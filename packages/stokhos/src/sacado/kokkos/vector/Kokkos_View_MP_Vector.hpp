@@ -216,16 +216,16 @@ public:
   // is one less than the rank of the array of intrinsic scalar_type defined by the shape.
   enum { Rank = traits::rank - 1 };
 
-  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_shape.N2 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_3() const { return m_shape.N3 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_4() const { return m_shape.N4 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type size() const
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const { return m_shape.N2 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const { return m_shape.N3 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const { return m_shape.N4 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type size() const
   {
     return   m_shape.N0
            * m_shape.N1
@@ -239,7 +239,7 @@ public:
   }
 
   template< typename iType >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type dimension( const iType & i ) const
     { return Impl::dimension( m_shape , i ); }
 
@@ -511,7 +511,7 @@ public:
   //------------------------------------
   // Is not allocated
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   bool is_null() const { return 0 == m_ptr_on_device ; }
 
   //------------------------------------
@@ -523,7 +523,7 @@ public:
                       Impl::ViewError::scalar_operator_called_from_non_scalar_view >
     if_scalar_operator ;
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename if_scalar_operator::type
     operator()() const
     {
@@ -536,25 +536,10 @@ public:
 
   //------------------------------------
   //------------------------------------
-  // LayoutLeft, array operators, traits::rank 2:
+  // Array operators, traits::rank 2:
 
   template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
-    operator[] ( const iType0 & i0 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Strided storage
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + i0 ,
-        m_shape.N1 ,
-        m_stride.value ) );
-    }
-
-  template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
@@ -569,28 +554,40 @@ public:
     }
 
   template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 2, iType0 >::type
-    at( const iType0 & i0 , const int , const int , const int ,
-        const int , const int , const int , const int ) const
+                                      traits, LayoutRight, 2, iType0 >::type
+    operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      // Strided storage
+      // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + i0 ,
-        m_shape.N1 ,
-        m_stride.value ) );
+        m_ptr_on_device + ( m_stride.value * i0 ) ,
+        m_shape.N1 , 1 ) );
     }
 
+  template< typename iType0 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type , traits, typename traits::array_layout, 2, iType0 >::type
+    operator[] ( const iType0 & i0 ) const
+    { return operator()( i0 ); }
+
+  template< typename iType0 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+                                      traits, typename traits::array_layout, 2,
+                                      iType0 >::type
+    at( const iType0 & i0 , int , int , int , int , int , int , int ) const
+    { return operator()(i0); }
+
   //------------------------------------
   //------------------------------------
-  // LayoutLeft, array operators, traits::rank 3:
+  // Array operators, traits::rank 3:
 
   template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 3, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
@@ -606,28 +603,34 @@ public:
     }
 
   template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 3, iType0, iType1 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
-        const int , const int , const int , const int ) const
+                                      traits, LayoutRight, 3, iType0, iType1 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0);
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      // Strided storage with right-most index as the stokhos dimension
+      // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * ( i1 )),
-        m_shape.N2 ,
-        m_stride.value * m_shape.N1 ) );
+        m_ptr_on_device + ( m_storage_size * ( i1 ) + m_stride.value * i0 ) ,
+        m_shape.N2 , 1 ) );
     }
 
+  template< typename iType0 , typename iType1 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+                                      traits, typename traits::array_layout, 3,
+                                      iType0, iType1 >::type
+    at( const iType0 & i0 , const iType1 & i1 , int , int , int , int , int , int ) const
+    { return operator()(i0,i1); }
+
   //------------------------------------
   //------------------------------------
-  // LayoutLeft, array operators, traits::rank 4:
+  // Array operators, traits::rank 4:
 
   template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
@@ -645,30 +648,36 @@ public:
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
-        const int , const int , const int , const int ) const
+                                      traits, LayoutRight, 4, iType0, iType1, iType2 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      // Strided storage with right-most index as the stokhos dimension
+      // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 ))),
-        m_shape.N3 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 ) );
+        m_ptr_on_device + ( m_storage_size * ( i2 +
+                            m_shape.N2 * ( i1 )) +
+                            m_stride.value * i0 ) ,
+        m_shape.N3 , 1 ) );
     }
 
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+                                      traits, typename traits::array_layout, 4,
+                                      iType0, iType1, iType2 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , int , int , int , int , int ) const
+    { return operator()(i0,i1,i2); }
+
   //------------------------------------
   //------------------------------------
-  // LayoutLeft, array operators, traits::rank 5:
+  // Array operators, traits::rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
@@ -687,31 +696,37 @@ public:
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const int , const int , const int , const int ) const
+                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      // Strided storage with right-most index as the stokhos dimension
+      // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 )))),
-        m_shape.N4 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 ) );
+        m_ptr_on_device + ( m_storage_size * ( i3 +
+                            m_shape.N3 * ( i2 +
+                            m_shape.N2 * ( i1 ))) +
+                            m_stride.value * i0 ) ,
+        m_shape.N4 , 1 ) );
     }
 
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+                                      traits, typename traits::array_layout, 5,
+                                      iType0, iType1, iType2, iType3 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , int , int , int , int ) const
+    { return operator()(i0,i1,i2,i3); }
+
   //------------------------------------
   //------------------------------------
-  // LayoutLeft, array operators, traits::rank 6:
+  // Array operators, traits::rank 6:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ) const
@@ -730,285 +745,9 @@ public:
         m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 ) );
     }
 
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3 , iType4 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Strided storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 ))))),
-        m_shape.N5 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutLeft, array operators, traits::rank 7:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
-                 const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Strided storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            i5 )))))),
-        m_shape.N6 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 ) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
-        const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ,
-        const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Strided storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            i5 )))))),
-        m_shape.N6 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutLeft, array operators, traits::rank 8:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
-    {
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
-
-      // Strided storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            i5 + m_shape.N5 * (
-                            i6 ))))))),
-        m_shape.N7 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 * m_shape.N6 ) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
-    {
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
-
-      // Strided storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            i5 + m_shape.N5 * (
-                            i6 ))))))),
-        m_shape.N7 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 * m_shape.N6 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 2:
-
-  template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 2, iType0 >::type
-    operator() ( const iType0 & i0 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_stride.value * i0 ) ,
-        m_shape.N1 , 1 ) );
-    }
-
-  template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 2, iType0 >::type
-    at( const iType0 & i0 , const int, const int, const int,
-        const int, const int, const int, const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_stride.value * i0 ) ,
-        m_shape.N1 , 1 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 3:
-
-  template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 3, iType0, iType1 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0);
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i1 ) + m_stride.value * i0 ) ,
-        m_shape.N2 , 1 ) );
-    }
-
-  template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 3, iType0, iType1 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0);
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i1 ) + m_stride.value * i0 ) ,
-        m_shape.N2 , 1 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 4:
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 4, iType0, iType1, iType2 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i2 +
-                            m_shape.N2 * ( i1 )) +
-                            m_stride.value * i0 ) ,
-        m_shape.N3 , 1 ) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 4, iType0, iType1, iType2 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i2 +
-                            m_shape.N2 * ( i1 )) +
-                            m_stride.value * i0 ) ,
-        m_shape.N3 , 1 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 5:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 ))) +
-                            m_stride.value * i0 ) ,
-        m_shape.N4 , 1 ) );
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 ))) +
-                            m_stride.value * i0 ) ,
-        m_shape.N4 , 1 ) );
-    }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 6:
-
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
@@ -1029,33 +768,43 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4 >::type
+                                      traits, typename traits::array_layout, 6,
+                                      iType0, iType1, iType2, iType3, iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const int , const int , const int ) const
+        const iType4 & i4 , int , int , int ) const
+    { return operator()(i0,i1,i2,i3,i4); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 7:
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
+                 const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      // Contiguous storage with right-most index as the stokhos dimension
+      // Strided storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i4 +
-                            m_shape.N4 * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 )))) +
-                            m_stride.value * i0 ) ,
-        m_shape.N5 , 1 ) );
+        m_ptr_on_device + ( i0 + m_stride.value * (
+                            i1 + m_shape.N1 * (
+                            i2 + m_shape.N2 * (
+                            i3 + m_shape.N3 * (
+                            i4 + m_shape.N4 * (
+                            i5 )))))),
+        m_shape.N6 ,
+        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 ) );
     }
-
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 7:
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
@@ -1077,33 +826,45 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+                                      traits, typename traits::array_layout, 7,
+                                      iType0, iType1, iType2, iType3, iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const iType5 & i5 , const int , const int ) const
+        const iType4 & i4 , const iType5 & i5 , int , int ) const
+    { return operator()(i0,i1,i2,i3,i4,i5); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 8:
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 , typename iType6 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
 
-      // Contiguous storage with right-most index as the stokhos dimension
+      // Strided storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i5 +
-                            m_shape.N5 * ( i4 +
-                            m_shape.N4 * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 ))))) +
-                            m_stride.value * i0 ) ,
-        m_shape.N6 , 1 ) );
+        m_ptr_on_device + ( i0 + m_stride.value * (
+                            i1 + m_shape.N1 * (
+                            i2 + m_shape.N2 * (
+                            i3 + m_shape.N3 * (
+                            i4 + m_shape.N4 * (
+                            i5 + m_shape.N5 * (
+                            i6 ))))))),
+        m_shape.N7 ,
+        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 * m_shape.N6 ) );
     }
-
-  //------------------------------------
-  //------------------------------------
-  // LayoutRight, array operators, traits::rank 8:
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
@@ -1126,47 +887,34 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
-                                      traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+                                      traits, typename traits::array_layout, 8,
+                                      iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( m_storage_size * ( i6 +
-                            m_shape.N6 * ( i5 +
-                            m_shape.N5 * ( i4 +
-                            m_shape.N4 * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 )))))) +
-                            m_stride.value * i0 ) ,
-        m_shape.N7 , 1 ) );
-    }
+        const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , int ) const
+    { return operator()(i0,i1,i2,i3,i4,i5,i6); }
 
   //------------------------------------
   // Access to the underlying contiguous storage of this view specialization.
   // These methods are specific to specialization of a view.
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
 
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   void stride( iType * const s ) const
   { Impl::stride( s , m_shape , m_stride ); }
 
   // Count of contiguously allocated data members including padding.
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type capacity() const
   { return Impl::capacity( m_shape , m_stride ); }
 
   // Static storage size
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type static_storage_size() const
   { return StokhosStorageStaticDimension; }
 };
