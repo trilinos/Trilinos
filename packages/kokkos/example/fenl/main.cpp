@@ -16,15 +16,20 @@
 #include <Kokkos_Cuda.hpp>
 #endif
 
+#if defined( KOKKOS_HAVE_OPENMP )
+#include <Kokkos_OpenMP.hpp>
+#endif
+
 #include <WrapMPI.hpp>
 #include <fenl.hpp>
 
 //----------------------------------------------------------------------------
 
-enum { CMD_USE_THREADS = 0 
+enum { CMD_USE_THREADS = 0
      , CMD_USE_NUMA
      , CMD_USE_CORE_PER_NUMA
      , CMD_USE_CUDA
+     , CMD_USE_OPENMP
      , CMD_USE_CUDA_DEV
      , CMD_USE_FIXTURE_X
      , CMD_USE_FIXTURE_Y
@@ -43,6 +48,12 @@ void print_cmdline( std::ostream & s , const int cmd[] )
 {
   if ( cmd[ CMD_USE_THREADS ] ) {
     s << " Threads(" << cmd[ CMD_USE_THREADS ]
+      << ") NUMA(" << cmd[ CMD_USE_NUMA ]
+      << ") CORE_PER_NUMA(" << cmd[ CMD_USE_CORE_PER_NUMA ]
+      << ")" ;
+  }
+  if ( cmd[ CMD_USE_OPENMP ] ) {
+    s << " OpenMP(" << cmd[ CMD_USE_OPENMP ]
       << ") NUMA(" << cmd[ CMD_USE_NUMA ]
       << ") CORE_PER_NUMA(" << cmd[ CMD_USE_CORE_PER_NUMA ]
       << ")" ;
@@ -94,6 +105,7 @@ template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
 void run( MPI_Comm comm , const int cmd[] )
 {
   if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
+  else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
   else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
 
   if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
@@ -114,9 +126,9 @@ void run( MPI_Comm comm , const int cmd[] )
 
       const Kokkos::Example::FENL::Perf perf =
         cmd[ CMD_USE_FIXTURE_QUADRATIC ]
-        ? Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemQuadratic > 
+        ? Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemQuadratic >
             ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
-        : Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemLinear > 
+        : Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemLinear >
             ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         ;
 
@@ -124,15 +136,15 @@ void run( MPI_Comm comm , const int cmd[] )
     }
   }
   else {
-    int nelem[3] = { cmd[ CMD_USE_FIXTURE_X ] , 
-                     cmd[ CMD_USE_FIXTURE_Y ] , 
+    int nelem[3] = { cmd[ CMD_USE_FIXTURE_X ] ,
+                     cmd[ CMD_USE_FIXTURE_Y ] ,
                      cmd[ CMD_USE_FIXTURE_Z ] };
 
     const Kokkos::Example::FENL::Perf perf =
       cmd[ CMD_USE_FIXTURE_QUADRATIC ]
-      ? Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemQuadratic > 
+      ? Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemQuadratic >
           ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
-      : Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemLinear > 
+      : Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemLinear >
           ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       ;
 
@@ -159,11 +171,14 @@ int main( int argc , char ** argv )
   int cmdline[ CMD_COUNT ] ;
 
   for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
-  
+
   if ( 0 == comm_rank ) {
     for ( int i = 1 ; i < argc ; ++i ) {
       if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
-        cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );      
+        cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
+      }
+      else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+        cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
       }
       else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
         sscanf( argv[++i] , "%dx%d" ,
@@ -243,6 +258,26 @@ int main( int argc , char ** argv )
       run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
 
       Kokkos::Threads::finalize();
+    }
+
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+
+    if ( cmdline[ CMD_USE_OPENMP ] ) {
+
+      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
+                                     cmdline[ CMD_USE_NUMA ] ,
+                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
+      }
+      else {
+        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_THREADS ] );
+      }
+
+      run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+
+      Kokkos::OpenMP::finalize();
     }
 
 #endif

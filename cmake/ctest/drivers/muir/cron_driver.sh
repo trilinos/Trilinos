@@ -16,7 +16,7 @@ export TDD_CTEST_TEST_TYPE=Nightly
 
 # Machine specific environment:
 #
-export PATH=/usr/local/bin:/bin:/usr/bin/$PATH
+export PATH=/usr/local/bin:/bin:/usr/bin/$PATH:/home/trilinos/tpl/gcc4.4.4/qt-4.5.2/bin
 
 # BASEDIR is the parent directory of this script's Trilinos source tree...
 BASEDIR=`cd "\`dirname \"$0\"\`/../../../../..";pwd`

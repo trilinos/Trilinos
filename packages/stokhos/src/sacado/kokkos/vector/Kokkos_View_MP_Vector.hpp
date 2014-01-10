@@ -285,9 +285,14 @@ private:
   inline
   void verify_dimension_storage_static_size() const
   {
-    if ( StokhosStorageStaticDimension &&
-         ( dimension( unsigned(Rank) ) != ( StokhosStorageStaticDimension ? StokhosStorageStaticDimension : 1 ) ) ) {
-        Impl::throw_runtime_exception( std::string("Kokkos::View< Sacado::MP::Vector<StorageType , ... > allocation dimension must equal StorageType::static_size" ) );
+    if ( dimension( unsigned(Rank) ) % ( StokhosStorageStaticDimension ? StokhosStorageStaticDimension : 1 ) ) {
+      std::ostringstream msg ;
+      msg << "Kokkos::View< Sacado::MP::Vector<StorageType , ... > allocation dimension ("
+          << dimension( unsigned(Rank) )
+          << ") must be a multiple of StorageType::static_size ("
+          << StokhosStorageStaticDimension
+          << ")" ;
+      Impl::throw_runtime_exception( msg.str() );
     }
   }
 
@@ -471,7 +476,7 @@ public:
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      (void) Impl::ViewFill< array_type >( *this , typename traits::scalar_type() );
     }
 
   explicit inline

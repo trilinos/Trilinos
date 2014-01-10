@@ -2576,7 +2576,6 @@ namespace Tpetra {
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
         RCP<const Comm<int> > pComm = rowMap->getComm ();
-        RCP<node_type> pNode = rowMap->getNode ();
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
         const bool extraDebug = false;
@@ -2599,30 +2598,15 @@ namespace Tpetra {
           "The specified row Map's communicator (rowMap->getComm())"
           "differs from the given separately supplied communicator pComm.");
         TEUCHOS_TEST_FOR_EXCEPTION(
-          rowMap->getNode().getRawPtr() != pNode.getRawPtr(),
-          std::invalid_argument,
-          "The specified row Map's Kokkos Node instance (rowMap->getNode())"
-          "differs from the given separately supplied Node instance pNode.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
           domainMap->getComm().getRawPtr() != pComm.getRawPtr(),
           std::invalid_argument,
           "The specified domain Map's communicator (domainMap->getComm())"
           "differs from the given separately supplied communicator pComm.");
         TEUCHOS_TEST_FOR_EXCEPTION(
-          domainMap->getNode().getRawPtr() != pNode.getRawPtr(),
-          std::invalid_argument,
-          "The specified domain Map's Kokkos Node instance (domainMap->getNode())"
-          "differs from the given separately supplied Node instance pNode.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
           rangeMap->getComm().getRawPtr() != pComm.getRawPtr(),
           std::invalid_argument,
           "The specified range Map's communicator (rangeMap->getComm())"
           "differs from the given separately supplied communicator pComm.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          rangeMap->getNode().getRawPtr() != pNode.getRawPtr(),
-          std::invalid_argument,
-          "The specified range Map's Kokkos Node instance (rangeMap->getNode())"
-          "differs from the given separately supplied Node instance pNode.");
 
         // Current line number in the input stream.  Various calls
         // will modify this depending on the number of lines that are
