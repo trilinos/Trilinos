@@ -257,7 +257,7 @@ struct IsViewLabel<char[N]> : public Kokkos::Impl::true_type {};
  *          If correct rank define type from traits,
  *          otherwise define type as an error message.
  */
-template< class ReturnType , class Traits , unsigned Rank ,
+template< class ReturnType , class Traits , class Layout , unsigned Rank ,
           typename iType0 = int , typename iType1 = int ,
           typename iType2 = int , typename iType3 = int ,
           typename iType4 = int , typename iType5 = int ,
@@ -265,18 +265,19 @@ template< class ReturnType , class Traits , unsigned Rank ,
           class Enable = void >
 struct ViewEnableArrayOper ;
 
-template< class ReturnType , class Traits , unsigned Rank ,
+template< class ReturnType , class Traits , class Layout , unsigned Rank ,
           typename iType0 , typename iType1 ,
           typename iType2 , typename iType3 ,
           typename iType4 , typename iType5 ,
           typename iType6 , typename iType7 >
 struct ViewEnableArrayOper<
-   ReturnType , Traits , Rank ,
+   ReturnType , Traits , Layout , Rank ,
    iType0 , iType1 , iType2 , iType3 ,
    iType4 , iType5 , iType6 , iType7 ,
    typename enable_if<
      iType0(0) == 0 && iType1(0) == 0 && iType2(0) == 0 && iType3(0) == 0 &&
      iType4(0) == 0 && iType5(0) == 0 && iType6(0) == 0 && iType7(0) == 0 &&
+     is_same< typename Traits::array_layout , Layout >::value &&
      ( unsigned(Traits::rank) == Rank )
    >::type >
 {
@@ -623,7 +624,8 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          Impl::is_same<T,typename traits::scalar_type>::value &&
+          ( Impl::is_same<T,typename traits::scalar_type>::value ||
+            Impl::is_same<T,typename traits::const_scalar_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -752,7 +754,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, 1, iType0 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, typename traits::array_layout, 1, iType0 >::type
     operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -763,7 +765,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, 1, iType0 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, typename traits::array_layout, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -774,7 +776,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, 1, iType0 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, typename traits::array_layout, 1, iType0 >::type
     at( const iType0 & i0 , const int , const int , const int ,
         const int , const int , const int , const int ) const
     {
@@ -789,7 +791,7 @@ public:
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 2, iType0, iType1 >::type
+                                      traits, typename traits::array_layout, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
@@ -801,7 +803,7 @@ public:
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 2, iType0, iType1 >::type
+                                      traits, typename traits::array_layout, 2, iType0, iType1 >::type
     at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
         const int , const int , const int , const int ) const
     {
@@ -816,7 +818,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 3, iType0, iType1, iType2 >::type
+                                      traits, typename traits::array_layout, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
@@ -828,7 +830,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 3, iType0, iType1, iType2 >::type
+                                      traits, typename traits::array_layout, 3, iType0, iType1, iType2 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
         const int , const int , const int , const int ) const
     {
@@ -843,7 +845,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 4, iType0, iType1, iType2, iType3 >::type
+                                      traits, typename traits::array_layout, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
@@ -855,7 +857,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 4, iType0, iType1, iType2, iType3 >::type
+                                      traits, typename traits::array_layout, 4, iType0, iType1, iType2, iType3 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const int , const int , const int , const int ) const
     {
@@ -871,7 +873,7 @@ public:
             typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 5, iType0, iType1, iType2, iType3 , iType4 >::type
+                                      traits, typename traits::array_layout, 5, iType0, iType1, iType2, iType3 , iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
@@ -885,7 +887,7 @@ public:
             typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 5, iType0, iType1, iType2, iType3 , iType4 >::type
+                                      traits, typename traits::array_layout, 5, iType0, iType1, iType2, iType3 , iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const int , const int , const int ) const
     {
@@ -901,7 +903,8 @@ public:
             typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 6, iType0, iType1, iType2, iType3 , iType4, iType5 >::type
+                                      traits, typename traits::array_layout, 6,
+                                      iType0, iType1, iType2, iType3 , iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
@@ -915,7 +918,8 @@ public:
             typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 6, iType0, iType1, iType2, iType3 , iType4, iType5 >::type
+                                      traits, typename traits::array_layout, 6,
+                                      iType0, iType1, iType2, iType3 , iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const int , const int ) const
     {
@@ -931,7 +935,8 @@ public:
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
+                                      traits, typename traits::array_layout, 7,
+                                      iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
@@ -945,7 +950,8 @@ public:
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
+                                      traits, typename traits::array_layout, 7,
+                                      iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
@@ -961,7 +967,8 @@ public:
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
+                                      traits, typename traits::array_layout, 8,
+                                      iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
@@ -975,7 +982,8 @@ public:
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
+                                      traits, typename traits::array_layout, 8,
+                                      iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
