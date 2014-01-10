@@ -2751,6 +2751,18 @@ namespace Tpetra {
   }
 
 
+ /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::replaceColMap(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap)
+  {
+    // NOTE: This safety check matches the code, but not the documentation of Crsgraph
+    const char tfecfFuncName[] = "replaceColMap()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() || isGloballyIndexed(),  std::runtime_error, " requires matching maps and non-static graph.");
+    colMap_ = newColMap;
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

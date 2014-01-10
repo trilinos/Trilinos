@@ -42,11 +42,14 @@
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
 #define TPETRA_CRSMATRIX_DEF_HPP
 
+#include <typeinfo>
 #include "Tpetra_RowMatrix.hpp"
 
 #include <Tpetra_Util.hpp>
+#include <Tpetra_Import_Util.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_as.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsMatrix_decl.hpp"
@@ -2172,6 +2175,20 @@ namespace Tpetra {
     }
     return frobNorm;
   }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap) 
+  {
+    const char tfecfFuncName[] = "replaceColMap";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_.is_null (), std::runtime_error, ": This method requires that the matrix have a graph.");
+    myGraph_->replaceColMap(newColMap);
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -5254,6 +5271,9 @@ namespace Tpetra {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
+#ifndef OLD_AND_BUSTED
+    return transferAndFillComplete<Export<LocalOrdinal, GlobalOrdinal, Node> >(exporter,domainMap,rangeMap,params);
+#else
     using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::Comm;
@@ -5349,7 +5369,264 @@ namespace Tpetra {
     }
 
     return destMat;
+#endif
   }
+
+
+// ===================================================================
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  template <class TransferType>
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  transferAndFillComplete(const TransferType & RowTransfer,
+			  const Teuchos::RCP<const map_type>& domainMap,
+			  const Teuchos::RCP<const map_type>& rangeMap,
+			  const Teuchos::RCP<Teuchos::ParameterList>& params) const
+  {
+    // NOTE: Does not work correctly with reverse mode on the transfers.  This needs to get fixed.
+
+    using Teuchos::RCP;    
+    using Teuchos::ArrayView;
+    // Fused contructor [import|export] and fillComplete
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Node NT;
+    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
+    typedef Vector<int,LO,GO,NT> IntVectorType;
+
+    // Note: Here "SourceMatrix is "this" 
+    bool communication_needed = RowTransfer.getSourceMap()->isDistributed();
+
+    // Sanity Check
+    TEUCHOS_TEST_FOR_EXCEPTION(!getRowMap()->isSameAs(*RowTransfer.getSourceMap()), std::invalid_argument,
+			       "Tpetra::CrsMatrix: transferAndFillComplete requires rowTransfer->getSourceMap() to match this->getRowMap()");
+
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (!params.is_null()) restrictComm = params->get ("Restrict Communicator", restrictComm);
+
+    // Are we in reverse mode? (FIXME)
+    bool reverseMode = false;
+    if (!params.is_null()) reverseMode = params->get ("Reverse Mode", reverseMode);
+    TEUCHOS_TEST_FOR_EXCEPTION(reverseMode, std::invalid_argument,
+			       "Tpetra::CrsMatrix: transferAndFillComplete does not allow reverse mode yet");//FIXME
+
+    // Get matrix parameters
+    RCP<ParameterList> matrixparams;
+    if (!params.is_null()) matrixparams = sublist(params, "CrsMatrix");
+
+    // The basic algorithm here is:
+    // 1) Call the moral equivalent of "distor.do" to handle the import.
+    // 2) Copy all the Imported and Copy/Permuted data into the raw CrsMatrix / CrsGraphData pointers, still using GIDs.
+    // 3) Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids) AND
+    //    reindexes to LIDs.
+    // 4) Call expertStaticFillComplete()
+    
+    // Get information from the Importer
+    size_t NumSameIDs                   = RowTransfer.getNumSameIDs();
+    ArrayView<const LO> ExportLIDs      = RowTransfer.getExportLIDs();
+    ArrayView<const LO> RemoteLIDs      = RowTransfer.getRemoteLIDs();
+    ArrayView<const LO> PermuteToLIDs   = RowTransfer.getPermuteToLIDs();
+    ArrayView<const LO> PermuteFromLIDs = RowTransfer.getPermuteFromLIDs();
+    Distributor& Distor                 = RowTransfer.getDistributor();
+   
+    // Owning PIDs
+    Teuchos::Array<int> SourcePids;
+    Teuchos::Array<int> TargetPids;
+    int MyPID = getComm()->getRank();
+    
+    // The new Domain & Range maps
+    RCP<const map_type> MyRowMap    = RowTransfer.getTargetMap(); // This is the implicit assumption of the Epetra version
+    RCP<const map_type> MyColMap;
+    RCP<const map_type> MyDomainMap = !domainMap.is_null() ? domainMap : getDomainMap();
+    RCP<const map_type> MyRangeMap  = !rangeMap.is_null()  ? rangeMap  : getRangeMap();
+
+    // Temp variables for sub-communicators
+    RCP<const map_type> ReducedRowMap,ReducedColMap,ReducedDomainMap,ReducedRangeMap;
+    RCP<const Comm<int> > ReducedComm;
+
+    // New matrix
+    RCP<this_type> destMat; 
+ 
+
+    // CMS: The basic problem here is that we need to use the *new* matrix's DistObject scratch space for communication,
+    // note the old matrix's stuff.  That means we need to move the constructor up and add a replaceColMap
+   
+    // Fire off the initial constructor for the new matrix
+    destMat = rcp(new this_type(MyRowMap,0, StaticProfile, matrixparams));
+
+
+
+    /***************************************************/
+    /***** 1) From Tpera::DistObject::doTransfer() ****/
+    /***************************************************/
+    // All this does is check the target's template parameters agains the source.  We'll skip that for now.
+    /*
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !destMat->checkSizes(*this), std::invalid_argument,
+      "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
+      "destination object is not a legal target for redistribution from the "
+      "source object.  This probably means that they do not have the same "
+      "dimensions.  For example, MultiVectors must have the same number of "
+      "rows and columns.");
+    */
+
+    // Get the owning PIDs
+    RCP<const Import<LO,GO,NT> > MyImporter = getGraph()->getImporter();
+
+    if(domainMap.is_null() || domainMap->isSameAs(*getDomainMap())) {
+      // Same domain map as source matrix
+      if(!MyImporter.is_null()) Import_Util::getPids(*MyImporter,SourcePids,false);
+      else {
+	SourcePids.resize(getColMap()->getNodeNumElements());
+	SourcePids.assign(getColMap()->getNodeNumElements(),MyPID);
+      }
+    }
+    else if(domainMap->isSameAs(*MyRowMap) && getDomainMap()->isSameAs(*getRowMap())){
+      // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
+      IntVectorType TargetRow_pids(domainMap);
+      IntVectorType SourceRow_pids(getRowMap());
+      SourcePids.resize(getColMap()->getNodeNumElements(),0);
+      IntVectorType SourceCol_pids(getColMap(),SourcePids());
+      
+      TargetRow_pids.putScalar(MyPID);
+      SourceRow_pids.doExport(TargetRow_pids,RowTransfer,INSERT); 
+      SourceCol_pids.doImport(SourceRow_pids,*MyImporter,INSERT);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument, 
+				 "Tpetra::Crs_Matrix::transferAndFillComplete only supports domainMap==getDomainMap() "
+				 "|| (domainMap==rowTransfer.getTargetMap() && getDomainMap()==getRowMap().");
+    }
+
+    // Tpetra-specific stuff
+    size_t constantNumPackets = destMat->constantNumberOfPackets();
+    if (constantNumPackets == 0) {
+      destMat->numExportPacketsPerLID_.resize(ExportLIDs.size());
+      destMat->numImportPacketsPerLID_.resize(RemoteLIDs.size());
+    }
+    else {
+      // There are a constant number of packets per element.  We
+      // already know (from the number of "remote" (incoming)
+      // elements) how many incoming elements we expect, so we can
+      // resize the buffer accordingly.
+      const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
+      if (Teuchos::as<size_t>(destMat->imports_.size()) != rbufLen) {
+	destMat->imports_.resize(rbufLen);
+      }
+    }
+
+    // Pack & Prepare w/ owning PIDs
+    Import_Util::packAndPrepareWithOwningPIDs(*this,ExportLIDs,destMat->exports_,destMat->numExportPacketsPerLID_(),constantNumPackets,Distor,SourcePids);
+    
+    if(communication_needed) {
+      // Do the exchange of remote data.  
+      // NTS: This will need to be fixed to allow reverse mode
+      if (constantNumPackets == 0) { //variable num-packets-per-LID:
+	Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_().getConst(), 1,
+			       destMat->numImportPacketsPerLID_());
+	size_t totalImportPackets = 0;
+	for (Array_size_type i = 0; i < destMat->numImportPacketsPerLID_.size(); ++i) {
+	  totalImportPackets += destMat->numImportPacketsPerLID_[i];
+	}
+	destMat->imports_.resize(totalImportPackets);
+	Distor.doPostsAndWaits(destMat->exports_().getConst(),
+			       destMat->numExportPacketsPerLID_(),
+			       destMat->imports_(),
+			       destMat->numImportPacketsPerLID_());
+      }
+      else {
+	Distor.doPostsAndWaits(destMat->exports_ ().getConst(),
+			       constantNumPackets,
+			       destMat->imports_());
+      }
+    }
+
+    /*********************************************************************/
+    /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
+    /*********************************************************************/
+    size_t mynnz = Import_Util::unpackAndCombineWithOwningPIDsCount(*this,RemoteLIDs,destMat->imports_(),destMat->numImportPacketsPerLID_(),constantNumPackets,Distor,INSERT,NumSameIDs,PermuteToLIDs,PermuteFromLIDs);
+    size_t N = MyRowMap->getNodeNumElements();
+
+    // Allocations
+    ArrayRCP<size_t> CSR_rowptr(N+1);
+    ArrayRCP<GO> CSR_colind_GID;
+    ArrayRCP<LO> CSR_colind_LID;
+    ArrayRCP<Scalar> CSR_vals;
+    CSR_colind_GID.resize(mynnz);
+    CSR_vals.resize(mynnz);
+    if(typeid(LO)==typeid(GO)) CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO>(CSR_colind_GID);
+    else CSR_colind_LID.resize(mynnz);
+
+    Import_Util::unpackAndCombineIntoCrsArrays(*this,RemoteLIDs,destMat->imports_(),destMat->numImportPacketsPerLID_(),constantNumPackets,Distor,INSERT,NumSameIDs,
+					       PermuteToLIDs,PermuteFromLIDs,N,mynnz,CSR_rowptr(),CSR_colind_GID(),CSR_vals(),SourcePids(),TargetPids);
+
+
+    /**************************************************************/
+    /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
+    /**************************************************************/
+    // Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
+    Teuchos::Array<int> RemotePids;
+    Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr(),CSR_colind_LID(),CSR_colind_GID(),MyDomainMap,
+						      TargetPids,RemotePids,MyColMap);
+
+    /*******************************************************/
+    /**** 4) Restrict communicator (Build reduced maps) ****/
+    /*******************************************************/
+    if(restrictComm) {
+      ReducedRowMap    = MyRowMap->removeEmptyProcesses();
+      ReducedComm      = ReducedRowMap.is_null () ? Teuchos::null : ReducedRowMap->getComm();
+      destMat->removeEmptyProcessesInPlace(ReducedRowMap);
+      
+      ReducedDomainMap = MyRowMap.getRawPtr() == MyDomainMap.getRawPtr() ? ReducedRowMap : MyDomainMap->replaceCommWithSubset(ReducedComm);
+      ReducedRangeMap  = MyRowMap.getRawPtr() == MyRangeMap.getRawPtr()  ? ReducedRowMap : MyRangeMap->replaceCommWithSubset(ReducedComm);
+      ReducedColMap    = MyRowMap.getRawPtr() == MyColMap.getRawPtr()    ? ReducedRowMap : MyColMap->replaceCommWithSubset(ReducedComm); // CMS: Is this right?
+
+      // Reset the "my" maps
+      MyRowMap    = ReducedRowMap;
+      MyColMap    = ReducedColMap;
+      MyDomainMap = ReducedDomainMap;
+      MyRangeMap  = ReducedRangeMap;
+    }
+    else
+      ReducedComm = MyRowMap->getComm();
+
+    /***************************************************/
+    /**** 5) Sort                                   ****/
+    /***************************************************/
+    Import_Util::sortCrsEntries(CSR_rowptr(),CSR_colind_LID(),CSR_vals());
+
+    /***************************************************/
+    /**** 6) Reser the colmap and the arrays        ****/
+    /***************************************************/
+    // Fire off the constructor for the new matrix (restricted as needed)
+    if(!destMat.is_null()) {
+      destMat->replaceColMap(MyColMap);
+      destMat->setAllValues(CSR_rowptr,CSR_colind_LID,CSR_vals);
+    }
+
+    /***************************************************/
+    /**** 7) Build Importer & Call ESFC             ****/
+    /***************************************************/
+    // Pre-build the importer using the existing PIDs
+
+    //    MyImport = new Epetra_Import(ColMap(),*MyDomainMap,NumRemotePIDs,RemotePIDs_ptr);
+    // CMS: Need to modify the Import constructor to use the existing PID list.  
+
+    RCP<Tpetra::Import<LO,GO,NT> > MyImport;
+    if(!destMat.is_null()) {
+      MyImport = rcp(new Tpetra::Import<LO,GO,NT>(MyDomainMap,MyColMap));
+      destMat->expertStaticFillComplete(MyDomainMap,MyRangeMap,MyImport);
+    }
+
+    return destMat;
+}// end transferAndFillComplete
+
+
 
 } // namespace Tpetra
 
