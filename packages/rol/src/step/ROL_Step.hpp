@@ -47,6 +47,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraints.hpp"
+#include "ROL_Types.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 /** \class ROL::Step
@@ -55,24 +56,6 @@
 
 
 namespace ROL {
-
-template<class Real>
-struct AlgorithmState {
-  int  iter;
-  int  nfval;
-  int  ngrad;
-  Real value;
-  Real gnorm;
-  Real snorm;
-  Teuchos::RCP<Vector<Real> > iterateVec;
-};
-
-template<class Real>
-struct StepState {
-  Teuchos::RCP<Vector<Real> > gradientVec;
-  Teuchos::RCP<Vector<Real> > descentVec;
-};
-
 
 template <class Real>
 class Step {

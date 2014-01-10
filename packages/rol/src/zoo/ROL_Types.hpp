@@ -66,7 +66,28 @@
 #define ROL_NUM_CHECKDERIV_STEPS 13
 
 namespace ROL {
+
+  /** \brief  State for algorithm class.  Will be used for restarts.
+   */
+  template<class Real>
+  struct AlgorithmState {
+    int  iter;
+    int  nfval;
+    int  ngrad;
+    Real value;              
+    Real gnorm;
+    Real snorm;
+    Teuchos::RCP<Vector<Real> > iterateVec;
+  };  
   
+  /** \brief  State for step class.  Will be used for restarts.
+   */  
+  template<class Real>
+  struct StepState {
+    Teuchos::RCP<Vector<Real> > gradientVec;
+    Teuchos::RCP<Vector<Real> > descentVec;
+  };  
+      
   /** \brief  Platform-dependent machine epsilon. 
    */
   static const double ROL_EPSILON   = std::abs(Teuchos::ScalarTraits<double>::eps());
