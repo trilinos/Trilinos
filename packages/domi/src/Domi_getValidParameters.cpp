@@ -40,9 +40,10 @@
 // @HEADER
 
 #include "Domi_getValidParameters.hpp"
+#include "Domi_Utils.hpp"
+
 #include "Teuchos_Array.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Domi_Utils.hpp"
 
 using std::string;
 using Teuchos::RCP;
@@ -122,19 +123,19 @@ RCP< const ParameterList > getValidParameters()
       	 periodicValidator);
 
     // "dimensions" parameter applies to MDMap
-    // RCP< EnhancedNumberValidator< long long > > dimensionNumber =
-    //   rcp(new EnhancedNumberValidator< long long >());
-    // dimensionNumber->setMin(1);
+    RCP< EnhancedNumberValidator< long int > > dimensionNumber =
+      rcp(new EnhancedNumberValidator< long int >());
+     dimensionNumber->setMin(1);
 
-    // RCP< const EnhancedNumberValidator< long long > > constDimensionNumber =
-    // 	rcp_const_cast< EnhancedNumberValidator< long long > >(dimensionNumber);
+    RCP< const EnhancedNumberValidator< long int > > constDimensionNumber =
+    	rcp_const_cast< EnhancedNumberValidator< long int > >(dimensionNumber);
 
-    // RCP< const ParameterEntryValidator > dimensionValidator =
-    // 	rcp< const ParameterEntryValidator >
-    // 	(new ArrayValidator< EnhancedNumberValidator< long long >,
-    // 	 int >(constDimensionNumber));
+     RCP< const ParameterEntryValidator > dimensionValidator =
+     	rcp< const ParameterEntryValidator >
+     	(new ArrayValidator< EnhancedNumberValidator< long int >,
+     	 int >(constDimensionNumber));
 
-    Array< long long > dimensions(1);
+    Array< long int > dimensions(1);
     dimensions[0] = 0;
     plist->set("dimensions",
                dimensions,
