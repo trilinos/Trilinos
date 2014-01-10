@@ -292,8 +292,6 @@ inline void createBoundingBoxesForElementsInElementBlocks(const int procId, cons
         {
             createBoundingBoxForElement(&connectivity[numNodesPerElement*elemCounter], numNodesPerElement, coordinates, boxCoordinates);
             Ident domainBoxId(analystElementIds[boxCounter], procId);
-            Point min();
-            Point max();
             domainBoxes[boxCounter] = std::make_pair(GtkBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
                                                             boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
                                                             domainBoxId);
