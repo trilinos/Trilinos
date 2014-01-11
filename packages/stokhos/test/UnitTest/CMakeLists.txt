@@ -481,7 +481,9 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      IF (Stokhos_ENABLE_Tpetra)
+      IF (Stokhos_ENABLE_Tpetra  AND
+          NOT Tpetra_ENABLE_Kokkos_DistObject AND
+          NOT Tpetra_ENABLE_Kokkos_Refactor)
 
         IF (Kokkos_ENABLE_Pthread)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(

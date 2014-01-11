@@ -372,7 +372,9 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
-    IF (Stokhos_ENABLE_Tpetra)
+    IF (Stokhos_ENABLE_Tpetra AND
+        NOT Tpetra_ENABLE_Kokkos_DistObject AND
+        NOT Tpetra_ENABLE_Kokkos_Refactor)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
         SET(HEADERS ${HEADERS}
