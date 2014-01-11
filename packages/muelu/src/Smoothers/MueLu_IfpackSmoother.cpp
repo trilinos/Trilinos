@@ -117,18 +117,46 @@ namespace MueLu {
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     double lambdaMax = -1.0;
-    if (type_ == "Chebyshev")
-      try {
-        lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter("chebyshev: max eigenvalue"));
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
+    if (type_ == "Chebyshev") {
+      std::string maxEigString   = "chebyshev: max eigenvalue";
+      std::string eigRatioString = "chebyshev: ratio eigenvalue";
 
-      } catch (Teuchos::Exceptions::InvalidParameterName) {
+      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+      // Get/calculate the maximum eigenvalue
+      if (paramList.isParameter(maxEigString)) {
+        lambdaMax = paramList.get<Scalar>(maxEigString);
+        this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+
+      } else {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
         if (lambdaMax != -1.0) {
-          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
-          this->SetParameter("chebyshev: max eigenvalue", ParameterEntry(lambdaMax));
+          this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+          paramList.set(maxEigString, lambdaMax);
         }
       }
+
+      // Calculate the eigenvalue ratio
+      const Scalar defaultEigRatio = 20;
+      Scalar ratio = defaultEigRatio;
+      if (paramList.isParameter(eigRatioString))
+        ratio = paramList.get<Scalar>(eigRatioString);
+
+      if (currentLevel.GetLevelID()) {
+        // Update ratio to be
+        //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
+        //
+        // NOTE: We don't need to request previous level matrix as we know for sure it was constructed
+        RCP<const Matrix> fineA = currentLevel.GetPreviousLevel()->Get<RCP<Matrix> >("A");
+        size_t nRowsFine   = fineA->getGlobalNumRows();
+        size_t nRowsCoarse = A_->getGlobalNumRows();
+
+        ratio = std::max(ratio, as<Scalar>(nRowsFine)/nRowsCoarse);
+      }
+
+      this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+      paramList.set(eigRatioString, ratio);
+    }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
 
