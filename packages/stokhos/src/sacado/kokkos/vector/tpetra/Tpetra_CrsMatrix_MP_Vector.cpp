@@ -39,37 +39,29 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_UnitTestRepository.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
-#include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsGraph_def.hpp"
 
-// Instantiate test for Threads device
-using Kokkos::Threads;
-using Kokkos::SerialNode;
-CRSMATRIX_MP_VECTOR_TESTS_SLGN( double, int, int, SerialNode )
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
 
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+#define TPETRA_CRSMATRIX_INSTANT_MP_VECTOR_N(N)               \
+  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_CRSMATRIX_INSTANT, N) \
+  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT, N) \
+  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT, N)
 
-  // Initialize threads
-  // size_t num_cores =
-  //   Kokkos::hwloc::get_available_numa_count() *
-  //   Kokkos::hwloc::get_available_cores_per_numa();
-  // size_t num_hyper_threads =
-  //   Kokkos::hwloc::get_available_threads_per_core();
-  // Kokkos::Threads::initialize(num_cores * num_hyper_threads);
-  //Kokkos::Threads::print_configuration(std::cout);
+namespace Tpetra {
 
-  // Run tests
-  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // Finish up
-  Kokkos::Threads::finalize();
+  // Currently excluding GPU nodes because SparseOps may not be
+  // implemented, I think depending on the choice of TPLs
+  TPETRA_INSTANTIATE_N_NOGPU(TPETRA_CRSMATRIX_INSTANT_MP_VECTOR_N)
 
-  return ret;
-}
+} // namespace Tpetra
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

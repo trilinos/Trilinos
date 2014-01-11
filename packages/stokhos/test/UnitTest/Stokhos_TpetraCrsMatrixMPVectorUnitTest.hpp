@@ -53,22 +53,11 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// Include Tpetra implementation if explicit instantiation is enabled
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_MultiVector_def.hpp"
-#include "Tpetra_Vector_def.hpp"
-#include "Tpetra_CrsGraph_def.hpp"
-#include "Tpetra_CrsMatrix_def.hpp"
-#include "Tpetra_RowMatrix_def.hpp"
-#include "Tpetra_DistObject_def.hpp"
-#endif
-
 // Kokkos device types
 #include "Kokkos_Serial.hpp"
 
 #ifdef HAVE_STOKHOS_BELOS
 // Belos solver
-//#include "BelosTpetraAdapter.hpp"
 #include "Belos_TpetraAdapter_MP_Vector.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
@@ -87,6 +76,7 @@ scalar generate_vector_coefficient( const ordinal nFEM,
   //return 1.0;
 }
 
+// Currently only using Kokkos::Serial device for every node
 template <typename Node>
 struct DeviceForNode {
   typedef Kokkos::Serial type;

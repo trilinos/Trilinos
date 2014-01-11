@@ -372,9 +372,25 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
+    IF (Stokhos_ENABLE_Tpetra)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
+      IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/tpetra/Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp
+          )
+        SET(SOURCES ${SOURCES}
+          sacado/kokkos/vector/tpetra/Tpetra_MultiVector_MP_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_Vector_MP_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix_MP_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_RowMatrix_MP_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_DistObject_MP_Vector.cpp
+          )
+      ENDIF()
+    ENDIF()
     IF (Stokhos_ENABLE_Belos)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
       SET(HEADERS ${HEADERS}
-        sacado/kokkos/vector/Belos_TpetraAdapter_MP_Vector.hpp
+        sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
         )
     ENDIF()
   ENDIF()

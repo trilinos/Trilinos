@@ -485,9 +485,9 @@ IF(Stokhos_ENABLE_Sacado)
 
         IF (Kokkos_ENABLE_Pthread)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
-            TpetraCrsMatrixMPVectorUnitTest_Threads
+            TpetraCrsMatrixMPVectorUnitTest_Serial
             SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
-                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_Threads.cpp
+                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             DEPLIBS stokhos kokkoscore kokkoslinalg
