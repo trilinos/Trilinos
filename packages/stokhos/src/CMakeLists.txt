@@ -381,11 +381,11 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/tpetra/Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp
           )
         SET(SOURCES ${SOURCES}
-          sacado/kokkos/vector/tpetra/Tpetra_MultiVector_MP_Vector.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_Vector_MP_Vector.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix_MP_Vector.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_RowMatrix_MP_Vector.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_DistObject_MP_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_MultiVector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_RowMatrix.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_DistObject.cpp
           )
       ENDIF()
     ENDIF()
