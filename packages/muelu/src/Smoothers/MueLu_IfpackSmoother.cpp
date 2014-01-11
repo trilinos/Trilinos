@@ -112,7 +112,8 @@ namespace MueLu {
 
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true)
+      GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -121,26 +122,27 @@ namespace MueLu {
       std::string maxEigString   = "chebyshev: max eigenvalue";
       std::string eigRatioString = "chebyshev: ratio eigenvalue";
 
-      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
-
-      // Get/calculate the maximum eigenvalue
-      if (paramList.isParameter(maxEigString)) {
-        lambdaMax = paramList.get<Scalar>(maxEigString);
+      try {
+        lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter(maxEigString));
         this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
-      } else {
+      } catch (Teuchos::Exceptions::InvalidParameterName) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
+
         if (lambdaMax != -1.0) {
           this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
-          paramList.set(maxEigString, lambdaMax);
+          this->SetParameter(maxEigString, ParameterEntry(lambdaMax));
         }
       }
 
       // Calculate the eigenvalue ratio
       const Scalar defaultEigRatio = 20;
+
       Scalar ratio = defaultEigRatio;
-      if (paramList.isParameter(eigRatioString))
-        ratio = paramList.get<Scalar>(eigRatioString);
+      try {
+        ratio = Teuchos::getValue<Scalar>(this->GetParameter(eigRatioString));
+
+      } catch (Teuchos::Exceptions::InvalidParameterName) { }
 
       if (currentLevel.GetLevelID()) {
         // Update ratio to be
@@ -155,7 +157,7 @@ namespace MueLu {
       }
 
       this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
-      paramList.set(eigRatioString, ratio);
+      this->SetParameter(eigRatioString, ParameterEntry(ratio));
     }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
@@ -198,7 +200,7 @@ namespace MueLu {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
       // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '" + type_ + "' not supported");
     }
     SetPrecParameters(paramList);
 
