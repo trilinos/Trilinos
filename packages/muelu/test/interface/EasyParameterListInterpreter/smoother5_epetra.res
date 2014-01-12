@@ -11,7 +11,7 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- [empty list]
+ chebyshev: ratio eigenvalue = 20   [unused]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -59,7 +59,7 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- [empty list]
+ chebyshev: ratio eigenvalue = 20   [unused]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
