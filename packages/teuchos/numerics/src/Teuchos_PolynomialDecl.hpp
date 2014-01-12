@@ -134,7 +134,7 @@ namespace Teuchos {
      * Horner's method is used to efficiently evaluate the polynomial
      * and its derivative.
      */
-    void evaluate(typename Teuchos::Polynomial<CoeffT>::scalar_type  t, 
+    void evaluate(typename Teuchos::Polynomial<CoeffT>::scalar_type&  t, 
 		  CoeffT* x, CoeffT* xdot = NULL) const;
 
   private:
