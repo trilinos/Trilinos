@@ -22,8 +22,8 @@ Level 0
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
-
-
+ 
+ 
  --------------------------------------------------------------------------------
  ---                            Multigrid Summary                             ---
  --------------------------------------------------------------------------------
@@ -31,9 +31,10 @@ Level 0
  Operator complexity = 1.00
  Max Coarse Size     = 2000
  Implicit Transpose  = false
-
+ 
  matrix rows    nnz  nnz/row procs
  A 0    9999  29995     3.00  1
-
+ 
  Smoother (level 0) pre  : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
  Smoother (level 0) post : no smoother
+ 

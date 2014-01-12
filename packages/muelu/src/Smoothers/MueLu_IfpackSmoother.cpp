@@ -142,7 +142,9 @@ namespace MueLu {
       try {
         ratio = Teuchos::getValue<Scalar>(this->GetParameter(eigRatioString));
 
-      } catch (Teuchos::Exceptions::InvalidParameterName) { }
+      } catch (Teuchos::Exceptions::InvalidParameterName) {
+        this->SetParameter(eigRatioString, ParameterEntry(ratio));
+      }
 
       if (currentLevel.GetLevelID()) {
         // Update ratio to be
@@ -154,10 +156,10 @@ namespace MueLu {
         size_t nRowsCoarse = A_->getGlobalNumRows();
 
         ratio = std::max(ratio, as<Scalar>(nRowsFine)/nRowsCoarse);
-      }
 
-      this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
-      this->SetParameter(eigRatioString, ParameterEntry(ratio));
+        this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+        this->SetParameter(eigRatioString, ParameterEntry(ratio));
+      }
     }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
