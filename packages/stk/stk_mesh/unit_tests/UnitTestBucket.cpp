@@ -85,10 +85,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   unsigned number_of_states = 4;
 
   ScalarFieldType & temperature =
-    meta.declare_field < ScalarFieldType > ( "temperature" , number_of_states );
+    meta.declare_field < ScalarFieldType > (stk::topology::NODE_RANK, "temperature" , number_of_states );
   ScalarFieldType & volume =
 
-    meta.declare_field < ScalarFieldType > ( "volume" , number_of_states );
+    meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "volume" , number_of_states );
   Part & universal     = meta.universal_part ();
   put_field ( temperature , NODE_RANK , universal );
   put_field ( volume , element_rank  , universal );
@@ -209,10 +209,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   unsigned number_of_states = 4;
 
   ScalarFieldType & temperature2 =
-    meta2.declare_field < ScalarFieldType >("temperature2" , number_of_states);
+    meta2.declare_field < ScalarFieldType >(stk::topology::NODE_RANK, "temperature2" , number_of_states);
   ScalarFieldType & volume2 =
 
-    meta2.declare_field < ScalarFieldType >("volume2", number_of_states);
+    meta2.declare_field < ScalarFieldType >(stk::topology::ELEMENT_RANK, "volume2", number_of_states);
   Part  & universal = meta2.universal_part ();
   put_field ( temperature2 , NODE_RANK , universal );
   put_field ( volume2 , element_rank  , universal );
@@ -284,9 +284,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   unsigned number_of_states = 4;
 
   ScalarFieldType & temperature2 =
-    meta2.declare_field < ScalarFieldType >("temperature2" , number_of_states);
+    meta2.declare_field < ScalarFieldType >(stk::topology::NODE_RANK, "temperature2" , number_of_states);
   ScalarFieldType & volume2 =
-    meta2.declare_field < ScalarFieldType >("volume2", number_of_states);
+    meta2.declare_field < ScalarFieldType >(stk::topology::ELEMENT_RANK, "volume2", number_of_states);
   Part  & universal     = meta2.universal_part ();
   put_field ( temperature2 , NODE_RANK , universal );
   put_field ( volume2 , element_rank  , universal );
