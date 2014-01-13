@@ -190,7 +190,8 @@ protected:
       unsigned                     arg_number_of_states ,
       FieldState                   arg_this_state
       )
-    : m_impl(
+    : m_mesh(NULL),
+      m_impl(
         arg_mesh_meta_data,
         entity_rank,
         arg_ordinal,

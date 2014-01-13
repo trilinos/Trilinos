@@ -250,7 +250,7 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
 
   int dims[3] = {x_dim, y_dim, z_dim};
   char dim_names[3] = {'x', 'y', 'z'};
-  const EntityRank field_rank = Induce ? stk::topology::NODE_RANK : stk::topology::ELEMENT_RANK;
+  const EntityRank field_entity_rank = Induce ? stk::topology::NODE_RANK : stk::topology::ELEMENT_RANK;
 
   for (int dim = 0; dim < 3; ++dim) {
     const int dim_size = dims[dim];
@@ -276,8 +276,8 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
         for (int f = 0; f < num_fields_per_chunk; ++f) {
           std::ostringstream append;
           append << f << "_";
-          (*fields)[dim][i].push_back(&meta.declare_field<SimpleField>(std::string("field_") + append.str() + oss.str()));
-          put_field(*((*fields)[dim][i].back()), field_rank, *element_parts[dim].back(), &init_val);
+          (*fields)[dim][i].push_back(&meta.declare_field<SimpleField>(field_entity_rank, std::string("field_") + append.str() + oss.str()));
+          put_field(*((*fields)[dim][i].back()), field_entity_rank, *element_parts[dim].back(), &init_val);
         }
       }
     }

@@ -344,7 +344,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
 
   meta_data.commit();
@@ -458,7 +458,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
 
   meta_data.commit();
@@ -578,7 +578,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   stk::mesh::Part & side_4 = meta_data.declare_part("side_4", stk::topology::NODE_RANK);
   stk::mesh::Part & side_5 = meta_data.declare_part("side_5", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
 
   meta_data.commit();
@@ -714,7 +714,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
 
   meta_data.commit();
@@ -796,7 +796,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, OffsetRotationalPeriodicBC)
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
-  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "volume");
   stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
 
   meta_data.commit();
