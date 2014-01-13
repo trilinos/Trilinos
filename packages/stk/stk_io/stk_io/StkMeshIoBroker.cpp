@@ -861,7 +861,7 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       // name "implicit_element_ids", then populate the field with the correct
       // data.
       if (implicit_elem_id_field) {
-        stk::io::field_data_from_ioss(bulk, implicit_elem_id_field, elements, entity, "implicit_element_ids");
+        stk::io::field_data_from_ioss(bulk, implicit_elem_id_field, elements, entity, "implicit_ids");
       }
 
       // Add all element attributes as fields.
