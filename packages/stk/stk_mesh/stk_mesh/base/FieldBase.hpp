@@ -138,8 +138,9 @@ class FieldBase
 
 private:
 
-  void set_mesh(stk::mesh::BulkData* bulk)
-  { m_mesh = bulk; }
+  //  Associate this field with a bulk data.
+  //    Note, a field can be assocaited with one and only one bulk data object
+  void set_mesh(stk::mesh::BulkData* bulk);
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -164,7 +165,8 @@ protected:
       unsigned                     arg_number_of_states ,
       FieldState                   arg_this_state
       )
-    : m_impl(
+    : m_mesh(NULL),
+      m_impl(
         arg_mesh_meta_data,
         arg_ordinal,
         arg_name,
