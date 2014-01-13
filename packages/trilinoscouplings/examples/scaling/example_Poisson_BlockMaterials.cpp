@@ -64,7 +64,7 @@
     \author Created by P. Bochev, D. Ridzal, K. Peterson, D. Hensinger, C. Siefert.
 
     \remark Usage:
-    \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
+    \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe [--meshfile filename]\endcode
 
     \remark Example driver requires input file named Poisson.xml with Pamgen
             formatted mesh description and settings for Isorropia (a version
@@ -75,9 +75,6 @@
             modified by the user.
 
 */
-
-/*** Uncomment if you would like output data for plotting ***/
-//#define DUMP_DATA
 
 /**************************************************************/
 /*                          Includes                          */
@@ -113,6 +110,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -338,60 +336,67 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
   // Command line for xml file, otherwise use default
-    std::string   xmlMeshInFileName, xmlSolverInFileName;
-    if(argc>=2) xmlMeshInFileName=string(argv[1]);
-    else xmlMeshInFileName="Poisson.xml";
-    if(argc>=3) xmlSolverInFileName=string(argv[2]);
+  Teuchos::CommandLineProcessor clp(false);
+  clp.setDocString("Example solution of a Poisson equation on a hexahedral mesh using nodal elements.");
+  std::string xmlMeshInFileName = "Poisson.xml"; clp.setOption("meshfile", &xmlMeshInFileName, "XML file describing mesh");
+  std::string xmlSolverInFileName = "";          clp.setOption("solverfile", &xmlSolverInFileName, "XML file describing solver");
+  bool dumpData = false;                         clp.setOption("dumpdata", "nodumpdata", &dumpData, "write mesh and matrix information to file");
+
+  switch (clp.parse(argc,argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
 
   // Read xml file into parameter list
-    Teuchos::ParameterList inputMeshList;
-    Teuchos::ParameterList inputSolverList;
+  Teuchos::ParameterList inputMeshList;
+  Teuchos::ParameterList inputSolverList;
 
-   if(xmlMeshInFileName.length()) {
-     if (MyPID == 0) {
-      std::cout << "\nReading parameter list from the XML file \""<<xmlMeshInFileName<<"\" ...\n\n";
-     }
-     Teuchos::updateParametersFromXmlFile (xmlMeshInFileName, Teuchos::ptr (&inputMeshList));
-     if (MyPID == 0) {
-      inputMeshList.print(std::cout,2,true,true);
-      std::cout << "\n";
-     }
-    }
-    else
-    {
-      std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
-      return 0;
-    }
-
-   if(xmlSolverInFileName.length()) {
-     if (MyPID == 0)
-        std::cout << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n\n";
-     Teuchos::updateParametersFromXmlFile(xmlSolverInFileName, Teuchos::inoutArg(inputSolverList));
-   } else if (MyPID == 0) std::cout << "Using default solver values ..." << std::endl;
-
-   // Get pamgen mesh definition
-    std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,"meshInput");
-
-   // Get Isorropia and Zoltan parameters.
-    Teuchos::ParameterList iso_paramlist = inputMeshList.sublist
-                                                    ("Isorropia Input") ;
+  if(xmlMeshInFileName.length()) {
     if (MyPID == 0) {
-      std::cout << "Isorropia/Zoltan parameters" << std::endl;
-        iso_paramlist.print(std::cout,2,true,true);
+      std::cout << "\nReading parameter list from the XML file \""<<xmlMeshInFileName<<"\" ...\n\n";
     }
+    Teuchos::updateParametersFromXmlFile (xmlMeshInFileName, Teuchos::ptr (&inputMeshList));
+    if (MyPID == 0) {
+     inputMeshList.print(std::cout,2,true,true);
+     std::cout << "\n";
+    }
+  }
+  else
+  {
+    std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    return 0;
+  }
+
+  if(xmlSolverInFileName.length()) {
+    if (MyPID == 0)
+      std::cout << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n\n";
+      Teuchos::updateParametersFromXmlFile(xmlSolverInFileName, Teuchos::inoutArg(inputSolverList));
+  } else if (MyPID == 0) std::cout << "Using default solver values ..." << std::endl;
+
+  // Get pamgen mesh definition
+  std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,"meshInput");
+
+  // Get Isorropia and Zoltan parameters.
+  Teuchos::ParameterList iso_paramlist = inputMeshList.sublist("Isorropia Input") ;
+  if (MyPID == 0) {
+    std::cout << "Isorropia/Zoltan parameters" << std::endl;
+    iso_paramlist.print(std::cout,2,true,true);
+  }
 
 
 /**********************************************************************************/
 /***************************** GET CELL TOPOLOGY **********************************/
 /**********************************************************************************/
 
-   // Get cell topology for base hexahedron
-    shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+  // Get cell topology for base hexahedron
+  shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
-   // Get dimensions
-    int numNodesPerElem = cellType.getNodeCount();
-    int spaceDim = cellType.getDimension();
-    int dim = 3;
+  // Get dimensions
+  int numNodesPerElem = cellType.getNodeCount();
+  int spaceDim = cellType.getDimension();
+  int dim = 3;
 
 /**********************************************************************************/
 /******************************* GENERATE MESH ************************************/
@@ -687,15 +692,15 @@ int main(int argc, char *argv[]) {
    if(MyPID==0) {std::cout << msg << "Build global maps                           "
                  << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
-
-#ifdef DUMP_DATA
+  if (dumpData) {
 /**********************************************************************************/
 /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
 /**********************************************************************************/
 
-  // Put coordinates in multivector for output
+    // Put coordinates in multivector for output
     Epetra_MultiVector nCoord(globalMapG,3);
     Epetra_MultiVector nBound(globalMapG,1);
+    Epetra_MultiVector nProc(globalMapG,2);
 
      int indOwned = 0;
      for (int inode=0; inode<numNodes; inode++) {
@@ -704,9 +709,14 @@ int main(int argc, char *argv[]) {
           nCoord[1][indOwned]=nodeCoord(inode,1);
           nCoord[2][indOwned]=nodeCoord(inode,2);
           nBound[0][indOwned]=nodeOnBoundary(inode);
+          nProc[0][indOwned] =globalMapG.GID(inode);
+          nProc[1][indOwned] = Comm.MyPID();
           indOwned++;
        }
      }
+     std::string objName = "map";
+     std::string description = "Map describing (parallel) layout of coordinates. 1st entry is GID, 2nd entry is owning PID";
+     EpetraExt::MultiVectorToMatrixMarketFile("map.dat",nProc,objName.c_str(),description.c_str(),true);
      EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
      EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
 
@@ -721,8 +731,7 @@ int main(int argc, char *argv[]) {
      EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
 
     if(MyPID==0) {Time.ResetStartTime();}
-
-#endif
+  }
 
 /**********************************************************************************/
 /************************** DIRICHLET BC SETUP ************************************/
@@ -880,20 +889,20 @@ int main(int argc, char *argv[]) {
 
     // Compute integration measure for workset cells:
     IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,              // Det(DF)*w = J*w
-						worksetJacobDet, cubWeights);
+                                                worksetJacobDet, cubWeights);
 
     // combine sigma value with weighted measure
     cellCounter = 0;
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
       for (int nPt = 0; nPt < numCubPoints; nPt++){
-	weightedMeasureSigma(cellCounter,nPt) = worksetCubWeights(cellCounter,nPt) * sigmaVal(cell);
+        weightedMeasureSigma(cellCounter,nPt) = worksetCubWeights(cellCounter,nPt) * sigmaVal(cell);
       }
       cellCounter++;
     }
     
     // multiply by weighted measure - Det(DF)*w = J*w * sigma
     IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,
-					     weightedMeasureSigma,  worksetHGBGrads);
+                                             weightedMeasureSigma,  worksetHGBGrads);
 
     // Compute the diffusive flux:
     IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
@@ -1007,11 +1016,11 @@ int main(int argc, char *argv[]) {
                   << " sec \n"; Time.ResetStartTime();}
 
 
-#ifdef DUMP_DATA
-  // Dump matrices to disk
-  EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-  EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
-#endif
+  if (dumpData) {
+    // Dump matrices to disk
+    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
+  }
 
 /**********************************************************************************/
 /*********************************** SOLVE ****************************************/
@@ -1043,9 +1052,9 @@ int main(int argc, char *argv[]) {
 
 
   TestMultiLevelPreconditionerLaplace(probType,             MLList,
-				      StiffMatrix,          exactNodalVals,
-				      rhsVector,            femCoefficients,
-				      TotalErrorResidual,   TotalErrorExactSol);
+                                      StiffMatrix,          exactNodalVals,
+                                      rhsVector,            femCoefficients,
+                                      TotalErrorResidual,   TotalErrorExactSol);
 
 /**********************************************************************************/
 /**************************** CALCULATE ERROR *************************************/
