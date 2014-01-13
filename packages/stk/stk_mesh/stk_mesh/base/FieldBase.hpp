@@ -181,6 +181,7 @@ protected:
 
   FieldBase(
       MetaData                   * arg_mesh_meta_data ,
+      BulkData                   * arg_mesh_bulk_data,
       stk::topology::rank_t        entity_rank ,
       unsigned                     arg_ordinal ,
       const std::string          & arg_name ,
@@ -190,7 +191,7 @@ protected:
       unsigned                     arg_number_of_states ,
       FieldState                   arg_this_state
       )
-    : m_mesh(NULL),
+    : m_mesh(arg_mesh_bulk_data),
       m_impl(
         arg_mesh_meta_data,
         entity_rank,

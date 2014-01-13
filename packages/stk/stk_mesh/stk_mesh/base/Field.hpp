@@ -137,6 +137,7 @@ public:
 
   Field(
        MetaData                   * arg_mesh_meta_data ,
+       BulkData                   * arg_mesh_bulk_data,
        stk::topology::rank_t        entity_rank ,
        unsigned                     arg_ordinal ,
        const std::string          & arg_name ,
@@ -147,6 +148,7 @@ public:
        FieldState                   arg_this_state
        )
     : FieldBase(arg_mesh_meta_data,
+		arg_mesh_bulk_data,
         entity_rank,
         arg_ordinal,
         arg_name,

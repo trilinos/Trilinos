@@ -276,7 +276,7 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
         for (int f = 0; f < num_fields_per_chunk; ++f) {
           std::ostringstream append;
           append << f << "_";
-          (*fields)[dim][i].push_back(&meta.declare_field<SimpleField>(static_cast<stk::topology::rank_t>(field_entity_rank), std::string("field_") + append.str() + oss.str()));
+          (*fields)[dim][i].push_back(&meta.declare_field<SimpleField>(static_cast<stk::topology::rank_t>(field_entity_rank), &bulk, std::string("field_") + append.str() + oss.str()));
           put_field(*((*fields)[dim][i].back()), field_entity_rank, *element_parts[dim].back(), &init_val);
         }
       }
