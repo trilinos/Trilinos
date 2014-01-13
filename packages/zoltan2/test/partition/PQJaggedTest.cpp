@@ -187,7 +187,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     }
 }
 
-int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
+int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
         partId_t numParts, float imbalance,
         std::string paramFile, std::string pqParts,
         std::string pfname,
@@ -205,7 +205,7 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
 
     Teuchos::ParameterList geoparams("geo params");
     readGeoGenParams(paramFile, geoparams, comm);
-    GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+    GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
 
     int coord_dim = gg->getCoordinateDimension();
     int weight_dim = gg->getWeightDimension();
@@ -849,7 +849,7 @@ int main(int argc, char *argv[])
             break;
 #endif
         default:
-            GeometricGen(tcomm, numParts, imbalance, fname, pqParts, paramFile, k,
+        	GeometricGenInterface(tcomm, numParts, imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,

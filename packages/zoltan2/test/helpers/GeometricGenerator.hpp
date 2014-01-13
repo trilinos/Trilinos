@@ -60,6 +60,7 @@
 #include <Teuchos_ArrayViewDecl.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Tpetra_Distributor.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
 
 
 //#define HAVE_ZOLTAN2_ZOLTAN
@@ -69,6 +70,7 @@
 
 using Teuchos::CommandLineProcessor;
 
+namespace GeometricGen{
 #define CATCH_EXCEPTIONS(pp) \
         catch (std::runtime_error &e) { \
             cout << "Runtime exception returned from " << pp << ": " \
@@ -95,6 +97,7 @@ using Teuchos::CommandLineProcessor;
 
 
 #ifdef HAVE_ZOLTAN2_ZOLTAN
+
 
 template <typename tMVector_t>
 class DOTS{
@@ -2650,6 +2653,7 @@ public:
 		  break;
 #endif
 	  case 2:
+
 		  this->predistributeMJ(coordinate_grid_parts);
 		  break;
 	  case 3:
@@ -2712,3 +2716,4 @@ public:
     }
   }
 };
+}

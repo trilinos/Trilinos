@@ -210,7 +210,7 @@ int main(int argc, char *argv[]){
             Teuchos::ParameterList geoparams;
             //getPartCenters(partCenters, numParts, coordDim);
             readGeoGenParams(partfile, geoparams, serialcomm);
-            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,serialcomm);
+            GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,serialcomm);
             coordDim = gg->getCoordinateDimension();
             numParts = gg->getNumLocalCoords();
             partCenters = new scalar_t * [coordDim];
