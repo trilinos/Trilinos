@@ -7,7 +7,12 @@
 
 #include <Kokkos_View.hpp>
 #ifdef KOKKOS_HAVE_CUDA
-#include <Kokkos_Cuda.hpp>
+  #ifndef KERNEL_PREFIX
+    #ifdef __CUDACC__
+    #define KERNEL_PREFIX __host__ __device__
+    #endif
+  #endif
+  #include <Kokkos_Cuda.hpp>
 #endif
 #ifdef KOKKOS_HAVE_OPENMP
 #include <Kokkos_OpenMP.hpp>

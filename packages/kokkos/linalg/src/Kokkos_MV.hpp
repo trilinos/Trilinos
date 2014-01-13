@@ -32,7 +32,7 @@ struct MultiVectorDynamic{
 #endif
   typedef typename Kokkos::View<Scalar**  , layout, device>  type ;
   typedef typename Kokkos::View<const Scalar**  , layout, device>  const_type ;
-  typedef typename Kokkos::View<const Scalar**  , layout, device, Kokkos::MemoryRandomRead>  random_read_type ;
+  typedef typename Kokkos::View<const Scalar**  , layout, device, Kokkos::MemoryRandomAccess>  random_read_type ;
   MultiVectorDynamic() {}
   ~MultiVectorDynamic() {}
 };
@@ -43,7 +43,7 @@ struct MultiVectorStatic{
   typedef typename device::array_layout layout;
   typedef typename Kokkos::View<Scalar*[n]  , layout, device>  type ;
   typedef typename Kokkos::View<const Scalar*[n]  , layout, device>  const_type ;
-  typedef typename Kokkos::View<const Scalar*[n]  , layout, device, Kokkos::MemoryRandomRead>  random_read_type ;
+  typedef typename Kokkos::View<const Scalar*[n]  , layout, device, Kokkos::MemoryRandomAccess>  random_read_type ;
   MultiVectorStatic() {}
   ~MultiVectorStatic() {}
 };
@@ -820,16 +820,16 @@ struct MV_DotProduct_Right_FunctorVector
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type sum ) const
   {
-	const int numVecs=value_count;
+	const size_type numVecs=value_count;
 
     #pragma ivdep
     #pragma vector always
-	for(int k=0;k<numVecs;k++)
+	for(size_type k=0;k<numVecs;k++)
       sum[k]+=m_x(i,k)*m_y(i,k);
   }
   KOKKOS_INLINE_FUNCTION void init( value_type update) const
   {
-    const int numVecs = value_count;
+    const size_type numVecs = value_count;
     #pragma ivdep
     #pragma vector always
 	for(size_type k=0;k<numVecs;k++)
@@ -838,7 +838,7 @@ struct MV_DotProduct_Right_FunctorVector
   KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
                     const volatile value_type  source ) const
   {
-    const int numVecs = value_count;
+    const size_type numVecs = value_count;
     #pragma ivdep
     #pragma vector always
 	for(size_type k=0;k<numVecs;k++){

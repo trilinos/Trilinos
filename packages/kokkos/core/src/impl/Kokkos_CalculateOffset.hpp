@@ -45,6 +45,7 @@
 #define KOKKOS_CALCULATE_OFFSET_HPP
 
 #include <impl/Kokkos_ViewSupport.hpp>
+#include <stdint.h>
 
 namespace Kokkos { namespace Impl {
 
@@ -56,7 +57,7 @@ struct CalculateOffset;
 template <typename Shape>
 struct CalculateOffset<LayoutLeft, Shape>
 {
-  typedef size_t size_type;
+  typedef int64_t size_type;
   typedef Shape shape_type;
   typedef LayoutStride<shape_type, LayoutLeft> stride_type;
 
@@ -152,7 +153,7 @@ struct CalculateOffset<LayoutLeft, Shape>
 template <typename Shape>
 struct CalculateOffset<LayoutRight, Shape>
 {
-  typedef size_t size_type;
+  typedef int64_t size_type;
   typedef Shape shape_type;
   typedef LayoutStride<shape_type, LayoutRight> stride_type;
 

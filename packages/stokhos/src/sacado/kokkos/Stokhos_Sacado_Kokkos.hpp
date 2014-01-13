@@ -50,6 +50,7 @@
 
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
 
+#include "Stokhos_KokkosTraits.hpp"
 #include "Stokhos_StaticFixedStorage.hpp"
 #include "Stokhos_StaticStorage.hpp"
 #include "Stokhos_DynamicStorage.hpp"

@@ -151,6 +151,7 @@ template <typename User> size_t removeUndesiredEdges(
 
   lno_t *offs = new lno_t [numVtx + 1];
   env->localMemoryAssertion(__FILE__, __LINE__, numVtx+1, offs);
+  for (size_t i = 0; i < numVtx+1; i++) offs[i] = 0;
   ArrayRCP<const lno_t> offArray = arcp(offs, 0, numVtx+1, true);
 
   const lno_t *allOffs = offsets.getRawPtr();
@@ -196,7 +197,7 @@ template <typename User> size_t removeUndesiredEdges(
   }
   else if (numKeep == 0){
     newGidNbors = ArrayRCP<const gid_t>(Teuchos::null);
-    newOffsets = ArrayRCP<const lno_t>(Teuchos::null);
+    newOffsets = offArray;
     return 0;
   }
 
@@ -278,11 +279,18 @@ template <typename User> size_t computeLocalEdgeList(
   bool gnosAreGids = idMap->gnosAreGids();
 
   edgeLocalIds = ArrayRCP<const lno_t>(Teuchos::null);
-  offsets = ArrayRCP<const lno_t>(Teuchos::null);
   eWeights = ArrayRCP<input_t>(Teuchos::null);
+  offsets = ArrayRCP<const lno_t>(Teuchos::null);
 
-  if (numLocalGraphEdges == 0)
+  if (numLocalGraphEdges == 0) {
+    // Set the offsets array and return
+    size_t allOffsSize = allOffs.size();
+    lno_t *offs = new lno_t [allOffsSize];
+    env->localMemoryAssertion(__FILE__, __LINE__, allOffsSize, offs);
+    for (size_t i = 0; i < allOffsSize; i++) offs[i] = 0;
+    offsets = arcp(offs, 0, allOffsSize, true);
     return 0;
+  }
 
   if (numLocalGraphEdges == numLocalEdges){
 
@@ -291,7 +299,7 @@ template <typename User> size_t computeLocalEdgeList(
     lno_t *lnos = new lno_t [numLocalEdges];
     env->localMemoryAssertion(__FILE__, __LINE__,numLocalEdges, lnos);
     for (size_t i=0; i < numLocalEdges; i++)
-      lnos[i] = i;
+      lnos[i] = allEdgeIds[i];
     edgeLocalIds = arcp(lnos, 0, numLocalEdges, true);
     offsets = allOffs;
     eWeights = allWeights;
@@ -599,8 +607,8 @@ public:
     ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts){
 
-    if (localGraphEdgeLnos_.size() <
-        static_cast<typename ArrayRCP<const lno_t>::size_type>(numLocalGraphEdges_)){
+    if (localGraphEdgeOffsets_.size() == 0) {
+      // Local graph not created yet
 
       RCP<const IdentifierMap<User> > idmap = this->getIdentifierMap();
 
@@ -793,7 +801,7 @@ template <typename User>
 
     // Compiler complained of an error if gids_.view(0, n), etc
     // was listed directly as a parameter in removeUndesiredEdges.
-    // So we have to create the ArraView before before the call.
+    // So we have to create the ArrayView before before the call.
 
     ArrayView<const gid_t> vtxView= gids_.view(0, numLocalVertices_);
     ArrayView<const gid_t> nborView= edgeGids_.view(0, numLocalEdges_);
@@ -901,9 +909,9 @@ template <typename User>
 
   numLocalGraphEdges_ = 0;
   int *pids = procArray.getRawPtr();
+  int me = comm_->getRank();
   for (size_t i=0; i < numLocalEdges_; i++)
-    if (pids[i] == comm_->getRank())
-      numLocalGraphEdges_++;
+    if (pids[i] == me) numLocalGraphEdges_++;
 
   // Vertex weights
 
@@ -989,8 +997,8 @@ template <typename User>
     else
       Ids = gnosConst_.view(0, nv);
 
-    xyz = vCoords_.view(0, vWeightDim_);
-    wgts = vWeights_.view(0, vCoordDim_);
+    xyz = vCoords_.view(0, vCoordDim_);
+    wgts = vWeights_.view(0, vWeightDim_);
 
     return nv;
   }
@@ -1076,7 +1084,8 @@ public:
     ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts){
 
-    if (localGraphEdgeLnos_.size() < numLocalGraphEdges_){
+    if (localGraphEdgeOffsets_.size() == 0) {
+      // Local graph not created yet
 
       RCP<const IdentifierMap<User> > idmap = this->getIdentifierMap();
 
@@ -1385,9 +1394,9 @@ template <typename User>
 
   numLocalGraphEdges_ = 0;
   int *pids = procArray.getRawPtr();
+  int me = comm_->getRank();
   for (lno_t i=0; i < numLocalEdges_; i++)
-    if (pids[i] == comm_->getRank())
-      numLocalGraphEdges_++;
+    if (pids[i] == me) numLocalGraphEdges_++;
 
   // Vertex weights
 
@@ -1458,8 +1467,8 @@ template <typename User>
     else
       Ids = gnosConst_.view(0, nv);
 
-    xyz = vCoords_.view(0, vWeightDim_);
-    wgts = vWeights_.view(0, vCoordDim_);
+    xyz = vCoords_.view(0, vCoordDim_);
+    wgts = vWeights_.view(0, vWeightDim_);
 
     return nv;
   }

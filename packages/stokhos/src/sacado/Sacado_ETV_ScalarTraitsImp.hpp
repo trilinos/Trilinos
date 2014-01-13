@@ -320,7 +320,7 @@ namespace Sacado {
     };
 
     //! Implementation of Teuchos::SerializationTraits for all Vector types
-    template <typename Ordinal, typename VecType>
+    template <typename Ordinal, typename VecType, bool is_static = false>
     struct SerializationTraitsImp {
 
     private:
@@ -384,7 +384,7 @@ namespace Sacado {
 
     //! Implementation of Teuchos::SerializationTraits for all static Vec types
     template <typename Ordinal, typename VecType>
-    struct StaticSerializationTraitsImp {
+    struct SerializationTraitsImp<Ordinal, VecType, true> {
       typedef typename Sacado::ValueType<VecType>::type ValueT;
       typedef Teuchos::SerializationTraits<Ordinal,ValueT> vSerT;
       typedef Teuchos::DirectSerializationTraits<Ordinal,VecType> DSerT;

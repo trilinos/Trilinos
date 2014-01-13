@@ -87,6 +87,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   ilu_fill_tol_        = paramList->get("MueLu: fill tol",    0.01);
   schwarz_overlap_     = paramList->get("MueLu: overlap",        0);
   schwarz_usereorder_  = paramList->get("MueLu: use reorder", true);
+  useKrylov_           = paramList->get("MueLu: use Krylov",  true);
   int combinemode      = paramList->get("MueLu: combine mode",   1);
   if(combinemode==0)   { schwarz_combinemode_ = Tpetra::ZERO;     }
   else                 { schwarz_combinemode_ = Tpetra::ADD;      }
@@ -366,21 +367,23 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> GetLevel(0) -> Set("A", P_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
 
-  // Define Preconditioner and Operator
-  MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-  // Belos Linear Problem
-  BelosLinearProblem_ = rcp( new BelosLinearProblem );
-  BelosLinearProblem_ -> setOperator (  TpetraA_  );
-  BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-  if(solverType_==0) {
-    BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-  }
-  else if(solverType_==1) {
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-  }
-  else {
-    BelosList_ -> set("Flexible Gmres", true);
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+  if(useKrylov_==true) {
+    // Define Preconditioner and Operator
+    MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
+    // Belos Linear Problem
+    BelosLinearProblem_ = rcp( new BelosLinearProblem );
+    BelosLinearProblem_ -> setOperator (  TpetraA_  );
+    BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
+    if(solverType_==0) {
+      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+    }
+    else if(solverType_==1) {
+      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    }
+    else {
+      BelosList_ -> set("Flexible Gmres", true);
+      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    }
   }
 
 }
@@ -403,21 +406,23 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> GetLevel(0) -> Set("M", M_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
 
-  // Define Preconditioner and Operator
-  MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-  // Belos Linear Problem
-  BelosLinearProblem_ = rcp( new BelosLinearProblem );
-  BelosLinearProblem_ -> setOperator (  TpetraA_  );
-  BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-  if(solverType_==0) {
-    BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-  }
-  else if(solverType_==1) {
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-  }
-  else {
-    BelosList_ -> set("Flexible Gmres", true);
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+  if(useKrylov_==true) {
+    // Define Preconditioner and Operator
+    MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
+    // Belos Linear Problem
+    BelosLinearProblem_ = rcp( new BelosLinearProblem );
+    BelosLinearProblem_ -> setOperator (  TpetraA_  );
+    BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
+    if(solverType_==0) {
+      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+    }
+    else if(solverType_==1) {
+      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    }
+    else {
+      BelosList_ -> set("Flexible Gmres", true);
+      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    }
   }
 
 }
@@ -563,26 +568,28 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   // Define Operator and Preconditioner
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
 
-  // Belos Linear Problem and Solver Manager
-  BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
-  BelosList_ -> set("Maximum Iterations",iters_ );
-  BelosList_ -> set("Convergence Tolerance",tol_ );
-  BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-  BelosList_ -> set("Output Frequency",1);
-  BelosList_ -> set("Output Style",Belos::Brief);
-  // Belos Linear Problem and Solver Manager
-  BelosLinearProblem_ = rcp( new BelosLinearProblem );
-  BelosLinearProblem_ -> setOperator (  TpetraA_  );
-  BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-  if(solverType_==0) {
-    BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-  }
-  else if(solverType_==1) {
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-  }
-  else {
-    BelosList_ -> set("Flexible Gmres", true);
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+  if(useKrylov_==true) {
+    // Belos Linear Problem and Solver Manager
+    BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
+    BelosList_ -> set("Maximum Iterations",iters_ );
+    BelosList_ -> set("Convergence Tolerance",tol_ );
+    BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    BelosList_ -> set("Output Frequency",1);
+    BelosList_ -> set("Output Style",Belos::Brief);
+    // Belos Linear Problem and Solver Manager
+    BelosLinearProblem_ = rcp( new BelosLinearProblem );
+    BelosLinearProblem_ -> setOperator (  TpetraA_  );
+    BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
+    if(solverType_==0) {
+      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+    }
+    else if(solverType_==1) {
+      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    }
+    else {
+      BelosList_ -> set("Flexible Gmres", true);
+      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    }
   }
 
 }
@@ -590,29 +597,29 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetLinearProblem()
 {
-
-  BelosLinearProblem_ -> setOperator (  TpetraA_  );
-
+  if(useKrylov_==true) {
+    BelosLinearProblem_ -> setOperator (  TpetraA_  );
+  }
 }
 
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const RCP<TMV> B, RCP<TMV>& X)
 {
-
-  // Set left and right hand sides for Belos
-  BelosLinearProblem_ -> setProblem(X, B);
-  // iterative solve
-  //Belos::ReturnType convergenceStatus = BelosSolverManager_ -> solve();
-  BelosSolverManager_ -> solve();
-  /*if(convergenceStatus == Belos::Converged) {
-    return 0;
+  if(useKrylov_==true) {
+    // Set left and right hand sides for Belos
+    BelosLinearProblem_ -> setProblem(X, B);
+    // iterative solve
+    //Belos::ReturnType convergenceStatus = BelosSolverManager_ -> solve();
+    BelosSolverManager_ -> solve();
+    /*if(convergenceStatus == Belos::Converged) {
+      return 0;
+      }
+      else {
+      return 1;
+      }*/
   }
-  else {
-    return 1;
-    }*/
   return 0;
-
 }
 
 // Solve phase
@@ -629,10 +636,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multi
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetIterations()
 {
-
-  int numiters = BelosSolverManager_ -> getNumIters();
-  return numiters;
-
+  if(useKrylov_==true) {
+    int numiters = BelosSolverManager_ -> getNumIters();
+    return numiters;
+  }
+  else {
+    return 0;
+  }
 }
 
 }

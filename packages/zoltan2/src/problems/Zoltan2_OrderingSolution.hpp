@@ -55,13 +55,16 @@
 
 namespace Zoltan2 {
 
-/*! \brief The class containing ordering solutions and metrics.
+/*! \brief The class containing ordering solutions.
 
     Template parameters:
     \li \c gid_t    data type for application global Ids
     \li \c lno_t    data type for local indices and local counts
 
-   \todo documentation
+The ordering solution always contains the permutation and the inverse permutation. These should be accessed through the accessor methods defined in this class, such as getPermutation(). Some ordering algorithms may compute and store other information. Currently, only serial ordering of the local data is supported.
+
+In Zoltan2, perm[i]=j means index i in the reordered vector/matrix corresponds to index j in the old ordering. In Matlab notation, A(perm,perm) is the reordered matrix. This is consistent with SuiteSparse (AMD) and several other ordering packages. Unfortunately, this notation may conflict with a few other packages (such as Ifpack2). 
+
 */
 
 template <typename gid_t, typename lno_t>
@@ -161,7 +164,8 @@ public:
 
   /*! \brief Get (local) permutation by RCP.
    *  If inverse = true, return inverse permutation.
-   *  By default, perm[i] is where index i should be in the new ordering.
+   *  By default, perm[i] is where new index i can be found in the old ordering.
+   *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
   inline ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) 
   {
@@ -180,7 +184,8 @@ public:
 
   /*! \brief Get (local) permutation by const RCP.
    *  If inverse = true, return inverse permutation.
-   *  By default, perm[i] is where index i should be in the new ordering.
+   *  By default, perm[i] is where new index i can be found in the old ordering.
+   *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
   inline ArrayRCP<lno_t> &getPermutationRCPConst(bool inverse=false) const
   {
@@ -199,7 +204,8 @@ public:
 
   /*! \brief Get pointer to (local) permutation.
    *  If inverse = true, return inverse permutation.
-   *  By default, perm[i] is where index i should be in the new ordering.
+   *  By default, perm[i] is where new index i can be found in the old ordering.
+   *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
   inline lno_t *getPermutation(bool inverse = false)
   {

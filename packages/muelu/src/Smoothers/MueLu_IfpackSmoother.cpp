@@ -112,23 +112,55 @@ namespace MueLu {
 
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true)
+      GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     double lambdaMax = -1.0;
-    if (type_ == "Chebyshev")
+    if (type_ == "Chebyshev") {
+      std::string maxEigString   = "chebyshev: max eigenvalue";
+      std::string eigRatioString = "chebyshev: ratio eigenvalue";
+
       try {
-        lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter("chebyshev: max eigenvalue"));
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
+        lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter(maxEigString));
+        this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
       } catch (Teuchos::Exceptions::InvalidParameterName) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
+
         if (lambdaMax != -1.0) {
-          this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
-          this->SetParameter("chebyshev: max eigenvalue", ParameterEntry(lambdaMax));
+          this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+          this->SetParameter(maxEigString, ParameterEntry(lambdaMax));
         }
       }
+
+      // Calculate the eigenvalue ratio
+      const Scalar defaultEigRatio = 20;
+
+      Scalar ratio = defaultEigRatio;
+      try {
+        ratio = Teuchos::getValue<Scalar>(this->GetParameter(eigRatioString));
+
+      } catch (Teuchos::Exceptions::InvalidParameterName) {
+        this->SetParameter(eigRatioString, ParameterEntry(ratio));
+      }
+
+      if (currentLevel.GetLevelID()) {
+        // Update ratio to be
+        //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
+        //
+        // NOTE: We don't need to request previous level matrix as we know for sure it was constructed
+        RCP<const Matrix> fineA = currentLevel.GetPreviousLevel()->Get<RCP<Matrix> >("A");
+        size_t nRowsFine   = fineA->getGlobalNumRows();
+        size_t nRowsCoarse = A_->getGlobalNumRows();
+
+        ratio = std::max(ratio, as<Scalar>(nRowsFine)/nRowsCoarse);
+
+        this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+        this->SetParameter(eigRatioString, ParameterEntry(ratio));
+      }
+    }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
 
@@ -170,7 +202,7 @@ namespace MueLu {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
       // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '" + type_ + "' not supported");
     }
     SetPrecParameters(paramList);
 

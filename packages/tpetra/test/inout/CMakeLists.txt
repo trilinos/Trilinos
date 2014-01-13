@@ -1,6 +1,18 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
+IF(Kokkos_ENABLE_Cuda)
+  #
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_COMPILE(MM_T_CM_IOT_OBJECTS_CUDA MatrixMarket_Tpetra_CrsMatrix_InOutTest_CU.cu)
+  CUDA_COMPILE(MM_T_MV_IOT_OBJECTS_CUDA MatrixMarket_Tpetra_MultiVector_InOutTest_CU.cu)
+  CUDA_COMPILE(MM_T_M_OBJECTS_CUDA MatrixMarket_Tpetra_Map_InOutTest_CU.cu)
+  CUDA_COMPILE(MM_MV_O_P_OBJECTS_CUDA MatrixMarket_MV_Output_Perm_CU.cu)
+  CUDA_COMPILE(MM_T_CM_FT_OBJECTS_CUDA MatrixMarket_Tpetra_CrsMatrix_FileTest_CU.cu)
+ENDIF()
+
 # This test should work for any number of MPI processes, as long as
 # the sparse matrix to be read in has enough rows that it may be
 # distributed over all of them, and as long as Proc 0 has enough
@@ -9,6 +21,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_CrsMatrix_InOutTest
   SOURCES
     MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
+    ${MM_T_CM_IOT_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -22,6 +35,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_MultiVector_InOutTest
   SOURCES
+    ${MM_T_MV_IOT_OBJECTS_CUDA}
     MatrixMarket_Tpetra_MultiVector_InOutTest.cpp
   ARGS ""
   COMM serial mpi
@@ -34,6 +48,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_Map_InOutTest
   SOURCES
     MatrixMarket_Tpetra_Map_InOutTest.cpp
+    ${MM_T_M_IOT_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -46,6 +61,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_MV_Output_Perm
   SOURCES
     MatrixMarket_MV_Output_Perm.cpp
+    ${MM_MV_O_P_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi
@@ -61,6 +77,7 @@ TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_FileTest
   SOURCES
     MatrixMarket_Tpetra_CrsMatrix_FileTest.cpp
+    ${MM_T_CM_FT_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )

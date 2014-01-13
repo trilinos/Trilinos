@@ -65,6 +65,17 @@
 #include "shylu_util.h"
 #include <EpetraExt_Reindex_LinearProblem2.h>
 
+#include "Ifpack_config.h"
+
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+#include "Ifpack_DynamicFactory.h"
+#else
+#include "Ifpack.h"
+#endif
+
+#include "gmres.h"
+#include "gmres_tools.h"
+
 int create_matrices
 (
     Epetra_CrsMatrix *A,    // i/p: A matrix
@@ -721,6 +732,7 @@ int shylu_symbolic_factor
     aList.set("TrustMe", true);
     Solver->SetParameters(aList);
     Solver->SymbolicFactorization();
+
     //config->dm.print(3, "Symbolic Factorization done");
 
 #ifdef TIMING_OUTPUT
@@ -783,6 +795,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
     //config->dm.print(3, "In Numeric Factorization");
     Solver->NumericFactorization();
+
     //config->dm.print(3, "Numeric Factorization done");
 
 #ifdef SHYLU_DEBUG
@@ -800,7 +813,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
-    data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
+   data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
              ShyLU_Probing_Operator(ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
              (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
@@ -870,7 +883,6 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         // it !).
     }
 
-
     data->Sbar = Sbar;
 
     if (config->schurSolver == "Amesos")
@@ -918,21 +930,39 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     }
     else if (config->schurSolver == "AztecOO-Exact")
     {
-        data->schur_prec = Teuchos::RCP<AmesosSchurOperator> (new
-                                     AmesosSchurOperator(Sbar.getRawPtr()));
-        data->schur_prec->Initialize();
-        data->schur_prec->Compute();
+    	if (config->libName == "AztecOO") {
+    		data->innersolver = new AztecOO();
+    	}
+    	std::string schurPrec = config->schurPreconditioner;
 
         int err = data->innersolver->SetUserOperator
                     (data->schur_op.get());
         assert (err == 0);
+
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory IfpackFactory;
+#else
+    Ifpack IfpackFactory;
+#endif
+    	data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
+    				(IfpackFactory.Create(schurPrec,
+					 Sbar.getRawPtr(), 0, false));
+
+        data->schur_prec->Initialize();
+        data->schur_prec->Compute();
 
         err = data->innersolver->SetPrecOperator
                     (data->schur_prec.get());
         assert (err == 0);
 
         data->innersolver->SetAztecOption(AZ_solver, AZ_gmres);
+
+        if (config->silent_subiter) {
+        	data->innersolver->SetAztecOption(AZ_output, AZ_none);
+        }
+
         data->innersolver->SetMatrixName(999);
+
     }
     else if (config->schurSolver == "AztecOO-Inexact")
     {
@@ -969,10 +999,14 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
             data->innersolver = NULL;
         }
     }
-    else
+    else if ((config->schurSolver == "IQR") || (config->schurSolver == "G"))
+    {
+    	// DO NOTHING
+    } else
     {
         assert (0 == 1);
     }
+
 
     //cout << " Out of factor" << endl ;
 #ifdef TIMING_OUTPUT

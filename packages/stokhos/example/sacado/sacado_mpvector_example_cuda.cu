@@ -80,11 +80,11 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
       return false ;
     }
 
-    if ( ! status ) return status ;
+    if ( status ) {
 
     status = run_view_kernel<Scalar, 0,Device>( config, num_elements, num_samples, reset, print, device_name);
 
-    if ( ! status ) return status ;
+    if ( status ) {
 
     if (storage_method == STATIC)
       status = run_kernels<Scalar, typename MPT::static_vector, typename MPT::static_vector, Device>(
@@ -171,6 +171,8 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
       status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::dynamic_threaded_vector, Device>(
         config, num_elements, num_samples, reset, print, device_name);
     }
+
+    }}
 
     // Finalize Cuda
     Kokkos::Cuda::finalize();

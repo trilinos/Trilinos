@@ -48,7 +48,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 #include "Epetra_IntVector.h"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_Hashtable.hpp"
@@ -142,7 +142,7 @@ void Ifpack_OverlappingRowMatrix::BuildMap(int OverlapLevel_in)
     Map_ = rcp( new Epetra_Map((int_type) -1, NumMyRowsA_ + ExtElements.size(),
                                listptr, 0, Comm()) );
   }
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   colMap_ = &*Map_;
 #else
 # ifdef IFPACK_NODE_AWARE_CODE
@@ -218,7 +218,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 
 }
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 
 // ====================================================================== 
 // Constructor for the case of two or more cores per subdomain
@@ -1594,7 +1594,7 @@ Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix() {
 }
 
 # endif //ifdef IFPACK_NODE_AWARE_CODE
-#endif // ifdef IFPACK_SUBCOMM_CODE
+#endif // ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 
 
 // ======================================================================
@@ -1607,7 +1607,7 @@ NumMyRowEntries(int MyRow, int & NumEntries) const
     return(B().NumMyRowEntries(MyRow - NumMyRowsA_, NumEntries));
 }
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 // ======================================================================
 int Ifpack_OverlappingRowMatrix::
 ExtractMyRowCopy(int LocRow, int Length, int & NumEntries, double *Values, 
@@ -1721,7 +1721,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values,
   IFPACK_RETURN(ierr);
 }
 # endif // ifdef IFPACK_NODE_AWARE_CODE
-#endif // ifdef IFPACK_SUBCOMM_CODE
+#endif // ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 
 // ======================================================================
 int Ifpack_OverlappingRowMatrix::
@@ -1783,7 +1783,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 }
 
 // ======================================================================
-#ifndef IFPACK_SUBCOMM_CODE
+#ifndef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 # ifndef IFPACK_NODE_AWARE_CODE
 Epetra_RowMatrix& Ifpack_OverlappingRowMatrix::B() const
 {

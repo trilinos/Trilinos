@@ -11,7 +11,7 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: ratio eigenvalue = 30   [default]
+ chebyshev: ratio eigenvalue = 20
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: degree = 1   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
@@ -64,7 +64,7 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: ratio eigenvalue = 30   [default]
+ chebyshev: ratio eigenvalue = 20
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: degree = 1   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
@@ -134,9 +134,9 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.9506, alpha: 30, lambdaMin: 0.06502}, global rows = 9999, global cols = 9999, global nnz  = 29995}
+ Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.9506, alpha: 20, lambdaMin: 0.0975299}, global rows = 9999, global cols = 9999, global nnz  = 29995}
  
- Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94634, alpha: 30, lambdaMin: 0.064878}, global rows = 3333, global cols = 3333, global nnz  = 9997}
+ Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94634, alpha: 20, lambdaMin: 0.0973171}, global rows = 3333, global cols = 3333, global nnz  = 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother

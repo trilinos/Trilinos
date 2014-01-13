@@ -74,7 +74,7 @@ struct fill_map
 {
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
+  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
   typedef Kokkos::UnorderedMap<uint32_t,size_type,device_type> global_id_view;
 
   global_id_view global_2_local;
@@ -100,7 +100,7 @@ struct find_test
 {
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
+  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
   typedef Kokkos::UnorderedMap<const uint32_t, const size_type,device_type> global_id_view;
 
   global_id_view global_2_local;

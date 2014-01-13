@@ -14,7 +14,7 @@ Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
  presmoother -> 
-  [empty list]
+  chebyshev: ratio eigenvalue = 20   [unused]
  postsmoother -> 
   [empty list]
  
@@ -66,7 +66,7 @@ Level 1
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
  presmoother -> 
-  [empty list]
+  chebyshev: ratio eigenvalue = 20   [unused]
  postsmoother -> 
   [empty list]
  

@@ -66,6 +66,7 @@
 #include <EpetraExt_BlockMapIn.h>
 #include <Xpetra_EpetraUtils.hpp>
 #include <Xpetra_EpetraMultiVector.hpp>
+#include <EpetraExt_BlockMapOut.h>
 #endif // HAVE_MUELU_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
@@ -77,7 +78,6 @@
 #endif // HAVE_MUELU_TPETRA
 
 #ifdef HAVE_MUELU_EPETRA
-#include <EpetraExt_BlockMapOut.h>
 #include <Xpetra_EpetraMap.hpp>
 #endif //ifdef HAVE_MUELU_EPETRA
 

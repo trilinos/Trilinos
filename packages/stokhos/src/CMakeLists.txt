@@ -342,6 +342,7 @@ IF (Stokhos_ENABLE_Sacado)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
       sacado/kokkos/Stokhos_LocalStorage.hpp
@@ -370,6 +371,29 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
           )
       ENDIF()
+    ENDIF()
+    IF (Stokhos_ENABLE_Tpetra AND
+        NOT Tpetra_ENABLE_Kokkos_DistObject AND
+        NOT Tpetra_ENABLE_Kokkos_Refactor)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
+      IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/tpetra/Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp
+          )
+        SET(SOURCES ${SOURCES}
+          sacado/kokkos/vector/tpetra/Tpetra_MultiVector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_RowMatrix.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_DistObject.cpp
+          )
+      ENDIF()
+    ENDIF()
+    IF (Stokhos_ENABLE_Belos)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
+        )
     ENDIF()
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)

@@ -194,6 +194,8 @@ public:
   //! \name Functions for the functor device interface
   //@{
 
+  __device__ inline static void memory_fence() { __threadfence(); }
+
   __device__ inline int league_size() const { return gridDim.x ; }
   __device__ inline int league_rank() const { return blockIdx.x ; }
 
@@ -240,6 +242,8 @@ private:
 
   //--------------------------------------------------------------------------
 #else
+
+  static void memory_fence();
 
   int league_size() const ;
   int league_rank() const ;

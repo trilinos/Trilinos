@@ -49,6 +49,8 @@
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
 #include <Zoltan2_MeshInput.hpp>
+#include <Zoltan2_StrideData.hpp>
+#include <vector>
 
 namespace Zoltan2 {
 
@@ -110,12 +112,15 @@ public:
     if (MESH_REGION == etype) {
       return RnumIds_;
     }
+
     if (MESH_FACE == etype) {
       return FnumIds_;
     }
+
     if (MESH_EDGE == etype) {
       return EnumIds_;
     }
+
     if (MESH_VERTEX == etype) {
       return VnumIds_:
     }
@@ -127,24 +132,44 @@ public:
       Ids = RidList_;
       return RnumIds_;
     }
+
     if (MESH_FACE == etype) {
       Ids = FidList_;
       return FnumIds_;
     }
+
     if (MESH_EDGE == etype) {
       Ids = EidList_;
       return EnumIds_;
     }
+
     if (MESH_VERTEX == etype) {
       Ids = VidList_;
       return VnumIds_;
     }
   }
 
-private:
+  int getDimensionOf(MeshEntityType etype) const { return dimension_; }
 
+  void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
+			    int &stride, int dim} const {
+    if (dim < 0 || dim >= dimension_) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ";" <<__LINE__
+	   << "  Invalid dimension " << dim << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+
+    size_t length;
+    coords_[dim].getStridedList(length, coords, stride);
+  }
+
+private:
   lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
+
+  int dimension_;
+  ArrayRCP<&StridedData<lno_t, scalar_t> > coords_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -152,18 +177,22 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-PamgenMeshInput<User>::PamgenMeshInput(string typestr = "region")
+PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
 {
   setPrimaryEntityType(typestr);
 
   int exoid, num_dim, num_nodes, num_elem;
   int num_elem_blk, num_node_sets, num_side_sets;
-
   im_ex_get_init( exoid, "PAMGEN Inline Mesh", &num_dim, &num_nodes,
 		  &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
 
-  if (3 == num_dim) {
-    int * element_num_map = malloc(num_elem * sizeof(int *));
+  dimension_ = num_dim;
+
+  double * coord = (double *) malloc (num_nodes * num_dim * sizeof (double));
+  im_ex_get_coord(exoid, coord, coord+num_nodes, coord+2*num_nodes);
+
+  if ( 3 == num_dim && num_elem ) {
+    int * element_num_map = ( int * ) malloc ( num_elem * sizeof ( int ) );
     im_ex_get_elem_num_map( exoid, element_num_map);
     RnumIds_ = num_elem;
     RidList_ = element_num_map;
@@ -172,8 +201,8 @@ PamgenMeshInput<User>::PamgenMeshInput(string typestr = "region")
     RidList_ = NULL;
   }
 
-  if (2 == num_dim) {
-    int * element_num_map = malloc(num_elem * sizeof(int *));
+  if ( 2 == num_dim && num_elem ) {
+    int * element_num_map = ( int * ) malloc ( num_elem * sizeof ( int ) );
     im_ex_get_elem_num_map( exoid, element_num_map);
     FnumIds_ = num_elem;
     FidList_ = element_num_map;
@@ -185,10 +214,15 @@ PamgenMeshInput<User>::PamgenMeshInput(string typestr = "region")
   EnumIds_ = 0;
   EidList_ = NULL;
 
-  int * node_num_map = malloc(num_nodes * sizeof(int *));
-  im_ex_get_node_num_map( exoid, node_num_map);
-  VnumIds_ = num_nodes;
-  VidList_ = node_num_map;
+  if (num_nodes) {
+    int * node_num_map = ( int * ) malloc ( num_nodes * sizeof ( int ) );
+    im_ex_get_node_num_map( exoid, node_num_map);
+    VnumIds_ = num_nodes;
+    VidList_ = node_num_map;
+  } else {
+    VnumIds_ = 0;
+    VidList_ = NULL;
+  }
 }
 
   

@@ -86,8 +86,6 @@
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_AdditiveSchwarz.hpp>
-#include <Ifpack2_ILUT.hpp>
-#include <Ifpack2_IdentitySolver.hpp>
 
 namespace {
 using Tpetra::global_size_t;
@@ -116,14 +114,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
 
   out << "Creating AdditiveSchwarz instance" << endl;
 
-  Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::ILUT<CrsType > > prec (crsmatrix);
+  Ifpack2::AdditiveSchwarz<CrsType> prec (crsmatrix);
   Teuchos::ParameterList params, zlist;
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
   zlist.set ("order_method", "rcm");
-  params.set ("fact: ilut level-of-fill", 1.0);
-  params.set ("fact: drop tolerance", 0.0);
+  params.set ("inner preconditioner name", "ILUT");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 1.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
   params.set ("schwarz: overlap level", static_cast<int> (0));
   params.set ("schwarz: combine mode", "Zero");
 
@@ -192,7 +195,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::ILUT<CrsType > > prec (crsmatrix);
+  Ifpack2::AdditiveSchwarz<CrsType> prec (crsmatrix);
 
   Teuchos::ParameterList params, zlist;
   zlist.set ("order_method", "rcm");
@@ -200,8 +203,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   const int overlapLevel=3;
   params.set ("schwarz: overlap level", overlapLevel);
   params.set ("schwarz: combine mode", "Add");
-  params.set ("fact: ilut level-of-fill", 1.0);
-  params.set ("fact: drop tolerance", 0.0);
+  params.set ("inner preconditioner name", "ILUT");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 1.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering", true);
   params.set ("schwarz: reordering list", zlist);
@@ -281,13 +289,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix3<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::ILUT<CrsType > > prec (crsmatrix);
+  Ifpack2::AdditiveSchwarz<CrsType> prec (crsmatrix);
   Teuchos::ParameterList params, zlist;
 
   const int overlapLevel=0;
   params.set ("schwarz: overlap level", overlapLevel);
-  params.set("fact: ilut level-of-fill", 6.0);
-  params.set("fact: drop tolerance", 0.0);
+  params.set ("inner preconditioner name", "ILUT");
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 6.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
   params.set("schwarz: use reordering",false);
   TEST_NOTHROW(prec.setParameters(params));
 
@@ -352,7 +365,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
 
     for (int overlapLevel=0; overlapLevel<4; ++overlapLevel) {
 
-      Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::IdentitySolver<CrsType > > prec (crsmatrix);
+      Ifpack2::AdditiveSchwarz<CrsType> prec (crsmatrix);
 
       Teuchos::ParameterList params, zlist;
       params.set ("schwarz: overlap level", overlapLevel);
@@ -360,6 +373,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
       zlist.set ("order_method", "rcm");
       params.set ("schwarz: reordering list", zlist);
       params.set("schwarz: combine mode", "Zero");
+      params.set ("inner preconditioner name", "IDENTITY");
 
       prec.setParameters(params);
 

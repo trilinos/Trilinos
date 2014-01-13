@@ -481,21 +481,22 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      # IF (Stokhos_ENABLE_Tpetra)
+      IF (Stokhos_ENABLE_Tpetra  AND
+          NOT Tpetra_ENABLE_Kokkos_DistObject AND
+          NOT Tpetra_ENABLE_Kokkos_Refactor)
 
-      #   IF (Kokkos_ENABLE_Pthread)
-      #     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      #       TpetraCrsMatrixMPVectorUnitTest_Threads
-      #       SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
-      #               Stokhos_TpetraCrsMatrixMPVectorUnitTest_Threads.cpp
-      #       COMM serial mpi
-      #       STANDARD_PASS_OUTPUT
-      #       NUM_MPI_PROCS 1
-      #       DEPLIBS stokhos kokkoscore kokkoslinalg
-      #       )
-      #   ENDIF()
+        IF (Kokkos_ENABLE_Pthread)
+          TRIBITS_ADD_EXECUTABLE_AND_TEST(
+            TpetraCrsMatrixMPVectorUnitTest_Serial
+            SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
+                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
+            COMM serial mpi
+            STANDARD_PASS_OUTPUT
+            DEPLIBS stokhos kokkoscore kokkoslinalg
+            )
+        ENDIF()
 
-      # ENDIF()
+      ENDIF()
 
     ENDIF()
 

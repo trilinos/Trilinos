@@ -59,14 +59,14 @@ namespace Kokkos {
  *  these traits are present.
  */
 enum MemoryTraitsFlags
-  { Unmanaged  = 0x01  
-  , RandomRead = 0x02  
+  { Unmanaged  = 0x01
+  , RandomAccess = 0x02
   };
 
 template < unsigned T >
 struct MemoryTraits {
   enum { Unmanaged  = T & unsigned(Kokkos::Unmanaged) };
-  enum { RandomRead = T & unsigned(Kokkos::RandomRead) };
+  enum { RandomAccess = T & unsigned(Kokkos::RandomAccess) };
 
   typedef MemoryTraits memory_traits ;
 };
@@ -79,7 +79,7 @@ namespace Kokkos {
 
 typedef Kokkos::MemoryTraits<0> MemoryManaged ;
 typedef Kokkos::MemoryTraits< Kokkos::Unmanaged > MemoryUnmanaged ;
-typedef Kokkos::MemoryTraits< Kokkos::Unmanaged | Kokkos::RandomRead > MemoryRandomRead ;
+typedef Kokkos::MemoryTraits< Kokkos::Unmanaged | Kokkos::RandomAccess > MemoryRandomAccess ;
 
 } // namespace Kokkos
 

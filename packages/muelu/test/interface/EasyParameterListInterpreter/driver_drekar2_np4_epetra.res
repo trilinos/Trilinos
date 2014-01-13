@@ -112,7 +112,7 @@ Level 1
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20
+ chebyshev: ratio eigenvalue = 20   [unused]
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
@@ -194,7 +194,7 @@ Level 2
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20
+ chebyshev: ratio eigenvalue = 20   [unused]
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10

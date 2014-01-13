@@ -349,9 +349,6 @@ namespace Xpetra {
 
       map_ = MapFactory::Build(xlib, numGlobalElements, elementList, indexBase, comm, node);
 
-      // set parameters for striding information
-      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
-
       // calculate offset_
 
       // find minimum GID over all procs
@@ -370,6 +367,8 @@ namespace Xpetra {
 
       // adapt offset_
       offset_ -= goStridedOffset + indexBase_;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
     }
 
     StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)

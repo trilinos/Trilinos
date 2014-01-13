@@ -41,6 +41,24 @@
 // @HEADER
 */
 
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
+
+#ifdef DO_COMPILATION
+
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include <Tpetra_ConfigDefs.hpp>
@@ -91,7 +109,7 @@ namespace {
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::Import<LO, GO, NT> import_type;
     typedef Tpetra::Vector<double, LO, GO, NT> vector_type;
-    typedef typename Array<GO>::size_type size_type;
+    //    typedef typename Array<GO>::size_type size_type;
 
     out << "Tpetra::Import::setUnion test" << endl;
     OSTab tab1 (out);
@@ -419,4 +437,7 @@ UNIT_TEST_GROUP(int, long)
 } // namespace (anonymous)
 
 
+
+
+#endif  //DO_COMPILATION
 

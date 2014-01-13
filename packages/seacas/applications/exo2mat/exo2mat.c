@@ -79,8 +79,8 @@ mat_t *mat_file=0;  /* file for binary .mat output */
 static char *qainfo[] =
 {
   "exo2mat",
-  "2012/07/09",
-  "2.01",
+  "2014/01/03",
+  "2.02",
 };
 
 
@@ -377,6 +377,7 @@ int main (int argc, char *argv[])
   /* title */
   PutStr("Title",line);
 
+#if 0
   /* QA records */
   if (num_qa_lines > 0 ){
     qa_records  =(char *(*)[4]) calloc (num_qa_lines*4,sizeof(char **));
@@ -410,7 +411,7 @@ int main (int argc, char *argv[])
 	sprintf(str+strlen(str),"%s\n",str2[i]);
     PutStr("cvxp",str);
   }
-
+#endif
   /* nodal coordinates */
   x = (double *) calloc(num_nodes,sizeof(double));
   y = (double *) calloc(num_nodes,sizeof(double));

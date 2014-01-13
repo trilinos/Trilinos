@@ -72,11 +72,11 @@ namespace MueLu {
     type and ParameterList passed into the constructor. See the constructor for more information.
   */
   class IfpackSmoother : public SmootherPrototype<double,int,int> {
-    typedef double Scalar;
-    typedef int    LocalOrdinal;
-    typedef int    GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef double                                                              Scalar;
+    typedef int                                                                 LocalOrdinal;
+    typedef int                                                                 GlobalOrdinal;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps  LocalMatOps;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 

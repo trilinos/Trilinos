@@ -61,22 +61,25 @@ namespace Ifpack2 {
 
 /** \class AdditiveSchwarz
 \brief Additive Schwarz domain decomposition for Tpetra sparse matrices
-\tparam MatrixType A specialization of Tpetra::RowMatrix
+\tparam MatrixType A specialization of Tpetra::CrsMatrix
 \tparam LocalInverseType The type of the solver for the local
   (subdomain) problem.  This must be a specialization of a concrete
-  subclass of Ifpack2::Preconditioner.  (This template parameter will
-  be DEPRECATED soon; refer to discussion below.)
+  subclass of Ifpack2::Preconditioner.  Using a type here other than
+  Ifpack2::Preconditioner is DEPRECATED, because the subdomain
+  solver's type is determined entirely at run time.  Please refer to
+  discussion below for more details.
 
 \section Ifpack2_AdditiveSchwarz_Summary Summary
 
 This class implements Additive Schwarz domain decomposition, with
 optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
 subdomain corresponds to exactly one MPI process in the given matrix's
-MPI communicator.
+MPI communicator.  For nonoverlapping domain decomposition
+<i>within</i> an MPI process, please use BlockRelaxation.
 
-This class implements Tpetra::Operator, like all other subclasses of
-Preconditioner.  Thus, the apply() method applies the preconditioner
-to a multivector.
+This class is a subclass of Tpetra::Operator, like all other
+subclasses of Preconditioner.  Thus, the apply() method applies the
+preconditioner to a multivector.
 
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
@@ -232,21 +235,27 @@ Even though both of the above examples combine the local results in
 the same way, Zero produces a different final result than Add, because
 the Zero example uses overlap 1, whereas the Add example uses overlap 0.
 
-\section Ifpack2_AdditiveSchwarz_DevNotes Notes to Ifpack2 developers
+\section Ifpack2_AdditiveSchwarz_subdomain Subdomain solver
 
-The second template parameter (\c LocalInverseType) is being
-DEPRECATED.  It causes a lot of trouble for explicit template
-instantiation, and we can perfectly well support an arbitrary
-subdomain solver type by run-time polymorphism.  For example, a
-subclass of Preconditioner could expose a scalar_type (of the input
-and output vectors of apply()) different than its internal storage
-type, via a mechanism like that of Tpetra::ApplyOp.  The only issue is
-that the preconditioner would need to be creatable by Factory, but we
-could get around that by adding a method to AdditiveSchwarz that lets
-the user supply an arbitrary Preconditioner subclass instance for the
-subdomain solver.
+This class gives you two ways to specify the subdomain solver.  First,
+you may set the "subdomain solver name" or "inner preconditioner name"
+parameters in the input to setParameters() or setParameterList().
+Second, you may construct the subdomain solver yourself, as an
+Ifpack2::Preconditioner instance, and give it to setInnerPreconditioner().
+
+A third, deprecated method is to specify the concrete type of the
+subdomain solver at compile time, as the second template parameter
+\c LocalInverseType.  This method has been DEPRECATED, because it
+causes a lot of trouble for explicit template instantiation.  Users
+may perfectly well pick the type of the subdomain solver at run time,
+using either of the above two methods.  This has no performance cost.
 */
-template<class MatrixType, class LocalInverseType>
+template<class MatrixType,
+         class LocalInverseType =
+         Preconditioner<typename MatrixType::scalar_type,
+                        typename MatrixType::local_ordinal_type,
+                        typename MatrixType::global_ordinal_type,
+                        typename MatrixType::node_type> >
 class AdditiveSchwarz :
     virtual public Preconditioner<typename MatrixType::scalar_type,
                                   typename MatrixType::local_ordinal_type,
@@ -383,28 +392,124 @@ public:
 
   /// \brief Set the preconditioner's parameters.
   ///
+  /// \param plist [in] List of parameters.
+  ///
   /// This version of the method takes a const list, as required by
   /// the Preconditioner interface.  setParameterList() takes a
   /// nonconst pointer to a list, in order to match the
   /// Teuchos::ParameterListAcceptor interface.
   ///
+  /// Both this method and setParameterList() have "delta" behavior.
+  /// That is, if called twice with two different lists, any
+  /// unspecified parameters in the new list retain their values in
+  /// the old list.
+  ///
+  /// In many cases, calling this method may require calling
+  /// initialize() and compute() to recompute the preconditioner.
+  ///
   /// Accepted parameters include the following:
+  ///   - "inner preconditioner name" or "subdomain solver name" or
+  ///     "schwarz: subdomain solver name" or "schwarz: inner
+  ///     preconditioner name" (\c std::string): the name of the
+  ///     subdomain solver.  See discussion below for what names are
+  ///     valid, and how this class chooses the default subdomain
+  ///     solver name.  Please set at most one of these parameters;
+  ///     results are undefined otherwise.
+  ///   - "inner preconditioner parameters" or "subdomain solver
+  ///     parameters" or "schwarz: subdomain solver parameters" or
+  ///     "schwarz: inner preconditioner parameters" (sublist):
+  ///     parameters for the subdomain solver.  If not provided, the
+  ///     subdomain solver will use its specific default parameters.
+  ///     Please set at most one of these parameters; results are
+  ///     undefined otherwise.
   ///   - "schwarz: compute condest" (\c bool): If true, estimate the
-  ///     condition number each time compute() is called.
+  ///     condition number each time compute() is called.  Default is
+  ///     false.
   ///   - "schwarz: combine mode" (\c std::string): The rule for
   ///     combining incoming data with existing data in overlap
   ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
   ///     "ABSMAX", and "ZERO".  These correspond to the valid values
-  ///     of Tpetra::CombineMode.
+  ///     of Tpetra::CombineMode.  The default combine mode is "ZERO",
+  ///     meaning that overlapping incoming entries from different
+  ///     processes are not combined.  (See the class documentation
+  ///     for an explanation and example of the "ZERO" vs. "ADD"
+  ///     combine modes.)
   ///   - "schwarz: overlap level" (\c int): The level of overlap.
+  ///     The default is zero, meaning no overlap.
   ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
   ///     to do reordering.  If true, then Trilinos must have been
-  ///     built with Zoltan2 and Xpetra enabled.
+  ///     built with Zoltan2 and Xpetra enabled.  Default is false.
   ///   - "schwarz: subdomain id" (\c int): This option does not
   ///     currently work.
   ///   - "schwarz: filter singletons" (\c bool): If true, exclude
   ///     rows with just a single entry on the calling process.
-  virtual void setParameters (const Teuchos::ParameterList& List);
+  ///     Default is false.
+  ///
+  /// \section Ifpack2_AdditiveSchwarz_setParameters_subdomain Subdomain solver parameters
+  ///
+  /// \subsection Ifpack2_AdditiveSchwarz_setParameters_subdomain_default Default subdomain solver
+  ///
+  /// This class lets users specify any subdomain solver they want, by
+  /// calling setInnerPreconditioner().  However, users may instead
+  /// specify the subdomain solver by setting the "inner
+  /// preconditioner name" parameter (or any of its aliases).  If they
+  /// choose to do so, they may only use inner preconditioners
+  /// supported by Ifpack2::Details::OneLevelFactory.  These include:
+  ///   - "AMESOS2": Ifpack2::Details::Amesos2Wrapper (only allowed if
+  ///     Trilinos was built with the Amesos2 package enabled)
+  ///   - "CHEBYSHEV": Ifpack2::Chebyshev
+  ///   - "DENSE" or "LAPACK": Ifpack2::Details::DenseSolver
+  ///   - "DIAGONAL": Ifpack2::Diagonal
+  ///   - "ILUT": Ifpack2::ILUT
+  ///   - "RELAXATION": Ifpack2::Relaxation
+  ///   - "RILUK": Ifpack2::RILUK
+  ///
+  /// This name <i>need not necessarily</i> correspond with
+  /// <tt>LocalInverseType</tt>.  If the user does <i>not</i> specify
+  /// this parameter, the following procedure specifies the default:
+  /// <ol>
+  /// <li> If <tt>LocalInverseType</tt> is just Preconditioner, then
+  ///      this class uses a default, which is currently "ILUT". </il>
+  /// <li> If <tt>LocalInverseType</tt> is a concrete Preconditioner
+  ///      subclass, and if that subclass is in the above supported
+  ///      list of subdomain solver types, then this class uses that
+  ///      subclass as the subdomain solver. </li>
+  /// <li> If <tt>LocalInverseType</tt> is a concrete Preconditioner
+  ///      subclass, and if that subclass is <i>not</i> in the above
+  ///      supported list of subdomain solver types, then users must
+  ///      create the subdomain solver themselves and give it to
+  ///      AdditiveSchwarz by calling setInnerPreconditioner(),
+  ///      <i>before</i> calling initialize() on the AdditiveSchwarz
+  ///      instance. </li>
+  /// </ol>
+  ///
+  /// \subsection Ifpack2_AdditiveSchwarz_setParameters_subdomain_setInner Subdomain solver parameters and setInnerPreconditioner
+  ///
+  /// If you specify a sublist of parameters to give to the subdomain
+  /// solver, setInnerPreconditioner() does <i>not</i> pass that
+  /// sublist to its argument.  This is because we presume that if you
+  /// call setInnerPreconditioner(), the input subdomain solver
+  /// probably has a type that AdditiveSchwarz does not know how to
+  /// create by itself, so the existing parameter list cannot apply.
+  ///
+  /// On the other hand, if, after calling setInnerPreconditioner(),
+  /// you then call setParameters(), we <i>do</i> pass any provided
+  /// sublist of subdomain solver parameters to the inner solver.  If
+  /// no such sublist was provided, we do <i>not</i> call
+  /// setParameters() on the inner solver.
+  ///
+  /// The reason the last sentence matters is because not every inner
+  /// solver necessarily has "delta" semantics for setParameters().
+  /// "Delta" or "relative" semantics means that an empty input
+  /// ParameterList doesn't change any existing parameters.
+  /// "Non-delta" or "absolute" semantics means that an empty input
+  /// ParameterList causes all parameters to be set to their default
+  /// values.  (The difference matters if the user has called
+  /// setParameters() before on the subdomain solver, with nondefault
+  /// values.)  If the user didn't specify a sublist for the inner
+  /// solver, we assume that the user doesn't want to change the inner
+  /// solver's parameters.
+  virtual void setParameters (const Teuchos::ParameterList& plist);
 
   /// \brief Set the preconditioner's parameters.
   ///
@@ -413,22 +518,22 @@ public:
   /// setParameters() takes a const list, as required by the
   /// Preconditioner interface.
   ///
-  /// Accepted parameters include the following:
-  ///   - "schwarz: compute condest" (\c bool): If true, estimate the
-  ///     condition number each time compute() is called.
-  ///   - "schwarz: combine mode" (\c std::string): The rule for
-  ///     combining incoming data with existing data in overlap
-  ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
-  ///     "ABSMAX", and "ZERO".  These correspond to the valid values
-  ///     of Tpetra::CombineMode.
-  ///   - "schwarz: overlap level" (\c int): The level of overlap.
-  ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
-  ///     to do reordering.  If true, then Trilinos must have been
-  ///     built with Zoltan2 and Xpetra enabled.
-  ///   - "schwarz: subdomain id" (\c int): This option does not
-  ///     currently work.
-  ///   - "schwarz: filter singletons" (\c bool): If true, exclude
-  ///     rows with just a single entry on the calling process.
+  /// Both this method and setParameterList() have "delta" behavior.
+  /// That is, if called twice with two different lists, any
+  /// unspecified parameters in the new list retain their values in
+  /// the old list.
+  ///
+  /// In many cases, calling this method may require calling
+  /// initialize() and compute() to recompute the preconditioner.
+  ///
+  /// \param plist [in/out] On input: List of parameters, or
+  ///   Teuchos::null (meaning "do not change the current parameter
+  ///   values").  On output: If nonnull, any missing parameters are
+  ///   filled in with their current values (or their default values,
+  ///   if they have not yet been set).
+  ///
+  /// See the documentation of setParameters() for a list of the
+  /// parameters this method accepts, and their default values.
   void
   setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
@@ -535,6 +640,13 @@ private:
   //! The current inner preconditioner name.
   std::string innerPrecName () const;
 
+  /// \brief Parameters to give to the inner preconditioner.
+  ///
+  /// \return The parameters, and whether the input ParameterList
+  ///   actually had a sublist for the inner preconditioner's
+  ///   parameters.
+  std::pair<Teuchos::ParameterList, bool> innerPrecParams () const;
+
   //! The default inner preconditioner name.
   static std::string defaultInnerPrecName ();
 
@@ -561,8 +673,13 @@ private:
   //! Level of overlap among the processors.
   int OverlapLevel_;
 
-  //! Store a copy of the list given in setParameters()
+  /// \brief A (deep) copy of the list given to setParameters().
+  ///
+  /// We need to keep this, because Inverse_ may not exist (may be
+  /// null) when setParameters() or setParameterList() is called.
+  /// Inverse_ needs a sublist containing its own parameters.
   Teuchos::ParameterList List_;
+
   //! Valid (default) parameters; computed and cached in getValidParameters().
   mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 

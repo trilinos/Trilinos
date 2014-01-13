@@ -1,0 +1,23 @@
+<ParameterList name="MueLu">
+  <Parameter        name="coarse: max size"                     type="int"      value="100"/>
+
+  <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="2"/>
+  </ParameterList>
+
+  <ParameterList    name="level 1">
+    <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+    <ParameterList    name="smoother: params">
+      <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="5"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList    name="level 2">
+    <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+    <ParameterList    name="smoother: params">
+      <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="4"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

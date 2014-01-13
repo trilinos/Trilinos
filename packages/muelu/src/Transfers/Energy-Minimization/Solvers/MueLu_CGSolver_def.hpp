@@ -100,7 +100,7 @@ namespace MueLu {
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
-    R = MatrixFactory::BuildCopy(T);
+    R = MatrixFactory2::BuildCopy(T);
 #ifdef HAVE_MUELU_TPETRA
     if (useTpetra)
       Utils::Op2NonConstTpetraCrs(R)->resumeFill();
@@ -110,11 +110,11 @@ namespace MueLu {
       R->fillComplete(R->getDomainMap(), R->getRangeMap());
 
     // Z_0 = M^{-1}R_0
-    Z = MatrixFactory::BuildCopy(R);
+    Z = MatrixFactory2::BuildCopy(R);
     Utils::MyOldScaleMatrix(*Z, D, true, true, false);
 
     // P_0 = Z_0
-    P = MatrixFactory::BuildCopy(Z);
+    P = MatrixFactory2::BuildCopy(Z);
 
     oldRZ = Frobenius(*R, *Z);
 
@@ -139,7 +139,7 @@ namespace MueLu {
         // For example, if we use TentativePFactory for both nonzero pattern and initial guess
         // I think it might also happen because of numerical breakdown, but we don't test for that yet
         if (k == 0)
-          X = MatrixFactory::BuildCopy(rcpFromRef(P0));
+          X = MatrixFactory2::BuildCopy(rcpFromRef(P0));
         break;
       }
 
@@ -171,7 +171,7 @@ namespace MueLu {
 #endif
 
       // Z_{k+1} = M^{-1} R_{k+1}
-      Z = MatrixFactory::BuildCopy(R);
+      Z = MatrixFactory2::BuildCopy(R);
       Utils::MyOldScaleMatrix(*Z, D, true, true, false);
 
       // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)

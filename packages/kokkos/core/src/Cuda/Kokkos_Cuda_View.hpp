@@ -258,31 +258,30 @@ struct CudaTexture {};
 #if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
 /** \brief  Replace LayoutDefault specialization */
-template< typename ScalarType , class Rank , class RankDynamic >
+template< typename ScalarType , typename Rank , typename RankDynamic >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
                        LayoutLeft , Rank , RankDynamic ,
-                       CudaSpace , MemoryRandomRead >
+                       CudaSpace , MemoryTraits< RandomAccess > >
 { typedef CudaTexture type ; };
 
-template< typename ScalarType , class Rank , class RankDynamic >
+template< typename ScalarType , typename Rank , typename RankDynamic >
+struct ViewSpecialize< const ScalarType , const ScalarType ,
+                       LayoutLeft , Rank , RankDynamic ,
+                       CudaSpace , MemoryTraits< (RandomAccess | Unmanaged) > >
+{ typedef CudaTexture type ; };
+
+
+template< typename ScalarType , typename Rank , typename RankDynamic >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
                        LayoutRight , Rank , RankDynamic ,
-                       CudaSpace , MemoryRandomRead >
+                       CudaSpace , MemoryTraits< RandomAccess > >
 { typedef CudaTexture type ; };
 
-/** \brief Scalar View matching **/
-template< typename ScalarType >
+template< typename ScalarType , typename Rank , typename RankDynamic >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , unsigned_<0> , unsigned_<0> ,
-                       CudaSpace , MemoryRandomRead >
+                       LayoutRight , Rank , RankDynamic ,
+                       CudaSpace , MemoryTraits< (RandomAccess | Unmanaged) > >
 { typedef CudaTexture type ; };
-
-template< typename ScalarType >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , unsigned_<0> , unsigned_<0> ,
-                       CudaSpace , MemoryRandomRead >
-{ typedef CudaTexture type ; };
-
 #endif
 
 //----------------------------------------------------------------------------
@@ -301,11 +300,14 @@ struct ViewAssignment< CudaTexture , CudaTexture , void >
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
+
+    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
 
     dst.m_texture  = src.m_texture ;
     dst.m_stride   = src.m_stride ;
@@ -313,6 +315,8 @@ struct ViewAssignment< CudaTexture , CudaTexture , void >
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+
+    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
   }
 };
 
@@ -332,11 +336,14 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type  shape_type ;
     typedef typename DstViewType::scalar_type scalar_type ;
     typedef typename DstViewType::stride_type stride_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
 
     dst.m_texture = CudaTextureFetch< scalar_type >( src.m_ptr_on_device );
 
@@ -345,6 +352,8 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
     stride_type::assign( dst.m_stride , src.m_stride.value );
+
+    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
   }
 };
 
@@ -431,12 +440,16 @@ public:
      stride_type::assign( m_stride , 0 );
    }
 
-  ~View() {}
+  KOKKOS_INLINE_FUNCTION
+  ~View() { Impl::ViewTracking< traits >::decrement( m_texture.ptr ); }
 
   View( const View & rhs )
     : m_texture( rhs.m_texture )
     , m_stride(  rhs.m_stride )
-    { m_shape = rhs.m_shape ; }
+    {
+      m_shape = rhs.m_shape ;
+      Impl::ViewTracking< traits >::increment( m_texture.ptr );
+    }
 
   View & operator = ( const View & rhs )
     {
@@ -456,6 +469,29 @@ public:
     {
       Impl::ViewAssignment< Impl::CudaTexture , RS >( *this , rhs );
       return *this ;
+    }
+
+  template< typename TT >
+  explicit inline
+  View( TT * ptr ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        typename Impl::enable_if<(
+          Impl::is_same<TT,typename traits::scalar_type>::value &&
+          ! traits::is_managed ),
+        const size_t >::type n7 = 0 )
+    : m_texture( Impl::CudaTextureFetch< typename traits::scalar_type >(ptr))
+    {
+      typedef typename traits::shape_type   shape_type ;
+      typedef typename traits::scalar_type  scalar_type ;
+
+      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      stride_type::assign_no_padding( m_stride , m_shape );
     }
 
   //------------------------------------
@@ -485,10 +521,6 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       return m_texture[ i0 ];
     }
-
-  //------------------------------------
-  // Layout left:
-
 
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION

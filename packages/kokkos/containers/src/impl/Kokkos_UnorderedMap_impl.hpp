@@ -47,6 +47,7 @@
 #include <Kokkos_Macros.hpp>
 #include <stdint.h>
 
+#include <cstdio>
 #include <climits>
 
 namespace Kokkos { namespace Impl {
@@ -174,6 +175,36 @@ struct UnorderedMapSize
 };
 
 template <typename UMap>
+struct UnorderedMapPrint
+{
+  typedef UMap map_type;
+  typedef typename map_type::device_type device_type;
+  typedef typename map_type::size_type size_type;
+
+  map_type m_map;
+
+  UnorderedMapPrint( map_type const& map)
+    : m_map(map)
+  {}
+
+  void apply() const
+  {
+    parallel_for(m_map.m_hash_lists.size(), *this);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(size_type i) const
+  {
+    const size_type invalid_index = map_type::invalid_index;
+    size_type curr = m_map.m_hash_lists(i);
+    while (curr != invalid_index) {
+      printf("%d %d\n", m_map.m_keys[curr], i);
+      curr = m_map.m_next_index[curr];
+    }
+  }
+};
+
+template <typename UMap>
 struct UnorderedMapCountFailedInserts
 {
   typedef UMap map_type;
@@ -215,6 +246,68 @@ struct UnorderedMapCountFailedInserts
   void final( value_type & failed_inserts ) const
   {
     m_map.m_scalars().failed_inserts = failed_inserts;
+  }
+};
+
+template <typename UMap>
+struct UnorderedMapErase
+{
+  typedef UMap map_type;
+  typedef typename map_type::device_type device_type;
+  typedef typename map_type::size_type size_type;
+  typedef typename map_type::key_type key_type;
+  typedef typename map_type::impl_value_type value_type;
+
+
+  map_type m_map;
+
+  UnorderedMapErase( map_type const& map)
+    : m_map(map)
+  {}
+
+  void apply() const
+  {
+    parallel_for(m_map.m_hash_lists.size(), *this);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( size_type i ) const
+  {
+    const size_type invalid_index = map_type::invalid_index;
+
+    size_type curr = m_map.m_hash_lists(i);
+    size_type next = invalid_index;
+
+    // remove erased head of the linked-list
+    while (curr != invalid_index && !m_map.valid_at(curr)) {
+      next = m_map.m_next_index[curr];
+      m_map.m_next_index[curr] = invalid_index;
+      m_map.m_keys[curr] = key_type();
+      if (m_map.is_set) m_map.m_values[curr] = value_type();
+      curr = next;
+      m_map.m_hash_lists(i) = next;
+    }
+
+    // if the list is non-empty and the head is valid
+    if (curr != invalid_index && m_map.valid_at(curr) ) {
+      size_type prev = curr;
+      curr = m_map.m_next_index[prev];
+
+      while (curr != invalid_index) {
+        next = m_map.m_next_index[curr];
+        if (m_map.valid_at(curr)) {
+          prev = curr;
+        }
+        else {
+          // remove curr from list
+          m_map.m_next_index[prev] = next;
+          m_map.m_next_index[curr] = invalid_index;
+          m_map.m_keys[curr] = key_type();
+          if (map_type::is_set) m_map.m_values[curr] = value_type();
+        }
+        curr = next;
+      }
+    }
   }
 };
 

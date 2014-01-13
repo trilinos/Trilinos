@@ -109,7 +109,7 @@ long long getPamgenEchoStreamSize()
 long long getPamgenErrorStreamSize()
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage->getErrorString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getErrorString();
   const char * cst = st.c_str();
   long long stsz = strlen(cst);
   return stsz;
@@ -119,7 +119,7 @@ long long getPamgenErrorStreamSize()
 long long getPamgenWarningStreamSize()
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage->getWarningString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getWarningString();
   const char * cst = st.c_str();
   long long stsz = strlen(cst);
   return stsz;
@@ -130,7 +130,7 @@ long long getPamgenWarningStreamSize()
 long long getPamgenInfoStreamSize()
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage->getInfoString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getInfoString();
   const char * cst = st.c_str();
   long long stsz = strlen(cst);
   return stsz;
@@ -140,7 +140,7 @@ long long getPamgenInfoStreamSize()
 char * getPamgenErrorStream(char * car)
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage->getErrorString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getErrorString();
   const char * cst = st.c_str();
   strcpy(car,cst);
   return car;
@@ -150,7 +150,7 @@ char * getPamgenErrorStream(char * car)
 char * getPamgenWarningStream(char * car)
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage->getWarningString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getWarningString();
   const char * cst = st.c_str();
   strcpy(car,cst);
   return car;
@@ -160,7 +160,7 @@ char * getPamgenWarningStream(char * car)
 char * getPamgenInfoStream(char * car)
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage->getInfoString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getInfoString();
   const char * cst = st.c_str();
   strcpy(car,cst);
   return car;
