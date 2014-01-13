@@ -83,6 +83,7 @@ struct SelectorNode
       return false;
     }
     else if (m_type == SelectorNodeType::COMPLEMENT) {
+      // there's no rhs for a SelectorNode of type Complement
       return true;
     }
     else if (m_type == SelectorNodeType::PART) {

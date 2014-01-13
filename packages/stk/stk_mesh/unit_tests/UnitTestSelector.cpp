@@ -26,6 +26,8 @@ namespace {
 
 using stk::mesh::fixtures::SelectorFixture ;
 
+void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
+
 void initialize(SelectorFixture& fixture)
 {
   fixture.m_meta_data.commit();
@@ -66,10 +68,7 @@ void initialize(SelectorFixture& fixture)
   *
   * */
 
-/** \brief Verify we can construct the selector unit testing fixture.
- *
- * */
-STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
+STKUNIT_UNIT_TEST(Verify, selectorFixtureDoesNotSegFault)
 {
   {
     SelectorFixture fix;
@@ -78,11 +77,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
   STKUNIT_EXPECT_TRUE(true);
 }
 
-
-/** \brief Verify we can construct two selector unit testing fixtures one after another.
- *
- * */
-STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
+STKUNIT_UNIT_TEST(Verify, twoSelectorFixturesCreatedSequetiallyDoNotSegFault)
 {
   {
     SelectorFixture fix;
@@ -95,495 +90,391 @@ STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
   STKUNIT_EXPECT_TRUE(true);
 }
 
-
-
-/** \brief Test containment directly.
- *
- * Verify PartA contains Entity1 and Entity2, and does not contain
- * Entity3, Entity4, or Entity5.
- * */
-STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
+STKUNIT_UNIT_TEST(DISABLE_Verify, interfacesNotVerified)
 {
-  SelectorFixture fix;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::Selector selector( fix.m_partA );
-  //std::cout << "Selector = " << selector << std::endl;
-
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1) ;
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity5);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
+    /*
+     *   Selector & operator -= ( const Selector & selector)
+     *
+     *   bool operator<(const Selector& rhs) const;
+     *   bool operator<=(const Selector& rhs) const {
+     *   bool operator>(const Selector& rhs) const {
+     *   bool operator>=(const Selector& rhs) const {
+     *
+     *   bool is_all_unions() const;
+     *   void get_parts(PartVector& parts) const;
+     *   bool operator()(const PartVector& parts) const;
+     *
+     *   FREE FUNCTIONS:
+     *   Selector selectUnion( const PartVector& union_part_vector );
+     *   Selector selectIntersection( const PartVector& intersection_part_vector );
+     *   Selector selectField( const FieldBase& field );
+     *
+     *   bool is_subset(Selector const& lhs, Selector const& rhs);
+     *
+     *   Selector operator - ( const Selector & A, const Selector & B  )
+     *   Selector operator - ( const Selector & A, const Part & B  )
+     *   Selector operator - ( const Part & A , const Selector & B )
+     *   Selector operator - ( const Part & A , const Part & B )
+     */
 }
 
-/** \brief Test containment with the complement.
- *
- * Verify !PartA does not contain Entity1 and Entity2, and does
- * contain Entity3, Entity4, and Entity5.
- ** */
-STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
+STKUNIT_UNIT_TEST(Verify, partASelector)
 {
   SelectorFixture fix;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
 
-  stk::mesh::Selector selector = ! fix.m_partA ;
-  //std::cout << "Selector = " << selector << std::endl;
+  stk::mesh::Selector partASelector(fix.m_partA);
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity5);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInSelector[numEntities] = {true, true, false, false, false};
 
+  testSelectorWithBuckets(fix, partASelector, gold_shouldEntityBeInSelector);
 }
 
-/** \brief Verify PartD does not contain Entity5.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
+STKUNIT_UNIT_TEST(Verify, notPartASelector)
 {
   SelectorFixture fix;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
+
+  stk::mesh::Selector notPartASelector = ! fix.m_partA;
+
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInSelector[numEntities] = {false, false, true, true, true};
+
+  testSelectorWithBuckets(fix, notPartASelector, gold_shouldEntityBeInSelector);
+}
+
+STKUNIT_UNIT_TEST(Verify, emptyPartSelector)
+{
+  SelectorFixture fix;
+  initialize(fix);
 
   stk::mesh::Selector selector( fix.m_partD );
 
-  const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity5);
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInSelector[numEntities] = {false, false, false, false, false};
 
-  bool result = selector(bucket);
-  STKUNIT_EXPECT_FALSE(result);
+  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInSelector);
 }
 
-/** \brief Verify PartA.complement contains Entity1 and Entity5.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
+STKUNIT_UNIT_TEST(Verify, complementOfPartASelector)
 {
   SelectorFixture fix;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
 
-  stk::mesh::Part & partA = fix.m_partA ;
+  stk::mesh::Part & partA = fix.m_partA;
 
-  stk::mesh::Selector selector(partA);
-  selector.complement();
-  //std::cout << "Selector = " << selector << std::endl;
+  stk::mesh::Selector partASelector(partA);
+  stk::mesh::Selector partAComplementSelector = partASelector.complement();
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity5);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInSelector[numEntities] = {false, false, true, true, true};
+
+  testSelectorWithBuckets(fix, partAComplementSelector, gold_shouldEntityBeInSelector);
 }
 
-/** \brief Verify (PartA AND PartB) does not contain Entity1 and does
- * contain Entity2.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
+STKUNIT_UNIT_TEST(Verify, andedSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
+
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+
+  stk::mesh::Selector andedSelector = partA & partB;
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true, false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true, true , false, false};
+  bool gold_shouldEntityBeInAndedSelector[numEntities] = {false, true, false, false, false};
+  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, andedSelector, gold_shouldEntityBeInAndedSelector);
+}
+
+STKUNIT_UNIT_TEST(Verify, oredSelector)
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+
+  stk::mesh::Selector oredSelector = partA | partB;
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true, false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true, true , false, false};
+  bool gold_shouldEntityBeInOredSelector[numEntities] =  {true , true, true , false, false};
+  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, oredSelector, gold_shouldEntityBeInOredSelector);
+}
+
+STKUNIT_UNIT_TEST(Verify, notAndedSelector)
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+
+  stk::mesh::Selector notAndedSelector = !(partA & partB);
+
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true , false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true , true , false, false};
+  bool gold_shouldEntityBeInAndedSelector[numEntities] = {true , false, true , true , true };
+  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, notAndedSelector, gold_shouldEntityBeInAndedSelector);
+}
+
+STKUNIT_UNIT_TEST(Verify, noredSelector)
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+
+  stk::mesh::Selector norSelector = !(partA | partB);
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true , false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true , true , false, false};
+  bool gold_shouldEntityBeInOredSelector[numEntities] =  {false, false, false, true , true };
+  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, norSelector, gold_shouldEntityBeInOredSelector);
+}
+
+STKUNIT_UNIT_TEST(Verify, variousSelectorCombinations)
+{
+    SelectorFixture fix ;
+    initialize(fix);
+
+    stk::mesh::Part & partA = fix.m_partA;
+    stk::mesh::Part & partB = fix.m_partB;
+    stk::mesh::Part & partC = fix.m_partC;
+
+    stk::mesh::Selector complexSelector = partA & !(partB | partC);
+
+    const int numEntities = 5;
+    bool gold_shouldEntityBeInPartBSelector[numEntities]           = {false, true , true , false, false};
+    bool gold_shouldEntityBeInPartCSelector[numEntities]           = {false, false, true , true , false};
+    bool gold_shouldEntityBeInPartBOrPartCSelector[numEntities]    = {false, true , true , true , false};
+    bool gold_shouldEntityNotBeInPartBOrPartCSelector[numEntities] = {true , false, false, false, true };
+    bool gold_shouldEntityBeInPartASelector[numEntities]           = {true , true , false, false, false};
+    bool gold_shouldEntityBeInComplexSelector[numEntities]         = {true , false, false, false, false};
+    testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+    testSelectorWithBuckets(fix, partC, gold_shouldEntityBeInPartCSelector);
+    testSelectorWithBuckets(fix, partB|partC, gold_shouldEntityBeInPartBOrPartCSelector);
+    testSelectorWithBuckets(fix, !(partB|partC), gold_shouldEntityNotBeInPartBOrPartCSelector);
+    testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+    testSelectorWithBuckets(fix, complexSelector, gold_shouldEntityBeInComplexSelector);
+}
+
+STKUNIT_UNIT_TEST(Verify, complementOfSelectorComplement)
+{
+  SelectorFixture fix ;
+  initialize(fix);
 
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
+  stk::mesh::Selector norSelector = (partA | partB).complement();
 
-  stk::mesh::Selector selector = partA & partB;
-  //std::cout << "Selector = " << selector << std::endl;
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities]    = {true , true , false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities]    = {false, true , true , false, false};
+  bool gold_shouldEntityBeInNoredSelector[numEntities]    = {false, false, false, true,  true };
+  bool gold_shouldEntityBeInNotNoredSelector[numEntities] = {true , true , true , false, false};
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
+  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, norSelector, gold_shouldEntityBeInNoredSelector);
+
+  stk::mesh::Selector selector = norSelector.complement();
+  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInNotNoredSelector);
+  testSelectorWithBuckets(fix, (partA | partB), gold_shouldEntityBeInNotNoredSelector);
 }
 
+STKUNIT_UNIT_TEST(Verify, complementOfDefaultConstructedSelector)
+{
+    SelectorFixture fix ;
+    initialize(fix);
 
-/** \brief Verify (PartA OR PartB) contains Entity1 but not Entity4
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
+    const int numEntities = 5;
+    bool goldEntityInDefaultCtor[numEntities]           = {false, false, false, false, false};
+    bool goldEntityInDefaultCtorComplement[numEntities] = {true , true , true , true , true };
+
+    stk::mesh::Selector defaultConstructedSelector;
+    testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
+
+    stk::mesh::Selector complementOfDefault = defaultConstructedSelector.complement();
+    testSelectorWithBuckets(fix, complementOfDefault, goldEntityInDefaultCtorComplement);
+}
+
+STKUNIT_UNIT_TEST(Verify, usingPartVectorToSelectIntersection)
 {
   SelectorFixture fix ;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
+
+  stk::mesh::PartVector parts ;
+  parts.push_back( & fix.m_partA );
+  parts.push_back( & fix.m_partB );
+  stk::mesh::Selector selector = selectIntersection(parts);
+
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true, false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true, true , false, false};
+  bool gold_shouldEntityBeInAndedSelector[numEntities] = {false, true, false, false, false};
+  testSelectorWithBuckets(fix, fix.m_partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInAndedSelector);
+
+  std::ostringstream msg;
+  msg << selector;
+  STKUNIT_EXPECT_EQ("(PartA & PartB)", msg.str());
+}
+
+STKUNIT_UNIT_TEST(Verify, usingPartVectorToSelectUnion)
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::PartVector parts ;
+  parts.push_back( & fix.m_partA );
+  parts.push_back( & fix.m_partB );
+  parts.push_back( & fix.m_partC );
+  stk::mesh::Selector selector = selectUnion(parts);
+
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities]        = {true , true , false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities]        = {false, true , true , false, false};
+  bool gold_shouldEntityBeInPartAOrPartBSelector[numEntities] = {true , true , true , false, false};
+  bool gold_shouldEntityBeInPartCSelector[numEntities]        = {false, false, true , true , false};
+  bool gold_shouldEntityBeInPartOredSelector[numEntities]     = {true , true , true , true , false};
+  testSelectorWithBuckets(fix, fix.m_partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, (fix.m_partA | fix.m_partB), gold_shouldEntityBeInPartAOrPartBSelector);
+  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInPartOredSelector);
+
+  std::ostringstream msg;
+  msg << selector;
+  std::cout << "msg.str() = " << msg.str() << std::endl;
+  STKUNIT_EXPECT_EQUAL( "((PartA | PartB) | PartC)", msg.str() );
+}
+
+STKUNIT_UNIT_TEST(Verify, defaultConstructorForSelector)
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Selector defaultConstructedSelector;
+
+  const int numEntities = 5;
+  bool goldEntityInDefaultCtor[numEntities] = {false, false, false, false, false};
+
+  testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
+}
+
+STKUNIT_UNIT_TEST(Verify, usingEqualityOperator)
+{
+  SelectorFixture fix;
+  initialize(fix);
 
   stk::mesh::Part & partA = fix.m_partA ;
+  stk::mesh::Selector partASelector(partA);
+  stk::mesh::Selector anotherPartASelector(partA);
+  EXPECT_TRUE(partASelector == anotherPartASelector);
+
   stk::mesh::Part & partB = fix.m_partB ;
+  stk::mesh::Selector unionPartAPartB(partA | partB);
+  stk::mesh::Selector anotherUnionPartAPartB(partA | partB);
+  EXPECT_TRUE(unionPartAPartB == anotherUnionPartAPartB);
 
-  stk::mesh::Selector selector = partA | partB;
-  //std::cout << "Selector = " << selector << std::endl;
+  stk::mesh::Selector intersectionPartAPartB(partA & partB);
+  stk::mesh::Selector anotherIntersectionPartAPartB(partA & partB);
+  EXPECT_TRUE(intersectionPartAPartB == anotherIntersectionPartAPartB);
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
+  EXPECT_FALSE(unionPartAPartB == intersectionPartAPartB);
+
+  stk::mesh::Selector complementPartA(!partA);
+  stk::mesh::Selector anotherComplementPartA(!partA);
+  EXPECT_TRUE(complementPartA == anotherComplementPartA);
+
+  EXPECT_FALSE(partASelector == complementPartA);
+  EXPECT_FALSE(complementPartA == partASelector);
+
+  stk::mesh::Selector complementPartB(!partB);
+  EXPECT_FALSE(complementPartA == complementPartB);
+
+  stk::mesh::Selector notNotPartA(!!partA);
+  EXPECT_FALSE(partASelector == notNotPartA);
 }
 
-
-/** \brief Verify !(PartA AND PartB) contains Entity1 but not Entity2.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
+STKUNIT_UNIT_TEST(Verify, usingCopyConstructor)
 {
   SelectorFixture fix ;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::Part & partA = fix.m_partA ;
-  stk::mesh::Part & partB = fix.m_partB ;
-
-  stk::mesh::Selector selector = partA & !partB;
-  //std::cout << "Selector = " << selector << std::endl;
-
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-}
-
-
-/** \brief Verify !(PartA OR PartB) contains Entity1 but not Entity3.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::Part & partA = fix.m_partA ;
-  stk::mesh::Part & partB = fix.m_partB ;
-
-  stk::mesh::Selector selector = partA | !partB;
-  //std::cout << "Selector = " << selector << std::endl;
-
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-}
-
-
-// plus copy constructor
-/** \brief Verify (PartA AND !(PartB OR PartC)) contains Entity1 but
- * not Entity2.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
 
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
-
-  stk::mesh::Selector selector = partA & !(partB | partC);
-  //std::cout << "Selector = " << selector << std::endl;
-
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-
-  stk::mesh::Selector newSelector(selector);
-  // Should be the same:
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = newSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = newSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-
+  stk::mesh::Selector selector = (partA & partB) | partC;
+  stk::mesh::Selector anotherSelector(selector);
+  EXPECT_TRUE(selector == anotherSelector);
 }
 
-
-/** \brief test on Selector operator for Entity
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, entityTest )
-{
-  {
-    SelectorFixture fix ;
-    initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-    stk::mesh::Part & partA = fix.m_partA ;
-    stk::mesh::Part & partB = fix.m_partB ;
-    stk::mesh::Selector selector = partA & !partB;
-
-    const stk::mesh::Entity pEntity = fix.m_entity5;
-    bool result = selector(mesh.bucket(pEntity));
-    STKUNIT_EXPECT_FALSE(result);
-  }
-
-}
-
-/** \brief Verify the default constructor does not contain Entity1.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
+STKUNIT_UNIT_TEST(Verify, usingSelectField)
 {
   SelectorFixture fix ;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
 
-  stk::mesh::Selector selector;
-  //std::cout << "Selector = " << selector << std::endl;
+  stk::mesh::Selector selectFieldA = stk::mesh::selectField(fix.m_fieldA);
+  stk::mesh::Selector selectFieldABC = stk::mesh::selectField(fix.m_fieldABC);
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartASelector[numEntities]         = {true , true , false, false, false};
+  bool gold_shouldEntityBeInPartBSelector[numEntities]         = {false, true , true , false, false};
+  bool gold_shouldEntityBeInPartCSelector[numEntities]         = {false, false, true , true , false};
+  bool gold_shouldEntityBeInPartsABCUnionSelector[numEntities] = {true , true , true , true , false};
+
+  testSelectorWithBuckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
 }
 
-
-/** \brief Verify flipping the complement bit on an OR expression
- * works correctly.
- * Verify !(PartA OR PartB) does not contain Entity1, Entity2,
- * or Entity3, and does contain Entity4.  Then check that !!(PartA OR
- * PartB) does contain Entity1, Entity2, and Entity3, and not Entity4.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
+STKUNIT_UNIT_TEST(Verify, selectorContainsPart)
 {
   SelectorFixture fix ;
   initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
 
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
-  stk::mesh::Selector notOrSelector = partA | partB;
-  //std::cout << "Or Selector = " << notOrSelector << std::endl;
-  notOrSelector.complement();
-  //std::cout << "Not Or Selector = " << notOrSelector << std::endl;
+  stk::mesh::Part & partC = fix.m_partC ;
+  stk::mesh::Part & partD = fix.m_partD ;
+  stk::mesh::Selector selector =  partA | partB | (!partC) | partD;
+  std::cout << "select_part selector = " << selector << std::endl;
+  STKUNIT_EXPECT_TRUE (selector(partA));
+  STKUNIT_EXPECT_TRUE (selector(partB));
+  STKUNIT_EXPECT_FALSE(selector(partC));
+  STKUNIT_EXPECT_TRUE (selector(partD));
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = notOrSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = notOrSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = notOrSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = notOrSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
+  selector = partA | ( !( (partA & partB) | partC) & (!partD | partB) );
+  STKUNIT_EXPECT_TRUE (selector(partA));
+  STKUNIT_EXPECT_TRUE (selector(partB));
+  STKUNIT_EXPECT_FALSE(selector(partC));
+  STKUNIT_EXPECT_FALSE(selector(partD));
 
-  stk::mesh::Selector notNotOrSelector = !notOrSelector;
-  //std::cout << "Not Not Or Selector = " << notNotOrSelector << std::endl;
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = notNotOrSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = notNotOrSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = notNotOrSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = notNotOrSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
+  selector = partC & (!partD);
+  STKUNIT_EXPECT_FALSE(selector(partA));
+  STKUNIT_EXPECT_FALSE(selector(partB));
+  STKUNIT_EXPECT_TRUE (selector(partC));
+  STKUNIT_EXPECT_FALSE(selector(partD));
 }
 
-/** \brief Verify flipping the complement bit on an AND expression
- * works correctly.
- * Verify !(PartA AND PartB) does not contain Entity2, and does
- * contain Entity1, Entity3, and Entity4.
- * Then check that !!(PartA AND PartB) does contain Entity2, but not Entity1, Entity3, or Entity4.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::Part & partA = fix.m_partA ;
-  stk::mesh::Part & partB = fix.m_partB ;
-  stk::mesh::Selector notAndSelector = partA & partB;
-  //std::cout << "And Selector = " << notAndSelector << std::endl;
-  notAndSelector.complement();
-  //std::cout << "Not And Selector = " << notAndSelector << std::endl;
-
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = notAndSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = notAndSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = notAndSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = notAndSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-
-  stk::mesh::Selector notNotAndSelector = !notAndSelector;
-  //std::cout << "Not Not And Selector = " << notNotAndSelector << std::endl;
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = notNotAndSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = notNotAndSelector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = notNotAndSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = notNotAndSelector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-}
-
-/** \brief Verify flipping the complement bit on an empty Selector
- * works.
- * () does not contain Entity1.
- * !() contains Entity1.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::Selector selector;
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  selector.complement();
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-}
-
-
-/** \brief Verify the fancy output for (PartA OR PartB OR PartC OR
- * PartD).
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
+STKUNIT_UNIT_TEST(Verify, printingOfSelectorUnion)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -599,11 +490,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
   STKUNIT_EXPECT_EQUAL( "(((PartA | PartB) | PartC) | PartD)" , msg.str() );
 }
 
-
-/** \brief Verify the fancy output for (PartA AND PartB AND PartC).
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
+STKUNIT_UNIT_TEST(Verify, printingOfSelectorIntersection)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -618,11 +505,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
   STKUNIT_EXPECT_TRUE( msg.str() == "((PartA & PartB) & PartC)" );
 }
 
-
-/** \brief Verify the fancy output for a complex expression.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
+STKUNIT_UNIT_TEST(Verify, printingOfGeneralSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -638,288 +521,29 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
   STKUNIT_EXPECT_EQUAL( "(PartA | (!(((PartA & PartB) | PartC)) & (!(PartD) | PartB)))" , msg.str() );
 }
 
-
-/** \brief Verify \ref stk::mesh::selectIntersection
- * "selectIntersection" works correctly.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
+STKUNIT_UNIT_TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
 {
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
+    stk::mesh::Selector selectAll;
+    selectAll.complement();
 
-  stk::mesh::PartVector parts ;
-  parts.push_back( & fix.m_partA );
-  parts.push_back( & fix.m_partB );
-  stk::mesh::Selector selector = selectIntersection(parts);
+    stk::mesh::Selector anotherSelectAll;
+    anotherSelectAll.complement();
 
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity5);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_FALSE(result);
-  }
-
-  std::ostringstream msg;
-  msg << selector;
-  STKUNIT_EXPECT_EQ("(PartA & PartB)", msg.str());
+    {
+        stk::mesh::Selector selectAllANDAll = selectAll & anotherSelectAll;
+        std::ostringstream description;
+        description << selectAllANDAll;
+        STKUNIT_EXPECT_EQUAL( "(!(NOTHING) & !(NOTHING))", description.str());
+    }
+    {
+        stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;
+        std::ostringstream description;
+        description << selectAllORAll;
+        STKUNIT_EXPECT_EQUAL( "(!(NOTHING) | !(NOTHING))", description.str());
+    }
 }
 
-
-/** \brief Verify \ref stk::mesh::selectUnion "selectUnion" works
- * correctly.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::PartVector parts ;
-  parts.push_back( & fix.m_partA );
-  parts.push_back( & fix.m_partB );
-  parts.push_back( & fix.m_partC );
-  stk::mesh::Selector selector = selectUnion(parts);
-
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity2);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity3);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity4);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity5);
-    bool result = selector(bucket);
-    STKUNIT_ASSERT_FALSE(result);
-  }
-
-  std::ostringstream msg;
-  msg << selector;
-  std::cout << "msg.str() = " << msg.str() << std::endl;
-  STKUNIT_EXPECT_EQUAL( "((PartA | PartB) | PartC)", msg.str() );
-}
-
-
-/** \brief Verify unions and intersections of default constructors and
- * their complements.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
-  SelectorFixture fix ;
-  initialize(fix);
-  const stk::mesh::BulkData& mesh = fix.get_BulkData();
-
-  stk::mesh::Selector selectNone;
-  stk::mesh::Selector selectAll;
-  selectAll.complement();
-  {
-    stk::mesh::Selector selector = selectNone & selectAll;
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    stk::mesh::Selector selector = selectNone | selectAll;
-    const stk::mesh::Bucket & bucket = mesh.bucket(fix.m_entity1);
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-
-}
-
-/** \brief Verify default \ref stk::mesh::Selector "selectors" work
- * well with \ref stk::mesh::Part "mesh part" instantiated \ref
- * stk::mesh::Selector "selectors".
- *
- * In particular, check that (() OR
- * PartA) contains Entity1 and (!() AND PartA) contains Entity1.
- *
- */
-
-STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-
-  stk::mesh::Part & partA = fix.m_partA ;
-  stk::mesh::Selector selectNone;
-  stk::mesh::Selector selectAll;
-  selectAll.complement();
-  stk::mesh::Selector selectA = partA;
-  stk::mesh::Selector selectNoneOrA = selectNone | selectA;
-  stk::mesh::Selector selectAllAndA = selectAll & selectA;
-  {
-    const stk::mesh::Bucket & bucket = fix.get_BulkData().bucket(fix.m_entity1);
-    bool result = selectNoneOrA(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.get_BulkData().bucket(fix.m_entity1);
-    bool result = selectAllAndA(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-}
-
-
-/** \brief Verify copy constructed \ref stk::mesh::Selector "selector" creates same pretty print output.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, copyConstructor )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-
-  stk::mesh::Part & partA = fix.m_partA ;
-  stk::mesh::Part & partB = fix.m_partB ;
-  stk::mesh::Part & partC = fix.m_partC ;
-  stk::mesh::Selector selectA = (partA & partB) | partC;
-  stk::mesh::Selector anotherSelectA(selectA);
-  std::ostringstream descriptionA;
-  descriptionA << selectA;
-  std::ostringstream descriptionAnotherA;
-  descriptionAnotherA << anotherSelectA;
-  STKUNIT_EXPECT_EQUAL( descriptionA.str() == descriptionAnotherA.str(), true );
-}
-
-
-/** \brief Verify pretty printing of default constructors and their
- * complements works well.
- * In particular !() AND !() and (!() OR !()) == !(() AND ()).
- *
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, AlliuAll )
-{
-  stk::mesh::Selector selectAll;
-  selectAll.complement();
-
-  stk::mesh::Selector anotherSelectAll;
-  anotherSelectAll.complement();
-
-  {
-    stk::mesh::Selector selectAllANDAll = selectAll & anotherSelectAll;
-    std::ostringstream description;
-    description << selectAllANDAll;
-    STKUNIT_EXPECT_EQUAL( "(!(NOTHING) & !(NOTHING))", description.str() );
-  }
-  {
-    stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;
-    std::ostringstream description;
-    description << selectAllORAll;
-    STKUNIT_EXPECT_EQUAL( "(!(NOTHING) | !(NOTHING))", description.str() );
-  }
-}
-
-/** \brief Verify that the 'selectField' selector works correctly.
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, selectField )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-
-  stk::mesh::Selector selectA = stk::mesh::selectField(fix.m_fieldA);
-  stk::mesh::Selector selectABC = stk::mesh::selectField(fix.m_fieldABC);
-  {
-    //entity1 is in partA, so entity1's bucket should be selected by selectA:
-    const stk::mesh::Bucket & bucket = fix.get_BulkData().bucket(fix.m_entity1);
-    bool result = selectA(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    //entity3 is not in partA, so entity3's bucket should not be selected by selectA:
-    const stk::mesh::Bucket & bucket = fix.get_BulkData().bucket(fix.m_entity3);
-    bool result = selectA(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    //entity3 is in partB, so entity3's bucket should be selected by selectABC:
-    const stk::mesh::Bucket & bucket = fix.get_BulkData().bucket(fix.m_entity3);
-    bool result = selectABC(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-}
-
-/** \brief Verify operator()(Part&) works as expected
- *
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, select_part )
-{
-  SelectorFixture fix ;
-  initialize(fix);
-
-  stk::mesh::Part & partA = fix.m_partA ;
-  stk::mesh::Part & partB = fix.m_partB ;
-  stk::mesh::Part & partC = fix.m_partC ;
-  stk::mesh::Part & partD = fix.m_partD ;
-  stk::mesh::Selector selector =  partA | partB | (!partC) | partD;
-  std::cout << "select_part selector = " << selector << std::endl;
-  STKUNIT_EXPECT_TRUE(selector(partA));
-  STKUNIT_EXPECT_TRUE(selector(partB));
-  STKUNIT_EXPECT_FALSE(selector(partC));
-  STKUNIT_EXPECT_TRUE(selector(partD));
-
-  selector =
-    partA |
-    ( !( (partA & partB) | partC)
-      &
-      (!partD | partB)
-      );
-
-  STKUNIT_EXPECT_TRUE(selector(partA));
-  STKUNIT_EXPECT_TRUE(selector(partB));
-  STKUNIT_EXPECT_FALSE(selector(partC));
-  STKUNIT_EXPECT_FALSE(selector(partD));
-
-  selector = partC & (!partD);
-  STKUNIT_EXPECT_FALSE(selector(partA));
-  STKUNIT_EXPECT_FALSE(selector(partB));
-  STKUNIT_EXPECT_TRUE(selector(partC));
-  STKUNIT_EXPECT_FALSE(selector(partD));
-
-}
-
-/** \brief Verify operator<(const Selector&) enforces strict weak ordering
- *  This is not an exhaustive test of all possible combinations, but does test
- *  some specific cases that were previously incorrect as well as some simple
- *  combinations of operators.
- */
-STKUNIT_UNIT_TEST( UnitTestSelector, less_than_operator )
+STKUNIT_UNIT_TEST(Verify, usingLessThanOperator)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -934,49 +558,59 @@ STKUNIT_UNIT_TEST( UnitTestSelector, less_than_operator )
   const unsigned ordC = partC.mesh_meta_data_ordinal();
   const unsigned ordD = partD.mesh_meta_data_ordinal();
 
-  STKUNIT_ASSERT_TRUE( ordA < ordB && ordB < ordC && ordC < ordD );
+  STKUNIT_ASSERT_TRUE(ordA < ordB && ordB < ordC && ordC < ordD);
 
-  stk::mesh::Selector lhs, rhs;
-  lhs |= partA;
-  rhs |= partB;
-  STKUNIT_EXPECT_FALSE( !(lhs < rhs) && !(rhs < lhs) );
-  lhs &= partD;
-  rhs &= partC;
-  STKUNIT_EXPECT_FALSE( !(lhs < rhs) && !(rhs < lhs) );
+  stk::mesh::Selector partASelector = partA;
+  STKUNIT_EXPECT_FALSE(partASelector < partASelector);
 
-  stk::mesh::Selector lhs2, rhs2;
-  lhs2 &= partA;
-  rhs2 &= partB;
-  STKUNIT_EXPECT_FALSE( !(lhs2 < rhs2) && !(rhs2 < lhs2) );
-  lhs2 &= partD;
-  rhs2 &= partC;
-  STKUNIT_EXPECT_FALSE( !(lhs2 < rhs2) && !(rhs2 < lhs2) );
+  stk::mesh::Selector partBSelector = partB;
+  STKUNIT_EXPECT_TRUE(partASelector < partBSelector);
 
-  stk::mesh::Selector lhs3, rhs3;
-  lhs3 -= partA;
-  rhs3 -= partB;
-  STKUNIT_EXPECT_FALSE( !(lhs3 < rhs3) && !(rhs3 < lhs3) );
-  lhs3 -= partD;
-  rhs3 -= partC;
-  STKUNIT_EXPECT_FALSE( !(lhs3 < rhs3) && !(rhs3 < lhs3) );
+  stk::mesh::Selector partAIntersectPartDSelector = partA & partD;
+  stk::mesh::Selector partBIntersectPartCSelector = partB & partC;
+  STKUNIT_EXPECT_TRUE(partAIntersectPartDSelector < partBIntersectPartCSelector);
 
-  stk::mesh::Selector lhs4(partA), rhs4(partB);
-  STKUNIT_EXPECT_FALSE( !(lhs4 < rhs4) && !(rhs4 < lhs4) );
+  stk::mesh::Selector partCIntersectPartBSelectorOrderMatters = partC & partB;
+  stk::mesh::Selector partDIntersectPartASelectorOrderMatters = partD & partA;
+  STKUNIT_EXPECT_TRUE(partCIntersectPartBSelectorOrderMatters < partDIntersectPartASelectorOrderMatters);
 
-  stk::mesh::Selector same(partA);
-  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
+  stk::mesh::Selector partAUnionPartBSelector     = partA | partB;
+  stk::mesh::Selector partAIntersectPartBSelector = partA & partB;
+  STKUNIT_EXPECT_TRUE(partASelector < partAUnionPartBSelector);
+  STKUNIT_EXPECT_TRUE(partAUnionPartBSelector < partAIntersectPartBSelector);
 
-  same |= partB;
-  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
-
-  same &= partC;
-  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
-
-  same -= partD;
-  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
+  stk::mesh::Selector partAUnionPartBIntersectPartCSelector = partAUnionPartBSelector & partC;
+  STKUNIT_EXPECT_TRUE(partAUnionPartBSelector < partAUnionPartBIntersectPartCSelector);
 }
 
-/** \} */
-
+void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[])
+{
+  const stk::mesh::BulkData& stkMeshBulkData = selectorFixture.get_BulkData();
+  {
+    const stk::mesh::Bucket & bucket = stkMeshBulkData.bucket(selectorFixture.m_entity1);
+    bool result = selector(bucket);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[0], result);
+  }
+  {
+    const stk::mesh::Bucket & bucket = stkMeshBulkData.bucket(selectorFixture.m_entity2);
+    bool result = selector(bucket);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[1], result);
+  }
+  {
+    const stk::mesh::Bucket & bucket = stkMeshBulkData.bucket(selectorFixture.m_entity3);
+    bool result = selector(bucket);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[2], result);
+  }
+  {
+    const stk::mesh::Bucket & bucket = stkMeshBulkData.bucket(selectorFixture.m_entity4);
+    bool result = selector(bucket);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[3], result);
+  }
+  {
+    const stk::mesh::Bucket & bucket = stkMeshBulkData.bucket(selectorFixture.m_entity5);
+    bool result = selector(bucket);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[4], result);
+  }
+}
 
 } // namespace
