@@ -11,13 +11,8 @@
 
 #include <ios> // #include <iosfwd> // ios_base is not defined in the forward file
 #include <string>
+#include <vector>
 #include <mpi.h>
-
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/util/Bootstrap.hpp>
-
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Writer_fwd.hpp>
 
 namespace sierra {
 

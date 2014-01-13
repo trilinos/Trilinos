@@ -40,6 +40,8 @@
 #include <stdexcept>
 #include <limits>
 
+#include <boost/shared_ptr.hpp>
+
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTable.hpp>
