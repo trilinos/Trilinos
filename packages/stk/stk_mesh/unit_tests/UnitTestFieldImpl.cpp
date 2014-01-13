@@ -97,26 +97,28 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   //------------------------------
 
-  FieldBase * const f3 =
-    &meta_data.declare_field<VectorField>( std::string("F3"), 2/* #states*/);
+//  FieldBase * const f3 = &meta_data.declare_field<VectorField>( std::string("F3"), 2/* #states*/);
+  FieldBase * const nodeField = &meta_data.declare_field<VectorField>( std::string("nodeField"), 2/* #states*/);
+  FieldBase * const edgeField = &meta_data.declare_field<VectorField>( std::string("edgeField"), 2/* #states*/);
+  FieldBase * const faceField = &meta_data.declare_field<VectorField>( std::string("faceField"), 2/* #states*/);
 
-  FieldBase * const f3_old = f3->field_state( StateOld ) ;
+  FieldBase * const f3_old = nodeField->field_state( StateOld ) ;
 
   //------------------------------
   // Test for correctness of vector of declared fields.
-  STKUNIT_ASSERT( allocated_fields.size() == 3 );
+  STKUNIT_ASSERT_EQ(7u,  allocated_fields.size());
   STKUNIT_ASSERT( f2 == allocated_fields[0] );
-  STKUNIT_ASSERT( f3 == allocated_fields[1] );
+  STKUNIT_ASSERT( nodeField == allocated_fields[1] );
 
   //------------------------------
   // Test for correctness of field internal state access:
 
   STKUNIT_ASSERT( f2     == f2->field_state( StateNone ) );
   STKUNIT_ASSERT( NULL   == f2->field_state( StateOld ) );
-  STKUNIT_ASSERT( f3     == f3->field_state( StateNew ) );
-  STKUNIT_ASSERT( f3_old == f3->field_state( StateOld ) );
-  STKUNIT_ASSERT( NULL   == f3->field_state( StateNM1 ) );
-  STKUNIT_ASSERT( f3     == f3_old->field_state( StateNew ) );
+  STKUNIT_ASSERT( nodeField     == nodeField->field_state( StateNew ) );
+  STKUNIT_ASSERT( f3_old == nodeField->field_state( StateOld ) );
+  STKUNIT_ASSERT( NULL   == nodeField->field_state( StateNM1 ) );
+  STKUNIT_ASSERT( nodeField     == f3_old->field_state( StateNew ) );
   STKUNIT_ASSERT( f3_old == f3_old->field_state( StateOld ) );
   STKUNIT_ASSERT( NULL   == f3_old->field_state( StateNM1 ) );
 
@@ -130,48 +132,48 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Declare three restrictions:
 
-  meta_data.declare_field_restriction(*f3, 0 , pA , stride );
-  meta_data.declare_field_restriction(*f3, 1 , pB , stride + 1 );
-  meta_data.declare_field_restriction(*f3, 2 , pC , stride + 2 );
+  meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pA , stride );
+  meta_data.declare_field_restriction(*edgeField, stk::topology::EDGE_RANK , pB , stride + 1 );
+  meta_data.declare_field_restriction(*faceField, stk::topology::FACE_RANK , pC , stride + 2 );
 
   // Check for correctness of restrictions:
 
-  STKUNIT_ASSERT( f3->restrictions().size() == 3 );
-  STKUNIT_ASSERT( f3->restrictions()[0] ==
-                  FieldRestriction( 0 , pA ) );
-  STKUNIT_ASSERT( f3->restrictions()[1] ==
-                  FieldRestriction( 1 , pB ) );
-  STKUNIT_ASSERT( f3->restrictions()[2] ==
-                  FieldRestriction( 2 , pC ) );
+  STKUNIT_ASSERT( nodeField->restrictions().size() == 1 );
+  STKUNIT_ASSERT( nodeField->restrictions()[0] ==
+                  FieldRestriction( stk::topology::NODE_RANK , pA ) );
+  STKUNIT_ASSERT( edgeField->restrictions()[0] ==
+                  FieldRestriction( stk::topology::EDGE_RANK , pB ) );
+  STKUNIT_ASSERT( faceField->restrictions()[0] ==
+                  FieldRestriction( stk::topology::FACE_RANK , pC ) );
 
-  meta_data.declare_field_restriction(*f3, 0 , pB , stride + 1 );
+  meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pB , stride + 1 );
 
-  STKUNIT_ASSERT_EQUAL( f3->max_size( 0 ) , 20u );
+  STKUNIT_ASSERT_EQUAL( nodeField->max_size( 0 ) , 20u );
 
   //------------------------------
   // Check for error detection of bad stride:
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*f3, 0 , pA , bad_stride ),
+      meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pA , bad_stride ),
       std::runtime_error
     );
-    STKUNIT_ASSERT( f3->restrictions().size() == 4 );
+    STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
   }
 
   // Check for error detection in re-declaring an incompatible
   // field restriction.
   {
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*f3, 0 , pA , stride + 1 ),
+      meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pA , stride + 1 ),
       std::runtime_error
     );
-    STKUNIT_ASSERT( f3->restrictions().size() == 4 );
+    STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
   }
 
   // Verify and clean out any redundant restructions:
 
-  STKUNIT_ASSERT( f3->restrictions().size() == 4 );
+  STKUNIT_ASSERT( nodeField->restrictions().size() == 2 );
 
   //------------------------------
   // Introduce a redundant restriction, clean it, and

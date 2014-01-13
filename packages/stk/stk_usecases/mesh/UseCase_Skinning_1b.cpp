@@ -122,17 +122,17 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
       stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-      const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+//      const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
-      const stk::mesh::EntityRank particle_rank = element_rank;
+//      const stk::mesh::EntityRank particle_rank = element_rank;
 
       stk::mesh::Part & skin_part =
         fixture.m_meta.declare_part("skin_part");
 
-      stk::mesh::put_field( fixture.m_coord_field,
-                            particle_rank,
-                            fixture.m_meta.universal_part(),
-                            3 );
+//      stk::mesh::put_field( fixture.m_coord_field,
+//                            particle_rank,
+//                            fixture.m_meta.universal_part(),
+//                            3 );
 
       fixture.m_meta.commit();
 

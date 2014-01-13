@@ -4,9 +4,6 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_rebalance/Rebalance.hpp>
-#include <stk_rebalance/ZoltanPartition.hpp>
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -98,24 +95,6 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   }
 
   stk::mesh::BulkData & bulk_data = fixture.bulk_data();
-
-  // time rebalance bulk_data
-  {
-    Teuchos::ParameterList emptyList;
-    stk::rebalance::Zoltan zoltan_partition(pm, meta_data.spatial_dimension(), emptyList);
-    stk::mesh::Selector selector(meta_data.locally_owned_part());
-
-    double start_time = stk::wall_time();
-
-    typedef stk::mesh::Field< double, stk::mesh::Cartesian> coord_field_type;
-    coord_field_type *coord_field = fixture.meta_data().get_field<coord_field_type>("coordinates");
-    stk::rebalance::rebalance(bulk_data,
-                              selector,
-                              coord_field,
-                              NULL /*weight field*/,
-                              zoltan_partition);
-    timings[REBALANCE_PHASE_ID] = stk::wall_dtime(start_time);
-  }
 
   // time skin bulk_data
   {

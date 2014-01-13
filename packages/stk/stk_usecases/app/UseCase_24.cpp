@@ -62,8 +62,10 @@ typedef mesh::EntityArray<VectorIPFieldType> VectorIPArray;
 void use_case_24_boundary_algorithm(
   mesh::BulkData & bulkData ,
   mesh::Part & quad_block,
-  const ScalarIPFieldType & pressure_ip,
-  const VectorIPFieldType & mass_flux_ip,
+  const ScalarIPFieldType & side_pressure_ip,
+  const ScalarIPFieldType & element_pressure_ip,
+  const VectorIPFieldType & side_mass_flux_ip,
+  const VectorIPFieldType & element_mass_flux_ip,
   const VectorIPFieldType & momentum_flux_bip,
   const ScalarFieldType   & pressure,
   const VectorFieldType   & velocity,
@@ -200,32 +202,36 @@ bool use_case_24_driver(
   // and interior integration points
   //-----------------------------------------
 
-  ScalarIPFieldType & pressure_ip =
-    fem_meta.declare_field< ScalarIPFieldType >( "pressure_ip" );
+  ScalarIPFieldType & side_pressure_ip =
+    fem_meta.declare_field< ScalarIPFieldType >( "side_pressure_ip" );
 
   // first on boundary ips
-  mesh::put_field( pressure_ip , side_rank , quad_io1 , numBoundaryIps );
-  mesh::put_field( pressure_ip , side_rank , quad_io2 , numBoundaryIps );
-  mesh::put_field( pressure_ip , side_rank , quad_io3 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , side_rank , quad_io1 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , side_rank , quad_io2 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , side_rank , quad_io3 , numBoundaryIps );
 
+  ScalarIPFieldType & element_pressure_ip =
+    fem_meta.declare_field< ScalarIPFieldType >( "element_pressure_ip" );
   // second on all interior element ips
-  mesh::put_field( pressure_ip , element_rank , hex_io1 , numElementSCSIps );
+  mesh::put_field( element_pressure_ip , element_rank , hex_io1 , numElementSCSIps );
 
   //-----------------------------------------
   // mass_flux_ip lives both on boundary
   // and interior integration points
   //-----------------------------------------
 
-  VectorIPFieldType & mass_flux_ip =
-    fem_meta.declare_field< VectorIPFieldType >( "mass_flux_ip" );
+  VectorIPFieldType & side_mass_flux_ip =
+    fem_meta.declare_field< VectorIPFieldType >( "side_mass_flux_ip" );
 
   // first on boundary ips
-  mesh::put_field(mass_flux_ip , side_rank , quad_io1 , SpatialDim, numBoundaryIps );
-  mesh::put_field(mass_flux_ip , side_rank , quad_io2 , SpatialDim, numBoundaryIps );
-  mesh::put_field(mass_flux_ip , side_rank , quad_io3 , SpatialDim, numBoundaryIps );
+  mesh::put_field(side_mass_flux_ip , side_rank , quad_io1 , SpatialDim, numBoundaryIps );
+  mesh::put_field(side_mass_flux_ip , side_rank , quad_io2 , SpatialDim, numBoundaryIps );
+  mesh::put_field(side_mass_flux_ip , side_rank , quad_io3 , SpatialDim, numBoundaryIps );
 
+  VectorIPFieldType & element_mass_flux_ip =
+    fem_meta.declare_field< VectorIPFieldType >( "element_mass_flux_ip" );
   // second on all interior element ips
-  mesh::put_field(mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
+  mesh::put_field(element_mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
 
   // Commit (finalize) the meta data (part and field definitions).
   // Is now ready to be used in the creation and management of mesh bulk data.
@@ -258,12 +264,12 @@ bool use_case_24_driver(
   //------------------------------------------------------------------
   // process only two of the sidesets
   use_case_24_boundary_algorithm( mesh_bulk_data , quad_io1,
-                                  pressure_ip, mass_flux_ip,
+                                  side_pressure_ip, element_pressure_ip, side_mass_flux_ip, element_mass_flux_ip,
                                   momentum_flux_bip, pressure, velocity,
                                   nodal_momentum_flux );
 
   use_case_24_boundary_algorithm( mesh_bulk_data , quad_io3,
-                                  pressure_ip, mass_flux_ip,
+                                  side_pressure_ip, element_pressure_ip, side_mass_flux_ip, element_mass_flux_ip,
                                   momentum_flux_bip, pressure, velocity,
                                   nodal_momentum_flux );
 
@@ -283,8 +289,10 @@ bool use_case_24_driver(
 void use_case_24_boundary_algorithm(
   mesh::BulkData & bulkData ,
   mesh::Part & quad_block,
-  const ScalarIPFieldType & pressure_ip,
-  const VectorIPFieldType & mass_flux_ip,
+  const ScalarIPFieldType & side_pressure_ip,
+  const ScalarIPFieldType & element_pressure_ip,
+  const VectorIPFieldType & side_mass_flux_ip,
+  const VectorIPFieldType & element_mass_flux_ip,
   const VectorIPFieldType & momentum_flux_bip,
   const ScalarFieldType   & pressure,
   const VectorFieldType   & velocity,
@@ -337,8 +345,8 @@ void use_case_24_boundary_algorithm(
           //=======================================
 
           // define some arrays for bip data
-          ScalarIPArray p_bip_array(pressure_ip, faceBucket, i);
-          VectorIPArray mf_bip_array(mass_flux_ip, faceBucket, i);
+          ScalarIPArray p_bip_array(side_pressure_ip, faceBucket, i);
+          VectorIPArray mf_bip_array(side_mass_flux_ip, faceBucket, i);
           VectorIPArray mom_flux_bip(momentum_flux_bip, faceBucket, i);
 
           // FIXME SPD 10/22/2008
@@ -387,8 +395,8 @@ void use_case_24_boundary_algorithm(
           //=======================================
 
           // define some arrays for bip data
-          ScalarIPArray p_ip_array(pressure_ip, elem_bucket, elem_bordinal);
-          VectorIPArray mf_ip_array(mass_flux_ip, elem_bucket, elem_bordinal);
+          ScalarIPArray p_ip_array(element_pressure_ip, elem_bucket, elem_bordinal);
+          VectorIPArray mf_ip_array(element_mass_flux_ip, elem_bucket, elem_bordinal);
 
           // FIXME SPD 10/22/2008
           // I do not like to remember specific indexes, e.g. dimension(0) means,

@@ -720,11 +720,11 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   // Salinas uses the "implicit id" which is the ordering of the nodes
   // in the "undecomposed" or "serial" mesh as user-visible ids
   // instead of the "global" ids. If there exists a stk-field with the
-  // name "implicit_ids", then populate the field with the correct
+  // name "implicit_node_ids", then populate the field with the correct
   // data.
-  stk::mesh::FieldBase *imp_id_field = mesh.meta_data().get_field<stk::mesh::FieldBase> ("implicit_ids");
-  if (imp_id_field) {
-    stk::io::field_data_from_ioss(bulk, imp_id_field, nodes, nb, "implicit_ids");
+  stk::mesh::FieldBase *implicit_node_id_field = mesh.meta_data().get_field<stk::mesh::FieldBase> ("implicit_node_ids");
+  if (implicit_node_id_field) {
+    stk::io::field_data_from_ioss(bulk, implicit_node_id_field, nodes, nb, "implicit_ids");
   }
 
 
@@ -824,8 +824,8 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       Ioss::NameList names;
       entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
 
-      stk::mesh::FieldBase *imp_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_ids");
-      if (imp_id_field) {
+      stk::mesh::FieldBase *implicit_elem_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_element_ids");
+      if (implicit_elem_id_field) {
 	elements_needed = true;
       } else {
 	for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
@@ -858,10 +858,10 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       // Salinas uses the "implicit id" which is the ordering of the nodes
       // in the "undecomposed" or "serial" mesh as user-visible ids
       // instead of the "global" ids. If there exists a stk-field with the
-      // name "implicit_ids", then populate the field with the correct
+      // name "implicit_element_ids", then populate the field with the correct
       // data.
-      if (imp_id_field) {
-        stk::io::field_data_from_ioss(bulk, imp_id_field, elements, entity, "implicit_ids");
+      if (implicit_elem_id_field) {
+        stk::io::field_data_from_ioss(bulk, implicit_elem_id_field, elements, entity, "implicit_element_ids");
       }
 
       // Add all element attributes as fields.
