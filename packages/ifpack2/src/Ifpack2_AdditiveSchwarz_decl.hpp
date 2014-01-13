@@ -157,6 +157,8 @@ b =
   9 \\
  16
 \end{array} \right)
+.
+\f]
 Suppose that we give the first two rows of A and b to Process 0, and
 the last two rows of A and b to Process 1.
 
@@ -201,15 +203,18 @@ use the Zero combine mode with additive Schwarz, then each process has
 to solve a linear system with the following 3 x 3 matrix:
 \f[
 A_{local} =
+\left(
 \begin{array}{rrr}
   2 & -1 &  0 \\
  -1 &  2 & -1 \\
   0 & -1 &  2
 \end{array} \right).
+\f]
 The inverse of this matrix is
 \f[
 A_{local}^{-1} =
 \frac{1}{4} \cdot
+\left(
 \begin{array}{rrr}
   3 &  2 &  1 \\
   2 &  4 &  2 \\
