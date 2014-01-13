@@ -50,6 +50,25 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+namespace Sacado {
+namespace MP {
+
+/**\brief  Define a partition of a View of Sacado::MP::Vector type */
+struct VectorPartition {
+  unsigned begin ;
+  unsigned end ;
+
+  template< typename iType0 , typename iType1 >
+  KOKKOS_INLINE_FUNCTION
+  VectorPartition( const iType0 & i0 , const iType1 & i1 ) : begin(i0), end(i1) {}
+};
+
+}
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 namespace Kokkos {
 namespace Impl {
 
@@ -341,72 +360,6 @@ public:
     }
 
   //------------------------------------
-
-  struct Partition {
-    typename traits::size_type rank ;
-    typename traits::size_type size ;
-    KOKKOS_INLINE_FUNCTION
-    Partition( typename traits::size_type r ,
-               typename traits::size_type s )
-      : rank( r ), size( s ) {}
-  };
-
-  template< class ViewRHS >
-  KOKKOS_INLINE_FUNCTION
-  View( const ViewRHS & rhs ,
-        typename Impl::enable_if< is_view< ViewRHS >::value &&
-                                  Impl::is_same< typename ViewRHS::traits::specialize ,
-                                                 typename traits::specialize >::value &&
-                                  Impl::is_same< typename ViewRHS::traits::array_type ,
-                                                 typename traits::array_type >::value &&
-                                  Impl::is_same< typename ViewRHS::traits::device_type ,
-                                                 typename traits::device_type >::value &&
-                                  ( ! traits::is_managed ) , Partition >::type & part )
-    : m_ptr_on_device(0)
-    {
-      typedef typename traits::shape_type   shape_type ;
-      typedef typename traits::scalar_type  scalar_type ;
-
-      if ( rhs.m_storage_size % part.size ) {
-        const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > unbalanced partitioning" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-        cuda_abort(msg);
-#else
-        throw std::runtime_error(msg);
-#endif
-      }
-
-      shape_type::assign( m_shape ,
-                          ( Rank == 0 ? rhs.m_shape.N0 / part.size : rhs.m_shape.N0 ) ,
-                          ( Rank == 1 ? rhs.m_shape.N1 / part.size : rhs.m_shape.N1 ) ,
-                          ( Rank == 2 ? rhs.m_shape.N2 / part.size : rhs.m_shape.N2 ) ,
-                          ( Rank == 3 ? rhs.m_shape.N3 / part.size : rhs.m_shape.N3 ) ,
-                          ( Rank == 4 ? rhs.m_shape.N4 / part.size : rhs.m_shape.N4 ) ,
-                          ( Rank == 5 ? rhs.m_shape.N5 / part.size : rhs.m_shape.N5 ) ,
-                          ( Rank == 6 ? rhs.m_shape.N6 / part.size : rhs.m_shape.N6 ) ,
-                          ( Rank == 7 ? rhs.m_shape.N7 / part.size : rhs.m_shape.N7 ) );
-
-      stride_type::assign( m_stride , rhs.m_stride.value );
-
-      // Original Sacado::MP::Vector length
-      m_storage_size = rhs.m_storage_size ;
-
-      if ( Impl::is_same< typename traits::array_layout , LayoutLeft >::value ) {
-        m_ptr_on_device = rhs.m_ptr_on_device + part.rank *
-                        ( 0 == Rank ? m_shape.N0 : m_stride.value * m_shape.N1 * (
-                        ( 1 == Rank ? 1 : m_shape.N2 * (
-                        ( 2 == Rank ? 1 : m_shape.N3 * (
-                        ( 3 == Rank ? 1 : m_shape.N4 * (
-                        ( 4 == Rank ? 1 : m_shape.N5 * (
-                        ( 5 == Rank ? 1 : m_shape.N6 * (
-                        ( 6 == Rank ? 1 : m_shape.N7 )))))))))))));
-      }
-      else { // if ( Impl::is_same< typename traits::array_layout , LayoutRight >::value )
-        m_ptr_on_device = rhs.m_ptr_on_device + part.rank * Impl::dimension( m_shape , unsigned(Rank) );
-      }
-    }
-
-  //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
   typedef Impl::if_c< traits::is_managed ,
@@ -479,12 +432,8 @@ public:
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
 
-  typedef Impl::if_c< ! traits::is_managed ,
-                      typename traits::scalar_type * ,
-                      Impl::ViewError::user_pointer_constructor_requires_unmanaged >
-    if_user_pointer_constructor ;
-
-  View( typename if_user_pointer_constructor::type ptr ,
+  template< typename T >
+  View( T * ptr ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
@@ -492,8 +441,12 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
+        typename Impl::enable_if<(
+          ( Impl::is_same<T,typename traits::scalar_type>::value ||
+            Impl::is_same<T,typename traits::const_scalar_type>::value ) &&
+          ! traits::is_managed ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
     {
       typedef typename traits::shape_type   shape_type ;
       typedef typename traits::scalar_type  scalar_type ;
@@ -503,10 +456,8 @@ public:
 
       verify_dimension_storage_static_size();
 
-      m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
-      m_ptr_on_device = if_user_pointer_constructor::select( ptr );
+      m_storage_size = Impl::dimension( m_shape , unsigned(Rank) );
     }
-
 
   //------------------------------------
   // Is not allocated
@@ -981,9 +932,10 @@ struct ViewAssignment< ViewSpecializeSacadoMPVector , ViewSpecializeSacadoMPVect
                     )>::type * = 0
                   )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
-    typedef typename View<DT,DL,DD,DM,ViewSpecializeSacadoMPVector>::shape_type   shape_type ;
-    typedef typename View<DT,DL,DD,DM,ViewSpecializeSacadoMPVector>::stride_type  stride_type ;
+    typedef ViewTraits<DT,DL,DD,DM>                         dst_traits ;
+    typedef View<DT,DL,DD,DM,ViewSpecializeSacadoMPVector>  dst_type ;
+    typedef typename dst_type::shape_type                   shape_type ;
+    typedef typename dst_type::stride_type                  stride_type ;
 
     ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
 
@@ -997,6 +949,74 @@ struct ViewAssignment< ViewSpecializeSacadoMPVector , ViewSpecializeSacadoMPVect
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
     Impl::ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Partition of compatible value and shape */
+
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,ViewSpecializeSacadoMPVector> & dst
+                , const View<ST,SL,SD,SM,ViewSpecializeSacadoMPVector> & src
+                , const Sacado::MP::VectorPartition & part
+                , const typename enable_if<(
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    ! ViewTraits<DT,DL,DD,DM>::is_managed
+                    )>::type * = 0
+                  )
+  {
+    typedef ViewTraits<DT,DL,DD,DM>                           dst_traits ;
+    typedef View<DT,DL,DD,DM,ViewSpecializeSacadoMPVector>    dst_type ;
+    typedef typename dst_type::shape_type                     dst_shape_type ;
+    typedef typename dst_type::stride_type                    dst_stride_type ;
+    typedef typename dst_traits::value_type                   dst_sacado_mp_vector_type ;
+    typedef typename dst_sacado_mp_vector_type::storage_type  dst_stokhos_storage_type ;
+
+    enum { DstRank         = dst_type::Rank };
+    enum { DstStaticLength = dst_stokhos_storage_type::is_static ? dst_stokhos_storage_type::static_size : 0 };
+
+    const int length = part.end - part.begin ;
+
+    if ( DstStaticLength && DstStaticLength != length ) {
+      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible partitioning" ;
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort(msg);
+#else
+      throw std::runtime_error(msg);
+#endif
+    }
+
+    dst_shape_type::assign( dst.m_shape ,
+                            ( DstRank == 0 ? length : src.m_shape.N0 ) ,
+                            ( DstRank == 1 ? length : src.m_shape.N1 ) ,
+                            ( DstRank == 2 ? length : src.m_shape.N2 ) ,
+                            ( DstRank == 3 ? length : src.m_shape.N3 ) ,
+                            ( DstRank == 4 ? length : src.m_shape.N4 ) ,
+                            ( DstRank == 5 ? length : src.m_shape.N5 ) ,
+                            ( DstRank == 6 ? length : src.m_shape.N6 ) ,
+                            ( DstRank == 7 ? length : src.m_shape.N7 ) );
+
+    dst_stride_type::assign( dst.m_stride , src.m_stride.value );
+
+    // Original Sacado::MP::Vector length
+    dst.m_storage_size = src.m_storage_size ;
+
+    if ( Impl::is_same< typename dst_traits::array_layout , LayoutLeft >::value ) {
+      dst.m_ptr_on_device = src.m_ptr_on_device + part.begin *
+                      ( 0 == DstRank ? 1 : dst.m_stride.value * (
+                      ( 1 == DstRank ? 1 : dst.m_shape.N1 * (
+                      ( 2 == DstRank ? 1 : dst.m_shape.N2 * (
+                      ( 3 == DstRank ? 1 : dst.m_shape.N3 * (
+                      ( 4 == DstRank ? 1 : dst.m_shape.N4 * (
+                      ( 5 == DstRank ? 1 : dst.m_shape.N5 * (
+                      ( 6 == DstRank ? 1 : dst.m_shape.N6 )))))))))))));
+    }
+    else { // if ( Impl::is_same< typename traits::array_layout , LayoutRight >::value )
+      dst.m_ptr_on_device = src.m_ptr_on_device + part.begin ;
+    }
   }
 };
 

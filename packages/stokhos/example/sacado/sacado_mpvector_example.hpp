@@ -258,9 +258,13 @@ struct view_kernel
   KOKKOS_INLINE_FUNCTION
   void operator() (device_type device) const
   {
-    typename local_view_type::Partition part( device.team_rank() , device.team_size() );
-    const local_view_type local_x( dev_x , part );
-    const local_view_type local_y( dev_y , part );
+    const int chunk = dev_x.dimension_1() / device.team_size();
+
+    const Sacado::MP::VectorPartition part( chunk * device.team_rank() ,
+                                            chunk * ( device.team_rank() + 1 ) );
+
+    const local_view_type local_x = Kokkos::subview<local_view_type>( dev_x , part );
+    const local_view_type local_y = Kokkos::subview<local_view_type>( dev_y , part );
     const int element = device.league_rank();
 
     // Apply evaluation function to this thread's fix-sized UQ sample set.
