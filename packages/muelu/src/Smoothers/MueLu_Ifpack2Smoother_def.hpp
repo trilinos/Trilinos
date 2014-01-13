@@ -144,7 +144,7 @@ namespace MueLu {
         size_t nRowsFine   = fineA->getGlobalNumRows();
         size_t nRowsCoarse = A_->getGlobalNumRows();
 
-        ratio = std::max(ratio, as<Scalar>(nRowsFine)/nRowsCoarse);
+        ratio = std::max(ratio, as<Scalar>(as<double>(nRowsFine)/nRowsCoarse));
       }
 
       this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
