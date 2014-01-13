@@ -63,7 +63,7 @@ STKUNIT_UNIT_TEST(many_parts, many_parts)
   start_time = stk::cpu_time();
 
   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
-  VectorField& field = meta.declare_field<VectorField>("field");
+  VectorField& field = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "field");
   for(size_t i=0; i<parts.size(); ++i) {
     const stk::mesh::Part& part = *parts[i];
     stk::mesh::put_field(field, stk::mesh::MetaData::NODE_RANK, part, 3);
