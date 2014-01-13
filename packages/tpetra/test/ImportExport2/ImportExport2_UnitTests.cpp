@@ -1544,6 +1544,70 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import, AdvancedConstructors, Ordinal )  {
+  // Test the remotePIDs Tpetra::Import constructor   
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;  
+  RCP<CrsMatrixType> A;
+
+  RCP<const ImportType> Import1, Import2;
+  int total_err=0;
+  int test_err=0;
+
+  // Build the sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+
+  // Grab its importer
+  Import1 = A->getGraph()->getImporter();
+
+  // Only test in parallel
+  if(Comm->getSize()==1) { TEST_EQUALITY(0,0); return;}
+
+  /////////////////////////////////////////////////////////
+  // Test #1: Constructor w/ remotePIDs test
+  /////////////////////////////////////////////////////////
+  {
+    test_err=0;
+
+    // Generate PID vector via getRemotePIDs
+    Teuchos::Array<int> pids;  
+    Tpetra::Import_Util::getRemotePIDs<Ordinal,Ordinal,Node>(*Import1,pids);
+
+    // Build a new (identical) importer via the other constructor 
+    Import2 = rcp(new ImportType(Import1->getSourceMap(),Import1->getTargetMap(),pids));
+    
+    // Compare
+    if(Import1->getNumSameIDs() != Import2->getNumSameIDs()) test_err++;
+    if(Import1->getNumPermuteIDs() != Import2->getNumPermuteIDs()) 
+      test_err++;
+    else {
+      for(size_t i=0; i<Import1->getNumPermuteIDs(); i++) {
+	test_err += (Import1->getPermuteFromLIDs()[i]!=Import2->getPermuteFromLIDs()[i]);
+      	test_err += (Import1->getPermuteToLIDs()[i]!=Import2->getPermuteToLIDs()[i]);
+      }      
+    }
+    if(Import1->getNumRemoteIDs() != Import2->getNumRemoteIDs()) 
+      test_err++;
+    else {
+      for(size_t i=0; i<Import1->getNumRemoteIDs(); i++) 
+	test_err += (Import1->getRemoteLIDs()[i]!=Import2->getRemoteLIDs()[i]);
+    }
+    if(Import1->getNumExportIDs() != Import2->getNumExportIDs()) 
+      test_err++;
+    else {
+      for(size_t i=0; i<Import1->getNumExportIDs(); i++) {
+	test_err += (Import1->getExportLIDs()[i]!=Import2->getExportLIDs()[i]);
+	test_err += (Import1->getExportPIDs()[i]!=Import2->getExportPIDs()[i]);
+      }
+    }   
+    total_err += test_err;
+  }
+ 
+  TEST_EQUALITY(total_err,0);
+}
+
+
   //
   // INSTANTIATIONS
   //
@@ -1551,7 +1615,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, GetPids, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, PackAndPrepareWithOwningPIDs, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, PackAndPrepareWithOwningPIDs, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import, AdvancedConstructors, ORDINAL )
 
 #   define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrixImportExport, doImport, ORDINAL, SCALAR ) \

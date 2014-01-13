@@ -5215,7 +5215,6 @@ namespace Tpetra {
     // Are we in reverse mode?
     bool reverseMode = false;
     if (!params.is_null()) reverseMode = params->get("Reverse Mode", reverseMode);
-    printf("CMS: Reverse Mode = %d\n",(int)reverseMode);fflush(stdout);
 
     // Sanity Checks
     TEUCHOS_TEST_FOR_EXCEPTION( !(reverseMode || getRowMap()->isSameAs(*RowTransfer.getSourceMap())), std::invalid_argument,
@@ -5445,12 +5444,7 @@ namespace Tpetra {
     /**** 7) Build Importer & Call ESFC             ****/
     /***************************************************/
     // Pre-build the importer using the existing PIDs
-
-    //    MyImport = new Epetra_Import(ColMap(),*MyDomainMap,NumRemotePIDs,RemotePIDs_ptr);
-    // CMS: Need to modify the Import constructor to use the existing PID list.  
-
-    RCP<Tpetra::Import<LO,GO,NT> > MyImport;
-    MyImport = rcp(new Tpetra::Import<LO,GO,NT>(MyDomainMap,MyColMap));
+    RCP<Tpetra::Import<LO,GO,NT> > MyImport = rcp(new Tpetra::Import<LO,GO,NT>(MyDomainMap,MyColMap,RemotePids));
     destMat->expertStaticFillComplete(MyDomainMap,MyRangeMap,MyImport);
 
     return destMat;

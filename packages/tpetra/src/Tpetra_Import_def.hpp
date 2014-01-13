@@ -81,6 +81,7 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+	Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
     using Teuchos::null;
@@ -119,7 +120,7 @@ namespace Tpetra {
       *out_ << os.str ();
     }
     if (source->isDistributed ()) {
-      setupExport (remoteGIDs);
+      setupExport (remoteGIDs,remotePIDs);
     }
     if (debug_) {
       std::ostringstream os;
@@ -139,7 +140,8 @@ namespace Tpetra {
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraImportDebugDefault)
   {
-    init (source, target, Teuchos::null);
+    Teuchos::Array<int> dummy;
+    init (source, target, dummy, Teuchos::null);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -150,7 +152,8 @@ namespace Tpetra {
     out_ (out),
     debug_ (tpetraImportDebugDefault)
   {
-    init (source, target, Teuchos::null);
+    Teuchos::Array<int> dummy;
+    init (source, target, dummy, Teuchos::null);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -161,7 +164,8 @@ namespace Tpetra {
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraImportDebugDefault)
   {
-    init (source, target, plist);
+    Teuchos::Array<int> dummy;
+    init (source, target, dummy, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -173,8 +177,20 @@ namespace Tpetra {
     out_ (out),
     debug_ (tpetraImportDebugDefault)
   {
-    init (source, target, plist);
+    Teuchos::Array<int> dummy;
+    init (source, target, dummy, plist);
   }
+  
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+	  Teuchos::Array<int> & remotePIDs) :
+    debug_ (tpetraImportDebugDefault)
+  {
+    init (source, target, remotePIDs, Teuchos::null);
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
@@ -480,7 +496,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs)
+  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, Teuchos::Array<int> & userRemotePIDs)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -502,10 +518,14 @@ namespace Tpetra {
       *out_ << os.str ();
     }
 
+    // Sanity check
+    TEUCHOS_TEST_FOR_EXCEPTION((userRemotePIDs.size() > 0) && (remoteGIDs.size() != userRemotePIDs.size()),std::invalid_argument, 
+			       "Tpetra::Import::setupExport: remotePIDs must either be of size zero or match the size of remoteGIDs");
+			     
     // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
     // the process ID of the process that owns that GID.
     ArrayView<GO> remoteGIDsView = remoteGIDs ();
-    Array<int> remoteProcIDs (remoteGIDsView.size ());
+    ArrayView<int> remoteProcIDsView;
 
     // lookup == IDNotPresent means that the source Map wasn't able to
     // figure out to which processes one or more of the GIDs in the
@@ -525,8 +545,16 @@ namespace Tpetra {
     // processes).  That is, there is at least one GID owned by some
     // process in the target Map, which is not owned by _any_ process
     // in the source Map.
-    const LookupStatus lookup =
-      source.getRemoteIndexList (remoteGIDsView, remoteProcIDs ());
+    Array<int> newRemotePIDs;
+    LookupStatus lookup = AllIDsPresent;
+
+    if(userRemotePIDs.size() == 0) {
+      newRemotePIDs.resize(remoteGIDsView.size());
+      lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs());
+      
+    }
+    Array<int> &remoteProcIDs = userRemotePIDs.size() ? userRemotePIDs : newRemotePIDs;
+      
     if (debug_) {
       std::ostringstream os;
       const int myRank = source.getComm ()->getRank ();
