@@ -319,7 +319,7 @@ public:
                               unsigned number_of_states = 1 );
 
   template< class field_type >
-  field_type & declare_field( stk::topology::rank_t entity_rank,
+  field_type & declare_field( stk::topology::rank_t arg_entity_rank,
                               const std::string & name ,
                               unsigned number_of_states = 1 );
 
@@ -839,7 +839,7 @@ field_type & MetaData::declare_field( const std::string & name ,
 
 template< class field_type >
 inline
-field_type & MetaData::declare_field( stk::topology::rank_t entity_rank,
+field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
                                       const std::string & name ,
                                       unsigned number_of_states )
 {
@@ -915,7 +915,7 @@ field_type & MetaData::declare_field( stk::topology::rank_t entity_rank,
 
       f[i] = new field_type(
           this,
-          entity_rank,
+          arg_entity_rank,
           m_field_repo.get_fields().size() ,
           field_names[i] ,
           traits ,
