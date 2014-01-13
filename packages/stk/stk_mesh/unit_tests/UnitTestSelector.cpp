@@ -612,5 +612,4 @@ void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::
     EXPECT_EQ(gold_shouldEntityBeInSelector[4], result);
   }
 }
-
 } // namespace

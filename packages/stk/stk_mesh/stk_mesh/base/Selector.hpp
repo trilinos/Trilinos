@@ -27,7 +27,6 @@ struct SelectorNodeType
     PART,
     UNION,
     INTERSECTION,
-    DIFFERENCE,
     COMPLEMENT
   };
 };
@@ -55,13 +54,13 @@ struct SelectorNode
 
   SelectorNode const* lhs() const
   {
-    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION);
     return this + m_value.left_offset;
   }
 
   SelectorNode const* rhs() const
   {
-    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION);
     return this + m_value.right_offset;
   }
 
@@ -102,7 +101,7 @@ struct SelectorNode
 
 /**
  * Selects subsets of the mesh. Allows for creating set expressions from
- * parts and set operators (union |, intersection &, difference -, complement !).
+ * parts and set operators (union |, intersection &, complement !).
  */
 class Selector {
 public:
@@ -146,10 +145,6 @@ public:
     }
     return *this;
   }
-
-  /** \brief  Difference: this = this - ( expression ) */
-  Selector & operator -= ( const Selector & selector)
-  { return add_binary_op(SelectorNodeType::DIFFERENCE, selector); }
 
   bool operator<(const Selector& rhs) const;
 
@@ -295,38 +290,6 @@ Selector operator | ( const Selector & A, const Selector & B  )
 {
   Selector S( A );
   S |= Selector(B);
-  return S;
-}
-
-inline
-Selector operator - ( const Part & A , const Part & B )
-{
-  Selector S( A );
-  S -= Selector( B );
-  return S;
-}
-
-inline
-Selector operator - ( const Part & A , const Selector & B )
-{
-  Selector S( A );
-  S -= B;
-  return S;
-}
-
-inline
-Selector operator - ( const Selector & A, const Part & B  )
-{
-  Selector S( A );
-  S -= Selector(B);
-  return S;
-}
-
-inline
-Selector operator - ( const Selector & A, const Selector & B  )
-{
-  Selector S( A );
-  S -= Selector(B);
   return S;
 }
 

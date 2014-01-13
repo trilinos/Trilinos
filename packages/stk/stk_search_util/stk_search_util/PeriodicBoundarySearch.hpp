@@ -384,8 +384,8 @@ private:
         const stk::mesh::Selector rangeB = m_periodic_pairs[1].second;
         const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
 
-        m_periodic_pairs[0].second = rangeA - rangeIntersection;
-        m_periodic_pairs[1].second = rangeB - rangeIntersection;
+        m_periodic_pairs[0].second = rangeA & !rangeIntersection;
+        m_periodic_pairs[1].second = rangeB & !rangeIntersection;
 
         break;
       }
@@ -407,14 +407,14 @@ private:
         const stk::mesh::Selector rangeBC = rangeB & rangeC;
 
         //now we redefine the periodic pairs to remove redundancies
-        m_periodic_pairs[0].second = rangeA - (rangeAB | rangeAC);
-        m_periodic_pairs[1].second = rangeB - (rangeAB | rangeBC);
-        m_periodic_pairs[2].second = rangeC - (rangeAC | rangeBC);
+        m_periodic_pairs[0].second = rangeA & !(rangeAB | rangeAC);
+        m_periodic_pairs[1].second = rangeB & !(rangeAB | rangeBC);
+        m_periodic_pairs[2].second = rangeC & !(rangeAC | rangeBC);
 
         //edges
-        m_periodic_pairs[3].second = rangeAB - rangeABC;
-        m_periodic_pairs[4].second = rangeBC - rangeABC;
-        m_periodic_pairs[5].second = rangeAC - rangeABC;
+        m_periodic_pairs[3].second = rangeAB & ! rangeABC;
+        m_periodic_pairs[4].second = rangeBC & ! rangeABC;
+        m_periodic_pairs[5].second = rangeAC & ! rangeABC;
 
         break;
       }
