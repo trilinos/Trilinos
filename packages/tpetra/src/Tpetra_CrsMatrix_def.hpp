@@ -5199,13 +5199,9 @@ namespace Tpetra {
 			  const Teuchos::RCP<const map_type>& rangeMap,
 			  const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    // NOTE: Does not work correctly with reverse mode on the transfers.  This needs to get fixed.
-    // We'll need to add that in order to get the ImportExport2 tests working.  I've disabled test for now,
-    // but plenty of other stuff is still broken.
-
+    // Fused constructor [import|export] and fillComplete
     using Teuchos::RCP;    
     using Teuchos::ArrayView;
-    // Fused contructor [import|export] and fillComplete
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Node NT;
@@ -5215,19 +5211,21 @@ namespace Tpetra {
     // Note: Here "SourceMatrix is "this" 
     bool communication_needed = RowTransfer.getSourceMap()->isDistributed();
 
-    // Sanity Check
-    TEUCHOS_TEST_FOR_EXCEPTION(!getRowMap()->isSameAs(*RowTransfer.getSourceMap()), std::invalid_argument,
-			       "Tpetra::CrsMatrix: transferAndFillComplete requires rowTransfer->getSourceMap() to match this->getRowMap()");
+
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (!params.is_null()) reverseMode = params->get("Reverse Mode", reverseMode);
+    printf("CMS: Reverse Mode = %d\n",(int)reverseMode);fflush(stdout);
+
+    // Sanity Checks
+    TEUCHOS_TEST_FOR_EXCEPTION( !(reverseMode || getRowMap()->isSameAs(*RowTransfer.getSourceMap())), std::invalid_argument,
+				"Tpetra::CrsMatrix: transferAndFillComplete requires rowTransfer->getSourceMap() to match this->getRowMap() in forward mode.");
+    TEUCHOS_TEST_FOR_EXCEPTION( !(!reverseMode || getRowMap()->isSameAs(*RowTransfer.getTargetMap())), std::invalid_argument,
+				"Tpetra::CrsMatrix: transferAndFillComplete requires rowTransfer->getTargetMap() to match this->getRowMap() in reverse mode.");
 
     // Do we need to restrict the communicator?
     bool restrictComm = false;
-    if (!params.is_null()) restrictComm = params->get ("Restrict Communicator", restrictComm);
-
-    // Are we in reverse mode? (FIXME)
-    bool reverseMode = false;
-    if (!params.is_null()) reverseMode = params->get ("Reverse Mode", reverseMode);
-    TEUCHOS_TEST_FOR_EXCEPTION(reverseMode, std::invalid_argument,
-			       "Tpetra::CrsMatrix: transferAndFillComplete does not allow reverse mode yet");//FIXME
+    if (!params.is_null()) restrictComm = params->get("Restrict Communicator", restrictComm);
 
     // Get matrix parameters
     RCP<ParameterList> matrixparams;
@@ -5242,10 +5240,10 @@ namespace Tpetra {
     
     // Get information from the Importer
     size_t NumSameIDs                   = RowTransfer.getNumSameIDs();
-    ArrayView<const LO> ExportLIDs      = RowTransfer.getExportLIDs();
-    ArrayView<const LO> RemoteLIDs      = RowTransfer.getRemoteLIDs();
-    ArrayView<const LO> PermuteToLIDs   = RowTransfer.getPermuteToLIDs();
-    ArrayView<const LO> PermuteFromLIDs = RowTransfer.getPermuteFromLIDs();
+    ArrayView<const LO> ExportLIDs      = reverseMode ? RowTransfer.getRemoteLIDs() : RowTransfer.getExportLIDs();
+    ArrayView<const LO> RemoteLIDs      = reverseMode ? RowTransfer.getExportLIDs() : RowTransfer.getRemoteLIDs();
+    ArrayView<const LO> PermuteToLIDs   = reverseMode ? RowTransfer.getPermuteFromLIDs() : RowTransfer.getPermuteToLIDs();
+    ArrayView<const LO> PermuteFromLIDs = reverseMode ? RowTransfer.getPermuteToLIDs() : RowTransfer.getPermuteFromLIDs();
     Distributor& Distor                 = RowTransfer.getDistributor();
    
     // Owning PIDs
@@ -5254,7 +5252,7 @@ namespace Tpetra {
     int MyPID = getComm()->getRank();
     
     // The new Domain & Range maps
-    RCP<const map_type> MyRowMap    = RowTransfer.getTargetMap(); // This is the implicit assumption of the Epetra version
+    RCP<const map_type> MyRowMap    = reverseMode ? RowTransfer.getSourceMap() : RowTransfer.getTargetMap(); 
     RCP<const map_type> MyColMap;
     RCP<const map_type> MyDomainMap = !domainMap.is_null() ? domainMap : getDomainMap();
     RCP<const map_type> MyRangeMap  = !rangeMap.is_null()  ? rangeMap  : getRangeMap();
@@ -5272,8 +5270,6 @@ namespace Tpetra {
     /***************************************************/
     /***** 1) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
-    // All this does is check the target's template parameters agains the source.  We'll skip that for now.
-    /*
     TEUCHOS_TEST_FOR_EXCEPTION(
       !destMat->checkSizes(*this), std::invalid_argument,
       "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
@@ -5281,7 +5277,6 @@ namespace Tpetra {
       "source object.  This probably means that they do not have the same "
       "dimensions.  For example, MultiVectors must have the same number of "
       "rows and columns.");
-    */
 
     // Get the owning PIDs
     RCP<const Import<LO,GO,NT> > MyImporter = getGraph()->getImporter();
@@ -5302,8 +5297,10 @@ namespace Tpetra {
       IntVectorType SourceCol_pids(getColMap(),SourcePids());
       
       TargetRow_pids.putScalar(MyPID);
-      if(typeid(TransferType)==typeid(Import<LO,GO,NT>)) SourceRow_pids.doExport(TargetRow_pids,RowTransfer,INSERT); 
-      else if(typeid(TransferType)==typeid(Export<LO,GO,NT>)) SourceRow_pids.doImport(TargetRow_pids,RowTransfer,INSERT); 
+      if((!reverseMode && typeid(TransferType)==typeid(Import<LO,GO,NT>)) || (reverseMode && typeid(TransferType)==typeid(Export<LO,GO,NT>)))
+	SourceRow_pids.doExport(TargetRow_pids,RowTransfer,INSERT); 
+      else if((!reverseMode && typeid(TransferType)==typeid(Export<LO,GO,NT>)) || (reverseMode && typeid(TransferType)==typeid(Import<LO,GO,NT>)))
+	SourceRow_pids.doImport(TargetRow_pids,RowTransfer,INSERT); 
       else TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument, 
 				      "Tpetra::Crs_Matrix::transferAndFillComplete TransferType must be Import or Export.");
       SourceCol_pids.doImport(SourceRow_pids,*MyImporter,INSERT);
@@ -5333,27 +5330,50 @@ namespace Tpetra {
 
     // Pack & Prepare w/ owning PIDs
     Import_Util::packAndPrepareWithOwningPIDs(*this,ExportLIDs,destMat->exports_,destMat->numExportPacketsPerLID_(),constantNumPackets,Distor,SourcePids);
-    
+
+    // Do the exchange of remote data.      
     if(communication_needed) {
-      // Do the exchange of remote data.  
-      // NTS: This will need to be fixed to allow reverse mode
-      if (constantNumPackets == 0) { //variable num-packets-per-LID:
-	Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_().getConst(), 1,
-			       destMat->numImportPacketsPerLID_());
-	size_t totalImportPackets = 0;
-	for (Array_size_type i = 0; i < destMat->numImportPacketsPerLID_.size(); ++i) {
-	  totalImportPackets += destMat->numImportPacketsPerLID_[i];
+      if(reverseMode) {
+	// Reverse Mode
+	if (constantNumPackets == 0) { //variable num-packets-per-LID:
+	  Distor.doReversePostsAndWaits(destMat->numExportPacketsPerLID_().getConst(), 1,
+					destMat->numImportPacketsPerLID_());
+	  size_t totalImportPackets = 0;
+	  for (Array_size_type i = 0; i < destMat->numImportPacketsPerLID_.size(); ++i) {
+	    totalImportPackets += destMat->numImportPacketsPerLID_[i];
+	  }
+	  destMat->imports_.resize(totalImportPackets);
+	  Distor.doReversePostsAndWaits(destMat->exports_().getConst(),
+					destMat->numExportPacketsPerLID_(),
+					destMat->imports_(),
+					destMat->numImportPacketsPerLID_());
 	}
-	destMat->imports_.resize(totalImportPackets);
-	Distor.doPostsAndWaits(destMat->exports_().getConst(),
-			       destMat->numExportPacketsPerLID_(),
-			       destMat->imports_(),
-			       destMat->numImportPacketsPerLID_());
+	else {
+	  Distor.doReversePostsAndWaits(destMat->exports_().getConst(),
+					constantNumPackets,
+					destMat->imports_());
+	}
       }
       else {
-	Distor.doPostsAndWaits(destMat->exports_ ().getConst(),
-			       constantNumPackets,
-			       destMat->imports_());
+	// Forward Mode
+	if (constantNumPackets == 0) { //variable num-packets-per-LID:
+	  Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_().getConst(), 1,
+				 destMat->numImportPacketsPerLID_());
+	  size_t totalImportPackets = 0;
+	  for (Array_size_type i = 0; i < destMat->numImportPacketsPerLID_.size(); ++i) {
+	    totalImportPackets += destMat->numImportPacketsPerLID_[i];
+	  }
+	  destMat->imports_.resize(totalImportPackets);	  
+	  Distor.doPostsAndWaits(destMat->exports_().getConst(),
+				 destMat->numExportPacketsPerLID_(),
+				 destMat->imports_(),
+				 destMat->numImportPacketsPerLID_());
+	}
+	else {
+	  Distor.doPostsAndWaits(destMat->exports_ ().getConst(),
+				 constantNumPackets,
+				 destMat->imports_());     
+	}
       }
     }
 
