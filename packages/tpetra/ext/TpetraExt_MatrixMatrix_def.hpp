@@ -993,6 +993,7 @@ void import_and_extract_views(
 {
   //Convience typedef
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> CrsMatrix_t;
   // The goal of this method is to populate the 'Mview' struct with views of the
   // rows of M, including all rows that correspond to elements in 'targetMap'.
   //
@@ -1079,9 +1080,7 @@ void import_and_extract_views(
     Import<LocalOrdinal, GlobalOrdinal, Node> importer(Mrowmap, MremoteRowMap);
 
     // Now create a new matrix into which we can import the remote rows of M that we need.
-    Mview.importMatrix = rcp(new CrsMatrix<Scalar,LocalOrdinal, GlobalOrdinal, Node, SpMatOps>( MremoteRowMap, 1 ));
-    Mview.importMatrix->doImport(M, importer, INSERT);
-    Mview.importMatrix->fillComplete(M.getDomainMap(), M.getRangeMap());
+    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),importer,M.getDomainMap(),M.getRangeMap(),Teuchos::null);
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later
     Mview.importColMap = Mview.importMatrix->getColMap();

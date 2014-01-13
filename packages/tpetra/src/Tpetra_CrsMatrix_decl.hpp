@@ -1918,7 +1918,7 @@ namespace Tpetra {
     importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
                            const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
-                           const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
     /// \brief Export from <tt>this</tt> to the result, and fillComplete the result.
     ///
@@ -1931,8 +1931,7 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
-    
-  private:
+
     /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to the result, and fillComplete the result.
     /// This method implements the nonmember "constructors"
     /// [import|export]AndFillCompleteCrsMatrix.  It's convenient to put that
