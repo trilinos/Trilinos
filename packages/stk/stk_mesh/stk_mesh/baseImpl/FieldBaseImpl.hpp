@@ -116,9 +116,9 @@ public:
     }
   }
 
-
   FieldBaseImpl(
       MetaData                   * arg_mesh_meta_data ,
+      stk::topology::rank_t        entity_rank ,
       unsigned                     arg_ordinal ,
       const std::string          & arg_name ,
       const DataTraits           & arg_traits ,
@@ -136,6 +136,7 @@ private:
 
   FieldRestrictionVector & restrictions();
 
+  stk::topology::rank_t        m_entity_rank ;             ///< entity-rank that this field can be allocated for
   const std::string            m_name ;                    ///< Name of the field
   CSet                         m_attribute ;               ///< User's attributes
   const DataTraits           & m_data_traits ;             ///< Data type traits

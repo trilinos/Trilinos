@@ -29,7 +29,7 @@ using stk::mesh::MetaData;
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = MetaData::NODE_RANK;
+const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 
 typedef shards::ArrayDimTag::size_type size_type;
 
@@ -177,10 +177,10 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
-  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
-  rank_three_field & f3 = meta_data.declare_field< rank_three_field >( name3 );
-  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(  name2 );
+  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >(NODE_RANK, name0);
+  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(NODE_RANK, name1);
+  rank_three_field & f3 = meta_data.declare_field< rank_three_field >(NODE_RANK, name3);
+  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(NODE_RANK, name2);
 
   // confirm that declaring field with erroneous type throws exception
   typedef stk::mesh::Field<double,CTAG> error_type ;

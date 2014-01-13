@@ -135,6 +135,29 @@ public:
         )
   {}
 
+  Field(
+       MetaData                   * arg_mesh_meta_data ,
+       stk::topology::rank_t        entity_rank ,
+       unsigned                     arg_ordinal ,
+       const std::string          & arg_name ,
+       const DataTraits           & arg_traits ,
+       unsigned                     arg_rank,
+       const shards::ArrayDimTag  * const * arg_dim_tags,
+       unsigned                     arg_number_of_states ,
+       FieldState                   arg_this_state
+       )
+    : FieldBase(arg_mesh_meta_data,
+        entity_rank,
+        arg_ordinal,
+        arg_name,
+        arg_traits,
+        arg_rank,
+        arg_dim_tags,
+        arg_number_of_states,
+        arg_this_state
+        )
+  {}
+
   /** \brief  Query this field for a given field state. */
   Field & field_of_state( FieldState input_state ) const {
 #ifndef NDEBUG

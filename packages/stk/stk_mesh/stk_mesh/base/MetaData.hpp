@@ -318,6 +318,11 @@ public:
   field_type & declare_field( const std::string & name ,
                               unsigned number_of_states = 1 );
 
+  template< class field_type >
+  field_type & declare_field( stk::topology::rank_t entity_rank,
+                              const std::string & name ,
+                              unsigned number_of_states = 1 );
+
   /** \brief  Declare an attribute on a field.
    *          Return the attribute of that type,
    *          which may be an already existing value.
@@ -812,6 +817,105 @@ field_type & MetaData::declare_field( const std::string & name ,
 
       f[i] = new field_type(
           this,
+          m_field_repo.get_fields().size() ,
+          field_names[i] ,
+          traits ,
+          Traits::Rank,
+          dim_tags,
+          number_of_states ,
+          static_cast<FieldState>(i)
+          );
+
+      m_field_repo.add_field( f[i] );
+    }
+
+    for ( unsigned i = 0 ; i < number_of_states ; ++i ) {
+      f[i]->m_impl.set_field_states( f );
+    }
+  }
+
+  return *f[0] ;
+}
+
+template< class field_type >
+inline
+field_type & MetaData::declare_field( stk::topology::rank_t entity_rank,
+                                      const std::string & name ,
+                                      unsigned number_of_states )
+{
+  typedef FieldTraits< field_type > Traits ;
+
+  const DataTraits & traits = data_traits< typename Traits::data_type >();
+
+  const shards::ArrayDimTag * dim_tags[8] ;
+
+  Traits::assign_tags( dim_tags );
+
+  static const char* reserved_state_suffix[6] = {
+    "_STKFS_OLD",
+    "_STKFS_N",
+    "_STKFS_NM1",
+    "_STKFS_NM2",
+    "_STKFS_NM3",
+    "_STKFS_NM4"
+  };
+
+  // Check that the name does not have a reserved suffix
+
+  for ( unsigned i = 0 ; i < 6 ; ++i ) {
+    const int len_name   = name.size();
+    const int len_suffix = std::strlen( reserved_state_suffix[i] );
+    const int offset     = len_name - len_suffix ;
+    if ( 0 <= offset ) {
+      const char * const name_suffix = name.c_str() + offset ;
+      ThrowErrorMsgIf( equal_case( name_suffix , reserved_state_suffix[i] ),
+          "For name = \"" << name_suffix <<
+          "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
+          reserved_state_suffix[i] << "\"" );
+    }
+  }
+
+  // Check that the field of this name has not already been declared
+
+  field_type * f[ MaximumFieldStates ] ;
+
+  f[0] = dynamic_cast<field_type*>(m_field_repo.get_field(
+      "MetaData::declare_field" ,
+      name ,
+      traits ,
+      Traits::Rank ,
+      dim_tags ,
+      number_of_states
+      ));
+
+  if ( NULL != f[0] ) {
+    for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
+      f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+    }
+  }
+  else {
+    // Field does not exist then create it
+
+    std::string field_names[ MaximumFieldStates ];
+
+    field_names[0] = name ;
+
+    if ( 2 == number_of_states ) {
+      field_names[1] = name ;
+      field_names[1].append( reserved_state_suffix[0] );
+    }
+    else {
+      for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
+        field_names[i] = name ;
+        field_names[i].append( reserved_state_suffix[i] );
+      }
+    }
+
+    for ( unsigned i = 0 ; i < number_of_states ; ++i ) {
+
+      f[i] = new field_type(
+          this,
+          entity_rank,
           m_field_repo.get_fields().size() ,
           field_names[i] ,
           traits ,

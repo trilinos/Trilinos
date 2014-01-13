@@ -28,6 +28,7 @@ namespace impl {
 
 FieldBaseImpl::FieldBaseImpl(
     MetaData                   * arg_mesh_meta_data ,
+    stk::topology::rank_t        entity_rank ,
     unsigned                     arg_ordinal ,
     const std::string          & arg_name ,
     const DataTraits           & arg_traits ,
@@ -36,7 +37,8 @@ FieldBaseImpl::FieldBaseImpl(
     unsigned                     arg_number_of_states ,
     FieldState                   arg_this_state
     )
-: m_name( arg_name ),
+: m_entity_rank(entity_rank),
+  m_name( arg_name ),
   m_attribute(),
   m_data_traits( arg_traits ),
   m_meta_data( arg_mesh_meta_data ),
@@ -88,6 +90,9 @@ void FieldBaseImpl::insert_restriction(
   const void*      arg_init_value )
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
+
+  ThrowRequireMsg(m_entity_rank == stk::topology::INVALID_RANK || m_entity_rank == arg_entity_rank,
+                  "ERROR in FieldBaseImpl::insert_restriction: field: arg_entity_rank ("<<arg_entity_rank<<") doesn't match m_entity_rank ("<<m_entity_rank<<")");
 
   const FieldRestrictionVector & existing_restrictions = restrictions();
   for(size_t i=0; i<existing_restrictions.size(); ++i)
