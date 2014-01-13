@@ -36,7 +36,7 @@ Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
     m_fem_meta_data( m_spatial_dimension ),
     m_bulk_data( m_fem_meta_data , comm , 100 ),
     m_quad_part( stk::mesh::declare_part<Quad4>( m_fem_meta_data, "quad")),
-    m_coord_field( m_fem_meta_data.declare_field< VectorField >(stk::topology::NODE_RANK, "coordinates" ) ),
+    m_coord_field( m_fem_meta_data.declare_field< VectorField >(stk::topology::NODE_RANK, &m_bulk_data, "coordinates" ) ),
     m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK ),
     m_node_rank( stk::mesh::MetaData::NODE_RANK )
 {

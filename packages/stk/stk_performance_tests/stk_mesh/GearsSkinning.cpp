@@ -270,10 +270,10 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",stk::mesh::MetaData::ELEMENT_RANK-1);
 
   const unsigned ONE_STATE = 1;
-  CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "velocity",ONE_STATE);
+  CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, &fixture.bulk_data, "velocity",ONE_STATE);
   stk::topology::rank_t face_rank = static_cast<stk::topology::rank_t>(fixture.meta_data.side_rank());
-  CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>(face_rank, "face_displacement",ONE_STATE);
-  IntField & processor_field = fixture.meta_data.declare_field<IntField>(stk::topology::ELEMENT_RANK, "processor_id",ONE_STATE);
+  CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>(face_rank, &fixture.bulk_data, "face_displacement",ONE_STATE);
+  IntField & processor_field = fixture.meta_data.declare_field<IntField>(stk::topology::ELEMENT_RANK, &fixture.bulk_data, "processor_id",ONE_STATE);
 
   stk::mesh::put_field(
       velocity_field,
