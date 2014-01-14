@@ -59,13 +59,15 @@ std::ostream & print_restrictions(std::ostream & s ,
   return s;
 }
 
-void FieldBase::set_mesh(stk::mesh::BulkData* bulk) { 
-    if(m_mesh == NULL) {
-      m_mesh = bulk; 
-    } else {
-      ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use a field on more than one bulk data");
-    }
+void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
+{
+  if (m_mesh == NULL) {
+    m_mesh = bulk;
   }
+  else {
+    ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use field " << name() << " on more than one bulk data");
+  }
+}
 
 //----------------------------------------------------------------------
 
