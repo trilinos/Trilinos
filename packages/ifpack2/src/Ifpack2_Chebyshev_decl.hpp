@@ -142,9 +142,9 @@ namespace Ifpack2 {
 /// is to smooth out the high-frequency components of the error, that
 /// is, those that correspond to the largest eigenvalues.  The coarser
 /// grids below the current grid will take care of the lower-frequency
-/// components of the error.)  This is why we use a ratio \f$\eta =
-/// \lambda_{max} / \lambda_{min}$, rather than requiring a guess for
-/// $\lambda_{min}$.  In fact, we only use \f$\lambda_{min}\f$ for
+/// components of the error.)  This is why we use a ratio
+/// \f$\eta = \lambda_{max} / \lambda_{min}\f$, rather than requiring a guess for
+/// \f$\lambda_{min}\f$. In fact, we only use \f$\lambda_{min}\f$ for
 /// error checking, not when determining the Chebyshev coefficients.
 /// Often, if users give us \f$\lambda_{max}\f$, our default value of
 /// \f$\eta\f$ suffices.
@@ -273,7 +273,7 @@ public:
 
   /// \brief Constructor.
   ///
-  /// \param A [in] The sparse matrix to which to apply Chebyshev
+  /// \param[in] A The sparse matrix to which to apply Chebyshev
   ///   iteration.  The matrix A must be square, and its domain Map
   ///   and range Map must be the same.  The latter means that the
   ///   vectors x and y in the sparse matrix-vector product y = A*x
@@ -506,7 +506,7 @@ public:
 
   /// \brief Change the matrix to be preconditioned.
   ///
-  /// \param A [in] The new matrix.
+  /// \param[in] A The new matrix.
   ///
   /// \post <tt>! isInitialized ()</tt>
   /// \post <tt>! isComputed ()</tt>
@@ -551,16 +551,16 @@ public:
   ///   solution will be undefined, since it will be computed using
   ///   uninitialized data.
   ///
-  /// \param X [in] A (multi)vector to which to apply the preconditioner.
-  /// \param Y [in/out] A (multi)vector containing the result of
+  /// \param[in] X  A (multi)vector to which to apply the preconditioner.
+  /// \param[in,out] Y A (multi)vector containing the result of
   ///   applying the preconditioner to X.
-  /// \param mode [in] If <tt>Teuchos::NO_TRANS</tt>, apply the matrix
+  /// \param[in] mode  If <tt>Teuchos::NO_TRANS</tt>, apply the matrix
   ///   A.  If <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>, apply its
   ///   transpose \f$A^T\f$.  If <tt>Teuchos::CONJ_TRANS</tt>, apply
   ///   its Hermitian transpose \f$A^H\f$.
-  /// \param alpha [in] Scaling factor for the result of Chebyshev
+  /// \param[in] alpha  Scaling factor for the result of Chebyshev
   ///   iteration.  The default is 1.
-  /// \param beta [in] Scaling factor for Y.  The default is 0.
+  /// \param[in] beta  Scaling factor for Y.  The default is 0.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -579,15 +579,15 @@ public:
 
   /// \brief Compute Y = Op(A)*X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   ///
-  /// \param X [in] Input (multi)vector of sparse matrix-vector
+  /// \param[in] X  Input (multi)vector of sparse matrix-vector
   ///   multiply.  If mode == Teuchos::NO_TRANS, X must be in the
   ///   domain Map of the matrix A.  Otherwise, X must be in the range
   ///   Map of A.
-  /// \param Y [out] Output (multi)vector of sparse matrix-vector
+  /// \param[out] Y  Output (multi)vector of sparse matrix-vector
   ///   multiply.  If mode == Teuchos::NO_TRANS, Y must be in the
   ///   range Map of the matrix A.  Otherwise, Y must be in the domain
   ///   Map of A.
-  /// \param mode [in] Whether to apply the matrix A, its transpose
+  /// \param[in] mode  Whether to apply the matrix A, its transpose
   ///   \f$A^T\f$, or its conjugate transpose \f$A^H\f$.  This method
   ///   applies A if <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>,
   ///   \f$A^T\f$ if <tt>mode</tt> is <tt>Teuchos::TRANS</tt>, and
@@ -713,12 +713,12 @@ public:
   ///   template parameter, and/or its fifth \c LocalMatOps template
   ///   parameter.  However, this is not strictly required.
   ///
-  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
+  /// \param[in] A_newnode  The matrix, with the new Kokkos Node type.
   ///   This would generally be the result of cloning (calling
   ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
   ///   matrix A, though the implementation does not require this.
   ///
-  /// \param params [in/out] Parameters for the new preconditioner.
+  /// \param[in,out] params Parameters for the new preconditioner.
   ///
   /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
   ///   complete.
