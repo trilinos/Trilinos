@@ -244,7 +244,7 @@ void use_case_5_write_mesh( stk::ParallelMachine comm ,
   stk::mesh::MetaData meta_data(SpatialDim);
 
   VectorFieldType & node_coord =
-    meta_data.declare_field<VectorFieldType>("coordinates");
+    meta_data.declare_field<VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
 
   mesh::put_field( node_coord , mesh::MetaData::NODE_RANK ,
                    meta_data.universal_part() , SpatialDim );

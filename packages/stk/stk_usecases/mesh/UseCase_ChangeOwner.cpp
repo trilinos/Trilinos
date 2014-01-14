@@ -222,7 +222,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   VectorField * coordinates_field =
     & put_field(
-        fem_meta_data.declare_field<VectorField>("coordinates"),
+        fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         NODE_RANK,
         fem_meta_data.universal_part() ,
         3
@@ -358,7 +358,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   VectorField * coordinates_field =
     & put_field(
-        fem_meta_data.declare_field<VectorField>("coordinates"),
+        fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         NODE_RANK,
         fem_meta_data.universal_part() ,
         3
@@ -483,7 +483,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
 
   VectorField * coordinates_field =
     & put_field(
-        fem_meta_data.declare_field<VectorField>("coordinates"),
+        fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         NODE_RANK,
         fem_meta_data.universal_part() ,
         3

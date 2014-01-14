@@ -54,10 +54,10 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   , m_block_tri_shell(  declare_part<ShellTriangle3>( m_fem_metaData, "block_6"))
   , m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK )
   , m_node_rank( MetaData::NODE_RANK )
-  , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >( "coordinates" ))
-  , m_centroid_field(    m_fem_metaData.declare_field< VectorFieldType >( "centroid" ))
-  , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >( "temperature" ))
-  , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >( "volume" ))
+  , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "coordinates" ))
+  , m_centroid_field(    m_fem_metaData.declare_field< VectorFieldType >(stk::topology::ELEMENT_RANK, "centroid" ))
+  , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >(stk::topology::NODE_RANK, "temperature" ))
+  , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >(stk::topology::ELEMENT_RANK, "volume" ))
 {
   // Define where fields exist on the mesh:
   Part & universal = m_fem_metaData.universal_part();

@@ -22,7 +22,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
     stkMeshIoBroker.create_input_mesh();
 
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >("temperature");
+    stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature");
     stk::mesh::put_field_on_all_nodes(temperatureField);
     stkMeshIoBroker.populate_bulk_data();
 
@@ -60,7 +60,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
     stkMeshIoBroker.create_input_mesh();
 
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >("temperature");
+    stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature");
     stk::mesh::put_field_on_all_nodes(temperatureField);
     stkMeshIoBroker.populate_bulk_data();
 

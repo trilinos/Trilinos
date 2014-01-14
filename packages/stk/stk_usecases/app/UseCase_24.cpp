@@ -137,13 +137,13 @@ bool use_case_24_driver(
   //-----------------------------------------
 
   VectorFieldType & coordinates_field =
-    fem_meta.declare_field< VectorFieldType >( "coordinates" );
+    fem_meta.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "coordinates" );
 
   VectorFieldType & velocity =
-    fem_meta.declare_field< VectorFieldType >( "velocity" );
+    fem_meta.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "velocity" );
 
   ScalarFieldType & pressure =
-    fem_meta.declare_field< ScalarFieldType >( "pressure" );
+    fem_meta.declare_field< ScalarFieldType >(stk::topology::NODE_RANK, "pressure" );
 
   // add these nodal fields to allParts that have nodes in the universe
 
@@ -159,7 +159,7 @@ bool use_case_24_driver(
   //-----------------------------------------
 
   VectorFieldType & nodal_momentum_flux =
-    fem_meta.declare_field< VectorFieldType >( "nodal_momentum_flux" );
+    fem_meta.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "nodal_momentum_flux" );
 
   mesh::put_field( nodal_momentum_flux , mesh::MetaData::NODE_RANK , quad_io1 );
   mesh::put_field( nodal_momentum_flux , mesh::MetaData::NODE_RANK , quad_io2 );
@@ -173,8 +173,9 @@ bool use_case_24_driver(
 
   // momentum_flux_bip lives only on the boundary points
 
+  stk::topology::rank_t sideRank = static_cast<stk::topology::rank_t>(side_rank);
   VectorIPFieldType & momentum_flux_bip =
-    fem_meta.declare_field< VectorIPFieldType >( "momentum_flux_bip" );
+    fem_meta.declare_field< VectorIPFieldType >(sideRank, "momentum_flux_bip" );
 
   // NOTE SPD 10/22/2008
   // I am not sure that I like all of these specialty put_field() methods
@@ -203,7 +204,7 @@ bool use_case_24_driver(
   //-----------------------------------------
 
   ScalarIPFieldType & side_pressure_ip =
-    fem_meta.declare_field< ScalarIPFieldType >( "side_pressure_ip" );
+    fem_meta.declare_field< ScalarIPFieldType >(sideRank, "side_pressure_ip" );
 
   // first on boundary ips
   mesh::put_field( side_pressure_ip , side_rank , quad_io1 , numBoundaryIps );
@@ -211,7 +212,7 @@ bool use_case_24_driver(
   mesh::put_field( side_pressure_ip , side_rank , quad_io3 , numBoundaryIps );
 
   ScalarIPFieldType & element_pressure_ip =
-    fem_meta.declare_field< ScalarIPFieldType >( "element_pressure_ip" );
+    fem_meta.declare_field< ScalarIPFieldType >(stk::topology::ELEMENT_RANK, "element_pressure_ip" );
   // second on all interior element ips
   mesh::put_field( element_pressure_ip , element_rank , hex_io1 , numElementSCSIps );
 
@@ -221,7 +222,7 @@ bool use_case_24_driver(
   //-----------------------------------------
 
   VectorIPFieldType & side_mass_flux_ip =
-    fem_meta.declare_field< VectorIPFieldType >( "side_mass_flux_ip" );
+    fem_meta.declare_field< VectorIPFieldType >(sideRank, "side_mass_flux_ip" );
 
   // first on boundary ips
   mesh::put_field(side_mass_flux_ip , side_rank , quad_io1 , SpatialDim, numBoundaryIps );
@@ -229,7 +230,7 @@ bool use_case_24_driver(
   mesh::put_field(side_mass_flux_ip , side_rank , quad_io3 , SpatialDim, numBoundaryIps );
 
   VectorIPFieldType & element_mass_flux_ip =
-    fem_meta.declare_field< VectorIPFieldType >( "element_mass_flux_ip" );
+    fem_meta.declare_field< VectorIPFieldType >(stk::topology::ELEMENT_RANK, "element_mass_flux_ip" );
   // second on all interior element ips
   mesh::put_field(element_mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
 
