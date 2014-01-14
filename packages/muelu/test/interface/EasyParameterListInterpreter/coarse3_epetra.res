@@ -110,7 +110,7 @@ Level 2
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
  
- Setup Smoother (MueLu::IfpackSmoother{type = ILU})
+ Setup Smoother (MueLu::IfpackSmoother{type = ILUT})
  [empty list]
  
  
@@ -131,6 +131,6 @@ Level 2
  
  Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
  
- Smoother (level 2) pre  : MueLu::IfpackSmoother{type = ILU}
+ Smoother (level 2) pre  : MueLu::IfpackSmoother{type = ILUT}
  Smoother (level 2) post : no smoother
  

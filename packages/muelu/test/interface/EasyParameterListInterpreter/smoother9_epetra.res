@@ -12,7 +12,7 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- Setup Smoother (MueLu::IfpackSmoother{type = ILU})
+ Setup Smoother (MueLu::IfpackSmoother{type = ILUT})
  presmoother -> 
   chebyshev: ratio eigenvalue = 20   [unused]
  postsmoother -> 
@@ -64,7 +64,7 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- Setup Smoother (MueLu::IfpackSmoother{type = ILU})
+ Setup Smoother (MueLu::IfpackSmoother{type = ILUT})
  presmoother -> 
   chebyshev: ratio eigenvalue = 20   [unused]
  postsmoother -> 
@@ -134,10 +134,10 @@ Level 2
  A 2    1111   3331     3.00  1
  
  Smoother (level 0) pre  : MueLu::IfpackSmoother{type = Chebyshev}
- Smoother (level 0) post : MueLu::IfpackSmoother{type = ILU}
+ Smoother (level 0) post : MueLu::IfpackSmoother{type = ILUT}
  
  Smoother (level 1) pre  : MueLu::IfpackSmoother{type = Chebyshev}
- Smoother (level 1) post : MueLu::IfpackSmoother{type = ILU}
+ Smoother (level 1) post : MueLu::IfpackSmoother{type = ILUT}
  
  Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 2) post : no smoother

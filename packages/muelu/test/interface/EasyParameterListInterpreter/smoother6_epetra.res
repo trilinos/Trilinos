@@ -10,7 +10,7 @@ multigrid algorithm = sa   [default]
 repartition: enable = 0   [default]
 
 Level 0
- Setup Smoother (MueLu::IfpackSmoother{type = ILU})
+ Setup Smoother (MueLu::IfpackSmoother{type = ILUT})
  [empty list]
  
 Level 1
@@ -58,7 +58,7 @@ Level 1
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
  
- Setup Smoother (MueLu::IfpackSmoother{type = ILU})
+ Setup Smoother (MueLu::IfpackSmoother{type = ILUT})
  [empty list]
  
 Level 2
@@ -124,9 +124,9 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : MueLu::IfpackSmoother{type = ILU}
+ Smoother (level 0) both : MueLu::IfpackSmoother{type = ILUT}
  
- Smoother (level 1) both : MueLu::IfpackSmoother{type = ILU}
+ Smoother (level 1) both : MueLu::IfpackSmoother{type = ILUT}
  
  Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 2) post : no smoother

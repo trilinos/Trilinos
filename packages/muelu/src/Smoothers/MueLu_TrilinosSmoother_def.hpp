@@ -166,10 +166,12 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(const std::string& type) {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
-    if (type == "CHEBYSHEV")  { return "Chebyshev"; }
-    if (type == "ILUT")       { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
+    if (type == "CHEBYSHEV")  { return "Chebyshev";                    }
+    if (type == "ILUT")       { return "ILUT";                         }
+    if (type == "RILUK")      { return "ILU";                          }
+    if (type == "ILU")        { return "ILU";                          }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: " + type);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
