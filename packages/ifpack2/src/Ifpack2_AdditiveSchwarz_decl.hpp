@@ -123,8 +123,8 @@ control this at compile time by setting the second template parameter
 run-time control of the subdomain solver.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
-and reordered. At the present time, RCM and METIS can be used to
-reorder the local matrix.
+and reordered. At the present time, the only available reordering
+algorithm is RCM (reverse Cuthill-Mckee).
 
 \section Ifpack2_AdditiveSchwarz_CombineMode Combine modes
 
