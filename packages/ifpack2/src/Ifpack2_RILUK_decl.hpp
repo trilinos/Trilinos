@@ -246,14 +246,6 @@ class RILUK:
   //! Preserved only for backwards compatibility.  Please use "node_type".
   TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
 
-
-  // //! The type of the Kokkos Node used by the input MatrixType.
-  // typedef typename MatrixType::mat_vec_type mat_vec_type;
-
-  // //! Preserved only for backwards compatibility.  Please use "mat_vec_type".
-  // TEUCHOS_DEPRECATED typedef typename MatrixType::mat_vec_type LocalMatOps;
-
-
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
