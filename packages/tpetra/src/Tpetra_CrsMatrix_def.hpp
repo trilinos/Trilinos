@@ -5436,7 +5436,7 @@ namespace Tpetra {
     Import_Util::sortCrsEntries(CSR_rowptr(),CSR_colind_LID(),CSR_vals());
 
     /***************************************************/
-    /**** 6) Reser the colmap and the arrays        ****/
+    /**** 6) Reset the colmap and the arrays        ****/
     /***************************************************/
     // Fire off the constructor for the new matrix (restricted as needed)
     destMat->replaceColMap(MyColMap);

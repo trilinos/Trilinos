@@ -647,9 +647,12 @@ void Tpetra::Import_Util::sortCrsEntries(const Teuchos::ArrayView<size_t> &CRS_r
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from  Epetra_CrsMatrix::SortEntries()
-  int NumRows = CRS_rowptr.size()-1;
-  for(int i = 0; i < NumRows; i++){
+  size_t NumRows = CRS_rowptr.size()-1;
+  size_t nnz = CRS_colind.size();
+
+  for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
+    if(start >= nnz) continue;
 
     Scalar* locValues   = &CRS_vals[start];
     size_t NumEntries   = CRS_rowptr[i+1] - start;
