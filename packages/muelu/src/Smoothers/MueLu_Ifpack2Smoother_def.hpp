@@ -66,7 +66,7 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
+  Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
     : type_(type), overlap_(overlap)
   {
     SetParameterList(paramList);
@@ -109,7 +109,8 @@ namespace MueLu {
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    SC negone = -Teuchos::ScalarTraits<Scalar>::one();
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC negone = -STS::one();
 
     SC lambdaMax = negone;
     if (type_ == "CHEBYSHEV") {
@@ -144,7 +145,9 @@ namespace MueLu {
         size_t nRowsFine   = fineA->getGlobalNumRows();
         size_t nRowsCoarse = A_->getGlobalNumRows();
 
-        ratio = std::max(ratio, as<Scalar>(as<double>(nRowsFine)/nRowsCoarse));
+        SC levelRatio = as<SC>(as<float>(nRowsFine)/nRowsCoarse);
+        if (STS::magnitude(levelRatio) > STS::magnitude(ratio))
+          ratio = levelRatio;
       }
 
       this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
@@ -180,43 +183,44 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack2
-    //  TODO: It might be nice to switch back the internal
+    // TODO:  It might be nice to switch back the internal
     //        "zero starting solution" option of the ifpack2 object prec_ to his
     //        initial value at the end but there is no way right now to get
     //        the current value of the "zero starting solution" in ifpack2.
     //        It's not really an issue, as prec_  can only be used by this method.
+    // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
+    // we should remove the if/else/elseif and just test if this
+    // option is supported by current ifpack2 preconditioner
     Teuchos::ParameterList paramList;
+    bool supportInitialGuess = false;
     if (type_ == "CHEBYSHEV") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+      supportInitialGuess = true;
 
     } else if (type_ == "RELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      supportInitialGuess = true;
 
     } else if (type_ == "KRYLOV") {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
+      supportInitialGuess = true;
 
     } else if (type_ == "SCHWARZ") {
-      int overlap=0;
+      int overlap = 0;
       Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
       if (InitialGuessIsZero == true)
         paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
-
-    } else if (type_ == "ILUT" || type_ == "RILUK" || type_ == "AMESOS2") {
-      //do nothing
-
-    } else {
-      // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
-      // we should remove the if/else/elseif and just test if this
-      // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Ifpack2Smoother::Apply(): Ifpack2 preconditioner '" + type_ + "' not supported");
+      supportInitialGuess = true;
     }
+
     SetPrecParameters(paramList);
 
     // Apply
-    if ( (type_ != "ILUT" && type_ != "SCHWARZ") || InitialGuessIsZero) {
+    if (supportInitialGuess || InitialGuessIsZero) {
       Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
       Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
       prec_->apply(tpB,tpX);
+
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
       RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);

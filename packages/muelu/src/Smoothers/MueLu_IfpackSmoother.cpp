@@ -166,6 +166,7 @@ namespace MueLu {
 
     Ifpack factory;
     prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
+    TEUCHOS_TEST_FOR_EXCEPTION(prec_.is_null(), Exceptions::RuntimeError, "Could not create an Ifpack preconditioner with type = \"" << type_ << "\"");
     SetPrecParameters();
     prec_->Compute();
 
@@ -189,33 +190,25 @@ namespace MueLu {
 
     // Forward the InitialGuessIsZero option to Ifpack
     Teuchos::ParameterList  paramList;
-    if (type_ == "Chebyshev") {
-      paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+    if (type_ == "Chebyshev")
+      paramList.set("chebyshev: zero starting solution",  InitialGuessIsZero);
 
-    } else if (type_ == "point relaxation stand-alone") {
+    else if (type_ == "point relaxation stand-alone")
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
 
-    } else if  (type_ == "ILU") {
-      // do nothing
-
-    } else {
-      // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
-      // we should remove the if/else/elseif and just test if this
-      // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '" + type_ + "' not supported");
-    }
     SetPrecParameters(paramList);
 
     // Apply
     if (InitialGuessIsZero) {
-      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
-      Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
+      Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(X);
+      const Epetra_MultiVector& epB = Utils::MV2EpetraMV(B);
       prec_->ApplyInverse(epB, epX);
+
     } else {
       RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
-      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(*Correction);
-      Epetra_MultiVector const &epB = Utils::MV2EpetraMV(*Residual);
+      Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(*Correction);
+      const Epetra_MultiVector& epB = Utils::MV2EpetraMV(*Residual);
       prec_->ApplyInverse(epB, epX);
       X.update(1.0, *Correction, 1.0);
     }

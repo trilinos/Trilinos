@@ -140,6 +140,18 @@ namespace MueLu {
     this->graphOutputLevel_ = paramList.get<int>("debug: graph level", -1);
     this->blockSize_        = paramList.get<int>("number of equations", 1);
 
+    // Save level data
+    if (paramList.isSublist("print")) {
+      ParameterList printList = paramList.sublist("print");
+
+      if (printList.isParameter("A"))
+        this->matricesToPrint_     = Teuchos::getArrayFromStringParameter<int>(printList, "A");
+      if (printList.isParameter("P"))
+        this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "P");
+      if (printList.isParameter("R"))
+        this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
+    }
+
     // Translate verbosity parameter
     this->verbosity_ = static_cast<MsgType>(Hierarchy::GetDefaultVerbLevel());      // cast int to enum
     if (paramList.isParameter("verbosity")) {
@@ -343,7 +355,8 @@ namespace MueLu {
       // TODO: this is not a proper place to check. If we consider direct solver to be a special
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || coarseType == "ILUT")
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams));
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));

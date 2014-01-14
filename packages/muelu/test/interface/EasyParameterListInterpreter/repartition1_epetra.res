@@ -11,9 +11,9 @@ repartition: partitioner = zoltan   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -88,9 +88,9 @@ Level 1
  useSubcomm = 1   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)

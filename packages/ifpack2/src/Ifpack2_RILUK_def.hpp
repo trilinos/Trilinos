@@ -145,7 +145,6 @@ setParameters (const Teuchos::ParameterList& params)
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   // Default values of the various parameters.
   int fillLevel = 0;
@@ -411,15 +410,19 @@ void RILUK<MatrixType>::initialize ()
   ++numInitialize_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & OverlapA) {
+void
+RILUK<MatrixType>::
+initAllValues (const row_matrix_type& OverlapA)
+{
+  using Teuchos::RCP;
+  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
 
   size_t NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
   size_t MaxNumEntries = OverlapA.getGlobalMaxNumRowEntries();
-
 
   Teuchos::Array<global_ordinal_type> InI(MaxNumEntries); // Allocate temp space
   Teuchos::Array<global_ordinal_type> LI(MaxNumEntries);
@@ -433,23 +436,23 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_
   L_->resumeFill();
   U_->resumeFill();
   if (ReplaceValues) {
-    L_->setAllToScalar(0.0); // Zero out L and U matrices
-    U_->setAllToScalar(0.0);
+    L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+    U_->setAllToScalar (STS::zero ());
   }
 
-  D_->putScalar(0.0); // Set diagonal values to zero
+  D_->putScalar (STS::zero ()); // Set diagonal values to zero
   Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& rowMap =
-    L_->getRowMap();
+  RCP<const map_type> rowMap = L_->getRowMap ();
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  for (global_ordinal_type i=rowMap->getMinGlobalIndex(); i<=rowMap->getMaxGlobalIndex(); ++i) {
+  for (global_ordinal_type i = rowMap->getMinGlobalIndex ();
+       i <= rowMap->getMaxGlobalIndex (); ++i) {
     global_ordinal_type global_row = i;
-    local_ordinal_type local_row = rowMap->getLocalElement(global_row);
+    local_ordinal_type local_row = rowMap->getLocalElement (global_row);
 
-    OverlapA.getGlobalRowCopy(global_row, InI(), InV(), NumIn); // Get Values and Indices
+    OverlapA.getGlobalRowCopy (global_row, InI(), InV(), NumIn); // Get Values and Indices
 
     // Split into L and U (we don't assume that indices are ordered).
 
@@ -464,11 +467,9 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_
         DiagFound = true;
         DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Tpetra::Vector D_
       }
-
       else if (k < 0) { // Out of range
         throw std::runtime_error("out of range (k<0) in Ifpack2::RILUK::initAllValues");
       }
-
       else if (k < i) {
         LI[NumL] = k;
         LV[NumL] = InV[j];
@@ -486,14 +487,16 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_
 
     // Check in things for this row of L and U
 
-    if (DiagFound) ++NumNonzeroDiags;
-    else DV[local_row] = Athresh_;
+    if (DiagFound) {
+      ++NumNonzeroDiags;
+    } else {
+      DV[local_row] = Athresh_;
+    }
 
     if (NumL) {
       if (ReplaceValues) {
         L_->replaceGlobalValues(global_row, LI(0, NumL), LV(0,NumL));
-      }
-      else {
+      } else {
         L_->insertGlobalValues(global_row, LI(0,NumL), LV(0,NumL));
       }
     }
@@ -501,20 +504,18 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_
     if (NumU) {
       if (ReplaceValues) {
         U_->replaceGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
-      }
-      else {
+      } else {
         U_->insertGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
       }
     }
-
   }
 
   // The domain of L and the range of U are exactly their own row maps (there is no communication).
   // The domain of U and the range of L must be the same as those of the original matrix,
   // However if the original matrix is a VbrMatrix, these two latter maps are translation from
   // a block map to a point map.
-  L_->fillComplete(L_->getColMap(), A_->getRangeMap());
-  U_->fillComplete(A_->getDomainMap(), U_->getRowMap());
+  L_->fillComplete (L_->getColMap (), A_->getRangeMap ());
+  U_->fillComplete (A_->getDomainMap (), U_->getRowMap ());
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
 
@@ -522,10 +523,10 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_
   isFactored_ = false;
 
   size_t TotalNonzeroDiags = 0;
-  Teuchos::reduceAll(*L_->getRowMap()->getComm(),Teuchos::REDUCE_SUM,
-                     1,&NumNonzeroDiags,&TotalNonzeroDiags);
+  Teuchos::reduceAll (* (L_->getRowMap ()->getComm ()), Teuchos::REDUCE_SUM,
+                      1, &NumNonzeroDiags, &TotalNonzeroDiags);
   NumMyDiagonals_ = NumNonzeroDiags;
-  if (NumNonzeroDiags != U_->getNodeNumRows()) {
+  if (NumNonzeroDiags != U_->getNodeNumRows ()) {
     throw std::runtime_error("Error in Ifpack2::RILUK::initAllValues, wrong number of diagonals.");
   }
 }
@@ -719,8 +720,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,
     "Ifpack2::RILUK::apply: If you have not yet called compute(), "

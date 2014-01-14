@@ -166,23 +166,23 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(const std::string& type) {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
-    if (type == "CHEBYSHEV")  { return "Chebyshev"; }
-    if (type == "ILUT")       { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
+    if (type == "CHEBYSHEV")  { return "Chebyshev";                    }
+    if (type == "ILUT")       { return "ILUT";                         }
+    if (type == "RILUK")      { return "ILU";                          }
+    if (type == "ILU")        { return "ILU";                          }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: " + type);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ParameterList TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Param(const Teuchos::ParameterList& ifpack2List) {
     Teuchos::ParameterList ifpack1List = ifpack2List;
 
-    if (ifpack2List.isParameter("relaxation: type")) {
-      std::string relaxationType = ifpack2List.get<std::string>("relaxation: type");
-      if (relaxationType == "Symmetric Gauss-Seidel") {
-        ifpack1List.remove("relaxation: type");
-        ifpack1List.set("relaxation: type", "symmetric Gauss-Seidel");
-      }
-    }
+    if (ifpack2List.isParameter("relaxation: type") && ifpack2List.get<std::string>("relaxation: type") == "Symmetric Gauss-Seidel")
+      ifpack1List.set("relaxation: type", "symmetric Gauss-Seidel");
+
+    if (ifpack2List.isParameter("fact: iluk level-of-fill"))
+      ifpack1List.remove("fact: level-of-fill", ifpack2List.get<int>("fact: iluk level-of-fill"));
 
     return ifpack1List;
   }

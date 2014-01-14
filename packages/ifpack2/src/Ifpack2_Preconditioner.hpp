@@ -40,6 +40,8 @@
 //@HEADER
 */
 
+/// @file Ifpack2_Preconditioner.hpp
+
 #ifndef IFPACK2_PRECONDITIONER_HPP
 #define IFPACK2_PRECONDITIONER_HPP
 
@@ -54,49 +56,47 @@
 
 namespace Ifpack2 {
 
-
-/*!
-\class Preconditioner
-\brief Interface for all Ifpack2 preconditioners
-\tparam Scalar Type of the matrix's entries; same as the first
-  template parameter of Tpetra::RowMatrix
-\tparam LocalOrdinal Type of the matrix's local indices; same as the
-  second template parameter of Tpetra::RowMatrix
-\tparam GlobalOrdinal Type of the matrix's global indices; same as the
-  third template parameter of Tpetra::RowMatrix
-\tparam Node The matrix's Kokkos Node type; same as the fourth
-  template parameter of Tpetra::RowMatrix
-
-The Preconditioner class defines the interface that all Ifpack2
-preconditioners must implement.  Preconditioner inherits from
-Tpetra::Operator.  Its apply() method applies the preconditioner.  (If
-you are familiar with the IFPACK package, please be aware that this is
-different from IFPACK.  In IFPACK, the ApplyInverse() method applies
-or "solves with" the preconditioner \f$M^{-1}\f$, and the Apply()
-method "applies" the preconditioner \f$M\f$.  In Ifpack2, the apply()
-method applies or "solves with" the preconditioner \f$M^{-1}\f$, and
-there is no method comparable to Apply() in IFPACK.)
-
-Preconditioner provides the following methods
-  - initialize() performs all operations based on the graph of the
-    matrix (without considering the numerical values)
-  - isInitialized() returns true if the preconditioner has been
-    successfully initialized
-  - compute() computes everything required to apply the
-    preconditioner, using the matrix's values (and assuming that the
-    graph structure of the matrix has not changed)
-  - isComputed() returns true if the preconditioner has been
-    successfully computed, false otherwise.
-  - getMatrix() returns a reference to the matrix to be preconditioned
-
-Implementations of compute() must internally call initialize() if
-isInitialized() returns false. The preconditioner is applied by
-apply() (which returns if isComputed() is false). Every time that
-initialize() is called, the object destroys all the previously
-allocated information, and reinitializes the preconditioner. Every
-time compute() is called, the object recomputes the actual values of
-the preconditioner.
-*/
+/// @class Preconditioner
+/// @brief Interface for all Ifpack2 preconditioners
+/// @tparam Scalar Type of the matrix's entries; same as the first
+///   template parameter of Tpetra::RowMatrix
+/// @tparam LocalOrdinal Type of the matrix's local indices; same as the
+///   second template parameter of Tpetra::RowMatrix
+/// @tparam GlobalOrdinal Type of the matrix's global indices; same as the
+///   third template parameter of Tpetra::RowMatrix
+/// @tparam Node The matrix's Kokkos Node type; same as the fourth
+///   template parameter of Tpetra::RowMatrix
+/// 
+/// The Preconditioner class defines the interface that all Ifpack2
+/// preconditioners must implement.  Preconditioner inherits from
+/// Tpetra::Operator.  Its apply() method applies the preconditioner.  (If
+/// you are familiar with the IFPACK package, please be aware that this is
+/// different from IFPACK.  In IFPACK, the ApplyInverse() method applies
+/// or "solves with" the preconditioner \f$M^{-1}\f$, and the Apply()
+/// method "applies" the preconditioner \f$M\f$.  In Ifpack2, the apply()
+/// method applies or "solves with" the preconditioner \f$M^{-1}\f$, and
+/// there is no method comparable to Apply() in IFPACK.)
+/// 
+/// Preconditioner provides the following methods
+///   - initialize() performs all operations based on the graph of the
+///     matrix (without considering the numerical values)
+///   - isInitialized() returns true if the preconditioner has been
+///     successfully initialized
+///   - compute() computes everything required to apply the
+///     preconditioner, using the matrix's values (and assuming that the
+///     graph structure of the matrix has not changed)
+///   - isComputed() returns true if the preconditioner has been
+///     successfully computed, false otherwise.
+///   - getMatrix() returns a reference to the matrix to be preconditioned
+/// 
+/// Implementations of compute() must internally call initialize() if
+/// isInitialized() returns false. The preconditioner is applied by
+/// apply() (which returns if isComputed() is false). Every time that
+/// initialize() is called, the object destroys all the previously
+/// allocated information, and reinitializes the preconditioner. Every
+/// time compute() is called, the object recomputes the actual values of
+/// the preconditioner.
+///
 template<class Scalar,
          class LocalOrdinal = int,
          class GlobalOrdinal = LocalOrdinal,
@@ -113,27 +113,27 @@ public:
   //! Destructor.
   virtual ~Preconditioner(){}
 
-  /** \name Methods implementing Tpetra::Operator. */
+  /// @name Methods implementing Tpetra::Operator.
   //@{
 
-  /// \brief The domain Map of this operator.
+  /// @brief The domain Map of this operator.
   ///
   /// The domain Map describes the distribution of valid input vectors
   /// X to the apply() method.
   virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
   getDomainMap () const = 0;
 
-  /// \brief The range Map of this operator.
+  /// @brief The range Map of this operator.
   ///
   /// The range Map describes the distribution of valid output vectors
   /// Y to the apply() method.
   virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
   getRangeMap () const = 0;
 
-  /// \brief Apply the preconditioner to X, putting the result in Y.
+  /// @brief Apply the preconditioner to X, putting the result in Y.
   ///
   /// If the result of applying this preconditioner to a vector X is
-  /// \f$F \cdot X$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
+  /// \f$F \cdot X$\f$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   virtual void
   apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
@@ -146,7 +146,7 @@ public:
   //! Set this preconditioner's parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
 
-  /// \brief Set up the graph structure of this preconditioner.
+  /// @brief Set up the graph structure of this preconditioner.
   ///
   /// If the graph structure of the constructor's input matrix has
   /// changed, or if you have not yet called initialize(), you must
@@ -160,7 +160,7 @@ public:
   //! True if the preconditioner has been successfully initialized, else false.
   virtual bool isInitialized() const = 0;
 
-  /// \brief Set up the numerical values in this preconditioner.
+  /// @brief Set up the numerical values in this preconditioner.
   ///
   /// If the values of the constructor's input matrix have changed, or
   /// if you have not yet called compute(), you must call compute()
@@ -174,7 +174,7 @@ public:
   //! True if the preconditioner has been successfully computed, else false.
   virtual bool isComputed() const = 0;
 
-  /// \brief Compute the condition number estimate and return its value.
+  /// @brief Compute the condition number estimate and return its value.
   ///
   /// \warning This method is DEPRECATED.  It was inherited from
   ///   Ifpack, and Ifpack never clearly stated what this method
@@ -189,7 +189,7 @@ public:
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null) = 0;
 
-  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  /// @brief Return the computed condition number estimate, or -1 if not computed.
   ///
   /// \warning This method is DEPRECATED.  See warning for computeCondEst().
   virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const = 0;
