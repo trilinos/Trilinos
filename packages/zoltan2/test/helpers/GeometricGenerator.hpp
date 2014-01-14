@@ -2522,7 +2522,7 @@ public:
 	  commandLine.setOption("objective", &objective,  doc.c_str());
 
 	  CommandLineProcessor::EParseCommandLineReturn rc =
-	    commandLine.parse(NULL, 0);
+	    commandLine.parse(0, NULL);
 
 
 
@@ -2569,7 +2569,7 @@ public:
 	  // Now call Zoltan to partition the problem.
 
 	  float ver;
-	  int aok = Zoltan_Initialize(NULL, 0, &ver);
+	  int aok = Zoltan_Initialize(0,NULL, &ver);
 
 	  if (aok != 0){
 	    printf("Zoltan_Initialize failed\n");
@@ -2635,7 +2635,7 @@ public:
 
 	  MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
 
-	  for (size_t i = 0; i < numLocalCoords; i++)
+	  for (lno_t i = 0; i < numLocalCoords; i++)
 		  coordinate_grid_parts[i] = exportToPart[i];
 	  Zoltan_Destroy(&zz);
 	  MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
