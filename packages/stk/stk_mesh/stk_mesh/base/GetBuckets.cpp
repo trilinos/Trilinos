@@ -48,7 +48,7 @@ void get_involved_parts(
     )
 {
   involved_parts.clear();
-  if (union_parts.size() == 0) {
+  if (union_parts.empty()) {
     return;
   }
 
