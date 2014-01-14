@@ -1,5 +1,94 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.6 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.6 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
+
+Framework Release Notes:
+
+  - Changed behavior of Trilinos_ENABLE_<PACKAGE>=ON to enable all
+    subpackages for that package including in propogating forward dependencies.
+    See updated <Project>BuildQuickRef.* document.
+
+
+Amesos2
+
+  - Added experimental support for Cholmod, a sparse Cholesky solver.
+
+Epetra
+
+  - Removed a few "using std::" statements from Epetra headers. These were for
+    std::{string, istream, ostream, cerr, cout, endl, flush}. User code that
+    inadvertently relied on such names being available in global namespace could
+    see errors.  They should explicitly use std::name or place the appropriate
+    "using std::name;" statement in their code.
+
+Kokkos
+
+  - Non-backwards compatible change: In the "Kokkos Classic" subpackage
+    (everything in kokkos/classic), the "Kokkos" namespace has been
+    changed to "KokkosClassic".  
+
+    This will facilitate coexistence of Kokkos Classic with Kokkos Array
+    and the new Kokkos subpackages that depend on Kokkos Array.
+    Coexistence will be necessary for our planned port of Tpetra to use
+    Kokkos Array instead of Kokkos Classic.  Kokkos Classic will
+    eventually be deprecated, and Tpetra (and downstream packages) will
+    use Kokkos Array instead.  This process is beginning now, but will
+    start in earnest once Kokkos Array becomes a Research Stable
+    subpackage.
+
+
+NOX
+
+  - Added a Fixed-point Anderson Acceleration solver.  Unit tests exist for
+    Epetra and Thyra adapters.
+
+RTOp
+
+  - Added better runtime support (not dependent on debug-mode builds) for
+    printing the application of RTOps in parallel with the
+    RTOpPack::SPMD_apply_op() functions.  This makes parallel debugging much
+    easier (for example, involving Thyra).
+
+Thyra
+
+  - Refactored Thyra support software and Thyra/Epetra adapters to support
+    zero-element processes for vector spaces and maps.  Now
+    Thyra::SpmdVectorSpaceBase subclass object can have zero elements on a
+    process and have everything work as it should.  The Thyra/Epetra and
+    Thyra/Tpetra adapters should also be able to take Eptra and Tpetra Map
+    objects that have zero elements on a process as well.  For most clients and
+    subclasses, these refactorings should maintain 100% perfect backward
+    compatibility except now more use cases are supported than before.  See the
+    unit tests and updated class documentation for details.
+
+Tpetra
+
+  - Accepted non-backwards compatible change to KokkosClassic, in which
+    that subpackage changed its namespace from Kokkos to KokkosClassic.
+
+
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.4 Release Notes                                         #
 #                                                                             #
 ###############################################################################
