@@ -154,26 +154,29 @@ namespace MueLu {
      * returns vector with size of striding blocks in the domain DOF map (= coarse map).
      * e.g. for 2 velocity dofs and 1 pressure dof the vector is (2,1)
      */
-    virtual std::vector<size_t> getStridingData() { return stridingInfo_; }
+    virtual std::vector<size_t> getStridingData() const { return stridingInfo_; }
 
     /*! @brief setStridingData
      * set striding vector for the domain DOF map (= coarse map),
      * e.g. (2,1) for 2 velocity dofs and 1 pressure dof
      */
-    virtual void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
+    virtual void setStridingData(std::vector<size_t> stridingInfo);
 
     /*! @brief getStridedBlockId
      * returns strided block id for the domain DOF map of Ptent (= coarse map)
      * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
      */
-    virtual LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
+    virtual LocalOrdinal getStridedBlockId() const {
+      const ParameterList & pL = GetParameterList();
+      return pL.get<LocalOrdinal>("Strided block id");
+    }
 
     /*! @brief setStridedBlockId
      * set strided block id for the domain DOF map of Ptent (= coarse map)
      * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
      */
     virtual void setStridedBlockId(LocalOrdinal stridedBlockId) {
-      stridedBlockId_ = stridedBlockId;
+      SetParameter("Strided block id", ParameterEntry(stridedBlockId));
     }
 
     //@}
@@ -183,7 +186,7 @@ namespace MueLu {
     GlobalOrdinal domainGidOffset_; //! offset for domain gids (coarse gids) of tentative prolongator  (default = 0). The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed equally over the procs (unless some reordering is done).
 
     mutable std::vector<size_t> stridingInfo_;   // vector with size of strided blocks (dofs)
-    LocalOrdinal stridedBlockId_;        // member variable denoting which dofs are stored in map
+    //LocalOrdinal stridedBlockId_;        // member variable denoting which dofs are stored in map
                                          // stridedBlock == -1: the full map (with all strided block dofs)
                                          // stridedBlock >  -1: only dofs of strided block with index "stridedBlockId" are stored in this map
 

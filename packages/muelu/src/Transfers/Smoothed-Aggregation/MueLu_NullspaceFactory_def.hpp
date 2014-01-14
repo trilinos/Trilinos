@@ -57,12 +57,33 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    // validParamList->set< bool >("QR",                                         true, "Use QR factorization"); Not implemented for QR=false
+
+    validParamList->set< std::string >("Fine level nullspace", "Nullspace", "Variable name which is used to store null space multi vector on the finest level (default=\"Nullspace\"");
+
+    validParamList->set< RCP<const FactoryBase> >("A",                          Teuchos::null, "Generating factory of the fine level matrix (only needed if default null space is generated)");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",                  Teuchos::null, "Generating factory of the fine level null space");
+
+    // TODO not very elegant.
+    validParamList->set< RCP<const FactoryBase> >("Nullspace1", Teuchos::null, "Generating factory of the fine level null space");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace2", Teuchos::null, "Generating factory of the fine level null space");
+
+    return validParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
 
+    const ParameterList & pL = GetParameterList();
+    std::string nspName = pL.get<std::string>("Fine level nullspace");
+
     // only request "A" in DeclareInput if
-    // 1) there is not nspName_ (e.g. "Nullspace") is available in Level, AND
+    // 1) there is not nspName (e.g. "Nullspace") is available in Level, AND
     // 2) it is the finest level (i.e. LevelID == 0)
-    if (currentLevel.IsAvailable(nspName_, NoFactory::get()) == false && currentLevel.GetLevelID() == 0)
+    if (currentLevel.IsAvailable(nspName, NoFactory::get()) == false && currentLevel.GetLevelID() == 0)
       Input(currentLevel, "A");
 
     if (currentLevel.GetLevelID() != 0) {
@@ -74,7 +95,7 @@ namespace MueLu {
       // 2) nullspaceFact_ must be a TentativePFactory i.e. at least a TwoLevelFactoryBase derived object
 
 
-      currentLevel.DeclareInput("Nullspace", GetFactory(nspName_).get(), this); /* ! "Nullspace" and nspName_ mismatch possible here */
+      currentLevel.DeclareInput("Nullspace", GetFactory(nspName).get(), this); /* ! "Nullspace" and nspName mismatch possible here */
     }
   }
 
@@ -85,18 +106,20 @@ namespace MueLu {
     RCP<MultiVector> nullspace;
 
     //TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): NullspaceFactory can be used for finest level (LevelID == 0) only.");
+    const ParameterList & pL = GetParameterList();
+    std::string nspName = pL.get<std::string>("Fine level nullspace");
 
     if (currentLevel.GetLevelID() == 0) {
 
-      if (currentLevel.IsAvailable(nspName_, NoFactory::get())) {
+      if (currentLevel.IsAvailable(nspName, NoFactory::get())) {
         //FIXME: with the new version of Level::GetFactory(), this never happens.
 
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
-        nullspace = currentLevel.Get< RCP<MultiVector> >(nspName_, NoFactory::get());
-        GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
+        nullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
+        GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
 
       } else {
-        // "Nullspace" (nspName_) is not available
+        // "Nullspace" (nspName) is not available
         RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
         // determine numPDEs
@@ -123,7 +146,7 @@ namespace MueLu {
       // on coarser levels always use "Nullspace" as variable name, since it is expected by
       // tentative P factory to be "Nullspace"
 
-      nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName_).get()); /* ! "Nullspace" and nspName_ mismatch possible here */
+      nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName).get()); /* ! "Nullspace" and nspName mismatch possible here */
 
     }
 

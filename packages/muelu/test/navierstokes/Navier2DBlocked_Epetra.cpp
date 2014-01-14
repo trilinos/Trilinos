@@ -527,8 +527,14 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////////////// define subblocks of A
   // make A11 block and A22 block available as variable "A" generated
   // by A11Fact and A22Fact
-  RCP<SubBlockAFactory> A11Fact = rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
-  RCP<SubBlockAFactory> A22Fact = rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
+  RCP<SubBlockAFactory> A11Fact = rcp(new SubBlockAFactory());
+  A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+  A11Fact->SetParameter("block row",ParameterEntry(0));
+  A11Fact->SetParameter("block col",ParameterEntry(0));
+  RCP<SubBlockAFactory> A22Fact = rcp(new SubBlockAFactory());
+  A22Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+  A22Fact->SetParameter("block row",ParameterEntry(1));
+  A22Fact->SetParameter("block col",ParameterEntry(1));
 
   ///////////////////////////////////////////// define smoother for A11
   // define block smoother for the first block matrix row in BlockGaussSeidel Smoother

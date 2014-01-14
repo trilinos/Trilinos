@@ -237,6 +237,9 @@ namespace MueLu {
 
       //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
 
+      // TODO: add support for "factory groups" which are stored in a map.
+      // A factory group has a name and a list of factories
+
       factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn);
     }
   }
