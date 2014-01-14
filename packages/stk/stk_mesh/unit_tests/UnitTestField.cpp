@@ -195,7 +195,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   stk::mesh::put_field( f0 , NODE_RANK , p0 );
   stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
   stk::mesh::put_field( f2 , NODE_RANK , p2 , 10 , 20 );
-  stk::mesh::put_field( f3 , NODE_RANK , p3 , 10 , 20 , 30 );
+  stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -281,7 +281,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::put_field( f0 , NODE_RANK , p0 );
   stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
   stk::mesh::put_field( f2 , NODE_RANK , p2 , 10 , 20 );
-  stk::mesh::put_field( f3 , NODE_RANK , p3 , 10 , 20 , 30 );
+  stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
 
   meta_data.commit();
 

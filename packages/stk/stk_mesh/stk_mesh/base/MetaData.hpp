@@ -628,7 +628,6 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -637,7 +636,6 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
                         const Selector & selector ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -646,7 +644,6 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -656,7 +653,6 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -1106,7 +1102,6 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1121,9 +1116,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 );
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
-  if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
-  }
+  ThrowRequireMsg(field_entity_rank != InvalidEntityRank, "put_field called on field without valid entity-rank");
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
@@ -1133,7 +1126,6 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        EntityRank entity_rank ,
                         const Selector &selector ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1148,9 +1140,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 );
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
-  if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
-  }
+  ThrowRequireMsg(field_entity_rank != InvalidEntityRank, "put_field called on field without valid entity-rank");
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
@@ -1160,7 +1150,6 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1176,9 +1165,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 , n4 );
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
-  if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
-  }
+  ThrowRequireMsg(field_entity_rank != InvalidEntityRank, "put_field called on field without valid entity-rank");
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
@@ -1188,7 +1175,6 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1205,9 +1191,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
-  if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
-  }
+  ThrowRequireMsg(field_entity_rank != InvalidEntityRank, "put_field called on field without valid entity-rank");
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
