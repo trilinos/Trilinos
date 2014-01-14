@@ -33,9 +33,9 @@ void setup_simple_mesh(stk::mesh::BulkData& bulk_data)
 {
     stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
 
-    stk::mesh::Field<double>  & field_1 = meta_data.declare_field< stk::mesh::Field<double> >( "field_1" );
-    stk::mesh::Field<double>  & field_2 = meta_data.declare_field< stk::mesh::Field<double> >( "field_2" );
-    stk::mesh::Field<double>  & field_3 = meta_data.declare_field< stk::mesh::Field<double> >( "field_3" );
+    stk::mesh::Field<double>  & field_1 = meta_data.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field_1" );
+    stk::mesh::Field<double>  & field_2 = meta_data.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field_2" );
+    stk::mesh::Field<double>  & field_3 = meta_data.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field_3" );
 
     stk::mesh::put_field( field_1 , NODE_RANK , meta_data.universal_part() );
     stk::mesh::put_field( field_2 , NODE_RANK , meta_data.universal_part() );
