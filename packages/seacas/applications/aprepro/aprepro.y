@@ -53,6 +53,7 @@ symrec *format;
   double  val;		/* For returning numbers.		*/
   symrec *tptr;		/* For returning symbol-table pointers	*/
   char   *string;	/* For returning quoted strings		*/
+  array  *array;
 }
 
 %token	<val>	NUM		/* Simple double precision number	*/
@@ -62,9 +63,12 @@ symrec *format;
 %token	<tptr>	SVAR 	/* String Variable */
 %token  <tptr>  IMMVAR  /* Immutable Variable */
 %token	<tptr>	IMMSVAR /* Immutable String Variable */
+%token	<tptr>	ARRAY   /* array data [i,j] */
 %token  <tptr>  FNCT
 %token  <tptr>  SFNCT
+%token  <tptr>  AFNCT
 %type	<val>	exp 
+%type	<array>	aexp 
 %type   <val>   bool
 %type	<string>	sexp
 
@@ -97,6 +101,7 @@ line:	  '\n'			{ if (echo) fprintf(yyout,"\n");	}
 				   }                                    }
 	| '{' sexp '}' 		{ if (echo && $2 != NULL)
 				    fprintf(yyout, "%s", $2);	}
+	| '{' aexp '}' 		{ ; }
 	| error '}'		{ yyerrok;				}
 ;
 
@@ -121,6 +126,16 @@ bool:     sexp '<' sexp         { $$ = (strcmp($1,$3) <  0 ? 1 : 0);	}
         | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);	}
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);	}
 
+aexp:   ARRAY                   { $$ = $1->value.avar;}
+        | AFNCT '(' sexp ')'    { $$ = (*($1->value.arrfnct))($3);	}
+        | AFNCT '(' exp ',' exp ')'  
+                                { $$ = (*($1->value.arrfnct))($3,$5);	}
+        | ARRAY '=' aexp        { $$ = $3; $1->value.avar = $3; 
+                                  redefined_warning($1);
+				  set_type($1, ARRAY); }
+        | UNDVAR '=' aexp       { $$ = $3; $1->value.avar = $3; 
+                                  set_type($1, ARRAY); }
+
 sexp:     QSTRING		{ $$ = $1;				}
         | SVAR			{ $$ = $1->value.svar;			}
         | IMMSVAR		{ $$ = $1->value.svar;			}
@@ -137,6 +152,7 @@ sexp:     QSTRING		{ $$ = $1;				}
         | IMMVAR '=' sexp	{ immutable_modify($1); YYERROR; }
         | SFNCT '(' sexp ')'	{ $$ = (*($1->value.strfnct))($3);	}
 	| SFNCT '(' ')'		{ $$ = (*($1->value.strfnct))();	}
+	| SFNCT '(' aexp ')'	{ $$ = (*($1->value.strfnct))($3); 	}
         | SFNCT '(' exp  ')'	{ $$ = (*($1->value.strfnct))($3);	}
         | sexp CONCAT sexp	{ int len1 = strlen($1);
 				  int len3 = strlen($3);
@@ -225,6 +241,7 @@ exp:	  NUM			{ $$ = $1; 				}
 	| FNCT '(' ')'		{ $$ = (*($1->value.fnctptr))();	}
 	| FNCT '(' exp ')'	{ $$ = (*($1->value.fnctptr))($3); 	}
 	| FNCT '(' sexp ')'	{ $$ = (*($1->value.fnctptr))($3); 	}
+	| FNCT '(' aexp ')'	{ $$ = (*($1->value.fnctptr))($3); 	}
 	| FNCT '(' sexp ',' exp ')'
                                 { $$ = (*($1->value.fnctptr))($3, $5); 	}
 	| FNCT '(' sexp ',' sexp ')'
@@ -262,14 +279,41 @@ exp:	  NUM			{ $$ = $1; 				}
 				  $$ = pow($1, $3); 
 				  MATH_ERROR("Power");			}
 	| '(' exp ')'		{ $$ = $2;				}
-    | '[' exp ']'           { errno = 0;
+	| '[' exp ']'           { errno = 0;
 				  $$ = (double)($2 < 0 ? 
 					-floor(-($2)): floor($2) );
 				  MATH_ERROR("floor (int)");		}
 
-    | bool { $$ = ($1) ? 1 : 0; }
-    | bool '?' exp ':' exp  { $$ = ($1) ? ($3) : ($5);              }
-
+	| bool { $$ = ($1) ? 1 : 0; }
+	| bool '?' exp ':' exp  { $$ = ($1) ? ($3) : ($5);              }
+      
+	| ARRAY '[' exp ',' exp ']' { array *arr = $1->value.avar;
+	                              int cols = arr->cols;
+				      int rows = arr->rows;
+				      if ($3 < rows && $5 < cols) {
+					int offset = $3*cols+$5;
+					$$ = $1->value.avar->data[offset];
+				      }
+				      else {
+					yyerror("Row or Column index out of range"); 
+					yyerrok;
+				      }
+                                    }
+	| ARRAY '[' exp ',' exp ']' '=' exp 
+                                  { $$ = $8;
+				    array *arr = $1->value.avar;
+				    int cols = arr->cols;
+				    int rows = arr->rows;
+				    if ($3 < rows && $5 < cols) {
+				      int offset = $3*cols+$5;
+				      $1->value.avar->data[offset] = $8;
+				    }
+				    else {
+				      yyerror("Row or Column index out of range"); 
+				      yyerrok;
+				    }
+				  }
+				    
 
 /* End of grammar */
 %%

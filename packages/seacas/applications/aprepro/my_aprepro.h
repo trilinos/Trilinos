@@ -59,7 +59,7 @@ extern FILE *yyout;       /* Output file */
 /* Global options */
 struct aprepro_options
 {
-  char comment;
+  char *comment;
   char *include_path;
   
   int end_on_exit;
@@ -75,6 +75,13 @@ struct aprepro_options
 
 typedef struct aprepro_options aprepro_options;
 
+struct array {
+  double *data;
+  int rows;
+  int cols;
+};
+typedef struct array array;
+
 /* Data type for links in the chain of symbols. */
 
 struct symrec
@@ -89,6 +96,8 @@ struct symrec
     double (*fnctptr)();
     char *svar;
     char *(*strfnct)();
+    array *avar; /* Array Variable */
+    array *(*arrfnct)();
   } value;
   struct symrec *next;
 };

@@ -129,6 +129,8 @@ double do_polarY(double rad, double ang);
 double do_strtod(char *string);
 double do_csvrows(char *string);
 double do_csvcols(char *string);
+double do_rows(array *arr);
+double do_cols(array *arr);
 
 char  *do_getenv(char *string);
 char  *do_tolower(char *string);
@@ -733,6 +735,16 @@ double do_atanh(double x)
   return (z * LOG1P(x + x));
 }
 
+double do_rows(array *arr)
+{
+  return arr->rows;
+}
+
+double do_cols(array *arr)
+{
+  return arr->cols;
+}
+
 double do_csvrows(char * filename)
 {
   size_t len = 0;
@@ -752,7 +764,7 @@ double do_csvrows(char * filename)
 
 double do_csvcols(char * filename)
 {
-  const char *delim = ",";
+  char *delim = ",";
   size_t len = 0;
   char *line = NULL;
 
@@ -1009,10 +1021,10 @@ double do_strtod(char *string)
 char *
 do_help(void)
 {
-  char comment = getsym("_C_")->value.svar[0];
-  printf ("\n%c   Enter {DUMP()}        to list defined variables\n", comment);
-  printf ("%c         {DUMP_FUNC()}   to list of all double and string functions\n", comment);
-  printf ("%c         {DUMP_PREVAR()} to list all predefined variables\n", comment);
+  char* comment = getsym("_C_")->value.svar;
+  printf ("\n%s   Enter {DUMP()}        to list defined variables\n", comment);
+  printf ("%s         {DUMP_FUNC()}   to list of all double and string functions\n", comment);
+  printf ("%s         {DUMP_PREVAR()} to list all predefined variables\n", comment);
   return("");
 }
 
@@ -1142,7 +1154,7 @@ char *do_extract(char *string, char *begin, char *end)
 
 char *do_get_csv(char *filename, double row, double col)
 {
-  const char *delim = ",";
+  char *delim = ",";
 
   size_t len = 0;
   char *line = NULL;
@@ -1168,4 +1180,93 @@ char *do_get_csv(char *filename, double row, double col)
   if (line) free(line);
 
   return value;
+}
+
+char *do_print_array(array *my_array_data)
+{
+  if (my_array_data != NULL) {
+    int ir, ic;
+    int rows = my_array_data->rows;
+    int cols = my_array_data->cols;
+    int idx=0;
+    symrec *format = getsym("_FORMAT");
+    for (ir=0; ir < rows; ir++) {
+      printf("\n\t");
+      for (ic=0; ic < cols; ic++) {
+	fprintf(yyout, format->value.svar, my_array_data->data[idx++]);
+	if (ic < cols-1)
+	  fprintf(yyout, "\t");
+      }
+    }
+  }
+  return "";
+}
+
+array *do_make_array(double rows, double cols)
+{
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = rows;
+  array_data->cols = cols;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(rows*cols,sizeof(double));
+  return array_data;
+}
+
+array *do_csv_array(char *filename)
+{
+  char *delim = ",";
+  
+  size_t len = 0;
+  char *line = NULL;
+  int rows = 0;
+  int cols = 0;
+  int i=0;
+  int idx=0;
+  
+  FILE *fp = NULL;
+  
+  double tempCols = 0;
+  array *array_data = (array*) malloc(sizeof(array));
+
+  fp = open_file(filename, "r");
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
+    double tempCols = do_word_count(line,   delim);
+    if (tempCols > cols) {
+      cols = tempCols;
+    }
+  }
+  array_data->rows = rows;
+  array_data->cols = cols;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) malloc( (rows*cols)*sizeof(double));
+
+  /* Read file again storing entries in array_data->data */
+  rewind(fp);
+    
+  idx = 0;
+  rows = 0;
+  while (getline(&line, &len, fp) != -1) {
+    for (i=0; i < array_data->cols; i++) {
+      char *tmp = i==0 ? line : NULL;
+      char *token = strtok(tmp, delim);
+      assert(token != NULL);
+      array_data->data[idx++] = atof(token);
+    }
+    rows++;
+  }
+  assert(rows == array_data->rows);
+
+  fclose(fp);
+  if (line) free(line);
+
+  /* dump_csv(array_data); */
+  return array_data;
+}
+
+char *do_allocate_csv(char *filename)
+{
+  return "";
 }
