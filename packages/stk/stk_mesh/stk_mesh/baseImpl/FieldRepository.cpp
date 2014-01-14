@@ -55,12 +55,12 @@ void verify_field_type( const char                        * arg_method ,
   const bool ok_number_states =
     ! arg_num_states || arg_num_states == arg_field.number_of_states();
 
-  bool ok_dimension = ! arg_rank || arg_rank     == arg_field.rank() ||
-                                    arg_rank + 1 == arg_field.rank() ||
-                                    arg_rank - 1 == arg_field.rank() ;
+  bool ok_dimension = ! arg_rank || arg_rank     == arg_field.field_array_rank() ||
+                                    arg_rank + 1 == arg_field.field_array_rank() ||
+                                    arg_rank - 1 == arg_field.field_array_rank() ;
 
-  const unsigned check_rank = arg_rank < arg_field.rank() ?
-                              arg_rank : arg_field.rank() ;
+  const unsigned check_rank = arg_rank < arg_field.field_array_rank() ?
+                              arg_rank : arg_field.field_array_rank() ;
 
   for ( unsigned i = 0 ; i < check_rank && ok_dimension ; ++i ) {
     ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i] ;
@@ -69,7 +69,7 @@ void verify_field_type( const char                        * arg_method ,
   ThrowErrorMsgIf( ! ok_traits || ! ok_number_states || ! ok_dimension,
                    arg_method << " FAILED: Existing field = " <<
                    print_field_type( arg_field.data_traits() ,
-                                     arg_field.rank() ,
+                                     arg_field.field_array_rank() ,
                                      arg_field.dimension_tags() ) <<
                    "[ name = \"" << arg_field.name() <<
                    "\" , #states = " << arg_field.number_of_states() << " ]" <<

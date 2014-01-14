@@ -306,10 +306,10 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::FACE_RANK), 0u );
   STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f0.rank(), 0u ); // Field Rank NOT entity rank
-  STKUNIT_EXPECT_EQUAL( f1.rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( f2.rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( f3.rank(), 3u );
+  STKUNIT_EXPECT_EQUAL( f0.field_array_rank(), 0u ); // Field Rank NOT entity rank
+  STKUNIT_EXPECT_EQUAL( f1.field_array_rank(), 1u );
+  STKUNIT_EXPECT_EQUAL( f2.field_array_rank(), 2u );
+  STKUNIT_EXPECT_EQUAL( f3.field_array_rank(), 3u );
 
 }
 

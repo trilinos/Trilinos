@@ -20,7 +20,7 @@ std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 {
   s << "Field<" ;
   s << field.data_traits().name ;
-  for ( unsigned i = 0 ; i < field.rank() ; ++i ) {
+  for ( unsigned i = 0 ; i < field.field_array_rank() ; ++i ) {
     s << "," << field.dimension_tags()[i]->name();
   }
   s << ">" ;
@@ -53,7 +53,7 @@ std::ostream & print_restrictions(std::ostream & s ,
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << b;
-    i->print( s, i->entity_rank(), i->selector(), field.rank() );
+    i->print( s, i->entity_rank(), i->selector(), field.field_array_rank() );
     s << std::endl;
   }
   return s;

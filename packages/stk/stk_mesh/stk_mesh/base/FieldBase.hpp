@@ -83,7 +83,9 @@ class FieldBase
   /** \brief  Multi-dimensional array rank of this field,
    *          which is zero for a scalar field.
    */
-  unsigned rank() const { return m_impl.field_array_rank(); }
+  unsigned field_array_rank() const { return m_impl.field_array_rank(); }
+
+  stk::topology::rank_t entity_rank() const { return m_impl.entity_rank(); }
 
   /** \brief  Multi-dimensional
    *          \ref shards::ArrayDimTag "array dimension tags"
@@ -95,8 +97,8 @@ class FieldBase
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
    */
-  unsigned max_size( EntityRank entity_rank) const {
-    return m_impl.max_size( entity_rank );
+  unsigned max_size( EntityRank ent_rank) const {
+    return m_impl.max_size( ent_rank );
   }
 
   //----------------------------------------
@@ -182,7 +184,7 @@ protected:
   FieldBase(
       MetaData                   * arg_mesh_meta_data ,
       BulkData                   * arg_mesh_bulk_data,
-      stk::topology::rank_t        entity_rank ,
+      stk::topology::rank_t        arg_entity_rank ,
       unsigned                     arg_ordinal ,
       const std::string          & arg_name ,
       const DataTraits           & arg_traits ,
@@ -194,7 +196,7 @@ protected:
     : m_mesh(arg_mesh_bulk_data),
       m_impl(
         arg_mesh_meta_data,
-        entity_rank,
+        arg_entity_rank,
         arg_ordinal,
         arg_name,
         arg_traits,

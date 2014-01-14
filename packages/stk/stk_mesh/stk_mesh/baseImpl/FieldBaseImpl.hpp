@@ -70,7 +70,7 @@ public:
   }
 
   //not inline
-  unsigned max_size( unsigned entity_rank) const ;
+  unsigned max_size( unsigned ent_rank) const ;
 
   template<class A>
   const A * attribute() const {
@@ -122,7 +122,7 @@ public:
 
   FieldBaseImpl(
       MetaData                   * arg_mesh_meta_data ,
-      stk::topology::rank_t        entity_rank ,
+      stk::topology::rank_t        arg_entity_rank ,
       unsigned                     arg_ordinal ,
       const std::string          & arg_name ,
       const DataTraits           & arg_traits ,

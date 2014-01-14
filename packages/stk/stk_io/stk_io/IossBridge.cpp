@@ -393,7 +393,7 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
   static const std::string asym_tensor_01("asym_tensor_01");
 #endif
 
-  const unsigned rank = field->rank();
+  const unsigned rank = field->field_array_rank();
   const shards::ArrayDimTag * const * const tags = field->dimension_tags();
 
   result->second = Ioss::Field::INVALID;
@@ -1028,7 +1028,7 @@ bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expecte
 {
   const stk::mesh::FieldBase::RestrictionVector& restrictions = field->restrictions();
   for(size_t i=0; i<restrictions.size(); ++i) {
-    unsigned field_size = restrictions[i].stride(field->rank());
+    unsigned field_size = restrictions[i].stride(field->field_array_rank());
     if (field_size != expected_size) {
       return false;
     }

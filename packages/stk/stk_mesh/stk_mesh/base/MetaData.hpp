@@ -1069,7 +1069,12 @@ field_type & put_field(
 
   Helper::assign( stride );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1089,7 +1094,12 @@ field_type & put_field(
 
   Helper::assign( stride );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
   return field ;
 }
@@ -1109,7 +1119,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1129,7 +1144,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
   return field ;
 }
@@ -1150,7 +1170,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1171,7 +1196,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
   return field ;
 }
@@ -1193,7 +1223,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1215,7 +1250,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
   return field ;
 }
@@ -1238,7 +1278,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1262,7 +1307,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1287,7 +1337,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -1313,7 +1368,12 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6, n7 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+  EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
+  if (field_entity_rank == InvalidEntityRank) {
+      field_entity_rank = entity_rank;
+  }
+
+  MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
   return field ;
 }

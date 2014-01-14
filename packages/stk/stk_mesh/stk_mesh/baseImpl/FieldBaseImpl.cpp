@@ -28,7 +28,7 @@ namespace impl {
 
 FieldBaseImpl::FieldBaseImpl(
     MetaData                   * arg_mesh_meta_data ,
-    stk::topology::rank_t        entity_rank ,
+    stk::topology::rank_t        arg_entity_rank ,
     unsigned                     arg_ordinal ,
     const std::string          & arg_name ,
     const DataTraits           & arg_traits ,
@@ -37,7 +37,7 @@ FieldBaseImpl::FieldBaseImpl(
     unsigned                     arg_number_of_states ,
     FieldState                   arg_this_state
     )
-: m_entity_rank(entity_rank),
+: m_entity_rank(arg_entity_rank),
   m_name( arg_name ),
   m_attribute(),
   m_data_traits( arg_traits ),
@@ -281,7 +281,7 @@ void FieldBaseImpl::set_initial_value(const void* new_initial_value, unsigned nu
 
 //----------------------------------------------------------------------
 
-unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
+unsigned FieldBaseImpl::max_size( unsigned ent_rank ) const
 {
   unsigned max = 0 ;
 
@@ -290,7 +290,7 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
         FieldRestrictionVector::const_iterator i = rMap.begin();
 
   for ( ; i != ie ; ++i ) {
-    if ( i->entity_rank() == entity_rank ) {
+    if ( i->entity_rank() == ent_rank ) {
       const unsigned len = m_field_rank ? i->stride( m_field_rank - 1 ) : 1 ;
       if ( max < len ) { max = len ; }
     }
@@ -328,7 +328,7 @@ std::ostream & print( std::ostream & s ,
   for ( FieldBase::RestrictionVector::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    i->print( s, i->entity_rank(), i->selector(), field.rank() );
+    i->print( s, i->entity_rank(), i->selector(), field.field_array_rank() );
     s << std::endl;
   }
   s << std::endl << b << "}" ;

@@ -187,7 +187,7 @@ void BulkData::gather_and_print_get_buckets_metrics()
 
     proc_0_buff.pack<size_t>(m_selector_to_count_map.size());
     for (SelectorCountMap::const_iterator itr = m_selector_to_count_map.begin(), end = m_selector_to_count_map.end(); itr != end; ++itr) {
-      const EntityRank rank = itr->first.first;
+      const EntityRank field_array_rank = itr->first.first;
       const size_t cache_hits = itr->second.first;
       const size_t bucket_trav_saved = itr->second.second;
 
@@ -195,7 +195,7 @@ void BulkData::gather_and_print_get_buckets_metrics()
       out << itr->first.second;
       const std::string sel_str = out.str();
 
-      proc_0_buff.pack<EntityRank>(rank);
+      proc_0_buff.pack<EntityRank>(field_array_rank);
       proc_0_buff.pack<size_t>(sel_str.size() + 1);
       proc_0_buff.pack<char>(sel_str.c_str(), sel_str.size() + 1);
       proc_0_buff.pack<size_t>(cache_hits);
@@ -260,12 +260,12 @@ void BulkData::gather_and_print_get_buckets_metrics()
       global_num_non_memoized_get_buckets_calls_sum += num_non_memoized_get_buckets_calls;
 
       for (size_t i = 0; i < map_size; ++i) {
-        EntityRank rank = 0;
+        EntityRank field_array_rank = 0;
         size_t str_size = 0;
         size_t cache_hits = 0;
         size_t bucket_trav_saved = 0;
 
-        buf.unpack<EntityRank>(rank);
+        buf.unpack<EntityRank>(field_array_rank);
         buf.unpack<size_t>(str_size);
         ThrowRequire(str_size < MAX_TEXT_LEN);
         buf.unpack<char>(sel_text, str_size);
@@ -276,7 +276,7 @@ void BulkData::gather_and_print_get_buckets_metrics()
         global_num_bucket_trav_saved += bucket_trav_saved;
 
         const std::string sel_str = sel_text;
-        std::pair<EntityRank, std::string> search_key = std::make_pair(rank, sel_str);
+        std::pair<EntityRank, std::string> search_key = std::make_pair(field_array_rank, sel_str);
         GlobalUsageMap::iterator f_itr = global_usage_map.find(search_key);
         if (f_itr == global_usage_map.end()) {
           global_usage_map[search_key] = std::make_pair(cache_hits, bucket_trav_saved);
@@ -1089,7 +1089,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
     if ( restriction.dimension() > 0 ) { // Exists
 
       const unsigned type_stride = field.data_traits().stride_of ;
-      const unsigned field_rank  = field.rank();
+      const unsigned field_rank  = field.field_array_rank();
 
       num_bytes_per_entity = type_stride *
         ( field_rank ? restriction.stride( field_rank - 1 ) : 1 );
@@ -1640,7 +1640,7 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
 #ifdef GATHER_GET_BUCKETS_METRICS
     std::pair<size_t, size_t> & data = m_selector_to_count_map[search_item];
     ++data.first;
-    data.second += buckets(rank).size();
+    data.second += buckets(field_array_rank).size();
 #endif
     TrackedBucketVector const& rv = fitr->second;
     return reinterpret_cast<BucketVector const&>(rv);
