@@ -718,12 +718,12 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   typedef stk::mesh::Field<double>  ScalarFieldType;
 
   ScalarFieldType & volume =
-     fem_meta.declare_field < ScalarFieldType > ( "volume" , 4 );
+    fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "volume" , 4 );
   ScalarFieldType & temperature =
-     fem_meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
+    fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "temperature" , 4 );
   stk::mesh::Part  & universal     = fem_meta.universal_part ();
-  put_field ( volume , 3 , universal );
-  put_field ( temperature , 3 , universal );
+  put_field ( volume , stk::topology::ELEMENT_RANK , universal );
+  put_field ( temperature , stk::topology::ELEMENT_RANK , universal );
 
   fem_meta.commit();
 

@@ -85,7 +85,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
 
   fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
 
-  Field<int> & simple_nodal_field = hf.m_meta.declare_field<Field<int> >("simple_nodal_field");
+  Field<int> & simple_nodal_field = hf.m_meta.declare_field<Field<int> >(stk::topology::NODE_RANK, "simple_nodal_field");
 
   put_field( simple_nodal_field,
              MetaData::NODE_RANK,

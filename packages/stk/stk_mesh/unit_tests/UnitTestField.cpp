@@ -184,7 +184,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
 
   // confirm that declaring field with erroneous type throws exception
   typedef stk::mesh::Field<double,CTAG> error_type ;
-  STKUNIT_ASSERT_THROW(meta_data.declare_field< error_type >( name1 ),
+  STKUNIT_ASSERT_THROW(meta_data.declare_field< error_type >( NODE_RANK, name1 ),
                        std::runtime_error);
 
   stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
@@ -268,10 +268,10 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
-  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
-  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(  name2 );
-  rank_three_field & f3 = meta_data.declare_field< rank_three_field >( name3 );
+  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( NODE_RANK, name0 );
+  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  NODE_RANK, name1 );
+  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(  NODE_RANK, name2 );
+  rank_three_field & f3 = meta_data.declare_field< rank_three_field >( NODE_RANK, name3 );
 
   stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
   stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
@@ -327,7 +327,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
+  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( NODE_RANK, name0 );
 
   stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
   stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
@@ -393,7 +393,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( name0 );
+  rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( stk::topology::ELEMENT_RANK, name0 );
 
   stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
   stk::mesh::Part & elements = meta_data.declare_part("Elements", elem_rank);
@@ -466,7 +466,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( name0 );
+  rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( stk::topology::ELEMENT_RANK, name0 );
 
   stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
   stk::mesh::Part & hex8s = meta_data.declare_part("Hex8", elem_rank );

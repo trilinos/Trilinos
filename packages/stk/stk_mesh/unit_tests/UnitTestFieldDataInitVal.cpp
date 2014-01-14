@@ -49,7 +49,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
   MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 1;
-  Field<double>& dfield = meta_data.declare_field<Field<double> >("double_scalar", num_states);
+  Field<double>& dfield = meta_data.declare_field<Field<double> >(stk::topology::NODE_RANK, "double_scalar", num_states);
 
   const double initial_value = 99.9;
 
@@ -95,7 +95,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
   MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 1;
-  VectorField& vfield = meta_data.declare_field<VectorField>("double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
@@ -144,7 +144,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 1;
-  VectorField& vfield = meta_data.declare_field<VectorField>("double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
@@ -207,7 +207,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 2;
-  VectorField& vfield = meta_data.declare_field<VectorField>("double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 

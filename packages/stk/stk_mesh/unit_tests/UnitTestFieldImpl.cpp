@@ -93,14 +93,14 @@ void UnitTestFieldImpl::testFieldRestriction()
   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
 
   FieldBase * const f2 =
-    &meta_data.declare_field<VectorField>( std::string("F2"), 1/* # states */ );
+    &meta_data.declare_field<VectorField>( stk::topology::NODE_RANK, std::string("F2"), 1/* # states */ );
 
   //------------------------------
 
 //  FieldBase * const f3 = &meta_data.declare_field<VectorField>( std::string("F3"), 2/* #states*/);
-  FieldBase * const nodeField = &meta_data.declare_field<VectorField>( std::string("nodeField"), 2/* #states*/);
-  FieldBase * const edgeField = &meta_data.declare_field<VectorField>( std::string("edgeField"), 2/* #states*/);
-  FieldBase * const faceField = &meta_data.declare_field<VectorField>( std::string("faceField"), 2/* #states*/);
+  FieldBase * const nodeField = &meta_data.declare_field<VectorField>( stk::topology::NODE_RANK, std::string("nodeField"), 2/* #states*/);
+  FieldBase * const edgeField = &meta_data.declare_field<VectorField>( stk::topology::EDGE_RANK, std::string("edgeField"), 2/* #states*/);
+  FieldBase * const faceField = &meta_data.declare_field<VectorField>( stk::topology::FACE_RANK, std::string("faceField"), 2/* #states*/);
 
   FieldBase * const f3_old = nodeField->field_state( StateOld ) ;
 
@@ -181,14 +181,14 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
   meta_data.declare_part_subset( pD, pA );
-  meta_data.declare_field_restriction(*f2, 0 , pA , stride );
-  meta_data.declare_field_restriction(*f2, 0 , pD , stride );
+  meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK , pA , stride );
+  meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK , pD , stride );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
   {
-    const FieldBase::Restriction & rA = stk::mesh::find_restriction(*f2, 0, pA );
-    const FieldBase::Restriction & rD = stk::mesh::find_restriction(*f2, 0, pD );
+    const FieldBase::Restriction & rA = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pA );
+    const FieldBase::Restriction & rD = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pD );
     STKUNIT_ASSERT( & rA == & rD );
     STKUNIT_ASSERT( rA.selector() == pD );
   }
@@ -200,7 +200,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check that the verify_and_clean_restrictions method detects
   // this error condition.
   {
-    meta_data.declare_field_restriction(*f2, 0 , pB , stride + 1 );
+    meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK , pB , stride + 1 );
     STKUNIT_ASSERT_THROW(
       meta_data.declare_part_subset( pD, pB ),
       std::runtime_error
@@ -216,7 +216,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[1] = 0;
 
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*f2, 0, pA, arg_no_stride),
+      meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK, pA, arg_no_stride),
       std::runtime_error
     );
   }
