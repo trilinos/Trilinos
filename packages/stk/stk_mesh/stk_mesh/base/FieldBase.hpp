@@ -83,7 +83,7 @@ class FieldBase
   /** \brief  Multi-dimensional array rank of this field,
    *          which is zero for a scalar field.
    */
-  unsigned rank() const { return m_impl.rank(); }
+  unsigned rank() const { return m_impl.field_array_rank(); }
 
   /** \brief  Multi-dimensional
    *          \ref shards::ArrayDimTag "array dimension tags"

@@ -57,8 +57,12 @@ public:
     return m_this_state ;
   }
 
-  unsigned rank() const {
+  unsigned field_array_rank() const {
     return m_field_rank ;
+  }
+
+  stk::topology::rank_t entity_rank() const {
+      return m_entity_rank;
   }
 
   const shards::ArrayDimTag * const * dimension_tags() const {

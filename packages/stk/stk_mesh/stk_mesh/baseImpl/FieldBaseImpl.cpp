@@ -305,7 +305,7 @@ std::ostream & operator << ( std::ostream & s , const FieldBaseImpl & field )
 {
   s << "FieldBaseImpl<" ;
   s << field.data_traits().name ;
-  for ( unsigned i = 0 ; i < field.rank() ; ++i ) {
+  for ( unsigned i = 0 ; i < field.field_array_rank() ; ++i ) {
     s << "," << field.dimension_tags()[i]->name();
   }
   s << ">" ;
