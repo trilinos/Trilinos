@@ -14,6 +14,9 @@
 #include <vector>
 #include <mpi.h>
 
+#include <stk_util/environment/ProgramOptions.hpp> // TSC:  We tried to remove this, but a conchas2 test diffs if we take this out.  ?
+
+
 namespace sierra {
 
 /// @brief Namespace <b>Env</b> contains the runtime environment bootstrap for the

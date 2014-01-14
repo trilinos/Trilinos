@@ -29,8 +29,10 @@ const char* to_str(SelectorNodeType::node_type type)
   switch(type) {
   case SelectorNodeType::UNION:
     return " | ";
-  default: // SelectorNodeType::INTERSECTION:
+  case SelectorNodeType::INTERSECTION:
     return " & ";
+  default:
+    return " - ";
   };
 }
 
@@ -39,6 +41,7 @@ std::ostream& print_expr_impl(std::ostream & out, SelectorNode const* root)
   switch(root->m_type) {
   case SelectorNodeType::UNION:
   case SelectorNodeType::INTERSECTION:
+  case SelectorNodeType::DIFFERENCE:
     out << "(";
     print_expr_impl(out, root->lhs());
     out << to_str(root->m_type);
@@ -69,6 +72,8 @@ bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
     return select_bucket_impl(bucket, root->lhs()) || select_bucket_impl(bucket, root->rhs());
   case SelectorNodeType::INTERSECTION:
     return select_bucket_impl(bucket, root->lhs()) && select_bucket_impl(bucket, root->rhs());
+  case SelectorNodeType::DIFFERENCE:
+    return select_bucket_impl(bucket, root->lhs()) && !select_bucket_impl(bucket, root->rhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_bucket_impl(bucket, root->unary());
   case SelectorNodeType::PART:
@@ -85,6 +90,8 @@ bool select_part_impl(Part const& part, SelectorNode const* root)
     return select_part_impl(part, root->lhs()) || select_part_impl(part, root->rhs());
   case SelectorNodeType::INTERSECTION:
     return select_part_impl(part, root->lhs()) && select_part_impl(part, root->rhs());
+  case SelectorNodeType::DIFFERENCE:
+    return select_part_impl(part, root->lhs()) && !select_part_impl(part, root->rhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_part_impl(part, root->unary());
   case SelectorNodeType::PART:
@@ -100,6 +107,7 @@ bool is_all_union_impl(SelectorNode const* root)
   case SelectorNodeType::UNION:
     return is_all_union_impl(root->lhs()) && is_all_union_impl(root->rhs());
   case SelectorNodeType::INTERSECTION:
+  case SelectorNodeType::DIFFERENCE:
   case SelectorNodeType::COMPLEMENT:
     return false;
   case SelectorNodeType::PART:
@@ -120,8 +128,11 @@ void gather_parts_impl(PartVector& parts, SelectorNode const* root)
     // HACK: Only first part (picks up Context part)
     gather_parts_impl(parts, root->lhs());
     break;
+  case SelectorNodeType::DIFFERENCE:
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
+    break;
   case SelectorNodeType::COMPLEMENT:
-    ThrowRequireMsg(false, "Cannot get_parts from a selector with complements");
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
     break;
   case SelectorNodeType::PART:
     if (root->part() != NULL) parts.push_back(const_cast<Part*>(root->part()));
@@ -135,6 +146,8 @@ bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
     return select_part_vector_impl(parts, root->lhs()) || select_part_vector_impl(parts, root->rhs());
   case SelectorNodeType::INTERSECTION:
     return select_part_vector_impl(parts, root->lhs()) && select_part_vector_impl(parts, root->rhs());
+  case SelectorNodeType::DIFFERENCE:
+    return select_part_vector_impl(parts, root->lhs()) && !select_part_vector_impl(parts, root->rhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_part_vector_impl(parts, root->unary());
   case SelectorNodeType::PART:
