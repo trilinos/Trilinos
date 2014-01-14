@@ -109,7 +109,8 @@ namespace MueLu {
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    SC negone = -Teuchos::ScalarTraits<Scalar>::one();
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC negone = -STS::one();
 
     SC lambdaMax = negone;
     if (type_ == "CHEBYSHEV") {
@@ -144,7 +145,9 @@ namespace MueLu {
         size_t nRowsFine   = fineA->getGlobalNumRows();
         size_t nRowsCoarse = A_->getGlobalNumRows();
 
-        ratio = std::max(ratio, as<Scalar>(as<double>(nRowsFine)/nRowsCoarse));
+        SC levelRatio = as<SC>(as<float>(nRowsFine)/nRowsCoarse);
+        if (STS::magnitude(levelRatio) > STS::magnitude(ratio))
+          ratio = levelRatio;
       }
 
       this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
