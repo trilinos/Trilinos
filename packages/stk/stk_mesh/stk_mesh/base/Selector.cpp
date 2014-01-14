@@ -39,6 +39,12 @@ std::ostream& print_expr_impl(std::ostream & out, SelectorNode const* root)
   switch(root->m_type) {
   case SelectorNodeType::UNION:
   case SelectorNodeType::INTERSECTION:
+    out << "(";
+    print_expr_impl(out, root->lhs());
+    out << to_str(root->m_type);
+    print_expr_impl(out, root->rhs());
+    out << ")";
+    break;
   case SelectorNodeType::COMPLEMENT:
     out << "!(";
     print_expr_impl(out, root->unary());
