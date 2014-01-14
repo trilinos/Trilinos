@@ -45,7 +45,7 @@ namespace fixtures {
                ),
     m_elem_parts( 1, &declare_part<shards::Hexahedron<8> >(m_meta, "hex_part") ),
     m_node_parts( 1, &m_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>("Coordinates") )
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
 {
   typedef shards::Hexahedron<8> Hex8 ;
 

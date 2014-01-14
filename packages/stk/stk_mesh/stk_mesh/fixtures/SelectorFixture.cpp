@@ -28,8 +28,8 @@ SelectorFixture::SelectorFixture()
   , m_entity3( )
   , m_entity4( )
   , m_entity5( )
-  , m_fieldA(m_meta_data.declare_field<stk::mesh::Field<double> >("FieldA"))
-  , m_fieldABC(m_meta_data.declare_field<stk::mesh::Field<double> >("FieldABC"))
+  , m_fieldA(m_meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "FieldA"))
+  , m_fieldABC(m_meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "FieldABC"))
 {
   stk::mesh::EntityRank ent_rank = 0;
 

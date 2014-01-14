@@ -63,7 +63,7 @@ declare_element_node_field( MetaData & md , const std::string & s )
 {
 
   ElementNodeField & f =
-    md.declare_field< ElementNodeField >( s, 1 /* 1 state */ );
+    md.declare_field< ElementNodeField >( stk::topology::ELEMENT_RANK, s, 1 /* 1 state */ );
 
   return f ;
 }

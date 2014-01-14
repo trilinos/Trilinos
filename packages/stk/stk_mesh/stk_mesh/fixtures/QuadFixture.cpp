@@ -33,7 +33,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
     m_meta( m_spatial_dimension, rank_names ),
     m_bulk_data( m_meta, pm ),
     m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta, "quad_part" ) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>("Coordinates") ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
     m_nx( nx ),
     m_ny( ny )
 {

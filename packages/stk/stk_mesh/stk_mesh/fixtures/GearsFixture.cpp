@@ -57,10 +57,10 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gea
   , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", ELEMENT_RANK))
   , hex_part( declare_part<Hex8>(meta_data, "hex8_part"))
   , wedge_part( declare_part<Wedge6>(meta_data, "wedge6_part"))
-  , cartesian_coord_field( meta_data.declare_field<CartesianField>("coordinates", ONE_STATE))
-  , displacement_field( meta_data.declare_field<CartesianField>("displacement", TWO_STATE))
-  , translation_field( meta_data.declare_field<CartesianField>("translation", ONE_STATE))
-  , cylindrical_coord_field( meta_data.declare_field<CylindricalField>("cylindrical_coordinates", ONE_STATE))
+  , cartesian_coord_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "coordinates", ONE_STATE))
+  , displacement_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "displacement", TWO_STATE))
+  , translation_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "translation", ONE_STATE))
+  , cylindrical_coord_field( meta_data.declare_field<CylindricalField>(stk::topology::NODE_RANK, "cylindrical_coordinates", ONE_STATE))
   , m_gears()
   {
 
