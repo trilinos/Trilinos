@@ -66,8 +66,8 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 namespace Details {
-
-/// \class Amesos2Wrapper
+/// @class Amesos2Wrapper
+/// @brief Wrapper class for direct solvers in Amesos2.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
 /// This class computes a sparse direct factorization of a local
