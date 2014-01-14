@@ -41,7 +41,7 @@ namespace app {
     int spatial_dim = coordinates.transformed_storage()->component_count();
 
     stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
-      meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+      meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
     stk::mesh::put_field( coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
                           spatial_dim);
@@ -100,7 +100,7 @@ namespace app {
     /// that is automatically declared on all objects that it exists
     /// on as is done in current framework?
     stk::mesh::Field<double> & distribution_factors_field =
-      meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
+      meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
 
     /// \todo REFACTOR How to associate distribution_factors field
     /// with the nodeset part if a node is a member of multiple
@@ -161,7 +161,7 @@ namespace app {
 	  if (!surface_df_defined) {
 	    std::string field_name = sset->name() + "_distribution_factors";
 	    distribution_factors_field =
-	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
+	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(static_cast<stk::topology::rank_t>(part_rank), field_name);
 	    stk::io::set_distribution_factor_field(*sideset_part, *distribution_factors_field);
 	    surface_df_defined = true;
 	  }

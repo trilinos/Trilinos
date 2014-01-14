@@ -33,8 +33,8 @@ namespace util {
 //----------------------------------------------------------------------
 
 GearFields::GearFields( stk::mesh::MetaData & S )
-  : gear_coord(          S.declare_field<CylindricalField>( std::string("gear_coordinates") ) ),
-    model_coord(         S.declare_field<CartesianField>( std::string("coordinates") ) )
+  : gear_coord(          S.declare_field<CylindricalField>(stk::topology::NODE_RANK, std::string("gear_coordinates") ) ),
+    model_coord(         S.declare_field<CartesianField>(stk::topology::NODE_RANK, std::string("coordinates") ) )
 {
   const stk::mesh::Part & universe = S.universal_part();
 

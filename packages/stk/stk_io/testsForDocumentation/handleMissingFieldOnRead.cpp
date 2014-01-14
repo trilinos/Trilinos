@@ -26,7 +26,7 @@ namespace {
       stkIo.create_input_mesh();
 
       stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >("temperature", 1);
+	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stk::mesh::Entity::NODE,
 			   stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
@@ -72,13 +72,13 @@ namespace {
 
       stk::mesh::Field<double> &temperature =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            ("temperature", 1);
+	                                            (stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stk::mesh::Entity::NODE,
 			   stkIo.meta_data().universal_part());
 
       stk::mesh::Field<double> &displacement =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            ("displacement", 1);
+	                                            (stk::topology::NODE_RANK, "displacement", 1);
       stk::mesh::put_field(displacement, stk::mesh::Entity::NODE,
 			   stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
