@@ -5413,7 +5413,7 @@ namespace Tpetra {
       
       ReducedDomainMap = MyRowMap.getRawPtr() == MyDomainMap.getRawPtr() ? ReducedRowMap : MyDomainMap->replaceCommWithSubset(ReducedComm);
       ReducedRangeMap  = MyRowMap.getRawPtr() == MyRangeMap.getRawPtr()  ? ReducedRowMap : MyRangeMap->replaceCommWithSubset(ReducedComm);
-      ReducedColMap    = MyRowMap.getRawPtr() == MyColMap.getRawPtr()    ? ReducedRowMap : MyColMap->replaceCommWithSubset(ReducedComm); // CMS: Is this right?
+      ReducedColMap    = MyRowMap.getRawPtr() == MyColMap.getRawPtr()    ? ReducedRowMap : MyColMap->replaceCommWithSubset(ReducedComm);
 
       // Reset the "my" maps
       MyRowMap    = ReducedRowMap;
@@ -5422,8 +5422,10 @@ namespace Tpetra {
       MyRangeMap  = ReducedRangeMap;
       
       // Short circuit if the processor is no longer in the communicator
+      // NOTE: Epetra replaces modifies all "removed" processors so they have a dummy (serial) map that doesn't touch the original
+      // communicator.  Duplicating that here might be a good idea.
       if(ReducedComm.is_null())
-	return Teuchos::null;
+	return destMat;
     }
     else
       ReducedComm = MyRowMap->getComm();
