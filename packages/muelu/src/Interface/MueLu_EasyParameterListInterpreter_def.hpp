@@ -140,6 +140,18 @@ namespace MueLu {
     this->graphOutputLevel_ = paramList.get<int>("debug: graph level", -1);
     this->blockSize_        = paramList.get<int>("number of equations", 1);
 
+    // Save level data
+    if (paramList.isSublist("print")) {
+      ParameterList printList = paramList.sublist("print");
+
+      if (printList.isParameter("A"))
+        this->matricesToPrint_     = Teuchos::getArrayFromStringParameter<int>(printList, "A");
+      if (printList.isParameter("P"))
+        this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "P");
+      if (printList.isParameter("R"))
+        this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
+    }
+
     // Translate verbosity parameter
     this->verbosity_ = static_cast<MsgType>(Hierarchy::GetDefaultVerbLevel());      // cast int to enum
     if (paramList.isParameter("verbosity")) {
