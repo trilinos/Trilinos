@@ -167,6 +167,7 @@ combine mode, then each process must solve a linear system with the
 following 2 x 2 matrix:
 \f[
 A_{local} =
+\left(
 \begin{array}{rr}
   2 & -1 \\
  -1 &  2
@@ -176,6 +177,7 @@ The inverse of this matrix is
 \f[
 A_{local}^{-1} =
 \frac{1}{3} \cdot
+\left(
 \begin{array}{rr}
   2 &  1 \\
   1 &  2
