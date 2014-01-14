@@ -11,9 +11,9 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -61,9 +61,9 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
@@ -111,9 +111,9 @@ Level 2
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 3
  Prolongator smoothing (MueLu::SaPFactory)
@@ -161,9 +161,9 @@ Level 3
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 4
  Prolongator smoothing (MueLu::SaPFactory)
@@ -211,9 +211,9 @@ Level 4
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 5
  Prolongator smoothing (MueLu::SaPFactory)
