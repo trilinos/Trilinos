@@ -355,7 +355,8 @@ namespace MueLu {
       // TODO: this is not a proper place to check. If we consider direct solver to be a special
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || coarseType == "ILUT")
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams));
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
