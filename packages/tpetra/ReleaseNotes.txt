@@ -2,8 +2,37 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Current (Trilinos 11.5)
-------------------------------
+Trilinos 11.6
+-------------
+
+* Gradual port to use (new) Kokkos
+
+Tpetra will migrate to use the new Kokkos programming model.  The
+tpetra/src/kokkos_refactor directory contains a preview of this
+migration under development.  This will include backwards-incompatible
+changes.  For example, MultiVector and Vector will have view
+semantics, instead of their current container semantics.  This means
+that their copy constructor and assignment operator (operator=) will
+make shallow copies, instead of deep copies.  This will make Tpetra's
+semantics more consistent with those of Kokkos.  In order to provide
+deep copies, all Tpetra objects will get the following:
+
+  - createCopy() method: returns a deep copy of its *this argument
+  - deep_copy() nonmember function: copies the contents of one
+    MultiVector into the contents of another existing MultiVector.
+    This works like deep_copy() for Kokkos::View objects.
+
+MultiVector already has both of these functions.  Thus, in order to
+prepare for the backwards incompatible changes to Tpetra, users must
+find all uses of the copy constructor and assignment operator, and
+replace them with createCopy() resp. deep_copy().  This will affect at
+least the following packages which have generic adapters for
+Tpetra::MultiVector:
+
+  - Amesos2 (MultiVecAdapter)
+  - Anasazi (MultiVecTraits)
+  - Belos (MultiVecTraits)
+  - Xpetra (Xpetra::TpetraMultiVector)
 
 * Accepted non-backwards compatible change to KokkosClassic, in which
   that subpackage changed its namespace from Kokkos to KokkosClassic.

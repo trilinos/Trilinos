@@ -2,25 +2,23 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
-Current (Trilinos 11.5)
-------------------------------
+Trilinos 11.6
+-------------
 
 * Non-backwards compatible change: In the "Kokkos Classic" subpackage
   (everything in kokkos/classic), the "Kokkos" namespace has been
   changed to "KokkosClassic".  
 
-  This will facilitate coexistence of Kokkos Classic with Kokkos Array
-  and the new Kokkos subpackages that depend on Kokkos Array.
-  Coexistence will be necessary for our planned port of Tpetra to use
-  Kokkos Array instead of Kokkos Classic.  Kokkos Classic will
+  This will facilitate coexistence of Kokkos Classic with both the new
+  Kokkos programming model and the new Kokkos subpackages that depend
+  on it.  Coexistence will be necessary for our planned port of Tpetra
+  to use new Kokkos instead of Kokkos Classic.  Kokkos Classic will
   eventually be deprecated, and Tpetra (and downstream packages) will
-  use Kokkos Array instead.  This process is beginning now, but will
-  start in earnest once Kokkos Array becomes a Research Stable
-  subpackage.
-
+  use new Kokkos instead.
 
 Trilinos 11.4
-------------------------------
+-------------
+
 * Non-backwards compatible change: The default Kokkos Node type for
   Tpetra objects is now Kokkos::SerialNode.
 
