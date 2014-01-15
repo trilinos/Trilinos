@@ -257,31 +257,26 @@ struct CudaTexture {};
 
 #if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
-/** \brief  Replace LayoutDefault specialization */
-template< typename ScalarType , typename Rank , typename RankDynamic >
+/** \brief  Replace LayoutDefault specialization with Cuda texture fetch specialization
+ *          if 'const' scalar type and random access.
+ */
+
+template< typename ScalarType , typename Rank , typename RankDynamic , class Memory >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
                        LayoutLeft , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< RandomAccess > >
-{ typedef CudaTexture type ; };
+                       CudaSpace , Memory >
+{
+  typedef typename if_c< Memory::RandomAccess , CudaTexture , LayoutDefault >::type type ;
+};
 
-template< typename ScalarType , typename Rank , typename RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< (RandomAccess | Unmanaged) > >
-{ typedef CudaTexture type ; };
-
-
-template< typename ScalarType , typename Rank , typename RankDynamic >
+template< typename ScalarType , typename Rank , typename RankDynamic , class Memory >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
                        LayoutRight , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< RandomAccess > >
-{ typedef CudaTexture type ; };
+                       CudaSpace , Memory >
+{
+  typedef typename if_c< Memory::RandomAccess , CudaTexture , LayoutDefault >::type type ;
+};
 
-template< typename ScalarType , typename Rank , typename RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< (RandomAccess | Unmanaged) > >
-{ typedef CudaTexture type ; };
 #endif
 
 //----------------------------------------------------------------------------
