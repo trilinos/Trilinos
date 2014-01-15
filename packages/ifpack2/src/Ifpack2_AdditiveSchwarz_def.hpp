@@ -199,6 +199,47 @@ public:
 
 
 template<class MatrixType, class LocalInverseType>
+bool
+AdditiveSchwarz<MatrixType, LocalInverseType>::hasInnerPrecName () const
+{
+  const char* options[4] = {
+    "inner preconditioner name",
+    "subdomain solver name",
+    "schwarz: inner preconditioner name",
+    "schwarz: subdomain solver name"
+  };
+  const int numOptions = 4;
+  bool match = false;
+  for (int k = 0; k < numOptions && ! match; ++k) {
+    if (List_.isParameter (options[k])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+template<class MatrixType, class LocalInverseType>
+void
+AdditiveSchwarz<MatrixType, LocalInverseType>::removeInnerPrecName ()
+{
+  const char* options[4] = {
+    "inner preconditioner name",
+    "subdomain solver name",
+    "schwarz: inner preconditioner name",
+    "schwarz: subdomain solver name"
+  };
+  const int numOptions = 4;
+  for (int k = 0; k < numOptions; ++k) {
+    List_.remove (options[k], false);
+  }
+}
+
+
+
+
+
+template<class MatrixType, class LocalInverseType>
 std::string
 AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
 {
@@ -226,6 +267,25 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
     }
   }
   return match ? newName : defaultInnerPrecName ();
+}
+
+
+template<class MatrixType, class LocalInverseType>
+void
+AdditiveSchwarz<MatrixType, LocalInverseType>::removeInnerPrecParams ()
+{
+  const char* options[4] = {
+    "inner preconditioner parameters",
+    "subdomain solver parameters",
+    "schwarz: inner preconditioner parameters",
+    "schwarz: subdomain solver parameters"
+  };
+  const int numOptions = 4;
+
+  // As soon as one parameter option matches, ignore all others.
+  for (int k = 0; k < numOptions; ++k) {
+    List_.remove (options[k], false);
+  }
 }
 
 
@@ -481,24 +541,23 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       ! IsComputed_, std::runtime_error,
       "Ifpack2::AdditiveSchwarz::apply: "
       "isComputed() must be true before you may call apply().");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      X.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
-      "Ifpack2::AdditiveSchwarz::apply: "
-      "X and Y must have the same number of columns.  X has "
-      << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       Matrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
       "The input matrix A is null, but the preconditioner says that it has "
       "been computed (isComputed() is true).  This should never happen.  "
       "Please report this bug to the Ifpack2 developers.");
-
     TEUCHOS_TEST_FOR_EXCEPTION(
-      Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
-      "Inverse_ is null, but the preconditioner says that it has been computed "
-      "(isComputed() is true).  This should never happen.  "
-      "Please report this bug to the Ifpack2 developers.");
+      Inverse_.is_null (), std::runtime_error,
+      "Ifpack2::AdditiveSchwarz::apply: The subdomain solver is null.  "
+      "This can only happen if you called setInnerPreconditioner() with a null "
+      "input, after calling initialize() or compute().  If you choose to call "
+      "setInnerPreconditioner() with a null input, you must then call it with "
+      "a nonnull input before you may call initialize() or compute().");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
+      "Ifpack2::AdditiveSchwarz::apply: "
+      "X and Y must have the same number of columns.  X has "
+      << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
 
     const size_t numVectors = X.getNumVectors ();
 
@@ -772,23 +831,52 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // singletons should help for PDE problems with Dirichlet BCs.
   FilterSingletons_ = plist->get ("schwarz: filter singletons", FilterSingletons_);
 
-  // If the inner solver exists, set its parameters using the sublist.
-  // Don't actually _create_ the inner solver here; initialize() does that.
+  // If the inner solver doesn't exist yet, don't create it.
+  // initialize() creates it.
   //
-  // FIXME (mfh 05 Jan 2014) What if the "inner preconditioner name"
-  // parameter has changed???  In that case, initialize() needs to
-  // create a new preconditioner -- but it doesn't know what the
-  // previous inner preconditioner name was.  Thus, we should store
-  // the previous inner preconditioner's name to keep track of this.
-  // On the other hand, the user might have called
-  // setInnerPreconditioner(), so the "inner preconditioner name"
-  // parameter might not be valid.
+  // If the inner solver _does_ exist, there are three cases,
+  // depending on what the user put in the input ParameterList.
+  //
+  //   1. The user did /not/ provide a parameter specifying the inner
+  //      solver's type, nor did the user specify a sublist of
+  //      parameters for the inner solver
+  //   2. The user did /not/ provide a parameter specifying the inner
+  //      solver's type, but /did/ specify a sublist of parameters for
+  //      the inner solver
+  //   3. The user provided a parameter specifying the inner solver's
+  //      type (it does not matter in this case whether the user gave
+  //      a sublist of parameters for the inner solver)
+  //
+  // AdditiveSchwarz has "delta" (relative) semantics for setting
+  // parameters.  This means that if the user did not specify the
+  // inner solver's type, we presume that the type has not changed.
+  // Thus, if the inner solver exists, we don't need to recreate it.
+  //
+  // In Case 3, if the user bothered to specify the inner solver's
+  // type, then we must assume it may differ than the current inner
+  // solver's type.  Thus, we have to recreate the inner solver.  We
+  // achieve this here by assigning null to Inverse_; initialize()
+  // will recreate the solver when it is needed.  Our assumption here
+  // is necessary because Ifpack2::Preconditioner does not have a
+  // method for querying a preconditioner's "type" (i.e., name) as a
+  // string.  Remember that the user may have previously set an
+  // arbitrary inner solver by calling setInnerPreconditioner().
+  //
+  // See note and FIXME at the end of setInnerPreconditioner().
+
   if (! Inverse_.is_null ()) {
-    // Extract and apply the sublist of parameters to give to the
-    // inner solver, if there is such a sublist of parameters.
-    std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
-    if (result.second) {
-      Inverse_->setParameters (result.first);
+    if (hasInnerPrecName ()) {
+      // Wipe out the current inner solver.  initialize() will
+      // recreate it with the correct type.
+      Inverse_ = Teuchos::null;
+    }
+    else {
+      // Extract and apply the sublist of parameters to give to the
+      // inner solver, if there is such a sublist of parameters.
+      std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+      if (result.second) {
+        Inverse_->setParameters (result.first);
+      }
     }
   }
 }
@@ -912,10 +1000,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
     "Please report this bug to the Ifpack2 developers.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::compute: "
-    "Inverse_ is null, but the preconditioner says that it has been initialized "
-    "(isInitialized() is true).  This should never happen.  "
-    "Please report this bug to the Ifpack2 developers.");
+    Inverse_.is_null (), std::runtime_error,
+    "Ifpack2::AdditiveSchwarz::compute: The subdomain solver is null.  "
+    "This can only happen if you called setInnerPreconditioner() with a null "
+    "input, after calling initialize() or compute().  If you choose to call "
+    "setInnerPreconditioner() with a null input, you must then call it with a "
+    "nonnull input before you may call initialize() or compute().");
 
   const std::string timerName ("Ifpack2::AdditiveSchwarz::compute");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
@@ -1173,8 +1263,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 #endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::setup: "
-    "The matrix A to precondition is null.");
+    Matrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "initialize: The matrix A to precondition is null.  This should never "
+    "happen, since AdditiveSchwarz does not currently implement Details::"
+    "CanChangeMatrix.  Please report this bug to the Ifpack2 developers.");
 
   // Localized version of Matrix_ or OverlappingMatrix_.
   RCP<row_matrix_type> LocalizedMatrix;
@@ -1286,8 +1378,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     const std::string innerName = innerPrecName ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       innerName == "INVALID", std::logic_error,
-      "Ifpack2::AdditiveSchwarz::setup: AdditiveSchwarz doesn't know how to "
-      "create an instance of your LocalInverseType \""
+      "Ifpack2::AdditiveSchwarz::initialize: AdditiveSchwarz doesn't "
+      "know how to create an instance of your LocalInverseType \""
       << Teuchos::TypeNameTraits<LocalInverseType>::name () << "\".  If "
       "LocalInverseType is a single-level preconditioner (does not take an "
       "inner solver), then you can fix this in one of two ways.  Either (a) "
@@ -1296,6 +1388,13 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       "initialize(), or (b) teach Details::OneLevelFactory how to create an "
       "inner preconditioner of that type.  "
       "Please talk to the Ifpack2 developers for details.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      innerName == "CUSTOM", std::runtime_error, "Ifpack2::AdditiveSchwarz::"
+      "initialize: If the \"inner preconditioner name\" parameter (or any "
+      "alias thereof) has the value \"CUSTOM\", then you must first call "
+      "setInnerPreconditioner with a nonnull inner preconditioner input before "
+      "you may call initialize().");
 
     Details::OneLevelFactory<MatrixType> factory;
     RCP<prec_type> innerPrec = factory.create (innerName, innerMatrix_);
@@ -1349,38 +1448,59 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
                                                           global_ordinal_type,
                                                           node_type> >& innerPrec)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    innerPrec.is_null (), std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
-    "setInnerPreconditioner: Inner preconditioner must be nonnull.");
+  if (! innerPrec.is_null ()) {
+    // Make sure that the new inner solver knows how to have its matrix changed.
+    typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
+    can_change_type* innerSolver = dynamic_cast<can_change_type*> (&*innerPrec);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
+      "setInnerPreconditioner: The input preconditioner does not implement the "
+      "setMatrix() feature.  Only input preconditioners that inherit from "
+      "Ifpack2::Details::CanChangeMatrix implement this feature.");
 
-  // Make sure that the new inner solver knows how to have its matrix changed.
-  typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
-  can_change_type* innerSolver = dynamic_cast<can_change_type*> (&*innerPrec);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
-    "setInnerPreconditioner: The input preconditioner does not implement the "
-    "setMatrix() feature.  Only input preconditioners that inherit from "
-    "Ifpack2::Details::CanChangeMatrix implement this feature.");
+    // If users provide an inner solver, we assume that
+    // AdditiveSchwarz's current inner solver parameters no longer
+    // apply.  (In fact, we will remove those parameters from
+    // AdditiveSchwarz's current list below.)  Thus, we do /not/ apply
+    // the current sublist of inner solver parameters to the input
+    // inner solver.
 
-  // mfh 05 Jan 2014: Please do not enable the commented-out code
-  // below, that sets the new inner solver's parameters.  See the
-  // public documentation of setParameters() for an explanation.
+    // mfh 03 Jan 2014: Thanks to Paul Tsuji for pointing out that it's
+    // perfectly legal for innerMatrix_ to be null here.  This can
+    // happen if initialize() has not been called yet.  For example,
+    // when Factory creates an AdditiveSchwarz instance, it calls
+    // setInnerPreconditioner() without first calling initialize().
 
-  // // Extract and apply the sublist of parameters to give to the
-  // // inner solver, if there is such a sublist of parameters.
-  // std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
-  // if (result.second) {
-  //   innerPrec->setParameters (result.first);
-  // }
+    // Give the local matrix to the new inner solver.
+    innerSolver->setMatrix (innerMatrix_);
 
-  // mfh 03 Jan 2014: Thanks to Paul Tsuji for pointing out that it's
-  // perfectly legal for innerMatrix_ to be null here.  This can
-  // happen if initialize() has not been called yet.  For example,
-  // when Factory creates an AdditiveSchwarz instance, it calls
-  // setInnerPreconditioner() without first calling initialize().
+    // If the user previously specified a parameter for the inner
+    // preconditioner's type, then clear out that parameter and its
+    // associated sublist.  Replace the inner preconditioner's type with
+    // "CUSTOM", to make it obvious that AdditiveSchwarz's ParameterList
+    // does not necessarily describe the current inner preconditioner.
+    // We have to remove all allowed aliases of "inner preconditioner
+    // name" before we may set it to "CUSTOM".  Users may also set this
+    // parameter to "CUSTOM" themselves, but this is not required.
+    removeInnerPrecName ();
+    removeInnerPrecParams ();
+    List_.set ("inner preconditioner name", "CUSTOM");
 
-  // Give the local matrix to the new inner solver.
-  innerSolver->setMatrix (innerMatrix_);
+    // Bring the new inner solver's current status (initialized or
+    // computed) in line with AdditiveSchwarz's current status.
+    if (isInitialized ()) {
+      innerPrec->initialize ();
+    }
+    if (isComputed ()) {
+      innerPrec->compute ();
+    }
+  }
+
+  // If the new inner solver is null, we don't change the initialized
+  // or computed status of AdditiveSchwarz.  That way, AdditiveSchwarz
+  // won't have to recompute innerMatrix_ if the inner solver changes.
+  // This does introduce a new error condition in compute() and
+  // apply(), but that's OK.
 
   // Set the new inner solver.
   Inverse_ = innerPrec;

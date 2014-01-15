@@ -388,6 +388,30 @@ public:
   ///   different instance.
   ///
   /// \pre <tt>&*innerPrec != this</tt>.
+  ///
+  /// We assume that if you created the inner preconditioner yourself,
+  /// then whatever parameters may be in the input ParameterList are
+  /// no longer valid.  In fact, calling this method clears all
+  /// parameters related to the inner preconditioner from this
+  /// instance's current ParameterList.  It also sets the "inner
+  /// preconditioner name" parameter to "CUSTOM", as a helpful
+  /// reminder that you set a custom inner preconditioner.
+  ///
+  /// Calling setInnerPreconditioner() with a null argument marks this
+  /// AdditiveSchwarz instance so that it will not attempt to create a
+  /// default inner preconditioner.  It does so via the "CUSTOM"
+  /// option mentioned above.  If you call setInnerPreconditioner()
+  /// with a null input, and then call initialize(), initialize() will
+  /// notice that the inner preconditioner is null and the "inner
+  /// preconditioner name" parameter's value is "CUSTOM".  In that
+  /// case, initialize() will throw an exception, rather than
+  /// attempting to create a default inner preconditioner.  You may
+  /// clear this mark by calling setParameters() and specifying a
+  /// value other than "CUSTOM" for the "inner preconditioner name"
+  /// parameter.
+  ///
+  /// This method has collective semantics, because it may call
+  /// initialize() or compute() on \c innerPrec.
   virtual void
   setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
                                                             local_ordinal_type,
@@ -489,6 +513,13 @@ public:
   ///      <i>before</i> calling initialize() on the AdditiveSchwarz
   ///      instance. </li>
   /// </ol>
+  ///
+  /// The subdomain solver name "INVALID" is reserved for internal
+  /// use.  The subdomain solver name "CUSTOM" is an optional way for
+  /// users to indicate that they want to set a custom subdomain
+  /// solver by calling setInnerPreconditioner().  The
+  /// setInnerPreconditioner() method may set the subdomain solver
+  /// name to "CUSTOM", in order to indicate this.
   ///
   /// \subsection Ifpack2_AdditiveSchwarz_setParameters_subdomain_setInner Subdomain solver parameters and setInnerPreconditioner
   ///
@@ -644,15 +675,27 @@ private:
   //! Set up the localized matrix and the singleton filter.
   void setup ();
 
+  /// \brief Whether the current ParameterList has a parameter for the
+  ///   inner preconditioner's name.
+  bool hasInnerPrecName () const;
+
   //! The current inner preconditioner name.
   std::string innerPrecName () const;
 
+  /// \brief Remove the inner preconditioner name parameter, if it
+  ///   exists, from the current ParameterList.
+  void removeInnerPrecName ();
+
   /// \brief Parameters to give to the inner preconditioner.
   ///
-  /// \return The parameters, and whether the input ParameterList
-  ///   actually had a sublist for the inner preconditioner's
-  ///   parameters.
+  /// \return The parameters, and whether the current ParameterList
+  ///   actually has a sublist for the inner preconditioner's
+  ///   parameters.  That sublist may be empty.
   std::pair<Teuchos::ParameterList, bool> innerPrecParams () const;
+
+  /// \brief Remove the inner preconditioner's sublist of parameters,
+  ///   if it exists, from the current ParameterList.
+  void removeInnerPrecParams ();
 
   //! The default inner preconditioner name.
   static std::string defaultInnerPrecName ();
