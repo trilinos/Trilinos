@@ -373,16 +373,16 @@ void Krylov<MatrixType>::initialize ()
       ifpack2_prec_->initialize();
       ifpack2_prec_->setParameters(precParams_);
     }
-    belosProblem_ = rcp (new Belos::LinearProblem<scalar_type,TMV,TOP> ());
+    belosProblem_ = rcp (new Belos::LinearProblem<belos_scalar_type,TMV,TOP> ());
     belosProblem_->setOperator (A_);
 
     if (iterationType_ == "GMRES") {
       belosSolver_ =
-        rcp (new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
+        rcp (new Belos::BlockGmresSolMgr<belos_scalar_type,TMV,TOP> (belosProblem_, belosList));
     }
     else {
       belosSolver_ =
-        rcp (new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
+        rcp (new Belos::BlockCGSolMgr<belos_scalar_type,TMV,TOP> (belosProblem_, belosList));
     }
 
   }
