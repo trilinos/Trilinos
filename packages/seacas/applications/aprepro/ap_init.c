@@ -197,6 +197,8 @@ struct str_init string_fncts[] =
 
 extern array *do_csv_array(const char *filename);
 extern array *do_make_array(double rows, double cols);
+extern array *do_identity(double size);
+extern array *do_transpose(array *array);
 
 struct array_init array_fncts[] =
 {
@@ -204,6 +206,10 @@ struct array_init array_fncts[] =
    "Create a 2D array from the data in a csv file."},
   {"make_array",        do_make_array,     "make_array(rows, cols)",
    "Create a 2D array of size 'rows' by 'cols' initialized to zero."},
+  {"identity",          do_identity,     "identity(size)",
+   "Create a 2D identity array with 'size' rows and columns. Diagonal = 1.0"},
+  {"transpose",         do_transpose,      "transpose(array)",
+   "Return the transpose of input array"},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
 };
 

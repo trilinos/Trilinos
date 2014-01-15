@@ -1213,6 +1213,40 @@ array *do_make_array(double rows, double cols)
   return array_data;
 }
 
+array *do_identity(double size)
+{
+  int i;
+  int isize = size;
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = isize;
+  array_data->cols = isize;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(size*size,sizeof(double));
+
+  for (i=0; i < isize; i++) {
+    array_data->data[i*isize+i] = 1.0;
+  }
+  return array_data;
+}
+
+array *do_transpose(array *a)
+{
+  int i,j;
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = a->cols;
+  array_data->cols = a->rows;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(a->rows*a->cols,sizeof(double));
+  for (i=0; i < a->rows; i++) {
+    for (j=0; j < a->cols; j++) {
+      array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
+    }
+  }
+  return array_data;
+}
+
 array *do_csv_array(char *filename)
 {
   char *delim = ",";

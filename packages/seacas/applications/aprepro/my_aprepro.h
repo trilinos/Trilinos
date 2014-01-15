@@ -41,6 +41,8 @@
 #include <math.h>
 #include <errno.h>
 
+#include "ap_array.h"
+
 #ifndef EXIT_FAILURE
 # define EXIT_FAILURE 1
 # define EXIT_SUCCESS 0
@@ -74,13 +76,6 @@ struct aprepro_options
 };
 
 typedef struct aprepro_options aprepro_options;
-
-struct array {
-  double *data;
-  int rows;
-  int cols;
-};
-typedef struct array array;
 
 /* Data type for links in the chain of symbols. */
 
