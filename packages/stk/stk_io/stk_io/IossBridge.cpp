@@ -109,56 +109,56 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
     } else {
       stk::mesh::Field<double, stk::mesh::Cartesian> & field =
         meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(entity_rank, name);
-      stk::mesh::put_field(field, type, part, 1);
+      stk::mesh::put_field(field, part, 1);
       field_ptr = &field;
     }
   }
   else if (field_type == "vector_2d") {
     stk::mesh::Field<double, stk::mesh::Cartesian> & field =
       meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, 2);
+    stk::mesh::put_field(field, part, 2);
     field_ptr = &field;
   }
   else if (field_type == "vector_3d") {
     stk::mesh::Field<double, stk::mesh::Cartesian> & field =
       meta.declare_field<stk::mesh::Field<double,
       stk::mesh::Cartesian> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, 3);
+    stk::mesh::put_field(field, part, 3);
     field_ptr = &field;
   }
   else if (field_type == "sym_tensor_33") {
     stk::mesh::Field<double, stk::mesh::SymmetricTensor> & field =
       meta.declare_field<stk::mesh::Field<double,
       stk::mesh::SymmetricTensor> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, 6);
+    stk::mesh::put_field(field, part, 6);
     field_ptr = &field;
   }
   else if (field_type == "full_tensor_36") {
     stk::mesh::Field<double, stk::mesh::FullTensor> & field =
       meta.declare_field<stk::mesh::Field<double,
       stk::mesh::FullTensor> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, 9);
+    stk::mesh::put_field(field, part, 9);
     field_ptr = &field;
   }
   else if (field_type == "matrix_22") {
     stk::mesh::Field<double, stk::mesh::Matrix> & field =
       meta.declare_field<stk::mesh::Field<double,
       stk::mesh::Matrix> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, 4);
+    stk::mesh::put_field(field, part, 4);
     field_ptr = &field;
   }
   else if (field_type == "matrix_33") {
     stk::mesh::Field<double, stk::mesh::Matrix> & field =
       meta.declare_field<stk::mesh::Field<double,
       stk::mesh::Matrix> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, 9);
+    stk::mesh::put_field(field, part, 9);
     field_ptr = &field;
   }
   else {
     // Just create a field with the correct number of components...
     stk::mesh::Field<double,shards::ArrayDimension> & field =
       meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension> >(entity_rank, name);
-    stk::mesh::put_field(field, type, part, num_components);
+    stk::mesh::put_field(field, part, num_components);
     field_ptr = &field;
   }
 

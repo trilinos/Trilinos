@@ -149,8 +149,8 @@ bool use_case_24_driver(
 
   // NOTE SPD 10/24/2008
   // how about put_field_on_part() rather than put_field()
-  mesh::put_field( coordinates_field , mesh::MetaData::NODE_RANK , allParts , SpatialDim );
-  mesh::put_field( velocity , mesh::MetaData::NODE_RANK , allParts , SpatialDim );
+  mesh::put_field( coordinates_field , allParts , SpatialDim );
+  mesh::put_field( velocity , allParts , SpatialDim );
   mesh::put_field( pressure , allParts );
 
   //-----------------------------------------
@@ -207,14 +207,14 @@ bool use_case_24_driver(
     fem_meta.declare_field< ScalarIPFieldType >(sideRank, "side_pressure_ip" );
 
   // first on boundary ips
-  mesh::put_field( side_pressure_ip , sideRank, quad_io1 , numBoundaryIps );
-  mesh::put_field( side_pressure_ip , sideRank, quad_io2 , numBoundaryIps );
-  mesh::put_field( side_pressure_ip , sideRank, quad_io3 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , quad_io1 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , quad_io2 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , quad_io3 , numBoundaryIps );
 
   ScalarIPFieldType & element_pressure_ip =
     fem_meta.declare_field< ScalarIPFieldType >(stk::topology::ELEMENT_RANK, "element_pressure_ip" );
   // second on all interior element ips
-  mesh::put_field( element_pressure_ip , mesh::MetaData::ELEMENT_RANK, hex_io1 , numElementSCSIps );
+  mesh::put_field( element_pressure_ip , hex_io1 , numElementSCSIps );
 
   //-----------------------------------------
   // mass_flux_ip lives both on boundary

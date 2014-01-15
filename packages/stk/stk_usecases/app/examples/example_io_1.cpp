@@ -37,7 +37,7 @@ CartesianField &
 declare_vector_field_on_all_nodes(
   stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, s), stk::mesh::MetaData::NODE_RANK, meta_data.universal_part() , n1 );
+  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, s), meta_data.universal_part() , n1 );
 }
 
 
@@ -45,8 +45,7 @@ CartesianField &
 declare_vector_field_on_all_elements(
   stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::ELEMENT_RANK, s), element_rank , meta_data.universal_part() , n1 );
+  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::ELEMENT_RANK, s), meta_data.universal_part() , n1 );
 }
 
 //----------------------------------------------------------------------

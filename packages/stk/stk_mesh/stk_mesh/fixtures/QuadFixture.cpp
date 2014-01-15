@@ -42,7 +42,6 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   //put coord-field on all nodes:
   put_field(
       m_coord_field,
-      MetaData::NODE_RANK,
       m_meta.universal_part(),
       m_spatial_dimension
       );

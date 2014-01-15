@@ -77,7 +77,7 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   // Put the coordinates and temperature field on all nodes
 
   stk::mesh::Part & universal = m_fem_metaData.universal_part();
-  stk::mesh::put_field( m_coordinates_field , m_node_rank , universal , SpatialDim );
+  stk::mesh::put_field( m_coordinates_field , universal , SpatialDim );
   stk::mesh::put_field( m_temperature_field, universal );
 
   // Put the volume field on all elements:

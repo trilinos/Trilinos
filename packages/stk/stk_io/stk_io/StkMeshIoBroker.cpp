@@ -393,7 +393,6 @@ namespace {
           stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
           int side_node_count = sb->topology()->number_nodes();
           stk::mesh::put_field(*distribution_factors_field,
-                               stk::io::part_primary_entity_rank(*sb_part),
                                *sb_part, side_node_count);
         }
       }
@@ -651,7 +650,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   meta.set_coordinate_field(&coord_field);
   
   Ioss::NodeBlock *nb = node_blocks[0];
-  stk::mesh::put_field(coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
+  stk::mesh::put_field(coord_field, meta.universal_part(),
                        meta.spatial_dimension());
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), 0);
 }

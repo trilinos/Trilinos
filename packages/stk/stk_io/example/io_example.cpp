@@ -390,7 +390,7 @@ namespace stk_example_io {
     stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
       meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field( coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
+    stk::mesh::put_field( coord_field, meta.universal_part(),
                           spatial_dim);
 
     /** \todo IMPLEMENT truly handle fields... For this case we are
@@ -523,7 +523,6 @@ namespace stk_example_io {
 	  stk::io::set_distribution_factor_field(*side_block_part, *distribution_factors_field);
 	  int side_node_count = side_block->topology()->number_nodes();
 	  stk::mesh::put_field(*distribution_factors_field,
-                               part_rank,
                                *side_block_part, side_node_count);
 	}
 

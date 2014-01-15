@@ -193,7 +193,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
   stk::mesh::put_field( f0 , p0 );
-  stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
+  stk::mesh::put_field( f1 , p1 , 10 );
   stk::mesh::put_field( f2 , p2 , 10 , 20 );
   stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
 
@@ -279,7 +279,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
   stk::mesh::put_field( f0 , p0 );
-  stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
+  stk::mesh::put_field( f1 , p1 , 10 );
   stk::mesh::put_field( f2 , p2 , 10 , 20 );
   stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
 
@@ -405,8 +405,8 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
   std::cout <<"elem_hex_selector: "<< elem_hex_selector << std::endl;
   std::cout <<"elem_tet_selector: "<< elem_tet_selector << std::endl;
 
-  stk::mesh::put_field( f0 , elem_rank , elem_hex_selector, 8u );
-  stk::mesh::put_field( f0 , elem_rank , elem_tet_selector, 4u );
+  stk::mesh::put_field( f0 , elem_hex_selector, 8u );
+  stk::mesh::put_field( f0 , elem_tet_selector, 4u );
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -478,12 +478,12 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
   std::cout <<"elem_hexA_selector: "<< elem_hexA_selector << std::endl;
   std::cout <<"elem_hexB_selector: "<< elem_hexB_selector << std::endl;
 
-  stk::mesh::put_field( f0 , elem_rank , elem_hexA_selector, 8u );
+  stk::mesh::put_field( f0 , elem_hexA_selector, 8u );
   STKUNIT_ASSERT_THROW(
-    stk::mesh::put_field( f0 , elem_rank , elem_hexA_selector, 4u ),
+    stk::mesh::put_field( f0 , elem_hexA_selector, 4u ),
     std::runtime_error
   );
-  stk::mesh::put_field( f0 , elem_rank , elem_hexB_selector, 4u );
+  stk::mesh::put_field( f0 , elem_hexB_selector, 4u );
 
   stk::mesh::print( oss , "  " , f0 );
 

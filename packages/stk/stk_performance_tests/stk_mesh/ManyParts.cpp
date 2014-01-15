@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST(many_parts, many_parts)
   VectorField& field = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "field");
   for(size_t i=0; i<parts.size(); ++i) {
     const stk::mesh::Part& part = *parts[i];
-    stk::mesh::put_field(field, stk::mesh::MetaData::NODE_RANK, part, 3);
+    stk::mesh::put_field(field, part, 3);
   }
 
   double field_reg_time = stk::cpu_time() - start_time;

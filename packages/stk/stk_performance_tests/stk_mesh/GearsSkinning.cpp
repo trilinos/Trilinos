@@ -277,7 +277,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
 
   stk::mesh::put_field(
       velocity_field,
-      NODE_RANK,
       fixture.meta_data.universal_part(),
       fixture.meta_data.spatial_dimension()
       );

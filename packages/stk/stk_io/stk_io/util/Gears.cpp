@@ -38,8 +38,8 @@ GearFields::GearFields( stk::mesh::MetaData & S )
 {
   const stk::mesh::Part & universe = S.universal_part();
 
-  stk::mesh::put_field( gear_coord    , stk::mesh::MetaData::NODE_RANK , universe , SpatialDimension );
-  stk::mesh::put_field( model_coord   , stk::mesh::MetaData::NODE_RANK , universe , SpatialDimension );
+  stk::mesh::put_field( gear_coord    , universe , SpatialDimension );
+  stk::mesh::put_field( model_coord   , universe , SpatialDimension );
 }
 
 //----------------------------------------------------------------------
