@@ -21,7 +21,7 @@ void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::str
 {
     const int numberOfStates = 1;
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, internalClientFieldName, numberOfStates);
-    stk::mesh::put_field(field0, stk::topology::NODE_RANK, stkMeshMetaData.universal_part());
+    stk::mesh::put_field(field0, stkMeshMetaData.universal_part());
 }
 
 void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, const std::string &goldFieldName)

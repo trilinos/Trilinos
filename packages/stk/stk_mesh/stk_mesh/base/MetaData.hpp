@@ -576,13 +576,11 @@ const std::vector<std::string>& entity_rank_names();
  */
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
                         const Part & part ,
                         const void* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
                         const Selector & selector ,
                         const void* init_value = NULL);
 
@@ -680,7 +678,7 @@ field_type & put_field( field_type & field ,
 template< class field_type >
 field_type & put_field_on_all_nodes_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
 {
-    return put_field(field, stk::topology::NODE_RANK, field.mesh_meta_data().universal_part(), initial_value);
+    return put_field(field, field.mesh_meta_data().universal_part(), initial_value);
 }
 
 template< class field_type >
@@ -833,15 +831,10 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 }
 
 
-
-
-
-
 template< class field_type >
 inline
 field_type & put_field(
   field_type & field ,
-  EntityRank entity_rank ,
   const Part & part ,
   const void* init_value)
 {
@@ -853,9 +846,7 @@ field_type & put_field(
   Helper::assign( stride );
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
-  if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
-  }
+  ThrowRequireMsg(field_entity_rank != InvalidEntityRank, "put_field called on field without valid entity-rank");
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
 
@@ -866,7 +857,6 @@ template< class field_type >
 inline
 field_type & put_field(
   field_type & field ,
-  EntityRank entity_rank ,
   const Selector & selector ,
   const void* init_value)
 {
@@ -878,9 +868,7 @@ field_type & put_field(
   Helper::assign( stride );
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
-  if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
-  }
+  ThrowRequireMsg(field_entity_rank != InvalidEntityRank, "put_field called on field without valid entity-rank");
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
@@ -904,7 +892,7 @@ field_type & put_field( field_type &field ,
 
   EntityRank field_entity_rank = static_cast<EntityRank>(field.entity_rank());
   if (field_entity_rank == InvalidEntityRank) {
-      field_entity_rank = entity_rank;
+     field_entity_rank = entity_rank;
   }
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, part, stride, init_value);
@@ -934,7 +922,7 @@ field_type & put_field( field_type &field ,
 
   MetaData::get(field).declare_field_restriction( field, field_entity_rank, selector, stride, init_value);
 
-  return field ;
+return field ;
 }
 
 template< class field_type >

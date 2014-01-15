@@ -40,7 +40,7 @@ Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
     m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK ),
     m_node_rank( stk::mesh::MetaData::NODE_RANK )
 {
-  stk::mesh::put_field( m_coord_field , m_node_rank , m_fem_meta_data.universal_part() );
+  stk::mesh::put_field( m_coord_field , m_fem_meta_data.universal_part() );
 
   m_fem_meta_data.commit();
 }

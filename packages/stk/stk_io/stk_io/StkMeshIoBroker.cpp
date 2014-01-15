@@ -906,7 +906,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
       assert(entity->field_exists("distribution_factors"));
 
       stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
-      stk::mesh::put_field(distribution_factors_field, stk::mesh::MetaData::NODE_RANK, *part);
+      stk::mesh::put_field(distribution_factors_field, *part);
     }
   }
 
@@ -927,7 +927,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 	meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, nodesetDistFieldName);
 
       stk::io::set_field_role(distribution_factors_field_per_nodeset, Ioss::Field::MESH);
-      stk::mesh::put_field(distribution_factors_field_per_nodeset, stk::mesh::MetaData::NODE_RANK, *part);
+      stk::mesh::put_field(distribution_factors_field_per_nodeset, *part);
     }
   }
 }

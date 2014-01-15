@@ -151,7 +151,7 @@ bool use_case_24_driver(
   // how about put_field_on_part() rather than put_field()
   mesh::put_field( coordinates_field , mesh::MetaData::NODE_RANK , allParts , SpatialDim );
   mesh::put_field( velocity , mesh::MetaData::NODE_RANK , allParts , SpatialDim );
-  mesh::put_field( pressure , mesh::MetaData::NODE_RANK , allParts );
+  mesh::put_field( pressure , allParts );
 
   //-----------------------------------------
   // nodal_face_momentum_flux lives on all
@@ -161,9 +161,9 @@ bool use_case_24_driver(
   VectorFieldType & nodal_momentum_flux =
     fem_meta.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "nodal_momentum_flux" );
 
-  mesh::put_field( nodal_momentum_flux , mesh::MetaData::NODE_RANK , quad_io1 );
-  mesh::put_field( nodal_momentum_flux , mesh::MetaData::NODE_RANK , quad_io2 );
-  mesh::put_field( nodal_momentum_flux , mesh::MetaData::NODE_RANK , quad_io3 );
+  mesh::put_field( nodal_momentum_flux , quad_io1 );
+  mesh::put_field( nodal_momentum_flux , quad_io2 );
+  mesh::put_field( nodal_momentum_flux , quad_io3 );
 
   //========================================
   // hard code dimensions for now for ip

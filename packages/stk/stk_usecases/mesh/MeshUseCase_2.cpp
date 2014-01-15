@@ -78,10 +78,10 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
 
   stk::mesh::Part & universal = m_fem_metaData.universal_part();
   stk::mesh::put_field( m_coordinates_field , m_node_rank , universal , SpatialDim );
-  stk::mesh::put_field( m_temperature_field, m_node_rank, universal );
+  stk::mesh::put_field( m_temperature_field, universal );
 
   // Put the volume field on all elements:
-  stk::mesh::put_field( m_volume_field , m_elem_rank , universal );
+  stk::mesh::put_field( m_volume_field , universal );
 
   // Done populating the mesh meta data.
   // Commit the meta data: this locks out changes,

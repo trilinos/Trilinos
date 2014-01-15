@@ -472,7 +472,7 @@ namespace stk_example_io {
 	assert(part != NULL);
 	assert(entity->field_exists("distribution_factors"));
 
-	stk::mesh::put_field(distribution_factors_field, stk::mesh::MetaData::NODE_RANK, *part);
+	stk::mesh::put_field(distribution_factors_field, *part);
 
 	/** \todo IMPLEMENT truly handle fields... For this case we
 	 * are just defining a field for each transient field that is

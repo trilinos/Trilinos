@@ -722,8 +722,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   ScalarFieldType & temperature =
     fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "temperature" , 4 );
   stk::mesh::Part  & universal     = fem_meta.universal_part ();
-  put_field ( volume , stk::topology::ELEMENT_RANK , universal );
-  put_field ( temperature , stk::topology::ELEMENT_RANK , universal );
+  put_field ( volume , universal );
+  put_field ( temperature , universal );
 
   fem_meta.commit();
 

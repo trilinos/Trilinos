@@ -192,7 +192,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
-  stk::mesh::put_field( f0 , NODE_RANK , p0 );
+  stk::mesh::put_field( f0 , p0 );
   stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
   stk::mesh::put_field( f2 , p2 , 10 , 20 );
   stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
@@ -278,7 +278,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
-  stk::mesh::put_field( f0 , NODE_RANK , p0 );
+  stk::mesh::put_field( f0 , p0 );
   stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
   stk::mesh::put_field( f2 , p2 , 10 , 20 );
   stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
@@ -335,7 +335,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
   stk::mesh::Selector select_p0 = p0;
   std::cout <<"select_p0: "<< select_p0 << std::endl;
 
-  stk::mesh::put_field( f0 , NODE_RANK , select_p0 );
+  stk::mesh::put_field( f0 , select_p0 );
 
   stk::mesh::print( oss , "  " , f0 );
 

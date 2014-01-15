@@ -79,7 +79,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   stk::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
   MetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   // Create two scalar fields, temperature and volume. Put temperature
   // on all the nodes and put volume on all the elements.
   unsigned number_of_states = 4;
@@ -90,8 +89,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
 
     meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "volume" , number_of_states );
   Part & universal     = meta.universal_part ();
-  put_field ( temperature , NODE_RANK , universal );
-  put_field ( volume , element_rank  , universal );
+  put_field ( temperature , universal );
+  put_field ( volume , universal );
   meta.commit();
 
   // Generate the mesh
@@ -214,8 +213,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
 
     meta2.declare_field < ScalarFieldType >(stk::topology::ELEMENT_RANK, "volume2", number_of_states);
   Part  & universal = meta2.universal_part ();
-  put_field ( temperature2 , NODE_RANK , universal );
-  put_field ( volume2 , element_rank  , universal );
+  put_field ( temperature2 , universal );
+  put_field ( volume2 , universal );
 
   meta2.commit();
 
@@ -288,8 +287,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   ScalarFieldType & volume2 =
     meta2.declare_field < ScalarFieldType >(stk::topology::ELEMENT_RANK, "volume2", number_of_states);
   Part  & universal     = meta2.universal_part ();
-  put_field ( temperature2 , NODE_RANK , universal );
-  put_field ( volume2 , element_rank  , universal );
+  put_field ( temperature2 , universal );
+  put_field ( volume2 , universal );
 
   typedef Field<double>  VectorFieldType;
 

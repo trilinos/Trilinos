@@ -1750,7 +1750,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFieldComm)
 
     BoxFixture fixture( pm, 100 );
     PressureFieldType& p_field = fixture.fem_meta().declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
-    stk::mesh::put_field( p_field , stk::mesh::MetaData::NODE_RANK , fixture.fem_meta().universal_part());
+    stk::mesh::put_field( p_field , fixture.fem_meta().universal_part());
     fixture.fem_meta().commit();
     BulkData & bulk = fixture.bulk_data();
     int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
@@ -1778,7 +1778,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFieldComm)
   {
     stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     PressureFieldType& p_field = fixture.m_meta.declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
-    stk::mesh::put_field( p_field , stk::mesh::MetaData::NODE_RANK , fixture.m_meta.universal_part());
+    stk::mesh::put_field( p_field , fixture.m_meta.universal_part());
     fixture.m_meta.commit();
     fixture.generate_mesh();
     stk::mesh::BulkData & bulk = fixture.m_bulk_data;

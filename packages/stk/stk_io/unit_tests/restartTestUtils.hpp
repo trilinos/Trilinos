@@ -36,7 +36,7 @@ inline stk::mesh::FieldBase* declareNodalField(stk::mesh::MetaData &stkMeshMetaD
 					       int numberOfStates)
 {
     stk::mesh::Field<double> &multiStateField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, numberOfStates);
-    stk::mesh::put_field(multiStateField, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+    stk::mesh::put_field(multiStateField, stkMeshMetaData.universal_part());
     return &multiStateField;
 }
 

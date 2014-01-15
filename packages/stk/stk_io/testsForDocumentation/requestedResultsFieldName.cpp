@@ -18,7 +18,7 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
     const int numberOfStates = 1;
     const std::string primaryFieldName = "displacement";
     stk::mesh::Field<double> &nodalDisplacement = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, primaryFieldName, numberOfStates);
-    stk::mesh::put_field(nodalDisplacement, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+    stk::mesh::put_field(nodalDisplacement, stkMeshMetaData.universal_part());
 
     const std::string outputFileName = "resultsOutput.exo";
     size_t resultsOutputIndex = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);

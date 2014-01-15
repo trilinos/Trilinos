@@ -83,7 +83,6 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
 
   ScalarField &domain_coord_sum_field = stk::mesh::put_field(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        node_rank ,
                         domain_meta_data.universal_part() );
   domain_meta_data.commit();
 

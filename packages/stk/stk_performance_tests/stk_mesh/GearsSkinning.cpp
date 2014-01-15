@@ -284,7 +284,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
 
   stk::mesh::put_field(
       processor_field,
-      stk::mesh::MetaData::ELEMENT_RANK,
       fixture.meta_data.universal_part()
       );
 
@@ -324,13 +323,13 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   }
   stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
   {
-    stk::mesh::put_field( displacement, stk::mesh::MetaData::ELEMENT_RANK-1, skin_part);
+    stk::mesh::put_field( displacement, skin_part);
     const stk::mesh::PartVector &surf_parts = skin_part.subsets();
     for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
       stk::mesh::Part & surf_part = **ip;
       if (surf_part.primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK-1) {
         surface_select |= surf_part;
-        stk::mesh::put_field( displacement, stk::mesh::MetaData::ELEMENT_RANK-1, surf_part);
+        stk::mesh::put_field( displacement, surf_part);
       }
     }
   }

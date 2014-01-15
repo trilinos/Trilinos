@@ -37,9 +37,9 @@ void setup_simple_mesh(stk::mesh::BulkData& bulk_data)
     stk::mesh::Field<double>  & field_2 = meta_data.declare_field< stk::mesh::Field<double> >( stk::topology::NODE_RANK, "field_2" );
     stk::mesh::Field<double>  & field_3 = meta_data.declare_field< stk::mesh::Field<double> >( stk::topology::NODE_RANK, "field_3" );
 
-    stk::mesh::put_field( field_1 , NODE_RANK , meta_data.universal_part() );
-    stk::mesh::put_field( field_2 , NODE_RANK , meta_data.universal_part() );
-    stk::mesh::put_field( field_3 , NODE_RANK , meta_data.universal_part() );
+    stk::mesh::put_field( field_1 , meta_data.universal_part() );
+    stk::mesh::put_field( field_2 , meta_data.universal_part() );
+    stk::mesh::put_field( field_3 , meta_data.universal_part() );
 
     stk::mesh::Part& block_1 = meta_data.declare_part<shards::Hexahedron<8> >("block_1");
 

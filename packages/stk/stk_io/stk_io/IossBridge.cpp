@@ -104,7 +104,7 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
   if (field_type == "scalar" || num_components == 1) {
     if (!use_cartesian_for_scalar) {
       stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(entity_rank, name);
-      stk::mesh::put_field(field, type, part);
+      stk::mesh::put_field(field, part);
       field_ptr = &field;
     } else {
       stk::mesh::Field<double, stk::mesh::Cartesian> & field =

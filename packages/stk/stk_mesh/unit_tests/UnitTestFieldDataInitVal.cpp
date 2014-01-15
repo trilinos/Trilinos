@@ -53,7 +53,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   const double initial_value = 99.9;
 
-  stk::mesh::put_field(dfield, NODE_RANK, meta_data.universal_part(), &initial_value);
+  stk::mesh::put_field(dfield, meta_data.universal_part(), &initial_value);
 
   meta_data.commit();
 

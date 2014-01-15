@@ -20,7 +20,7 @@ STKUNIT_UNIT_TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
 
     stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "displacement", 1);
-    stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+    stk::mesh::put_field(field0, stkMeshMetaData.universal_part());
     stkIo.populate_bulk_data();
 
     {

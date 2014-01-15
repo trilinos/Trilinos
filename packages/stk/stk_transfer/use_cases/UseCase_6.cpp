@@ -70,7 +70,6 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   const std::string data_field_name = "Sum_Of_Coordinates";
   ScalarField &range_coord_sum_field = stk::mesh::put_field(
                         range_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        stk::mesh::MetaData::NODE_RANK ,
                         range_meta_data.universal_part() );
 
   range_meta_data.commit();
@@ -93,7 +92,6 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
 
   ScalarField &domain_coord_sum_field = stk::mesh::put_field(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        stk::mesh::MetaData::NODE_RANK ,
                         domain_meta_data.universal_part() );
   domain_meta_data.commit();
 
