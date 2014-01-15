@@ -1,0 +1,10 @@
+#ifndef KOKKOSMPICOMM_CONFIG_H
+#define KOKKOSMPICOMM_CONFIG_H
+
+//
+// mfh 15 Jan 2014: This subpackage _requires_ MPI, so it doesn't make
+// sense to have a test for MPI.
+//
+//#cmakedefine KOKKOSMPICOMM_HAVE_MPI
+
+#endif // KOKKOSMPICOMM_CONFIG_H
