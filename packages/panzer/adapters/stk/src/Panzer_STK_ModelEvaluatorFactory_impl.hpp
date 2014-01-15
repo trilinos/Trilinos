@@ -1230,7 +1230,7 @@ namespace panzer_stk {
       Teuchos::setStringToIntegralParameter<int>(
       "Start Time Type",
       "From Input File",
-      "Enables or disables SUPG stabilization in the Momentum equation",
+      "Set the start time",
       Teuchos::tuple<std::string>("From Input File","From Exodus File"),
       &validPL
       );
