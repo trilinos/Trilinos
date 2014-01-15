@@ -53,8 +53,10 @@ template<class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 IFPACK2_SGN(const Scalar& x)
 {
-  static const typename Teuchos::ScalarTraits<Scalar>::magnitudeType one = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one());
-  return Teuchos::ScalarTraits<Scalar>::real(x) > 0.0 ? -one : one;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType magnitudeType;
+  static const magnitudeType one = STS::magnitude(STS::one());
+  return STS::real(x) > 0.0 ? magnitudeType(-one) : one;
 }
 
 /// \namespace Ifpack2
