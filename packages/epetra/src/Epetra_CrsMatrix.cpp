@@ -62,6 +62,7 @@
 #include "Epetra_IntVector.h"
 
 #include <cstdlib>
+#include <typeinfo>
 
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
 # include "Teuchos_VerboseObject.hpp"
@@ -4848,7 +4849,12 @@ template<class TransferType>
     Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),&SourcePids[0]);
 
     TargetRow_pids.PutValue(MyPID);
-    SourceRow_pids.Export(TargetRow_pids,RowTransfer,Insert); 
+    if(typeid(TransferType)==typeid(Epetra_Import))    
+      SourceRow_pids.Export(TargetRow_pids,RowTransfer,Insert); 
+    else if(typeid(TransferType)==typeid(Epetra_Export))    
+      SourceRow_pids.Import(TargetRow_pids,RowTransfer,Insert); 
+    else 
+      throw ReportError("Epetra_CrsMatrix: Fused import/export constructor TransferType must be Epetra_Import or Epetra_Export");
     SourceCol_pids.Import(SourceRow_pids,*MyImporter,Insert);
   }
   else

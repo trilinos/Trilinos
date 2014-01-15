@@ -420,8 +420,11 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from  Epetra_CrsMatrix::SortEntries() 
+  int nnz = CRS_rowptr[NumRows];
+
   for(int i = 0; i < NumRows; i++){
     int start=CRS_rowptr[i];
+    if(start >= nnz) continue;
 
     double* locValues = &CRS_vals[start];
     int NumEntries    = CRS_rowptr[i+1] - start;
