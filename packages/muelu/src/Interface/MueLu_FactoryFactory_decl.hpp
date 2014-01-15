@@ -490,34 +490,48 @@ namespace MueLu {
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
 
+      // internal vector of factory managers
       std::vector<RCP<FactoryManager> > facManagers;
 
+      // loop over all "block%i" sublists in parameter list
+      int blockid = 1;
+      bool blockExists = true;
+      while (blockExists == true) {
+        std::stringstream ss;
+        ss << "block" << blockid;
 
-      if(paramList.isSublist("block1") == true) {
-        RCP<const ParameterList> b1 = rcp(new ParameterList(*sublist(paramListNonConst, "block1")));
+        if(paramList.isSublist(ss.str()) == true) {
+          // we either have a parameter group or we have a list of factories in here
+          RCP<const ParameterList> b = rcp(new ParameterList(*sublist(paramListNonConst, ss.str())));
 
-        RCP<FactoryManager> M = rcp(new FactoryManager());
-        for (ParameterList::ConstIterator param = b1->begin(); param != b1->end(); ++param) {
-          RCP<const FactoryBase> p = BuildFactory(b1->entry(param), factoryMapIn, factoryManagersIn);
-          M->SetFactory(b1->name(param),p);
+          RCP<FactoryManager> M = Teuchos::null;
+
+          if (b->isParameter("group")) {
+            // use a factory manager
+            std::string facManagerName = b->get< std::string >("group");
+            TEUCHOS_TEST_FOR_EXCEPTION(factoryManagersIn.count(facManagerName) != 1, Exceptions::RuntimeError, "Factory manager has not been found. Please check the spelling of the factory managers in your xml file.");
+            RCP<FactoryManagerBase> Mb = factoryManagersIn.find(facManagerName)->second;
+            M = Teuchos::rcp_dynamic_cast<FactoryManager>(Mb);
+            TEUCHOS_TEST_FOR_EXCEPTION(M==Teuchos::null, Exceptions::RuntimeError, "Failed to cast FactoryManagerBase object to FactoryManager.");
+          } else {
+            // read in the list of factories
+            M = rcp(new FactoryManager());
+            for (ParameterList::ConstIterator param = b->begin(); param != b->end(); ++param) {
+              RCP<const FactoryBase> p = BuildFactory(b->entry(param), factoryMapIn, factoryManagersIn);
+              M->SetFactory(b->name(param),p);
+            }
+          }
+
+          // add factory manager to internal vector of factory managers
+          M->SetIgnoreUserData(true);
+          facManagers.push_back(M);
+          paramListNonConst->remove(ss.str());
+          blockid++;
+        } else {
+          blockExists = false;
+          break;
         }
-        M->SetIgnoreUserData(true);
-        facManagers.push_back(M);
-        paramListNonConst->remove("block1");
-      }
 
-      if(paramList.isSublist("block2") == true) {
-        RCP<const ParameterList> b2 = rcp(new ParameterList(*sublist(paramListNonConst, "block2")));
-
-        RCP<FactoryManager> M = rcp(new FactoryManager());
-        for (ParameterList::ConstIterator param = b2->begin(); param != b2->end(); ++param) {
-          RCP<const FactoryBase> p = BuildFactory(b2->entry(param), factoryMapIn, factoryManagersIn);
-          M->SetFactory(b2->name(param),p);
-        }
-        M->SetIgnoreUserData(true);
-        facManagers.push_back(M);
-
-        paramListNonConst->remove("block2");
       }
 
       RCP<BlockedGaussSeidelSmoother> bgs = rcp(new BlockedGaussSeidelSmoother(bgs_sweeps,bgs_omega));
@@ -525,7 +539,7 @@ namespace MueLu {
       bgs->AddFactoryManager(facManagers[0]);
       bgs->AddFactoryManager(facManagers[1]);
 
-      Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
+      //Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
       return rcp(new SmootherFactory(bgs));
     }
@@ -543,42 +557,57 @@ namespace MueLu {
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
 
+      // internal vector of factory managers
       std::vector<RCP<FactoryManager> > facManagers;
 
+      // loop over all "block%i" sublists in parameter list
+      int blockid = 1;
+      bool blockExists = true;
+      while (blockExists == true) {
+        std::stringstream ss;
+        ss << "block" << blockid;
 
-      if(paramList.isSublist("block1") == true) {
-        RCP<const ParameterList> b1 = rcp(new ParameterList(*sublist(paramListNonConst, "block1")));
+        if(paramList.isSublist(ss.str()) == true) {
+          // we either have a parameter group or we have a list of factories in here
+          RCP<const ParameterList> b = rcp(new ParameterList(*sublist(paramListNonConst, ss.str())));
 
-        RCP<FactoryManager> M = rcp(new FactoryManager());
-        for (ParameterList::ConstIterator param = b1->begin(); param != b1->end(); ++param) {
-          RCP<const FactoryBase> p = BuildFactory(b1->entry(param), factoryMapIn, factoryManagersIn);
-          M->SetFactory(b1->name(param),p);
+          RCP<FactoryManager> M = Teuchos::null;
+
+          if (b->isParameter("group")) {
+            // use a factory manager
+            std::string facManagerName = b->get< std::string >("group");
+            TEUCHOS_TEST_FOR_EXCEPTION(factoryManagersIn.count(facManagerName) != 1, Exceptions::RuntimeError, "Factory manager has not been found. Please check the spelling of the factory managers in your xml file.");
+            RCP<FactoryManagerBase> Mb = factoryManagersIn.find(facManagerName)->second;
+            M = Teuchos::rcp_dynamic_cast<FactoryManager>(Mb);
+            TEUCHOS_TEST_FOR_EXCEPTION(M==Teuchos::null, Exceptions::RuntimeError, "Failed to cast FactoryManagerBase object to FactoryManager.");
+          } else {
+            // read in the list of factories
+            M = rcp(new FactoryManager());
+            for (ParameterList::ConstIterator param = b->begin(); param != b->end(); ++param) {
+              RCP<const FactoryBase> p = BuildFactory(b->entry(param), factoryMapIn, factoryManagersIn);
+              M->SetFactory(b->name(param),p);
+            }
+          }
+
+          // add factory manager to internal vector of factory managers
+          M->SetIgnoreUserData(true);
+          facManagers.push_back(M);
+          paramListNonConst->remove(ss.str());
+          blockid++;
+        } else {
+          blockExists = false;
+          break;
         }
-        M->SetIgnoreUserData(true);
-        facManagers.push_back(M);
-        paramListNonConst->remove("block1");
-      }
 
-      if(paramList.isSublist("block2") == true) {
-        RCP<const ParameterList> b2 = rcp(new ParameterList(*sublist(paramListNonConst, "block2")));
-
-        RCP<FactoryManager> M = rcp(new FactoryManager());
-        for (ParameterList::ConstIterator param = b2->begin(); param != b2->end(); ++param) {
-          RCP<const FactoryBase> p = BuildFactory(b2->entry(param), factoryMapIn, factoryManagersIn);
-          M->SetFactory(b2->name(param),p);
-        }
-        M->SetIgnoreUserData(true);
-        facManagers.push_back(M);
-
-        paramListNonConst->remove("block2");
       }
 
       // build BlockedPFactory (without sub block information)
       pfac = Build2<BlockedPFactory>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
       // add FactoryManager objects
-      pfac->AddFactoryManager(facManagers[0]); // add first factory manager
-      pfac->AddFactoryManager(facManagers[1]); // add second factory manager
+      for(size_t i = 0; i<facManagers.size(); i++) {
+        pfac->AddFactoryManager(facManagers[i]); // add factory manager
+      }
 
       return pfac;
     }
