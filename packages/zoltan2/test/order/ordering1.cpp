@@ -87,16 +87,15 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 #define epsilon 0.00000001
 
 int validatePerm(size_t n, z2TestLO *perm)
-// returns 0 if permutation is valid
+// returns 0 if permutation is valid, negative if invalid
 {
   std::vector<int> count(n);
   int status = 0;
-  size_t i;
 
-  for (i=0; i<n; i++)
+  for (size_t i=0; i<n; i++)
     count[i]=0;
 
-  for (i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     if ((perm[i]<0) || (perm[i]>=z2TestLO(n)))
       status = -1;
     else
@@ -104,7 +103,7 @@ int validatePerm(size_t n, z2TestLO *perm)
   }
 
   // Each index should occur exactly once (count==1)
-  for (i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     if (count[i] != 1){
       status = -2;
       break;
