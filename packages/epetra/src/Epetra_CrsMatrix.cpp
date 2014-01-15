@@ -4854,7 +4854,7 @@ template<class TransferType>
     else if(typeid(TransferType)==typeid(Epetra_Export))    
       SourceRow_pids.Import(TargetRow_pids,RowTransfer,Insert); 
     else 
-      throw ReportError("Epetra_CrsMatrix: Fused import/export constructor TransferType must be Epetra_Import or Epetra_Export");
+      throw ReportError("Epetra_CrsMatrix: Fused import/export constructor TransferType must be Epetra_Import or Epetra_Export",-31);
     SourceCol_pids.Import(SourceRow_pids,*MyImporter,Insert);
   }
   else
