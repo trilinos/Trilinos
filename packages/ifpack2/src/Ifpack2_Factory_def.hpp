@@ -87,6 +87,20 @@ Factory::create (const std::string& precType,
   (void) one_mpi_rank;
 
   if (precTypeUpper == "SCHWARZ") {
+    // Discussion related to Bug 5987: The line of code below will
+    // give AdditiveSchwarz a default subdomain solver by default.
+    // However, you can change it later via setParameters() or
+    // setInnerPreconditioner().  In the former case, AdditiveSchwarz
+    // will not create the subdomain solver until you call
+    // initialize(), so there is no performance loss in waiting after
+    // calling AdditiveSchwarz's constructor before specifying the
+    // subdomain solver's type.
+    //
+    // FIXME (mfh 14 Jan 2014) Use of "CUSTOM" in AdditiveSchwarz may
+    // destroy information needed for fixing Bug 5987.  In particular,
+    // the input ParameterList needs to keep its subdomain solver
+    // info.  setInnerPreconditioner must _not_ destroy that info _if_
+    // the Factory creates the AdditiveSchwarz instance.
     prec = rcp (new AdditiveSchwarz<MatrixType> (matrix, overlap));
   }
   else if (precTypeUpper == "KRYLOV") {
@@ -146,6 +160,27 @@ Factory::create (const std::string& precType,
   (void) one_mpi_rank;
 
   if (precTypeUpper == "SCHWARZ") {
+    // Discussion related to Bug 5987: The line of code below will
+    // give AdditiveSchwarz a default subdomain solver by default.
+    // However, you can change it later via setParameters() or
+    // setInnerPreconditioner().  In the former case, AdditiveSchwarz
+    // will not create the subdomain solver until you call
+    // initialize(), so there is no performance loss in waiting after
+    // calling AdditiveSchwarz's constructor before specifying the
+    // subdomain solver's type.
+    //
+    // FIXME (mfh 14 Jan 2014) Use of "CUSTOM" in AdditiveSchwarz may
+    // destroy information needed for fixing Bug 5987.  In particular,
+    // the input ParameterList needs to keep its subdomain solver
+    // info.  setInnerPreconditioner must _not_ destroy that info _if_
+    // the Factory creates the AdditiveSchwarz instance.
+    //
+    // "CUSTOM" isn't necessary.  If Inverse_ is not null, then
+    // AdditiveSchwarz's initialize() should just use the inner
+    // preconditioner as it is.  If Inverse_ is null, then we assume
+    // you want the default inner preconditioner.  You shouldn't have
+    // called setInnerPreconditioner() with a null argument if that's
+    // not what you meant!
     prec = rcp (new AdditiveSchwarz<MatrixType> (matrix));
   }
   else if (precTypeUpper == "KRYLOV") {
