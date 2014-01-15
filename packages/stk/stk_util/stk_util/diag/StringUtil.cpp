@@ -21,7 +21,6 @@
 
 #include <stk_util/diag/StringUtil.hpp>
 
-
 //----------------------------------------------------------------------
 
 namespace sierra {

@@ -334,7 +334,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 
   // For both left and right parts
   // Verify the element-node relationships for each part:
-  for( std::vector<stk::mesh::Part*>::const_iterator iter_part = both_parts.begin();  iter_part < both_parts.end(); iter_part++)
+  for( std::vector<stk::mesh::Part*>::const_iterator iter_part = both_parts.begin();  iter_part != both_parts.end(); iter_part++)
   {
     // From all element buckets select part buckets
     stk::mesh::Selector selector(**iter_part);

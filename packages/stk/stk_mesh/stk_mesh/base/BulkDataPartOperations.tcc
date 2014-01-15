@@ -215,7 +215,7 @@ void BulkData::internal_change_entity_parts(
   const unsigned locally_owned_ordinal = m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal();
 
   bool add_to_locally_owned = false;
-  for (typename std::vector<PartT>::const_iterator itr = add_parts.begin(), end_itr = add_parts.end(); itr < end_itr; ++itr) {
+  for (typename std::vector<PartT>::const_iterator itr = add_parts.begin(), end_itr = add_parts.end(); itr != end_itr; ++itr) {
     if ( impl::get_ordinal(*itr) == locally_owned_ordinal ) {
       add_to_locally_owned = true;
       break;
@@ -225,7 +225,7 @@ void BulkData::internal_change_entity_parts(
 
 
   bool remove_from_locally_owned = false;
-  for (typename std::vector<PartT>::const_iterator itr = remove_parts.begin(), end_itr = remove_parts.end(); itr < end_itr; ++itr) {
+  for (typename std::vector<PartT>::const_iterator itr = remove_parts.begin(), end_itr = remove_parts.end(); itr != end_itr; ++itr) {
     if ( impl::get_ordinal(*itr) == locally_owned_ordinal ) {
       remove_from_locally_owned = true;
       break;
