@@ -332,75 +332,26 @@ template<class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   Matrix_ (A),
-  IsInitialized_(false),
-  IsComputed_(false),
-  IsOverlapping_(false),
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  IsOverlapping_ (false),
   OverlapLevel_ (0),
-  CombineMode_(Tpetra::ADD),
+  CombineMode_ (Tpetra::ADD),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-  ComputeCondest_(true),
-  UseReordering_(false),
-  ReorderingAlgorithm_("none"),
-  UseSubdomain_(false),
-  FilterSingletons_(false),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
-  InitializeTime_(0.0),
-  ComputeTime_(0.0),
-  ApplyTime_(0.0)
+  ComputeCondest_ (true),
+  UseReordering_ (false),
+  ReorderingAlgorithm_ ("none"),
+  UseSubdomain_ (false),
+  FilterSingletons_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0)
 {
-  using Tpetra::global_size_t;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::SerialComm;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Matrix_.is_null (), std::invalid_argument, "Ifpack2::AdditiveSchwarz "
-    "constructor: The input matrix A must be nonnull.");
-
-  RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
-  RCP<const map_type> rowMap = Matrix_->getRowMap ();
-  RCP<node_type> node = Matrix_->getNode ();
-  const global_size_t INVALID =
-    Teuchos::OrdinalTraits<global_size_t>::invalid ();
-
-  // If there's only one process in the matrix's communicator,
-  // then there's no need to compute overlap.
-  if (comm->getSize () == 1) {
-    OverlapLevel_ = 0;
-    IsOverlapping_ = false;
-  } else if (OverlapLevel_ != 0) {
-    IsOverlapping_ = true;
-  }
-
-  if (OverlapLevel_ == 0) {
-    const global_ordinal_type indexBase = rowMap->getIndexBase ();
-
-    // FIXME (mfh 28 Sep 2013) I don't understand why this is called a
-    // "serial Map."  It's the same Map as the input matrix's row Map!
-    // It's also the same Map as "distributed Map"!  I would change it
-    // myself, but I don't want to break anything, so I just
-    // reformatted the code to comply better with Ifpack2 standards
-    // and left the names alone.
-    SerialMap_ =
-      rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                         indexBase, comm, node));
-    DistributedMap_ =
-      rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                         indexBase, comm, node));
-
-    RCP<const SerialComm<int> > localComm (new SerialComm<int> ());
-
-    LocalDistributedMap_ =
-      rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
-                         indexBase, localComm, node));
-  }
-
-
-  // Set parameters to default values
   Teuchos::ParameterList plist;
-  setParameters (plist);
+  setParameters (plist); // Set parameters to default values
 }
 
 template<class MatrixType, class LocalInverseType>
@@ -408,74 +359,26 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
                  const int overlapLevel) :
   Matrix_ (A),
-  IsInitialized_(false),
-  IsComputed_(false),
-  IsOverlapping_(false),
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  IsOverlapping_ (false),
   OverlapLevel_ (overlapLevel),
-  CombineMode_(Tpetra::ADD),
+  CombineMode_ (Tpetra::ADD),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-  ComputeCondest_(true),
-  UseReordering_(false),
-  ReorderingAlgorithm_("none"),
-  UseSubdomain_(false),
-  FilterSingletons_(false),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
-  InitializeTime_(0.0),
-  ComputeTime_(0.0),
-  ApplyTime_(0.0)
+  ComputeCondest_ (true),
+  UseReordering_ (false),
+  ReorderingAlgorithm_ ("none"),
+  UseSubdomain_ (false),
+  FilterSingletons_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0)
 {
-  using Tpetra::global_size_t;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::SerialComm;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Matrix_.is_null (), std::invalid_argument, "Ifpack2::AdditiveSchwarz "
-    "constructor: The input matrix A must be nonnull.");
-
-  RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
-  RCP<const map_type> rowMap = Matrix_->getRowMap ();
-  RCP<node_type> node = Matrix_->getNode ();
-  const global_size_t INVALID =
-    Teuchos::OrdinalTraits<global_size_t>::invalid ();
-
-  // If there's only one process in the matrix's communicator,
-  // then there's no need to compute overlap.
-  if (comm->getSize () == 1) {
-    OverlapLevel_ = 0;
-    IsOverlapping_ = false;
-  } else if (OverlapLevel_ != 0) {
-    IsOverlapping_ = true;
-  }
-
-  if (OverlapLevel_ == 0) {
-    const global_ordinal_type indexBase = rowMap->getIndexBase ();
-
-    // FIXME (mfh 28 Sep 2013) I don't understand why this is called a
-    // "serial Map."  It's the same Map as the input matrix's row Map!
-    // It's also the same Map as "distributed Map"!  I would change it
-    // myself, but I don't want to break anything, so I just
-    // reformatted the code to comply better with Ifpack2 standards
-    // and left the names alone.
-    SerialMap_ =
-      rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                         indexBase, comm, node));
-    DistributedMap_ =
-      rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                         indexBase, comm, node));
-
-    RCP<const SerialComm<int> > localComm (new SerialComm<int> ());
-
-    LocalDistributedMap_ =
-      rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
-                         indexBase, localComm, node));
-  }
-
-  // Set parameters to default values
   Teuchos::ParameterList plist;
-  setParameters (plist);
+  setParameters (plist); // Set parameters to default values
 }
 
 
@@ -488,8 +391,10 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename
 AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::getDomainMap: "
-    "The matrix A to precondition is null.");
+    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
+    "getDomainMap: The matrix to precondition is null.  You must either pass "
+    "a nonnull matrix to the constructor, or call setMatrix() with a nonnull "
+    "input, before you may call this method.");
   return Matrix_->getDomainMap ();
 }
 
@@ -499,8 +404,10 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename
 AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::getRangeMap: "
-    "The matrix A to precondition is null.");
+    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
+    "getRangeMap: The matrix to precondition is null.  You must either pass "
+    "a nonnull matrix to the constructor, or call setMatrix() with a nonnull "
+    "input, before you may call this method.");
   return Matrix_->getRangeMap ();
 }
 
@@ -544,7 +451,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TEUCHOS_TEST_FOR_EXCEPTION(
       Matrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
       "The input matrix A is null, but the preconditioner says that it has "
-      "been computed (isComputed() is true).  This should never happen.  "
+      "been computed (isComputed() is true).  This should never happen, since "
+      "setMatrix() should always mark the preconditioner as not computed if "
+      "its argument is null.  "
       "Please report this bug to the Ifpack2 developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       Inverse_.is_null (), std::runtime_error,
@@ -794,9 +703,8 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   (void) gotCombineMode; // forestall "set but not used" compiler warning
 
   OverlapLevel_ = plist->get ("schwarz: overlap level", OverlapLevel_);
-  if (OverlapLevel_ != 0 && Matrix_->getComm ()->getSize () > 1) {
-    IsOverlapping_ = true;
-  }
+
+  // We set IsOverlapping_ in initialize(), once we know that Matrix_ is nonnull.
 
   // Will we be doing reordering?  Unlike Ifpack, we'll use a
   // "schwarz: reordering list" to give to Zoltan2.
@@ -862,10 +770,12 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // string.  Remember that the user may have previously set an
   // arbitrary inner solver by calling setInnerPreconditioner().
   //
-  // See note and FIXME at the end of setInnerPreconditioner().
+  // See note at the end of setInnerPreconditioner().
 
   if (! Inverse_.is_null ()) {
-    if (hasInnerPrecName ()) {
+    // "CUSTOM" explicitly indicates that the user called or plans to
+    // call setInnerPreconditioner.
+    if (hasInnerPrecName () && innerPrecName () != "CUSTOM") {
       // Wipe out the current inner solver.  initialize() will
       // recreate it with the correct type.
       Inverse_ = Teuchos::null;
@@ -924,8 +834,10 @@ getValidParameters () const
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 {
+  using Tpetra::global_size_t;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::SerialComm;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
@@ -938,9 +850,53 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   { // Start timing here.
     TimeMonitor timeMon (*timer);
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
+      "initialize: The matrix to precondition is null.  You must either pass "
+      "a nonnull matrix to the constructor, or call setMatrix() with a nonnull "
+      "input, before you may call this method.");
+
     IsInitialized_ = false;
     IsComputed_ = false;
     Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
+
+    RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
+    RCP<const map_type> rowMap = Matrix_->getRowMap ();
+    RCP<node_type> node = Matrix_->getNode ();
+    const global_size_t INVALID =
+      Teuchos::OrdinalTraits<global_size_t>::invalid ();
+
+    // If there's only one process in the matrix's communicator,
+    // then there's no need to compute overlap.
+    if (comm->getSize () == 1) {
+      OverlapLevel_ = 0;
+      IsOverlapping_ = false;
+    } else if (OverlapLevel_ != 0) {
+      IsOverlapping_ = true;
+    }
+
+    if (OverlapLevel_ == 0) {
+      const global_ordinal_type indexBase = rowMap->getIndexBase ();
+
+      // FIXME (mfh 28 Sep 2013) I don't understand why this is called a
+      // "serial Map."  It's the same Map as the input matrix's row Map!
+      // It's also the same Map as "distributed Map"!  I would change it
+      // myself, but I don't want to break anything, so I just
+      // reformatted the code to comply better with Ifpack2 standards
+      // and left the names alone.
+      SerialMap_ =
+        rcp (new map_type (INVALID, rowMap->getNodeElementList (),
+                           indexBase, comm, node));
+      DistributedMap_ =
+        rcp (new map_type (INVALID, rowMap->getNodeElementList (),
+                           indexBase, comm, node));
+
+      RCP<const SerialComm<int> > localComm (new SerialComm<int> ());
+
+      LocalDistributedMap_ =
+        rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
+                           indexBase, localComm, node));
+    }
 
     // compute the overlapping matrix if necessary
     if (IsOverlapping_) {
@@ -952,17 +908,11 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
       }
     }
 
-    // Setup
-    setup ();
+    setup (); // This does a lot of the initialization work.
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::initialize: "
-      "Inverse_ is null after calling setup().  "
-      "This should never happen.  "
-      "Please report this bug to the Ifpack2 developers.");
-
-    // Initialize subdomain solver.
-    Inverse_->initialize ();
+    if (! Inverse_.is_null ()) {
+      Inverse_->initialize (); // Initialize subdomain solver.
+    }
   } // Stop timing here.
 
   IsInitialized_ = true;
@@ -975,7 +925,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
 
 template<class MatrixType,class LocalInverseType>
-bool AdditiveSchwarz<MatrixType,LocalInverseType>::isInitialized() const
+bool AdditiveSchwarz<MatrixType,LocalInverseType>::isInitialized () const
 {
   return IsInitialized_;
 }
@@ -1263,10 +1213,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 #endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Matrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
-    "initialize: The matrix A to precondition is null.  This should never "
-    "happen, since AdditiveSchwarz does not currently implement Details::"
-    "CanChangeMatrix.  Please report this bug to the Ifpack2 developers.");
+    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
+    "initialize: The matrix to precondition is null.  You must either pass "
+    "a nonnull matrix to the constructor, or call setMatrix() with a nonnull "
+    "input, before you may call this method.");
 
   // Localized version of Matrix_ or OverlappingMatrix_.
   RCP<row_matrix_type> LocalizedMatrix;
@@ -1504,6 +1454,31 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
 
   // Set the new inner solver.
   Inverse_ = innerPrec;
+}
+
+template<class MatrixType, class LocalInverseType>
+void AdditiveSchwarz<MatrixType, LocalInverseType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  // Don't set the matrix unless it is different from the current one.
+  if (A.getRawPtr () != Matrix_.getRawPtr ()) {
+    IsInitialized_ = false;
+    IsComputed_ = false;
+
+    // Reset all the state computed in initialize() and compute().
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
+    OverlappingMatrix_ = Teuchos::null;
+    ReorderedLocalizedMatrix_ = Teuchos::null;
+    innerMatrix_ = Teuchos::null;
+    SingletonMatrix_ = Teuchos::null;
+    SerialMap_ = Teuchos::null;
+    DistributedMap_ = Teuchos::null;
+    LocalDistributedMap_ = Teuchos::null;
+    SerialImporter_ = Teuchos::null;
+    DistributedImporter_ = Teuchos::null;
+
+    Matrix_ = A;
+  }
 }
 
 } // namespace Ifpack2
