@@ -385,7 +385,7 @@ namespace {
             stk::topology::rank_t side_rank = static_cast<stk::topology::rank_t>(stk::io::part_primary_entity_rank(*sb_part));
             std::string field_name = sset->name() + "_df";
             distribution_factors_field =
-	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(side_rank, NULL, field_name);
+	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(side_rank, field_name);
             stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
             stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
             surface_df_defined = true;
@@ -645,7 +645,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   assert(node_blocks.size() == 1);
 
   stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field =
-    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, NULL, stk::io::CoordinateFieldName);
+    meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, stk::io::CoordinateFieldName);
   stk::io::set_field_role(coord_field, Ioss::Field::MESH);
 
   meta.set_coordinate_field(&coord_field);
@@ -887,7 +887,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::io::default_part_processing(node_sets, meta);
 
   stk::mesh::Field<double> & distribution_factors_field =
-    meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, NULL, "distribution_factors");
+    meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
   stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
 
   /** \todo REFACTOR How to associate distribution_factors field
@@ -924,7 +924,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
       std::string nodesetDistFieldName = "distribution_factors_" + nodesetName;
 
       stk::mesh::Field<double> & distribution_factors_field_per_nodeset =
-	meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, NULL, nodesetDistFieldName);
+	meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, nodesetDistFieldName);
 
       stk::io::set_field_role(distribution_factors_field_per_nodeset, Ioss::Field::MESH);
       stk::mesh::put_field(distribution_factors_field_per_nodeset, stk::mesh::MetaData::NODE_RANK, *part);

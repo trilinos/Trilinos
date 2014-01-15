@@ -177,10 +177,10 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >(NODE_RANK, &bulk_data, name0);
-  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(NODE_RANK, &bulk_data, name1);
-  rank_three_field & f3 = meta_data.declare_field< rank_three_field >(NODE_RANK, &bulk_data, name3);
-  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(NODE_RANK, &bulk_data, name2);
+  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >(NODE_RANK, name0);
+  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(NODE_RANK,  name1);
+  rank_three_field & f3 = meta_data.declare_field< rank_three_field >(NODE_RANK, name3);
+  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(NODE_RANK,  name2);
 
   // confirm that declaring field with erroneous type throws exception
   typedef stk::mesh::Field<double,CTAG> error_type ;
