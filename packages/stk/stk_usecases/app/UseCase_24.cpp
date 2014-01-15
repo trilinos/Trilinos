@@ -194,9 +194,9 @@ bool use_case_24_driver(
   // This would also help in extracting the size of things rather than remembering
   // what index should be passed to dimension()
 
-  mesh::put_field(momentum_flux_bip , side_rank , quad_io1 , SpatialDim, numBoundaryIps );
-  mesh::put_field(momentum_flux_bip , side_rank , quad_io2 , SpatialDim, numBoundaryIps );
-  mesh::put_field(momentum_flux_bip , side_rank , quad_io3 , SpatialDim, numBoundaryIps );
+  mesh::put_field(momentum_flux_bip , quad_io1 , SpatialDim, numBoundaryIps );
+  mesh::put_field(momentum_flux_bip , quad_io2 , SpatialDim, numBoundaryIps );
+  mesh::put_field(momentum_flux_bip , quad_io3 , SpatialDim, numBoundaryIps );
 
   //-----------------------------------------
   // pressure_ip lives both on boundary
@@ -207,14 +207,14 @@ bool use_case_24_driver(
     fem_meta.declare_field< ScalarIPFieldType >(sideRank, "side_pressure_ip" );
 
   // first on boundary ips
-  mesh::put_field( side_pressure_ip , side_rank , quad_io1 , numBoundaryIps );
-  mesh::put_field( side_pressure_ip , side_rank , quad_io2 , numBoundaryIps );
-  mesh::put_field( side_pressure_ip , side_rank , quad_io3 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , sideRank, quad_io1 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , sideRank, quad_io2 , numBoundaryIps );
+  mesh::put_field( side_pressure_ip , sideRank, quad_io3 , numBoundaryIps );
 
   ScalarIPFieldType & element_pressure_ip =
     fem_meta.declare_field< ScalarIPFieldType >(stk::topology::ELEMENT_RANK, "element_pressure_ip" );
   // second on all interior element ips
-  mesh::put_field( element_pressure_ip , element_rank , hex_io1 , numElementSCSIps );
+  mesh::put_field( element_pressure_ip , mesh::MetaData::ELEMENT_RANK, hex_io1 , numElementSCSIps );
 
   //-----------------------------------------
   // mass_flux_ip lives both on boundary
@@ -225,14 +225,14 @@ bool use_case_24_driver(
     fem_meta.declare_field< VectorIPFieldType >(sideRank, "side_mass_flux_ip" );
 
   // first on boundary ips
-  mesh::put_field(side_mass_flux_ip , side_rank , quad_io1 , SpatialDim, numBoundaryIps );
-  mesh::put_field(side_mass_flux_ip , side_rank , quad_io2 , SpatialDim, numBoundaryIps );
-  mesh::put_field(side_mass_flux_ip , side_rank , quad_io3 , SpatialDim, numBoundaryIps );
+  mesh::put_field(side_mass_flux_ip , quad_io1 , SpatialDim, numBoundaryIps );
+  mesh::put_field(side_mass_flux_ip , quad_io2 , SpatialDim, numBoundaryIps );
+  mesh::put_field(side_mass_flux_ip , quad_io3 , SpatialDim, numBoundaryIps );
 
   VectorIPFieldType & element_mass_flux_ip =
     fem_meta.declare_field< VectorIPFieldType >(stk::topology::ELEMENT_RANK, "element_mass_flux_ip" );
   // second on all interior element ips
-  mesh::put_field(element_mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
+  mesh::put_field(element_mass_flux_ip , hex_io1 , SpatialDim, numElementSCSIps );
 
   // Commit (finalize) the meta data (part and field definitions).
   // Is now ready to be used in the creation and management of mesh bulk data.
