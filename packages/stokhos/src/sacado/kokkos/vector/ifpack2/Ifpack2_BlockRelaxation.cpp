@@ -39,26 +39,22 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_RowMatrix.hpp"
+#include "Stokhos_Sacado_Kokkos.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Ifpack2_BlockRelaxation_decl.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_RowMatrix_def.hpp"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_SparseContainer.hpp"
+#include "Ifpack2_BlockRelaxation_def.hpp"
 
-#define TPETRA_ROWMATRIX_INSTANT_MP_VECTOR_N(N)               \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_ROWMATRIX_INSTANT, N)
+#define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
+  template class BlockRelaxation< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                                  Ifpack2::SparseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                                                            Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO,N> > > >;
 
-namespace Tpetra {
+#include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  // Currently excluding GPU nodes because SparseOps may not be
-  // implemented, I think depending on the choice of TPLs
-  TPETRA_INSTANTIATE_N_NOGPU(TPETRA_ROWMATRIX_INSTANT_MP_VECTOR_N)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

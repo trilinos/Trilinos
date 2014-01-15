@@ -39,26 +39,24 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_DistObject.hpp"
+#include "Stokhos_Sacado_Kokkos.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Ifpack2_Details_Amesos2Wrapper_decl.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_DistObject_def.hpp"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_Details_Amesos2Wrapper_def.hpp"
 
-#define TPETRA_DISTOBJECT_INSTANT_MP_VECTOR_N(N)               \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_DISTOBJECT_INSTANT, N)
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
 
-namespace Tpetra {
+#define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
+  template class Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+// Don't instantiate this class yet.  It requires Amesos2
+//#include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
 
-  // Currently excluding GPU nodes because SparseOps may not be
-  // implemented, I think depending on the choice of TPLs
-  TPETRA_INSTANTIATE_N_NOGPU(TPETRA_DISTOBJECT_INSTANT_MP_VECTOR_N)
+#endif
 
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

@@ -39,26 +39,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_Vector.hpp"
+#ifndef STOKHOS_IFPACK2_MP_VECTOR_HPP
+#define STOKHOS_IFPACK2_MP_VECTOR_HPP
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// MP includes and specializations
+#include "Ifpack2_Krylov_MP_Vector.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_Vector_def.hpp"
+// Ifpack2 includes
+#include "Ifpack2_Factory.hpp"
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
-
-#define TPETRA_VECTOR_INSTANT_MP_VECTOR_N(N)               \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_VECTOR_INSTANT, N)
-
-namespace Tpetra {
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  // Currently excluding GPU nodes because SparseOps may not be
-  // implemented, I think depending on the choice of TPLs
-  TPETRA_INSTANTIATE_N_NOGPU(TPETRA_VECTOR_INSTANT_MP_VECTOR_N)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // STOKHOS_IFPACK2_MP_VECTOR_HPP

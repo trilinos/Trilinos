@@ -65,7 +65,7 @@
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_BELOS_TSQR
-#  include <Tpetra_TsqrAdaptor.hpp>
+#  include <Tpetra_TsqrAdaptor_MP_Vector.hpp>
 #endif // HAVE_BELOS_TSQR
 
 

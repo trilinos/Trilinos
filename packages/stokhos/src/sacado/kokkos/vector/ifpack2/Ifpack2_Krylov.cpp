@@ -39,26 +39,18 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_MultiVector.hpp"
+#include "Ifpack2_Krylov_MP_Vector.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_MultiVector_def.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Krylov_def.hpp"
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
+  template class Krylov< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                         Ifpack2::Preconditioner<S, LO, GO, N> >;
 
-#define TPETRA_MULTIVECTOR_INSTANT_MP_VECTOR_N(N)               \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_MULTIVECTOR_INSTANT, N)
+#include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
 
-namespace Tpetra {
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  // Currently excluding GPU nodes because SparseOps may not be
-  // implemented, I think depending on the choice of TPLs
-  TPETRA_INSTANTIATE_N_NOGPU(TPETRA_MULTIVECTOR_INSTANT_MP_VECTOR_N)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
