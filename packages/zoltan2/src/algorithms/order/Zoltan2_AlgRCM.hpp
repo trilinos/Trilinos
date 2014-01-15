@@ -125,7 +125,7 @@ class AlgRCM
   
     // Loop over all connected components.
     // Do BFS within each component.
-    lno_t root;
+    lno_t root = 0;
     std::queue<lno_t> Q;
     size_t count = 0; // CM label, reversed later
     size_t next = 0;  // next unmarked vertex
@@ -148,6 +148,7 @@ class AlgRCM
         root = findPseudoPeripheral(next, nVtx, edgeIds, offsets);
       else {
         // This should never happen if pl was validated.
+        throw std::runtime_error("invalid root_method");
       }
 
       // Label connected component starting at root
