@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.17 (2013/09/12)";
+  const char* version_string = "4.00 (2014/01/15)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -160,6 +160,9 @@ namespace SEAMS {
       case STRING_VARIABLE:
 	parser_type = Parser::token::SVAR;
 	break;
+      case ARRAY_VARIABLE:
+	parser_type = Parser::token::AVAR;
+	break;
       case IMMUTABLE_VARIABLE:
 	parser_type = Parser::token::IMMVAR;
 	break;
@@ -174,6 +177,9 @@ namespace SEAMS {
 	break;
       case STRING_FUNCTION:
 	parser_type = Parser::token::SFNCT;
+	break;
+      case ARRAY_FUNCTION:
+	parser_type = Parser::token::AFNCT;
 	break;
       }
     symrec *ptr = new symrec(sym_name, parser_type, is_internal);
@@ -293,7 +299,7 @@ namespace SEAMS {
   {
     char comment = getsym("_C_")->value.svar[0];
   
-    if (type == Parser::token::VAR || type == Parser::token::SVAR) {
+    if (type == Parser::token::VAR || type == Parser::token::SVAR || type == Parser::token::AVAR) {
       printf ("\n%c   Variable    = Value\n", comment);
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
@@ -306,11 +312,16 @@ namespace SEAMS {
 	      printf ("%c  {%-10s\t= \"%s\"}\n", comment, ptr->name.c_str(), ptr->value.svar);
 	    else if (ptr->type == Parser::token::IMMSVAR)
 	      printf ("%c  {%-10s\t= \"%s\"}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.svar);
+	    else if (ptr->type == Parser::token::AVAR) {
+	      array *arr = ptr->value.avar;
+	      printf ("%c  {%-10s\t (array) rows = %d, cols = %d} \n",
+		      comment, ptr->name.c_str(), arr->rows, arr->cols);
+	    }
 	  }
 	}
       }
     }
-    else if (type == Parser::token::FNCT || type == Parser::token::SFNCT) {
+    else if (type == Parser::token::FNCT || type == Parser::token::SFNCT || type == Parser::token::AFNCT) {
       printf ("\nFunctions returning double:\n");
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
@@ -323,6 +334,15 @@ namespace SEAMS {
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::SFNCT) {
+	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
+	  }
+	}
+      }
+      
+      printf ("\nFunctions returning array:\n");
+      for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
+	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
+	  if (ptr->type == Parser::token::AFNCT) {
 	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
 	  }
 	}
