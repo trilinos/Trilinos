@@ -32,6 +32,7 @@
 #include <cassert>
 #include <iomanip>
 #include <vector>
+#include <iostream>
 
 #include "Sacado_ScalarFlopCounter.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
