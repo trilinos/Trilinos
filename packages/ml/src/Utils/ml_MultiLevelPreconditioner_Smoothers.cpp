@@ -409,14 +409,21 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // ====================== //
       // symmetric Gauss-Seidel //
       // ====================== //
-        bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
-
+      bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
       if( verbose_ ) std::cout << msg << "symmetric Gauss-Seidel (sweeps="
 			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
 			       << MyPreOrPostSmoother 
 			       << (use_l1  ? ",l1 damping" : "" )
 			       << ")" <<std::endl;
 #ifdef HAVE_ML_IFPACK
+      std::string MyIfpackType = "point relaxation stand-alone";
+      ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");;
+      MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+      MyIfpackList.set("relaxation: damping factor", Myomega);
+      MyIfpackList.set("relaxation: use l1",use_l1);
+      int smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+
       if (verbose_) {
 	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
 	  std::cout << msg << "Epetra_CrsMatrix detected, using "
@@ -424,14 +431,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	else
 	  std::cout << msg << "Wrapping to use "
 		    << "Ifpack implementation" << std::endl;
+	if (smoothing_indices)
+	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	  
       }
-
-      std::string MyIfpackType = "point relaxation stand-alone";
-      ParameterList& MyIfpackList = List_.sublist("smoother: ifpack list");;
-      MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
-      MyIfpackList.set("relaxation: damping factor", Myomega);
-      MyIfpackList.set("relaxation: use l1",use_l1);
 
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
 			     IfpackOverlap, currentLevel, pre_or_post,
