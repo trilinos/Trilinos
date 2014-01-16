@@ -53,7 +53,7 @@ std::ostream & print_restrictions(std::ostream & s ,
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << b;
-    i->print( s, i->entity_rank(), i->selector(), field.field_array_rank() );
+    i->print( s, i->selector(), field.field_array_rank() );
     s << std::endl;
   }
   return s;

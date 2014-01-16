@@ -52,14 +52,16 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
                                                const PartVector& parts)
 {
-  const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
-  for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
-    const Selector& selector = it->selector();
-    if (it->entity_rank() == erank && selector(parts)) {
-      return *it;
-    }
+  if(field.entity_rank() == erank)
+  {
+      const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
+      for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
+        const Selector& selector = it->selector();
+        if (selector(parts)) {
+          return *it;
+        }
+      }
   }
-
   return empty_field_restriction();
 }
 
@@ -67,12 +69,15 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
                                                const Part & part)
 {
-  const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
-  for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
-    const Selector& selector = it->selector();
-    if (it->entity_rank() == erank && selector(part)) {
-      return *it;
-    }
+  if(field.entity_rank() == erank)
+  {
+      const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
+      for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
+        const Selector& selector = it->selector();
+        if (selector(part)) {
+          return *it;
+        }
+      }
   }
 
   return empty_field_restriction();
@@ -85,19 +90,21 @@ const FieldBase::Restriction& find_and_check_restriction(const FieldBase& field,
   const FieldBase::Restriction & empty = empty_field_restriction();
   const FieldBase::Restriction * restriction = & empty;
 
-  const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
-  for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
-    const Selector& selector = it->selector();
-    if (it->entity_rank() == erank && selector(parts)) {
-      if (restriction == &empty) {
-        restriction = &*it;
+  if(field.entity_rank() == erank)
+  {
+      const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
+      for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
+        const Selector& selector = it->selector();
+        if (selector(parts)) {
+          if (restriction == &empty) {
+            restriction = &*it;
+          }
+          else if (it->not_equal_stride(*restriction)) {
+            throw_conflicting_restrictions(field, parts, *restriction, *it);
+          }
+        }
       }
-      else if (it->not_equal_stride(*restriction)) {
-        throw_conflicting_restrictions(field, parts, *restriction, *it);
-      }
-    }
   }
-
   return *restriction;
 }
 

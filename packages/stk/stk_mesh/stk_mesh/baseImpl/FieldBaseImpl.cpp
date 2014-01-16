@@ -84,24 +84,13 @@ FieldRestrictionVector & FieldBaseImpl::restrictions()
 
 void FieldBaseImpl::insert_restriction(
   const char     * arg_method ,
-  EntityRank       arg_entity_rank ,
   const Selector & arg_selector ,
   const unsigned * arg_stride,
   const void*      arg_init_value )
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
 
-  ThrowRequireMsg(m_entity_rank == stk::topology::INVALID_RANK || m_entity_rank == arg_entity_rank,
-                  "ERROR in FieldBaseImpl::insert_restriction: field: arg_entity_rank ("<<arg_entity_rank<<") doesn't match m_entity_rank ("<<m_entity_rank<<")");
-
-  const FieldRestrictionVector & existing_restrictions = restrictions();
-  for(size_t i=0; i<existing_restrictions.size(); ++i)
-  {
-      ThrowRequireMsg(existing_restrictions[i].entity_rank() == arg_entity_rank,
-                      "ERROR in FieldBaseImpl::insert_restriction: field: "<<this->name()<<", new restriction on entity_rank ("<<arg_entity_rank<<"), but this field already has a restriction for entity-rank ("<<existing_restrictions[i].entity_rank()<<")");
-  }
-
-  FieldRestriction tmp( arg_entity_rank , arg_selector );
+  FieldRestriction tmp( arg_selector );
 
   {
     unsigned i = 0 ;
@@ -174,16 +163,15 @@ void FieldBaseImpl::insert_restriction(
       ThrowRequireMsg(!m_meta_data->is_commit(), "mesh MetaData has been committed.");
       unsigned num_subsets = 0;
       for(FieldRestrictionVector::iterator i=restrs.begin(), iend=restrs.end(); i!=iend; ++i) {
-        if (i->entity_rank() != arg_entity_rank) continue;
 
         const Selector& selectorI = i->selector();
         bool found_subset = is_subset(selectorI, arg_selector);
         if (found_subset) {
           ThrowErrorMsgIf( i->not_equal_stride(tmp),
                            arg_method << " FAILED for " << *this << " " <<
-                           print_restriction( *i, arg_entity_rank, arg_selector, m_field_rank ) <<
+                           print_restriction( *i, arg_selector, m_field_rank ) <<
                            " WITH INCOMPATIBLE REDECLARATION " <<
-                           print_restriction( tmp, arg_entity_rank, arg_selector, m_field_rank ));
+                           print_restriction( tmp, arg_selector, m_field_rank ));
           *i = tmp;
           ++num_subsets;
         }
@@ -192,9 +180,9 @@ void FieldBaseImpl::insert_restriction(
         if (found_superset) {
           ThrowErrorMsgIf( i->not_equal_stride(tmp),
                            arg_method << " FAILED for " << *this << " " <<
-                           print_restriction( *i, arg_entity_rank, arg_selector, m_field_rank ) <<
+                           print_restriction( *i, arg_selector, m_field_rank ) <<
                            " WITH INCOMPATIBLE REDECLARATION " <<
-                           print_restriction( tmp, arg_entity_rank, arg_selector, m_field_rank ));
+                           print_restriction( tmp, arg_selector, m_field_rank ));
           //if there's already a restriction for a superset of this selector, then
           //there's nothing to do and we're out of here..
           return;
@@ -214,9 +202,9 @@ void FieldBaseImpl::insert_restriction(
     else {
       ThrowErrorMsgIf( restr->not_equal_stride(tmp),
                        arg_method << " FAILED for " << *this << " " <<
-                       print_restriction( *restr, arg_entity_rank, arg_selector, m_field_rank ) <<
+                       print_restriction( *restr, arg_selector, m_field_rank ) <<
                        " WITH INCOMPATIBLE REDECLARATION " <<
-                       print_restriction( tmp, arg_entity_rank, arg_selector, m_field_rank ));
+                       print_restriction( tmp, arg_selector, m_field_rank ));
     }
   }
 }
@@ -238,7 +226,6 @@ void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Pa
       for (size_t i = 0, ie = restrs.size(); i < ie; ++i) {
         FieldRestriction const& check_restriction = restrs[i];
         if (i != r &&
-            curr_restriction.entity_rank() == check_restriction.entity_rank() &&
             check_restriction.selector()(subset) &&
             is_subset(curr_restriction.selector(), check_restriction.selector())) {
           ThrowErrorMsgIf( check_restriction.not_equal_stride(curr_restriction),
@@ -289,13 +276,13 @@ unsigned FieldBaseImpl::max_size( unsigned ent_rank ) const
   const FieldRestrictionVector::const_iterator ie = rMap.end() ;
         FieldRestrictionVector::const_iterator i = rMap.begin();
 
-  for ( ; i != ie ; ++i ) {
-    if ( i->entity_rank() == ent_rank ) {
-      const unsigned len = m_field_rank ? i->stride( m_field_rank - 1 ) : 1 ;
-      if ( max < len ) { max = len ; }
-    }
+  if(entity_rank() == ent_rank)
+  {
+      for ( ; i != ie ; ++i ) {
+          const unsigned len = m_field_rank ? i->stride( m_field_rank - 1 ) : 1 ;
+          if ( max < len ) { max = len ; }
+      }
   }
-
   return max ;
 }
 
@@ -328,7 +315,7 @@ std::ostream & print( std::ostream & s ,
   for ( FieldBase::RestrictionVector::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    i->print( s, i->entity_rank(), i->selector(), field.field_array_rank() );
+    i->print( s, i->selector(), field.field_array_rank() );
     s << std::endl;
   }
   s << std::endl << b << "}" ;

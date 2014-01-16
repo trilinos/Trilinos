@@ -99,7 +99,6 @@ public:
   }
 
   void insert_restriction( const char       * arg_method ,
-                           EntityRank         arg_entity_rank ,
                            const Selector   & arg_selector ,
                            const unsigned   * arg_stride ,
                            const void*        arg_init_value = NULL);

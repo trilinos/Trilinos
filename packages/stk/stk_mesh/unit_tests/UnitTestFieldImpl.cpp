@@ -132,21 +132,21 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Declare three restrictions:
 
-  meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pA , stride );
-  meta_data.declare_field_restriction(*edgeField, stk::topology::EDGE_RANK , pB , stride + 1 );
-  meta_data.declare_field_restriction(*faceField, stk::topology::FACE_RANK , pC , stride + 2 );
+  meta_data.declare_field_restriction(*nodeField, pA , stride );
+  meta_data.declare_field_restriction(*edgeField, pB , stride + 1 );
+  meta_data.declare_field_restriction(*faceField, pC , stride + 2 );
 
   // Check for correctness of restrictions:
 
   STKUNIT_ASSERT( nodeField->restrictions().size() == 1 );
   STKUNIT_ASSERT( nodeField->restrictions()[0] ==
-                  FieldRestriction( stk::topology::NODE_RANK , pA ) );
+                  FieldRestriction( pA ) );
   STKUNIT_ASSERT( edgeField->restrictions()[0] ==
-                  FieldRestriction( stk::topology::EDGE_RANK , pB ) );
+                  FieldRestriction( pB ) );
   STKUNIT_ASSERT( faceField->restrictions()[0] ==
-                  FieldRestriction( stk::topology::FACE_RANK , pC ) );
+                  FieldRestriction( pC ) );
 
-  meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pB , stride + 1 );
+  meta_data.declare_field_restriction(*nodeField , pB , stride + 1 );
 
   STKUNIT_ASSERT_EQUAL( nodeField->max_size( 0 ) , 20u );
 
@@ -155,7 +155,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pA , bad_stride ),
+      meta_data.declare_field_restriction(*nodeField , pA , bad_stride ),
       std::runtime_error
     );
     STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
@@ -165,7 +165,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // field restriction.
   {
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*nodeField, stk::topology::NODE_RANK , pA , stride + 1 ),
+      meta_data.declare_field_restriction(*nodeField , pA , stride + 1 ),
       std::runtime_error
     );
     STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
@@ -181,8 +181,8 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
   meta_data.declare_part_subset( pD, pA );
-  meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK , pA , stride );
-  meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK , pD , stride );
+  meta_data.declare_field_restriction(*f2 , pA , stride );
+  meta_data.declare_field_restriction(*f2 , pD , stride );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
@@ -200,7 +200,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check that the verify_and_clean_restrictions method detects
   // this error condition.
   {
-    meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK , pB , stride + 1 );
+    meta_data.declare_field_restriction(*f2 , pB , stride + 1 );
     STKUNIT_ASSERT_THROW(
       meta_data.declare_part_subset( pD, pB ),
       std::runtime_error
@@ -216,7 +216,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[1] = 0;
 
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*f2, stk::topology::NODE_RANK, pA, arg_no_stride),
+      meta_data.declare_field_restriction(*f2, pA, arg_no_stride),
       std::runtime_error
     );
   }
