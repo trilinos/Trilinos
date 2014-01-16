@@ -270,6 +270,8 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     solverType = "klu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     solverType = "superludist";
+#elif defined(HAVE_AMESOS2_CHOLMOD)
+    solverType = "cholmod";
 #elif defined(HAVE_AMESOS2_LAPACK)
     solverType = "lapack";
 #endif
