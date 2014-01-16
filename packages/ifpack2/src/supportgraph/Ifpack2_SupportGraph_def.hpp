@@ -59,8 +59,7 @@
 #  include <boost/graph/prim_minimum_spanning_tree.hpp>
 #  include <boost/config.hpp>
 #else
-#  error "Ifpack2::SupportGraph requires that Trilinos be built with Boost "
-"support."
+#  error "Ifpack2::SupportGraph requires that Trilinos be built with Boost support."
 #endif // HAVE_IFPACK2_BOOST
 
 #include "Ifpack2_Condest.hpp"
@@ -116,7 +115,7 @@ setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterType&) {
     // Try double, for backwards compatibility.
     // The cast from double to magnitude_type must succeed.
-    absThresh = as<magnitude_type> (params.get<double> 
+    absThresh = as<magnitude_type> (params.get<double>
                                     ("fact: absolute threshold"));
   }
   catch (InvalidParameterName&) {
@@ -129,7 +128,7 @@ setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterType&) {
     // Try double, for backwards compatibility.
     // The cast from double to magnitude_type must succeed.
-    relThresh = as<magnitude_type> (params.get<double> 
+    relThresh = as<magnitude_type> (params.get<double>
                                     ("fact: relative threshold"));
   }
   catch (InvalidParameterName&) {
@@ -310,14 +309,14 @@ SupportGraph<MatrixType>::findSupport ()
                             global_ordinal_type, node_type> crs_matrix_type;
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> vec_type;
-  
+
 typedef std::pair<int, int> E;
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, 
-                                boost::no_property, 
-                                boost::property<boost::edge_weight_t, 
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
+                                boost::no_property,
+                                boost::property<boost::edge_weight_t,
                                                 magnitude_type> > graph_type;
   typedef typename boost::graph_traits<graph_type>::edge_descriptor edge_type;
-  typedef typename boost::graph_traits<graph_type>::vertex_descriptor 
+  typedef typename boost::graph_traits<graph_type>::vertex_descriptor
     vertex_type;
 
   const scalar_type zero = STS::zero();
@@ -326,7 +325,7 @@ typedef std::pair<int, int> E;
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
   size_t num_verts = A_local_->getNodeNumRows();
-  size_t num_edges  
+  size_t num_edges
     = (A_local_->getNodeNumEntries() - A_local_->getNodeNumDiags())/2;
 
   // Create data structures for the BGL code
@@ -339,13 +338,13 @@ typedef std::pair<int, int> E;
 
   std::vector<scalar_type> valuestemp (max_num_entries);
   std::vector<local_ordinal_type> indicestemp (max_num_entries);
-  
+
   std::vector<magnitude_type> diagonal (num_verts);
 
   Tpetra::ArrayView<scalar_type> values (valuestemp);
   Tpetra::ArrayView<local_ordinal_type> indices (indicestemp);
 
-  // Extract from the tpetra matrix keeping only one edge per pair 
+  // Extract from the tpetra matrix keeping only one edge per pair
   // (assume symmetric)
   size_t offDiagCount = 0;
   for (size_t row = 0; row < num_verts; ++row) {
@@ -355,13 +354,13 @@ typedef std::pair<int, int> E;
         diagonal[row] = values[colIndex];
       }
 
-      if((row < Teuchos::as<size_t>(indices[colIndex])) 
+      if((row < Teuchos::as<size_t>(indices[colIndex]))
          && (values[colIndex] < zero)) {
         edge_array[offDiagCount] = E(row, indices[colIndex]);
         weights[offDiagCount] = values[colIndex];
         if (Randomize_) {
           // Add small random pertubation.
-          weights[offDiagCount] *= one + 
+          weights[offDiagCount] *= one +
             STS::magnitude(STS::rmin() * STS::random());
         }
 
@@ -372,7 +371,7 @@ typedef std::pair<int, int> E;
 
   // Create BGL graph
   graph_type g(edge_array, edge_array + num_edges, weights, num_verts);
-  typedef typename boost::property_map 
+  typedef typename boost::property_map
     <graph_type, boost::edge_weight_t>::type type;
   type weight = get (boost::edge_weight, g);
   std::vector<edge_type> spanning_tree;
@@ -402,8 +401,8 @@ typedef std::pair<int, int> E;
 
 
   // Create an stl vector of stl vectors to hold indices and values
-  std::vector<std::vector<local_ordinal_type> > Indices (num_verts); 
-  std::vector<std::vector<magnitude_type> > Values (num_verts); 
+  std::vector<std::vector<local_ordinal_type> > Indices (num_verts);
+  std::vector<std::vector<magnitude_type> > Values (num_verts);
 
   for (size_t i = 0; i < num_verts; ++i) {
     Indices[i].resize(NumNz[i]);
@@ -427,10 +426,10 @@ typedef std::pair<int, int> E;
     // update the arrays containing size information
     if (i > 0) {
       spanning_tree.clear();
-      boost::kruskal_minimum_spanning_tree 
+      boost::kruskal_minimum_spanning_tree
         (g, std::back_inserter(spanning_tree));
 
-      for (edge_iterator_type ei = spanning_tree.begin(); 
+      for (edge_iterator_type ei = spanning_tree.begin();
           ei != spanning_tree.end(); ++ei) {
         NumNz[source(*ei,g)] += 1;
       }
@@ -443,7 +442,7 @@ typedef std::pair<int, int> E;
       }
     }
 
-    for (edge_iterator_type ei = spanning_tree.begin(); 
+    for (edge_iterator_type ei = spanning_tree.begin();
         ei != spanning_tree.end(); ++ei) {
       local_ordinal_type localsource = source(*ei, g);
       local_ordinal_type localtarget = target(*ei, g);
@@ -485,7 +484,7 @@ typedef std::pair<int, int> E;
     }
 
     // If the original diagonal is less than the row sum then we aren't going to
-    // use it regardless of the diagonal option, shouldn't happen for proper 
+    // use it regardless of the diagonal option, shouldn't happen for proper
     // Laplacian
     if (diagonal[i] < Values[i][0]) {
       diagonal[i] = Values[i][0];
@@ -750,7 +749,7 @@ describe (Teuchos::FancyOStream &out,
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
 
-  const Teuchos::EVerbosityLevel vl 
+  const Teuchos::EVerbosityLevel vl
     = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
   Teuchos::OSTab tab (out);
   //    none: print nothing
@@ -770,14 +769,14 @@ describe (Teuchos::FancyOStream &out,
 
     if (isComputed()) {
       out << "Number of nonzeros in A: " << A_->getGlobalNumEntries() << endl;
-      out << "Number of nonzeros in A_local: " 
+      out << "Number of nonzeros in A_local: "
           << A_local_->getGlobalNumEntries() << endl;
       out << "Number of edges in support graph: "
-          << Support_->getGlobalNumEntries() - Support_->getGlobalNumDiags() 
+          << Support_->getGlobalNumEntries() - Support_->getGlobalNumDiags()
           << endl;
 
       const double popFrac =
-        static_cast<double> (Support_->getGlobalNumEntries() - 
+        static_cast<double> (Support_->getGlobalNumEntries() -
                              Support_->getGlobalNumDiags()) /
         ((A_->getGlobalNumEntries() - A_->getGlobalNumDiags()) / 2.0);
 

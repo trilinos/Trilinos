@@ -49,79 +49,84 @@ namespace Amesos2 {
    *   QUERY function   *
    **********************/
 
-  bool query(const char* solverName){
+  bool query (const char* solverName) {
     std::string solver = solverName;
-    return( query(solver) );
+    return query (solver);
   }
 
-  bool query(const std::string solver_name){
-    std::string solverName = tolower(solver_name); // for easier string checking
+  bool query (const std::string solver_name) {
+    // Make the input name canonical by converting to lower case.
+    const std::string solverName = tolower (solver_name);
+    //
+    // Go through all implemented solvers.  If the name matches one of
+    // them, return true; else return false.
+    //
 #ifdef HAVE_AMESOS2_KLU2
-    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
-       (solverName == "amesos2_klu")  || (solverName == "klu")){
-      return( true );
+    if (solverName == "amesos2_klu2" ||
+        solverName == "klu2" ||
+        solverName == "amesos2_klu" ||
+        solverName == "klu") {
+      return true;
     }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLUDIST
-    if((solverName == "amesos2_superludist") ||
-       (solverName == "superludist") ||
-       (solverName == "amesos2_superlu_dist") ||
-       (solverName == "superlu_dist")){
-      return( true );
+    if (solverName == "amesos2_superludist" ||
+        solverName == "superludist" ||
+        solverName == "amesos2_superlu_dist" ||
+        solverName == "superlu_dist") {
+      return true;
     }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLUMT
-    if((solverName == "amesos2_superlumt") ||
-       (solverName == "superlumt") ||
-       (solverName == "amesos2_superlu_mt") ||
-       (solverName == "superlu_mt")){
-      return( true );
+    if (solverName == "amesos2_superlumt" ||
+        solverName == "superlumt" ||
+        solverName == "amesos2_superlu_mt" ||
+        solverName == "superlu_mt") {
+      return true;
     }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLU
-    if((solverName == "amesos2_superlu") ||
-       (solverName == "superlu")){
-      return( true );
+    if (solverName == "amesos2_superlu" || solverName == "superlu") {
+      return true;
     }
 #endif
 
 #ifdef HAVE_AMESOS2_PARDISO_MKL
-    if((solverName == "amesos2_pardiso_mkl") ||
-       (solverName == "pardiso_mkl") ||
-       (solverName == "amesos2_pardisomkl")  ||
-       (solverName == "pardisomkl")){
-      return( true );
+    if (solverName == "amesos2_pardiso_mkl" ||
+        solverName == "pardiso_mkl" ||
+        solverName == "amesos2_pardisomkl"  ||
+        solverName == "pardisomkl") {
+      return true;
     }
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK
-    if((solverName == "amesos2_lapack") ||
-       (solverName == "lapack")){
-      return( true );
+    if (solverName == "amesos2_lapack" || solverName == "lapack") {
+      return true;
     }
 #endif
 
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
-    if(solverName == "amesos2_cholmod")
-      return( true );
+    if (solverName == "amesos2_cholmod" || solverName == "cholmod") {
+      return true;
+    }
 #endif
 
     // Otherwise, the solver is not available
-    return( false );
+    return false;
   }
 
-
-  std::string tolower(const std::string& s)
+  std::string tolower (const std::string& s)
   {
     std::locale loc;
     std::string rtn = s;
-    for (size_t i=0; i<rtn.length(); ++i)
-      {
-        rtn[i] = tolower(rtn[i],loc);
-      }
+    const size_t len = rtn.length ();
+    for (size_t i = 0; i < len; ++i) {
+      rtn[i] = tolower (rtn[i], loc);
+    }
     return rtn;
   }
 } // end namespace Amesos2
