@@ -294,7 +294,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
-    precList_.set("schwarz: subdomain solver name","ILUT");
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
@@ -520,7 +519,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
-    precList_.set("schwarz: subdomain solver name","ILUT");
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
