@@ -50,6 +50,10 @@ TIPS:
    it will require that the user specify the eg/git command to run with
    --with-eg-git=<the command>.
 
+ - To exclude processing either the base git repo and/or git repos listed in .egdist,
+   pass in --dist-not-base-repo and/or --dist-not-extra-repos=RepoX,RepoZ,...
+   The provides complete control over what git repos the given command is run on.
+
 REPO VERSION FILES:
 
 This script also supports the options --dist-version-file=<versionFile> and
@@ -193,13 +197,16 @@ def getCommandlineOps():
   helpArgName = "--help"
   withEgGitArgName = "--with-eg-git"
   extraRepoArgName = "--dist-extra-repos"
+  notExtraRepoArgName = "--dist-not-extra-repos"
+  notBaseRepoArgName = "--dist-not-base-repo"
   versionFileName = "--dist-version-file"
   versionFile2Name = "--dist-version-file2"
   noColorArgName = "--dist-no-color"
   debugArgName = "--dist-debug"
   noOptName = "--dist-no-opt"
   
-  nativeArgNames = [ helpArgName, withEgGitArgName, extraRepoArgName, \
+  nativeArgNames = [ helpArgName, withEgGitArgName, \
+    extraRepoArgName, notExtraRepoArgName, notBaseRepoArgName, \
     versionFileName, versionFile2Name, noColorArgName, debugArgName, noOptName ]
 
   # Find a default eg/dist to use
@@ -224,10 +231,22 @@ def getCommandlineOps():
   clp.add_option(
     extraRepoArgName, dest="extraRepos", type="string",
     default="",
-    help="Coma seprated list of extra repos to forward eg commands to."
+    help="Comma seprated list of extra repos to forward eg/git commands to."
     +"  If the list is empty, it will look for a file called .egdist to"
     +" get the list of extra repos seprated by newlines."
     )
+  
+  clp.add_option(
+    notExtraRepoArgName, dest="notExtraRepos", type="string",
+    default="",
+    help="Comma seprated list of extra repos to *not* forward eg/git commands to."
+    +"  This removes any repos from being processed that would otherwise be."
+    )
+  
+  clp.add_option(
+    notBaseRepoArgName, dest="processBaseRepo", action="store_false",
+    help="If set, don't pass the eg/git conmmand on to the base git repo.",
+    default=True )
   
   clp.add_option(
     versionFileName, dest="versionFile", type="string",
@@ -291,7 +310,7 @@ def getCommandlineOps():
 
   if len(otherArgs) == 0:
     print addColorToErrorMsg(options.useColor,
-      "Must specify eg command. See 'eg --help' for options.")
+      "Must specify eg/git command. See 'eg/git --help' for options.")
     sys.exit(1)
 
   if not options.egGit:
@@ -310,7 +329,14 @@ def getCommandlineOps():
     else:
       extraReposFullList = []
 
-  return (options, otherArgs, extraReposFullList)
+  # Get list of not extra repos
+
+  if options.notExtraRepos:
+    notExtraReposFullList = options.notExtraRepos.split(",")
+  else:
+    notExtraReposFullList = []
+
+  return (options, otherArgs, extraReposFullList, notExtraReposFullList)
 
 
 # Requote commandline arguments into an array
@@ -416,13 +442,20 @@ def runRepoCmnd(options, cmndLineArgsArray, repoDirName, baseDir, \
   runCmnd(options, egCmndArray)
 
 
+# Determine if the repos should be processed or not
+def shouldWeProcessExtraRepo(options, extraRepo, notExtraReposList):
+  if not os.path.isdir(extraRepo): return False
+  if extraRepo in notExtraReposList: return False
+  return True
+ 
+
 #
 # Run the script
 #
 
 if __name__ == '__main__':
 
-  (options, otherArgs, extraReposFullList) = getCommandlineOps()
+  (options, otherArgs, extraReposFullList, notExtraReposList) = getCommandlineOps()
 
   # Get the repo version files
   repoVersionDict = getRepoVersionDictFromRepoVersionFile(options.versionFile)
@@ -441,16 +474,16 @@ if __name__ == '__main__':
   # Get the name of the base repo  
   baseDirArray = baseDir.split("/")
   baseRepoName = baseDirArray[-1]
-  
-  print "" 
-  print "*** Base Git Repo: "+addColorToRepoDir(options.useColor, baseRepoName)
-  sys.stdout.flush()
-  
-  runRepoCmnd(options, cmndLineArgsArray, baseRepoName, baseDir,
-    repoVersionDict, repoVersionDict2)
+
+  if options.processBaseRepo:
+    print "" 
+    print "*** Base Git Repo: "+addColorToRepoDir(options.useColor, baseRepoName)
+    sys.stdout.flush()
+    runRepoCmnd(options, cmndLineArgsArray, baseRepoName, baseDir,
+      repoVersionDict, repoVersionDict2)
   
   for extraRepo in extraReposFullList:
-    if os.path.isdir(extraRepo):
+    if shouldWeProcessExtraRepo(options, extraRepo, notExtraReposList):
       print "" 
       print "*** Git Repo: "+addColorToRepoDir(options.useColor, extraRepo)
       sys.stdout.flush()

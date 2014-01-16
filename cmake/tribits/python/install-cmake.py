@@ -71,7 +71,18 @@ class CMakeInstall:
   def getExtraHelpStr(self):
     return """
 This script builds cmake-"""+cmakeVersion+""" from source compiled with
-the configured GCC compiler.
+the configured C/C++ compilers in your path.  Note that the provided
+CMake configure script actually builds a local bootstrap copy of CMake
+first, before building the final version of CMake and the rest of the
+tools that gets installed.
+
+WARNING: By default CMake builds an unoptimized version!  To build an optimized
+version you must set CXXFLAGS and CFLAGS with:
+
+  env CXXFLAGS=-O3 CFLAGS=-O3 install-cmake.py [other options]
+
+There does not appear to be any other way to set compiler flags than
+on the env.
 """
 
   def getBaseDirName(self):
@@ -83,7 +94,16 @@ the configured GCC compiler.
       default="git clone software.sandia.gov:/space/git/TrilinosToolset/cmake.BASE "+\
       self.getBaseDirName(),
       help="Command used to check out "+self.getProductName()+" and dependent source tarball(s)." )
-      
+    clp.add_option(
+      "--extra-configure-options", dest="extraConfigureOptions", type="string", \
+      default="", \
+      help="Extra options to add to the 'configure' command for "+self.getProductName()+"." \
+      +"  Note: This does not override the hard-coded configure options." )
+    clp.add_option(
+      "--parallel", dest="parallel", type="int", \
+      default=0, \
+      help="Uses parallelism in build if set to > 0." )
+
   def echoExtraCmndLineOptions(self, inOptions):
     cmndLine = ""
     cmndLine += "  --checkout-cmnd='"+inOptions.checkoutCmnd+"' \\\n"
@@ -97,6 +117,11 @@ the configured GCC compiler.
     self.cmakeBuildBaseDir = self.cmakeBaseDir+"/cmake-build"
     self.scriptBaseDir = getScriptBaseDir()
 
+  def getParallelOpt(self, optName):
+    if self.inOptions.parallel > 0:
+      return " "+optName+str(self.inOptions.parallel)
+    return " "
+
   def doCheckout(self):
     echoRunSysCmnd(self.inOptions.checkoutCmnd)
 
@@ -108,11 +133,13 @@ the configured GCC compiler.
     createDir(self.cmakeBuildBaseDir, True, True)
     echoRunSysCmnd(
       "../"+cmakeSrcDir+"/configure "+\
+      " "+self.inOptions.extraConfigureOptions+\
+      self.getParallelOpt("--parallel=")+\
       " --prefix="+self.inOptions.installDir)
 
   def doBuild(self):
     echoChDir(self.cmakeBuildBaseDir)
-    echoRunSysCmnd("make "+self.inOptions.makeOptions)
+    echoRunSysCmnd("make "+self.getParallelOpt("-j")+self.inOptions.makeOptions)
 
   def doInstall(self):
     echoChDir(self.cmakeBuildBaseDir)
@@ -133,5 +160,4 @@ to your path and that should be it!
 #
 
 cmakeInstaller = InstallProgramDriver(CMakeInstall())
-
 cmakeInstaller.runDriver()
