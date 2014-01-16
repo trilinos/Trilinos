@@ -197,10 +197,11 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
+    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
     this->CGflag_ = 0;
     this->CGiter_ = 0;
     this->trustRegion_->run(s,algo_state.snorm,this->del_,this->CGflag_,this->CGiter_,
-                            x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,obj,con,this->secant_);
+                            x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,pObj);
   }
 
   /** \brief Update step, if successful.
@@ -208,6 +209,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
+    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
 
     this->TRflag_   = 0;
     this->TR_nfval_ = 0;
@@ -215,7 +217,7 @@ public:
     Real fold = algo_state.value;
     Real fnew = 0.0;
     this->trustRegion_->update(x,fnew,this->del_,this->TR_nfval_,this->TR_ngrad_,this->TRflag_,
-                              s,algo_state.snorm,fold,*(Step<Real>::state_->gradientVec),obj,this->secant_);
+                              s,algo_state.snorm,fold,*(Step<Real>::state_->gradientVec),pObj);
     algo_state.value = fnew;
     algo_state.nfval += this->TR_nfval_;
     algo_state.ngrad += this->TR_ngrad_;

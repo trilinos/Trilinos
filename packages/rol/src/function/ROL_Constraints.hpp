@@ -84,6 +84,7 @@ public:
                 x is the optimization variable
   */
   virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {}
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x ) {}
 
   /** \brief Remove the inactive set variables.
                 v is the vector to be pruned 
@@ -94,6 +95,12 @@ public:
     Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
     tmp->set(v);
     this->pruneActive(*tmp,g,x);
+    v.axpy(-1.0,*tmp);
+  }
+  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &x ) { 
+    Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
+    tmp->set(v);
+    this->pruneActive(*tmp,x);
     v.axpy(-1.0,*tmp);
   }
   

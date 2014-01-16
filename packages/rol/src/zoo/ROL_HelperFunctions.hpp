@@ -223,6 +223,33 @@ namespace ROL {
       }
     }
  
+    /** \brief Apply the reduced Hessian to a vector, v.  
+               The reduced Hessian first removes elements of v 
+               corresponding to the feasible indices from 
+               the point p.
+                   Hv   the Hessian times a vector
+                   v    input vector 
+                   p    starting point for tangent cone
+                   x    current iteration vector
+                   tol  objective function tolerance
+    */
+    void reducedHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &p, 
+                         const Vector<Real> &x, Real &tol ) {
+      if ( this->con_->isActivated() ) {
+        Teuchos::RCP<Vector<Real> > vnew = x.clone();
+        vnew->set(v);                       // Set vnew to v
+        this->con_->pruneActive(*vnew,p);   // Remove elements of vnew corresponding to binding set
+        this->hessVec(Hv,*vnew,x,tol);      // Apply full Hessian to reduced vector
+        this->con_->pruneActive(Hv,p);      // Remove elements of Hv corresponding to binding set
+        vnew->set(v);                       // Set vnew to v
+        this->con_->pruneInactive(*vnew,p); // Remove Elements of vnew corresponding to complement of binding set
+        Hv.plus(*vnew);                     // Fill complement of binding set elements in Hp with v
+      }
+      else {
+        this->hessVec(Hv,v,x,tol);
+      }
+    }
+
     void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) { 
       if ( this->useSecantHessVec_ ) {
         this->secant_->applyH(Hv,v,x);
@@ -260,6 +287,32 @@ namespace ROL {
       }
     }
 
+    /** \brief Apply the reduced inverse Hessian to a vector, v.  
+               The reduced inverse Hessian first removes elements 
+               of v corresponding to the feasible indices from 
+               the point p.
+                   Hv   the inverse Hessian times a vector
+                   v    input vector 
+                   p    starting point for tangent cone
+                   x    current iteration vector
+                   tol  objective function tolerance
+    */
+    void reducedInvHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &p, 
+                            const Vector<Real> &x, Real &tol ) {
+      if ( this->con_->isActivated() ) {
+        Teuchos::RCP<Vector<Real> > vnew = x.clone();
+        vnew->set(v);                       // Set vnew to v
+        this->con_->pruneActive(*vnew,p);   // Remove elements of vnew corresponding to binding set
+        this->invHessVec(Hv,*vnew,x,tol);   // Apply full Hessian to reduced vector
+        this->con_->pruneActive(Hv,p);      // Remove elements of Hv corresponding to binding set
+        vnew->set(v);                       // Set vnew to v
+        this->con_->pruneInactive(*vnew,p); // Remove Elements of vnew corresponding to complement of binding set
+        Hv.plus(*vnew);                     // Fill complement of binding set elements in Hv with v
+      }
+      else {
+        this->invHessVec(Hv,v,x,tol);
+      }
+    }
     void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( this->useSecantPrecond_ ) {
         this->secant_->applyH( Mv, v, x );
@@ -297,6 +350,33 @@ namespace ROL {
       }
     }
 
+    /** \brief Apply the reduced preconditioner to a vector, v.  
+               The reduced preconditioner first removes elements 
+               of v corresponding to the feasible indices from 
+               the point p.
+                   Hv   the preconditioner times a vector
+                   v    input vector 
+                   p    starting point for tangent cone
+                   x    current iteration vector
+                   tol  objective function tolerance
+    */
+    void reducedPrecond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &p, 
+                         const Vector<Real> &x, Real &tol ) {
+      if ( this->con_->isActivated() ) {
+        Teuchos::RCP<Vector<Real> > vnew = x.clone();
+        vnew->set(v);                       // Set vnew to v
+        this->con_->pruneActive(*vnew,p);   // Remove elements of vnew corresponding to binding set
+        this->precond(Mv,*vnew,x,tol);      // Apply full Hessian to reduced vector
+        this->con_->pruneActive(Mv,p);      // Remove elements of Mv corresponding to binding set
+        vnew->set(v);                       // Set vnew to v
+        this->con_->pruneInactive(*vnew,p); // Remove Elements of vnew corresponding to complement of binding set
+        Mv.plus(*vnew);                     // Fill complement of binding set elements in Mv with v
+      }
+      else {
+        this->precond(Mv,v,x,tol);
+      }
+    }
+
     void project( Vector<Real> &x ) {
       this->con_->project(x);
     } 
@@ -305,17 +385,29 @@ namespace ROL {
       this->con_->pruneActive(v,g,x);
     }
 
+    void pruneActive( Vector<Real> &v, const Vector<Real> &x ) {
+      this->con_->pruneActive(v,x);
+    }
+
     void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {
       this->con_->pruneInactive(v,g,x);
     }
 
+    void pruneInactive( Vector<Real> &v, const Vector<Real> &x ) {
+      this->con_->pruneInactive(v,x);
+    }
+
     bool isFeasible( const Vector<Real> &v ) {
-      return this->con_->isFeasible();
+      return this->con_->isFeasible(v);
     }
 
     bool isConActivated(void) {
       return this->con_->isActivated();
     }
+
+    void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) {
+      this->con_->computeProjectedStep(v,x);
+    } 
   }; 
 
 } // namespace ROL

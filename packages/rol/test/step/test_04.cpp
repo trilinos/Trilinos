@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
       ROL::StdVector<RealT> e(e_rcp);
       e.zero();
 
-      ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; 
-      //ROL::ETrustRegion tr = ROL::TRUSTREGION_TRUNCATEDCG; 
+      //ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; 
+      ROL::ETrustRegion tr = ROL::TRUSTREGION_TRUNCATEDCG; 
       parlist->set("Trust-Region Subproblem Solver Type", ROL::ETrustRegionToString(tr));
       *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
 
