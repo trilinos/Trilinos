@@ -148,6 +148,7 @@ public:
 #endif
 
   inline const FieldMetaDataVector& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
+    ThrowAssert(this == &f.get_mesh());
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
 
@@ -156,6 +157,7 @@ public:
 
   //  Optimized version making use of zero value enum
   inline const FieldMetaDataVector& get_meta_data_for_nodal_field(const FieldBase & f) const {
+    ThrowAssert(this == &f.get_mesh());
 #ifndef NDEBUG
     ThrowAssert(stk::mesh::MetaData::NODE_RANK == 0);
     //  Check if field is a nodal field
@@ -165,6 +167,8 @@ public:
     }
 #endif
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
+
+
     return field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[0];
   }
 
@@ -1059,6 +1063,9 @@ public:
 
   unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
+
     const EntityRank rank   = b.entity_rank();
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
@@ -1068,6 +1075,9 @@ public:
 
   bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
+
      const EntityRank rank = b.entity_rank();
      //return true if field-data size is not zero
 
@@ -1087,11 +1097,18 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
+
     const EntityRank rank         = b.entity_rank();
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
 
     const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()];
+
+
+    
+
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
@@ -1100,6 +1117,9 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
+
     const EntityRank rank         = b.entity_rank();
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
@@ -1113,11 +1133,15 @@ public:
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
+
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
 
     const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[0][b.bucket_id()];
+
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
 
@@ -1125,11 +1149,14 @@ public:
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, const Bucket& b ) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
 
     const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[0][b.bucket_id()];
+
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
@@ -1155,13 +1182,15 @@ public:
     return nodal_field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
 
-  const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field, const Bucket& b ) const
+  const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & f, const Bucket& b ) const
   {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
     const EntityRank rank = b.entity_rank();
 
     const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
 
-    return field_set[field.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()].m_stride;
+    return field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()].m_stride;
 
   }
 
