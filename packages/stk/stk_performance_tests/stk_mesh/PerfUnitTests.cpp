@@ -627,7 +627,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
 
   CALLGRIND_TOGGLE_COLLECT;
 
-  std::vector<BulkData::FieldMetaDataVector const*> field_meta(num_fields_per_chunk * spatial_dim, NULL);
+  std::vector<FieldMetaDataVector const*> field_meta(num_fields_per_chunk * spatial_dim, NULL);
   const int num_iterations = 100;
   size_t dummy = 0;
   for (int i = 0; i < num_iterations; ++i) {

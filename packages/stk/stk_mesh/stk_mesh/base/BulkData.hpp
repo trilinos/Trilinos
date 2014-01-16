@@ -133,23 +133,12 @@ public:
   inline static BulkData & get( const Ghosting & ghost);
   inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
-  struct FieldMetaData
-  {
-    int m_size; // num bytes per entity, 0 means bucket does not have this field
-    const FieldBase::Restriction::size_type * m_stride;
-    unsigned char* m_data;
-  };
-
   typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...
-  typedef std::vector<FieldMetaData>                                     FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector>                               FieldMetaDataVectorVector;
   typedef BucketVector                                                   TrackedBucketVector;
   typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector> SelectorBucketMap;
 #else
-  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldDataTag> > FieldMetaDataVectorVector;
   typedef std::vector<Bucket*, tracking_allocator<Bucket*, SelectorMapTag> >                       TrackedBucketVector;
   typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
                    std::less<std::pair<EntityRank, Selector> >,

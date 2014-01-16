@@ -37,6 +37,21 @@ class FieldRepository;
 
 }
 
+  struct FieldMetaData
+  {
+    int m_size;                                           // num bytes per entity, 0 means bucket does not have this field
+    const FieldRestriction::size_type * m_stride;
+    unsigned char* m_data;
+  };
+#ifdef __IBMCPP__
+  // The IBM compiler is easily confused by complex template types...
+  typedef std::vector<FieldMetaData>                                     FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector>                               FieldMetaDataVectorVector;
+#else
+  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldDataTag> > FieldMetaDataVectorVector;
+#endif
+
 //----------------------------------------------------------------------
 /** \ingroup stk_stk_mesh_module
  *  \brief  Field base class with an anonymous data type and
