@@ -477,11 +477,6 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
     }
 
-    // TODO do not return a factory base here!! // TODO remove this
-    /*RCP<FactoryBase> BuildFactoryGroup(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn) const {
-
-    }*/
-
     RCP<FactoryBase> BuildBlockedGaussSeidelSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedGaussSeidelSmoother", Exceptions::RuntimeError, "");
       int bgs_sweeps=1;          if(paramList.isParameter("sweeps"))       bgs_sweeps = paramList.get<int>        ("sweeps");
@@ -539,16 +534,7 @@ namespace MueLu {
       bgs->AddFactoryManager(facManagers[0]);
       bgs->AddFactoryManager(facManagers[1]);
 
-      //Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
-
       return rcp(new SmootherFactory(bgs));
-    }
-
-    RCP<FactoryBase> BuildSubBlockAFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      /*int blockrow = 0;              if(paramList.isParameter("block row"))          blockrow = paramList.get<int>("block row");
-      int blockcol = 0;              if(paramList.isParameter("block col"))          blockcol = paramList.get<int>("block col");
-      return rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(),blockrow,blockcol));*/
-      return Build2<SubBlockAFactory>       (paramList, factoryMapIn, factoryManagersIn);
     }
 
     RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
