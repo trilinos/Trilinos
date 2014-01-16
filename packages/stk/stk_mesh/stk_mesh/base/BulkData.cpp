@@ -129,7 +129,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_fmwk_shared_attrs(),
     m_fmwk_connect_counts(),
 #endif
-    m_field_meta_data(),
     m_field_raw_data(mesh_meta_data.entity_rank_count()),
     m_selector_to_buckets_map(),
 #ifdef GATHER_GET_BUCKETS_METRICS
@@ -1072,7 +1071,12 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
   if (m_num_fields == -1) {
     // hasn't been set yet
     m_num_fields = field_set.size();
-    m_field_meta_data.resize(m_num_fields * mesh_meta_data().entity_rank_count());
+
+    for (int i = 0; i < m_num_fields; ++i) {
+      FieldBase& field = * field_set[i];
+      field.get_meta_data_for_field().resize(mesh_meta_data().entity_rank_count());
+    }
+
   }
 
   // Sizing loop
@@ -1101,8 +1105,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
         total_field_data_size += num_bytes_per_entity * capacity;
       }
     }
-
-    m_field_meta_data[m_num_fields * rank + i].push_back(field_meta_data);
+    field_set[i]->get_meta_data_for_field()[rank].push_back(field_meta_data);
   }
 
   // Allocate all field data for this bucket
@@ -1113,7 +1116,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
     // Set data ptrs in field meta datas
     size_t current_field_offset = 0;
     for ( int i = 0; i < m_num_fields; ++i ) {
-      FieldMetaData& field_meta_data = m_field_meta_data[m_num_fields * rank + i].back();
+      FieldMetaData& field_meta_data = field_set[i]->get_meta_data_for_field()[rank].back();
       const FieldBase  & field = * field_set[i];
 
       if (field_meta_data.m_size > 0) {
@@ -1150,19 +1153,19 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     return;
   }
 
-
+  const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
   for (int i = 0; i < m_num_fields; ++i) {
-    const int src_size        = m_field_meta_data[m_num_fields * src_rank + i][src_bucket_id].m_size;
+    const int src_size        = field_set[i]->get_meta_data_for_field()[src_rank][src_bucket_id].m_size;
     if (src_size == 0) {
       continue;
     }
 
 
-    unsigned char * const src = m_field_meta_data[m_num_fields * src_rank + i][src_bucket_id].m_data;
-    const int dst_size        = m_field_meta_data[m_num_fields * dst_rank + i][dst_bucket_id].m_size;
+    unsigned char * const src = field_set[i]->get_meta_data_for_field()[src_rank][src_bucket_id].m_data;
+    const int dst_size        = field_set[i]->get_meta_data_for_field()[dst_rank][dst_bucket_id].m_size;
 
     if ( dst_size ) {
-      unsigned char * const dst = m_field_meta_data[m_num_fields * dst_rank + i][dst_bucket_id].m_data;
+      unsigned char * const dst = field_set[i]->get_meta_data_for_field()[dst_rank][dst_bucket_id].m_data;
       ThrowAssertMsg( dst_size == src_size,
                       "Incompatible field sizes: " << dst_size << " != " << src_size );
 
@@ -1184,10 +1187,11 @@ void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank,
   }
 
 
-  const FieldMetaDataVector* firstMetaVec = &m_field_meta_data[m_num_fields * rank];
+  const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
 
   for (int i = 0; i < m_num_fields; ++i) {
-    const FieldMetaDataVector& metaVec = firstMetaVec[i];
+    const FieldMetaDataVector& metaVec = field_set[i]->get_meta_data_for_field()[rank];
+
     const FieldMetaData& srcMeta = metaVec[src_bucket_id];
 
     const int src_size        = srcMeta.m_size;
@@ -1217,10 +1221,11 @@ void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucke
     return;
   }
 
+
   const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
   for ( int i = 0; i < m_num_fields; ++i) {
     const FieldBase  & field      = *field_set[i];
-    FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * rank + i][bucket_id];
+    FieldMetaData field_meta_data = field_set[i]->get_meta_data_for_field()[rank][bucket_id];
     const int num_bytes_per_entity = field_meta_data.m_size;
 
     if (num_bytes_per_entity > 0) {
@@ -1263,11 +1268,15 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
   if (!m_keep_fields_updated) {
     return;
   }
+  const std::vector<FieldBase*>  field_set = mesh_meta_data().get_fields();
+
+  if(field_set.size() == 0) return;
 
   if (m_field_raw_data[rank][bucket_id] != NULL) {
     size_t bytes_to_delete = 0;
-    for (int i = 0; i < m_num_fields; ++i) {
-      FieldMetaData& field_data = m_field_meta_data[m_num_fields * rank + i][bucket_id];
+    for (unsigned int i = 0; i < field_set.size(); ++i) {
+      if(field_set[i] == NULL) continue;
+      FieldMetaData& field_data = field_set[i]->get_meta_data_for_field()[rank][bucket_id];
       if (field_data.m_data != NULL) {
         bytes_to_delete += field_data.m_size * capacity;
         field_data.m_size = 0;
@@ -1287,18 +1296,21 @@ void BulkData::update_field_data_states()
   for ( int r = 0; r < num_ranks; ++r ) {
     for ( int i = 0 ; i < m_num_fields ; ) {
       const FieldBase & field = * field_set[i];
-      const int outer_idx = m_num_fields * r + i;
+      const int outer_idx = i;
       const int num_state = field.number_of_states();
       i += num_state ;
 
+
+
+
       if (num_state > 1) {
-        for ( int b = 0, be = m_field_meta_data[outer_idx].size(); b < be; ++b) {
-          if ( m_field_meta_data[outer_idx][b].m_size > 0 ) {
-            unsigned char* data_last = m_field_meta_data[outer_idx][b].m_data;
+        for ( int b = 0, be = field_set[outer_idx]->get_meta_data_for_field()[r].size(); b < be; ++b) {
+          if ( field_set[outer_idx]->get_meta_data_for_field()[r][b].m_size > 0 ) {
+            unsigned char* data_last = field_set[outer_idx]->get_meta_data_for_field()[r][b].m_data;
             for ( int s = 1; s < num_state; ++s ) {
-              std::swap(m_field_meta_data[outer_idx + s][b].m_data, data_last);
+              std::swap(field_set[outer_idx+s]->get_meta_data_for_field()[r][b].m_data, data_last);
             }
-            m_field_meta_data[outer_idx][b].m_data = data_last;
+            field_set[outer_idx]->get_meta_data_for_field()[r][b].m_data = data_last;
           }
         }
       }
@@ -1324,14 +1336,13 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   }
   m_field_raw_data[rank].swap(field_raw_data);
 
+  const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
   for ( int i = 0 ; i < m_num_fields ; ++i ) {
-    const int outer_idx = m_num_fields * rank + i;
-
     FieldMetaDataVector new_fields(id_map.size());
     for ( unsigned m = 0, e = id_map.size(); m < e; ++m ) {
-      new_fields[m] = m_field_meta_data[outer_idx][id_map[m]];
+      new_fields[m] = field_set[i]->get_meta_data_for_field()[rank][id_map[m]];
     }
-    new_fields.swap(m_field_meta_data[outer_idx]);
+    new_fields.swap(field_set[i]->get_meta_data_for_field()[rank]);
   }
 }
 
@@ -1384,7 +1395,8 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         // Print field data
         if (m_num_fields > 0) {
           BOOST_FOREACH(FieldBase* field, all_fields) {
-            FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * i + field->mesh_meta_data_ordinal()][bucket->bucket_id()];
+
+            FieldMetaData field_meta_data = field->get_meta_data_for_field()[i][bucket->bucket_id()];
 
             unsigned data_size = field_meta_data.m_size;
             if (data_size > 0) { // entity has this field?
