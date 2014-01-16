@@ -1,5 +1,5 @@
-#ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_LOGGER_DECORATOR_HPP
-#define PIKE_BLACK_BOX_MODEL_EVALUATOR_LOGGER_DECORATOR_HPP
+#ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_LOGGER_HPP
+#define PIKE_BLACK_BOX_MODEL_EVALUATOR_LOGGER_HPP
 
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Teuchos_RCP.hpp"
@@ -8,15 +8,15 @@
 
 namespace pike {
 
-  /** \brief A BlackBoxModelEvaluator decorator that logs certain method calls.
+  /** \brief A BlackBoxModelEvaluator adapter that logs certain method calls.
 
       Currently, this only logs the solve() and getResponse() methods.
    */
-  class ModelLoggerDecorator : public pike::BlackBoxModelEvaluator {
+  class ModelEvaluatorLogger : public pike::BlackBoxModelEvaluator {
 
   public:
 
-    ModelLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
+    ModelEvaluatorLogger(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
 
     void setLog(const Teuchos::RCP<std::vector<std::string> >& log);
 
@@ -49,10 +49,10 @@ namespace pike {
   };
 
   /** \brief Non-member ctor
-      \relates ModelLoggerDecorator
+      \relates ModelEvaluatorLogger
   */
-  Teuchos::RCP<ModelLoggerDecorator>
-  modelLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
+  Teuchos::RCP<ModelEvaluatorLogger>
+  modelEvaluatorLogger(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
 
 }
 

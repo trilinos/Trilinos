@@ -14,8 +14,8 @@
 
 // Observers and decorators
 #include "Pike_Observer_Logger.hpp"
-#include "Pike_BlackBoxModelEvaluator_LoggerDecorator.hpp"
-#include "Pike_DataTransfer_LoggerDecorator.hpp"
+#include "Pike_BlackBoxModelEvaluator_Logger.hpp"
+#include "Pike_DataTransfer_Logger.hpp"
 
 namespace pike {
 
@@ -66,8 +66,8 @@ namespace pike {
       pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,7);
 
     Teuchos::RCP<pike::LoggerObserver> logger = pike::loggerObserver();
-    Teuchos::RCP<pike::ModelLoggerDecorator> app1Logged = pike::modelLoggerDecorator(app1);
-    Teuchos::RCP<pike::ModelLoggerDecorator> app2Logged = pike::modelLoggerDecorator(app2);
+    Teuchos::RCP<pike::ModelEvaluatorLogger> app1Logged = pike::modelEvaluatorLogger(app1);
+    Teuchos::RCP<pike::ModelEvaluatorLogger> app2Logged = pike::modelEvaluatorLogger(app2);
     Teuchos::RCP<std::vector<std::string> > log = Teuchos::rcp(new std::vector<std::string>);
     logger->setLog(log);
     app1Logged->setLog(log);

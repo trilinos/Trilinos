@@ -1,5 +1,5 @@
-#ifndef PIKE_DATA_TRANSFER_LOGGER_DECORATOR_HPP
-#define PIKE_DATA_TRANSFER_LOGGER_DECORATOR_HPP
+#ifndef PIKE_DATA_TRANSFER_LOGGER_HPP
+#define PIKE_DATA_TRANSFER_LOGGER_HPP
 
 #include "Pike_DataTransfer.hpp"
 #include "Teuchos_RCP.hpp"
@@ -8,15 +8,15 @@
 
 namespace pike {
   
-  /** \brief A DataTransfer decorator that logs certain method calls.
+  /** \brief A DataTransfer adapter that logs certain method calls.
 
       Currently, this only logs the doTransfer() method.
    */
-  class DataTransferLoggerDecorator : public pike::DataTransfer {
+  class DataTransferLogger : public pike::DataTransfer {
     
   public:
     
-    DataTransferLoggerDecorator(const Teuchos::RCP<pike::DataTransfer>& transfer);
+    DataTransferLogger(const Teuchos::RCP<pike::DataTransfer>& transfer);
 
     void setLog(const Teuchos::RCP<std::vector<std::string> >& log);
 
@@ -41,10 +41,10 @@ namespace pike {
   };
 
   /** Non-member ctor
-      \relates DataTransferLoggerDecorator
+      \relates DataTransferLogger
   */
-  Teuchos::RCP<pike::DataTransferLoggerDecorator> 
-  dataTransferLoggerDecorator(const Teuchos::RCP<pike::DataTransfer>& transfer);
+  Teuchos::RCP<pike::DataTransferLogger> 
+  dataTransferLogger(const Teuchos::RCP<pike::DataTransfer>& transfer);
 }
 
 #endif
