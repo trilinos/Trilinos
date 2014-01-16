@@ -1,6 +1,3 @@
-#ifndef PIKE_MOCK_MODEL_EVALUATOR_HPP
-#define PIKE_MOCK_MODEL_EVALUATOR_HPP
-
 #include "Pike_Mock_ModelEvaluator.hpp"
 #include "Pike_Solver.hpp"
 #include "Teuchos_Assert.hpp"
@@ -115,5 +112,3 @@ namespace pike_test {
   }
 
 }
-
-#endif

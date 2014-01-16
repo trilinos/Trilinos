@@ -32,8 +32,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  decorators
-  SOURCES decorators.cpp ${UNIT_TEST_DRIVER}
+  loggers
+  SOURCES loggers.cpp ${UNIT_TEST_DRIVER}
   DEPLIBS pike-test-apps
   NUM_MPI_PROCS 1
   )

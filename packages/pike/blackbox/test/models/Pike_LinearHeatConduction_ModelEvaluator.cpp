@@ -1,6 +1,3 @@
-#ifndef PIKE_LINEAR_HEAT_CONDUTION_MODEL_EVALUATOR_HPP
-#define PIKE_LINEAR_HEAT_CONDUTION_MODEL_EVALUATOR_HPP
-
 #include "Pike_LinearHeatConduction_ModelEvaluator.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
@@ -129,5 +126,3 @@ namespace pike_test {
   }
 
 }
-
-#endif
