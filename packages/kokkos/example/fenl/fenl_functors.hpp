@@ -104,7 +104,7 @@ public:
                  const unsigned         arg_node_count )
     : elem_node_id( arg_elem_node_id )
     , row_total( "row_total" )
-    , row_count( "row_count" , arg_node_count )
+    , row_count(AllocateWithoutInitializing(), "row_count" , arg_node_count ) // will deep_copy to 0 inside loop
     , row_map( "graph_row_map" , arg_node_count + 1 )
     , node_node_set()
     , phase( FILL_NODE_SET )
@@ -115,7 +115,8 @@ public:
       // Guess at capacity required for the map:
 
       phase = FILL_NODE_SET ;
-      unsigned set_capacity = 2 * arg_elem_node_id.dimension_0() * arg_elem_node_id.dimension_1();
+      //unsigned set_capacity = 2 * arg_elem_node_id.dimension_0() * arg_elem_node_id.dimension_1();
+      unsigned set_capacity = (27 * arg_node_count) / 2;
 
       // Increase capacity until the (node,node) map is successfully filled.
       do {
@@ -199,12 +200,15 @@ public:
 
           const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-          const key_type key = ( key_type(row_node) << 32 ) | key_type( col_node );
+          const key_type key = (row_node < col_node) ?
+                              ( key_type(row_node) << 32 ) | key_type( col_node ) :
+                              ( key_type(col_node) << 32 ) | key_type( row_node ) ;
 
           const typename SetType::insert_result result = node_node_set.insert( key );
 
           if ( result.first == Kokkos::INSERT_SUCCESS ) {
             atomic_fetch_add( & row_count( row_node ) , 1 );
+            atomic_fetch_add( & row_count( col_node ) , 1 );
           }
         }
       }
@@ -219,9 +223,15 @@ public:
       const unsigned row_node = key >> 32 ;
       const unsigned col_node = key & ~0u ;
 
-      const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
+      {
+        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
+        graph.entries( offset ) = col_node ;
+      }
 
-      graph.entries( offset ) = col_node ;
+      {
+        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
+        graph.entries( offset ) = row_node ;
+      }
     }
   }
 
