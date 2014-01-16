@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
   // default parameters
-  std::string xmlFile;
+  std::string xmlFile = "myXML.xml";
 
   // Note: use --help to list available options.
   CommandLineProcessor clp(false);
