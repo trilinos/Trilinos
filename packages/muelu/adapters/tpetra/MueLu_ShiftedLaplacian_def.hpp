@@ -289,15 +289,16 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
-    precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: overlap level", schwarz_overlap_);
     precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
+    precList_.set("schwarz: subdomain solver name","ILUT");
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance", ilu_drop_tol_);
   }
   else if(Smoother_=="superilu") {
     precType_ = "superlu";
@@ -514,15 +515,16 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
-    precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: overlap level", schwarz_overlap_);
     precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
+    precList_.set("schwarz: subdomain solver name","ILUT");
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance", ilu_drop_tol_);
   }
   else if(Smoother_=="superilu") {
     precType_ = "superlu";
