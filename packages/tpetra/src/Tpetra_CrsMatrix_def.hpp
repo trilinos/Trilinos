@@ -5292,8 +5292,7 @@ namespace Tpetra {
       // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
       IntVectorType TargetRow_pids(domainMap);
       IntVectorType SourceRow_pids(getRowMap());
-      SourcePids.resize(getColMap()->getNodeNumElements(),-2); // Start w/ -2 since that doesn't have a special meaning
-      IntVectorType SourceCol_pids(getColMap(),SourcePids());
+      IntVectorType SourceCol_pids(getColMap());
       
       TargetRow_pids.putScalar(MyPID);
       if((!reverseMode && typeid(TransferType)==typeid(Import<LO,GO,NT>)) || (reverseMode && typeid(TransferType)==typeid(Export<LO,GO,NT>)))
@@ -5303,6 +5302,9 @@ namespace Tpetra {
       else TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument, 
 				      "Tpetra::Crs_Matrix::transferAndFillComplete TransferType must be Import or Export.");
       SourceCol_pids.doImport(SourceRow_pids,*MyImporter,INSERT);
+
+      SourcePids.resize(getColMap()->getNodeNumElements());
+      SourceCol_pids.get1dCopy(SourcePids());
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument, 
