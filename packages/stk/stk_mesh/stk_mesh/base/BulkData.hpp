@@ -144,13 +144,6 @@ public:
 #endif
 
 
-  // NKC OPT, should be able to get rid of this entirely and just call the field function directly
-  inline const FieldMetaDataVector& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
-    ThrowAssert(this == &f.get_mesh());
-    return f.get_meta_data_for_field()[rank];
-  }
-
-
   //  Optimized version making use of zero value enum
   // NKC OPT, should be able to remove once rank optimizations are done
   //
@@ -672,13 +665,11 @@ public:
 
   bool in_index_range(Entity entity) const
   {
-    require_same_bulk_data(entity);
     return entity.local_offset() < m_entity_states.size();
   }
 
   bool is_valid(Entity entity) const
   {
-    require_same_bulk_data(entity);
     return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
   }
 
@@ -1465,7 +1456,6 @@ private:
   {
     if (!is_valid(entity)) return false;
     if (bucket_ptr(entity) == NULL) return false;
-    require_same_bulk_data(entity);
     internal_check_unpopulated_relations(entity, rank);
     return true;
   }
@@ -1475,13 +1465,6 @@ private:
                                const Entity e_from ,
                                const Entity e_to );
 
-  void require_same_bulk_data(Entity entity) const
-  {
-#ifndef NDEBUG
-    const MeshIndex& mi = mesh_index(entity);
-    ThrowAssert(this == &mi.bucket->mesh());
-#endif
-  }
 
   /** \} */
 
