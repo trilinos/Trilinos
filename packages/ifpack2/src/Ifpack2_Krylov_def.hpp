@@ -43,6 +43,8 @@
 #ifndef IFPACK2_KRYLOV_DEF_HPP
 #define IFPACK2_KRYLOV_DEF_HPP
 
+#include "Ifpack2_Krylov_decl.hpp"
+
 namespace Ifpack2 {
 
 template <class MatrixType>
