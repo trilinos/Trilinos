@@ -42,10 +42,11 @@ Level 1
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -92,10 +93,11 @@ Level 2
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -142,10 +144,11 @@ Level 3
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -192,10 +195,11 @@ Level 4
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -242,10 +246,11 @@ Level 5
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   

@@ -55,10 +55,11 @@ Level 1
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -108,10 +109,11 @@ Level 2
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -161,10 +163,11 @@ Level 3
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -214,10 +217,11 @@ Level 4
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -267,10 +271,11 @@ Level 5
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -306,15 +311,15 @@ Level 5
  A 4     124    370     2.98  1
  A 5      42    124     2.95  1
  
- Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.9506, alpha: 2, lambdaMin: 0.975299}, global rows = 9999, global cols = 9999, global nnz  = 29995}
+ Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2, lambdaMin = <ignored>}, global rows = 9999, global cols = 9999, global nnz  = 29995}
  
- Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94634, alpha: 5, lambdaMin: 0.389268}, global rows = 3333, global cols = 3333, global nnz  = 9997}
+ Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 5, lambdaMin = <ignored>}, global rows = 3333, global cols = 3333, global nnz  = 9997}
  
- Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.95747, alpha: 4, lambdaMin: 0.489368}, global rows = 1111, global cols = 1111, global nnz  = 3331}
+ Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 4, lambdaMin = <ignored>}, global rows = 1111, global cols = 1111, global nnz  = 3331}
  
- Smoother (level 3) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.93464, alpha: 2.99461, lambdaMin: 0.646043}, global rows = 371, global cols = 371, global nnz  = 1111}
+ Smoother (level 3) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2.99461, lambdaMin = <ignored>}, global rows = 371, global cols = 371, global nnz  = 1111}
  
- Smoother (level 4) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.95476, alpha: 2.99194, lambdaMin: 0.653344}, global rows = 124, global cols = 124, global nnz  = 370}
+ Smoother (level 4) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2.99194, lambdaMin = <ignored>}, global rows = 124, global cols = 124, global nnz  = 370}
  
  Smoother (level 5) pre  : SuperLU solver interface
  Smoother (level 5) post : no smoother

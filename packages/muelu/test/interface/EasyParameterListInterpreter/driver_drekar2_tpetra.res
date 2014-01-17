@@ -70,10 +70,11 @@ Level 1
       [empty list]
       
       Nullspace factory (MueLu::NullspaceFactory)
-      [empty list]
+      Fine level nullspace = Nullspace
       
       Build (MueLu::CoarseMapFactory)
-      [empty list]
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
       
      [empty list]
      
@@ -154,10 +155,11 @@ Level 2
       [empty list]
       
       Nullspace factory (MueLu::NullspaceFactory)
-      [empty list]
+      Fine level nullspace = Nullspace
       
       Build (MueLu::CoarseMapFactory)
-      [empty list]
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
       
      [empty list]
      
@@ -238,10 +240,11 @@ Level 3
       [empty list]
       
       Nullspace factory (MueLu::NullspaceFactory)
-      [empty list]
+      Fine level nullspace = Nullspace
       
       Build (MueLu::CoarseMapFactory)
-      [empty list]
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
       
      [empty list]
      
@@ -299,11 +302,11 @@ Level 3
  A 2    1111   3331     3.00  1
  A 3     371   1111     2.99  1
  
- Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.9506, alpha: 20, lambdaMin: 0.0975299}, global rows = 9999, global cols = 9999, global nnz  = 29995}
+ Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 9999, global cols = 9999, global nnz  = 29995}
  
- Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94379, alpha: 20, lambdaMin: 0.0971895}, global rows = 3333, global cols = 3333, global nnz  = 9997}
+ Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 3333, global cols = 3333, global nnz  = 9997}
  
- Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94989, alpha: 20, lambdaMin: 0.0974946}, global rows = 1111, global cols = 1111, global nnz  = 3331}
+ Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 1111, global cols = 1111, global nnz  = 3331}
  
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother
