@@ -89,6 +89,28 @@ Krylov<MatrixType,PrecType>::~Krylov() {
 
 //==========================================================================
 template <class MatrixType, class PrecType>
+void Krylov<MatrixType,PrecType>::setMatrix(const Teuchos::RCP<const row_matrix_type>& A)
+{
+  // Check in serial or one-process mode if the matrix is square.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! A.is_null () && A->getComm ()->getSize () == 1 &&
+    A->getNodeNumRows () != A->getNodeNumCols (),
+    std::runtime_error, "Ifpack2::Krylov::setMatrix: If A's communicator only "
+    "contains one process, then A must be square.  Instead, you provided a "
+    "matrix A with " << A->getNodeNumRows () << " rows and "
+    << A->getNodeNumCols () << " columns.");
+
+  // It's legal for A to be null; in that case, you may not call
+  // initialize() until calling setMatrix() with a nonnull input.
+  // Regardless, setting the matrix invalidates any previous
+  // factorization.
+  IsInitialized_ = false;
+  IsComputed_ = false;
+  A_ = A;
+}
+
+//==========================================================================
+template <class MatrixType, class PrecType>
 void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;

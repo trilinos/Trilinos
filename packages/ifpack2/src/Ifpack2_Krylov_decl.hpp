@@ -59,6 +59,7 @@
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
 
 #include <BelosConfigDefs.hpp>
 #include <BelosSolverManager.hpp>
@@ -107,7 +108,11 @@ namespace Ifpack2 {
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
   {
   public:
     // \name Public typedefs
@@ -149,6 +154,12 @@ namespace Ifpack2 {
 
     //! Preserved only for backwards compatibility.  Please use "magnitude_type".
     TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+    //! Type of the Tpetra::RowMatrix specialization that this class uses.
+    typedef Tpetra::RowMatrix<scalar_type,
+			      local_ordinal_type,
+			      global_ordinal_type,
+			      node_type> row_matrix_type;
 
     //! Tpetra MultiVector/Operator
     typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TMV;
@@ -195,6 +206,35 @@ namespace Ifpack2 {
     inline bool isComputed() const {
       return(IsComputed_);
     }
+
+    //@}
+    //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+    //@{
+
+    /// \brief Change the matrix to be preconditioned.
+    ///
+    /// \param[in] A The new matrix.
+    ///
+    /// \post <tt>! isInitialized ()</tt>
+    /// \post <tt>! isComputed ()</tt>
+    ///
+    /// Calling this method resets the preconditioner's state.  After
+    /// calling this method with a nonnull input, you must first call
+    /// initialize() and compute() (in that order) before you may call
+    /// apply().
+    ///
+    /// You may call this method with a null input.  If A is null, then
+    /// you may not call initialize() or compute() until you first call
+    /// this method again with a nonnull input.  This method invalidates
+    /// any previous factorization whether or not A is null, so calling
+    /// setMatrix() with a null input is one way to clear the
+    /// preconditioner's state (and free any memory that it may be
+    /// using).
+    ///
+    /// The new matrix A need not necessarily have the same Maps or even
+    /// the same communicator as the original matrix.
+    virtual void
+    setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
     //@}
     //! @name Implementation of Tpetra::Operator
@@ -299,7 +339,7 @@ namespace Ifpack2 {
     // @{ Internal data and parameters
 
     //! reference to the matrix to be preconditioned.
-    const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
+    Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
     //! Reference to the communicator object.
     const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
 
