@@ -531,6 +531,7 @@ public:
   ///   - "ILUT": Ifpack2::ILUT
   ///   - "RELAXATION": Ifpack2::Relaxation
   ///   - "RILUK": Ifpack2::RILUK
+  ///   - "KRYLOV": Ifpack2::Krylov
   ///
   /// This name <i>need not necessarily</i> correspond with
   /// <tt>LocalInverseType</tt>.  If the user does <i>not</i> specify

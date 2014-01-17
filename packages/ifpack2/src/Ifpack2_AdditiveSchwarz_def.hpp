@@ -188,6 +188,14 @@ public:
 };
 
 template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Krylov<MatrixType> > {
+public:
+  static std::string name () {
+    return "KRYLOV";
+  }
+};
+
+template<class MatrixType>
 class OneLevelPreconditionerNamer< ::Ifpack2::IdentitySolver<MatrixType> > {
 public:
   static std::string name () {
