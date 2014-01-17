@@ -54,7 +54,7 @@ using Teuchos::tuple;
 using Teuchos::ParameterList;
 using Teuchos::ParameterEntryValidator;
 using Teuchos::EnhancedNumberValidator;
-using Teuchos::ArrayValidator;
+using Teuchos::ArrayNumberValidator;
 using Teuchos::StringToIntegralParameterEntryValidator;
 
 namespace Domi
@@ -83,8 +83,7 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > axisCommValidator =
       rcp< const ParameterEntryValidator >
-      (new ArrayValidator< EnhancedNumberValidator< int >,
-       int >(constAxisCommNumber));
+      (new ArrayNumberValidator< int >(constAxisCommNumber));
 
     Array< int > axisCommSizes(1);
     axisCommSizes[0] = -1;
@@ -95,7 +94,7 @@ RCP< const ParameterList > getValidParameters()
                "MDComm along each axis. A negative value tells Domi to "
                "fill in a logical value based on the total number of "
                "processors",
-      	 axisCommValidator);
+               axisCommValidator);
 
     // "periodic" parameter applies to MDComm
     RCP< EnhancedNumberValidator< int > > periodicNumber =
@@ -108,8 +107,7 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > periodicValidator =
       rcp< const ParameterEntryValidator >
-      (new ArrayValidator< EnhancedNumberValidator< int >,
-       int >(constPeriodicNumber));
+      (new ArrayNumberValidator< int >(constPeriodicNumber));
 
     Array< int > periodic(1);
     periodic[0] = 0;
@@ -120,20 +118,19 @@ RCP< const ParameterList > getValidParameters()
                "length of axisCommSizes array, then the unspecified "
                "entries are given a default value of zero (not "
                "periodic).",
-      	 periodicValidator);
+               periodicValidator);
 
     // "dimensions" parameter applies to MDMap
     RCP< EnhancedNumberValidator< long int > > dimensionNumber =
       rcp(new EnhancedNumberValidator< long int >());
-     dimensionNumber->setMin(1);
+     dimensionNumber->setMin(0);
 
     RCP< const EnhancedNumberValidator< long int > > constDimensionNumber =
     	rcp_const_cast< EnhancedNumberValidator< long int > >(dimensionNumber);
 
      RCP< const ParameterEntryValidator > dimensionValidator =
      	rcp< const ParameterEntryValidator >
-     	(new ArrayValidator< EnhancedNumberValidator< long int >,
-     	 int >(constDimensionNumber));
+     	(new ArrayNumberValidator< long int >(constDimensionNumber));
 
     Array< long int > dimensions(1);
     dimensions[0] = 0;
@@ -142,9 +139,9 @@ RCP< const ParameterList > getValidParameters()
                "An array of ordinals specifying the global dimensions of "
                "the MDMap. The length of this array should be the same as "
                "the length of the axisCommSizes array. Note that this is "
-               "an array of long long and it will need to be copied to an "
-               "array of type GlobalOrd."/*,
-                                           dimensionValidator*/);
+               "an array of long int and it will need to be copied to an "
+               "array of type GlobalOrd.",
+               dimensionValidator);
 
     // Both boundary pad and communication pad use the same validator,
     // so just construct one
@@ -159,8 +156,7 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > padValidator =
       rcp< const ParameterEntryValidator >
-      (new ArrayValidator< EnhancedNumberValidator< int >,
-       int >(constPadNumber));
+      (new ArrayNumberValidator< int >(constPadNumber));
 
     // "boundary pad" parameter applies to MDMap
     plist->set("boundary pad",
