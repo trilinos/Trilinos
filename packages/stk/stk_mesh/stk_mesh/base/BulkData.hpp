@@ -125,10 +125,6 @@ public:
   void deactivate_field_updating();
   bool is_field_updating_active() const { return m_keep_fields_updated; }
 
-#ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  inline static BulkData & get( Entity entity);
-#endif
-
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Ghosting & ghost);
   inline static BulkData & get( const impl::BucketRepository & bucket_repo );
@@ -205,10 +201,6 @@ public:
   int parallel_rank()   const { return m_parallel_rank ; }
 
   const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  int bulk_data_id() const { return m_bulk_data_id; }
-#endif
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -705,9 +697,6 @@ public:
 
   void entity_getter_debug_check(Entity entity) const
   {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    require_same_bulk_data(entity);
-#endif
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
 
@@ -1156,9 +1145,6 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, Entity e) const
   {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    ThrowAssert(&f.get_mesh() == &stk::mesh::BulkData::get(e));
-#endif
     const MeshIndex& mi           = mesh_index(e);
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
@@ -1168,9 +1154,6 @@ public:
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, Entity e) const
   {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    ThrowAssert(&f.get_mesh() == &stk::mesh::BulkData::get(e));
-#endif
     const MeshIndex& mi           = mesh_index(e);
     return nodal_field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
@@ -1256,11 +1239,6 @@ private:
 
   void update_deleted_entities_container();
 
-#ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  static const int MAX_NUM_BULKDATA = 65535;
-  static BulkData * the_bulk_data_registry[MAX_NUM_BULKDATA];
-#endif
-
 #ifndef DOXYGEN_COMPILE
 
   // Forbidden
@@ -1293,9 +1271,6 @@ private:
   BulkDataSyncState  m_sync_state;
   bool               m_meta_data_verified;
   bool               m_mesh_finalized;
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  int                m_bulk_data_id;
-#endif
 #ifdef SIERRA_MIGRATION
   bool                              m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
@@ -1502,11 +1477,9 @@ private:
 
   void require_same_bulk_data(Entity entity) const
   {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    // if entity is invalid, we can't check bulk data
-    ThrowAssertMsg(entity.local_offset() == 0 || this == &BulkData::get(entity),
-                   "Entity with bulk_data: " << BulkData::get(entity).m_bulk_data_id << " was given to bulk_data: " << m_bulk_data_id <<
-                   "; entity has key: " << entity.key() << " and local_offset: "<< entity.local_offset());
+#ifndef NDEBUG
+    const MeshIndex& mi = mesh_index(entity);
+    ThrowAssert(this == &mi.bucket->mesh());
 #endif
   }
 
@@ -1615,13 +1588,6 @@ struct EntityLess {
   const BulkData* m_mesh;
 }; //struct EntityLess
 
-#ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-inline
-BulkData & BulkData::get( Entity entity)
-{
-  return *the_bulk_data_registry[entity.bulk_data_id()];
-}
-#endif
 
 inline
 BulkData & BulkData::get( const Bucket & bucket) {

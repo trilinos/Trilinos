@@ -80,12 +80,6 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
 //----------------------------------------------------------------------
 
-#ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-BulkData * BulkData::the_bulk_data_registry[MAX_NUM_BULKDATA] = {};
-#endif
-
-//----------------------------------------------------------------------
-
 BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel
 #ifdef SIERRA_MIGRATION
@@ -107,9 +101,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_sync_state( MODIFIABLE ),
     m_meta_data_verified( false ),
     m_mesh_finalized(false),
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    m_bulk_data_id(0),
-#endif
 #ifdef SIERRA_MIGRATION
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_bulk_ptr(NULL),
@@ -151,13 +142,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 
   create_ghosting( "shared" );
   create_ghosting( "shared_aura" );
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  static int bulk_data_id = 0;
-  m_bulk_data_id = bulk_data_id++;
-  ThrowRequireMsg(m_bulk_data_id < MAX_NUM_BULKDATA, "Trying to use too many BulkDatas");
-  the_bulk_data_registry[m_bulk_data_id] = this;
-#endif
 
   m_sync_state = SYNCHRONIZED ;
 }
@@ -333,9 +317,6 @@ BulkData::~BulkData()
     delete m_ghosting.back();
     m_ghosting.pop_back();
   }
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  the_bulk_data_registry[m_bulk_data_id] = NULL;
-#endif
 }
 
 void BulkData::get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes)
@@ -1352,9 +1333,6 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
   m_mesh_meta_data.dump_all_meta_info(out);
 
   out << "BulkData "
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-      << m_bulk_data_id
-#endif
       << " info...\n";
 
   const FieldVector& all_fields = m_mesh_meta_data.get_fields();

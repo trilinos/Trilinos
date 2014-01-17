@@ -56,36 +56,12 @@ class EntityRepository;
 union Entity
 {
   enum Entity_t {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    BULK_DATA_ID_SHIFT = 48ull,
-#endif
     InvalidEntity = 0ull,
     MinEntity = 1ull,
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    MaxEntity = (1ull << BULK_DATA_ID_SHIFT) - 1,
-    ForceEnumToBeUint64 = ~0ull,
-#else
     MaxEntity = ~0ull,
-#endif
-    LOCAL_OFFSET_MASK = MaxEntity
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    , BULK_DATA_ID_MASK = (1ull << 16) - 1
-#endif
   };
 
   uint64_t m_value;
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  struct {
-    unsigned char bulk_data_id_part;
-    uint32_t local_offset32_part;
-  } view1;
-
-  struct {
-    uint32_t local_offset32_part;
-    unsigned char bulk_data_id_part;
-  } view2;
-#endif
 
   Entity operator=(Entity_t val) { m_value = val; return *this;}
 
@@ -96,15 +72,7 @@ union Entity
    * Thus, local_offset is not suitable for use as an equation index for linear-system operations.
    * See local_id() below.
    */
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  size_t local_offset() const { return static_cast<size_t>(m_value & LOCAL_OFFSET_MASK); }
-#else
   size_t local_offset() const { return static_cast<size_t>(m_value); }
-#endif
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  int bulk_data_id() const { return BULK_DATA_ID_MASK & (m_value >> BULK_DATA_ID_SHIFT); }
-#endif
 
   bool is_local_offset_valid() const { return local_offset() > 0; }
 
@@ -112,22 +80,8 @@ union Entity
    * Erroneous calls will lead to undefined (and probably disastrous) behavior.
    */
   void set_local_offset(size_t localOffset) {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    int bdi = bulk_data_id();
-#endif
     m_value = static_cast<Entity_t>(localOffset);
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    set_bulk_data_id(bdi);
-#endif
   }
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  void set_bulk_data_id(int bdi) {
-    int64_t val = bdi;
-    val = val << BULK_DATA_ID_SHIFT;
-    m_value |= val;
-  }
-#endif
 
   bool operator==(Entity entity) const { return m_value == entity.m_value; }
 
@@ -156,20 +110,6 @@ union Entity
   //
   // NEED TO REFACTOR CALLERS TO ELIMINATE THE FOLLOWING
   //
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  bool is_valid() const;
-  EntityState state() const;
-  EntityRank entity_rank() const;
-  EntityId identifier() const;
-  const EntityKey key() const;
-  Bucket & bucket() const;
-  Bucket * bucket_ptr() const;
-  size_t bucket_ordinal() const;
-  size_t synchronized_count() const;
-  int owner_rank() const;
-#endif
-
 
 #ifdef SIERRA_MIGRATION
   friend class sierra::Fmwk::MeshObjRoster;

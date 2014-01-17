@@ -39,67 +39,9 @@ namespace mesh {
 
 std::ostream & operator << ( std::ostream &os , const Entity &entity )
 {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  os << entity.bulk_data_id() << "[" << entity.local_offset() << "]";
-#else
   os << entity.m_value;
-#endif
   return os;
 }
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-
-bool Entity::is_valid() const
-{
-  return (m_value != 0) && BulkData::get(*this).is_valid(*this);
-}
-
-EntityState Entity::state() const
-{
-  return BulkData::get(*this).state(*this);
-}
-
-EntityRank Entity::entity_rank() const
-{
-  return BulkData::get(*this).entity_rank(*this);
-}
-
-EntityId Entity::identifier() const
-{
-  return BulkData::get(*this).identifier(*this);
-}
-
-const EntityKey Entity::key() const
-{
-  return BulkData::get(*this).entity_key(*this);
-}
-
-Bucket & Entity::bucket() const
-{
-  return BulkData::get(*this).bucket(*this);
-}
-
-Bucket * Entity::bucket_ptr() const
-{
-  return BulkData::get(*this).bucket_ptr(*this);
-}
-
-Bucket::size_type Entity::bucket_ordinal() const
-{
-  return BulkData::get(*this).bucket_ordinal(*this);
-}
-
-size_t Entity::synchronized_count() const
-{
-  return BulkData::get(*this).synchronized_count(*this);
-}
-
-int Entity::owner_rank() const
-{
-  return BulkData::get(*this).parallel_owner_rank(*this);
-}
-
-#endif
 
 // TODO - Activate once we move to intel-12.1
 //BOOST_MPL_ASSERT(( boost::is_pod<Entity> ));

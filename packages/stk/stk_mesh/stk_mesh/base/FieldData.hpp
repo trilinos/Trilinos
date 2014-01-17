@@ -80,16 +80,6 @@ unsigned field_data_size_per_entity( const FieldBase & f , const Bucket & k )
   return BulkData::get(k).field_data_size_per_entity(f, k);
 }
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-template< class field_type >
-inline
-typename FieldTraits< field_type >::data_type *
-field_data( const field_type & f , const Entity e )
-{
-  return stk::mesh::BulkData::get(e).field_data(f, e);
-}
-#endif
-
 //----------------------------------------------------------------------
 
 

@@ -51,9 +51,6 @@ EntityRepository::internal_create_entity( const EntityKey & key )
 
   if (iter == m_entities.end() || iter->first != key) {
     Entity next_entity = {Entity::InvalidEntity};
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-    next_entity.set_bulk_data_id(m_mesh.bulk_data_id());
-#endif
     next_entity.set_local_offset(m_mesh.generate_next_local_offset());
     m_mesh.set_entity_key(next_entity, key);
 
