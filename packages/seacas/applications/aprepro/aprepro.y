@@ -64,7 +64,7 @@ symrec *format;
 %token  <tptr>  SVAR    /* String Variable */
 %token  <tptr>  IMMVAR  /* Immutable Variable */
 %token  <tptr>  IMMSVAR /* Immutable String Variable */
-%token  <tptr>  ARRAY   /* array data [i,j] */
+%token  <tptr>  AVAR   /* array data [i,j] */
 %token  <tptr>  FNCT
 %token  <tptr>  SFNCT
 %token  <tptr>  AFNCT
@@ -127,7 +127,7 @@ bool:     sexp '<' sexp         { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
         | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
 
-aexp:   ARRAY                   { $$ = $1->value.avar;}
+aexp:   AVAR                   { $$ = $1->value.avar;}
         | AFNCT '(' sexp ')'    { $$ = (*($1->value.arrfnct))($3);      }
         | AFNCT '(' exp ',' exp ')'  
                                 { $$ = (*($1->value.arrfnct))($3,$5);   }
@@ -135,11 +135,11 @@ aexp:   ARRAY                   { $$ = $1->value.avar;}
                                 { $$ = (*($1->value.arrfnct))($3);      }
         | AFNCT '(' aexp ')'  
                                 { $$ = (*($1->value.arrfnct))($3);      }
-        | ARRAY '=' aexp        { $$ = $3; $1->value.avar = $3; 
+        | AVAR '=' aexp        { $$ = $3; $1->value.avar = $3; 
                                   redefined_warning($1);
-                                  set_type($1, ARRAY); }
+                                  set_type($1, AVAR); }
         | UNDVAR '=' aexp       { $$ = $3; $1->value.avar = $3; 
-                                  set_type($1, ARRAY); }
+                                  set_type($1, AVAR); }
         | aexp '+' aexp         { if ($1->cols == $3->cols && $1->rows == $3->rows ) {
                                      $$ = array_add($1, $3); 
                                   }
@@ -321,7 +321,7 @@ exp:      NUM                   { $$ = $1;                              }
         | bool { $$ = ($1) ? 1 : 0; }
         | bool '?' exp ':' exp  { $$ = ($1) ? ($3) : ($5);              }
       
-        | ARRAY '[' exp ',' exp ']' { array *arr = $1->value.avar;
+        | AVAR '[' exp ',' exp ']' { array *arr = $1->value.avar;
                                       int cols = arr->cols;
                                       int rows = arr->rows;
                                       if ($3 < rows && $5 < cols) {
@@ -333,7 +333,7 @@ exp:      NUM                   { $$ = $1;                              }
                                         yyerrok;
                                       }
                                     }
-        | ARRAY '[' exp ',' exp ']' '=' exp 
+        | AVAR '[' exp ',' exp ']' '=' exp 
                                   { $$ = $8;
                                     array *arr = $1->value.avar;
                                     int cols = arr->cols;

@@ -1185,21 +1185,43 @@ char *do_get_csv(char *filename, double row, double col)
 char *do_print_array(array *my_array_data)
 {
   if (my_array_data != NULL) {
+    char *lines = NULL;
+    char *ret_string = NULL; 
+
     int ir, ic;
     int rows = my_array_data->rows;
     int cols = my_array_data->cols;
     int idx=0;
+
+    /* Assume a maximum of 32 characters per array entry.
+     * Total space for the array data is then 32*rows*cols
+     */
+    
+    int size = 32 * rows * cols;
+    lines = malloc(size * sizeof(char) + 1);
+    lines[0] = '\0';
+    
     symrec *format = getsym("_FORMAT");
     for (ir=0; ir < rows; ir++) {
-      printf("\n\t");
+      if (ir > 0)
+	strcat(lines, "\n");
+      strcat(lines, "\t");
+
       for (ic=0; ic < cols; ic++) {
-	fprintf(yyout, format->value.svar, my_array_data->data[idx++]);
+	assert(strlen(lines) <= size);
+	sprintf(&lines[strlen(lines)], format->value.svar, my_array_data->data[idx++]);
 	if (ic < cols-1)
-	  fprintf(yyout, "\t");
+	  strcat(lines, "\t");
       }
     }
+    assert(strlen(lines) <= size);
+    NEWSTR(lines, ret_string);
+    if (lines) free(lines);
+    return ret_string;
   }
-  return "";
+  else {
+    return "";
+  }
 }
 
 array *do_make_array(double rows, double cols)
