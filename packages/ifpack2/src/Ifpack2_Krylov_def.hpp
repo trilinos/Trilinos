@@ -44,6 +44,8 @@
 #define IFPACK2_KRYLOV_DEF_HPP
 
 #include "Ifpack2_Krylov_decl.hpp"
+#include "BelosSolverFactory.hpp"
+
 
 namespace Ifpack2 {
 
@@ -52,7 +54,7 @@ Krylov<MatrixType>::
 Krylov (const Teuchos::RCP<const row_matrix_type>& A) :
   A_ (A),
   // Default values
-  IterationType_ (1),
+  iterationType_ ("GMRES"),
   Iterations_ (5),
   ResidualTolerance_ (0.001), // FIXME (mfh 17 Jan 2014) Make a function of STS::eps()
   BlockSize_ (1),
@@ -109,7 +111,45 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   using Teuchos::Exceptions::InvalidParameterType;
 
   // Read in parameters
-  Ifpack2::getParameter(params, "krylov: iteration type",IterationType_);
+
+  //
+  // Get the "krylov: iteration type" parameter.
+  //
+  // We prefer std::string (name of Belos solver), but allow int
+  // ("enum" value) for backwards compatibility.
+  //
+  std::string iterType;
+  bool gotIterType = false;
+  try {
+    iterType = params.get<std::string> ("krylov: iteration type");
+    gotIterType = true;
+  }
+  catch (InvalidParameterName) {
+    gotIterType = true; // the parameter is not there, so don't try to get it anymore
+  }
+  catch (InvalidParameterType) {
+    // Perhaps the user specified it as int.
+  }
+  // If it's not string, it has to be int.
+  // We've already checked whether the name exists.
+  if (! gotIterType) {
+    const int iterTypeInt = params.get<int> ("krylov: iteration type");
+    gotIterType = true;
+
+    if (iterTypeInt == 1) {
+      iterType = "GMRES";
+    } else if (iterTypeInt == 2) {
+      iterType = "CG";
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "Ifpack2::Krylov::setParameters: Invalid "
+        "\"krylov: iteration type\" value " << iterTypeInt << ".  Valid int "
+        "values are 1 (GMRES) and 2 (CG).  Please prefer setting this "
+        "parameter as a string (the name of the Krylov solver to use).");
+    }
+  }
+  iterationType_ = iterType; // "commit" the new parameter value
+
   Ifpack2::getParameter(params, "krylov: number of iterations",Iterations_);
   Ifpack2::getParameter(params, "krylov: residual tolerance",ResidualTolerance_);
   Ifpack2::getParameter(params, "krylov: block size",BlockSize_);
@@ -293,17 +333,6 @@ void Krylov<MatrixType>::initialize ()
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix before calling this method.");
 
-  // check only in serial
-  //
-  // FIXME (mfh 17 Jan 2014) Why do we need to check this?  Belos'
-  // LSQR doesn't require a square matrix.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    getComm ()->getSize () == 1 && A_->getNodeNumRows () != A_->getNodeNumCols (),
-    std::runtime_error, "Ifpack2::Krylov::initialize: If the input matrix A's "
-    "communicator has only one process, then the matrix must be square.  "
-    "Instead, the matrix has " << A_->getNodeNumRows () << " row(s) and "
-    << A_->getNodeNumCols () << " column(s).");
-
   // clear any previous allocation
   IsInitialized_ = false;
   IsComputed_ = false;
@@ -346,19 +375,8 @@ void Krylov<MatrixType>::initialize ()
     belosProblem_ = rcp (new Belos::LinearProblem<scalar_type,TMV,TOP> ());
     belosProblem_->setOperator (A_);
 
-    // FIXME (mfh 17 Jan 2014) It's also nonsense to use enums to pick
-    // the Belos solver type.  Users should just name the Belos solver
-    // type and give a sublist of parameters.  This could then go
-    // straight into the Belos::SolverFactory to create the solver.
-
-    if (IterationType_ == 1) {
-      belosSolver_ =
-        rcp (new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
-    }
-    else {
-      belosSolver_ =
-        rcp (new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
-    }
+    Belos::SolverFactory<scalar_type, TMV, TOP> factory;
+    belosSolver_ = factory.create (iterationType_, belosList);
   }
   IsInitialized_ = true;
   ++NumInitialize_;

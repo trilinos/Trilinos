@@ -186,12 +186,19 @@ namespace Ifpack2 {
     /// \brief Set the preconditioner's parameters.
     ///
     /// This preconditioner accepts the following parameters:
+    ///   - "krylov: iteration type" (\c std::string)
     ///   - "krylov: number of iterations" (\c int)
     ///   - "krylov: residual tolerance" (\c magnitude_type)
-    void setParameters(const Teuchos::ParameterList& params);
+    ///
+    /// The "krylov: iteration type" parameter specifies the name of
+    /// the iterative linear solver to use.  You may use any name here
+    /// that Belos::SolverFactory understands.  For example, "GMRES"
+    /// specifies the GMRES (Generalized Minimum Residual) solver, and
+    /// "CG" specifies CG (the Method of Conjugate Gradients).
+    void setParameters (const Teuchos::ParameterList& params);
 
     //! Do any initialization that depends on the input matrix's structure.
-    void initialize();
+    void initialize ();
 
     //! Return \c true if initialize() completed successfully, else \c false.
     inline bool isInitialized () const {
@@ -330,18 +337,25 @@ namespace Ifpack2 {
     Teuchos::RCP<const row_matrix_type> A_;
 
     //! General CG/GMRES parameters
-    //!  Type of iteration
-    // 1 for GMRES (default)
-    // 2 for CG
-    int IterationType_;
+
+    /// \brief Belos iterative linear solver name.
+    ///
+    /// Default is "GMRES".  Any name that Belos::SolverFactory
+    /// understands will work here.
+    std::string iterationType_;
+
     //! Number of Iterations
     int Iterations_;
+
     //! Residual Tolerance
     magnitude_type ResidualTolerance_;
+
     //! Block size
     int BlockSize_;
+
     //! If true, the starting solution is always the zero vector.
     bool ZeroStartingSolution_;
+
     //! Preconditioner Type
     // 1 for relaxation
     // 2 for ILUT
