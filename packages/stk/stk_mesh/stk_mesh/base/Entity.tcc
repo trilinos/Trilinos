@@ -52,6 +52,7 @@ class EntityRepository;
 }
 
 //----------------------------------------------------------------------
+// NKC OPT, is this now just the local_offset?  IS the shift ever still needed
 union Entity
 {
   enum Entity_t {
@@ -95,7 +96,11 @@ union Entity
    * Thus, local_offset is not suitable for use as an equation index for linear-system operations.
    * See local_id() below.
    */
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   size_t local_offset() const { return static_cast<size_t>(m_value & LOCAL_OFFSET_MASK); }
+#else
+  size_t local_offset() const { return static_cast<size_t>(m_value); }
+#endif
 
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   int bulk_data_id() const { return BULK_DATA_ID_MASK & (m_value >> BULK_DATA_ID_SHIFT); }
