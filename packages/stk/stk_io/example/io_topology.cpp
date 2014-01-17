@@ -4,7 +4,6 @@
 #include <Ioss_ElementTopology.h>
 #include <Ioss_ConcreteVariableType.h>
 
-using namespace Ioss;
 #define OUTPUT std::cerr
 
 // ========================================================================
@@ -45,7 +44,7 @@ int convert_ioss_to_stk_topology()
 {
   int err_count = 0;
 
-  NameList topologies;
+  Ioss::NameList topologies;
   int topology_count = Ioss::ElementTopology::describe(&topologies);
 
   OUTPUT.setf(std::ios::left);

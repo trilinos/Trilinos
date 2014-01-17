@@ -9,14 +9,15 @@
 #include <Ioss_Region.h>
 #include <Ioss_Property.h>
 
-using namespace stk::io::util;
-
+namespace stk {
+namespace io {
+namespace util {
 ///////////////////////////////////////////////////////////////////////////////
 Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
-                                              , const std::string& gmesh_spec
-                                              , bool use_64bit_int_IO_api
-                                              , stk::mesh::ConnectivityMap * connectivity_map
-                                            )
+						, const std::string& gmesh_spec
+						, bool use_64bit_int_IO_api
+						, stk::mesh::ConnectivityMap * connectivity_map
+						)
   : m_mesh_data(comm, connectivity_map)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,3 +50,4 @@ void Gmesh_STKmesh_Fixture::commit()
   m_mesh_data.populate_bulk_data();
 }
 
+}}}
