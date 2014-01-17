@@ -204,21 +204,6 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
     precParams_.set ("fact: relax value",
                      params.get ("fact: relax value", (double) 0.0));
   }
-  if (PreconditionerType_ == 3) {
-    precParams_.set ("schwarz: compute condest",
-                     params.get ("schwarz: compute condest",true));
-    precParams_.set ("schwarz: combine mode",
-                     params.get ("schwarz: combine mode", "Zero"));
-    // FIXME (mfh 17 Jan 2014) AdditiveSchwarz only allows setting
-    // this to true if Xpetra and Zoltan2 are enabled!  Otherwise it
-    // throws an exception if this is true.
-    precParams_.set ("schwarz: use reordering",
-                     params.get ("schwarz: use reordering", true));
-    precParams_.set ("schwarz: filter singletons",
-                     params.get ("schwarz: filter singletons", false));
-    precParams_.set ("schwarz: overlap level",
-                     params.get ("schwarz: overlap level", (int) 0));
-  }
 
   // "Commit" the new values to the instance data.
   iterationType_ = iterType;
@@ -379,7 +364,7 @@ void Krylov<MatrixType>::initialize ()
       ifpack2_prec_=rcp (new ILUT<MatrixType> (A_));
     }
     else if (PreconditionerType_==3) {
-      ifpack2_prec_ = rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (A_));
+      ifpack2_prec_ = rcp (new RILUK<MatrixType> (A_));
     }
     else if (PreconditionerType_==4) {
       ifpack2_prec_ = rcp (new Chebyshev<MatrixType> (A_));

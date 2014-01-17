@@ -54,9 +54,8 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_ILUT.hpp"
-#include "Ifpack2_AdditiveSchwarz.hpp"
+#include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Chebyshev.hpp"
-#include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
 #include <BelosConfigDefs.hpp>
