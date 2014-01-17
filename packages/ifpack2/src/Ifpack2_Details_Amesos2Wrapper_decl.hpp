@@ -55,7 +55,7 @@
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Details_CanChangeMatrix.hpp>
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#ifdef HAVE_IFPACK2_AMESOS2
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
 
@@ -70,39 +70,29 @@ namespace Details {
 /// @brief Wrapper class for direct solvers in Amesos2.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
-/// This class computes a sparse direct factorization of a local
-/// matrix using Amesos2.
-///
-/// The "local matrix" is the square diagonal block of the matrix
-/// owned by the calling process.  Thus, if the input matrix is
-/// distributed over multiple MPI processes, this preconditioner is
-/// equivalent to nonoverlapping additive Schwarz domain decomposition
-/// over the MPI processes, with Amesos2 as the subdomain Wrapper on
-/// each process.
+/// This class computes a sparse direct factorization of the input
+/// matrix A using Amesos2.  The apply() method solves linear
+/// system(s) using that factorization.  As with all Ifpack2
+/// preconditioners, initialize() computes the symbolic factorization,
+/// and compute() computes the numeric factorization.
 ///
 /// \warning This class is an implementation detail of Ifpack2.  Users
 ///   must not rely on this class.  It may go away or its interface
 ///   may change at any time.
 ///
-/// \warning (mfh 10 Dec 2013) I strongly object to the need for this
-///   class.  I will leave it in place because users need a way to
-///   specify a sparse direct solver as a subdomain solver for
-///   AdditiveSchwarz and SupportGraph.  It should be removed as soon
-///   as we have a Stratimikos-like central factory solution for
-///   solvers in the Tpetra-based solver stack.
-///
 /// \warning \c MatrixType <i>must</i> be a specialization of
 ///   Tpetra::CrsMatrix.  It may <i>not</i> just be a specialization
-///   of Tpetra::RowMatrix.  This is a requirement of the interface of
-///   Amesos2.
+///   of Tpetra::RowMatrix.  This requirement comes from Amesos2's
+///   Tpetra adapter.
 ///
 /// \note This class does <i>not</i> apply a LocalFilter to the input
 ///   matrix A.  This is unnecessary for subdomain solvers in
 ///   AdditiveSchwarz, because AdditiveSchwarz already applies a
 ///   LocalFilter to the matrix it passes to its subdomain solver.
-///   Furthermore, some Amesos2 sparse factorizations do support MPI
-///   parallelism, so it is reasonable to leave this option open to
-///   users, rather than forcing a LocalFilter.
+///   Furthermore, some sparse factorizations wrapped by Amesos2, like
+///   SuperLU_DIST, do support MPI parallelism.  Thus, it is
+///   reasonable to leave this option open to users, rather than force
+///   a LocalFilter.
 template<class MatrixType>
 class Amesos2Wrapper :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,

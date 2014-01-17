@@ -145,7 +145,7 @@ public:
   }
 };
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#ifdef HAVE_IFPACK2_AMESOS2
 template<class MatrixType>
 class OneLevelPreconditionerNamer< ::Ifpack2::Details::Amesos2Wrapper<MatrixType> > {
 public:
@@ -153,7 +153,7 @@ public:
     return "AMESOS2";
   }
 };
-#endif
+#endif // HAVE_IFPACK2_AMESOS2
 
 template<class MatrixType>
 class OneLevelPreconditionerNamer< ::Ifpack2::Diagonal<MatrixType> > {
