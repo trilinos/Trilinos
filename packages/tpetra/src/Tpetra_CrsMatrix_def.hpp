@@ -5292,7 +5292,7 @@ namespace Tpetra {
       // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
       IntVectorType TargetRow_pids(domainMap);
       IntVectorType SourceRow_pids(getRowMap());
-      SourcePids.resize(getColMap()->getNodeNumElements(),0);
+      SourcePids.resize(getColMap()->getNodeNumElements(),-2); // Start w/ -2 since that doesn't have a special meaning
       IntVectorType SourceCol_pids(getColMap(),SourcePids());
       
       TargetRow_pids.putScalar(MyPID);
