@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
 		&xsl_header_flag, 
 		"XSL header flag");
 
-  CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc, argv);
+  CommandLineProcessor::EParseCommandLineReturn parse_return =
+    clp.parse(argc, argv);
 
   if(parse_return != CommandLineProcessor::PARSE_SUCCESSFUL)
     return parse_return;
@@ -74,7 +75,8 @@ int main(int argc, char* argv[])
   RCP< FancyOStream > out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   if (xsl_header_flag )
-    *out << "<?xml-stylesheet type=\"text/xsl\" href=\"common/paramList/paramList.xslt\"?>\n";
+    *out << "<?xml-stylesheet type=\"text/xsl\" "
+         << "href=\"common/paramList/paramList.xslt\"?>\n";
 
   Teuchos::writeParameterListToXmlOStream(*Domi::getValidParameters(), *out);
 
