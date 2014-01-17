@@ -339,6 +339,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 			       << ")" <<std::endl;
       
 #ifdef HAVE_ML_IFPACK
+      std::string MyIfpackType = "point relaxation stand-alone";
+      ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");
+      MyIfpackList.set("relaxation: type", "Gauss-Seidel");
+      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+      MyIfpackList.set("relaxation: damping factor", Myomega);
+      MyIfpackList.set("relaxation: use l1",use_l1);
+      int smoothing_indices=0;
+      if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
+	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+      
       if (verbose_) {
 	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
 	  std::cout << msg << "Epetra_CrsMatrix detected, using "
@@ -346,15 +356,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	else
 	  std::cout << msg << "Wrapping to use "
 		    << "Ifpack implementation" << std::endl;
+	if (smoothing_indices)
+	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;	  
       }
 
-      std::string MyIfpackType = "point relaxation stand-alone";
-      ParameterList& MyIfpackList = List_.sublist("smoother: ifpack list");
-      MyIfpackList.set("relaxation: type", "Gauss-Seidel");
-      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
-      MyIfpackList.set("relaxation: damping factor", Myomega);
-      MyIfpackList.set("relaxation: use l1",use_l1);
-      
       if(gs_type){
 	if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
 	  ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
@@ -422,7 +427,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
       MyIfpackList.set("relaxation: damping factor", Myomega);
       MyIfpackList.set("relaxation: use l1",use_l1);
-      int smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+      int smoothing_indices=0;
+      if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
+	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+	
 
       if (verbose_) {
 	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
@@ -432,8 +440,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	  std::cout << msg << "Wrapping to use "
 		    << "Ifpack implementation" << std::endl;
 	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
-	  
+	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;	  
       }
 
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),

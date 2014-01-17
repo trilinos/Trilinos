@@ -363,8 +363,10 @@ namespace Tpetra {
     /// \param target [in] The target distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
     ///
-    /// \param remotePIDs [in] Owning PIDs corresponding to the remoteGIDs.
-    /// Leave this as an empty list if you don't have this information.
+    /// \param useRemotePIDs [in] True if the remotePIDs parameter is non-empty
+    /// on at least some processors.
+    ///
+    /// \param remotePIDs [in/out] Owning PIDs corresponding to the remoteGIDs.
     ///
     /// \param plist [in/out] List of parameters.  Currently passed
     ///   directly to the Distributor that implements communication.
@@ -372,6 +374,7 @@ namespace Tpetra {
     void
     init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+	  bool useRemotePIDs,
 	  Teuchos::Array<int> & remotePIDs,
           const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
@@ -437,7 +440,7 @@ namespace Tpetra {
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
     /// <tt>ImportData_</tt>.
     void
-    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, Teuchos::Array<int> & remotePIDs);
+    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
     //@}
 
 
