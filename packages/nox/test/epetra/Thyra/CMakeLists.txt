@@ -84,5 +84,13 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
+    
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_Rosenbrock_UserDirectionChangeLineSearch
+    SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
+    Thyra_Rosenbrock_UserDirectionChangeLineSearch.cpp
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
   
 ENDIF()
