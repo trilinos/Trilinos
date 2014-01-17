@@ -163,7 +163,6 @@
 ///     #define SIERRA_App_DiagWriter_h
 ///     
 ///     #include <stk_util/diag/Writer.hpp>
-///     #include <Slib_DiagWriterOStream.h>
 ///     #include <stk_util/diag/WriterParser.hpp>
 ///     
 ///     #include <App_DiagWriter_fwd.h>
