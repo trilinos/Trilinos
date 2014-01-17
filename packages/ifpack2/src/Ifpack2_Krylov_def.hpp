@@ -55,8 +55,8 @@ Krylov (const Teuchos::RCP<const row_matrix_type>& A) :
   A_ (A),
   // Default values
   iterationType_ ("GMRES"),
-  Iterations_ (5),
-  ResidualTolerance_ (0.001), // FIXME (mfh 17 Jan 2014) Make a function of STS::eps()
+  numIters_ (5),
+  resTol_ (0.001), // FIXME (mfh 17 Jan 2014) Make a function of STS::eps()
   BlockSize_ (1),
   ZeroStartingSolution_ (true),
   PreconditionerType_ (1),
@@ -69,9 +69,7 @@ Krylov (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
-  ApplyTime_ (0.0),
-  NumMyRows_ (-1), // FIXME (mfh 17 Jan 2014) What does this mean???
-  NumGlobalNonzeros_ (0)
+  ApplyTime_ (0.0)
 {}
 
 
@@ -104,13 +102,26 @@ void Krylov<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A
 
 
 template <class MatrixType>
-void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& params)
+void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
 {
   using Teuchos::as;
+  using Teuchos::ParameterList;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
 
-  // Read in parameters
+  ParameterList params = plist;
+
+  // Get the current parameters' values.  We don't assign to the
+  // instance data directly until we've gotten all the parameters.
+  // This ensures "transactional" semantics, so that if attempting to
+  // get some parameter throws an exception, the class' state doesn't
+  // change.
+  magnitude_type resTol = resTol_;
+  int numIters = numIters_;
+  std::string iterType = iterationType_;
+  int blockSize = BlockSize_;
+  bool zeroStartingSolution = ZeroStartingSolution_;
+  int precType = PreconditionerType_;
 
   //
   // Get the "krylov: iteration type" parameter.
@@ -118,7 +129,6 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   // We prefer std::string (name of Belos solver), but allow int
   // ("enum" value) for backwards compatibility.
   //
-  std::string iterType;
   bool gotIterType = false;
   try {
     iterType = params.get<std::string> ("krylov: iteration type");
@@ -148,29 +158,29 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& params)
         "parameter as a string (the name of the Krylov solver to use).");
     }
   }
-  iterationType_ = iterType; // "commit" the new parameter value
 
-  Ifpack2::getParameter(params, "krylov: number of iterations",Iterations_);
-  Ifpack2::getParameter(params, "krylov: residual tolerance",ResidualTolerance_);
-  Ifpack2::getParameter(params, "krylov: block size",BlockSize_);
-  Ifpack2::getParameter(params, "krylov: zero starting solution",ZeroStartingSolution_);
-  Ifpack2::getParameter(params, "krylov: preconditioner type",PreconditionerType_);
-  params_=params;
+  resTol = params.get ("krylov: residual tolerance", resTol);
+  numIters = params.get ("krylov: number of iterations", numIters);
+  blockSize = params.get ("krylov: block size", blockSize);
+  zeroStartingSolution = params.get ("krylov: zero starting solution",
+                                     zeroStartingSolution);
+  precType = params.get ("krylov: preconditioner type", precType);
+
   // Separate preconditioner parameters into another list
   //
   // FIXME (mfh 17 Jan 2014) Inner preconditioner's parameters should
   // be a sublist, not part of the main list!!!
   if (PreconditionerType_ == 1) {
     precParams_.set ("relaxation: sweeps",
-                     params_.get ("relaxation: sweeps", 1));
+                     params.get ("relaxation: sweeps", 1));
     precParams_.set ("relaxation: damping factor",
-                     params_.get("relaxation: damping factor", (scalar_type) 1.0));
+                     params.get ("relaxation: damping factor", (scalar_type) 1.0));
     precParams_.set ("relaxation: min diagonal value",
-                     params_.get ("relaxation: min diagonal value", STS::one ()));
+                     params.get ("relaxation: min diagonal value", STS::one ()));
     precParams_.set ("relaxation: zero starting solution",
-                     params_.get ("relaxation: zero starting solution", true));
+                     params.get ("relaxation: zero starting solution", true));
     precParams_.set ("relaxation: backward mode",
-                     params_.get ("relaxation: backward mode", false));
+                     params.get ("relaxation: backward mode", false));
   }
   // FIXME (mfh 17 Jan 2014) AdditiveSchwarz's ParameterList no longer
   // takes parameters for its subdomain solver!  You have to pass them
@@ -180,35 +190,43 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& params)
     // works!  Furthermore, this parameter does not mean what you
     // think it means.
     precParams_.set ("fact: ilut level-of-fill",
-                     params_.get ("fact: ilut level-of-fill", (double) 1.0));
+                     params.get ("fact: ilut level-of-fill", (double) 1.0));
     // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
     // sure, but double is definitely wrong.
     precParams_.set ("fact: absolute threshold",
-                     params_.get ("fact: absolute threshold", (double) 0.0));
+                     params.get ("fact: absolute threshold", (double) 0.0));
     // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
     // sure, but double is definitely wrong.
     precParams_.set ("fact: relative threshold",
-                     params_.get("fact: relative threshold", (double) 1.0));
+                     params.get("fact: relative threshold", (double) 1.0));
     // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
     // sure, but double is definitely wrong.
     precParams_.set ("fact: relax value",
-                     params_.get ("fact: relax value", (double) 0.0));
+                     params.get ("fact: relax value", (double) 0.0));
   }
   if (PreconditionerType_ == 3) {
     precParams_.set ("schwarz: compute condest",
-                     params_.get ("schwarz: compute condest",true));
+                     params.get ("schwarz: compute condest",true));
     precParams_.set ("schwarz: combine mode",
-                     params_.get ("schwarz: combine mode", "Zero"));
+                     params.get ("schwarz: combine mode", "Zero"));
     // FIXME (mfh 17 Jan 2014) AdditiveSchwarz only allows setting
     // this to true if Xpetra and Zoltan2 are enabled!  Otherwise it
     // throws an exception if this is true.
     precParams_.set ("schwarz: use reordering",
-                     params_.get ("schwarz: use reordering", true));
+                     params.get ("schwarz: use reordering", true));
     precParams_.set ("schwarz: filter singletons",
-                     params_.get ("schwarz: filter singletons", false));
+                     params.get ("schwarz: filter singletons", false));
     precParams_.set ("schwarz: overlap level",
-                     params_.get ("schwarz: overlap level", (int) 0));
+                     params.get ("schwarz: overlap level", (int) 0));
   }
+
+  // "Commit" the new values to the instance data.
+  iterationType_ = iterType;
+  numIters_ = numIters;
+  resTol_ = resTol;
+  BlockSize_ = blockSize;
+  ZeroStartingSolution_ = zeroStartingSolution;
+  PreconditionerType_ = precType;
 }
 
 
@@ -341,15 +359,13 @@ void Krylov<MatrixType>::initialize ()
   { // The body of code to time
     Teuchos::TimeMonitor timeMon (timer);
 
-    NumMyRows_ = A_->getNodeNumRows ();
-
     // Belos parameter list
     RCP<ParameterList> belosList = rcp (new ParameterList ("GMRES"));
-    belosList->set ("Maximum Iterations", Iterations_);
-    belosList->set ("Convergence Tolerance", ResidualTolerance_);
+    belosList->set ("Maximum Iterations", numIters_);
+    belosList->set ("Convergence Tolerance", resTol_);
 
-    // FIXME (17 Jan 2014) This whole "preconditioner type" thing is not
-    // how we want Krylov to initialize its inner preconditioner.
+    // FIXME (17 Jan 2014) This whole "preconditioner type" thing is
+    // not how we want Krylov to initialize its inner preconditioner.
     // Krylov should be initialized like AdditiveSchwarz: the Factory
     // should create it, in order to avoid circular dependencies.
 

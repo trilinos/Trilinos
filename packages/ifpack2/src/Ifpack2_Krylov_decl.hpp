@@ -333,7 +333,10 @@ namespace Ifpack2 {
     //! operator= (should never be used)
     Krylov<MatrixType>& operator= (const Krylov<MatrixType>& RHS);
 
-    //! The input matrix to be preconditioned.
+    /// \brief The input matrix to be preconditioned.
+    ///
+    /// This may be null.  If this is null, initialize(), compute(),
+    /// and apply() may not be called.
     Teuchos::RCP<const row_matrix_type> A_;
 
     //! General CG/GMRES parameters
@@ -344,11 +347,11 @@ namespace Ifpack2 {
     /// understands will work here.
     std::string iterationType_;
 
-    //! Number of Iterations
-    int Iterations_;
+    //! Number of iterations
+    int numIters_;
 
     //! Residual Tolerance
-    magnitude_type ResidualTolerance_;
+    magnitude_type resTol_;
 
     //! Block size
     int BlockSize_;
@@ -362,8 +365,12 @@ namespace Ifpack2 {
     // 3 for Additive Schwarz with ILUT
     // 4 for Chebyshev
     int PreconditionerType_;
-    //! Teuchos parameter lists
-    Teuchos::ParameterList params_, precParams_;
+
+    /// \brief Inner preconditioner parameters.
+    ///
+    /// The "inner preconditioner" for Krylov means the preconditioner
+    /// for the Krylov subspace method.
+    Teuchos::ParameterList precParams_;
 
     //! Condition number estimate
     magnitude_type Condest_;
@@ -383,23 +390,20 @@ namespace Ifpack2 {
     double ComputeTime_;
     //! Contains the time for all successful calls to apply().
     mutable double ApplyTime_;
-    //! Number of local rows.
-    local_ordinal_type NumMyRows_;
-    //! Global number of nonzeros in L and U factors
-    global_size_t NumGlobalNonzeros_;
 
-    //! Belos Objects
-    Teuchos::RCP< Belos::LinearProblem<scalar_type,
-                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-                                       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
-    Teuchos::RCP< Belos::SolverManager<scalar_type,
-                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-                                       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
+    //! Belos' encapsulation of the linear problem to solve.
+    Teuchos::RCP<Belos::LinearProblem<scalar_type,
+                                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
+                                      Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
+
+    //! The Belos solver (implementation of the Krylov method).
+    Teuchos::RCP<Belos::SolverManager<scalar_type,
+                                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
+                                      Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
+
+    //! The inner preconditioner (the preconditioner for the Krylov method).
     Teuchos::RCP<prec_type> ifpack2_prec_;
-
-  //@}
-
-}; // class Krylov
+  };
 
 } // namespace Ifpack2
 
