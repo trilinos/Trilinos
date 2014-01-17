@@ -14,7 +14,7 @@ namespace pike {
     Scalar current;
   }
 
-  /** A Mix-In interface for transient problems that derives from the pike::BlackBoxModelEvaluator.
+  /** A decorator design pattern for transient problems that derives from the pike::BlackBoxModelEvaluator.
 
       This interface allows pike to query physics models for a
       possible next time step, then coordinate with the coupled codes
