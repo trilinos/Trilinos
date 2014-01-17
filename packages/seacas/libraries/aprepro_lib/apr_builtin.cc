@@ -1123,7 +1123,9 @@ const char *do_print_array(const array *my_array_data)
     int idx=0;
 
     for (int ir=0; ir < rows; ir++) {
-      lines << "\n\t";
+      if (ir > 0)
+	lines << "\n";
+      lines << "\t";
       for (int ic=0; ic < cols; ic++) {
 	lines << my_array_data->data[idx++];
 	if (ic < cols-1)

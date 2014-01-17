@@ -12,8 +12,8 @@
 namespace SEAMS {
 extern SEAMS::Aprepro *aprepro;
 
-void init_table(char comment);
-char comm_string[2];
+void init_table(const char *comment);
+char comm_string[32];
 
 extern double
   do_fabs(double x),
@@ -335,7 +335,7 @@ struct svar_init svariables[] =
  *	 initialize is differently than the other string variables.
  */
 
-  void Aprepro::init_table(char comment)
+  void Aprepro::init_table(const char *comment)
   {
     for (int i = 0; arith_fncts[i].fname != 0; i++) {
       symrec *ptr = putsym(arith_fncts[i].fname, FUNCTION, 1);

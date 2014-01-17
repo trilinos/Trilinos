@@ -196,7 +196,7 @@ namespace SEAMS {
     void dumpsym (int type, bool doInternal) const;
   private:
     
-    void init_table(char comment);
+    void init_table(const char *comment);
     std::vector<symrec*> sym_table;
     std::ostringstream parsingResults;
   public:
