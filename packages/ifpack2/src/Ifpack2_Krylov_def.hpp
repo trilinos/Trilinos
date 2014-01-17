@@ -191,6 +191,8 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
     // think it means.
     precParams_.set ("fact: ilut level-of-fill",
                      params.get ("fact: ilut level-of-fill", (double) 1.0));
+    precParams_.set ("fact: iluk level-of-fill",
+                     params.get ("fact: iluk level-of-fill", (double) 1.0));
     // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
     // sure, but double is definitely wrong.
     precParams_.set ("fact: absolute threshold",

@@ -361,7 +361,7 @@ namespace Ifpack2 {
     //! Preconditioner Type
     // 1 for relaxation
     // 2 for ILUT
-    // 3 for Additive Schwarz with ILUT
+    // 3 for RILUK
     // 4 for Chebyshev
     int PreconditionerType_;
 
