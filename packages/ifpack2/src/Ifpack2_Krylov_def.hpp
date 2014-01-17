@@ -40,56 +40,43 @@
 //@HEADER
 */
 
-//-----------------------------------------------------
-// Ifpack2::KRYLOV is based on the Krylov iterative
-// solvers in Belos.
-// written by Paul Tsuji.
-//-----------------------------------------------------
-
 #ifndef IFPACK2_KRYLOV_DEF_HPP
 #define IFPACK2_KRYLOV_DEF_HPP
 
 namespace Ifpack2 {
 
-//Definitions for the Krylov methods:
-//==============================================================================
 template <class MatrixType>
-Krylov<MatrixType>::Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
-  A_(A),
-  Comm_(A->getRowMap()->getComm()),
+Krylov<MatrixType>::
+Krylov (const Teuchos::RCP<const row_matrix_type>& A) :
+  A_ (A),
   // Default values
-  IterationType_(1),
-  Iterations_(5),
-  ResidualTolerance_(0.001),
-  BlockSize_(1),
-  ZeroStartingSolution_(true),
-  PreconditionerType_(1),
+  IterationType_ (1),
+  Iterations_ (5),
+  ResidualTolerance_ (0.001), // FIXME (mfh 17 Jan 2014) Make a function of STS::eps()
+  BlockSize_ (1),
+  ZeroStartingSolution_ (true),
+  PreconditionerType_ (1),
   // General
-  Condest_ (- Teuchos::ScalarTraits<magnitude_type>::one()),
-  IsInitialized_(false),
-  IsComputed_(false),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
-  InitializeTime_(0.0),
-  ComputeTime_(0.0),
-  ApplyTime_(0.0),
-  Time_("Ifpack2::Krylov"),
-  NumMyRows_(-1),
-  NumGlobalNonzeros_(0)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
-      Teuchos::typeName(*this) << "::Krylov(): input matrix reference was null.");
-}
+  Condest_ (-STM::one ()),
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0),
+  NumMyRows_ (-1), // FIXME (mfh 17 Jan 2014) What does this mean???
+  NumGlobalNonzeros_ (0)
+{}
 
-//==========================================================================
-template <class MatrixType>
-Krylov<MatrixType>::~Krylov() {
-}
 
-//==========================================================================
 template <class MatrixType>
-void Krylov<MatrixType>::setMatrix(const Teuchos::RCP<const row_matrix_type>& A)
+Krylov<MatrixType>::~Krylov() {}
+
+
+template <class MatrixType>
+void Krylov<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   // Check in serial or one-process mode if the matrix is square.
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -106,15 +93,19 @@ void Krylov<MatrixType>::setMatrix(const Teuchos::RCP<const row_matrix_type>& A)
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
+  Condest_ = -STM::one ();
+
   A_ = A;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-void Krylov<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
+void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& params)
+{
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
+
   // Read in parameters
   Ifpack2::getParameter(params, "krylov: iteration type",IterationType_);
   Ifpack2::getParameter(params, "krylov: number of iterations",Iterations_);
@@ -124,261 +115,371 @@ void Krylov<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   Ifpack2::getParameter(params, "krylov: preconditioner type",PreconditionerType_);
   params_=params;
   // Separate preconditioner parameters into another list
-  if(PreconditionerType_==1) {
-    precParams_.set("relaxation: sweeps",                 params_.get("relaxation: sweeps",1));
-    precParams_.set("relaxation: damping factor",         params_.get("relaxation: damping factor",(scalar_type)1.0));
-    precParams_.set("relaxation: min diagonal value",     params_.get("relaxation: min diagonal value",(scalar_type)1.0));
-    precParams_.set("relaxation: zero starting solution", params_.get("relaxation: zero starting solution",true));
-    precParams_.set("relaxation: backward mode",          params_.get("relaxation: backward mode",false));
+  //
+  // FIXME (mfh 17 Jan 2014) Inner preconditioner's parameters should
+  // be a sublist, not part of the main list!!!
+  if (PreconditionerType_ == 1) {
+    precParams_.set ("relaxation: sweeps",
+                     params_.get ("relaxation: sweeps", 1));
+    precParams_.set ("relaxation: damping factor",
+                     params_.get("relaxation: damping factor", (scalar_type) 1.0));
+    precParams_.set ("relaxation: min diagonal value",
+                     params_.get ("relaxation: min diagonal value", STS::one ()));
+    precParams_.set ("relaxation: zero starting solution",
+                     params_.get ("relaxation: zero starting solution", true));
+    precParams_.set ("relaxation: backward mode",
+                     params_.get ("relaxation: backward mode", false));
   }
-  if(PreconditionerType_==2 || PreconditionerType_==3) {
-    precParams_.set("fact: ilut level-of-fill", params_.get("fact: ilut level-of-fill",(double)1.0));
-    precParams_.set("fact: absolute threshold", params_.get("fact: absolute threshold",(double)0.0));
-    precParams_.set("fact: relative threshold", params_.get("fact: relative threshold",(double)1.0));
-    precParams_.set("fact: relax value",        params_.get("fact: relax value",(double)0.0));
+  // FIXME (mfh 17 Jan 2014) AdditiveSchwarz's ParameterList no longer
+  // takes parameters for its subdomain solver!  You have to pass them
+  // into a sublist.
+  if (PreconditionerType_ == 2 || PreconditionerType_ == 3) {
+    // FIXME (mfh 17 Jan 2014) should be an integer, given how ILUT
+    // works!  Furthermore, this parameter does not mean what you
+    // think it means.
+    precParams_.set ("fact: ilut level-of-fill",
+                     params_.get ("fact: ilut level-of-fill", (double) 1.0));
+    // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
+    // sure, but double is definitely wrong.
+    precParams_.set ("fact: absolute threshold",
+                     params_.get ("fact: absolute threshold", (double) 0.0));
+    // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
+    // sure, but double is definitely wrong.
+    precParams_.set ("fact: relative threshold",
+                     params_.get("fact: relative threshold", (double) 1.0));
+    // FIXME (mfh 17 Jan 2014) scalar_type or magnitude_type? not
+    // sure, but double is definitely wrong.
+    precParams_.set ("fact: relax value",
+                     params_.get ("fact: relax value", (double) 0.0));
   }
-  if(PreconditionerType_==3) {
-    precParams_.set("schwarz: compute condest",   params_.get("schwarz: compute condest",true));
-    precParams_.set("schwarz: combine mode",      params_.get("schwarz: combine mode","Zero")); // use string mode for this
-    precParams_.set("schwarz: use reordering",    params_.get("schwarz: use reordering",true));
-    precParams_.set("schwarz: filter singletons", params_.get("schwarz: filter singletons",false));
-    precParams_.set("schwarz: overlap level",     params_.get("schwarz: overlap level",(int)0));
+  if (PreconditionerType_ == 3) {
+    precParams_.set ("schwarz: compute condest",
+                     params_.get ("schwarz: compute condest",true));
+    precParams_.set ("schwarz: combine mode",
+                     params_.get ("schwarz: combine mode", "Zero"));
+    // FIXME (mfh 17 Jan 2014) AdditiveSchwarz only allows setting
+    // this to true if Xpetra and Zoltan2 are enabled!  Otherwise it
+    // throws an exception if this is true.
+    precParams_.set ("schwarz: use reordering",
+                     params_.get ("schwarz: use reordering", true));
+    precParams_.set ("schwarz: filter singletons",
+                     params_.get ("schwarz: filter singletons", false));
+    precParams_.set ("schwarz: overlap level",
+                     params_.get ("schwarz: overlap level", (int) 0));
   }
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 Krylov<MatrixType>::getComm () const {
-  return Comm_;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Krylov::getComm: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
+  return A_->getComm ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 Krylov<MatrixType>::getMatrix () const {
   return A_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 Krylov<MatrixType>::getDomainMap () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Krylov::getDomainMap: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
   return A_->getDomainMap ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 Krylov<MatrixType>::getRangeMap () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Krylov::getRangeMap: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
   return A_->getRangeMap ();
 }
 
-//==============================================================================
+
 template <class MatrixType>
 bool Krylov<MatrixType>::hasTransposeApply () const {
-  return true;
+  // FIXME (mfh 17 Jan 2014) apply() does not currently work with mode
+  // != NO_TRANS, so it's correct to return false here.
+  return false;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int Krylov<MatrixType>::getNumInitialize () const {
   return NumInitialize_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-int Krylov<MatrixType>::getNumCompute() const {
-  return(NumCompute_);
+int Krylov<MatrixType>::getNumCompute () const {
+  return NumCompute_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-int Krylov<MatrixType>::getNumApply() const {
-  return(NumApply_);
+int Krylov<MatrixType>::getNumApply () const {
+  return NumApply_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-double Krylov<MatrixType>::getInitializeTime() const {
-  return(InitializeTime_);
+double Krylov<MatrixType>::getInitializeTime () const {
+  return InitializeTime_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-double Krylov<MatrixType>::getComputeTime() const {
-  return(ComputeTime_);
+double Krylov<MatrixType>::getComputeTime () const {
+  return ComputeTime_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-double Krylov<MatrixType>::getApplyTime() const {
-  return(ApplyTime_);
+double Krylov<MatrixType>::getApplyTime () const {
+  return ApplyTime_;
 }
 
-//=============================================================================
+
 template <class MatrixType>
 typename Krylov<MatrixType>::magnitude_type
 Krylov<MatrixType>::
 computeCondEst (CondestType CT,
                 local_ordinal_type MaxIters,
                 magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix) {
+                const Teuchos::Ptr<const row_matrix_type>& matrix)
+{
   if (! isComputed ()) { // cannot compute right now
-    return -Teuchos::ScalarTraits<magnitude_type>::one ();
+    return -STM::one ();
   }
   // NOTE: this is computing the *local* condest
-  if (Condest_ == -Teuchos::ScalarTraits<magnitude_type>::one()) {
-    Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
+  if (Condest_ == -STM::one ()) {
+    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
   }
   return Condest_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-void Krylov<MatrixType>::initialize() {
+void Krylov<MatrixType>::initialize ()
+{
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> TMV;
+  typedef Tpetra::Operator<scalar_type, local_ordinal_type,
+                           global_ordinal_type, node_type> TOP;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Krylov::initialize: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
+
+  // check only in serial
+  //
+  // FIXME (mfh 17 Jan 2014) Why do we need to check this?  Belos'
+  // LSQR doesn't require a square matrix.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    getComm ()->getSize () == 1 && A_->getNodeNumRows () != A_->getNodeNumCols (),
+    std::runtime_error, "Ifpack2::Krylov::initialize: If the input matrix A's "
+    "communicator has only one process, then the matrix must be square.  "
+    "Instead, the matrix has " << A_->getNodeNumRows () << " row(s) and "
+    << A_->getNodeNumCols () << " column(s).");
+
   // clear any previous allocation
   IsInitialized_ = false;
   IsComputed_ = false;
-  Time_.start(true);
-  // check only in serial
-  TEUCHOS_TEST_FOR_EXCEPTION(Comm_->getSize() == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(), std::runtime_error, "Ifpack2::Krylov::Initialize ERROR, matrix must be square");
-  NumMyRows_ = A_->getNodeNumRows();
-  // Belos parameter list
-  belosList_ = Teuchos::rcp( new Teuchos::ParameterList("GMRES") );
-  belosList_->set("Maximum Iterations",Iterations_);
-  belosList_->set("Convergence Tolerance",ResidualTolerance_);
-  if(PreconditionerType_==0) {
-    // no preconditioner
-  }
-  else if(PreconditionerType_==1) {
-    ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType> (A_) );
-  }
-  else if(PreconditionerType_==2) {
-    ifpack2_prec_=Teuchos::rcp( new ILUT<MatrixType>(A_) );
-  }
-  else if(PreconditionerType_==3) {
-    ifpack2_prec_ = Teuchos::rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (A_));
-  }
-  else if(PreconditionerType_==4) {
-    ifpack2_prec_=Teuchos::rcp( new Chebyshev<MatrixType>(A_) );
-  }
-  if(PreconditionerType_>0) {
-    ifpack2_prec_->initialize();
-    ifpack2_prec_->setParameters(precParams_);
-  }
-  belosProblem_ = Teuchos::rcp( new Belos::LinearProblem<scalar_type,TMV,TOP> );
-  belosProblem_ -> setOperator(A_);
-  if(IterationType_==1) {
-    belosSolver_ =
-      Teuchos::rcp( new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
-  }
-  else {
-    belosSolver_ =
-      Teuchos::rcp( new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
+
+  Teuchos::Time timer ("initialize");
+  { // The body of code to time
+    Teuchos::TimeMonitor timeMon (timer);
+
+    NumMyRows_ = A_->getNodeNumRows ();
+
+    // Belos parameter list
+    RCP<ParameterList> belosList = rcp (new ParameterList ("GMRES"));
+    belosList->set ("Maximum Iterations", Iterations_);
+    belosList->set ("Convergence Tolerance", ResidualTolerance_);
+
+    // FIXME (17 Jan 2014) This whole "preconditioner type" thing is not
+    // how we want Krylov to initialize its inner preconditioner.
+    // Krylov should be initialized like AdditiveSchwarz: the Factory
+    // should create it, in order to avoid circular dependencies.
+
+    if (PreconditionerType_ == 0) {
+      // no preconditioner
+    }
+    else if (PreconditionerType_==1) {
+      ifpack2_prec_=rcp (new Relaxation<MatrixType> (A_));
+    }
+    else if (PreconditionerType_==2) {
+      ifpack2_prec_=rcp (new ILUT<MatrixType> (A_));
+    }
+    else if (PreconditionerType_==3) {
+      ifpack2_prec_ = rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (A_));
+    }
+    else if (PreconditionerType_==4) {
+      ifpack2_prec_ = rcp (new Chebyshev<MatrixType> (A_));
+    }
+    if (PreconditionerType_>0) {
+      ifpack2_prec_->initialize();
+      ifpack2_prec_->setParameters(precParams_);
+    }
+    belosProblem_ = rcp (new Belos::LinearProblem<scalar_type,TMV,TOP> ());
+    belosProblem_->setOperator (A_);
+
+    // FIXME (mfh 17 Jan 2014) It's also nonsense to use enums to pick
+    // the Belos solver type.  Users should just name the Belos solver
+    // type and give a sublist of parameters.  This could then go
+    // straight into the Belos::SolverFactory to create the solver.
+
+    if (IterationType_ == 1) {
+      belosSolver_ =
+        rcp (new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
+    }
+    else {
+      belosSolver_ =
+        rcp (new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
+    }
   }
   IsInitialized_ = true;
   ++NumInitialize_;
-  Time_.stop();
-  InitializeTime_ += Time_.totalElapsedTime();
+  InitializeTime_ += timer.totalElapsedTime ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
-void Krylov<MatrixType>::compute() {
-  using Teuchos::as;
-  //--------------------------------------------------------------------------
-  // Ifpack2::Krylov
-  // Computes necessary preconditioner info
-  //--------------------------------------------------------------------------
-  if (!isInitialized()) {
-    initialize();
+void Krylov<MatrixType>::compute ()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Krylov::compute: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
+
+  // Don't time the initialize(); that gets timed separately.
+  if (! isInitialized ()) {
+    initialize ();
   }
-  Time_.start(true);
-  if(PreconditionerType_>0) {
-    ifpack2_prec_->compute();
-    belosProblem_->setLeftPrec(ifpack2_prec_);
+
+  Teuchos::Time timer ("compute");
+  { // The body of code to time
+    Teuchos::TimeMonitor timeMon (timer);
+    if (PreconditionerType_ > 0) {
+      ifpack2_prec_->compute ();
+      belosProblem_->setLeftPrec (ifpack2_prec_);
+    }
   }
   IsComputed_ = true;
   ++NumCompute_;
-  Time_.stop();
-  ComputeTime_ += Time_.totalElapsedTime();
+  ComputeTime_ += timer.totalElapsedTime ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
-void Krylov<MatrixType>::apply(const Tpetra::MultiVector<typename MatrixType::scalar_type,
-                              typename MatrixType::local_ordinal_type,
-                              typename MatrixType::global_ordinal_type,
-                              typename MatrixType::node_type>& X,
-                              Tpetra::MultiVector<typename MatrixType::scalar_type,
-                              typename MatrixType::local_ordinal_type,
-                              typename MatrixType::global_ordinal_type,
-                              typename MatrixType::node_type>& Y,
-                              Teuchos::ETransp mode,
-                              typename MatrixType::scalar_type alpha,
-                              typename MatrixType::scalar_type beta) const
+void Krylov<MatrixType>::
+apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
+       typename MatrixType::local_ordinal_type,
+       typename MatrixType::global_ordinal_type,
+       typename MatrixType::node_type>& X,
+       Tpetra::MultiVector<typename MatrixType::scalar_type,
+                           typename MatrixType::local_ordinal_type,
+                           typename MatrixType::global_ordinal_type,
+                           typename MatrixType::node_type>& Y,
+       Teuchos::ETransp mode,
+       typename MatrixType::scalar_type alpha,
+       typename MatrixType::scalar_type beta) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::Krylov::apply() ERROR, compute() hasn't been called yet.");
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! isComputed (), std::runtime_error,
+    "Ifpack2::Krylov::apply: You must call compute() before you may call apply().");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X.getNumVectors () != Y.getNumVectors (), std::invalid_argument,
+    "Ifpack2::Krylov::apply: The MultiVector inputs X and Y do not have the "
+    "same number of columns.  X.getNumVectors() = " << X.getNumVectors ()
+    << " != Y.getNumVectors() = " << Y.getNumVectors () << ".");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-    "Ifpack2::Krylov::apply() ERROR, X.getNumVectors() != Y.getNumVectors().");
+  // Catch unimplemented cases: alpha != 1, beta != 0, mode != NO_TRANS.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    alpha != STS::one (), std::logic_error,
+    "Ifpack2::Krylov::apply: alpha != 1 has not been implemented.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    beta != STS::zero (), std::logic_error,
+    "Ifpack2::Krylov::apply: zero != 0 has not been implemented.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    mode != Teuchos::NO_TRANS, std::logic_error,
+    "Ifpack2::Krylov::apply: mode != Teuchos::NO_TRANS has not been implemented.");
 
-  Time_.start(true);
+  Teuchos::Time timer ("apply");
+  { // The body of code to time
+    Teuchos::TimeMonitor timeMon (timer);
 
-  // If X and Y are pointing to the same memory location,
-  // we need to create an auxiliary vector, Xcopy
-  Teuchos::RCP< const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Xcopy;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(X) );
+    // If X and Y are pointing to the same memory location,
+    // we need to create an auxiliary vector, Xcopy
+    RCP<const MV> Xcopy;
+    if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+      Xcopy = rcp (new MV (X));
+    } else {
+      Xcopy = rcpFromRef (X);
+    }
+
+    RCP<MV> Ycopy = rcpFromRef (Y);
+    if (ZeroStartingSolution_) {
+      Ycopy->putScalar (STS::zero ());
+    }
+
+    // Set left and right hand sides for Belos
+    belosProblem_->setProblem (Ycopy, Xcopy);
+    belosSolver_->solve (); // solve the linear system
   }
-  else {
-    Xcopy = Teuchos::rcp( &X, false );
-  }
-
-  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Ycopy = Teuchos::rcpFromRef(Y);
-  if(ZeroStartingSolution_==true) {
-    Ycopy->putScalar((scalar_type) 0.0);
-  }
-  
-  // Set left and right hand sides for Belos
-  belosProblem_->setProblem(Ycopy,Xcopy);
-  // iterative solve
-  belosSolver_->solve();
-
   ++NumApply_;
-  Time_.stop();
-  ApplyTime_ += Time_.totalElapsedTime();
+  ApplyTime_ += timer.totalElapsedTime ();
 }
 
-//=============================================================================
+
 template <class MatrixType>
-std::string Krylov<MatrixType>::description() const {
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed";
-    }
-    else {
-      oss << "{status = initialized, not computed";
-    }
+std::string Krylov<MatrixType>::description () const
+{
+  std::ostringstream out;
+
+  out << "\"Ifpack2::Krylov\": {";
+  if (this->getObjectLabel () != "") {
+    out << "Label: " << this->getObjectLabel () << ", ";
   }
-  else {
-    oss << "{status = not initialized, not computed";
-  }
-  oss << ", global rows = " << A_->getGlobalNumRows()
-      << ", global cols = " << A_->getGlobalNumCols()
+  out << "Initialized: " << (isInitialized () ? "true" : "false")
+      << ", Computed: " << (isComputed () ? "true" : "false")
+      << ", Global number of rows: " << A_->getGlobalNumRows ()
+      << ", Global number of columns: " << A_->getGlobalNumCols ()
       << "}";
-  return oss.str();
+  return out.str ();
 }
 
-//=============================================================================
+
 template <class MatrixType>
-void Krylov<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+void Krylov<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
   using std::endl;
   using std::setw;
   using Teuchos::VERB_DEFAULT;
@@ -387,19 +488,32 @@ void Krylov<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVe
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
-  Teuchos::EVerbosityLevel vl = verbLevel;
-  if (vl == VERB_DEFAULT) vl = VERB_LOW;
-  const int myImageID = Comm_->getRank();
-  Teuchos::OSTab tab(out);
-  //    none: print nothing
-  //     low: print O(1) info from node 0
-  //  medium:
-  //    high:
-  // extreme:
-  if (vl != VERB_NONE && myImageID == 0) {
+
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+  if (vl != VERB_NONE) {
+    // describe() always starts with a tab by convention.
+    Teuchos::OSTab tab0 (out);
+    out << "\"Ifpack2::Krylov\":";
+
+    Teuchos::OSTab tab1 (out);
+    if (this->getObjectLabel () != "") {
+      out << "Label: " << this->getObjectLabel () << endl;
+    }
+    out << "Initialized: " << (isInitialized () ? "true" : "false") << endl
+        << "Computed: " << (isComputed () ? "true" : "false") << endl
+        << "Global number of rows: " << A_->getGlobalNumRows () << endl
+        << "Global number of columns: " << A_->getGlobalNumCols () << endl
+        << "Matrix:";
+    if (A_.is_null ()) {
+      out << " null" << endl;
+    } else {
+      A_->describe (out, vl);
+    }
   }
 }
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif /* IFPACK2_KRYLOV_DEF_HPP */

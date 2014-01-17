@@ -40,11 +40,9 @@
 //@HEADER
 */
 
-//-----------------------------------------------------
-// Ifpack2::KRYLOV is based on the Krylov iterative
-// solvers in Belos.
-// written by Paul Tsuji.
-//-----------------------------------------------------
+/// \file Ifpack2_Krylov_decl.hpp
+/// \brief Declaration of Ifpack2::Krylov class.
+/// \author Paul Tsuji
 
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
@@ -79,30 +77,34 @@
 #include <cmath>
 
 namespace Teuchos {
-  // forward declaration
-  class ParameterList;
+  class ParameterList; // forward declaration
 }
 
 namespace Ifpack2 {
 
-  //! A traits class for determining the scalar type to use for Belos
-  /*
-   * This exists to allow a ScalarType to override what scalar type is used
-   * for Belos, if those are not equal, by specializing this class.
-   */
+  /// \struct BelosScalarType
+  /// \brief Traits class for determining the scalar type to use for Belos
+  ///
+  /// \warning This is an implementation detail of Ifpack2.  Users
+  ///   must not rely on this struct existing or on any details of its
+  ///   interface.  It may go away at any time.
+  ///
+  /// This exists to allow a ScalarType to override what scalar type
+  /// is used for Belos, if those are not equal, by specializing this
+  /// class.
   template <typename ScalarType>
   struct BelosScalarType {
     typedef ScalarType type;
   };
 
-  //! A class for constructing and using a CG/GMRES smoother
-  // for a given Tpetra::RowMatrix.
-
-  /*! Ifpack2::Krylov computes a few iterations of CG/GMRES with zero
-    initial guess as a smoother for a given Tpetra::RowMatrix.
-
-    For all valid parameters, see the method Krylov::setParameters.
-  */
+  /// \class Krylov
+  /// \brief Wrapper for iterative linear solvers (e.g., CG or GMRES).
+  ///
+  /// Ifpack2::Krylov computes a few iterations of CG/GMRES with zero
+  /// initial guess as a smoother for a given Tpetra::RowMatrix.
+  ///
+  /// For a list of all run-time parameters that this class accepts,
+  /// see the documentation of setParameters().
   template<class MatrixType>
   class Krylov :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -157,59 +159,51 @@ namespace Ifpack2 {
 
     //! Type of the Tpetra::RowMatrix specialization that this class uses.
     typedef Tpetra::RowMatrix<scalar_type,
-			      local_ordinal_type,
-			      global_ordinal_type,
-			      node_type> row_matrix_type;
+                              local_ordinal_type,
+                              global_ordinal_type,
+                              node_type> row_matrix_type;
 
+    //! Type of the Ifpack2::Preconditioner specialization from which this class inherits.
     typedef Ifpack2::Preconditioner<scalar_type,
-				    local_ordinal_type,
+                                    local_ordinal_type,
                                     global_ordinal_type,
                                     node_type> prec_type;
-
-    //! Tpetra MultiVector/Operator
-    typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TMV;
-    typedef typename Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TOP;
 
     //@}
     // \name Constructors and Destructors
     //@{
 
-    //! Krylov explicit constuctor with Tpetra::RowMatrix input.
-    explicit Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
+    //! Constructor that takes a Tpetra::RowMatrix.
+    explicit Krylov (const Teuchos::RCP<const row_matrix_type>& A);
 
-    //! Krylov Destructor
-    virtual ~Krylov();
+    //! Destructor
+    virtual ~Krylov ();
 
     //@}
-    //@{ Construction methods
-    //! Set parameters for the preconditioner.
-    /**
-       <ul>
-       <li> "krylov: number of iterations" (int)<br>
-       <li> "krylov: residual tolerance" (double)<br>
-       <li> "krylov: inner preconditioner" (string)<br>
-       <li> "krylov: number of sweeps for inner preconditioning" (int)<br>
-       <li> "krylov: damping parameter for inner preconditioning" (double)<br>
-       </ul>
-    */
+    //! \name Methods for setting parameters and initialization
+    //@{
+
+    /// \brief Set the preconditioner's parameters.
+    ///
+    /// This preconditioner accepts the following parameters:
+    ///   - "krylov: number of iterations" (\c int)
+    ///   - "krylov: residual tolerance" (\c magnitude_type)
     void setParameters(const Teuchos::ParameterList& params);
 
-    //! Initialize Krylov preconditioner object.
-    /*! Clear away any previously-allocated objects.
-     */
+    //! Do any initialization that depends on the input matrix's structure.
     void initialize();
 
-    //! Returns \c true if the preconditioner has been successfully initialized.
-    inline bool isInitialized() const {
-      return(IsInitialized_);
+    //! Return \c true if initialize() completed successfully, else \c false.
+    inline bool isInitialized () const {
+      return IsInitialized_;
     }
 
-    //! Set up the iterative solver and compute any necessary preconditioners.
+    //! Do any initialization that depends on the input matrix's values.
     void compute ();
 
-    //! If compute() is completed, this query returns true, otherwise it returns false.
+    //! Return \c true if compute() completed successfully, else \c false.
     inline bool isComputed() const {
-      return(IsComputed_);
+      return IsComputed_;
     }
 
     //@}
@@ -238,20 +232,13 @@ namespace Ifpack2 {
     ///
     /// The new matrix A need not necessarily have the same Maps or even
     /// the same communicator as the original matrix.
-    virtual void
-    setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+    virtual void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
     //@}
     //! @name Implementation of Tpetra::Operator
     //@{
 
-    //! Returns the result of a few iterations of CG/GMRES on a Tpetra::MultiVector X in Y.
-    /*!
-      \param
-      X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
-      \param
-      Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
-    */
+    //! Apply the preconditioner to X, putting the result in Y.
     void
     apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -330,23 +317,17 @@ namespace Ifpack2 {
     //@}
 
   private:
-
-    // @{ Internal methods
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
     //! Copy constructor (should never be used)
-    Krylov(const Krylov<MatrixType>& RHS);
+    Krylov (const Krylov<MatrixType>& RHS);
 
     //! operator= (should never be used)
-    Krylov<MatrixType>& operator=(const Krylov<MatrixType>& RHS);
+    Krylov<MatrixType>& operator= (const Krylov<MatrixType>& RHS);
 
-    //@}
-
-    // @{ Internal data and parameters
-
-    //! reference to the matrix to be preconditioned.
-    Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-    //! Reference to the communicator object.
-    const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
+    //! The input matrix to be preconditioned.
+    Teuchos::RCP<const row_matrix_type> A_;
 
     //! General CG/GMRES parameters
     //!  Type of iteration
@@ -388,8 +369,6 @@ namespace Ifpack2 {
     double ComputeTime_;
     //! Contains the time for all successful calls to apply().
     mutable double ApplyTime_;
-    //! Used for timing purposes
-    mutable Teuchos::Time Time_;
     //! Number of local rows.
     local_ordinal_type NumMyRows_;
     //! Global number of nonzeros in L and U factors
@@ -402,13 +381,12 @@ namespace Ifpack2 {
     Teuchos::RCP< Belos::SolverManager<scalar_type,
                                        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
                                        Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
-    Teuchos::RCP<Teuchos::ParameterList> belosList_;
     Teuchos::RCP<prec_type> ifpack2_prec_;
 
   //@}
 
 }; // class Krylov
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
-#endif /* IFPACK2_KRYLOV_HPP */
+#endif // IFPACK2_KRYLOV_DECL_HPP
