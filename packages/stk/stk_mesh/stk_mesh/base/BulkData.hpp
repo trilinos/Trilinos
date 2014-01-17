@@ -147,15 +147,17 @@ public:
 
 #endif
 
+
+  // NKC OPT, should be able to get rid of this entirely and just call the field function directly
   inline const FieldMetaDataVector& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
     ThrowAssert(this == &f.get_mesh());
-
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    return field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank];
+    return f.get_meta_data_for_field()[rank];
   }
 
+
   //  Optimized version making use of zero value enum
+  // NKC OPT, should be able to remove once rank optimizations are done
+  //
   inline const FieldMetaDataVector& get_meta_data_for_nodal_field(const FieldBase & f) const {
     ThrowAssert(this == &f.get_mesh());
 #ifndef NDEBUG
@@ -166,10 +168,7 @@ public:
       ThrowAssert(restrictions[ir].entity_rank() == stk::mesh::MetaData::NODE_RANK);
     }
 #endif
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-
-    return field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[0];
+    return f.get_meta_data_for_field()[0];
   }
 
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
@@ -1056,11 +1055,13 @@ public:
 
   void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
 
+  // NKC OPT, move this to a field function
   unsigned field_data_size(const FieldBase& f, Entity e) const
   {
     return field_data_size_per_entity(f, bucket(e));
   }
 
+  // NKC OPT, move this to a field function
   unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) const
   {
     ThrowAssert(this == &f.get_mesh());
@@ -1068,11 +1069,10 @@ public:
 
     const EntityRank rank   = b.entity_rank();
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    return field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()].m_size;
+    return f.get_meta_data_for_field()[rank][b.bucket_id()].m_size;
   }
 
+  // NKC OPT, move this to a field function
   bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) const
   {
     ThrowAssert(this == &f.get_mesh());
@@ -1081,9 +1081,7 @@ public:
      const EntityRank rank = b.entity_rank();
      //return true if field-data size is not zero
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-     return 0 != field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()].m_size;
+     return 0 != f.get_meta_data_for_field()[rank][b.bucket_id()].m_size;
   }
 
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const
@@ -1093,6 +1091,8 @@ public:
 
   size_t total_field_data_footprint(EntityRank rank) const;
 
+
+  // NKC OPT, move this to a field function
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b) const
@@ -1102,17 +1102,12 @@ public:
 
     const EntityRank rank         = b.entity_rank();
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()];
-
-
-    
-
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[rank][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
+  // NKC OPT, move this to a field function
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
@@ -1122,13 +1117,12 @@ public:
 
     const EntityRank rank         = b.entity_rank();
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[rank][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
 
+  // NKC OPT, remove once rank refactor complete
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
@@ -1138,13 +1132,12 @@ public:
 
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[0][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
 
+// NKC OPT, remove once rank refactor complete
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, const Bucket& b ) const
@@ -1153,13 +1146,12 @@ public:
     ThrowAssert(this == &b.mesh());
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    const FieldMetaData& field_meta_data = field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[0][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
+  // NKC OPT, move this to a field function
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, Entity e) const
@@ -1171,6 +1163,7 @@ public:
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
 
+// NKC OPT, remove once rank refactor complete
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, Entity e) const
@@ -1182,15 +1175,15 @@ public:
     return nodal_field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
 
+// NKC OPT, move this to a field function, also not at all clear what stride even is, 
+// investigate if it can be removed entirely
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & f, const Bucket& b ) const
   {
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
     const EntityRank rank = b.entity_rank();
 
-    const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-
-    return field_set[f.mesh_meta_data_ordinal()]->get_meta_data_for_field()[rank][b.bucket_id()].m_stride;
+    return f.get_meta_data_for_field()[rank][b.bucket_id()].m_stride;
 
   }
 

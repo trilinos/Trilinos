@@ -185,6 +185,10 @@ private:
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
 
+  //
+  //  NKC OPT, change this to FieldMetaDataVector and pull off the rank
+  //  hop
+  //
   FieldMetaDataVectorVector m_field_meta_data;
 
 protected:
