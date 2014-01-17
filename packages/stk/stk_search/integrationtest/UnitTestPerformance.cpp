@@ -184,8 +184,13 @@ void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 
 void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& searchResults)
 {
+  // This is an unusual situation where these tests are both performance unit tests
+  // and normal tests; therefore, they need to work regardless of whether we have
+  // callgrind available or not.
+#if __VALGRIND_MAJOR__
     check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
+#endif
 
     int num_procs = -1;
     int proc_id   = -1;
@@ -200,7 +205,9 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 
     std::vector<GtkBox> rangeBoxes(domainBoxes);
 
+#if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
+#endif
 
     double startTime = stk::wall_time();
     std::vector<int> ghost_indices;
@@ -234,8 +241,10 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 
     double elapsedTime = stk::wall_time() - startTime;
 
+#if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
     CALLGRIND_STOP_INSTRUMENTATION;
+#endif
 
     printPeformanceStats(elapsedTime, comm);
     print_debug_skip(comm);
@@ -287,8 +296,10 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
+#if __VALGRIND_MAJOR__
     check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
+#endif
 
     int procId=-1;
     MPI_Comm_rank(comm, &procId);
@@ -302,14 +313,18 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
+#if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
+#endif
 
     double startTime = stk::wall_time();
     stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
+#if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
     CALLGRIND_STOP_INSTRUMENTATION;
+#endif
 
     printPeformanceStats(elapsedTime, comm);
     print_debug_skip(comm);
@@ -332,8 +347,10 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
+#if __VALGRIND_MAJOR__
     check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
+#endif
 
     int procId=-1;
     MPI_Comm_rank(comm, &procId);
@@ -351,14 +368,18 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
+#if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
+#endif
 
     double startTime = stk::wall_time();
     stk::search::coarse_search(searchBoxPairs, searchBoxPairs, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
+#if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
     CALLGRIND_STOP_INSTRUMENTATION;
+#endif
 
     printPeformanceStats(elapsedTime, comm);
     print_debug_skip(comm);
