@@ -522,7 +522,7 @@ void Jacobi(
       AB.leftScale(*tpD);
 
       // Add
-      Tpetra::MatrixMatrix::Add(tpB,false,Teuchos::ScalarTraits<Scalar>::one(),AB,false,-omega,Teuchos::rcp(&tpC,false));
+      Tpetra::MatrixMatrix::Add(tpB,false,Teuchos::ScalarTraits<Scalar>::one(),AB,false,Scalar(-omega),Teuchos::rcp(&tpC,false));
       tpC.fillComplete( tpB.getDomainMap(), tpB.getRangeMap() );
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
