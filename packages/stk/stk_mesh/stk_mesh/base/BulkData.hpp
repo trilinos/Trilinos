@@ -144,22 +144,6 @@ public:
 #endif
 
 
-  //  Optimized version making use of zero value enum
-  // NKC OPT, should be able to remove once rank optimizations are done
-  //
-  inline const FieldMetaDataVector& get_meta_data_for_nodal_field(const FieldBase & f) const {
-    ThrowAssert(this == &f.get_mesh());
-#ifndef NDEBUG
-    ThrowAssert(stk::mesh::MetaData::NODE_RANK == 0);
-    //  Check if field is a nodal field
-    const FieldRestrictionVector& restrictions = f.restrictions();
-    for(unsigned ir=0; ir<restrictions.size(); ++ir) {
-      ThrowAssert(restrictions[ir].entity_rank() == stk::mesh::MetaData::NODE_RANK);
-    }
-#endif
-    return f.get_meta_data_for_field()[0];
-  }
-
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
   ~BulkData();
