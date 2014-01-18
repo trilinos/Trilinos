@@ -392,17 +392,28 @@ IF (Stokhos_ENABLE_Sacado)
       APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
       IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
         SET(TPETRA_ETI_CLASSES
-            MultiVector
-            Vector
-            RowMatrix
-            DistObject
-            )
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/Tpetra_ETI_Template.cpp.in
-            "Tpetra_CLASS_FILE_NAME.cpp"
-            TPETRA_SRCS)
-          SET(SOURCES ${SOURCES} ${TPETRA_SRCS})
+          MultiVector
+          Vector
+          RowMatrix
+          RowMatrixTransposer
+          DistObject
+          )
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/Tpetra_ETI_Template.cpp.in
+          "Tpetra_CLASS_FILE_NAME.cpp"
+          TPETRA_SRCS)
+        SET(SOURCES ${SOURCES} ${TPETRA_SRCS})
+
+        SET(TPETRAEXT_ETI_CLASSES
+          MatrixMatrix
+          )
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/TpetraExt_ETI_Template.cpp.in
+          "TpetraExt_CLASS_FILE_NAME.cpp"
+          TPETRA_SRCS)
+        SET(SOURCES ${SOURCES} ${TPETRA_SRCS})
 
         SET(SOURCES ${SOURCES}
           sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix.cpp
@@ -453,6 +464,12 @@ IF (Stokhos_ENABLE_Sacado)
           SET(SOURCES ${SOURCES} ${IFPACK2_SRCS})
         ENDIF()
 
+      ENDIF()
+
+      IF (Stokhos_ENABLE_MueLu)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
+        APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
+        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
       ENDIF()
     ENDIF()
   ENDIF()

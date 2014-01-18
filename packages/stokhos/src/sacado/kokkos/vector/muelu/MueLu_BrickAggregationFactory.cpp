@@ -39,36 +39,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_KOKKOS_HPP
-#define STOKHOS_SACADO_KOKKOS_HPP
 
+
+
+#include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
 
-#ifdef HAVE_STOKHOS_KOKKOSCORE
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
-#include "KokkosCore_config.h"
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
 
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "MueLu_BrickAggregationFactory_def.hpp"
 
-#include "Stokhos_KokkosTraits.hpp"
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_LocalStorage.hpp"
-#include "Stokhos_ViewStorage.hpp"
-#include "Stokhos_ViewStridedStorage.hpp"
+#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+  template class MueLu::BrickAggregationFactory<S, LO, GO, N>;
 
-#include "Sacado_MP_ExpressionTraits.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
+#define MUELU_INST_N(N) \
+  INSTANTIATE_TPETRA_MP_VECTOR_N(MUELU_INST_S_LO_GO_N, N)
 
-#include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_Atomic_MP_Vector.hpp"
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#include "Teuchos_SerialQRDenseSolver_MP_Vector.hpp"
+// Currently excluding GPU nodes because SparseOps may not be
+// implemented, I think depending on the choice of TPLs
+//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
+MUELU_INST_N(KokkosClassic_SerialNode)
 
-#endif // HAVE_STOKHOS_KOKKOSCORE
+#endif
 
-#endif // STOKHOS_SACADO_KOKKOS_HPP
+
