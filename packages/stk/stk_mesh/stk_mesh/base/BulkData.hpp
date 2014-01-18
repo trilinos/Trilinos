@@ -1065,7 +1065,6 @@ public:
     ThrowAssert(this == &b.mesh());
 
     const EntityRank rank         = b.entity_rank();
-
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[rank][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
@@ -1095,7 +1094,6 @@ public:
     ThrowAssert(this == &b.mesh());
 
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
-
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
@@ -1109,13 +1107,28 @@ public:
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
-
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
   // NKC OPT, move this to a field function
+  template<class FieldType>
+  bool is_matching_rank(const FieldType& f, Entity e) const {
+    const MeshIndex& mi           = mesh_index(e);
+    return is_matching_rank(f, *mi.bucket);
+  }
+
+  template<class FieldType>
+  bool is_matching_rank(const FieldType& f, const Bucket& b) const {
+    ThrowAssert(this == &f.get_mesh());
+    ThrowAssert(this == &b.mesh());
+    return(b.entity_rank() == f.entity_rank());    
+  }
+
+
+
+
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, Entity e) const

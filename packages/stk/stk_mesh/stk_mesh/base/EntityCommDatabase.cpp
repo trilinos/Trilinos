@@ -137,15 +137,19 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 
     const FieldBase & f = **i ;
 
-    if ( f.data_traits().is_pod ) {
-      const unsigned size = mesh.field_data_size_per_entity( f, bucket );
+    if(mesh.is_matching_rank(f, bucket)) {
 
-      buf.pack<unsigned>( size );
 
-      if ( size ) {
-        unsigned char * const ptr =
-          reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
-        buf.pack<unsigned char>( ptr , size );
+      if ( f.data_traits().is_pod ) {
+	const unsigned size = mesh.field_data_size_per_entity( f, bucket );
+
+	buf.pack<unsigned>( size );
+
+	if ( size ) {
+	  unsigned char * const ptr =
+	    reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
+	  buf.pack<unsigned char>( ptr , size );
+	}
       }
     }
   }
@@ -173,26 +177,29 @@ bool unpack_field_values(const BulkData& mesh,
   for ( i = i_beg ; i_end != i ; ) {
     const FieldBase & f = **i ; ++i ;
 
-    if ( f.data_traits().is_pod ) {
+    if(mesh.is_matching_rank(f, bucket)) {
 
-      const unsigned size = mesh.field_data_size_per_entity( f, bucket );
-      unsigned recv_data_size = 0 ;
-      buf.unpack<unsigned>( recv_data_size );
+      if ( f.data_traits().is_pod ) {
 
-      if ( size != recv_data_size ) {
-        if ( ok ) {
-          ok = false ;
-          error_msg << mesh.identifier(entity);
-        }
-        error_msg << " " << f.name();
-        error_msg << " " << size ;
-        error_msg << " != " << recv_data_size ;
-        buf.skip<unsigned char>( recv_data_size );
-      }
-      else if ( size ) { // Non-zero and equal
-        unsigned char * ptr =
-          reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
-        buf.unpack<unsigned char>( ptr , size );
+	const unsigned size = mesh.field_data_size_per_entity( f, bucket );
+	unsigned recv_data_size = 0 ;
+	buf.unpack<unsigned>( recv_data_size );
+
+	if ( size != recv_data_size ) {
+	  if ( ok ) {
+	    ok = false ;
+	    error_msg << mesh.identifier(entity);
+	  }
+	  error_msg << " " << f.name();
+	  error_msg << " " << size ;
+	  error_msg << " != " << recv_data_size ;
+	  buf.skip<unsigned char>( recv_data_size );
+	}
+	else if ( size ) { // Non-zero and equal
+	  unsigned char * ptr =
+	    reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
+	  buf.unpack<unsigned char>( ptr , size );
+	}
       }
     }
   }

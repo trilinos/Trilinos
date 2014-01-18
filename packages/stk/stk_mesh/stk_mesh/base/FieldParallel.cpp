@@ -48,7 +48,10 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
     unsigned e_size = 0 ;
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
-      e_size += mesh.field_data_size( f , e );
+     
+      if(mesh.is_matching_rank(f, e)) {
+        e_size += mesh.field_data_size( f , e );
+      }
     }
 
     if (e_size == 0) {
@@ -88,7 +91,11 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+        if(!mesh.is_matching_rank(f, e)) continue;
+
         const unsigned size = mesh.field_data_size( f , e );
+	
 
         if ( size ) {
           unsigned char * ptr =
@@ -120,6 +127,8 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+        if(!mesh.is_matching_rank(f, e)) continue;
         const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
@@ -164,12 +173,16 @@ void communicate_field_data(
         i =  mesh.comm_list().begin() ;
         i != mesh.comm_list().end() ; ++i ) {
     Entity e = i->entity;
+
     const bool owned = i->owner == parallel_rank ;
 
     unsigned e_size = 0 ;
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
-      e_size += mesh.field_data_size( f , e );
+
+      if(mesh.is_matching_rank(f, e)) {
+        e_size += mesh.field_data_size( f , e );
+      }
     }
 
     if (e_size == 0) {
@@ -204,10 +217,15 @@ void communicate_field_data(
         i =  mesh.comm_list().begin() ;
         i != mesh.comm_list().end() ; ++i ) {
     Entity e = i->entity;
+
+
     if ( i->owner == parallel_rank ) {
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+        if(!mesh.is_matching_rank(f, e)) continue;
+
         const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
@@ -240,6 +258,9 @@ void communicate_field_data(
 
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+ 
+        if(!mesh.is_matching_rank(f, e)) continue;
+
         const unsigned size = mesh.field_data_size( f , e );
 
         if ( size ) {
@@ -294,6 +315,9 @@ void communicate_field_data(
       unsigned e_size = 0 ;
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+	if(!mesh.is_matching_rank(f, e)) continue;
+
         e_size += mesh.field_data_size( f , e );
       }
       send_size[ p ] += e_size ;
@@ -308,6 +332,9 @@ void communicate_field_data(
       unsigned e_size = 0 ;
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+	if(!mesh.is_matching_rank(f, e)) continue;
+
         e_size += mesh.field_data_size( f , e );
       }
       recv_size[ p ] += e_size ;
@@ -334,6 +361,9 @@ void communicate_field_data(
       CommBuffer & b = sparse.send_buffer( p );
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+	if(!mesh.is_matching_rank(f, e)) continue;
+
         const unsigned size = mesh.field_data_size( f , e );
         if ( size ) {
           unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
@@ -357,7 +387,12 @@ void communicate_field_data(
       CommBuffer & b = sparse.recv_buffer( p );
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
+
+	if(!mesh.is_matching_rank(f, e)) continue;
+
         const unsigned size = mesh.field_data_size( f , e );
+
+
         if ( size ) {
           unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
           b.unpack<unsigned char>( ptr , size );
@@ -391,6 +426,9 @@ void communicate_field_data(
     for ( EntityCommListInfoVector::const_iterator
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
       Entity e = i->entity;
+
+      if(!mesh.is_matching_rank(f, e)) continue;
+
       const unsigned size = mesh.field_data_size( f , e );
       if ( size ) {
         PairIterEntityComm ec = mesh.entity_comm(i->key);
@@ -415,6 +453,9 @@ void communicate_field_data(
     for ( EntityCommListInfoVector::const_iterator
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
       Entity e = i->entity;
+
+      if(!mesh.is_matching_rank(f, e)) continue;
+
       const unsigned size = mesh.field_data_size( f , e );
       if ( size ) {
         unsigned char * ptr =
