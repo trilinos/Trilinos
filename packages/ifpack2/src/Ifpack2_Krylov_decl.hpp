@@ -190,10 +190,12 @@ namespace Ifpack2 {
     ///   - "krylov: residual tolerance" (\c magnitude_type)
     ///
     /// The "krylov: iteration type" parameter specifies the name of
-    /// the iterative linear solver to use.  You may use any name here
-    /// that Belos::SolverFactory understands.  For example, "GMRES"
-    /// specifies the GMRES (Generalized Minimum Residual) solver, and
-    /// "CG" specifies CG (the Method of Conjugate Gradients).
+    /// the iterative linear solver to use.
+    ///
+    /// Note: Because some of the iterative solvers in Belos
+    /// are not currently supported for complex types, the
+    /// BelosSolverFactory is not used; Ifpack2::Krylov
+    /// either uses Block GMRES or Block CG.
     void setParameters (const Teuchos::ParameterList& params);
 
     //! Do any initialization that depends on the input matrix's structure.
@@ -342,8 +344,7 @@ namespace Ifpack2 {
 
     /// \brief Belos iterative linear solver name.
     ///
-    /// Default is "GMRES".  Any name that Belos::SolverFactory
-    /// understands will work here.
+    /// Default is "GMRES".
     std::string iterationType_;
 
     //! Number of iterations

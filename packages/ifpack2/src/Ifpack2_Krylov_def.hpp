@@ -44,8 +44,6 @@
 #define IFPACK2_KRYLOV_DEF_HPP
 
 #include "Ifpack2_Krylov_decl.hpp"
-#include "BelosSolverFactory.hpp"
-
 
 namespace Ifpack2 {
 
@@ -378,8 +376,15 @@ void Krylov<MatrixType>::initialize ()
     belosProblem_ = rcp (new Belos::LinearProblem<scalar_type,TMV,TOP> ());
     belosProblem_->setOperator (A_);
 
-    Belos::SolverFactory<scalar_type, TMV, TOP> factory;
-    belosSolver_ = factory.create (iterationType_, belosList);
+    if (iterationType_ == "GMRES") {
+      belosSolver_ =
+        rcp (new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
+    }
+    else {
+      belosSolver_ =
+        rcp (new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList));
+    }
+
   }
   IsInitialized_ = true;
   ++NumInitialize_;
