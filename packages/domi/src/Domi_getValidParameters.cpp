@@ -55,6 +55,7 @@ using Teuchos::ParameterList;
 using Teuchos::ParameterEntryValidator;
 using Teuchos::EnhancedNumberValidator;
 using Teuchos::ArrayNumberValidator;
+using Teuchos::ScalarOrArrayNumberValidator;
 using Teuchos::StringToIntegralParameterEntryValidator;
 
 namespace Domi
@@ -107,15 +108,15 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > periodicValidator =
       rcp< const ParameterEntryValidator >
-      (new ArrayNumberValidator< int >(constPeriodicNumber));
+      (new ScalarOrArrayNumberValidator< int >(constPeriodicNumber));
 
-    Array< int > periodic(1);
-    periodic[0] = 0;
+    int periodic = 0;
     plist->set("periodic",
                periodic,
-               "An array of int flags specifying whether each axis is a "
-               "periodic axis. If the periodic array is shorter than the "
-               "length of axisCommSizes array, then the unspecified "
+               "A scalar or an array of int flags specifying whether axes are "
+               "periodic. If a scalar is given, then all axes share that "
+               "periodicity flag.  If an array is given and it is shorter than "
+               "the length of axisCommSizes array, then the unspecified "
                "entries are given a default value of zero (not "
                "periodic).",
                periodicValidator);
@@ -156,22 +157,26 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > padValidator =
       rcp< const ParameterEntryValidator >
-      (new ArrayNumberValidator< int >(constPadNumber));
+      (new ScalarOrArrayNumberValidator< int >(constPadNumber));
 
     // "boundary pad" parameter applies to MDMap
     plist->set("boundary pad",
                pad,
-               "An array of ints specifying the size of the boundary "
-               "padding along each axis. All unspecified entries are "
-               "assumed to be zero.",
+               "A scalar or an array of ints specifying the size of the "
+               "boundary padding. If a scalar is given, then all axes share "
+               "that padding value.  An array can be used to specify padding "
+               "along each axis.  All unspecified entries are assumed to be "
+               "zero.",
                padValidator);
 
     // "communication pad" parameter applies to MDMap
     plist->set("communication pad",
                pad,
-               "An array of ints specifying the size of the commmunication "
-               "padding along each axis. All unspecified entries are "
-               "assumed to be zero.",
+               "A scalar or an array of ints specifying the size of the "
+               "communication padding. If a scalar is given, then all axes "
+               "share that padding value.  An array can be used to specify "
+               "padding along each axis.  All unspecified entries are assumed "
+               "to be zero.",
                padValidator);
 
     // "layout" parameter applies to MDMap
