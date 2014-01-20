@@ -4,14 +4,58 @@
 
     \author Radu Popescu <i.radu.popescu@gmail.com>
 
-    The preconditioner used for the linear system is a two-level AAS (implemented with ML).
-    The coarse level is a Gauss-Seidel iteration, while the fine level is an Ifpack_AdditiveSchwarz
-    preconditioner with minimal overlap.
-    The subdomain solvers of AAS are Ifpack_ShyLU (configured with the IQR inexact solver for
-    solving the Schur complement system).
+	* The example needs the following Ifpack variables enabled when compiling Trilinos:
+	  -DIfpack_ENABLE_DYNAMIC_FACTORY:BOOL=ON (allows the use of the new factory which can register
+	  new preconditioners within the client application)
+	  -DIfpack_ENABLE_PARALLEL_SUBDOMAIN_SOLVERS:BOOL=ON (allows using MPI parallel subdomain
+	  solvers for Ifpack AAS)
+	* The example doesn't fail if these variables are disabled, but it doesn't do anything
+	* interesting, it just solves the problem with Ifpack AAS with serial Amesos subdomain solvers.
 
-    \remark Usage:
-    \code mpirun -n np ShyLU_iqr_driver.exe
+	* Highlights:
+	  * There is a builder function for Ifpack_ShyLU declared at the beginning of the file.
+	  * Ifpack_ShyLU is registered with the Ifpack_DynamicFactory class at the beginning of the
+		main() function, using the builder function that was declared earlier.
+	  * An alternate XML file is provided in case the CMake variables mentioned earlier are not
+	    enabled, to prevent the test from failing.
+	  * A global Teuchos parameter list is read from an XML file, with sublists for the matrix
+	    partitioner, the preconditioner and the linear solver
+	  * The ML list contains a sublist for Ifpack (as usual), which in turn contains a sublist for
+	  	all ShyLU parameters (this behaviour is enabled with the Ifpack_DynamicFactory switch, to
+	  	avoid parameter list polution)
+	  * Through Ifpack_DynamicFactory, ML is be able to build the Ifpack_AdditiveSchwarz<Ifpack_ShyLU>
+	    preconditioner.
+
+	* Key parameters:
+	  * Isorropia parameters:
+	    * we set the partitioning method to HIER_GRAPH, to ensure that the parts which make up each
+	      AAS subdomain are connected
+	    * we set TOPOLOGY to the number of processor per AAS subdomain
+	  * ML parameters:
+		* smoother: ifpack type - string - should be set to ShyLU
+		* smoother: ifpack overlap - int - 0 - using multiple processors per AAS subdomain forces
+		  this. Overlap is not supported.
+	  * Ifpack parameters:
+		* subdomain: number-of-processors - int - number of processors per AAS subdomain (must be a
+		  divisor of the total number of MPI processes used).
+	  * ShyLU parameters:
+		* Schur Approximation Method - usually A22AndBlockDiagonals; can be set to IQR or G. IQR
+		  means that we use IQR to solve the Schur complement system inexactly (Krylov subspace
+		  reuse method), G means that we just approximate the inverse of the Schur complement with
+		  an AAS of the G subblock of the subdomain matrix (which is faster, but leads to a looser
+		  coupling at the subdomain level, for some problems it leads to fewer outer GMRES iterations
+		  than IQR).
+		* IQR Initial Prec Type - string - default: Amesos (this is the actual string given to an
+		  Ifpack factory; it means AAS with serial Amesos on subdomains) - the preconditioner used
+		  for the GMRES solver within IQR. This is also used for the approximation of the Schur
+		  complement inverse when Schur Approximation Method is set to G.
+		* IQR Initial Prec Amesos Type - string - default: Amesos_Klu - which Amesos solver to use
+		  for the IQR preconditioner
+	  * Amesos_Klu is given as a default in multiple places of the XML file. Should be substituted
+	    with faster alternatives: Amesos_Pardiso, Amesos_Umfpack etc.
+
+	\remark Usage:
+    \code mpirun -n 2np ShyLU_iqr_driver.exe
 
 */
 
