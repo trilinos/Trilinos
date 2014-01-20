@@ -83,9 +83,9 @@ namespace pike {
 	<< " must be < " << tolerance_
 	<< std::endl;
     //if (verbLevel >= Teuchos::VERB_MEDIUM) {
-    out << "  Current Value = " << currentValue_ 
+    out << "             (Current Value = " << currentValue_ 
 	<< ", Previous Value = " << previousValue_
-	<< std::endl;
+	<< ")" << std::endl;
     //}
   }
 
