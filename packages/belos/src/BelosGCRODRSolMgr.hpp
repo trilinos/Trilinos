@@ -197,11 +197,12 @@ or complex.
                   const Teuchos::RCP<Teuchos::ParameterList> &pl) :
       base_type ()
     {}
-    virtual ~GCRODRSolMgr() {}
+    virtual ~GCRODRSolMgr () {}
   };
 
   // Partial specialization for real ScalarType.
   // This contains the actual working implementation of GCRODR.
+  // See discussion in the class documentation above.
   template<class ScalarType, class MV, class OP>
   class GCRODRSolMgr<ScalarType, MV, OP, false> :
     public Details::RealSolverManager<ScalarType, MV, OP, false> {
