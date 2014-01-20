@@ -741,7 +741,7 @@ string ExoII_Read<INT>::Load_Global_Results(int time_step_num)
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
   
   if (!Open()) return "WARNING:  File not open!";
-  if (global_vars.size() == 0)
+  if (global_vars.empty())
     return "WARNING:  No global variables! (doing nothing)";
   
   if (!global_vals) {
@@ -780,7 +780,7 @@ string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
   SMART_ASSERT(t2 > 0 && t2 <= num_times);
   
   if (!Open()) return "WARNING:  File not open!";
-  if (global_vars.size() == 0)
+  if (global_vars.empty())
     return "WARNING:  No global variables! (doing nothing)";
   
   if (!global_vals) {
@@ -1227,8 +1227,8 @@ int ExoII_Read<INT>::Check_State() const
   SMART_ASSERT( !( num_times > 0 && !times ) );
   
   SMART_ASSERT(cur_time >= 0 && cur_time <= num_times);
-  SMART_ASSERT( !( nodal_vars.size() > 0 && !results ) );
-  SMART_ASSERT( !( nodal_vars.size() == 0 && results ) );
+  SMART_ASSERT( !( !nodal_vars.empty() && !results ) );
+  SMART_ASSERT( !( nodal_vars.empty() && results ) );
 
   return 1;
 }

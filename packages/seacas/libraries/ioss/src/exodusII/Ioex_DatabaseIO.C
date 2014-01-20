@@ -2330,7 +2330,7 @@ namespace Ioex {
                 // cases where we don't need to read it, but if we are
                 // already reading it (to split the sidesets), then use
                 // the data when we have it.
-                if (side_map.size() > 0) {
+                if (!side_map.empty()) {
                   // Set a property indicating which element side
                   // (1-based) all sides in this block are applied to.
                   // If they are not all assigned to the same element
@@ -6093,7 +6093,7 @@ namespace Ioex {
         if (get_region()->property_exists("my_processor")) {
           meta->processorId = get_region()->get_property("my_processor").get_int();
         }
-        if (get_region()->get_commsets().size() > 0) {
+        if (!get_region()->get_commsets().empty()) {
           isSerialParallel = true;
           meta->outputNemesis = true;
         }
@@ -7797,7 +7797,7 @@ namespace Ioex {
                                         Ioex::TopologyMap &side_map,
                                         Ioss::SurfaceSplitType split_type)
     {
-      if (element.size() > 0) {
+      if (!element.empty()) {
         Ioss::ElementBlock *block = NULL;
         // Topology of sides in current element block
         const Ioss::ElementTopology *common_ftopo = NULL;

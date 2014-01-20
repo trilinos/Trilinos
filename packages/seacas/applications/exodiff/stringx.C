@@ -73,7 +73,7 @@ bool no_case_equals( const string & s1, const string & s2 )
 
 string & chop_whitespace( string & s )
 {
-  if (s.size() > 0)
+  if (!s.empty())
   {
     int i = s.size() - 1;
     for (; i >= 0; --i)
@@ -88,9 +88,9 @@ string & chop_whitespace( string & s )
 
 string extract_token(string & s, const char* delimeters)
 {
-  if (s.size() > 0)
+  if (!s.empty())
   {
-    SMART_ASSERT( delimeters != 0 && string(delimeters).size() > 0 );
+    SMART_ASSERT( delimeters != 0 && !string(delimeters).empty());
     
     // Move through initial delimeters.
     unsigned p = s.find_first_not_of(delimeters);
@@ -158,7 +158,7 @@ int count_tokens(const string & s, const char* delimeters)
 
 int max_string_length(const vector<string> &names)
 {
-  if (names.size() == 0)
+  if (names.empty())
     return 0;
   unsigned len = names[0].size();
   for (unsigned i=1; i < names.size(); i++) {
