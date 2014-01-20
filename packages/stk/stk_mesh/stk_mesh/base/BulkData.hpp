@@ -335,6 +335,7 @@ public:
     return m_entity_repo.get_entity( EntityKey(ent_rank, entity_id));
   }
 
+
   /** \brief  Get entity with a given key */
   Entity get_entity( const EntityKey key ) const  {
     return m_entity_repo.get_entity(key);
@@ -1021,19 +1022,18 @@ public:
 
   // NKC OPT, move this to a field function
   unsigned field_data_size(const FieldBase& f, Entity e) const {
+    ThrowAssert(this == &f.get_mesh());
     ThrowAssert(f.entity_rank() == entity_rank(e));
     return field_data_size_per_entity(f, bucket(e));
   }
 
-  // NKC OPT, move this to a field function
-  unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) const
-  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
+  unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) const {
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
-    const EntityRank rank   = b.entity_rank();
-    return f.get_meta_data_for_field()[rank][b.bucket_id()].m_size;
+    ThrowAssert(f.entity_rank() == b.entity_rank());
+    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
   }
+
 
   // NKC OPT, move this to a field function
   bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) const
@@ -2046,6 +2046,17 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   }
 #endif
 }
+
+//
+//  Field access free functions
+//
+  inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
+    ThrowAseert(f.entity_rank() == b.entity_rank());
+    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
+  }
+
+
+
 
 } // namespace mesh
 } // namespace stk

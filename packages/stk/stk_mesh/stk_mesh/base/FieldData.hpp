@@ -73,16 +73,6 @@ template< class FieldType > struct EntityArray {};
 
 //----------------------------------------------------------------------
 
-/** \brief  Size, in bytes, of the field data for each entity */
-inline
-unsigned field_data_size_per_entity( const FieldBase & f , const Bucket & k )
-{
-  return BulkData::get(k).field_data_size_per_entity(f, k);
-}
-
-//----------------------------------------------------------------------
-
-
 #ifndef DOXYGEN_COMPILE
 
 template< typename ScalarType >
@@ -128,7 +118,7 @@ public:
 
   EntityArray( const field_type & f , const Bucket& b, Bucket::size_type bucket_ordinal) : array_type()
   {
-    if ( BulkData::get(b).field_data_size_per_entity(f, b)) {
+    if ( field_data_size_per_entity(f, b)) {
       array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
                                  BulkData::get(b).field_data_stride(f, b) );
     }
@@ -180,7 +170,7 @@ public:
 
   BucketArray( const field_type & f , const Bucket & k )
   {
-    if (BulkData::get(k).field_data_size_per_entity(f, k)) {
+    if (field_data_size_per_entity(f, k)) {
       array_type::assign( BulkData::get(k).field_data(f, k, 0) ,
                           k.size() );
     }
@@ -193,7 +183,7 @@ public:
   {
     const ptrdiff_t n = j - i ;
 
-    if ( BulkData::get(b).field_data_size_per_entity(f, b) && 0 < n ) {
+    if ( field_data_size_per_entity(f, b) && 0 < n ) {
       unsigned b_ord = i-b.begin();
       array_type::assign( BulkData::get(b).field_data( f, b, b_ord ),
                           static_cast<typename array_type::size_type>(n) );
@@ -231,7 +221,7 @@ public:
 
   BucketArray( const field_type & f , const Bucket & b )
   {
-    if ( BulkData::get(b).field_data_size_per_entity(f, b) ) {
+    if ( field_data_size_per_entity(f, b) ) {
       array_type::assign_stride( BulkData::get(b).field_data(f, b, 0),
                                  BulkData::get(b).field_data_stride(f, b),
                                  static_cast<typename array_type::size_type>(b.size()) );
@@ -247,7 +237,7 @@ public:
 
     if ( 0 < distance ) {
 
-      if ( BulkData::get(b).field_data_size_per_entity(f, b) ) {
+      if ( field_data_size_per_entity(f, b) ) {
         Bucket::size_type bucket_ordinal = i - b.begin();
         array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
                                    BulkData::get(b).field_data_stride(f, b),
