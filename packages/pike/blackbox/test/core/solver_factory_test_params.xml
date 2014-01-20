@@ -17,15 +17,13 @@
         </ParameterList>
 
         <ParameterList>
-            <Parameter name="Type" type="string" value="Model Convergence" />
+            <Parameter name="Type" type="string" value="Local Model Failure" />
             <Parameter name="Model Name" type="string" value="app1" />
-            <Parameter name="Check Type" type="string" value="Local" />
         </ParameterList>
 
         <ParameterList>
-            <Parameter name="Type" type="string" value="Model Converence" />
+            <Parameter name="Type" type="string" value="Local Model Failure" />
             <Parameter name="Model Name" type="string" value="app2" />
-            <Parameter name="Check Type" type="string" value="Local" />
         </ParameterList>
 
         <ParameterList>
@@ -47,15 +45,13 @@
             </ParameterList>
 
             <ParameterList>
-                <Parameter name="Type" type="string" value="Model Convergence" />
+                <Parameter name="Type" type="string" value="Global Model Convergence" />
                 <Parameter name="Model Name" type="string" value="app1" />
-                <Parameter name="Check Type" type="string" value="Global" />
             </ParameterList>
 
             <ParameterList>
-                <Parameter name="Type" type="string" value="Model Convergence" />
+                <Parameter name="Type" type="string" value="Global Model Convergence" />
                 <Parameter name="Model Name" type="string" value="app2" />
-                <Parameter name="Check Type" type="string" value="Global" />
             </ParameterList>
 
         </ParameterList>
