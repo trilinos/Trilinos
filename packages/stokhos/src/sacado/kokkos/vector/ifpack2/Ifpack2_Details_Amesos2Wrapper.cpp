@@ -55,7 +55,7 @@
   template class Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 // Don't instantiate this class yet.  It requires Amesos2
-//#include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
 
 #endif
 
