@@ -6,6 +6,11 @@
 
 namespace pike {
 
+  BlockGaussSeidel::BlockGaussSeidel()
+  {
+    this->getNonconstValidParameters()->set("Type","Block Gauss-Seidel");
+  }
+
   void BlockGaussSeidel::completeRegistration()
   {
     this->pike::SolverDefaultImpl::completeRegistration();

@@ -9,6 +9,8 @@ namespace pike {
     
   public:
 
+    BlockJacobi();
+
     void stepImplementation();
     
   };

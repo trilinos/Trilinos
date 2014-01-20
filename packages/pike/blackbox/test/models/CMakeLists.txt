@@ -12,6 +12,7 @@ APPEND_SET(NOINSTALLHEADERS
   Pike_Mock_DataTransfer.hpp
   Pike_LinearHeatConduction_ModelEvaluator.hpp
   Pike_LinearHeatConduction_DataTransfer.hpp
+  Pike_Mock_UserSolverFactory.hpp
   )
 
 APPEND_SET(SOURCES
@@ -19,6 +20,7 @@ APPEND_SET(SOURCES
   Pike_Mock_DataTransfer.cpp
   Pike_LinearHeatConduction_ModelEvaluator.cpp
   Pike_LinearHeatConduction_DataTransfer.cpp
+  Pike_Mock_UserSolverFactory.cpp
   )
 
 TRIBITS_ADD_LIBRARY(
@@ -36,8 +38,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES test_models.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
-
-#TRIBITS_COPY_FILES_TO_BINARY_DIR(core_tests
-#  SOURCE_FILES parameter_list_acceptance_test.xml parameter_list_acceptance_test2.xml
-#  EXEDEPS parameter_list_acceptance_test
-#  )

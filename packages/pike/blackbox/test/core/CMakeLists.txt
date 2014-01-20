@@ -1,4 +1,5 @@
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../models)
@@ -42,4 +43,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   any
   SOURCES any.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(core_tests
+  SOURCE_FILES solver_factory_test_params.xml
+  EXEDEPS solvers
   )

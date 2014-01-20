@@ -1,24 +1,28 @@
 #ifndef PIKE_SOLVER_FACTORY_HPP
 #define PIKE_SOLVER_FACTORY_HPP
 
-#include "Teuchos_RCP.hpp"
-
-namespace Teuchos {
-  class ParameterList;
-}
+#include "Pike_Solver_AbstractFactory.hpp"
+#include <vector>
 
 namespace pike {
 
-  class StatusTest;
-  
-  /** \brief Allocates a new solver based on parameter list
-      
-      \param[in] paramList (Required) Parameter list the determines the solver to build.
-      \param[in] statusTests (Optional) Status tests for stopping criteria.  If this value is null, the status tests will be built from the parameter list. 
-  */
-  Teuchos::RCP<pike::Solver> 
-  buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& paramList,
-	      const Teuchos::RCP<pike::StatusTest>& statusTests = Teuchos::Null);
+  class SolverFactory : public pike::SolverAbstractFactory {
+    
+  public:
+    
+    //! Regsiter a user defined solver factory.
+    void addFactory(const Teuchos::RCP<pike::SolverAbstractFactory>& f);
+    
+    virtual
+    Teuchos::RCP<pike::Solver> 
+    buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const;
+
+  private:
+
+    void validateParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p);
+
+    std::vector<Teuchos::RCP<pike::SolverAbstractFactory> > userFactories_;
+  };
 
 }
 

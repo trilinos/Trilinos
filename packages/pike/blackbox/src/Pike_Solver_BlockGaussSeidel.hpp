@@ -11,7 +11,9 @@ namespace pike {
   class BlockGaussSeidel : public pike::SolverDefaultImpl {
     
   public:
-    
+
+    BlockGaussSeidel();
+
     void completeRegistration();
 
     void stepImplementation();

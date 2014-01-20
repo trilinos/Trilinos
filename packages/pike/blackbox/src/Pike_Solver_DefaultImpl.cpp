@@ -17,7 +17,7 @@ namespace pike {
     validParameters_->set("Print Begin Solve Status",true, "If set to true the status tests will print current status at the beginning of the solve.");
     validParameters_->set("Print Step Status",true, "If set to true the status tests will print current status at the end of each step.");
     validParameters_->set("Print End Solve Status",true,"If set to true the status tests will print current status at the end of the solve.");
-    validParameters_->set("Name","pike::Solver","A unique identifier chosen by the user for this solver. Used mainly for distinguishing solvers in a hierarchic problem.");
+    validParameters_->set("Name","pike::Solver","A unique identifier chosen by the user for this solver. Used mainly for distinguishing nodes in a hierarchic problem.");
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
 
