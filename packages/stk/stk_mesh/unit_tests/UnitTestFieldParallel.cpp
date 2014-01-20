@@ -127,12 +127,9 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
   const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
   for(size_t i=0; i<entity_comm_list.size(); ++i) {
     stk::mesh::Entity node = entity_comm_list[i].entity;
-
-    if(!bulk_data.is_matching_rank(field_1, node)) continue;
-
-    const double* field_1_ptr = bulk_data.field_data(field_1, node);
+    const double* field_1_ptr = field_1.entity_rank()==bulk_data.entity_rank(node) ? bulk_data.field_data(field_1, node) : NULL;
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
-    if (entity_comm.size() > 0) {
+    if (field_1_ptr != NULL && entity_comm.size() > 0) {
       const double num_sharing_procs = entity_comm.size() + 1;
       std::cout<<"sum: proc "<<this_proc<<", node "<<bulk_data.identifier(node)<<", num-sharing-procs: "<<num_sharing_procs<<std::endl;
       STKUNIT_ASSERT_EQUAL(field_1_ptr[0], num_sharing_procs);
@@ -211,10 +208,8 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
     const double* field_2_ptr = bulk_data.field_data(field_2, node);
     const double* field_3_ptr = bulk_data.field_data(field_3, node);
 
-
-
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
-    if (entity_comm.size() > 0) {
+    if (field_1_ptr != NULL && field_2_ptr != NULL && field_3_ptr != NULL && entity_comm.size() > 0) {
       const double num_sharing_procs = entity_comm.size() + 1;
       std::cout<<"max: proc "<<this_proc<<", node "<<bulk_data.identifier(node)<<", num-sharing-procs: "<<num_sharing_procs<<std::endl;
       STKUNIT_ASSERT_EQUAL(field_1_ptr[0], one);
@@ -260,14 +255,17 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
   for ( size_t i=0; i<node_buckets.size(); ++i) {
     stk::mesh::Bucket & b = *node_buckets[i];
 
-    double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
-    double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));
-    double* field_3_ptr = reinterpret_cast<double*>(b.field_data_location(field_3));
+    if (b.entity_rank() == field_1.entity_rank())
+    {
+        double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
+        double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));
+        double* field_3_ptr = reinterpret_cast<double*>(b.field_data_location(field_3));
 
-    for(size_t j=0; j<b.size(); ++j) {
-      field_1_ptr[j] = one;
-      field_2_ptr[j] = this_proc;
-      field_3_ptr[j] = this_proc;
+        for(size_t j=0; j<b.size(); ++j) {
+          field_1_ptr[j] = one;
+          field_2_ptr[j] = this_proc;
+          field_3_ptr[j] = this_proc;
+        }
     }
   }
 
