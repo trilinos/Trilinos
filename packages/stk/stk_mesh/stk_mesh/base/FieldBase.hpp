@@ -46,10 +46,8 @@ class FieldRepository;
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...
   typedef std::vector<FieldMetaData>                                     FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector>                               FieldMetaDataVectorVector;
 #else
   typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldDataTag> > FieldMetaDataVectorVector;
 #endif
 
 //----------------------------------------------------------------------
@@ -159,10 +157,10 @@ class FieldBase
   //  this should be private and have BulkData as friend?  Or maybe restructure in a different way so that bucket
   //  changes are cleanly propogated to field.
   //
-  inline FieldMetaDataVectorVector& get_meta_data_for_field() {
+  inline FieldMetaDataVector& get_meta_data_for_field() {
     return m_field_meta_data;
   }
-  inline const FieldMetaDataVectorVector& get_meta_data_for_field() const{
+  inline const FieldMetaDataVector& get_meta_data_for_field() const{
     return m_field_meta_data;
   }
 
@@ -185,11 +183,7 @@ private:
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
 
-  //
-  //  NKC OPT, change this to FieldMetaDataVector and pull off the rank
-  //  hop
-  //
-  FieldMetaDataVectorVector m_field_meta_data;
+  FieldMetaDataVector m_field_meta_data;
 
 protected:
   FieldBase(

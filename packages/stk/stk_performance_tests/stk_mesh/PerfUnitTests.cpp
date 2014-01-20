@@ -639,9 +639,9 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
           std::vector<SimpleField*> const& z_fields = fields[2][z];
 
           for (int f = 0; f < num_fields_per_chunk; ++f) {
-            field_meta[f * spatial_dim]     = &x_fields[f]->get_meta_data_for_field()[stk::topology::NODE_RANK];
-            field_meta[f * spatial_dim + 1] = &y_fields[f]->get_meta_data_for_field()[stk::topology::NODE_RANK];
-            field_meta[f * spatial_dim + 2] = &z_fields[f]->get_meta_data_for_field()[stk::topology::NODE_RANK];
+            field_meta[f * spatial_dim]     = &x_fields[f]->get_meta_data_for_field();
+            field_meta[f * spatial_dim + 1] = &y_fields[f]->get_meta_data_for_field();
+            field_meta[f * spatial_dim + 2] = &z_fields[f]->get_meta_data_for_field();
           }
 
           BucketVector const& chunk_buckets = bucket_map[x][y][z];

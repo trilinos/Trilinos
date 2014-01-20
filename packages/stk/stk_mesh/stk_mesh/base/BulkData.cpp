@@ -1052,12 +1052,6 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
   if (m_num_fields == -1) {
     // hasn't been set yet
     m_num_fields = field_set.size();
-
-    for (int i = 0; i < m_num_fields; ++i) {
-      FieldBase& field = * field_set[i];
-      field.get_meta_data_for_field().resize(1);
-    }
-
   }
 
   // Sizing loop
@@ -1088,7 +1082,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
             total_field_data_size += num_bytes_per_entity * capacity;
           }
         }
-        field_set[i]->get_meta_data_for_field()[0].push_back(field_meta_data);
+        field_set[i]->get_meta_data_for_field().push_back(field_meta_data);
     }
   }
 
@@ -1103,7 +1097,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
       const FieldBase  & field = * field_set[i];
       if (field.entity_rank() == rank)
       {
-          FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field()[0].back());
+          FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field().back());
 
           if (field_meta_data.m_size > 0) {
             field_meta_data.m_data = all_data + current_field_offset;
@@ -1144,17 +1138,17 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
   for (int i = 0; i < m_num_fields; ++i) {
     if (field_set[i]->entity_rank() == src_rank && field_set[i]->entity_rank() == dst_rank)
     {
-        const int src_size        = field_set[i]->get_meta_data_for_field()[0][src_bucket_id].m_size;
+        const int src_size        = field_set[i]->get_meta_data_for_field()[src_bucket_id].m_size;
         if (src_size == 0) {
           continue;
         }
 
 
-        unsigned char * const src = field_set[i]->get_meta_data_for_field()[0][src_bucket_id].m_data;
-        const int dst_size        = field_set[i]->get_meta_data_for_field()[0][dst_bucket_id].m_size;
+        unsigned char * const src = field_set[i]->get_meta_data_for_field()[src_bucket_id].m_data;
+        const int dst_size        = field_set[i]->get_meta_data_for_field()[dst_bucket_id].m_size;
 
         if ( dst_size ) {
-          unsigned char * const dst = field_set[i]->get_meta_data_for_field()[0][dst_bucket_id].m_data;
+          unsigned char * const dst = field_set[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
           ThrowAssertMsg( dst_size == src_size,
                           "Incompatible field sizes: " << dst_size << " != " << src_size );
 
@@ -1182,7 +1176,7 @@ void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank,
   for (int i = 0; i < m_num_fields; ++i) {
     if (field_set[i]->entity_rank() == rank)
     {
-        const FieldMetaDataVector& metaVec = field_set[i]->get_meta_data_for_field()[0];
+        const FieldMetaDataVector& metaVec = field_set[i]->get_meta_data_for_field();
 
         const FieldMetaData& srcMeta = metaVec[src_bucket_id];
 
@@ -1220,7 +1214,7 @@ void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucke
     const FieldBase  & field      = *field_set[i];
     if (field.entity_rank() == rank)
     {
-        FieldMetaData field_meta_data = field_set[i]->get_meta_data_for_field()[0][bucket_id];
+        FieldMetaData field_meta_data = field_set[i]->get_meta_data_for_field()[bucket_id];
         const int num_bytes_per_entity = field_meta_data.m_size;
 
         if (num_bytes_per_entity > 0) {
@@ -1272,7 +1266,7 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
     size_t bytes_to_delete = 0;
     for (unsigned int i = 0; i < field_set.size(); ++i) {
       if(field_set[i] == NULL || field_set[i]->entity_rank() != rank) continue;
-      FieldMetaData& field_data = field_set[i]->get_meta_data_for_field()[0][bucket_id];
+      FieldMetaData& field_data = field_set[i]->get_meta_data_for_field()[bucket_id];
       if (field_data.m_data != NULL) {
         bytes_to_delete += field_data.m_size * capacity;
         field_data.m_size = 0;
@@ -1298,13 +1292,13 @@ void BulkData::update_field_data_states()
 
 
       if (num_state > 1) {
-        for ( int b = 0, be = field_set[outer_idx]->get_meta_data_for_field()[0].size(); b < be; ++b) {
-          if ( field_set[outer_idx]->get_meta_data_for_field()[0][b].m_size > 0 ) {
-            unsigned char* data_last = field_set[outer_idx]->get_meta_data_for_field()[0][b].m_data;
+        for ( int b = 0, be = field_set[outer_idx]->get_meta_data_for_field().size(); b < be; ++b) {
+          if ( field_set[outer_idx]->get_meta_data_for_field()[b].m_size > 0 ) {
+            unsigned char* data_last = field_set[outer_idx]->get_meta_data_for_field()[b].m_data;
             for ( int s = 1; s < num_state; ++s ) {
-              std::swap(field_set[outer_idx+s]->get_meta_data_for_field()[0][b].m_data, data_last);
+              std::swap(field_set[outer_idx+s]->get_meta_data_for_field()[b].m_data, data_last);
             }
-            field_set[outer_idx]->get_meta_data_for_field()[0][b].m_data = data_last;
+            field_set[outer_idx]->get_meta_data_for_field()[b].m_data = data_last;
           }
         }
       }
@@ -1335,9 +1329,9 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
     {
         FieldMetaDataVector new_fields(id_map.size());
         for ( unsigned m = 0, e = id_map.size(); m < e; ++m ) {
-          new_fields[m] = field_set[i]->get_meta_data_for_field()[0][id_map[m]];
+          new_fields[m] = field_set[i]->get_meta_data_for_field()[id_map[m]];
         }
-        new_fields.swap(field_set[i]->get_meta_data_for_field()[0]);
+        new_fields.swap(field_set[i]->get_meta_data_for_field());
     }
   }
 }
@@ -1391,7 +1385,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
 
             if(field->entity_rank() != bucket->entity_rank()) continue;
 
-            FieldMetaData field_meta_data = field->get_meta_data_for_field()[0][bucket->bucket_id()];
+            FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
 
             unsigned data_size = field_meta_data.m_size;
             if (data_size > 0) { // entity has this field?

@@ -1029,7 +1029,7 @@ public:
 
      //return true if field-data size is not zero
 
-     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[0][b.bucket_id()].m_size);
+     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_size);
   }
 
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const
@@ -1050,7 +1050,7 @@ public:
     ThrowAssert(this == &b.mesh());
 
     ThrowAssert(f.entity_rank() == b.entity_rank());
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
@@ -1066,7 +1066,7 @@ public:
 
     ThrowAssert(f.entity_rank() == b.entity_rank());
 
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
@@ -1081,7 +1081,7 @@ public:
     ThrowAssert(this == &b.mesh());
 
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
@@ -1095,7 +1095,7 @@ public:
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[0][b.bucket_id()];
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
 
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
@@ -1144,7 +1144,7 @@ public:
     ThrowAssert(this == &b.mesh());
     ThrowAssert(f.entity_rank() == b.entity_rank());
 
-    return f.get_meta_data_for_field()[0][b.bucket_id()].m_stride;
+    return f.get_meta_data_for_field()[b.bucket_id()].m_stride;
   }
 
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
@@ -2038,7 +2038,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
     ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(&f.get_mesh() == &b.mesh());
-    return f.get_meta_data_for_field()[0][b.bucket_id()].m_size;
+    return f.get_meta_data_for_field()[b.bucket_id()].m_size;
   }
   inline unsigned field_data_size(const FieldBase& f, Entity e) {  
     BulkData& bulk(f.get_mesh());
