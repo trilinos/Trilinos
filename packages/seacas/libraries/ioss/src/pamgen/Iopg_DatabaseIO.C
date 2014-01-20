@@ -161,24 +161,12 @@ namespace Iopg {
     elemMap.release_memory();
   }
 
-  void DatabaseIO::read_meta_data()
-  {
-    // The file for pamgen contains the mesh description.
-    // The Iopg routine is expecting the mesh description to be a
-    // single string...
 
-    // Read the data and convert it to a string which is then passed
-    // in to the Create_Pamgen_Mesh routine.
-    std::ifstream input(get_filename().c_str());
-    if (!input) {
-      std::ostringstream errmsg;
-      errmsg << "Error opening file '" << get_filename() << "'.";
-      IOSS_ERROR(errmsg);
-    }
 
+  std::string massagePamgenInputString(std::string sinput, int & dimension){
     std::string mesh_description;
     std::string line;
-    int dimension = 3;
+    std::istringstream input(sinput);
     while (std::getline(input, line)) {
       if (line.empty() || line[0] == '$' || line[0] == '#') {
 	continue;
@@ -197,16 +185,69 @@ namespace Iopg {
 	break;
       }
     }
-
+    
     mesh_description += "mesh\n";
     while (std::getline(input, line)) {
-      if (line.empty() || line[0] == '$' || line[0] == '#') {
+      if (line.empty() || 
+	  line[0] == '$' || 
+	  line[0] == '#' || 
+	  (line.find("mesh")  != std::string::npos) || 
+	  (line.find("MESH")  != std::string::npos) ) {
 	;
       } else {
 	mesh_description += line;
 	mesh_description += "\n";
       }
     }
+    return mesh_description;
+  }
+  
+  void DatabaseIO::read_meta_data()
+  {
+    // The file for pamgen contains the mesh description.
+    // The Iopg routine is expecting the mesh description to be a
+    // single string...
+
+    // Read the data and convert it to a string which is then passed
+    // in to the Create_Pamgen_Mesh routine.
+    
+    //Check if this is a multi line filename implies it is actually the mesh specification
+    std::string mesh_description;
+
+    std::string tfilename = get_filename();
+    std::string raw_string;
+    //If this is a multi-line string then it actually includes the 
+    // mesh description; otherwise, it is a file that must be opened
+    // and read.
+    std::string nlstring = std::string("\n");
+    std::size_t found = tfilename.find(nlstring);
+    if (found!=std::string::npos){
+      std::istringstream f(tfilename);
+      std::string line;
+      while (std::getline(f, line)) {
+	raw_string += line;
+	raw_string += "\n";
+      }
+    }
+    else{
+      std::ifstream f(get_filename().c_str());
+      if (!f) {
+	std::ostringstream errmsg;
+	errmsg << "Error opening file '" << get_filename() << "'.";
+	IOSS_ERROR(errmsg);
+      }
+      else{
+	std::string line;
+	while (std::getline(f, line)) {
+	  raw_string += line;
+	  raw_string += "\n";
+	}
+      }
+    }
+
+    // pulls out dimension, gets rid of comments, prepends mesh...
+    int dimension = 3;
+    mesh_description = massagePamgenInputString(raw_string,dimension);    
 
     int retval = ERROR_FREE_CREATION;
     bool error_detected = false;
@@ -923,7 +964,7 @@ namespace Iopg {
 	      // cases where we don't need to read it, but if we are
 	      // already reading it (to split the sidesets), then use
 	      // the data when we have it.
-	      if (side_map.size() > 0) {
+	      if (!side_map.empty()) {
 		// Set a property indicating which element side
 		// (1-based) all faces in this block are applied to.
 		// If they are not all assigned to the same element
@@ -1979,7 +2020,7 @@ void separate_surface_element_sides(Ioss::IntVector &element,
 				    Iopg::TopologyMap &side_map,
 				    Ioss::SurfaceSplitType split_type)
 {
-  if (element.size() > 0) {
+  if (!element.empty()) {
     Ioss::ElementBlock *block = NULL;
     // Topology of sides in current element block
     const Ioss::ElementTopology *common_ftopo = NULL;

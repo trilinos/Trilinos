@@ -52,8 +52,10 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Import_Util.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
+
 
 
 /*! \file TpetraExt_MatrixMatrix_def.hpp
@@ -91,16 +93,9 @@ void Multiply(
   //A and B should already be Filled.
   //(Should we go ahead and call FillComplete() on them if necessary?
   // or error out? For now, we choose to error out.)
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-    "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-    "\n\n MatrixMatrix::Multiply(): Matrix A is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error,
-    "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-    "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-    "\n\n MatrixMatrix::Multiply(): Matrix B is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix C must not be locally indexed!");
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix A is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix B is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error, "MatrixMatrix::Multiply(): Result matrix C must not be locally indexed.");
 
   //Convience typedefs
   typedef CrsMatrixStruct<
@@ -415,12 +410,12 @@ void Add(
   using Teuchos::rcpFromRef;
   using Teuchos::tuple;
   using std::endl;
-  typedef typename ArrayView<const Scalar>::size_type size_type;
+  //  typedef typename ArrayView<const Scalar>::size_type size_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
-  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_graph_type;
+  //  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+  //  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
+  //  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_graph_type;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
   typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> transposer_type;
 
@@ -998,6 +993,7 @@ void import_and_extract_views(
 {
   //Convience typedef
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> CrsMatrix_t;
   // The goal of this method is to populate the 'Mview' struct with views of the
   // rows of M, including all rows that correspond to elements in 'targetMap'.
   //
@@ -1084,9 +1080,7 @@ void import_and_extract_views(
     Import<LocalOrdinal, GlobalOrdinal, Node> importer(Mrowmap, MremoteRowMap);
 
     // Now create a new matrix into which we can import the remote rows of M that we need.
-    Mview.importMatrix = rcp(new CrsMatrix<Scalar,LocalOrdinal, GlobalOrdinal, Node, SpMatOps>( MremoteRowMap, 1 ));
-    Mview.importMatrix->doImport(M, importer, INSERT);
-    Mview.importMatrix->fillComplete(M.getDomainMap(), M.getRangeMap());
+    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),importer,M.getDomainMap(),M.getRangeMap(),Teuchos::null);
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later
     Mview.importColMap = Mview.importMatrix->getColMap();

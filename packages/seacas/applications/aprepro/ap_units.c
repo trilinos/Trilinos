@@ -12,7 +12,7 @@ void load_conversion(struct var_init *base, struct svar_init *label);
     if ((ptr = getsym((name))) == NULL) \
       ptr = putsym((name), VAR, 1);	\
     ptr->value.var = (val);		\
-    if (echo) fprintf(stdout, "%c 1 %-10s\t= %14.7g  %s\n", comment, name, val, label); \
+    if (echo) fprintf(stdout, "%s 1 %-10s\t= %14.7g  %s\n", comment, name, val, label); \
   } while(0)
 
 /*-------------------------------------------------------------------------------------*/
@@ -338,36 +338,36 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   double foot = m * 0.3048;
   double inch = foot / 12.0;
 
-  char comment = getsym("_C_")->value.svar[0];
+  char* comment = getsym("_C_")->value.svar;
 
   if (echo) {
-    fprintf(stdout, "\n%c%c%c Outputs\n", comment, comment, comment);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Time", tout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Length", lout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Accel", aout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Mass", mout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Force", fout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Velocity", vout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Volume", Vout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Density", dout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Energy", eout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Power", Pout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Pressure", pout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Temp", Tout);
-    fprintf(stdout, "%c %10s:\t%s\n", comment, "Angular", Aout);
-    fprintf(stdout, "%c\n", comment);
+    fprintf(stdout, "\n%s%s%s Outputs\n", comment, comment, comment);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Time", tout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Length", lout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Accel", aout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Mass", mout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Force", fout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Velocity", vout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Volume", Vout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Density", dout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Energy", eout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Power", Pout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Pressure", pout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Temp", Tout);
+    fprintf(stdout, "%s %10s:\t%s\n", comment, "Angular", Aout);
+    fprintf(stdout, "%s\n", comment);
   }
 
   if (echo) {
-    fprintf(stdout, "\n%c%c%c Base Dimensions\n", comment, comment, comment);
-    fprintf(stdout, "%c 1 %-10s\t= %14.7g  %s\n", comment, "meter",  m,    lout);
-    fprintf(stdout, "%c 1 %-10s\t= %14.7g  %s\n", comment, "second", sec,  tout);
-    fprintf(stdout, "%c 1 %-10s\t= %14.7g  %s\n", comment, "kg",     kg,   mout);
-    fprintf(stdout, "%c 1 %-10s\t= %14.7g  %s\n", comment, "kelvin", degK, Tout);
-    fprintf(stdout, "%c 1 %-10s\t= %14.7g  %s\n", comment, "radian", rad,  Aout);
+    fprintf(stdout, "\n%s%s%s Base Dimensions\n", comment, comment, comment);
+    fprintf(stdout, "%s 1 %-10s\t= %14.7g  %s\n", comment, "meter",  m,    lout);
+    fprintf(stdout, "%s 1 %-10s\t= %14.7g  %s\n", comment, "second", sec,  tout);
+    fprintf(stdout, "%s 1 %-10s\t= %14.7g  %s\n", comment, "kg",     kg,   mout);
+    fprintf(stdout, "%s 1 %-10s\t= %14.7g  %s\n", comment, "kelvin", degK, Tout);
+    fprintf(stdout, "%s 1 %-10s\t= %14.7g  %s\n", comment, "radian", rad,  Aout);
   }
 
-  if (echo) fprintf(stdout, "\n%c%c%c Time (T)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Time (T)\n", comment, comment, comment);
   DEFINE_VAR("second",                                        sec,         tout);
   DEFINE_VAR("usec",                                          sec / 1.0e6, tout);
   DEFINE_VAR("microsecond",                                   sec / 1.0e6, tout);
@@ -382,7 +382,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("decade",       10. * 365.25 * 24. * 60. * 60. * sec,         tout);
   DEFINE_VAR("century",     100. * 365.25 * 24. * 60. * 60. * sec,         tout);
       
-  if (echo) fprintf(stdout, "\n%c%c%c Length (L)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Length (L)\n", comment, comment, comment);
   DEFINE_VAR("meter",       m,         lout);
   DEFINE_VAR("metre",       m,         lout);
   DEFINE_VAR("cm",          m / 100.,  lout);
@@ -407,11 +407,11 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("inch",        inch,      lout);
   DEFINE_VAR("mil",         inch / 1000., lout);
 
-  if (echo) fprintf(stdout, "\n%c%c%c Acceleration (L/T^2)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Acceleration (L/T^2)\n", comment, comment, comment);
   DEFINE_VAR("ga", 9.806650 * m / (sec*sec), aout);
 
   /* Force  (ML/T^2) */
-  if (echo) fprintf(stdout, "\n%c%c%c Force (ML/T^2)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Force (ML/T^2)\n", comment, comment, comment);
   DEFINE_VAR("newton",              1.0    * kg*m/(sec*sec), fout);
   DEFINE_VAR("N",                   1.0    * kg*m/(sec*sec), fout);
   DEFINE_VAR("dyne",                1.0e-5 * kg*m/(sec*sec), fout);
@@ -424,7 +424,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("ounce",      4.4482216152605 * kg*m/(sec*sec)/16.0, fout);
 
   /* Mass (M) */
-  if (echo) fprintf(stdout, "\n%c%c%c Mass (M)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Mass (M)\n", comment, comment, comment);
   DEFINE_VAR("gram",              kg / 1000., mout);
   DEFINE_VAR("g",                 kg / 1000., mout);
   DEFINE_VAR("lbm",   453.59237 * kg / 1000., mout);
@@ -432,7 +432,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("lbfs2pin",  4.4482216152605 * kg/0.0254, mout);
   
   /* Velocity (L/T) */
-  if (echo) fprintf(stdout, "\n%c%c%c Velocity (L/T)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Velocity (L/T)\n", comment, comment, comment);
   DEFINE_VAR("mps",  m/sec, vout);
   DEFINE_VAR("fps",  foot / sec, vout);
   DEFINE_VAR("mph",  (foot * 5280.) / (60. * 60. * sec), vout);
@@ -441,13 +441,13 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("kps",  (1000. * m) / sec, vout);
 
   /* Volume (L^3) */
-  if (echo) fprintf(stdout, "\n%c%c%c Volume (L^3)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Volume (L^3)\n", comment, comment, comment);
   DEFINE_VAR("liter",              (m*m*m)/1000., Vout);
   DEFINE_VAR("gal",     3.785412 * (m*m*m)/1000., Vout);
   DEFINE_VAR("gallon",  3.785412 * (m*m*m)/1000., Vout);
 
   /* Density (M/L^3) */
-  if (echo) fprintf(stdout, "\n%c%c%c Density (M/L^3)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Density (M/L^3)\n", comment, comment, comment);
   DEFINE_VAR("gpcc",      (kg/1000.)/((m/100.)*(m/100.)*(m/100.)), dout);
   DEFINE_VAR("kgpm3",      kg /(m*m*m), dout);
   DEFINE_VAR("lbfs2pin4",  (4.4482216152605 * kg*m/(sec*sec))*sec*sec / (inch*inch*inch*inch), dout);
@@ -456,13 +456,13 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("slugpft3",   (453.59237 * kg / 1000. * 32.17404856) / (foot*foot*foot), dout);
 
   /* Power: (M L^2 / T^3) */
-  if (echo) fprintf(stdout, "\n%c%c%c Power (M L^2 / T^3)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Power (M L^2 / T^3)\n", comment, comment, comment);
   DEFINE_VAR("W",    kg*m/(sec*sec)*m/sec, Pout);
   DEFINE_VAR("watt", kg*m/(sec*sec)*m/sec, Pout);
   DEFINE_VAR("Hp",   kg*m/(sec*sec)*m/sec * 746, Pout); /* --- (electric horsepower) */
 
   /* Energy (ML^2/T^2) */
-  if (echo) fprintf(stdout, "\n%c%c%c Energy (M L^2 / T^2)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Energy (M L^2 / T^2)\n", comment, comment, comment);
   DEFINE_VAR("joule",  kg*m/(sec*sec)*m, eout);
   DEFINE_VAR("J",      kg*m/(sec*sec)*m, eout);
   DEFINE_VAR("ftlbf",  kg*m/(sec*sec)*m * 1.355818, eout); 
@@ -474,7 +474,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("tonTNT",  kg*m/(sec*sec)*m * 4.184e9, eout); 
 
   /* Pressure: (M/L/T^2) */
-  if (echo) fprintf(stdout, "\n%c%c%c Pressure (M/L/T^2)\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Pressure (M/L/T^2)\n", comment, comment, comment);
   DEFINE_VAR("Pa",      kg*m/(sec*sec) / (m*m), pout);
   DEFINE_VAR("pascal",  kg*m/(sec*sec) / (m*m), pout);
   DEFINE_VAR("MPa",     kg*m/(sec*sec) / (m*m) * 1.0e6, pout); 
@@ -494,7 +494,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("ftH2O",   kg*m/(sec*sec) / (m*m) * 249.082 * 12.0, pout); 
 
   /* Temperature: */
-  if (echo) fprintf(stdout, "\n%c%c%c Temperature\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Temperature\n", comment, comment, comment);
   DEFINE_VAR("kelvin",         degK, Tout); 
   DEFINE_VAR("degC",           degK, Tout); 
   DEFINE_VAR("degF",   5./9. * degK, Tout); 
@@ -504,7 +504,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
 
   /* Angular */
 #define PI  3.141592653589793238462643
-  if (echo) fprintf(stdout, "\n%c%c%c Angular\n", comment, comment, comment);
+  if (echo) fprintf(stdout, "\n%s%s%s Angular\n", comment, comment, comment);
   DEFINE_VAR("rev",    2.0 * PI * rad, Aout); 
   DEFINE_VAR("deg",    2.0 * PI * rad / 360.0, Aout); 
   DEFINE_VAR("degree", 2.0 * PI * rad / 360.0, Aout); 

@@ -170,7 +170,10 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
 
   // create exo names
   for(int p = 0; p < partCount_; p++) {
-    std::string name = file_prefix + "." + exodus_suffix;
+    std::string name = file_prefix;
+    if (!exodus_suffix.empty()) {
+      name += "." + exodus_suffix;
+    }
 
     int proc = p + startPart_;
     disks.rename_file_for_mp(root_dir, sub_dir, name, proc,
@@ -249,7 +252,11 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
   std::string file_prefix = si.basename();
   std::string output_suffix = si.output_suffix();
 
-  outputFilename_ = file_prefix + "." + output_suffix;
+  outputFilename_ = file_prefix;
+  if (!output_suffix.empty()) {
+    outputFilename_ += "." + output_suffix;
+  }
+
   if(curdir.length() && outputFilename_[0] != '/') {
     outputFilename_ = curdir + "/" + outputFilename_;
   }

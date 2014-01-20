@@ -56,7 +56,6 @@
 
 #include "KokkosCompat_config.h"
 #include "KokkosCore_config.h"
-#include "KokkosClassic_config.h"
 
 // KokkosCore device types
 #include "Kokkos_Serial.hpp"
@@ -70,57 +69,11 @@
 #include "Kokkos_Cuda.hpp"
 #endif
 
-// KokkosClassic node types
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-#include "Kokkos_SerialNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
-
 #include "Kokkos_View.hpp"
 #include "Teuchos_ArrayView.hpp"
 
 namespace Kokkos {
   namespace Compat {
-
-    // Determine KokkosCore device type from KokkosClassic node type
-    template <typename Node>
-    struct NodeDevice {};
-
-#if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-    template <>
-    struct NodeDevice<KokkosClassic::SerialNode> {
-      typedef Kokkos::Serial type;
-    };
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(KOKKOS_HAVE_PTHREAD)
-    template <>
-    struct NodeDevice<KokkosClassic::TPINode> {
-      typedef Kokkos::Threads type;
-    };
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP) && defined(KOKKOS_HAVE_OPENMP)
-    template <>
-    struct NodeDevice<KokkosClassic::OpenMPNode> {
-      typedef Kokkos::OpenMP type;
-    };
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(KOKKOS_HAVE_CUDA)
-    template <>
-    struct NodeDevice<KokkosClassic::ThrustGPUNode> {
-      typedef Kokkos::Cuda type;
-    };
-#endif
 
     // Convert Kokkos::View to Teuchos::ArrayView
     template <typename ViewType>
@@ -164,6 +117,7 @@ namespace Kokkos {
     class Deallocator {
     public:
       typedef ViewType view_type;
+      typedef typename ViewType::scalar_type ptr_t;
       typedef typename view_type::scalar_type scalar_type;
 
       // Constructor takes the View that owns the memory.
@@ -173,8 +127,10 @@ namespace Kokkos {
       // pointer; the View is responsible for deallocation of its
       // memory.
       void free (scalar_type*) {}
+      view_type view() { return view_;}
     private:
       view_type view_; // View that owns the memory
+
     };
 
     // Create deallocator for a given view

@@ -111,12 +111,12 @@ using KokkosClassic::DefaultArithmetic;
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager()
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), buildGhosted_(false)
 { }
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), buildGhosted_(false)
 { 
   setConnManager(connMngr,mpiComm);
 }
@@ -389,32 +389,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     }
   }
 
-  /*
-   * 2.  Iterate through all local elements and create the overlapVector
-   *     of concerned elements.
+  // given a set of elements over each element block build an overlap
+  // map that will provide the required element entities for the
+  // set of elements requested.
+  ElementBlockAccess ownedAccess(true,connMngr_);
+
+  /* Steps 2. and 3. 
    */
-
-  std::set<GO> overlapset;
-  for (size_t i = 0; i < blockOrder_.size(); ++i) {
-    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[i]);
-    for (size_t e = 0; e < myElements.size(); ++e) {
-      LO connSize = connMngr_->getConnectivitySize(myElements[e]);
-      const GO * elmtConn = connMngr_->getConnectivity(myElements[e]);
-      for (int k = 0; k < connSize; ++k) {
-        overlapset.insert(elmtConn[k]);
-      }
-    }
-  }
-
-
-  Array<GO> overlapVector;
-  for (typename std::set<GO>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr) {
-    overlapVector.push_back(*itr);
-  }
-
-  /* 3.  Construct an overlap map from this structure.
-   */
-  RCP<const Map> overlapmap = Tpetra::createNonContigMap<LO,GO>(overlapVector,comm);
+  RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
 
  /* 4.  Create an overlapped multivector from the overlap map.
    */
@@ -519,49 +501,26 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
    *     create final GID vectors.
    */
 
-  //To generate elementGIDs_ we need to go through all of the local elements.
-  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
+  // this bit of code takes the uniquely assigned GIDs and spreads them
+  // out for processing by local element ID
+  fillGIDsFromOverlappedMV(ownedAccess,elementGIDs_,*overlapmap,*overlap_mv);
 
-  //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
-  //we move from globalID to localID in the map and use our local value for something.
-  for (size_t b = 0; b < blockOrder_.size(); ++b) {
-    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+  // if neighbor unknowns are required, then make sure they are included
+  // in the elementGIDs_
+  if (buildGhosted_) { // enabling this turns on GID construction for 
+                       // neighbor processors
+    ElementBlockAccess naborAccess(false,connMngr_);
+    RCP<const Map> overlapmap_nabor = buildOverlapMapFromElements(naborAccess);
 
-    if(fa_fps_[b]==Teuchos::null) {
-      // fill elements that are not used with empty vectors
-      for (size_t l = 0; l < myElements.size(); ++l) {
-        LO thisID=myElements[l];
-        if(elementGIDs_.size()<=(size_t)thisID)
-          elementGIDs_.resize(thisID+1);
-      }
-      continue;
-    }
+    Export e(overlapmap_nabor,non_overlap_map);
 
-    const std::vector<int> & numFields= fa_fps_[b]->numFieldsPerId();
-    const std::vector<int> & fieldIds= fa_fps_[b]->fieldIds();
-    //
-    //
-    for (size_t l = 0; l < myElements.size(); ++l) {
-      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
-      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
-      std::vector<GO> localOrdering;
-      int offset=0;
-      for (int c = 0; c < connSize; ++c) {
-        size_t lid = overlapmap->getLocalElement(elmtConn[c]);
-        for (int n = 0; n < numFields[c]; ++n) {
-          int whichField = fieldIds[offset];
-          offset++;
-          //Row will be lid. column will be whichField.
-          //Shove onto local ordering
-          localOrdering.push_back(twoview[whichField][lid]);
-        }
-      }
-      LO thisID=myElements[l];
-      if(elementGIDs_.size()<=(size_t)thisID){
-        elementGIDs_.resize(thisID+1);
-      }
-      elementGIDs_[thisID]=localOrdering;
-    }
+    Teuchos::RCP<MultiVector> overlap_mv_nabor 
+        = Tpetra::createMultiVector<GO>(overlapmap_nabor,(size_t)numFields_);
+
+    // get all neighbor information
+    overlap_mv_nabor->doImport(*non_overlap_mv,e,Tpetra::REPLACE);
+
+    fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlapmap_nabor,*overlap_mv_nabor);
   }
 
   //////////////////////////////////////////////////////////////////
@@ -649,23 +608,38 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     // for element ordered assembly
     typedef boost::unordered_set<GO> HashTable;
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
-    for (size_t b = 0; b < blockOrder_.size(); ++b) {
-      if(fa_fps_[b]==Teuchos::null)
-        continue;
 
-      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    // this cute trick (blah) of constructing a accessor vector is to eliminate a copy
+    // of the block of code computing shared/owned DOFs
+    std::vector<ElementBlockAccess> blockAccessVec;
+    blockAccessVec.push_back(ElementBlockAccess(true,connMngr_));
+    if(buildGhosted_)
+      blockAccessVec.push_back(ElementBlockAccess(false,connMngr_)); 
+    // all owned will be processed first followed by those that are 
+    // optionally ghosted 
 
-      for (size_t l = 0; l < myElements.size(); ++l) {
-        const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
+    for(std::size_t a=0;a < blockAccessVec.size(); a++) {
+      // get access type (owned or neighbor)
+      const ElementBlockAccess & access = blockAccessVec[a];
 
-        // add "novel" global ids into owned_and_ghosted_ vector.
-        for(std::size_t i=0;i<localOrdering.size();i++) { 
-          std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
-
-          // if insertion succeeds, then this is "novel" to owned_and_ghosted_
-          // vector so include it
-          if(insertResult.second)
-            owned_and_ghosted_.push_back(localOrdering[i]);
+      for (size_t b = 0; b < blockOrder_.size(); ++b) {
+        if(fa_fps_[b]==Teuchos::null)
+          continue;
+  
+        const std::vector<LO> & myElements = access.getElementBlock(blockOrder_[b]);
+  
+        for (size_t l = 0; l < myElements.size(); ++l) {
+          const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
+  
+          // add "novel" global ids into owned_and_ghosted_ vector.
+          for(std::size_t i=0;i<localOrdering.size();i++) { 
+            std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
+  
+            // if insertion succeeds, then this is "novel" to owned_and_ghosted_
+            // vector so include it
+            if(insertResult.second)
+              owned_and_ghosted_.push_back(localOrdering[i]);
+          }
         }
       }
     }
@@ -945,6 +919,96 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
     const std::vector<int> & fieldIds = blockToAssociatedFP_[i];
     for(std::size_t f=0;f<fieldIds.size();f++)
       os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
+  }
+}
+
+template <typename LO,typename GO>
+Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+DOFManager<LO,GO>::
+buildOverlapMapFromElements(const ElementBlockAccess & access) const
+{
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+
+  /*
+   * 2.  Iterate through all local elements and create the overlapVector
+   *     of concerned elements.
+   */
+
+  std::set<GO> overlapset;
+  for (size_t i = 0; i < blockOrder_.size(); ++i) {
+    const std::vector<LO> & myElements = access.getElementBlock(blockOrder_[i]);
+    for (size_t e = 0; e < myElements.size(); ++e) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[e]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[e]);
+      for (int k = 0; k < connSize; ++k) {
+        overlapset.insert(elmtConn[k]);
+      }
+    }
+  }
+
+  Array<GO> overlapVector;
+  for (typename std::set<GO>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr) {
+    overlapVector.push_back(*itr);
+  }
+
+  /* 3.  Construct an overlap map from this structure.
+   */
+  return Tpetra::createNonContigMap<LO,GO>(overlapVector,communicator_);
+}
+
+template <typename LO,typename GO>
+void DOFManager<LO,GO>::
+fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
+                         std::vector<std::vector< GO > > & elementGIDs,
+                         const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlapmap,
+                         const Tpetra::MultiVector<GO,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlap_mv) const
+{
+  using Teuchos::ArrayRCP;
+
+  //To generate elementGIDs we need to go through all of the local elements.
+  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv.get2dView();
+
+  //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
+  //we move from globalID to localID in the map and use our local value for something.
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    const std::vector<LO> & myElements = access.getElementBlock(blockOrder_[b]);
+
+    if(fa_fps_[b]==Teuchos::null) {
+      // fill elements that are not used with empty vectors
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        LO thisID=myElements[l];
+        if(elementGIDs.size()<=(size_t)thisID)
+          elementGIDs.resize(thisID+1);
+      }
+      continue;
+    }
+
+    const std::vector<int> & numFields= fa_fps_[b]->numFieldsPerId();
+    const std::vector<int> & fieldIds= fa_fps_[b]->fieldIds();
+    //
+    //
+    for (size_t l = 0; l < myElements.size(); ++l) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      std::vector<GO> localOrdering;
+      int offset=0;
+      for (int c = 0; c < connSize; ++c) {
+        size_t lid = overlapmap.getLocalElement(elmtConn[c]);
+        for (int n = 0; n < numFields[c]; ++n) {
+          int whichField = fieldIds[offset];
+          offset++;
+          //Row will be lid. column will be whichField.
+          //Shove onto local ordering
+          localOrdering.push_back(twoview[whichField][lid]);
+        }
+      }
+      LO thisID=myElements[l];
+      if(elementGIDs.size()<=(size_t)thisID){
+        elementGIDs.resize(thisID+1);
+      }
+      elementGIDs[thisID]=localOrdering;
+    }
   }
 }
 

@@ -36,6 +36,7 @@
 #ifndef _ELB_UTIL_CONST_H_
 #define _ELB_UTIL_CONST_H_
 
+#include <cstdio>
 #include <vector>
 
 /* Function prototypes */

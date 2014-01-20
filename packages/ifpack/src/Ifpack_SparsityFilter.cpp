@@ -71,7 +71,7 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_R
 
   // only square serial matrices
   if ((A_->NumMyRows() != A_->NumMyCols()) ||
-     (A_->NumMyRows() != A_->NumGlobalRows()))
+     (A_->NumMyRows() != A_->NumGlobalRows64()))
     IFPACK_CHK_ERRV(-1);
 
   NumRows_ = A_->NumMyRows();

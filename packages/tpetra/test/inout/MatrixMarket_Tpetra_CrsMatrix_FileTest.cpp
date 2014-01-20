@@ -39,6 +39,24 @@
 // ************************************************************************
 // @HEADER
 
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
+
+#ifdef DO_COMPILATION
+
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
@@ -102,9 +120,9 @@ template<class CrsMatrixType>
 bool
 compareCrsMatrixMaps (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
-  typedef typename CrsMatrixType::scalar_type ST;
-  typedef typename CrsMatrixType::global_ordinal_type GO;
-  typedef typename ArrayView<const GO>::size_type size_type;
+  //  typedef typename CrsMatrixType::scalar_type ST;
+  //  typedef typename CrsMatrixType::global_ordinal_type GO;
+  //  typedef typename ArrayView<const GO>::size_type size_type;
 
   Teuchos::OSTab tab (out);
 
@@ -307,7 +325,7 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   typedef double ST;
   typedef int LO;
   typedef long GO;
-  typedef KokkosClassic::SerialNode NT;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
@@ -422,4 +440,7 @@ TEUCHOS_UNIT_TEST( MatrixMarket, CrsMatrixFileTest )
   success = testReadAndWriteFile (out, mapOutputFilename, matrixOutputFilename,
                                   mapInputFilename, matrixInputFilename);
 }
+
+
+#endif  //DO_COMPILATION
 

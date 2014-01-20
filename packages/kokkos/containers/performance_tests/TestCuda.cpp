@@ -57,11 +57,13 @@ protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(3) );
+    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
+    Kokkos::Cuda::host_mirror_device_type::finalize();
   }
 };
 

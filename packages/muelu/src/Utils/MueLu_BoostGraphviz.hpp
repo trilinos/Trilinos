@@ -7,7 +7,7 @@
 //       pragma push/pop available since gcc 4.6
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_BOOST
+#if defined(HAVE_MUELU_BOOST) and defined(HAVE_MUELU_BOOST_FOR_REAL)
 
 #ifdef __GNUC__
 # if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
@@ -36,6 +36,6 @@ typedef boost::graph_traits<BoostGraph>::vertex_descriptor                  Boos
 typedef boost::graph_traits<BoostGraph>::edge_descriptor                    BoostEdge;
 
 
-#endif // HAVE_MUELU_BOOST
+#endif // HAVE_MUELU_BOOST && HAVE_MUELU_BOOST_FOR_REAL
 
 #endif // MUELU_BOOSTGRAPHVIZ_HPP

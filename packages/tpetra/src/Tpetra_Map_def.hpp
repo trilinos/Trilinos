@@ -629,14 +629,12 @@ namespace Tpetra {
 
     contiguous_  = false; // "Contiguous" is conservative.
 
-#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       minAllGID_ < indexBase_,
       std::invalid_argument,
       "Tpetra::Map constructor (noncontiguous): "
       "Minimum global ID = " << minAllGID_ << " over all process(es) is "
       "less than the given indexBase = " << indexBase_ << ".");
-#endif // HAVE_TPETRA_DEBUG
 
     // Create the Directory on demand in getRemoteIndexList().
     //setupDirectory ();
@@ -877,14 +875,23 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Map<LocalOrdinal,GlobalOrdinal,Node>::description() const {
-    std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    oss << "{getGlobalNumElements() = " << getGlobalNumElements()
-        << ", getNodeNumElements() = " << getNodeNumElements()
-        << ", isContiguous() = " << isContiguous()
-        << ", isDistributed() = " << isDistributed()
-        << "}";
-    return oss.str();
+    using Teuchos::TypeNameTraits;
+    std::ostringstream os;
+
+    os << "Tpetra::Map: {"
+       << "LocalOrdinalType: " << TypeNameTraits<LocalOrdinal>::name ()
+       << ", GlobalOrdinalType: " << TypeNameTraits<GlobalOrdinal>::name ()
+       << ", NodeType: " << TypeNameTraits<Node>::name ();
+    if (this->getObjectLabel () != "") {
+      os << ", Label: \"" << this->getObjectLabel () << "\"";
+    }
+    os << ", Global number of entries: " << getGlobalNumElements ()
+       << ", Number of processes: " << getComm ()->getSize ()
+       << ", Uniform: " << (isUniform () ? "true" : "false")
+       << ", Contiguous: " << (isContiguous () ? "true" : "false")
+       << ", Distributed: " << (isDistributed () ? "true" : "false")
+       << "}";
+    return os.str ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -897,20 +904,23 @@ namespace Tpetra {
     using std::setw;
     using Teuchos::ArrayView;
     using Teuchos::as;
+    using Teuchos::OSTab;
+    using Teuchos::toString;
+    using Teuchos::TypeNameTraits;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
+    typedef typename ArrayView<const GlobalOrdinal>::size_type size_type;
 
-    const size_t nME = getNodeNumElements();
-    ArrayView<const GlobalOrdinal> myEntries = getNodeElementList();
-    int myRank = comm_->getRank();
-    int numProcs = comm_->getSize();
+    const size_t nME = getNodeNumElements ();
+    ArrayView<const GlobalOrdinal> myEntries = getNodeElementList ();
+    const int myRank = comm_->getRank ();
+    const int numProcs = comm_->getSize ();
 
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
+    const Teuchos::EVerbosityLevel vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
     size_t width = 1;
     for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
@@ -918,49 +928,57 @@ namespace Tpetra {
     }
     width = std::max<size_t> (width, as<size_t> (12)) + 2;
 
-    Teuchos::OSTab tab(out);
+    // By convention, describe() always begins with a tab before printing.
+    OSTab tab0 (out);
 
     if (vl == VERB_NONE) {
       // do nothing
     }
     else if (vl == VERB_LOW) {
-      out << this->description() << endl;
+      if (myRank == 0) {
+        out << "Tpetra::Map:" << endl;
+        OSTab tab1 (out);
+        out << "LocalOrdinalType: " << TypeNameTraits<LocalOrdinal>::name () << endl
+            << "GlobalOrdinalType: " << TypeNameTraits<GlobalOrdinal>::name () << endl
+            << "NodeType: " << TypeNameTraits<Node>::name () << endl;
+        if (this->getObjectLabel () != "") {
+          out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
+        }
+        out << "Global number of entries: " << getGlobalNumElements () << endl
+            << "Minimum global index: " << getMinAllGlobalIndex () << endl
+            << "Maximum global index: " << getMaxAllGlobalIndex () << endl
+            << "Index base: " << getIndexBase () << endl
+            << "Number of processes: " << getComm ()->getSize () << endl
+            << "Uniform: " << (isUniform () ? "true" : "false") << endl
+            << "Contiguous: " << (isContiguous () ? "true" : "false") << endl
+            << "Distributed: " << (isDistributed () ? "true" : "false") << endl;
+      }
     }
-    else {  // MEDIUM, HIGH or EXTREME
+
+    if (vl >= VERB_HIGH) { // HIGH or EXTREME
       for (int p = 0; p < numProcs; ++p) {
         if (myRank == p) {
-          if (myRank == 0) { // this is the root node (only output this info once)
-            out << endl
-                << "Number of Global Entries = " << getGlobalNumElements()  << endl
-                << "Maximum of all GIDs      = " << getMaxAllGlobalIndex() << endl
-                << "Minimum of all GIDs      = " << getMinAllGlobalIndex() << endl
-                << "Index Base               = " << getIndexBase()         << endl;
-          }
-          out << endl;
-          if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-            out << "Number of Local Elements   = " << nME           << endl
-                << "Maximum of my GIDs         = " << getMaxGlobalIndex() << endl
-                << "Minimum of my GIDs         = " << getMinGlobalIndex() << endl;
-            out << endl;
-          }
+          out << "Process " << myRank << ":" << endl;
+          OSTab tab1 (out);
+          out << "My number of entries: " << nME << endl
+              << "My minimum global index: " << getMinGlobalIndex () << endl
+              << "My maximum global index: " << getMaxGlobalIndex () << endl;
           if (vl == VERB_EXTREME) {
-            out << std::setw(width) << "Process Rank"
-                << std::setw(width) << "Local Index"
-                << std::setw(width) << "Global Index"
-                << endl;
-            for (size_t i=0; i < nME; i++) {
-              out << std::setw(width) << myRank
-                  << std::setw(width) << i
-                  << std::setw(width) << myEntries[i]
-                  << endl;
+            out << "My global indices: [";
+            for (size_type k = 0; k < myEntries.size (); ++k) {
+              out << myEntries[k];
+              if (k + 1 < myEntries.size ()) {
+                out << ", ";
+              }
             }
-            out << std::flush;
+            out << "]" << endl;
           }
+          std::flush (out);
         }
         // Do a few global ops to give I/O a chance to complete
-        comm_->barrier();
-        comm_->barrier();
-        comm_->barrier();
+        comm_->barrier ();
+        comm_->barrier ();
+        comm_->barrier ();
       }
     }
   }
@@ -1312,46 +1330,75 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
 
 }
 
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M)
+
+template<class LO, class GO, class NT>
+Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >
+Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Teuchos::as;
   using Teuchos::rcp;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Tpetra::Map<LO,GO,Node> map_type;
-  int myID = M->getComm()->getRank();
+  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef global_size_t GST;
+  const GST GINV = Teuchos::OrdinalTraits<GST>::invalid ();
+  const int myRank = M->getComm ()->getRank ();
 
-  // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
-  // Maps (which are 1-to-1 by construction).
+  // Bypasses for special cases where either M is known to be
+  // one-to-one, or the one-to-one version of M is easy to compute.
+  // This is why we take M as an RCP, not as a const reference -- so
+  // that we can return M itself if it is 1-to-1.
+  if (! M->isDistributed ()) {
+    // For a locally replicated Map, we assume that users want to push
+    // all the GIDs to Process 0.
 
-  //Based on Epetra's one to one.
+    // mfh 05 Nov 2013: getGlobalNumElements() does indeed return what
+    // you think it should return, in this special case of a locally
+    // replicated contiguous Map.
+    const GST numGlobalEntries = M->getGlobalNumElements ();
+    if (M->isContiguous ()) {
+      const size_t numLocalEntries =
+        (myRank == 0) ? as<size_t> (numGlobalEntries) : static_cast<size_t> (0);
+      return rcp (new map_type (numGlobalEntries, numLocalEntries,
+                                M->getIndexBase (), M->getComm (),
+                                M->getNode ()));
+    }
+    else {
+      ArrayView<const GO> myGids =
+        (myRank == 0) ? M->getNodeElementList () : Teuchos::null;
+      return rcp (new map_type (GINV, myGids (), M->getIndexBase (),
+                                M->getComm (), M->getNode ()));
 
-  Tpetra::Directory<LO, GO, Node> directory (*M);
-  size_t numMyElems = M->getNodeNumElements ();
-  ArrayView<const GO> myElems = M->getNodeElementList ();
-  Array<int> owner_procs_vec (numMyElems);
-
-  directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
-
-  Array<GO> myOwned_vec (numMyElems);
-  size_t numMyOwnedElems = 0;
-  for (size_t i = 0; i < numMyElems; ++i) {
-    GO GID = myElems[i];
-    int owner = owner_procs_vec[i];
-
-    if (myID == owner) {
-      myOwned_vec[numMyOwnedElems++] = GID;
     }
   }
-  myOwned_vec.resize (numMyOwnedElems);
+  else if (M->isContiguous ()) {
+    // Contiguous, distributed Maps are one-to-one by construction.
+    // (Locally replicated Maps can be contiguous.)
+    return M;
+  }
+  else {
+    Tpetra::Directory<LO, GO, NT> directory (*M);
+    const size_t numMyElems = M->getNodeNumElements ();
+    ArrayView<const GO> myElems = M->getNodeElementList ();
+    Array<int> owner_procs_vec (numMyElems);
 
-  const global_size_t GINV =
-    Teuchos::OrdinalTraits<global_size_t>::invalid ();
-  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                            M->getComm (), M->getNode ()));
+    directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
+
+    Array<GO> myOwned_vec (numMyElems);
+    size_t numMyOwnedElems = 0;
+    for (size_t i = 0; i < numMyElems; ++i) {
+      const GO GID = myElems[i];
+      const int owner = owner_procs_vec[i];
+
+      if (myRank == owner) {
+        myOwned_vec[numMyOwnedElems++] = GID;
+      }
+    }
+    myOwned_vec.resize (numMyOwnedElems);
+
+    return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
+                              M->getComm (), M->getNode ()));
+  }
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1428,7 +1475,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
                                               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
   \
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
-  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
+  createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
   \
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
   createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> > &M, \

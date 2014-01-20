@@ -191,6 +191,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Residual>(pl);
 
@@ -212,6 +213,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Residual>(pl);
 
@@ -441,6 +443,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
 
@@ -462,6 +465,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -61,7 +61,7 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory for the matrix");
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory for the matrix providing nonzero graph");
-    validParamList->set<int>                     ("k",             0, "Polynomial degree: the resulting pattern is A^k*P [default = 0]");
+    validParamList->set<int>                     ("k",             1, "Polynomial degree: the resulting pattern is A^k*P [default = 1]");
 
     return validParamList;
   }
@@ -90,10 +90,9 @@ namespace MueLu {
 
       bool doFillComplete  = true;
       bool optimizeStorage = true;
-      bool allowMLMultiply = false;
 
       for (int i = 0; i < k; i++) {
-        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2, 0), doFillComplete, optimizeStorage, allowMLMultiply);
+        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2, 0), doFillComplete, optimizeStorage);
         P.swap(AP);
       }
     }

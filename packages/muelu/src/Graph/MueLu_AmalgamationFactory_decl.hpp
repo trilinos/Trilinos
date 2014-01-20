@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -51,7 +51,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -108,26 +107,7 @@ namespace MueLu {
     // @param indexBase (GlobalOrdinal): indexBase for DOF map (and node map, default = 0)
     static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
 
-    /*! @brief ComputeUnamalgamatedAggregateSizes
-     * computes the size of the aggregates (in DOFs)
-     */
-
-    /*! @brief UnamalgamateAggregates
-
-       Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
-    */
-    static void UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, Teuchos::ArrayRCP<GlobalOrdinal> & aggToRowMap);
-
-    /*! @brief ComputeUnamalgamatedImportDofMap
-     * build overlapping dof row map from aggregates needed for overlapping null space
-     */
-    static Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo);
-
-
   private:
-
-    // amalgamation information
-    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_;
 
   }; //class SubBlockUnAmalgamationFactory
 

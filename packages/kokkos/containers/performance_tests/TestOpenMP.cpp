@@ -65,16 +65,14 @@ protected:
   {
     std::cout << std::setprecision(5) << std::scientific;
 
-    std::pair<unsigned, unsigned> team_league(1,4);
-    if (Kokkos::hwloc::available()) {
-      const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
-      team_league.first  = core_top.first ;
-      team_league.second = core_top.second;
+    unsigned threads_count = 4 ;
+
+    if ( Kokkos::hwloc::available() ) {
+      threads_count = Kokkos::hwloc::get_available_numa_count() *
+                      Kokkos::hwloc::get_available_cores_per_numa();
     }
 
-    std::cout << "Threads: " << team_league.first << "x" << team_league.second << std::endl;
-
-    Kokkos::OpenMP::initialize( team_league.first , team_league.second );
+    Kokkos::OpenMP::initialize( threads_count );
   }
 
   static void TearDownTestCase()

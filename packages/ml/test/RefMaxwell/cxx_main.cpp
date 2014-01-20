@@ -90,9 +90,7 @@ Teuchos::ParameterList Build_Teuchos_List(int LDA, double *coord_ptr,const char 
 /*******************************************************/
 void rpc_test_additive(Epetra_ActiveComm &Comm,
                        Teuchos::ParameterList & List,
-                       const Epetra_CrsMatrix &S,
                        Epetra_CrsMatrix &SM,
-                       const Epetra_CrsMatrix &Ms,
                        const Epetra_CrsMatrix &M1,
                        const Epetra_CrsMatrix &M0inv,
                        const Epetra_CrsMatrix &D0,
@@ -102,7 +100,12 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
                        const Epetra_Vector &b,
 		       bool run_gmres){
 
-  RefMaxwellPreconditioner PrecRF(SM,D0,Ms,M0inv,M1,List);
+  // Generate Fake Ms
+  Epetra_CrsMatrix *Ms=0;
+  EpetraExt::MatrixMatrix::Add(M1,false,1.0,M1,false,1.0,Ms);
+  Ms->FillComplete();
+
+  RefMaxwellPreconditioner PrecRF(SM,D0,*Ms,M0inv,M1,List);
   Epetra_Vector x0_(x0);
 
 
@@ -123,47 +126,40 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   diff.Update(1.0,x0_,-1.0);
   diff.Norm2(&nd);
   if(Comm.MyPID()==0) printf("||sol-exact||/||exact||=%6.4e\n",nd/nxe);
-  if(nd/nxe > 1e-8) exit(1);
+  if(nd/nxe > 1e-8) exit(1);  
   
-  
+
+  delete Ms;
 }
 
 
 
 /*******************************************************/
 void matrix_read(Epetra_ActiveComm &Comm){
-  Epetra_CrsMatrix *SM,*Se,*S,*Ms,*Mse, *D0,*D0e,*M0,*M1, *M1e;
+  Epetra_CrsMatrix *SM=0, *S, *Se,*D0,*D0e,*M0,*M1, *M1e;
 
   /* Read Matrices */
   EpetraExt::MatlabFileToCrsMatrix("S.dat" ,Comm,Se);
   EpetraExt::MatlabFileToCrsMatrix("M1.dat",Comm,M1e);
   EpetraExt::MatlabFileToCrsMatrix("M0.dat",Comm,M0);
   EpetraExt::MatlabFileToCrsMatrix("Tclean.dat",Comm,D0e);
-  EpetraExt::MatlabFileToCrsMatrix("Ms.dat" ,Comm,Mse);
-
-  /* Optimize Storage */
-  M1e->OptimizeStorage();
-  D0e->OptimizeStorage();
-  Mse->OptimizeStorage();
 
   /* Fix Column Maps */
-  EpetraExt::CrsMatrix_SolverMap S_CMT, D0_CMT, Ms_CMT, M0inv_CMT,M1_CMT;
-  S =dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Se, S_CMT ));
+  EpetraExt::CrsMatrix_SolverMap S_CMT, D0_CMT, M0inv_CMT,M1_CMT;
+  S =dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Se,S_CMT ));
   M1=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1e,M1_CMT));
   D0=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0e,D0_CMT));
-  Ms=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Mse,Ms_CMT));
 
-  /* Build SM */
-  SM=new Epetra_CrsMatrix(*S);
-  EpetraExt::MatrixMatrix::Add(*Ms,false,1,*SM,1);
 
   /* Optimize Storage */
-  S->OptimizeStorage();
-  SM->OptimizeStorage();
-  Ms->OptimizeStorage();
-  M1->OptimizeStorage();
-  M0->OptimizeStorage();
-  D0->OptimizeStorage();
+  M1->FillComplete();
+  M0->FillComplete();
+  D0->FillComplete(D0e->DomainMap(),D0e->RangeMap());
+  S->FillComplete();
+
+  /* Build SM */
+  EpetraExt::MatrixMatrix::Add(*S,false,1.0,*M1,false,1.0,SM);
+  SM->FillComplete();
 
   /* Build RHS */
   Epetra_Map EdgeMap=SM->DomainMap();
@@ -184,11 +180,10 @@ void matrix_read(Epetra_ActiveComm &Comm){
     M0inve.InsertGlobalValues(gid,1,&(invdiag[i]),&gid);
   }/*end for*/
   M0inve.FillComplete();
-  M0inve.OptimizeStorage();
 
   /* Remap this bad boy */
   Epetra_CrsMatrix * M0inv=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(M0inve,M0inv_CMT));
-  M0inv->OptimizeStorage();
+  M0inv->FillComplete();
 
   /* Read in coordinates*/
   int N;
@@ -210,23 +205,22 @@ void matrix_read(Epetra_ActiveComm &Comm){
 
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
-  rpc_test_additive(Comm,List_2level,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_SGS,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_Cheby,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);  
+  rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);  
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_SORa,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,true); 
+  rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,true); 
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_Aux,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);  
+  rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);  
 
 
   
   delete M0; delete M1e;
   delete D0e;delete Se;
-  delete coords;
   delete SM;
-  delete Mse;
+  delete coords;
 }
 
 

@@ -39,11 +39,12 @@
 // ***********************************************************************
 //@HEADER
 
+#include <Epetra_ConfigDefs.h>
 #include <EpetraExt_MapColoringIndex.h>
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_MapColoring.h>
-#include <Epetra_IntVector.h>
+#include <Epetra_GIDTypeVector.h>
 #include <Epetra_Map.h>
 
 #include <vector>
@@ -54,11 +55,15 @@ using std::map;
 
 namespace EpetraExt {
 
-CrsGraph_MapColoringIndex::NewTypeRef
-CrsGraph_MapColoringIndex::
+template<typename int_type>
+typename TCrsGraph_MapColoringIndex<int_type>::NewTypeRef
+TCrsGraph_MapColoringIndex<int_type>::
 operator()( OriginalTypeRef orig )
 {
-  origObj_ = &orig;
+  if(!orig.RowMap(). template GlobalIndicesIsType<int_type>())
+    throw "EpetraExt::TCrsGraph_MapColoringIndex::operator(): Global indices mismatch.";
+
+  Base::origObj_ = &orig;
 
   const Epetra_BlockMap & RowMap = orig.RowMap();
   int nRows = RowMap.NumMyElements();
@@ -70,25 +75,45 @@ operator()( OriginalTypeRef orig )
   for( int i = 0; i < NumColors; ++i ) MapOfColors[ ListOfColors[i] ] = i;
 
   //initial setup of stl vector of IntVectors for indexing
-  vector<int> dummy( nRows, -1 );
-  NewTypePtr IndexVec = new NewType( NumColors, Epetra_IntVector( Copy, RowMap, &dummy[0] ) );
+  vector<int_type> dummy( nRows, -1 );
+  typename Base::NewTypePtr IndexVec = new typename Base::NewType( NumColors, typename Epetra_GIDTypeVector<int_type>::impl( Copy, RowMap, &dummy[0] ) );
 
   int MaxNumIndices = orig.MaxNumIndices();
   int NumIndices;
-  vector<int> Indices( MaxNumIndices );
+  vector<int_type> Indices( MaxNumIndices );
 
   for( int i = 0; i < nRows; ++i )
   {
-    orig.ExtractGlobalRowCopy( orig.GRID(i), MaxNumIndices, NumIndices, &Indices[0] );
+    orig.ExtractGlobalRowCopy( (int_type) orig.GRID64(i), MaxNumIndices, NumIndices, &Indices[0] );
 
     for( int j = 0; j < NumIndices; ++j )
      (*IndexVec)[ MapOfColors[ColorMap_(Indices[j])] ][i] = Indices[j];
   }
 
-  newObj_ = IndexVec;
+  Base::newObj_ = IndexVec;
 
   return *IndexVec;
 }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+std::vector<Epetra_IntVector>&
+CrsGraph_MapColoringIndex::operator()( Epetra_CrsGraph& orig )
+{
+  return TCrsGraph_MapColoringIndex<int>::operator()(orig);
+}
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+std::vector<Epetra_LongLongVector>&
+CrsGraph_MapColoringIndex64::operator()( Epetra_CrsGraph& orig )
+{
+  return TCrsGraph_MapColoringIndex<long long>::operator()(orig);
+}
+
+#endif
 
 } // namespace EpetraExt
 

@@ -2291,8 +2291,12 @@ int Epetra_CrsGraph::RemoveEmptyProcessesInPlace(const Epetra_BlockMap * newMap)
     throw ReportError("Epetra_CrsGraph::RemoveEmptyProcessesInPlace does not work for shared CrsGraphData_",-2);
   
   // Dummy map for the non-active procs
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  Epetra_Map dummy;
+#else
   Epetra_SerialComm SComm;
   Epetra_Map dummy(0,0,SComm);
+#endif
 
   delete CrsGraphData_->Importer_;
   delete CrsGraphData_->Exporter_;

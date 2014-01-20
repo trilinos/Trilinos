@@ -43,8 +43,7 @@
 //
 // @HEADER
 #include <Zoltan2_OrderingProblem.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <limits>
@@ -84,8 +83,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
-typedef Zoltan2::XpetraCrsMatrixInput<SparseMatrix> SparseMatrixAdapter;
-typedef Zoltan2::XpetraVectorInput<Vector> VectorAdapter;
+typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 
 #define epsilon 0.00000001
 
@@ -94,20 +92,19 @@ int validatePerm(size_t n, z2TestLO *perm)
 {
   std::vector<int> count(n);
   int status = 0;
-  size_t i;
 
-  for (i=0; i<n; i++)
+  for (size_t i=0; i<n; i++)
     count[i]=0;
 
-  for (i=0; i<n; i++){
-    if ((perm[i]<0) || (perm[i]>=n))
+  for (size_t i=0; i<n; i++){
+    if (perm[i] < 0 || static_cast<size_t> (perm[i]) >= n)
       status = -1;
     else
       count[perm[i]]++;
   }
 
   // Each index should occur exactly once (count==1)
-  for (i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     if (count[i] != 1){
       status = -2;
       break;
@@ -202,7 +199,6 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
-  size_t dummy;
   z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
 
@@ -222,10 +218,10 @@ int main(int narg, char** arg)
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkGIDs = soln->getGids(&dummy);
-  checkPerm = soln->getPermutation(&dummy);
+  checkGIDs = soln->getGids();
+  checkPerm = soln->getPermutation();
 
-  for (int ii = 0; ii < checkLength; ii++)
+  for (size_t ii = 0; ii < checkLength; ii++)
       cout << checkPerm[ii] << " ";
   cout << endl;
   // Verify that checkPerm is a permutation

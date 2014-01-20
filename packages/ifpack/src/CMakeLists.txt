@@ -54,7 +54,6 @@ SET(HEADERS ${HEADERS}
   Ifpack_AdditiveSchwarz.h
   Ifpack_LocalFilter.h
   Ifpack_NodeFilter.h
-  Ifpack_SubdomainFilter.h
   Ifpack_DropFilter.h
   Ifpack_SparsityFilter.h
   Ifpack_ReorderFilter.h
@@ -109,11 +108,10 @@ SET(SOURCES ${SOURCES}
   Ifpack_DenseContainer.cpp
   Ifpack_LocalFilter.cpp
   Ifpack_NodeFilter.cpp
-  Ifpack_SubdomainFilter.cpp
+  Ifpack_SingletonFilter.cpp
   Ifpack_DropFilter.cpp
   Ifpack_SparsityFilter.cpp
   Ifpack_ReorderFilter.cpp
-  Ifpack_SingletonFilter.cpp
   Ifpack_DiagonalFilter.cpp
   Ifpack_Graph_Epetra_RowMatrix.cpp
   Ifpack_Graph_Epetra_CrsGraph.cpp
@@ -139,6 +137,26 @@ SET(SOURCES ${SOURCES}
   Ifpack_IHSS.cpp
   Ifpack_SORa.cpp
   )
+
+# Ifpack support for MPI parallel subdomain solvers
+IF (${PACKAGE_NAME}_ENABLE_PARALLEL_SUBDOMAIN_SOLVERS)
+  SET(HEADERS ${HEADERS}
+    Ifpack_SubdomainFilter.h
+    )
+  SET(SOURCES ${SOURCES}
+    Ifpack_SubdomainFilter.cpp
+    )
+ENDIF()
+
+# Ifpack_DynamicFactory support
+IF (${PACKAGE_NAME}_ENABLE_DYNAMIC_FACTORY)
+  SET(HEADERS ${HEADERS}
+    Ifpack_DynamicFactory.h
+    )
+  SET(SOURCES ${SOURCES}
+    Ifpack_DynamicFactory.cpp
+    )
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
 

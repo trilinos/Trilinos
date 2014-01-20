@@ -151,9 +151,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type iwork , ScalarType dst[] ) const
   {
-    const unsigned tmp[3] = { 1 , iwork + 1 , nwork - iwork };
+    const size_type tmp[3] = { 1 , iwork + 1 , nwork - iwork };
 
-    for ( unsigned i = 0 ; i < value_count ; ++i ) {
+    for ( size_type i = 0 ; i < value_count ; ++i ) {
       dst[i] += tmp[ i % 3 ];
     }
   }

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -348,8 +348,8 @@ namespace MueLu {
     Teuchos::ArrayRCP< Scalar >       ColBasedOmega_local = ColBasedOmega->getDataNonConst(0);
     GlobalOrdinal zero_local = 0;  // count negative colbased omegas
     GlobalOrdinal nan_local = 0;   // count NaNs -> set them to zero
-    Scalar min_local = 1000000; //Teuchos::ScalarTraits<Scalar>::one() * (Scalar) 1000000;
-    Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
+    Magnitude min_local = 1000000.0; //Teuchos::ScalarTraits<Scalar>::one() * (Scalar) 1000000;
+    Magnitude max_local = 0.0;
     for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
       if(Teuchos::ScalarTraits<Scalar>::magnitude(Denominator_local[i]) == mZero)
         {
@@ -374,15 +374,17 @@ namespace MueLu {
         ColBasedOmega_local[i] = 0.0;
       }
 
-      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < Teuchos::ScalarTraits<Scalar>::magnitude(min_local)) { min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
-      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(max_local)) { max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < min_local)
+	{ min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) > max_local)
+	{ max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
     }
 
     { // be verbose
       GlobalOrdinal zero_all;
       GlobalOrdinal nan_all;
-      Scalar min_all;
-      Scalar max_all;
+      Magnitude min_all;
+      Magnitude max_all;
       sumAll(A->getRowMap()->getComm(), zero_local, zero_all);
       sumAll(A->getRowMap()->getComm(), nan_local, nan_all);
       minAll(A->getRowMap()->getComm(), min_local, min_all);

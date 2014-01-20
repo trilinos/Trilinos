@@ -636,9 +636,6 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
     int_type* MyGlobalElements = 0;
     domainMap.MyGlobalElementsPtr(MyGlobalElements);
 
-    int* ElementSizeList = 0;
-    if(DoSizes) 
-      ElementSizeList = domainMap.ElementSizeList();
     int NumLocalAgain = 0;
     use_local_permute = true;    
     for(i = 0; i < numDomainElements; i++) {

@@ -40,7 +40,25 @@
 // ************************************************************************
 // @HEADER
 */
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
 
+#ifdef DO_COMPILATION
+
+#include <Tpetra_TestingUtilities.hpp>
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include <map>
@@ -54,10 +72,14 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Export.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 namespace {
   using Teuchos::as;
@@ -188,6 +210,8 @@ namespace {
   RCP<ParameterList> getCrsMatrixParameterList () {
     return parameterList (* (getCrsGraphParameterList ())); // For now.
   }
+
+
 
   //
   // UNIT TESTS
@@ -708,6 +732,7 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
       Indices[1] = GID+1;
       NumEntries = 2;
     }
+    Values[0] = -1.0; Values[1] = -1.0;
     A->insertGlobalValues(GID,Indices.view(0,NumEntries),Values.view(0,NumEntries));
 
     Indices[0]=GID; Values[0]=2.0;
@@ -717,6 +742,135 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
   A->fillComplete();
 }
 
+// ===============================================================================
+template<class CrsMatrixType>
+void build_test_matrix_wideband(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType> & A){
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename CrsMatrixType::scalar_type Scalar;
+  typedef typename CrsMatrixType::node_type Node;
+
+  typedef Tpetra::Map<LO,GO, Node> map_type;
+  int NumProc = Comm->getSize();
+  int MyPID   = Comm->getRank();
+
+  LO NumMyEquations = 1000;
+
+  GO NumGlobalEquations = (NumMyEquations * NumProc) + (NumProc < 3 ? NumProc : 3);
+  if(MyPID < 3)  NumMyEquations++;
+
+  // Construct a Map that puts approximately the same Number of equations on each processor
+  RCP<const map_type > MyMap = rcp(new map_type(NumGlobalEquations, NumMyEquations, 0, Comm));
+
+  // Create the matrix
+  A = rcp(new CrsMatrixType(MyMap,0));
+
+  // Add  rows one-at-a-time
+  // Need some vectors to help
+  // Off diagonal Values will always be -1
+  Teuchos::Array<Scalar> Values(10);
+  Teuchos::Array<GO> Indices(10);
+  size_t NumEntries=1;
+
+  for (LO i = 0; i < NumMyEquations; i++) {
+    GO GID = MyMap->getGlobalElement(i);
+    // Super / subdiagonal
+    if(GID == 0){
+      Indices[0] = 1;
+      NumEntries = 1;
+    }
+    else if (GID == NumGlobalEquations-1) {
+      Indices[0] = NumGlobalEquations-2;
+      NumEntries = 1;
+    }
+    else {
+      Indices[0] = GID-1;
+      Indices[1] = GID+1;
+      NumEntries = 2;
+    }
+
+    // Wide stuff
+    if(GID + NumMyEquations < NumGlobalEquations) {
+      Indices[NumEntries]=GID + NumMyEquations;
+      NumEntries++;
+    }
+    if(GID > Teuchos::as<GO>(NumMyEquations) ) { // Note: Unsigned integers are evil.
+      Indices[NumEntries]=GID - NumMyEquations;
+      NumEntries++;
+    }
+
+    // Double wide stuff.  Truck signage required
+    if(GID + 2*NumMyEquations < NumGlobalEquations) {
+      Indices[NumEntries]=GID + 2*NumMyEquations;
+      NumEntries++;
+    }
+    if(GID > Teuchos::as<GO>(2*NumMyEquations) ) { // Note: Unsigned integers are evil.
+      Indices[NumEntries]=GID - 2*NumMyEquations;
+      NumEntries++;
+    }
+
+    Values[0] = -1.0; Values[1] = -1.0; Values[2] = -1.0; Values[3] = -1.0; Values[4] = -1.0; Values[5] = -1.0; Values[6] = -1.0; Values[7] = -1.0;
+    A->insertGlobalValues(GID,Indices.view(0,NumEntries),Values.view(0,NumEntries));
+
+    Indices[0]=GID; Values[0]=2.0;
+    A->insertGlobalValues(GID,Indices.view(0,1), Values.view(0,1));
+  }
+
+  A->fillComplete();
+}
+
+// ===============================================================================
+template<class CrsMatrixType>
+void build_test_prolongator(const RCP<const CrsMatrixType> & A, RCP< CrsMatrixType> & P) {
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename CrsMatrixType::scalar_type Scalar;
+  typedef typename CrsMatrixType::node_type Node;
+  typedef Tpetra::Map<LO,GO, Node> map_type;
+
+  const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+  RCP<const map_type> RowMap =A->getRowMap(), DomainMap;
+
+  // Create the matrix
+  P = rcp(new CrsMatrixType(RowMap,0));
+  
+  // Make DomainMap
+  size_t num_my_domains=0;
+  for(size_t i=0; i<RowMap->getNodeNumElements(); i+=3) num_my_domains++;
+  DomainMap = rcp(new map_type(INVALID,num_my_domains,0,RowMap->getComm()));
+
+
+  Teuchos::Array<Scalar> Values(1);
+  Teuchos::Array<GO> Indices(1);
+  for(size_t i=0; i<RowMap->getNodeNumElements(); i++) {
+    GO GID = RowMap->getGlobalElement(i);
+    Indices[0] = GID % 3;
+    P->insertGlobalValues(GID,Indices(),Values());
+  }
+  P->fillComplete(DomainMap,RowMap);
+}
+
+// ===============================================================================
+template<class MapType>
+void build_test_map(const RCP<const MapType> & oldMap, RCP<MapType> & newMap) {
+  int NumProc = oldMap->getComm()->getSize();
+  int MyPID   = oldMap->getComm()->getRank();
+
+  if(NumProc<=2) {
+    // Dump everything onto -proc 0
+    global_size_t num_global = oldMap->getGlobalNumElements();
+    size_t num_local = MyPID==0 ? num_global : 0;
+    newMap = rcp(new MapType(num_global,num_local,0,oldMap->getComm()));
+  }
+  else {
+    // Split everything between procs 0 and 1
+    global_size_t num_global = oldMap->getGlobalNumElements();
+    size_t num_local=0;
+    if(MyPID==0) num_local = num_global/2;
+    else if(MyPID==1) num_local =  num_global - ((size_t)num_global/2);
+    newMap = rcp(new MapType(num_global,num_local,0,oldMap->getComm()));
+  } 
+}
 
 
  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar )  {
@@ -953,50 +1107,51 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
 
 
 
-
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scalar )  {
+  // NOTE: This test will fail.
+
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
   typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
   typedef Tpetra::Vector<Scalar,Ordinal,Ordinal, Node> VectorType;
+  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
+  
+  RCP<CrsMatrixType> A;
 
   RCP<VectorType> SourceVector, TargetVector, TestVector;
-  RCP<MapType> MapSource, MapTarget;
+  RCP<const MapType> MapSource, MapTarget;
   RCP<ImportType> Import1;
   RCP<ExportType> Export1;
   int MyPID = Comm->getRank();
-  double diff;
   int total_err=0;
   MagType diff_tol = 1e4*Teuchos::ScalarTraits<Scalar>::eps();
-
-  Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
-
-  global_size_t num_global=1000;
-
   int test_err=0;
 
-  // Initial setup - source = distributed, target = all on proc 0
-  MapSource = rcp(new MapType(num_global,INVALID),(Ordinal)0, Comm);
-  if(MyPID==0) MapTarget = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
-  else MapTarget = rcp(new MapType(num_global,(size_t)0,0,Comm));
+  // Get the source map from a sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+  MapSource=A->getRowMap();
+  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
 
+  // Target Map - all on one proc
+  size_t num_local = MyPID==0 ? num_global : 0;
+  MapTarget = rcp(new MapType(num_global,num_local,0,Comm));
+
+  // Vectors
   SourceVector = rcp(new VectorType(MapSource));
   TargetVector = rcp(new VectorType(MapTarget));
   TestVector   = rcp(new VectorType(MapTarget));
-
+  
+  // Importer / Exporter
   Import1 = rcp(new ImportType(MapSource,MapTarget));
   Export1 = rcp(new ExportType(MapSource,MapTarget));
   Teuchos::Array< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > norms(1);
 
 
   Teuchos::ScalarTraits< Scalar >::seedrandom(24601);
-  SourceVector.randomize();
-
-  TestVector->doImport(SourceVector,Import1,Tpetra::INSERT);
+  SourceVector->randomize();
+  TestVector->doImport(*SourceVector,*Import1,Tpetra::INSERT);
 
   /////////////////////////////////////////////////////////
   // Test #1: Use Exporter to create a reverse import
@@ -1005,12 +1160,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scala
     TargetVector->putScalar(0.0);
     RCP<ImportType> Import2 = rcp(new ImportType(*Export1));
 
-    TargetVector->doExport(SourceVector,Import2,Tpetra::ADD);
+    TargetVector->doExport(*SourceVector,*Import2,Tpetra::ADD);
 
     TargetVector->update(-1.0,*TestVector,1.0);
-
-    if(TargetVector->norm2(norms) > diff_tol) {
-      if(MyPID==0) cout<<"ReverseImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+    TargetVector->norm2(norms);
+    if(norms[0] > diff_tol) {
+      if(MyPID==0) cout<<"ReverseImport: Test #1 FAILED with norm diff = "<<norms[0]<<"."<<endl;
       total_err--;
     }
   }
@@ -1022,29 +1177,591 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scala
     TargetVector->putScalar(0.0);
     RCP<ExportType> Export2 = rcp(new ExportType(*Import1));
 
-    TargetVector->doExport(SourceVector,Export2,Tpetra::ADD);
+    TargetVector->doExport(*SourceVector,*Export2,Tpetra::ADD);
 
     TargetVector->update(-1.0,*TestVector,1.0);
+    TargetVector->norm2(norms);
 
-    if(TargetVector->norm2(norms) > diff_tol) {
-      if(MyPID==0) cout<<"ReverseExport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+    if(norms[0] > diff_tol) {
+      if(MyPID==0) cout<<"ReverseExport: Test #2 FAILED with norm diff = "<<norms[0]<<"."<<endl;
       total_err--;
     }
   }
 
-   TEST_EQUALITY(test_err,0);
+  
+  TEST_EQUALITY(test_err,0);
 }
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
+  // Unit Test the functionality in Tpetra_Import_Util
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
+  typedef Tpetra::Vector<int,Ordinal,Ordinal, Node> IntVectorType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;
+  
+  RCP<CrsMatrixType> A;
+
+  RCP<IntVectorType> SourceVector, TargetVector, TestVector;
+  RCP<const MapType> MapSource, MapTarget;
+  RCP<ImportType> Import1;
+  RCP<ExportType> Export1;
+  int MyPID = Comm->getRank();
+  int total_err=0;
+  int test_err=0;
+
+  // Get the source map from a sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+  MapSource=A->getRowMap();
+  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+
+  // Target Map - all on one proc
+  size_t num_local = MyPID==0 ? num_global : 0;
+  MapTarget = rcp(new MapType(num_global,num_local,0,Comm));
+
+  // Vectors
+  SourceVector = rcp(new IntVectorType(MapSource));
+  TargetVector = rcp(new IntVectorType(MapTarget));
+  TestVector   = rcp(new IntVectorType(MapTarget));
+  
+  // Importer / Exporter
+  Import1 = rcp(new ImportType(MapSource,MapTarget));
+
+  // Generate PID vector via explicit import
+  SourceVector->putScalar(MyPID);
+  TargetVector->putScalar(0);
+  TargetVector->doImport(*SourceVector,*Import1,Tpetra::ADD);
+
+
+  /////////////////////////////////////////////////////////
+  // Test #1: getPids
+  /////////////////////////////////////////////////////////
+  {
+    test_err=0;
+    // Generate PID vector via getPids
+    Teuchos::Array<int> pids;  
+    Tpetra::Import_Util::getPids<Ordinal,Ordinal,Node>(*Import1,pids,false);
+    
+    // Compare
+    Teuchos::ArrayRCP<const int>  TargetView = TargetVector->get1dView();
+    for(size_t i=0; i < TargetVector->getLocalLength(); i++) 
+      test_err += (pids[i] - TargetView[i] > 0) ?  1 : ((pids[i] - TargetView[i] < 0) ?  1 : 0);
+    total_err += test_err;
+  }
+
+  /////////////////////////////////////////////////////////
+  // Test #2: getPidGidPairs
+  /////////////////////////////////////////////////////////
+  {
+    test_err=0;
+    // Generate PID vector via getPidGidPairs
+    Teuchos::Array<std::pair<int,Ordinal> > pgids;  
+    Tpetra::Import_Util::getPidGidPairs<Ordinal,Ordinal,Node>(*Import1,pgids,false);
+    
+    // Compare
+    Teuchos::ArrayRCP<const int>  TargetView = TargetVector->get1dView();
+    for(size_t i=0; i < TargetVector->getLocalLength(); i++) 
+      test_err += (pgids[i].first - TargetView[i] > 0) ?  1 : ((pgids[i].first - TargetView[i] < 0) ?  1 : 0);
+    total_err += test_err;
+  }
+
+  /////////////////////////////////////////////////////////
+  // Test #3: getRemotePids
+  /////////////////////////////////////////////////////////
+  {
+    test_err=0;
+    Teuchos::Array<int> RemotePIDs;
+    Tpetra::Import_Util::getRemotePIDs<Ordinal,Ordinal,Node>(*Import1,RemotePIDs);
+
+    // We can't easily test this, so let's at least make sure it doesn't crash.
+  }
+
+  TEST_EQUALITY(total_err,0);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, PackAndPrepareWithOwningPIDs, Ordinal )  {
+  // Unit Test the functionality in Tpetra_Import_Util
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;
+  typedef typename Tpetra::CrsMatrix<double,Ordinal,Ordinal>::mat_vec_type LocalOps;
+  using Teuchos::av_reinterpret_cast;
+
+  RCP<CrsMatrixType> A;
+  int total_err=0;
+  int test_err=0;
+  Teuchos::Array<char> exports1, exports2;
+  Teuchos::Array<size_t> numPackets1, numPackets2;
+  size_t constantNumPackets1=0, constantNumPackets2=0;
+
+  // Build sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+
+  // Get Importer
+  RCP<const ImportType> Importer = A->getCrsGraph()->getImporter();
+  if(Importer == Teuchos::null)  {
+    TEST_EQUALITY(0,0); // short circuit
+  }
+  else {
+    /////////////////////////////////////////////////////////
+    // Test #1: P&PWOPIDs
+    /////////////////////////////////////////////////////////
+    // Call Standard Pack & Prepare
+    test_err=0;
+    constantNumPackets1=0;
+    numPackets1.resize(Importer->getExportLIDs().size());
+    A->packAndPrepare(*A,Importer->getExportLIDs(),exports1,numPackets1(),constantNumPackets1,Importer->getDistributor());
+
+    // Call the P&PWOPIDs
+    Teuchos::Array<int> pids;
+    Tpetra::Import_Util::getPids<Ordinal,Ordinal,Node>(*Importer,pids,false);
+    constantNumPackets2=0;
+    numPackets2.resize(Importer->getExportLIDs().size());  
+    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<double,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getExportLIDs(),exports2,numPackets2(),constantNumPackets2,Importer->getDistributor(),pids());
+
+    // Loop through the parts that should be the same
+    const size_t numExportLIDs = Importer->getExportLIDs().size();
+    Teuchos::ArrayView<const Ordinal> exportLIDs = Importer->getExportLIDs();
+
+    const int sizeOfPacket1 = sizeof(double) + sizeof(Ordinal);
+    const int sizeOfPacket2 = sizeof(double) + sizeof(Ordinal) + sizeof(int);
+    
+    size_t offset1=0,offset2=0;
+    for (size_t i = 0; i < numExportLIDs; i++) {
+      ArrayView<const Ordinal> lidsView;
+      ArrayView<const double>  valsView;
+      A->getLocalRowView(exportLIDs[i], lidsView, valsView);
+      const size_t curNumEntries = lidsView.size();
+      
+      ArrayView<char> gidsChar1 = exports1(offset1, curNumEntries*sizeof(Ordinal));
+      ArrayView<char> valsChar1 = exports1(offset1+curNumEntries*sizeof(Ordinal), curNumEntries*sizeof(double));
+      ArrayView<Ordinal> gids1  = av_reinterpret_cast<Ordinal>(gidsChar1);
+      ArrayView<double>  vals1  = av_reinterpret_cast<double>(valsChar1);
+
+      ArrayView<char> gidsChar2 = exports2(offset2, curNumEntries*sizeof(Ordinal));
+      //      ArrayView<char> pidsChar2 = exports2(offset2+curNumEntries*sizeof(Ordinal), curNumEntries*sizeof(int));
+      ArrayView<char> valsChar2 = exports2(offset2+curNumEntries*(sizeof(Ordinal)+sizeof(int)), curNumEntries*sizeof(double));
+      ArrayView<Ordinal> gids2  = av_reinterpret_cast<Ordinal>(gidsChar2);
+      ArrayView<double>  vals2  = av_reinterpret_cast<double>(valsChar2);
+
+      for (size_t k = 0; k < curNumEntries; ++k) {
+	if(gids1[k] != gids2[k] || vals1[k] != vals2[k]) test_err++;
+      }
+      offset1 += sizeOfPacket1 * curNumEntries;
+      offset2 += sizeOfPacket2 * curNumEntries;
+    }
+    total_err+=test_err;
+  }
+  
+  TEST_EQUALITY(total_err,0);
+}
+
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, Ordinal, Scalar)  {
+  // Unit Test the functionality in Tpetra_Import_Util
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
+  typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::mat_vec_type LocalOps;
+  typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::packet_type PacketType;
+  using Teuchos::av_reinterpret_cast;
+
+  RCP<CrsMatrixType> A,B;
+  int total_err=0;
+  int test_err=0;
+  int MyPID = Comm->getRank();
+  RCP<const MapType> MapSource, MapTarget;
+  Teuchos::Array<char> exports, imports;
+  Teuchos::Array<size_t> numImportPackets, numExportPackets;
+  size_t constantNumPackets=0;
+
+  // Build sample matrix & sourceMap
+  build_test_matrix<CrsMatrixType>(Comm,A);
+  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+  MapSource = A->getRowMap();
+
+  // Target Map - all on one proc
+  size_t num_local = MyPID==0 ? num_global : 0;
+  MapTarget = rcp(new MapType(num_global,num_local,0,Comm));
+
+  // Build Importer
+  RCP<ImportType> Importer = rcp(new ImportType(MapSource,MapTarget));
+  if(Importer != Teuchos::null)  {
+    /////////////////////////////////////////////////////////
+    // Test #1: Count test
+    /////////////////////////////////////////////////////////
+    // Do the traditional import
+    test_err=0;
+    B = rcp(new CrsMatrixType(MapTarget,0));
+    B->doImport(*A, *Importer, Tpetra::INSERT);
+    B->fillComplete(A->getDomainMap(),A->getRangeMap());
+    size_t nnz1=B->getNodeNumEntries();
+
+    // Call the P&PWOPIDs
+    Teuchos::Array<int> SourcePids(A->getColMap()->getNodeNumElements());
+    Tpetra::Distributor &distor = Importer->getDistributor();
+    if(A->getGraph()->getImporter()==Teuchos::null) SourcePids.assign(SourcePids.size(),MyPID);
+    else Tpetra::Import_Util::getPids<Ordinal,Ordinal,Node>(*A->getGraph()->getImporter(),SourcePids,false);
+    numExportPackets.resize(Importer->getExportLIDs().size());  
+    numImportPackets.resize(Importer->getRemoteLIDs().size());
+
+    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getExportLIDs(),exports,numExportPackets(),constantNumPackets,distor,SourcePids());
+
+    // Do the moral equivalent of doTransfer
+    distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
+    size_t totalImportPackets = 0;
+    for(size_t i = 0; i < (size_t)numImportPackets.size(); i++) {
+      totalImportPackets += numImportPackets[i];
+    }
+    imports.resize(totalImportPackets);
+    distor.doPostsAndWaits<PacketType>(exports(),numExportPackets(),imports(),numImportPackets());    
+
+    // Run the count... which should get the same NNZ as the traditional import
+    size_t nnz2=Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),
+													       constantNumPackets, distor,Tpetra::INSERT,Importer->getNumSameIDs(),
+													       Importer->getPermuteToLIDs(),Importer->getPermuteFromLIDs());
+    if(nnz1!=nnz2) test_err++;
+    total_err+=test_err;
+
+    /////////////////////////////////////////////////////////
+    // Test #2: Actual combine test
+    /////////////////////////////////////////////////////////
+    Teuchos::Array<size_t>  rowptr(MapTarget->getNodeNumElements()+1);
+    Teuchos::Array<Ordinal> colind(nnz2);
+    Teuchos::Array<Scalar>  vals(nnz2);
+    Teuchos::Array<int>     TargetPids;
+
+    Tpetra::Import_Util::unpackAndCombineIntoCrsArrays<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),constantNumPackets,
+											     distor,Tpetra::INSERT,Importer->getNumSameIDs(),Importer->getPermuteToLIDs(),
+											     Importer->getPermuteFromLIDs(),MapTarget->getNodeNumElements(),nnz2,rowptr(),
+											     colind(),vals(),SourcePids(),TargetPids);
+    // Do the comparison
+    Teuchos::ArrayRCP<const size_t>  Browptr;
+    Teuchos::ArrayRCP<const Ordinal> Bcolind;
+    Teuchos::ArrayRCP<const Scalar>  Bvals;
+    B->getAllValues(Browptr,Bcolind,Bvals);
+
+    // Check the rowptrs
+    if(Browptr.size()!= rowptr.size()) test_err++;
+    if(!test_err) {
+      for(size_t i=0; i < as<size_t>(rowptr.size()); i++) {
+	if(Browptr[i]!=rowptr[i]) {
+	  test_err++;
+	  break;
+	}
+      }
+    }
+    // Check the indices / values... but sort first
+    if(Bcolind.size()!=colind.size()) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
+    if(Bvals.size()  !=vals.size())   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
+    if(!test_err) {
+
+      // Reindex colind to local indices
+      const MapType & Bmap = *B->getColMap();
+      for(size_t i=0; i<as<size_t>(colind.size()); i++){
+	colind[i]=Bmap.getLocalElement(colind[i]);
+      }
+
+      // Sort the GIDs
+      Tpetra::Import_Util::sortCrsEntries<Scalar,Ordinal>(rowptr(),colind(),vals());
+
+      // Compare the gids
+      for(size_t i=0; i < as<size_t>(rowptr.size()-1); i++) {	
+	for(size_t j=rowptr[i]; j < rowptr[i+1]; j++) {
+	  if(colind[j] != Bcolind[j] || vals[j] != Bvals[j]) {
+	    test_err++;
+	  }	  
+	}
+      }
+    }
+    
+    total_err+=test_err;
+  }
+
+  TEST_EQUALITY(total_err,0);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndReindex, LocalOrdinal, GlobalOrdinal)  {
+  // Test the colmap...
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef double Scalar;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> MapType;
+  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal> ImportType;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> CrsMatrixType;
+  typedef Teuchos_Ordinal rsize_t;
+  using Teuchos::av_reinterpret_cast;
+
+  RCP<CrsMatrixType> A;
+  RCP<const MapType> Acolmap, Adomainmap;
+  RCP<const MapType> Bcolmap;
+  int total_err=0;
+  int test_err=0;
+
+  // Build sample matrix 
+  build_test_matrix_wideband<CrsMatrixType>(Comm,A);
+
+  // Get the matrix pointers / map
+  ArrayRCP<const size_t> rowptr;
+  ArrayRCP<const LocalOrdinal> colind;
+  ArrayRCP<const Scalar> values;
+  A->getAllValues(rowptr,colind,values);
+  Acolmap = A->getColMap();
+  Adomainmap = A->getDomainMap();
+
+  // Get owning PID information
+  size_t numMyCols = A->getColMap()->getNodeNumElements();
+  RCP<const ImportType> Importer = A->getGraph()->getImporter();
+  Teuchos::Array<int> AcolmapPIDs(numMyCols,-1);
+  if(Importer!=Teuchos::null)    
+    Tpetra::Import_Util::getPids<LocalOrdinal,GlobalOrdinal,Node>(*Importer,AcolmapPIDs,true);
+
+  // Build a "gid" version of colind & colind-sized pid list
+  Array<GlobalOrdinal> colind_GID(colind.size());
+  Array<int> colind_PID(colind.size());
+  for(rsize_t i=0; i<colind.size(); i++) { 
+    colind_GID[i] = Acolmap->getGlobalElement(colind[i]);
+    colind_PID[i] = AcolmapPIDs[colind[i]];
+  }
+  
+
+  {
+    /////////////////////////////////////////////////////////
+    // Test #1: Pre-sorted colinds
+    /////////////////////////////////////////////////////////
+    Teuchos::Array<int> BcolmapPIDs;
+    Teuchos::Array<LocalOrdinal> Bcolind_LID(colind.size());
+    Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex<LocalOrdinal,GlobalOrdinal,Node>(rowptr(),Bcolind_LID(),colind_GID(),Adomainmap,colind_PID(),BcolmapPIDs,Bcolmap);
+
+    // Since this was sorted to begin with, the outgoing maps should be 
+    // in an identical order.  So let's check.
+    if(Acolmap->getNodeNumElements()!=Bcolmap->getNodeNumElements()) test_err++;
+    else {
+      for(size_t i=0; i<Acolmap->getNodeNumElements(); i++)
+	if(Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
+    }
+
+    // Now test the column indices
+    if(colind.size()!=Bcolind_LID.size()) test_err++;
+    else {
+      for(rsize_t i=0; i<colind.size(); i++)
+	if(colind[i] != Bcolind_LID[i]) test_err++;
+    }
+
+    total_err+=test_err;
+  }    
+
+  TEST_EQUALITY(total_err,0);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import, AdvancedConstructors, Ordinal )  {
+  // Test the remotePIDs Tpetra::Import constructor   
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;  
+  RCP<CrsMatrixType> A,B;
+
+  RCP<const ImportType> Import1, Import2;
+  RCP<MapType> Map0;
+  int total_err=0;
+  int test_err=0;
+
+  // Build the sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+
+  // Grab its importer
+  Import1 = A->getGraph()->getImporter();
+
+  // Only test in parallel
+  if(Comm->getSize()==1) { TEST_EQUALITY(0,0); return;}
+
+
+  // Rebalanced map (based on the *DomainMap* of A)
+  build_test_map<MapType>(A->getDomainMap(),Map0);
+
+  /////////////////////////////////////////////////////////
+  // Test #1: Constructor w/ remotePIDs test
+  /////////////////////////////////////////////////////////
+  {
+    test_err=0;
+
+    // Generate PID vector via getRemotePIDs
+    Teuchos::Array<int> pids;  
+    Tpetra::Import_Util::getRemotePIDs<Ordinal,Ordinal,Node>(*Import1,pids);
+
+    // Build a new (identical) importer via the other constructor 
+    Import2 = rcp(new ImportType(Import1->getSourceMap(),Import1->getTargetMap(),pids));
+    
+    // Compare
+    if(Import1->getNumSameIDs() != Import2->getNumSameIDs()) test_err++;
+    if(Import1->getNumPermuteIDs() != Import2->getNumPermuteIDs()) 
+      test_err++;
+    else {
+      for(size_t i=0; i<Import1->getNumPermuteIDs(); i++) {
+	test_err += (Import1->getPermuteFromLIDs()[i]!=Import2->getPermuteFromLIDs()[i]);
+      	test_err += (Import1->getPermuteToLIDs()[i]!=Import2->getPermuteToLIDs()[i]);
+      }      
+    }
+    if(Import1->getNumRemoteIDs() != Import2->getNumRemoteIDs()) 
+      test_err++;
+    else {
+      for(size_t i=0; i<Import1->getNumRemoteIDs(); i++) 
+	test_err += (Import1->getRemoteLIDs()[i]!=Import2->getRemoteLIDs()[i]);
+    }
+    if(Import1->getNumExportIDs() != Import2->getNumExportIDs()) 
+      test_err++;
+    else {
+      for(size_t i=0; i<Import1->getNumExportIDs(); i++) {
+	test_err += (Import1->getExportLIDs()[i]!=Import2->getExportLIDs()[i]);
+	test_err += (Import1->getExportPIDs()[i]!=Import2->getExportPIDs()[i]);
+      }
+    }   
+    total_err += test_err;
+  }
+ 
+  /////////////////////////////////////////////////////////
+  // Test #2: MueLu-style Transpose & Rebalance "R"
+  /////////////////////////////////////////////////////////
+  {
+    // Create Transpose
+    Tpetra::RowMatrixTransposer<double, Ordinal, Ordinal, Node> transposer(A);
+    B = transposer.createTranspose();
+
+    // Build Importer
+    Import2 = rcp(new ImportType(B->getRowMap(),Map0));
+
+    // Build the imported matrix
+    Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(B,*Import2,Teuchos::null,Map0,Teuchos::null);
+    
+  }
+  //
+
+
+  TEST_EQUALITY(total_err,0);
+}
+
+  
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scalar )  {
+  // Test a muelu-style SA build and rebalance.  Kind of like Gangnam Style, but with more cows.
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;  
+  RCP<CrsMatrixType> A,Ptent,P,R,AP,RAP,rebalancedP;
+  RCP<MapType> Map0;
+  RCP<const ImportType> Import0,ImportTemp;
+
+  int total_err=0;
+  int test_err=0;
+
+  // Build sample matrix
+  build_test_matrix_wideband<CrsMatrixType>(Comm,A);
+
+  /////////////////////////////////////////////////////////
+  // Test #1: Tentative P, no rebalance
+  /////////////////////////////////////////////////////////
+  {
+    // Build tentative prolongator
+    build_test_prolongator<CrsMatrixType>(A,P);
+
+    // Build R
+    Tpetra::RowMatrixTransposer<double, Ordinal, Ordinal, Node> transposer(P);
+    R = transposer.createTranspose();
+
+    // Form AP
+    AP = rcp (new CrsMatrixType(A->getRowMap(),0));
+    Tpetra::MatrixMatrix::Multiply(*A,false,*P,false,*AP);
+
+    // Form RAP
+    RAP = rcp (new CrsMatrixType(R->getRangeMap(),0));
+    Tpetra::MatrixMatrix::Multiply(*R,false,*AP,false,*RAP);
+    
+    total_err+=test_err;
+  }
+
+  /////////////////////////////////////////////////////////
+  // Test #2: SaP, plus rebalancing
+  /////////////////////////////////////////////////////////
+  {   
+    // Build tentative prolongator
+    build_test_prolongator<CrsMatrixType>(A,Ptent);
+
+    // Build SA-stype P
+    P = rcp (new CrsMatrixType(A->getRowMap(),0));
+    Tpetra::MatrixMatrix::Multiply(*A,false,*Ptent,false,*P);
+    
+    // Build R
+    Tpetra::RowMatrixTransposer<double, Ordinal, Ordinal, Node> transposer(P);
+    R = transposer.createTranspose();
+
+    // Form AP
+    AP = rcp (new CrsMatrixType(A->getRowMap(),0));
+    Tpetra::MatrixMatrix::Multiply(*A,false,*P,false,*AP);
+
+    // Form RAP
+    RAP = rcp (new CrsMatrixType(R->getRangeMap(),0));
+    Tpetra::MatrixMatrix::Multiply(*R,false,*AP,false,*RAP);
+
+    // "Rebalanced" Map (based on the *RowMap* of RAP)
+    build_test_map<MapType>(RAP->getRowMap(),Map0);
+   
+    // Build Importer
+    Import0 = rcp(new ImportType(RAP->getRowMap(),Map0));
+
+    // Rebalance P
+    ImportTemp = rcp(new ImportType(Import0->getTargetMap(),P->getColMap()));
+    P->replaceDomainMapAndImporter(Import0->getTargetMap(),ImportTemp);
+    
+    // Rebalance R
+    R = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(R,*Import0,Teuchos::null,Import0->getTargetMap(),Teuchos::null);
+
+    
+    total_err+=test_err;
+  }
+
+
+
+
+
+  TEST_EQUALITY(total_err,0);
+}
+
+
 
   //
   // INSTANTIATIONS
   //
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, GetPids, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, PackAndPrepareWithOwningPIDs, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import, AdvancedConstructors, ORDINAL )
 
 #   define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrixImportExport, doImport, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( FusedImportExport, doImport, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( FusedImportExport, doImport, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( FusedImportExport,  MueLuStyle, ORDINAL, SCALAR )   
+
+#define UNIT_TEST_GROUP_LO_GO(LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, LowCommunicationMakeColMapAndReindex, LO, GO)
+
+  
+
+
+  // Note: This test fails.  Should fix later.
+  //      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ReverseImportExport, doImport, ORDINAL, SCALAR )
 
   // test CrsGraph for <int,int,DefaultNode>
   // if explicit instantiation is enabled, this configuration is always built
@@ -1071,5 +1788,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scala
   UNIT_TEST_GROUP_ORDINAL_SCALAR(int,float)
 #endif
 
+    TPETRA_ETI_MANGLING_TYPEDEFS()
+
+    TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_LO_GO )
+
 }
+
+#endif  //DO_COMPILATION
 

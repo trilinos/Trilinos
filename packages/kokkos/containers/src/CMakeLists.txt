@@ -15,20 +15,11 @@ SET(HEADERS_IMPL "")
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB HEADERS_IMPL impl/*.hpp)
+FILE(GLOB SOURCES impl/*.cpp)
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})
 
-INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/)
 INSTALL(FILES ${HEADERS_IMPL} DESTINATION ${TRILINOS_INCDIR}/impl/)
-
-# mfh 20 Sep 2013: This subpackage currently only contains header files.  Thus,
-# there is no library to build.  See, for example, this Stack Overflow post:
-#
-# http://stackoverflow.com/questions/16655705/cmake-cannot-determine-linker-language-for-target
-#
-# If we add source files to this subpackage, for example, to support explicit
-# template instantiation, then we will need to uncomment out the
-# TRIBITS_ADD_LIBRARY statement below.
 
 TRIBITS_ADD_LIBRARY(
     kokkoscontainers
@@ -39,3 +30,4 @@ TRIBITS_ADD_LIBRARY(
     )
 
 #-----------------------------------------------------------------------------
+

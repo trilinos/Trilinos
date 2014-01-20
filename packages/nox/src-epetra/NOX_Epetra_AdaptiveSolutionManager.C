@@ -69,6 +69,7 @@ void NOX::Epetra::AdaptiveSolutionManager::resizeMeshDataArrays(
   exporter = rcp(new Epetra_Export(*overlapMap, *map));
   overlapped_x = rcp(new Epetra_Vector(*overlapMap));
   overlapped_xdot = rcp(new Epetra_Vector(*overlapMap));
+  overlapped_xdotdot = rcp(new Epetra_Vector(*overlapMap));
   overlapped_f = rcp(new Epetra_Vector(*overlapMap));
   overlapped_jac = rcp(new Epetra_CrsMatrix(Copy, *overlapJacGraph));
   tmp_ovlp_sol = rcp(new Epetra_Vector(*overlapMap));

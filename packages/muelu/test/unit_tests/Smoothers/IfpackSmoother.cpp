@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -50,7 +50,6 @@
 #include "MueLu_IfpackSmoother.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 /*
   Comments about tests with hard coded results:
@@ -62,6 +61,7 @@
 
 namespace MueLuTests {
 
+  // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
@@ -89,7 +89,7 @@ namespace MueLuTests {
 
       IfpackSmoother smoother("point relaxation stand-alone", paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       switch (comm->getSize()) {
       case 1:
@@ -119,7 +119,7 @@ namespace MueLuTests {
 
       IfpackSmoother smoother("point relaxation stand-alone", paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       switch (comm->getSize()) {
       case 1:
@@ -153,7 +153,7 @@ namespace MueLuTests {
 
       IfpackSmoother smoother("Chebyshev", paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       TEST_FLOATING_EQUALITY(residualNorms, 5.269156e-01, 1e-7); // Compare to residual reported by ML
 
@@ -169,7 +169,7 @@ namespace MueLuTests {
 
       IfpackSmoother smoother("ILU", Teuchos::ParameterList());
 
-      ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {

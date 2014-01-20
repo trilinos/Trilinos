@@ -471,12 +471,12 @@ int main(int argc, char* argv[])
   int loop = 1000000;
   int test = -1;
   int numa = 1;
-  int threads = 8;
+  int threads_per_numa = 8;
   int device = 0;
 
   for(int i=0;i<argc;i++)
   {
-     if((strcmp(argv[i],"-t")==0)||(strcmp(argv[i],"--threads")==0)) {threads=atoi(argv[++i]); continue;}
+     if((strcmp(argv[i],"-t")==0)||(strcmp(argv[i],"--threads")==0)) {threads_per_numa=atoi(argv[++i]); continue;}
      if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
      if((strcmp(argv[i],"--test")==0)) {test=atoi(argv[++i]); continue;}
      if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
@@ -488,7 +488,7 @@ int main(int argc, char* argv[])
   }
 
 #if DEVICE==1
-  Kokkos::Threads::initialize(std::pair<unsigned,unsigned>(numa,threads));
+  Kokkos::Threads::initialize( numa * threads_per_numa , numa );
 #endif
 
 #if DEVICE==2

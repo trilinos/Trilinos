@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -60,7 +60,6 @@
 
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
-//#include "MueLu_Graph.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -68,69 +67,59 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::EmergencyAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
-{
-}
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+    Monitor m(*this, "BuildAggregates");
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
-  Monitor m(*this, "BuildAggregates");
+    // vertex ids for output
+    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
 
-  // form new aggregates from non-aggregated nodes
+    const LO  nRows  = graph.GetNodeNumVertices();
+    const int myRank = graph.GetComm()->getRank();
 
-  // vertex ids for output
-  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+    int              aggIndex = -1;
+    size_t           aggSize  =  0;
+    const unsigned   magicConstAsDefaultSize = 100;
+    std::vector<int> aggList(magicConstAsDefaultSize);
 
-  const LocalOrdinal nRows = graph.GetNodeNumVertices();
-  LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
-  const int myRank = graph.GetComm()->getRank();
+    LO nLocalAggregates = aggregates.GetNumAggregates();
+    for (LO iNode = 0; iNode < nRows; iNode++) {
+      if (aggStat[iNode] != NodeStats::AGGREGATED) {
+        aggSize = 0;
+        aggregates.SetIsRoot(iNode);
 
-  // loop over all local rows
-  for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
-    if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
+        aggList[aggSize++] = iNode;
+        aggIndex = nLocalAggregates++;
 
-      aggregates.SetIsRoot(iNode);    // mark iNode1 as root node for new aggregate 'ag'
+        ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
 
-      Aggregate ag;
-      ag.list.push_back(iNode);
-      ag.index = nLocalAggregates++;
+        // TODO: I would like to get rid of this, but that requires something like
+        // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
+        // computation in LWGraph
+        if (as<size_t>(neighOfINode.size()) > aggList.size())
+          aggList.resize(neighOfINode.size()*2);
 
-      Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
-      for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it!=neighOfINode.end(); ++it) {
-        LocalOrdinal index = *it;
-        //if(graph.isLocalNeighborVertex(index) && aggStat[index] != SELECTED && aggStat[index] != BDRY) {
-        if(graph.isLocalNeighborVertex(index) && aggStat[index] != NodeStats::AGGREGATED) {
-          ag.list.push_back(index);
+        for (LO j = 0; j < neighOfINode.size(); j++) {
+          LO neigh = neighOfINode[j];
+
+          if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != NodeStats::AGGREGATED)
+            aggList[aggSize++] = neigh;
         }
-      } // loop over all columns
 
-      // finalize aggregate
-      for(size_t k=0; k<ag.list.size(); k++) {
-        aggStat[ag.list[k]] = NodeStats::AGGREGATED;
-        vertex2AggId[ag.list[k]] = ag.index;
-        procWinner[ag.list[k]] = myRank;
+        // finalize aggregate
+        for (size_t k = 0; k < aggSize; k++) {
+          aggStat     [aggList[k]] = NodeStats::AGGREGATED;
+          vertex2AggId[aggList[k]] = aggIndex;
+          procWinner  [aggList[k]] = myRank;
+        }
+
+        numNonAggregatedNodes -= aggSize;
       }
-    } // end if NOTSEL
-  }   // end for
+    }
 
-  // update aggregate object
-  aggregates.SetNumAggregates(nLocalAggregates);
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 3 (emergency aggregation):", graph, aggregates, aggStat);
-
-  // collect some local information
-  LO nLocalAggregated    = 0;
-  LO nLocalNotAggregated = 0;
-  for (LO i = 0; i < nRows; i++) {
-    if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-    else nLocalNotAggregated++;
+    aggregates.SetNumAggregates(nLocalAggregates);
   }
-
-  return nLocalNotAggregated;
-}
 
 } // end namespace
 

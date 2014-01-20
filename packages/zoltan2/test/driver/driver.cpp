@@ -65,13 +65,11 @@
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
-#include <Zoltan2_BasicIdentifierInput.hpp>
-#include <Zoltan2_BasicVectorInput.hpp>
-#include <Zoltan2_XpetraCrsGraphInput.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraMultiVectorInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -107,13 +105,11 @@ typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
 
-typedef Zoltan2::BasicCoordinateInput<tcrsMatrix_t> bci_t;
-typedef Zoltan2::BasicIdentifierInput<tcrsMatrix_t> bii_t;
-typedef Zoltan2::BasicVectorInput<tcrsMatrix_t>     bvi_t; 
-typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t>  xgi_t;
-typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> xmi_t;
-typedef Zoltan2::XpetraMultiVectorInput<tMVector_t>  xmvi_t;
-typedef Zoltan2::XpetraVectorInput<tVector_t>    xvi_t;
+typedef Zoltan2::BasicIdentifierAdapter<tcrsMatrix_t> bii_t;
+typedef Zoltan2::BasicVectorAdapter<tcrsMatrix_t>     bvi_t; 
+typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t>  xgi_t;
+typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> xmi_t;
+typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>  xmvi_t;
 
 #define ERRMSG(msg) if (rank == 0){ cerr << "FAIL: " << msg << endl; }
 #define EXC_ERRMSG(msg, e) \
@@ -343,22 +339,7 @@ int main(int argc, char *argv[])
     bool fail = false;
     ArrayRCP<const Zoltan2::MetricValues<scalar_t> > quality;
 
-    if (iaType == string("BasicCoordinateInput")){
-      bci_t *ia = NULL;
-      try{
-        ia = new bci_t(numRows, gids, coords, strides, vweights, strides);
-      }
-      catch (std::exception &e){
-        EXC_ERRMSG("Test error: InputAdapter build", e);
-        fail = true;
-      }
-
-      int err = runAlgorithm<bci_t>(rank, ia, pList, quality);
-
-      if (err != 0)
-        fail = true;
-    }
-    else if (iaType == string("BasicIdentifierInput")){
+    if (iaType == string("BasicIdentifierInput")){
       bii_t *ia = NULL;
       try{
         ia = new bii_t(numRows, gids, vweights, strides);
@@ -409,7 +390,7 @@ int main(int argc, char *argv[])
       xmi_t *ia = NULL;
       RCP<const tcrsMatrix_t> Mptr(M);
       try{
-        ia = new xmi_t(Mptr, coordDim, vWeightDim);
+        ia = new xmi_t(Mptr, vWeightDim, coordDim);
       }
       catch (std::exception &e){
         EXC_ERRMSG("Test error: InputAdapter build", e);
@@ -418,13 +399,13 @@ int main(int argc, char *argv[])
 
       if (coordDim > 0){
         for (int i=0; i < coordDim; i++){
-          ia->setRowCoordinates(i, coords[i], 1);
+          ia->setRowCoordinates(coords[i], 1, i);
         }
       }
 
       if (vWeightDim > 0){
         for (int i=0; i < vWeightDim; i++){
-          ia->setRowWeights(i, vweights[i], 1);
+          ia->setRowWeights(vweights[i], 1, i);
         }
       }
 
@@ -451,16 +432,16 @@ int main(int argc, char *argv[])
     else if (iaType == string("XpetraVectorInput")){
       // UserInputForTests can give us a vector based on M.
       const RCP<const tVector_t> V;
-      xvi_t *ia = NULL;
+      xmvi_t *ia = NULL;
       try{
-        ia = new xvi_t(V, vweights, strides);
+        ia = new xmvi_t(V, vweights, strides);
       }
       catch (std::exception &e){
         EXC_ERRMSG("Test error: InputAdapter build", e);
         fail = true;
       }
 
-      int err = runAlgorithm<xvi_t>(rank, ia, pList, quality);
+      int err = runAlgorithm<xmvi_t>(rank, ia, pList, quality);
       if (err != 0)
         fail = true;
     }

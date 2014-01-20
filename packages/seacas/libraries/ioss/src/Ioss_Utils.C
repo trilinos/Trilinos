@@ -47,15 +47,9 @@
 #include <sys/utsname.h>
 #endif
 
-#include <Ioss_ElementBlock.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Field.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Region.h>
-#include <Ioss_SideBlock.h>
-#include <fstream>
+#include <Ioss_SubSystem.h>
 
-#include "Ioss_Property.h"
+#include <fstream>
 
 namespace {
   inline int to_lower(int c) { return std::tolower(c); }
@@ -616,4 +610,39 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name,
   new_str += hash_string;
   std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
   return new_str;
+}
+
+void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
+{
+  // The model for a history file is a single sphere element (1 node, 1 element)
+  // This is needed for some applications that read this file that require a "mesh"
+  // even though a history file is just a collection of global variables with no
+  // real mesh.
+
+  Ioss::DatabaseIO *db = region->get_database();
+  if (db->parallel_rank() == 0) {
+    region->begin_mode(Ioss::STATE_DEFINE_MODEL);
+    
+    // Node Block
+    Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", 1, 3);
+    region->add(nb);
+
+    // Element Block
+    Ioss::ElementBlock *eb = new Ioss::ElementBlock(db, "e1", "sphere", 1);
+    eb->property_add(Ioss::Property("id", 1));
+    region->add(eb);
+    region->end_mode(Ioss::STATE_DEFINE_MODEL);
+
+    region->begin_mode(Ioss::STATE_MODEL);
+    static double coord[3] = {1.1, 2.2, 3.3};
+    static int  ids[1] = {1};
+    nb->put_field_data("ids", ids, sizeof(int));
+    nb->put_field_data("mesh_model_coordinates", coord, 3*sizeof(double));
+
+    static int connect[1] = {1};
+    eb->put_field_data("ids", ids, sizeof(int));
+    eb->put_field_data("connectivity", connect, 1*sizeof(int));
+
+    region->end_mode(Ioss::STATE_MODEL);
+  }
 }

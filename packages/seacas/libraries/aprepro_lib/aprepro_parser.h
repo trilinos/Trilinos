@@ -66,15 +66,16 @@ namespace SEAMS {
     union semantic_type
     {
 /* Line 33 of lalr1.cc  */
-#line 42 "aprepro.yy"
+#line 43 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
   struct symrec *tptr;	/* For returning symbol-table pointers	*/
   char   *string;	/* For returning quoted strings		*/
+  struct array  *arrval;       /* For returning arrays                 */
 
 
 /* Line 33 of lalr1.cc  */
-#line 78 "aprepro_parser.h"
+#line 79 "aprepro_parser.h"
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -94,43 +95,45 @@ namespace SEAMS {
      SVAR = 262,
      IMMVAR = 263,
      IMMSVAR = 264,
-     FNCT = 265,
-     SFNCT = 266,
-     COMMA = 267,
-     LPAR = 268,
-     RPAR = 269,
-     LBRACK = 270,
-     RBRACK = 271,
-     LBRACE = 272,
-     RBRACE = 273,
-     SEMI = 274,
-     EQUAL = 275,
-     EQ_MINUS = 276,
-     EQ_PLUS = 277,
-     EQ_DIV = 278,
-     EQ_TIME = 279,
-     EQ_POW = 280,
-     COLON = 281,
-     QUEST = 282,
-     LOR = 283,
-     LAND = 284,
-     NE = 285,
-     EQ = 286,
-     GE = 287,
-     LE = 288,
-     GT = 289,
-     LT = 290,
-     SUB = 291,
-     PLU = 292,
-     MOD = 293,
-     TIM = 294,
-     DIV = 295,
-     NOT = 296,
-     UNARY = 297,
-     POW = 298,
-     DEC = 299,
-     INC = 300,
-     CONCAT = 301
+     AVAR = 265,
+     FNCT = 266,
+     SFNCT = 267,
+     AFNCT = 268,
+     COMMA = 269,
+     LPAR = 270,
+     RPAR = 271,
+     LBRACK = 272,
+     RBRACK = 273,
+     LBRACE = 274,
+     RBRACE = 275,
+     SEMI = 276,
+     EQUAL = 277,
+     EQ_MINUS = 278,
+     EQ_PLUS = 279,
+     EQ_DIV = 280,
+     EQ_TIME = 281,
+     EQ_POW = 282,
+     COLON = 283,
+     QUEST = 284,
+     LOR = 285,
+     LAND = 286,
+     NE = 287,
+     EQ = 288,
+     GE = 289,
+     LE = 290,
+     GT = 291,
+     LT = 292,
+     SUB = 293,
+     PLU = 294,
+     MOD = 295,
+     TIM = 296,
+     DIV = 297,
+     NOT = 298,
+     UNARY = 299,
+     POW = 300,
+     DEC = 301,
+     INC = 302,
+     CONCAT = 303
    };
 
     };
@@ -312,7 +315,7 @@ namespace SEAMS {
 
 } // SEAMS
 /* Line 33 of lalr1.cc  */
-#line 316 "aprepro_parser.h"
+#line 319 "aprepro_parser.h"
 
 
 

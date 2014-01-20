@@ -50,7 +50,7 @@
 */
 
 #include "Zoltan2_config.h"
-
+#define HAVE_ZOLTAN2_ZOLTAN
 #ifdef HAVE_ZOLTAN2_ZOLTAN
 #include <zoltan.h>
 
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
   else if(input_option == 1){
       Teuchos::ParameterList geoparams("geo params");
       readGeoGenParams(inputFile, geoparams, comm);
-      GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+      GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
 
       int coord_dim = gg->getCoordinateDimension();
       weightDim = gg->getWeightDimension();

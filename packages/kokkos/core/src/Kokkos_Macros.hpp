@@ -51,23 +51,18 @@
 namespace Kokkos {
 class HostSpace ;
 class CudaSpace ;
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#if defined( __CUDACC__ ) && ! defined( KOKKOS_HAVE_CUDA )
-#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
-#endif
-
-#if defined( _OPENMP ) && ! defined( KOKKOS_HAVE_OPENMP )
-#error "Compiling Kokkos for OpenMP but KOKKOS_HAVE_OPENMP is undefined"
-#endif
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ ) 
+
+// Compiling with CUDA compiler.
+
+#if ! defined( KOKKOS_HAVE_CUDA )
+#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
+#endif
 
 #include <cuda.h>
 
@@ -120,6 +115,10 @@ class CudaSpace ;
 
 #if defined( __INTEL_COMPILER )
 
+#if (__INTEL_COMPILER < 1200)
+#define KOKKOS_DISABLE_ASM true;
+#endif
+
 /*  Compiling with Intel compiler */
 /*  TBD: Version testing */
 
@@ -133,9 +132,20 @@ class CudaSpace ;
  *  These devices are used in no-offload mode so the HostSpace is the MIC space.
  */
 
+#else
+
+#ifndef KOKKOS_USE_PRAGMA_SIMD
+#define KOKKOS_USE_PRAGMA_SIMD
 #endif
 
-#endif
+/*
+  #pragma simd vectorlength(N)
+  #pragma ivdep
+*/
+
+#endif /* #if defined( __MIC__ ) */
+
+#endif /* #if defined( __INTEL_COMPILER ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -158,7 +168,11 @@ class CudaSpace ;
 
 #if defined( _OPENMP )
 
-/*  Compiling with in OpenMP mode.
+#if ! defined( KOKKOS_HAVE_OPENMP )
+#error "Compiling Kokkos for OpenMP but KOKKOS_HAVE_OPENMP is undefined"
+#endif
+
+/*  Compiling with OpenMP.
  *  The value of _OPENMP is an integer value YYYYMM
  *  where YYYY and MM are the year and month designation
  *  of the supported OpenMP API version.

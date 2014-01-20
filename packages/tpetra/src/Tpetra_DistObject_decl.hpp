@@ -610,7 +610,7 @@ namespace Tpetra {
     //! The Map over which this object is distributed.
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
 
-  private:
+  protected:
     //! Buffer into which packed data are imported (received from other processes).
     Teuchos::Array<Packet> imports_;
 
@@ -641,6 +641,7 @@ namespace Tpetra {
     /// multivector.)
     Teuchos::Array<size_t> numExportPacketsPerLID_;
 
+  private:
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
     Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
@@ -781,5 +782,10 @@ namespace Tpetra {
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input);
 
 } // namespace Tpetra
+
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
+#endif
 
 #endif /* TPETRA_DISTOBJECT_DECL_HPP */

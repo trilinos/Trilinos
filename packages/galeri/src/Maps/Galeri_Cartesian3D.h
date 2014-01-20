@@ -50,9 +50,10 @@
 namespace Galeri {
 namespace Maps {
 
+template<typename int_type>
 inline
 Epetra_Map* 
-Cartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
+TCartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
             const int mx, const int my, const int mz)
 {
   if (nx <= 0 || ny <= 0 || nz <= 0 ||
@@ -101,7 +102,7 @@ Cartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
   if ( zpid < NBigZDir) endz++;
 
   int NumMyElements = (endx - startx) * (endy - starty) * (endz - startz);
-  vector<int> MyGlobalElements(NumMyElements);
+  vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
 
   for (int i = startx ; i < endx ; ++i) 
@@ -109,9 +110,29 @@ Cartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
       for (int k = startz ; k < endz ; ++k) 
         MyGlobalElements[count++] = i + j * nx +k * (nx * ny);
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   return(new Epetra_Map (-1, NumMyElements, &MyGlobalElements[0], 0, Comm));
+#else
+  return(new Epetra_Map);
+#endif
 
-} // Cartesian3D()
+} // TCartesian3D()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map* 
+Cartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
+            const int mx, const int my, const int mz) {
+  return TCartesian3D<int>(Comm, nx, ny, nz, mx, my, mz);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map* 
+Cartesian3D64(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
+            const int mx, const int my, const int mz) {
+  return TCartesian3D<long long>(Comm, nx, ny, nz, mx, my, mz);
+}
+#endif
 
 } // namespace Maps
 } // namespace Galeri

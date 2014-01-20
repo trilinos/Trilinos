@@ -48,7 +48,7 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TimerManager.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
@@ -60,7 +60,7 @@ using Zoltan2::MICRO_TIMERS;
 using Zoltan2::BOTH_TIMERS;
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
-typedef Zoltan2::BasicIdentifierInput<myTypes_t> inputAdapter_t;
+typedef Zoltan2::BasicIdentifierAdapter<myTypes_t> inputAdapter_t;
 
 void goToSleep(const RCP<const Zoltan2::Environment> &env)
 {

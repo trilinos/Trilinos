@@ -8,11 +8,13 @@
 
 /* #undef HAVE_MUELU_EXPLICIT_INSTANTIATION */
 
-#define HAVE_MUELU_PROFILING
+/* #undef HAVE_MUELU_PROFILING */
 
 /* #undef HAVE_MUELU_GOOGLE_PERFTOOLS */
 
 /* #undef HAVE_MUELU_EXPERIMENTAL */
+
+/* #undef HAVE_MUELU_BOOST_FOR_REAL */
 
 /* Optional Dependencies */
 

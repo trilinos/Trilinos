@@ -46,22 +46,16 @@
 #ifndef IFPACK2_ILUT_DECL_HPP
 #define IFPACK2_ILUT_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
 
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <cmath>
+
 
 namespace Teuchos {
   // forward declaration
@@ -71,20 +65,20 @@ namespace Teuchos {
 namespace Ifpack2 {
 
 /// \class ILUT
-/// \brief ILUT (incomplete LU factorization with threshold) of a Tpetra sparse matrix.
-/// \tparam Specialization of Tpetra::CrsMatrix or Tpetra::RowMatrix.
+/// \brief ILUT (incomplete LU factorization with threshold) of a
+///   Tpetra sparse matrix
+/// \tparam Specialization of Tpetra::RowMatrix (preferred) or
+///   Tpetra::CrsMatrix
 ///
-/// This class computes an ILUT sparse incomplete factorization with
-/// specified fill and drop tolerance, of a given sparse matrix
-/// represented as a Tpetra::RowMatrix.
-///
-/// \warning If the matrix is distributed over multiple MPI processes,
-///   this class will not work correctly by itself.  You must use it
-///   as a subdomain solver inside of a domain decomposition method
-///   like AdditiveSchwarz (which see).  If you use Factory to create
-///   an ILUT preconditioner, the Factory will automatically wrap ILUT
-///   in AdditiveSchwarz for you, if the matrix's communicator
-///   contains multiple processes.
+/// This class computes a sparse ILUT (incomplete LU) factorization
+/// with specified fill and drop tolerance, of the local part of a
+/// given sparse matrix represented as a Tpetra::RowMatrix or
+/// Tpetra::CrsMatrix.  The "local part" is the square diagonal block
+/// of the matrix owned by the calling process.  Thus, if the input
+/// matrix is distributed over multiple MPI processes, this
+/// preconditioner is equivalent to nonoverlapping additive Schwarz
+/// domain decomposition over the MPI processes, with ILUT as the
+/// subdomain solver on each process.
 ///
 /// See the documentation of setParameters() for a list of valid
 /// parameters.
@@ -96,7 +90,11 @@ class ILUT :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
 {
 public:
   //! \name Typedefs
@@ -136,6 +134,22 @@ public:
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
+  //! Type of the Tpetra::RowMatrix specialization that this class uses.
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+
+  //! Type of the Tpetra::CrsMatrix specialization that this class uses for the L and U factors.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+
+  //! Type of the Tpetra::Map specialization that this class uses.
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
   //@}
   //! \name Constructors and Destructors
   //@{
@@ -149,7 +163,7 @@ public:
   /// The factorization will <i>not</i> modify the input matrix.  It
   /// stores the L and U factors in the incomplete factorization
   /// separately.
-  explicit ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
+  explicit ILUT (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
   virtual ~ILUT();
@@ -196,7 +210,7 @@ public:
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(IsInitialized_);
+    return IsInitialized_;
   }
 
   //! Compute factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
@@ -211,77 +225,99 @@ public:
 
   //! If compute() is completed, this query returns true, otherwise it returns false.
   inline bool isComputed() const {
-    return(IsComputed_);
+    return IsComputed_;
   }
 
   //@}
-
-  //! @name Methods implementing Tpetra::Operator.
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
 
-  //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
-  */
-  void apply(
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-               scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param A [in] The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method resets the preconditioner's state.  After
+  /// calling this method with a nonnull input, you must first call
+  /// initialize() and compute() (in that order) before you may call
+  /// apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+
+  //@}
+  //! \name Implementation of Tpetra::Operator
+  //@{
+
+  /// \brief Apply the ILUT preconditioner to X, resulting in Y.
+  ///
+  /// \param X [in] Input multivector; "right-hand side" of the solve.
+  /// \param Y [out] Output multivector; result of the solve.
+  void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
 
   //@}
-
+  //! \name Mathematical functions
   //@{
-  //! \name Mathematical functions.
 
-  //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
-  */
-  template<class DomainScalar, class RangeScalar>
-  void applyTempl(
-      const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-               RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
+  computeCondEst (CondestType CT = Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
 
-  //! Computes the estimated condition number and returns the value.
-  magnitude_type computeCondEst(CondestType CT = Cheap,
-                               local_ordinal_type MaxIters = 1550,
-                               magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
+    return Condest_;
+  }
 
-  //! Returns the computed estimated condition number, or -1.0 if no computed.
-  magnitude_type getCondEst() const { return Condest_; }
-
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+  //! Returns the input matrix's communicator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
+  Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   //! Returns a reference to the L factor.
-  Teuchos::RCP<const MatrixType> getL() const { return L_; }
+  Teuchos::RCP<const crs_matrix_type> getL () const { return L_; }
 
   //! Returns a reference to the U factor.
-  Teuchos::RCP<const MatrixType> getU() const { return U_; }
+  Teuchos::RCP<const crs_matrix_type> getU () const { return U_; }
 
   //! Returns the number of calls to Initialize().
   int getNumInitialize() const;
@@ -338,9 +374,8 @@ public:
   //! Returns the number of nonzero entries in the local graph.
   size_t getNodeNumEntries() const;
 
-  // @}
-
-  //! @name Overridden from Teuchos::Describable
+  //@}
+  //! \name Implementation of Teuchos::Describable
   //@{
 
   /** \brief Return a simple one-line description of this object. */
@@ -356,27 +391,39 @@ private:
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
 
-  //@{ Internal methods
-
   //! Copy constructor (declared private and undefined; may not be used)
-  ILUT(const ILUT<MatrixType>& RHS);
+  ILUT (const ILUT<MatrixType>& RHS);
 
   //! operator= (declared private and undefined; may not be used)
-  ILUT<MatrixType>& operator=(const ILUT<MatrixType>& RHS);
+  ILUT<MatrixType>& operator= (const ILUT<MatrixType>& RHS);
 
-  //@}
-  // \name Internal data
+  /// \brief Wrap the given matrix in a "local filter," if necessary.
+  ///
+  /// A "local filter" excludes rows and columns that do not belong to
+  /// the calling process.  It also uses a "serial" communicator
+  /// (equivalent to MPI_COMM_SELF) rather than the matrix's original
+  /// communicator.
+  ///
+  /// If the matrix's communicator only contains one process, then the
+  /// matrix is already "local," so this function just returns the
+  /// original input.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
+  // \name The matrix and its incomplete LU factors
   //@{
 
-  //! reference to the matrix to be preconditioned.
-  const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-  //! L factor
-  Teuchos::RCP<MatrixType> L_;
-  //! U factor
-  Teuchos::RCP<MatrixType> U_;
+  //! The matrix to be preconditioned.
+  Teuchos::RCP<const row_matrix_type> A_;
+  //! "Local filter" version of A_.
+  Teuchos::RCP<const row_matrix_type> A_local_;
+  //! L factor of the incomplete LU factorization of A_local_.
+  Teuchos::RCP<crs_matrix_type> L_;
+  //! U factor of the incomplete LU factorization of A_local_.
+  Teuchos::RCP<crs_matrix_type> U_;
 
   //@}
-  // \name Parameters (set by the input ParameterList)
+  // \name Parameters (set by setParameters())
   //@{
 
   magnitude_type Athresh_; //!< Absolute threshold
@@ -396,7 +443,7 @@ private:
   double InitializeTime_;
   //! Total time in seconds for all successful calls to compute().
   double ComputeTime_;
-  //! Total timer in seconds for all successful calls to apply().
+  //! Total time in seconds for all successful calls to apply().
   mutable double ApplyTime_;
   //! The number of successful calls to initialize().
   int NumInitialize_;

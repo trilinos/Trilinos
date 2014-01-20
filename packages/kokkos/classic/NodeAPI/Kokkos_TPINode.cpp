@@ -43,6 +43,13 @@
 #include <iostream>
 #include <Teuchos_Assert.hpp>
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCORE
+#include "KokkosCore_config.h"
+#ifdef KOKKOS_HAVE_PTHREAD
+#include "Kokkos_Threads.hpp"
+#endif
+#endif
+
 namespace KokkosClassic {
 
   TPINode::TPINode () {
@@ -89,6 +96,16 @@ namespace KokkosClassic {
     if (curNumThreads_ >= 1) {
       TPI_Init(curNumThreads_);
     }
+#if 0
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_PTHREAD)
+    if (!Kokkos::Threads::is_initialized()) {
+      if (curNumThreads_ >= 1)
+        Kokkos::Threads::initialize( curNumThreads_ );
+      else
+        Kokkos::Threads::initialize( 1 );
+    }
+#endif
+#endif // 0
   }
 
   TPINode::~TPINode()

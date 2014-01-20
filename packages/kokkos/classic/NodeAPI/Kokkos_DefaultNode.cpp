@@ -40,37 +40,53 @@
 //@HEADER
 
 #include "Kokkos_DefaultNode.hpp"
-#include <Teuchos_ParameterList.hpp>
-#include <iostream>
-#include <Teuchos_CompileTimeAssert.hpp>
-
-Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> KokkosClassic::DefaultNode::node_ = Teuchos::null;
 
 namespace KokkosClassic {
 
-  RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode()
+  Teuchos::RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode()
   {
-    if (node_ == null) {
-      Teuchos::ParameterList pl;
-#if   defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-      pl.set<int>("Num Threads",1);
-      node_ = rcp<TPINode>(new TPINode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
-      pl.set<int>("Num Threads",0);
-      node_ = rcp<TBBNode>(new TBBNode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
-      node_ = rcp<OpenMPNode>(new OpenMPNode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
-      pl.set<int>("Device Number",0);
-      node_ = rcp<ThrustGPUNode>(new ThrustGPUNode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
-      node_ = rcp<SerialNode>(new SerialNode(pl));
-#else
-      const int KokkosDefaultNodeIsMissing = 1;
-      Teuchos::CompileTimeAssert<KokkosDefaultNodeIsMissing> cta; (void)cta;
-#endif
-    }
-    return node_;
+    return Details::getNode<DefaultNodeType> ();
   }
 
-}
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  namespace Details {
+
+  // Full specializations for the new Kokkos wrapper Node types.
+
+#ifdef KOKKOS_HAVE_CUDA
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> () {
+    Teuchos::ParameterList defaultParams;
+    // This Node type knows how to handle multiple Node instances,
+    // so we don't have to keep a static instance around.
+    return Teuchos::rcp (new ::Kokkos::Compat::KokkosCudaWrapperNode (defaultParams));
+  }
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_OPENMP
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> () {
+    Teuchos::ParameterList defaultParams;
+    // This Node type knows how to handle multiple Node instances,
+    // so we don't have to keep a static instance around.
+    return Teuchos::rcp (new ::Kokkos::Compat::KokkosOpenMPWrapperNode (defaultParams));
+  }
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> () {
+    Teuchos::ParameterList defaultParams;
+    // This Node type knows how to handle multiple Node instances,
+    // so we don't have to keep a static instance around.
+    return Teuchos::rcp (new ::Kokkos::Compat::KokkosThreadsWrapperNode (defaultParams));
+  }
+#endif // KOKKOS_HAVE_PTHREAD
+
+  } // namespace Details
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+
+} // namespace KokkosClassic

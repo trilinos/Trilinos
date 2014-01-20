@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -67,15 +67,15 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    
-    if (implicitTranspose_ == false) 
+
+    if (implicitTranspose_ == false)
       {
         Input(coarseLevel, "R" );
         Input(coarseLevel, "RV");
         Input(coarseLevel, "RP");
         Input(coarseLevel, "RM");
       }
-    
+
     Input(fineLevel, "A"  );
     Input(fineLevel, "A00");
     Input(fineLevel, "A01");
@@ -86,14 +86,14 @@ namespace MueLu {
     Input(fineLevel, "A20");
     Input(fineLevel, "A21");
     Input(fineLevel, "A22");
-    
+
     Input(coarseLevel, "P" );
     Input(coarseLevel, "PV");
     Input(coarseLevel, "PP");
     Input(coarseLevel, "PM");
-    
+
   }
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
     {
@@ -106,7 +106,7 @@ namespace MueLu {
       //DEBUG
       //Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
       //coarseLevel.print(fout,Teuchos::VERB_HIGH);
-      
+
 
       RCP<Matrix> A   = Get< RCP<Matrix> >(fineLevel, "A"  );
       RCP<Matrix> A00 = Get< RCP<Matrix> >(fineLevel, "A00");
@@ -141,7 +141,7 @@ namespace MueLu {
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
-        
+
         AP   = Utils::Multiply(*A  , false, *P , false);
         AP00 = Utils::Multiply(*A00, false, *PV, false);
         AP01 = Utils::Multiply(*A01, false, *PP, false);
@@ -168,7 +168,7 @@ namespace MueLu {
       if (implicitTranspose_)
         {
           SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-          
+
           Ac   = Utils::Multiply(*P , true, *AP  , false);
           Ac00 = Utils::Multiply(*PV, true, *AP00, false);
           Ac01 = Utils::Multiply(*PV, true, *AP01, false);
@@ -179,13 +179,13 @@ namespace MueLu {
           Ac20 = Utils::Multiply(*PM, true, *AP20, false);
           Ac21 = Utils::Multiply(*PM, true, *AP21, false);
           Ac22 = Utils::Multiply(*PM, true, *AP22, false);
-          
-        } 
-      else 
+
+        }
+      else
         {
-          
+
           SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-          
+
           RCP<Matrix> R  = Get< RCP<Matrix> >(coarseLevel, "R" );
           RCP<Matrix> RV = Get< RCP<Matrix> >(coarseLevel, "RV");
           RCP<Matrix> RP = Get< RCP<Matrix> >(coarseLevel, "RP");
@@ -201,7 +201,7 @@ namespace MueLu {
           Ac20 = Utils::Multiply(*RM, false, *AP20, false);
           Ac21 = Utils::Multiply(*RM, false, *AP21, false);
           Ac22 = Utils::Multiply(*RM, false, *AP22, false);
-          
+
         }
       // FINISHED MAKING COARSE BLOCKS
 
@@ -216,10 +216,10 @@ namespace MueLu {
       Set(coarseLevel, "A21", Ac21);
       Set(coarseLevel, "A22", Ac22);
 
-            
+
     }
-    
-   
+
+
   }
 
 

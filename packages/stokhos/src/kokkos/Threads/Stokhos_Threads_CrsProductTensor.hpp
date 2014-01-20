@@ -46,89 +46,29 @@
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
-#include "Stokhos_Threads_TinyVec.hpp"
+#include "Stokhos_BlockCrsMatrix.hpp"
+#include "Stokhos_StochasticProductTensor.hpp"
+#include "Stokhos_TinyVec.hpp"
 
 namespace Stokhos {
 
-template< typename ValueType >
-class Multiply< CrsProductTensor< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
+template< typename ValueType , typename MatrixValue , typename VectorValue >
+class Multiply<
+  BlockCrsMatrix< StochasticProductTensor< ValueType, CrsProductTensor< ValueType , Kokkos::Threads > , Kokkos::Threads > , MatrixValue , Kokkos::Threads > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Threads > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Threads > >
 {
 public:
+  typedef MultiplyImpl<ValueType, MatrixValue, VectorValue, Kokkos::Threads> impl_type;
+  typedef typename impl_type::matrix_type matrix_type;
+  typedef typename impl_type::block_vector_type block_vector_type;
 
-  typedef Kokkos::Threads::size_type size_type ;
-  typedef CrsProductTensor< ValueType , Kokkos::Threads > tensor_type ;
-
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const tensor_type & tensor ,
-                     const MatrixValue * const a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
-  {
-    const size_type block_size = 2;
-    typedef TinyVec<ValueType,block_size,false> TV;
-
-    const size_type nDim = tensor.dimension();
-
-    for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
-
-      const size_type nEntry = tensor.num_entry(iy);
-      const size_type iEntryBeg = tensor.entry_begin(iy);
-      const size_type iEntryEnd = iEntryBeg + nEntry;
-            size_type iEntry    = iEntryBeg;
-
-      VectorValue ytmp = 0 ;
-
-      // Do entries with a blocked loop of size block_size
-      if (block_size > 1) {
-        const size_type nBlock = nEntry / block_size;
-        const size_type nEntryB = nBlock * block_size;
-        const size_type iEnd = iEntryBeg + nEntryB;
-
-        TV vy;
-        vy.zero();
-        int j[block_size], k[block_size];
-
-        for ( ; iEntry < iEnd ; iEntry += block_size ) {
-
-          for (size_type ii=0; ii<block_size; ++ii) {
-            j[ii] = tensor.coord(iEntry+ii,0);
-            k[ii] = tensor.coord(iEntry+ii,1);
-          }
-          TV aj(a, j), ak(a, k), xj(x, j), xk(x, k),
-            c(&(tensor.value(iEntry)));
-
-          // vy += c * ( aj * xk + ak * xj)
-          aj.times_equal(xk);
-          ak.times_equal(xj);
-          aj.plus_equal(ak);
-          c.times_equal(aj);
-          vy.plus_equal(c);
-
-        }
-
-        ytmp += vy.sum();
-      }
-
-      // Do remaining entries with a scalar loop
-      for ( ; iEntry<iEntryEnd; ++iEntry) {
-        const size_type j = tensor.coord(iEntry,0);
-        const size_type k = tensor.coord(iEntry,1);
-
-        ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
-      }
-
-      y[iy] += ytmp ;
-    }
+  static void apply( const matrix_type & A ,
+                     const block_vector_type & x ,
+                     const block_vector_type & y ) {
+    impl_type::apply(A,x,y);
   }
-
-  static size_type matrix_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
-
-  static size_type vector_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
 };
-
-//----------------------------------------------------------------------------
 
 } // namespace Stokhos
 

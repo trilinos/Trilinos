@@ -195,11 +195,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // create new matrices, with reordering
   // ======================================== //
 #ifdef HAVE_IFPACK2_ZOLTAN2
-  // Fill the permulation with a local reversal
-  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc,(size_t)num_rows_per_proc);
+  // Fill the permutation AND its inverse with a local reversal
+  // Note Zoltan2 would normally do this, but for unit testing we do it
+  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc);
   Teuchos::ArrayRCP<LocalOrdinal> l_perm=Ordering.getPermutationRCP();
+  Teuchos::ArrayRCP<LocalOrdinal> l_invperm=Ordering.getPermutationRCP(true);
   for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
     l_perm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);
+    l_invperm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);
   }
 
   // Now, build a reordering and a reverse reordering

@@ -66,7 +66,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LAPACK
   HAVE_AMESOS_LAPACK
   "Enable LAPACK functionality."
   ON )
-
+  
 # ...
 
 #

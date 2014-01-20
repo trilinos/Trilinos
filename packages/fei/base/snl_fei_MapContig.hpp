@@ -59,7 +59,7 @@ class MapContig {
       int first = mapPtr_->first_;
       if (offset_ < len) {
         ++offset_;
-	while(offset_ < len) {
+        while(offset_ < len) {
           if (keysPtr[offset_] >= first) break;
           ++offset_;
         }
@@ -143,11 +143,11 @@ MapContig<VAL_TYPE>::MapContig(int firstKey, int lastKey)
     first_(firstKey),
     len_(lastKey-firstKey+1)
 {
-  keysPtr_ = &keys_[0];
+  keysPtr_ = keys_.size()>0 ? &keys_[0] : NULL;
   for(int i=0; i<len_; ++i) {
     keysPtr_[i] = firstKey+i;
   }
-  valuesPtr_ = &values_[0];
+  valuesPtr_ = values_.size()>0 ? &values_[0] : NULL;
   len_ = keys_.size();
   m_end_ = iterator(len_, this);
 }
@@ -160,8 +160,8 @@ MapContig<VAL_TYPE>::MapContig(const MapContig<VAL_TYPE>& src)
   first_(src.first_),
   len_(src.len_)
 {
-  keysPtr_ = &keys_[0];
-  valuesPtr_ = &values_[0];
+  keysPtr_ = keys_.size()>0 ? &keys_[0] : NULL;
+  valuesPtr_ = values_.size()>0 ? &values_[0] : NULL;
   m_end_ = iterator(len_, this);
 }
 

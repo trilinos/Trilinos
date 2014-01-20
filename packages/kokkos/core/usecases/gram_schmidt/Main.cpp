@@ -60,10 +60,12 @@ int main( int argc , char ** argv )
 
   // const int comm_size = comm::size( machine );
   const int comm_rank = comm::rank( machine );
-  const std::pair<unsigned,unsigned> core_top = Kokkos::hwloc::get_core_topology();
-  const unsigned                     core_cap = Kokkos::hwloc::get_core_capacity();
-  const unsigned                     thread_capacity = core_top.first * core_top.second * core_cap ;
-  const unsigned                     gang_worker_capacity = core_top.second * core_cap ;
+  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
+
+  const unsigned thread_capacity = numa_count * cores_per_numa * threads_per_core ;
+  const unsigned gang_worker_capacity = cores_per_numa * threads_per_core ;
 
   const int cuda_device_count =
 #if defined( KOKKOS_HAVE_CUDA )
@@ -126,7 +128,7 @@ int main( int argc , char ** argv )
                 << "cuda DEVICE# | "
                 << "test #LENGTH_BEGIN #LENGTH_END #COUNT #ITER )"
                 << std::endl
-                << "thread capacity = " << core_top.first << "x" << gang_worker_capacity
+                << "thread capacity = " << numa_count << "x" << gang_worker_capacity
                 << std::endl
                 << "cuda devices = "
                 << cuda_device_count
@@ -155,7 +157,7 @@ int main( int argc , char ** argv )
   if ( 0 == error ) {
 
     if ( gang_count && gang_worker ) {
-      Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( gang_count , gang_worker ) );
+      Kokkos::Threads::initialize( gang_count * gang_worker );
 
       if ( test_iter ) {
         Test::driver_modified_gram_schmidt<Kokkos::Threads>
@@ -174,6 +176,7 @@ int main( int argc , char ** argv )
 
 #if defined( KOKKOS_HAVE_CUDA )
     if ( 0 <= cuda_device ) {
+      Kokkos::Cuda::host_mirror_device_type::initialize();
       Kokkos::Cuda::SelectDevice select( ( cuda_device + comm_rank ) % cuda_device_count );
       Kokkos::Cuda::initialize( select );
 
@@ -184,12 +187,13 @@ int main( int argc , char ** argv )
             test_count ,
             test_iter ,
             machine );
-       }
-       else {
+      }
+      else {
         Kokkos::Cuda::print_configuration( std::cout );
-       }
+      }
 
       Kokkos::Cuda::finalize();
+      Kokkos::Cuda::host_mirror_device_type::finalize();
     }
 #endif
 

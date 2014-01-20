@@ -33,9 +33,23 @@ Amesos_StandardIndex::Amesos_StandardIndex( const Epetra_Map& OriginalMap )
 {
 
 #ifdef HAVE_AMESOS_EPETRAEXT
-  int NumGlobalElements = OriginalMap.NumGlobalElements();
   int NumMyElements = OriginalMap.NumMyElements();
-  StdIndexMap_ = rcp( new Epetra_Map( NumGlobalElements, NumMyElements, 0, OriginalMap.Comm() ) );
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(OriginalMap.GlobalIndicesInt()) {
+    int NumGlobalElements = OriginalMap.NumGlobalElements();
+    StdIndexMap_ = rcp( new Epetra_Map( NumGlobalElements, NumMyElements, 0, OriginalMap.Comm() ) );
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(OriginalMap.GlobalIndicesLongLong()) {
+    long long NumGlobalElements = OriginalMap.NumGlobalElements64();
+    StdIndexMap_ = rcp( new Epetra_Map( NumGlobalElements, NumMyElements, 0LL, OriginalMap.Comm() ) );
+  }
+  else
+#endif
+    throw "Amesos_StandardIndex::Amesos_StandardIndex: ERROR, GlobalIndices type unknown.";
+
   MatTrans_ = rcp( new EpetraExt::CrsMatrix_Reindex( *StdIndexMap_ ) );
   VecTrans_ = rcp( new EpetraExt::MultiVector_Reindex( *StdIndexMap_ ) );
 #endif

@@ -119,13 +119,10 @@ The resulting matrix is symmetric positive definite. We choose the right hand si
     <Parameter name="maxCoarseSize" type="int" value="10"/>
     <Parameter name="verbosity" type="string"   value="Low"/>
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother" type="string" value="myJacobi"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-     <Parameter name="CoarseSolver" type="string"   value="myJacobi"/>    
+      <Parameter name="CoarseSolver" type="string"   value="myJacobi"/>    
     </ParameterList>
   </ParameterList>
 </ParameterList>
@@ -542,14 +539,12 @@ The aggregates are built by the \verb|UncoupledAggregationFactory| which means t
     <Parameter name="numDesiredLevel" type="int" value="10"/>
     <Parameter name="maxCoarseSize" type="int" value="10"/>
     <Parameter name="verbosity" type="string" value="High"/>
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel" type="int"      value="0"/>
       <Parameter name="Aggregates" type="string"   value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace" type="string"   value="myTentativePFact"/>
       <Parameter name="P" type="string"   value="myTentativePFact"/>
       <Parameter name="R" type="string"   value="myRestrictorFact"/>
-    </ParameterList>
-    <ParameterList name="CoarsestLevel">
       <Parameter name="CoarseSolver" type="string"   value="DirectSolver"/>
     </ParameterList>
   </ParameterList>
@@ -782,7 +777,7 @@ In listing \ref{listing:CoalesceDropFactory} one can find the definition of the 
 <ParameterList name="Hierarchy">
   <Parameter name="numDesiredLevel" type="int" value="10"/> 
   <Parameter name="maxCoarseSize" type="int" value="10"/>
-  <ParameterList name="AllButCoarsestLevel">
+  <ParameterList name="All">
     <Parameter name="Graph" type="string"   value="myCoalesceDropFact"/>
     <Parameter name="A" type="string"   value="myRAPFact"/>
   </ParameterList>
@@ -851,6 +846,113 @@ Using the \verb|CoupledAggregationFactory| in general is not recommended, since
 The implementation of a \verb|CoupledAggregationFactory| is highly complicated and therefore error-prone and less robust.
 
 \section{Tutorial 5}
+\subsection{Rebalancing}
+It's a natural thing to use lesser processors for the coarse level problem than for the fine level problem. This is an elegant way to avoid the problems of the coupled aggregation strategy, by just using the uncoupled aggregation strategy with rebalancing on the coarser levels.
+
+In this tutorial we use a hypergraph based repartitioning for the coarse level matrices $A_c$ to rebalance the problem. The repartitioning algorithm is implemented in the Zoltan package of Trilinos. The advantage of the hypergraph based repartitioning methods is, that they do not need additional information such as node coordinates and therefore are the consequent choice within algebraic multigrid preconditioners\footnote{Hypergraph partitioning algorithms as PHG are not available in the new Zoltan2 package of Trilinos. Therefore we can use this type of repartitioning only in context of Epetra based applications. If you use the new templated Tpetra stack you have to use repartitioning algorithms which are available in Zoltan2 such as RCB.}.
+
+Repartitioning algorithms are a very wide field of research and can be very complicated. Here, we cannot go into details and just focus on how to use them. Basically there are only two really important parameters that the user has to set properly:
+\begin{description}
+\item \textbf{minRowsPerProcessor} the minimum number of rows each processor shall handle. This parameter is used to reduce the number of involved processors on the coarser levels. If for example the parameter value is chosen to be 1000 and the fine level problem has 10000 rows whereas the coarse level problem has 2000 rows, then the fine level problem is solved on not more than 10 processors at maximum and for the coarse level problem there are not more processors than at maximum 2 being used.
+\item \textbf{nonzeroImbalance} This parameter defines the maximum allowed imbalance ratio of nonzeros on all processors. If e.g. the value is set to 1.2, and there is one processor with more than 20\% nonzeros compared to another processor, than the problem will be rebalanced.
+\end{description}
+
+\subsection{Transfer operator design}
+
+Figure \ref{fig:rebalanceddesignpgamg} gives the extended factory design for smoothed aggregation based AMG for non-symmetric linear systems with rebalancing. Nothing has changed in the upper part where the non-rebalanced Galerkin product has been calculated using the \verb|RAPFactory|. The coarse level matrix $A_c$ as output from the \verb|RAPFactory| then is checked for its partition and rebalanced. 
+
+The \verb|AmalgamationFactory| amalgamates the matrix, i.e. it generates some mapping between the actual degrees of freedom and the corresponding nodes or supernodes. In fact the \verb|AmalgamationFactory| is only important if there are more than one degree of freedom per node. Otherwise the mappings are trivial to build.
+
+The \verb|IsorropiaInterface| class first builds internally the graph of the coarse level matrix $A_c$ using the information from the \verb|AmalgamationInformation| and then calls the repartitioning algorithm from Zoltan through the Isorropia interface\footnote{Isorropia is a Trilinos package which provides an easy-to-use interface to many partitioning algorithms in Zoltan.}. The output is an amalgamated repartitioning information. Then the \verb|RepartitionInterface| factory resembles the un-amalgamated repartitioning information which is put into the \verb|RepartitionFactory|.
+
+The \verb|RepartitionFactory| is the most important factory and responsible for the repartitioning. Therein the decision is made whether repartitioning is necessary at all. It creates the communication "plan" that is used to rebalance the transfer operators and the coarse level matrix.
+
+\begin{figure}
+\begin{center}
+\scalebox{0.8}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (0,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node(nothing) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{...};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {PgPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (GenericRFactory) {GenericRFactory};
+\node(RAPFactory) at(0,0) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RAPFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RAPFactory] (RebAmalgFactory) {AmalgamationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFactory] (IsorropiaInterface) {IsorropiaInterface};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface] (RepartitionInterface) {RepartitionInterface};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface] (RepartitionFactory) {RepartitionFactory};
+\node(RebalanceTransferFactory) at(-3,-10) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebalanceTransferFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RebalanceTransferFactory,node distance=6cm] (RebalanceTransferFactory2) {RebalanceTransferFactory};
+\node(RebalanceAcFactory) at (0,-12) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebalanceAcFactory};
+
+\node(A2) at (0,-14) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\draw[->] (A) -- (nothing);
+\draw[->] (nothing) -- (AggregationFactory);
+\draw[->] (A) to[out=270,in=25] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=270,in=25] node [near start, left] {} (SaPFactory);
+\draw[->] (A) to[out=270,in=90] node [near start, left] {} (RAPFactory);
+\draw[->] (A) to[out=0,in=90] node [near end, right] {$A^T$} (GenericRFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (SaPFactory);
+\draw[->,dashed] (SaPFactory) -- node [near start, below] {} (GenericRFactory);
+\draw[->] (SaPFactory) -- node [near start, below] {P} (RAPFactory);
+\draw[->] (GenericRFactory) -- node [near start, below] {R} (RAPFactory);
+%\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[->] (RAPFactory) -- node [near start, left] {$A_c$} (RebAmalgFactory);
+\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (IsorropiaInterface);
+\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionInterface);
+\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionFactory);
+%\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RebalanceAcFactory);
+\draw[->] (RebAmalgFactory) -- node [near start, left] {UnAmalg.Info} (IsorropiaInterface);
+\draw[->] (RebAmalgFactory) to[out=0,in=0] node [near start, right] {UnAmalg.Info} (RepartitionInterface);
+\draw[->] (IsorropiaInterface) -- node [near start, left] {Amalg.Partition} (RepartitionInterface);
+\draw[->] (RepartitionInterface) -- node [near start, left] {Partition} (RepartitionFactory);
+\draw[->] (RepartitionFactory) -- node [near start, left] {Importer} (RebalanceTransferFactory);
+\draw[->] (RepartitionFactory) -- node [near start, right] {Importer} (RebalanceTransferFactory2);
+\draw[->] (RepartitionFactory) -- node [near end, left] {Importer} (RebalanceAcFactory);
+\draw[->] (RebalanceAcFactory) -- node [near end, left] {} (A2);
+\draw[->] (SaPFactory) to[out=230,in=130] node [near end, left] {P} (RebalanceTransferFactory);
+\draw[->] (GenericRFactory) to[out=310,in=50] node [near end, left] {R} (RebalanceTransferFactory2);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Factory design for smoothed aggregation based algebraic multigrid methods for non-symmetric systems with rebalancing.}
+\label{fig:rebalanceddesignpgamg}
+\end{figure}
+
+The XML parameters can be found in \verb|xml/s5a.xml|. Therein we define smoothed aggregation transfer operators (using the \verb|PgPFactory|) for non-sym\-metric systems. 1 sweep with an undamped symmetric Gauss-Seidel is used on the finest and intermedium levels. A direct solver is applied on the coarsest level. The intermedium multigrid levels are rebalanced.
+
+\begin{graybox}
+ \textbf{Exercise}
+ \begin{itemize}
+ \item Run the \verb|hands-on.sh| and choose either option 2 to set up a Laplace2D problem with a user-chosen mesh. Use reasonable values for \texttt{nx} and \texttt{ny}, e.g. \verb|nx=300| and \verb|ny=300|.
+ \item Change the solver (using option 4) to \verb|xml/s5a.xml|.
+ \item Use a reasonable number of processors (option 5). For demonstration purposes $4$ processors should be fine for the $300\times 300$ mesh.
+ \item Adapt the \verb|numprocs| variable in the \verb|MueLu_Agg2VTK.py| postprocessing script. Rerun the example (option 1) and make sure that \verb|MueLu_Agg2VTK.py| is executed afterwards (should be done automatically).
+ \item Use \verb|paraview| to visualize the aggregates. Open \verb|paraview| and load the \verb|aggs*.vtp| files. Use the processor id as colors.
+ \item Repeat above steps for the Recirc2D example. Vary the \verb|minRowsPerProcessor| and \verb|nonzeroImbalance| parameters.
+ \end{itemize}
+\end{graybox}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{images/aggsSymmReb.png} 
+\caption{Aggregates and owning processors for level 1 to level 4 for a 2D Laplace problem on a $300\times 300$ mesh}
+\label{fig:rebAggs}
+\end{figure}
+
+Figure \ref{fig:rebAggs} shows the aggregates and the owning processors for the different multigrid levels. One can see how the number of involved processors is reduced and how it affects the shape of aggregates.
+
+
+\section{Tutorial 6}
 
 In this tutorial we want to introduce the C++ API of \MueLu. We write a small test program for the \verb|Recirc2D| example as introduced in the first example, but instead of building the multigrid hierarchy using an xml parameter file we use the C++ routines to define the multigrid method.
 
@@ -882,7 +984,7 @@ For the level smoothers \MueLu~ uses the prototype design pattern \footnote{see 
 We create a new \verb|TrilinosSmoother| prototype object which is fed by a parameter list with all necessary parameters (e.g. for a Symmetric Gauss-Seidel smoother). A list of all possible parameters can be found in the class documentation.
 The prototype object then is used as parameter for the \verb|SmootherFactory| instance. In each multigrid level the smoother factory then creates a new instance of the level smoother based on the information from the prototype class.
 
-\paragraph{The factory manager}
+\paragraph{The FactoryManager}
 The \verb|FactoryManager| object is the heart of the multigrid setup phase since it manages all the dependencies between the factories. The default implementation automatically creates factories which are necessary to build a multigrid hierarchy for symmetric positive definite systems (with smoothed aggregation transfer operators etc...). The user can change this default behaviour by defining new factories (see above) and registering them in the \verb|FactoryManager| object. In listing \ref{listing:CppAPI} line 34-39 a \verb|FactoryManager| object is created and the previously defined factories for the transfer operators and smoothers are registered as default factories for the variables "P", "R", "Nullspace", "Smoother" and "CoarseSolver" using the \verb|SetFactory| function.
 
 If we register the new factories as default factories in the \verb|FactoryManager| object most of the factory specific connections are not necessary any more. For example in listing \ref{listing:CppAPI} we could remove line 16, since then the \verb|TransPFactory| woudl use the object with name "P" that is generated by the default factory which is again \verb|PFact| as defined in line 14 and registered as default factory in line 37. We could also remove line 36, since the \verb|FactoryManager| in its default implementation would automatically generate an \verb|TransPFactory| instance for building the restriction operator. In this case, our \verb|TransPFactory| instance defined in line 15 would be created but never used. It is not registered in the factory manager and therefore not involved in the setup process.
@@ -963,254 +1065,6 @@ The generated hierarchy then can be used as solver or preconditioner within a Kr
  \end{itemize}
 \end{graybox}
 
-\section{Tutorial n}
-
-
-% basic design
-\scalebox{0.6}{
-\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
-\def\datawidth{2cm}
-\def\dataheight{0.5cm}
-\def\factorywidth{5cm}
-\def\factoryheight{0.75cm}
-%\draw[help lines] (-10,-10) grid (10,10);
-\begin{scope}[>=triangle 60]
-\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
-\node(AmalgamationFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AmalgamationFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgamationFactory] (CoalesceDropFactory) {CoalesceDropFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=CoalesceDropFactory] (AggregationFactory) {AggregationFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggregationFactory,node distance=6cm] (CoarseMapFactory) {CoarseMapFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=TentativePFactory,node distance=6cm] (TransPFactory) {TransPFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (RAPFactory) {RAPFactory};
-\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
-\draw[->] (A) -- (AmalgamationFactory);
-\draw[->] (AmalgamationFactory) -- node [near start, left] {UnAmalgamationInfo} (CoalesceDropFactory);
-\draw[->] (AmalgamationFactory) to[out=-15,in=15] node [near start, right] {UnAmalgamationInfo} (TentativePFactory);
-\draw[->] (CoalesceDropFactory) -- node [near start, left] {DofsPerNode} (AggregationFactory);
-\draw[->] (CoalesceDropFactory) -- node [near start, right] {Graph} (AggregationFactory);
-\draw[->] (A) to[out=180,in=180] node [near start, left] {} (CoalesceDropFactory);
-\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
-\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
-\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
-\draw[->] (CoarseMapFactory) to[out=190,in=10] node [near start, right] {CoarseMap} (TentativePFactory);
-\draw[->] (TentativePFactory) -- node [near start, below] {P} (TransPFactory);
-\draw[->] (TentativePFactory) -- node [near start, left] {P} (RAPFactory);
-\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
-\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
-\end{scope}
-\end{tikzpicture}
-} % end scalebox
-
-% symmetric design of 2x2 blocked preconditioner with repartitioning
-\scalebox{0.6}{
-\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
-\def\datawidth{2cm}
-\def\dataheight{0.5cm}
-\def\factorywidth{5cm}
-\def\factoryheight{0.75cm}
-
-%\draw[help lines] (-10,-10) grid (10,10);
-\begin{scope}[>=triangle 60]
-\node(A) at (1,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
-\node(AFact11) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact11] (AmalgFact11) {AmalgFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgFact11] (DropFact11) {DropFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=DropFact11] (AggregationFact11) {AggregationFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=AggregationFact11,node distance=6cm] (CoarseMapFact11) {CoarseMapFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact11] (PFact11) {PFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=PFact11,node distance=6cm] (RFact11) {RFact11};
-\draw[->] (AFact11) -- node [near start, right] {A} (AmalgFact11);
-\draw[->] (AFact11) to[out=190,in=175] node [near start, right] {A} (DropFact11);
-\draw[->] (AmalgFact11) -- node [near start, left] {UnamalgInfo} (DropFact11);
-\draw[->] (DropFact11) -- node [near start, right] {Graph} (AggregationFact11);
-\draw[->] (AggregationFact11) -- node [near start, left] {Aggregates} (PFact11);
-\draw[->] (PFact11) -- node [near start, above] {P} (RFact11);
-\draw[->] (CoarseMapFact11) -- node [near start, below] {coarseMap} (PFact11);
-\draw[->] (AmalgFact11) to[out=-15,in=15] node[near start, left] {UnamalgInfo} (PFact11);
-\draw[->] (A) -- (AFact11);
-
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AFact11,node distance=8cm] (AFact22) {AFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact22] (AmalgFact22) {AmalgFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgFact22] (DropFact22) {DropFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=DropFact22] (AggregationFact22) {AggregationFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggregationFact22,node distance=6cm] (CoarseMapFact22) {CoarseMapFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact22] (PFact22) {PFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=PFact22,node distance=6cm] (RFact22) {RFact22};
-\draw[->] (AFact22) -- node [near start, right] {A} (AmalgFact22);
-\draw[->] (AFact22) to[out=-10,in=5] node [near start, right] {A} (DropFact22);
-\draw[->] (AmalgFact22) -- node [near start, right] {UnamalgInfo} (DropFact22);
-\draw[->] (DropFact22) -- node [near start, right] {Graph} (AggregationFact22);
-\draw[->] (AggregationFact22) -- node [near start, right] {Aggregates} (PFact22);
-\draw[->] (PFact22) -- node [near start, below] {P} (RFact22);
-\draw[->] (CoarseMapFact22) -- node [near start, below] {coarseMap} (PFact22);
-\draw[->] (AmalgFact22) to[out=195,in=165] node[near start, right] {UnamalgInfo} (PFact22);
-\draw[->] (A) -- (AFact22);
-
-\node (BlockedPFact) at (-5,-2) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedPFact};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=BlockedPFact,node distance=12cm] (GenericRFact) {GenericRFact};
-\draw[->] (PFact11) -- node [near start, right] {P} (BlockedPFact);
-\draw[->] (PFact22) -- node [near start, below] {P} (BlockedPFact);
-\draw[->,dashed] (RFact11) -- node [near start, below] {R} (GenericRFact);
-\draw[->,dashed] (RFact22) -- node [near start, right] {R} (GenericRFact);
-
-\node (BlockedRAPFact) at (1,-4) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedRAPFact};
-\draw[->] (BlockedPFact) -- node [near start, below] {P} (BlockedRAPFact);
-\draw[->] (GenericRFact) -- node [near start, below] {R} (BlockedRAPFact);
-\draw[->] (A) -- (BlockedRAPFact);
-
-\node (RebAFact11) at (-3,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact11] (RebAmalgFact11) {RebAmalgFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFact11] (IsorropiaInterface11) {IsorropiaInterface11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface11] (RepartitionInterface11){RepartitionInterface11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface11] (RepartitionFactory11) {RepartitionFactory11};
-
-
-\node (RebAFact22) at (5,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact22] (RebAmalgFact22) {RebAmalgFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFact22] (IsorropiaInterface22) {IsorropiaInterface22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface22] (RepartitionInterface22){RepartitionInterface22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface22] (RepartitionFactory22) {RepartitionFactory22};
-
-\node (RebBlockedPFact) at (-5,-16) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedPFact};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RebBlockedPFact,node distance=12cm] (RebBlockedRFact) {RebBlockedRFact};
-\node (RebBlockedRAPFact) at (1,-18) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedRAPFact};
-\coordinate [left of=BlockedRAPFact,node distance=5cm](coLeftOfBlockedRAPFact);
-\coordinate [right of=BlockedRAPFact,node distance=5cm](coRightOfBlockedRAPFact);
-\draw[->] (BlockedRAPFact) -- node [near start, right] {A} (RebBlockedRAPFact);
-\draw[->] (BlockedRAPFact) to[out=180,in=10] (coLeftOfBlockedRAPFact) to[out=190,in=150] node[near start, right] {A} (RebBlockedPFact);
-\draw[->] (BlockedPFact) to[out=220,in=160] node [near start, right] {P} (RebBlockedPFact);
-
-\draw[->] (BlockedRAPFact) to[out=0,in=170] (coRightOfBlockedRAPFact) to[out=-10,in=30] node[near start, right] {A} (RebBlockedRFact);
-\draw[->] (GenericRFact) to[out=-40,in=20] node [near start, right] {R} (RebBlockedRFact);
-
-\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact11);
-\draw[->] (RebAFact11) -- node [near start, right] {A} (RebAmalgFact11);
-\draw[->] (RebAmalgFact11) -- node [near start, right] {UnamalgInfo} (IsorropiaInterface11);
-\draw[->] (IsorropiaInterface11) -- node [near start, right] {Amalg.Part.} (RepartitionInterface11);
-\draw[->] (RepartitionInterface11) -- node [near start, right] {Partition} (RepartitionFactory11);
-\draw[->] (RepartitionFactory11) -- node [near start, left] {Importer} (RebBlockedPFact);
-\draw[->] (RepartitionFactory11) -- node [near start, right] {Importer} (RebBlockedRAPFact);
-
-\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact22);
-\draw[->] (RebAFact22) -- node [near start, right] {A} (RebAmalgFact22);
-\draw[->] (RebAmalgFact22) -- node [near start, right] {UnamalgInfo} (IsorropiaInterface22);
-\draw[->] (IsorropiaInterface22) -- node [near start, right] {Amalg.Part.} (RepartitionInterface22);
-\draw[->] (RepartitionInterface22) -- node [near start, right] {Partition} (RepartitionFactory22);
-\draw[->] (RepartitionFactory22) -- node [near start, right] {Importer} (RebBlockedRFact);
-\draw[->] (RepartitionFactory22) -- node [near start, left] {Importer} (RebBlockedRAPFact);
-
-\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRAPFact](Acoarse){A};
-\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedPFact, node distance=4cm](Pcoarse){P};
-\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRFact, node distance=4cm](Rcoarse){R};
-\draw[->] (RebBlockedRAPFact) -- (Acoarse);
-\draw[->] (RebBlockedPFact) -- (Pcoarse);
-\draw[->] (RebBlockedRFact) -- (Rcoarse);
-\end{scope}
-\end{tikzpicture}
-} % end scalebox
-
-% non-symmetric design of 2x2 block preconditioner with reusing aggregates of upper-left block
-\scalebox{0.6}{
-\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
-\def\datawidth{2cm}
-\def\dataheight{0.5cm}
-\def\factorywidth{5cm}
-\def\factoryheight{0.75cm}
-
-%\draw[help lines] (-10,-10) grid (10,10);
-\begin{scope}[>=triangle 60]
-\node(A) at (1,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
-\node(AFact11) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact11] (AmalgFact11) {AmalgFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgFact11] (DropFact11) {DropFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=DropFact11] (AggregationFact11) {AggregationFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=AggregationFact11,node distance=6cm] (CoarseMapFact11) {CoarseMapFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact11] (PFact11) {PFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=PFact11,node distance=6cm] (RFact11) {RFact11};
-\draw[->] (AFact11) -- node [near start, right] {A} (AmalgFact11);
-\draw[->] (AFact11) to[out=190,in=175] node [near start, right] {A} (DropFact11);
-\draw[->] (AmalgFact11) -- node [near start, left] {UnamalgInfo} (DropFact11);
-\draw[->] (DropFact11) -- node [near start, right] {Graph} (AggregationFact11);
-\draw[->] (AggregationFact11) -- node [near start, left] {Aggregates} (PFact11);
-\draw[->] (PFact11) -- node [near start, above] {P} (RFact11);
-\draw[->] (CoarseMapFact11) -- node [near start, below] {coarseMap} (PFact11);
-\draw[->] (AmalgFact11) to[out=-15,in=15] node[near start, left] {UnamalgInfo} (PFact11);
-\draw[->] (A) -- (AFact11);
-
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AFact11,node distance=8cm] (AFact22) {AFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact22] (AmalgFact22) {AmalgFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggregationFact22,node distance=6cm] (CoarseMapFact22) {CoarseMapFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact22] (PFact22) {PFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=PFact22,node distance=6cm] (RFact22) {RFact22};
-\draw[->] (AFact22) -- node [near start, right] {A} (AmalgFact22);
-\draw[->] (AmalgFact22) -- node [near start, right] {UnamalgInfo} (PFact22);
-\draw[->] (PFact22) -- node [near start, below] {P} (RFact22);
-\draw[->] (CoarseMapFact22) -- node [near start, below] {coarseMap} (PFact22);
-\draw[->] (AggregationFact11) -- node [near end, above] {Aggregates} (PFact22);
-\draw[->] (A) -- (AFact22);
-
-\node (BlockedPFact) at (-5,-2) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedPFact};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=BlockedPFact,node distance=12cm] (GenericRFact) {GenericRFact};
-\draw[->] (PFact11) -- node [near start, right] {P} (BlockedPFact);
-\draw[->] (PFact22) -- node [near start, below] {P} (BlockedPFact);
-\draw[->,dashed] (RFact11) -- node [near start, below] {R} (GenericRFact);
-\draw[->,dashed] (RFact22) -- node [near start, right] {R} (GenericRFact);
-
-\node (BlockedRAPFact) at (1,-4) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedRAPFact};
-\draw[->] (BlockedPFact) -- node [near start, below] {P} (BlockedRAPFact);
-\draw[->] (GenericRFact) -- node [near start, below] {R} (BlockedRAPFact);
-\draw[->] (A) -- (BlockedRAPFact);
-
-\node (RebAFact11) at (-3,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact11] (RebAmalgFact11) {RebAmalgFact11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFact11] (IsorropiaInterface11) {IsorropiaInterface11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface11] (RepartitionInterface11){RepartitionInterface11};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface11] (RepartitionFactory11) {RepartitionFactory11};
-
-
-\node (RebAFact22) at (5,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact22] (RebAmalgFact22) {RebAmalgFact22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface22] (RepartitionInterface22){RepartitionInterface22};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface22] (RepartitionFactory22) {RepartitionFactory22};
-
-\node (RebBlockedPFact) at (-5,-16) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedPFact};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RebBlockedPFact,node distance=12cm] (RebBlockedRFact) {RebBlockedRFact};
-\node (RebBlockedRAPFact) at (1,-18) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedRAPFact};
-\coordinate [left of=BlockedRAPFact,node distance=5cm](coLeftOfBlockedRAPFact);
-\coordinate [right of=BlockedRAPFact,node distance=5cm](coRightOfBlockedRAPFact);
-\draw[->] (BlockedRAPFact) -- node [near start, right] {A} (RebBlockedRAPFact);
-\draw[->] (BlockedRAPFact) to[out=180,in=10] (coLeftOfBlockedRAPFact) to[out=190,in=150] node[near start, right] {A} (RebBlockedPFact);
-\draw[->] (BlockedPFact) to[out=220,in=160] node [near start, right] {P} (RebBlockedPFact);
-
-\draw[->] (BlockedRAPFact) to[out=0,in=170] (coRightOfBlockedRAPFact) to[out=-10,in=30] node[near start, right] {A} (RebBlockedRFact);
-\draw[->] (GenericRFact) to[out=-40,in=20] node [near start, right] {R} (RebBlockedRFact);
-
-\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact11);
-\draw[->] (RebAFact11) -- node [near start, right] {A} (RebAmalgFact11);
-\draw[->] (RebAmalgFact11) -- node [near start, right] {UnamalgInfo} (IsorropiaInterface11);
-\draw[->] (IsorropiaInterface11) -- node [near start, right] {Amalg.Part.} (RepartitionInterface11);
-\draw[->] (RepartitionInterface11) -- node [near start, right] {Partition} (RepartitionFactory11);
-\draw[->] (RepartitionFactory11) -- node [near start, left] {Importer} (RebBlockedPFact);
-\draw[->] (RepartitionFactory11) -- node [near start, right] {Importer} (RebBlockedRAPFact);
-
-\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact22);
-\draw[->] (RebAFact22) -- node [near start, right] {A} (RebAmalgFact22);
-\draw[->] (RebAmalgFact22) -- node [near start, right] {UnamalgInfo} (RepartitionInterface22);
-\draw[->] (IsorropiaInterface11) -- node [near end, above] {Amalg.Part.} (RepartitionInterface22);
-\draw[->] (RepartitionInterface22) -- node [near start, right] {Partition} (RepartitionFactory22);
-\draw[->] (RepartitionFactory22) -- node [near start, right] {Importer} (RebBlockedRFact);
-\draw[->] (RepartitionFactory22) -- node [near start, left] {Importer} (RebBlockedRAPFact);
-
-\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRAPFact](Acoarse){A};
-\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedPFact, node distance=4cm](Pcoarse){P};
-\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRFact, node distance=4cm](Rcoarse){R};
-\draw[->] (RebBlockedRAPFact) -- (Acoarse);
-\draw[->] (RebBlockedPFact) -- (Pcoarse);
-\draw[->] (RebBlockedRFact) -- (Rcoarse);
-\end{scope}
-\end{tikzpicture}
-} % end scalebox
 
 \begin{thebibliography}{9}
 \bibitem{vanek1996} Vanek, P. and Mandel, J. and Brezina, M. Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems, Computing, 1996, 56, p. 179--196

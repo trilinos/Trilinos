@@ -95,26 +95,31 @@ void dumpsym (int type, int doInternal)
   symrec *ptr;
   unsigned hashval;
 
-  char comment = getsym("_C_")->value.svar[0];
+  char* comment = getsym("_C_")->value.svar;
   
-  if (type == VAR || type == SVAR) {
-    printf ("\n%c   Variable = Value\n", comment);
+  if (type == VAR || type == SVAR || type == AVAR) {
+    printf ("\n%s   Variable = Value\n", comment);
     for (hashval = 0; hashval < HASHSIZE; hashval++) {
       for (ptr = sym_table[hashval]; ptr != (symrec *) 0; ptr = ptr->next) {
 	if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	  if (ptr->type == VAR)
-	    printf ("%c  {%-10s\t= %.10g}\n", comment, ptr->name, ptr->value.var);
+	    printf ("%s  {%-10s\t= %.10g}\n", comment, ptr->name, ptr->value.var);
 	  else if (ptr->type == IMMVAR)
-	    printf ("%c  {%-10s\t= %.10g} (immutable)\n", comment, ptr->name, ptr->value.var);
+	    printf ("%s  {%-10s\t= %.10g} (immutable)\n", comment, ptr->name, ptr->value.var);
 	  else if (ptr->type == SVAR)
-	    printf ("%c  {%-10s\t= \"%s\"}\n", comment, ptr->name, ptr->value.svar);
+	    printf ("%s  {%-10s\t= \"%s\"}\n", comment, ptr->name, ptr->value.svar);
 	  else if (ptr->type == IMMSVAR)
-	    printf ("%c  {%-10s\t= \"%s\"} (immutable)\n", comment, ptr->name, ptr->value.svar);
+	    printf ("%s  {%-10s\t= \"%s\"} (immutable)\n", comment, ptr->name, ptr->value.svar);
+	  else if (ptr->type == AVAR) {
+	    array *arr = ptr->value.avar;
+	    printf ("%s  {%-10s\t (array) rows = %d, cols = %d} \n",
+		    comment, ptr->name, arr->rows, arr->cols);
+	  }
 	}
       }
     }
   }
-  else if (type == FNCT || type == SFNCT) {
+  else if (type == FNCT || type == SFNCT || type == AFNCT) {
     printf ("\nFunctions returning double:\n");
     for (hashval = 0; hashval < HASHSIZE; hashval++) {
       for (ptr = sym_table[hashval]; ptr != (symrec *) 0; ptr = ptr->next) {
@@ -127,6 +132,14 @@ void dumpsym (int type, int doInternal)
     for (hashval = 0; hashval < HASHSIZE; hashval++) {
       for (ptr = sym_table[hashval]; ptr != (symrec *) 0; ptr = ptr->next) {
 	if (ptr->type == SFNCT) {
+	  printf ("%-20s:  %s\n", ptr->syntax, ptr->info);
+	}
+      }
+    }
+    printf ("\nFunctions returning array:\n");
+    for (hashval = 0; hashval < HASHSIZE; hashval++) {
+      for (ptr = sym_table[hashval]; ptr != (symrec *) 0; ptr = ptr->next) {
+	if (ptr->type == AFNCT) {
 	  printf ("%-20s:  %s\n", ptr->syntax, ptr->info);
 	}
       }

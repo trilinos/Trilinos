@@ -64,7 +64,9 @@
 #include <TestViewAPI.hpp>
 
 #include <TestCrsArray.hpp>
+#include <TestRequest.hpp>
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestMultiReduce.hpp>
 
 namespace Test {
@@ -73,16 +75,14 @@ class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const std::pair<unsigned,unsigned> core_top =
-      Kokkos::hwloc::get_core_topology();
+    const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+    const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+    const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-    const unsigned core_size =
-      Kokkos::hwloc::get_core_capacity();
+    const unsigned threads_count = std::max( 1u , numa_count ) *
+                                   std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
-    const unsigned gang_count        = std::max( 1u , core_top.first );
-    const unsigned gang_worker_count = std::max( 2u , ( core_top.second * core_size ) / 2 );
-
-    Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
+    Kokkos::OpenMP::initialize( threads_count );
     // Kokkos::OpenMP::print_configuration( std::cout );
   }
 
@@ -129,6 +129,19 @@ TEST_F( openmp, double_reduce_dynamic ) {
 TEST_F( openmp, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::OpenMP >( 1000000 );
 }
+
+TEST_F( openmp, dev_long_reduce) {
+  TestReduceRequest< long ,   Kokkos::OpenMP >( 1000000 );
+}
+
+TEST_F( openmp, dev_double_reduce) {
+  TestReduceRequest< double ,   Kokkos::OpenMP >( 1000000 );
+}
+
+TEST_F( openmp, dev_shared_request) {
+  TestSharedRequest< Kokkos::OpenMP >();
+}
+
 
 TEST_F( openmp , atomics )
 {
@@ -205,6 +218,25 @@ TEST_F( openmp , view_remap )
 }
 
 //----------------------------------------------------------------------------
+
+TEST_F( openmp , scan )
+{
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScan< Kokkos::OpenMP >( 10 );
+    TestScan< Kokkos::OpenMP >( 10000 );
+  }
+  TestScan< Kokkos::OpenMP >( 1000000 );
+  TestScan< Kokkos::OpenMP >( 10000000 );
+  Kokkos::OpenMP::fence();
+}
+
+
+TEST_F( openmp , team_scan )
+{
+  TestScanRequest< Kokkos::OpenMP >( 10 );
+  TestScanRequest< Kokkos::OpenMP >( 10000 );
+}
+
 
 } // namespace test
 

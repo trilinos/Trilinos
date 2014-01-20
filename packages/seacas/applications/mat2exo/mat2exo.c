@@ -66,10 +66,6 @@
 #include "matio.h"
 #include "add_to_log.h"
 
-/* The maximum buffer size we will need is MAX_LINE_LENGTH (defined in
-   exodusII.h to be 80) x the number of informational records. */
-#define MAX_INFO_RECORDS 20
-
 /**********************************************************************/
 mat_t *mat_file=0;  /* file for binary .mat input */
 
@@ -77,8 +73,8 @@ mat_t *mat_file=0;  /* file for binary .mat input */
 static char *qainfo[] =
 {
   "mat2exo",
-  "2012/07/09",
-  "2.01",
+  "2014/01/14",
+  "2.02",
 };
 
 /**********************************************************************/
@@ -92,8 +88,7 @@ void del_arg(int *argc, char* argv[], int j);
 /**********************************************************************/
 int main (int argc, char *argv[]){
 
-  char  
-    *str,**str2,*line,*curr;
+  char **str2,*line,*curr;
     
   const char* ext=".exo";
 
@@ -113,8 +108,6 @@ int main (int argc, char *argv[]){
   char * blknames = NULL;
   int *num_elem_in_block = NULL;
 
-  str = (char *) calloc((MAX_LINE_LENGTH*MAX_INFO_RECORDS),sizeof(char));
-  
   /* QA Info */
   printf("%s: %s, %s\n", qainfo[0], qainfo[2], qainfo[1]);
 
@@ -135,7 +128,7 @@ int main (int argc, char *argv[]){
 
   /*open output file*/
   cpu_word_size=sizeof(double);
-  io_word_size=0;
+  io_word_size=sizeof(double);
   /* QA records */
   ext=".exo";
   line = (char *) calloc (2049,sizeof(char));
@@ -217,22 +210,24 @@ int main (int argc, char *argv[]){
     matGetInt("nssdfac",num_side_sets,1,nssdfac);
 
     for(i=0;i<num_side_sets;i++){
+      char name[32];
+  
       ex_put_set_param(exo_file,EX_SIDE_SET,ids[i],nsssides[i],nssdfac[i]);
       elem_list = (int *) calloc(nsssides[i],sizeof(int));
       side_list = (int *) calloc(nsssides[i],sizeof(int));
       escr = (double *) calloc(nssdfac[i],sizeof(double));
            
-      sprintf(str,"sselem%02d",i+1);
-      matGetInt(str,nsssides[i],1,elem_list);
+      sprintf(name,"sselem%02d",i+1);
+      matGetInt(name,nsssides[i],1,elem_list);
 
-      sprintf(str,"ssside%02d",i+1);
-      matGetInt(str,nsssides[i],1,side_list);
+      sprintf(name,"ssside%02d",i+1);
+      matGetInt(name,nsssides[i],1,side_list);
       ex_put_set(exo_file,EX_SIDE_SET,ids[i],elem_list,side_list);
 
       free(elem_list);
       free(side_list);
-      sprintf(str,"ssfac%02d",i+1);
-      matGetDbl(str,nssdfac[i],1,escr);
+      sprintf(name,"ssfac%02d",i+1);
+      matGetDbl(name,nssdfac[i],1,escr);
       ex_put_set_dist_fact(exo_file,EX_SIDE_SET,ids[i],escr);
       free(escr);      
     }
@@ -258,17 +253,19 @@ int main (int argc, char *argv[]){
     matGetInt("nnsdfac",num_node_sets,1,nnsdfac);
 
     for(i=0;i<num_node_sets;i++){
+      char name[32];
+
       ex_put_set_param(exo_file,EX_NODE_SET,ids[i],nnsnodes[i],nnsdfac[i]);
       node_list = (int *) calloc(nnsnodes[i],sizeof(int));
       escr = (double *) calloc(nnsdfac[i],sizeof(double));
            
-      sprintf(str,"nsnod%02d",i+1);
-      matGetInt(str,nnsnodes[i],1,node_list);
+      sprintf(name,"nsnod%02d",i+1);
+      matGetInt(name,nnsnodes[i],1,node_list);
       ex_put_set(exo_file,EX_NODE_SET,ids[i],node_list,NULL);
       free(node_list);
       
-      sprintf(str,"nsfac%02d",i+1);
-      matGetDbl(str,nnsdfac[i],1,escr);
+      sprintf(name,"nsfac%02d",i+1);
+      matGetDbl(name,nnsdfac[i],1,escr);
       ex_put_set_dist_fact(exo_file,EX_NODE_SET,ids[i],escr);
       free(escr);      
     }
@@ -285,17 +282,19 @@ int main (int argc, char *argv[]){
   matGetInt("blkids",num_blocks,1,ids);
 
   /* get elem block types */
-  blknames = (char *) calloc(num_blocks*MAX_STR_LENGTH,sizeof(char));
+  blknames = (char *) calloc(num_blocks*(MAX_STR_LENGTH+1),sizeof(char));
   matGetStr("blknames",blknames);
   num_elem_in_block = (int *) calloc(num_blocks,sizeof(int));
   curr = blknames;
   curr = strtok(curr,"\n");
   for(i=0;i<num_blocks;i++){
-    sprintf(str,"blk%02d",i+1);
-    n1 = matArrNRow(str);
-    n = matArrNCol(str);
+    char name[32];
+
+    sprintf(name,"blk%02d",i+1);
+    n1 = matArrNRow(name);
+    n = matArrNCol(name);
     iscr = (int *) calloc(n*n1,sizeof(int));
-    matGetInt(str,n1,n,iscr);
+    matGetInt(name,n1,n,iscr);
     num_elem_in_block[i]=n;
     ex_put_elem_block(exo_file,ids[i],curr,n,n1,0);
     ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i],iscr,NULL,NULL);
@@ -316,6 +315,8 @@ int main (int argc, char *argv[]){
   
   /* global variables */
   if (num_global_vars > 0 ){
+    int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    char *str = (char *) calloc(num_global_vars * (max_name_length+1), sizeof(char));
     matGetStr("gnames",str);
     str2 = (char **) calloc(num_global_vars,sizeof(char*));
     curr = strtok(str,"\n");
@@ -324,22 +325,25 @@ int main (int argc, char *argv[]){
       curr = strtok(NULL,"\n");
     }
     ex_put_variable_names(exo_file, EX_GLOBAL, num_global_vars, str2);
+    free(str);
     free(str2);
 
     {
       double * global_var_vals;
       double * temp;
-      global_var_vals = (double *) calloc(num_global_vars,sizeof(double));
+      global_var_vals = (double *) calloc(num_global_vars*num_time_steps,sizeof(double));
       temp            = (double *) calloc(num_time_steps,sizeof(double));
-      for (i=0;i<num_time_steps;i++) {
-	
-	for (j=0;j<num_global_vars;j++) {
-	  sprintf(str,"gvar%02d",j+1);
-	  matGetDbl(str,num_time_steps,1,temp);
-	  global_var_vals[j]=temp[i];}
-	
-	ex_put_var(exo_file,i+1,EX_GLOBAL,1,0,num_global_vars,global_var_vals);
-	
+      for (j=0;j<num_global_vars;j++) {
+	char name[32];
+	sprintf(name,"gvar%02d",j+1);
+	matGetDbl(name,num_time_steps,1,temp);
+	for (i=0; i < num_time_steps; i++) {
+	  global_var_vals[num_global_vars*i+j]=temp[i];
+	}
+      }
+      for (i=0; i<num_time_steps; i++) {
+	size_t offset = num_global_vars * i;
+	ex_put_var(exo_file,i+1,EX_GLOBAL,1,0,num_global_vars,&global_var_vals[offset]);
       }
       free(temp);
       free(global_var_vals);
@@ -350,6 +354,8 @@ int main (int argc, char *argv[]){
   /* nodal variables */ /* section by dtg */
 
   if (num_nodal_vars > 0){
+    int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    char *str = (char *) calloc(num_nodal_vars * (max_name_length+1), sizeof(char));
     matGetStr("nnames",str);
     str2 = (char **) calloc(num_nodal_vars,sizeof(char*));
     curr = strtok(str,"\n");
@@ -358,13 +364,15 @@ int main (int argc, char *argv[]){
       curr = strtok(NULL,"\n");
     }
     ex_put_variable_names(exo_file, EX_NODAL, num_nodal_vars, str2);	
+    free(str);
     free(str2);
     {
       double * nodal_var_vals;
       for (i=0;i<num_nodal_vars;i++) {
+	char name[32];
 	nodal_var_vals = (double *) calloc(num_nodes*num_time_steps,sizeof(double));
-	sprintf(str,"nvar%02d",i+1);
-	matGetDbl(str,num_nodes,num_time_steps,nodal_var_vals);
+	sprintf(name,"nvar%02d",i+1);
+	matGetDbl(name,num_nodes,num_time_steps,nodal_var_vals);
 	for (j=0;j<num_time_steps;j++) {
 	  ex_put_var(exo_file,j+1,EX_NODAL,i+1,num_nodes,1,nodal_var_vals+num_nodes*j);
 	}
@@ -376,6 +384,8 @@ int main (int argc, char *argv[]){
   /* elemental variables */ /* section by dtg */
   
   if (num_element_vars > 0){
+    int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    char *str = (char *) calloc(num_element_vars * (max_name_length+1), sizeof(char));
     matGetStr("enames",str);
     str2 = (char **) calloc(num_element_vars,sizeof(char*));
     curr = strtok(str,"\n");
@@ -384,13 +394,15 @@ int main (int argc, char *argv[]){
       curr = strtok(NULL,"\n");
     }
     ex_put_variable_names(exo_file, EX_ELEM_BLOCK, num_element_vars, str2);	
+    free(str);
     free(str2);
     {
       double * element_var_vals;
       for (i=0;i<num_element_vars;i++) {
+	char name[32];
 	element_var_vals = (double *) calloc(num_elements*num_time_steps,sizeof(double));       
-	sprintf(str,"evar%02d",i+1);
-	matGetDbl(str,num_elements,num_time_steps,element_var_vals);
+	sprintf(name,"evar%02d",i+1);
+	matGetDbl(name,num_elements,num_time_steps,element_var_vals);
 	n=0;       
 	for (j=0;j<num_time_steps;j++) {
 	  for (k=0;k<num_blocks;k++) {
@@ -426,8 +438,6 @@ int main (int argc, char *argv[]){
 
   /* */
   fprintf(stderr,"done.\n");
-
-  free(str);
 
   /* exit status */
   add_to_log("mat2exo", 0);

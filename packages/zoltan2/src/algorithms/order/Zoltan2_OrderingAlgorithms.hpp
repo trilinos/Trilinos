@@ -49,6 +49,7 @@
 #include "Zoltan2_AlgNatural.hpp"
 #include "Zoltan2_AlgRandom.hpp"
 #include "Zoltan2_AlgRCM.hpp"
+#include "Zoltan2_AlgSortedDegree.hpp"
 #include "Zoltan2_AlgAMD.hpp"
 
 

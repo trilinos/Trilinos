@@ -63,6 +63,8 @@ template< class DeviceType >
 class SymmetricDiagonalSpec {
 public:
 
+  typedef unsigned size_type;
+
   /** \brief  Dimension of vector block */
   KOKKOS_INLINE_FUNCTION
   unsigned dimension() const { return m_dimension ; }
@@ -107,6 +109,60 @@ public:
 
 private:
   unsigned m_dimension ;
+};
+
+template < typename Device >
+class BlockMultiply< SymmetricDiagonalSpec< Device > > {
+public:
+  typedef Device device_type ;
+  typedef typename device_type::size_type size_type ;
+  typedef SymmetricDiagonalSpec< device_type > block_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const block_type  & block ,
+                     const MatrixValue *       a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type dimension = block.dimension();
+    const size_type dim_half  = ( dimension + 1 ) >> 1 ;
+
+    // Multiply the main diagonal (first diagonal)
+    for ( size_type j = 0 ; j < dimension ; ++j ) {
+      y[j] += a[j] * x[j] ; // Contiguous access
+    }
+
+    // Multiply remaining full diagionals, each diagonal is accessed twice
+    for ( size_type d = 1 ; d < dim_half ; ++d ) {
+      size_type kx  = d ;
+      size_type kxr = dimension - d ;
+
+      a += dimension ; // next diagonal
+
+      for ( size_type j = 0 ; j < dimension ; ++j ) {
+        y[j] += a[j] * x[kx] + a[kxr] * x[kxr]; // Contiguous access
+        if ( dimension == ++kx )  kx = 0 ;
+        if ( dimension == ++kxr ) kxr = 0 ;
+      }
+    }
+
+    // If even number of diagonals then the last diagonal is half-length
+    if ( ! ( dimension & 01 ) ) {
+      size_type kx = dim_half ;
+
+      a += dimension ; // next diagonal
+
+      for ( size_type j = 0 ; j < dim_half ; ++j , ++kx ) {
+        y[j]  += a[j] * x[kx] ; // Contiguous access
+        y[kx] += a[j] * x[j] ;  // Contiguous access
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type matrix_size( const block_type & block )
+    { return block.matrix_size(); }
 };
 
 } // namespace Stokhos

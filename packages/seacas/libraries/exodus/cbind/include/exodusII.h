@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.27f
-#define EX_API_VERS_NODOT 527
+#define EX_API_VERS 5.29f
+#define EX_API_VERS_NODOT 529
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -78,12 +78,12 @@ extern "C" {
    * API. They should already be defined, but are left over from the
    * old days...
    */
-#ifndef TRUE
-#define TRUE -1
+#ifndef EX_TRUE
+#define EX_TRUE -1
 #endif
 
-#ifndef FALSE
-#define FALSE 0 
+#ifndef EX_FALSE
+#define EX_FALSE 0 
 #endif
 
   /**

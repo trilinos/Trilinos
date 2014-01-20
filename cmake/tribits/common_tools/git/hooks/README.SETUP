@@ -38,6 +38,9 @@ Set up email notification hooks
   $ ./hooks/get_recipients.py OLD_REV NEW_REV refs/heads/master # Prints out email list
   $ ./hooks/post-receive-email OLD_REV NEW_REV refs/heads/master  # Sends email
 
+where OLD_REV and NEW_REV are git SHA1s for different commits that represent
+the commits pushed.
+
 With all of this done, your email notifications should work great.  Note that
 you should keep your dirs_to_emails file under version control and just create
 a symbolic link in order to allow anyone with access to your repository to

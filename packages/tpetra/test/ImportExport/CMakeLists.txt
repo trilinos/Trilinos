@@ -1,11 +1,24 @@
 
 INCLUDE(TribitsAddExecutableAndTest)
 
+IF(Kokkos_ENABLE_Cuda)
+  #
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_COMPILE(IE_UT_OBJECTS_CUDA ImportExport_UnitTests_CU.cu)
+  CUDA_COMPILE(I_U_OBJECTS_CUDA Import_Union_CU.cu)
+  CUDA_COMPILE(SMET_OBJECTS_CUDA SubmapExport_CU.cu)
+  CUDA_COMPILE(SMIT_OBJECTS_CUDA SubmapImport_CU.cu)
+  CUDA_COMPILE(IB5430T_OBJECTS_CUDA ImportBug5430Test_CU.cu)
+  CUDA_COMPILE(ETSGCM_OBJECTS_CUDA ExportToStaticGraphCrsMatrix_CU.cu)
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport_UnitTests
   SOURCES
     ImportExport_UnitTests
+    ${IE_UT_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -15,6 +28,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Import_Union
   SOURCES
     Import_Union
+    ${I_U_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -24,6 +38,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SubmapExportTests
   SOURCES
     SubmapExport
+    ${SMET_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -34,6 +49,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SubmapImportTests
   SOURCES
     SubmapImport
+    ${SMIT_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -49,7 +65,8 @@ IF (${PROJECT_NAME}_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ImportBug5430
     SOURCES
-    ImportBug5430Test.cpp
+      ImportBug5430Test.cpp
+      ${IB5430T_OBJECTS_CUDA}
     COMM mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 4
@@ -59,7 +76,9 @@ ENDIF ()
 # Test whether Export to a CrsMatrix with a static graph works.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ExportToStaticGraphCrsMatrix
-  SOURCES ExportToStaticGraphCrsMatrix.cpp
+  SOURCES
+    ExportToStaticGraphCrsMatrix.cpp
+    ${ETSGCM_OBJECTS_CUDA}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 4

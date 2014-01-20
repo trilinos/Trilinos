@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -72,11 +72,11 @@ namespace MueLu {
     type and ParameterList passed into the constructor. See the constructor for more information.
   */
   class IfpackSmoother : public SmootherPrototype<double,int,int> {
-    typedef double Scalar;
-    typedef int    LocalOrdinal;
-    typedef int    GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef double                                                              Scalar;
+    typedef int                                                                 LocalOrdinal;
+    typedef int                                                                 GlobalOrdinal;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps  LocalMatOps;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -122,40 +122,11 @@ namespace MueLu {
     IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
-    virtual ~IfpackSmoother();
+    virtual ~IfpackSmoother() { }
 
     //@}
 
-    //! @name Set/Get methods
-
-    //@{
-
-    //! Set smoother parameters
-    void SetParameters(Teuchos::ParameterList const & paramList);
-
-    //! Get smoother parameters
-    Teuchos::ParameterList const & GetParameters();
-
-    //JG: I'm not sure if it's a good idea to provide Get/Set NIts (for code maintainability)
-
-    //     /*! @brief Set the number of smoothing sweeps/degree.
-    //
-    //        If the smoother is relaxation, this sets the number of sweeps.
-    //        If the smoother is Chebyshev, this sets the polynomial degree.
-    //
-    //        Note:  This can be called after the preconditioner is set up, i.e., after
-    //        calling IfpackSmoother::Setup().
-    //     */
-    //     void SetNIts(LO const &nIts);
-    //
-    //     /*! @brief Get the number of smoothing sweeps.
-    //
-    //        If the smoother is relaxation, this returns the number of sweeps.
-    //        If the smoother is Chebyshev, this returns the polynomial degree.
-    //     */
-    //     LO GetNIts();
-
-    //@}
+    void SetParameterList(const Teuchos::ParameterList& paramList);
 
     //! Input
     //@{
@@ -207,12 +178,12 @@ namespace MueLu {
     //@}
 
   private:
+    void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
+
+  private:
 
     //! ifpack-specific key phrase that denote smoother type
     std::string type_;
-
-    //! parameter list that is used by Ifpack internally
-    Teuchos::ParameterList paramList_;
 
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;

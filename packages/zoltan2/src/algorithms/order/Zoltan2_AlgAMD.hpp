@@ -53,33 +53,14 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
-#ifndef HAVE_ZOLTAN2_AMD
 
-namespace Zoltan2{
-
-template <typename Adapter>
-int AlgAMD(
-  const RCP<GraphModel<Adapter> > &model,
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<Teuchos::Comm<int> > &comm
-)
-{
-    // We don't need to check comm size here as we throw an exception always.
-  throw std::runtime_error(
-        "BUILD ERROR: AMD requested but not compiled into Zoltan2.\n"
-        "Please set CMake flag Zoltan2_ENABLE_AMD:BOOL=ON.");
-}
-
-}
-
-#else
-
+#ifdef HAVE_ZOLTAN2_AMD
 #include "amd.h"
+#endif
 
 namespace Zoltan2{
 
+#ifdef HAVE_ZOLTAN2_AMD
 template <typename Ordinal>
 class AMDTraits
 {
@@ -109,64 +90,83 @@ class AMDTraits<long>
         return (amd_l_order(n, Ap, Ai, perm, control, info));
     }
 };
+#endif
+
+}
+
+
+namespace Zoltan2{
 
 template <typename Adapter>
-int AlgAMD(
-  const RCP<GraphModel<Adapter> > &model,
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<Teuchos::Comm<int> > &comm
-)
+class AlgAMD
 {
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::scalar_t scalar_t;
+    public:
 
-  int ierr= 0;
+    AlgAMD()
+    {
+    }
 
-  if (comm->getSize() != 1)
-  {
-      throw std::runtime_error(
-        "ERROR: AMD requested with distributed matrix.\n"
-        "This feature is not supported yet. Please use a local matrix.");
-  }
+    int order ( const RCP<GraphModel<Adapter> > &model,
+    const RCP<OrderingSolution<typename Adapter::gid_t,
+    typename Adapter::lno_t> > &solution, const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Teuchos::Comm<int> > &comm )
+    {
+#ifndef HAVE_ZOLTAN2_AMD
+  throw std::runtime_error(
+        "BUILD ERROR: AMD requested but not compiled into Zoltan2.\n"
+        "Please set CMake flag Zoltan2_ENABLE_AMD:BOOL=ON.");
+#else
+      typedef typename Adapter::lno_t lno_t;
+      typedef typename Adapter::gno_t gno_t;
+      typedef typename Adapter::gid_t gid_t;
+      typedef typename Adapter::scalar_t scalar_t;
 
-  const size_t nVtx = model->getLocalNumVertices();
+      int ierr= 0;
 
-  cout << "Local num vertices" << nVtx << endl;
-  ArrayView<const gno_t> edgeIds;
-  ArrayView<const int> procIds;
-  ArrayView<const lno_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t> > wgts;
+      if (comm->getSize() != 1)
+      {
+          throw std::runtime_error(
+            "ERROR: AMD requested with distributed matrix.\n"
+            "This feature is not supported yet. Please use a local matrix.");
+      }
 
-  //const size_t nEdgs = model->getEdgeList( edgeIds,
-  //                      procIds, offsets, wgts);
-  // TODO: Should use the local graph
-  model->getEdgeList( edgeIds, procIds, offsets, wgts);
+      const size_t nVtx = model->getLocalNumVertices();
 
-  AMDTraits<lno_t> AMDobj;
-  double Control[AMD_CONTROL];
-  double Info[AMD_INFO];
+      //cout << "Local num vertices" << nVtx << endl;
+      ArrayView<const gno_t> edgeIds;
+      ArrayView<const int> procIds;
+      ArrayView<const lno_t> offsets;
+      ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
-  amd_defaults(Control);
-  amd_control(Control);
+      //const size_t nEdgs = model->getEdgeList( edgeIds,
+      //                      procIds, offsets, wgts);
+      // TODO: Should use the local graph
+      model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
-  lno_t *perm;
-  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+      AMDTraits<lno_t> AMDobj;
+      double Control[AMD_CONTROL];
+      double Info[AMD_INFO];
 
-  lno_t result = AMDobj.order(nVtx, offsets.getRawPtr(),
-                         edgeIds.getRawPtr(), perm, Control, Info);
+      amd_defaults(Control);
+      amd_control(Control);
 
-  if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
-      ierr = -1; // TODO: Change return value to lno_t
+      lno_t *perm;
+      perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
 
-  return ierr;
+      lno_t result = AMDobj.order(nVtx, offsets.getRawPtr(),
+                             edgeIds.getRawPtr(), perm, Control, Info);
+
+      if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
+          ierr = -1; // TODO: Change return value to lno_t
+
+      solution->setHavePerm(true);
+      return ierr;
+#endif
+    }
+};
+
 }
 
-}
 
-#endif // ZOLTAN2_HAVE_AMD
 
 #endif

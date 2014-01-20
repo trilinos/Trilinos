@@ -1441,6 +1441,12 @@ namespace Iogn {
     }
   }
 
+  std::vector<std::string> GeneratedMesh::sideset_touching_blocks(int64_t set_id) const
+  {
+    std::vector<std::string> result(1, "block_1");
+    return result;
+  }
+
   void GeneratedMesh::set_variable_count(const std::string &type, size_t count)
   {
     if (type == "global") {

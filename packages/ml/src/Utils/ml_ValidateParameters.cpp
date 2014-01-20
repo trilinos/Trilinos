@@ -9,6 +9,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "ml_ValidateParameters.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#ifdef HAVE_ML_IFPACK
+#include "Ifpack_config.h"
+#endif
 
 # ifdef HAVE_ML_TekoSmoothers
 namespace Teko {
@@ -56,7 +59,11 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList, int 
     List.validateParameters (*validList, depth, Teuchos::VALIDATE_USED_ENABLED, 
 			     Teuchos::VALIDATE_DEFAULTS_DISABLED);
   }
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+  catch(InvalidParameterName &excpt)  {/*rv=false; std::cout<<excpt.what()<<std::endl;*/}
+#else
   catch(InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+#endif
   catch(InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(...) {rv=false;}
@@ -92,8 +99,10 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   setStringToIntegralParameter<int>("smoother: type", std::string("Chebyshev"), 
 				    "Smoothing algorithm",smoothers,PL);
   setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
+  setIntParameter("smoother: line direction nodes", -1, "Number of mesh points in z direction", PL, intParam);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<std::string>("pre","post","both"),PL);
+  setStringToIntegralParameter<int>("smoother: line orientation","not specified","indicates grid points are numbered either horizontally or veritcally for extruded meshes", tuple<std::string>("horizontal","vertical","not specified"),PL);
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
   RCP<std::vector<double> > params = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
@@ -265,13 +274,13 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Allocate List for Smoothing Options */
 # if defined(HAVE_PETSC) && defined(HAVE_ML_SUPERLU4_0)
-  const int num_smoothers=30;
+  const int num_smoothers=32;
 # elif defined(HAVE_PETSC) || defined(HAVE_ML_SUPERLU4_0)
-  const int num_smoothers=29;
+  const int num_smoothers=31;
 #elif defined(HAVE_ML_TekoSmoothers)
-  const int num_smoothers=29; // won't work with SUPERLU or PETSC!
+  const int num_smoothers=31; // won't work with SUPERLU or PETSC!
 # else
-  const int num_smoothers=28;
+  const int num_smoothers=30;
 # endif
   const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi",
    "ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel",
@@ -279,7 +288,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
    "Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
    "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT",
-   "Block Chebyshev","IFPACK-Block Chebyshev"
+   "Block Chebyshev","IFPACK-Block Chebyshev","line Jacobi","line Gauss-Seidel"
 #  ifdef HAVE_PETSC
    ,"petsc"
 #  endif

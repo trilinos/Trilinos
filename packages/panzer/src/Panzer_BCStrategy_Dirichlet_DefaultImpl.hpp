@@ -63,7 +63,8 @@ namespace panzer {
 
   public:    
 
-      BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
+    BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data,
+				     const bool check_apply_bc = false);
     
     virtual ~BCStrategy_Dirichlet_DefaultImpl();
     
@@ -94,11 +95,11 @@ namespace panzer {
 						   const Teuchos::ParameterList& user_data) const;
 
   protected:
-
-      std::vector<std::string> required_dof_names;
-
-      std::map<std::string,std::string> residual_to_dof_names_map;
-      std::map<std::string,std::string> residual_to_target_field_map;
+    
+    std::vector<std::string> required_dof_names;
+    std::map<std::string,std::string> residual_to_dof_names_map;
+    std::map<std::string,std::string> residual_to_target_field_map;
+    bool check_apply_bc;
   };
 
 }

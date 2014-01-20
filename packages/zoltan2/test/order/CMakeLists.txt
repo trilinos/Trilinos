@@ -45,6 +45,17 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_TEST(
+  Ordering1
+  NAME Ordering1_sorteddegree
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--order_method=sorted_degree"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   OrderingAMD

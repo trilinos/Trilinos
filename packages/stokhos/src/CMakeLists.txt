@@ -119,7 +119,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp
   Stokhos_Dense3TensorImp.hpp
-  Stokhos_Sparse3TensorUtilities.hpp
   Stokhos_Sparse3TensorPartition.hpp
   Stokhos_LTBSparse3Tensor.hpp
   Stokhos_Quadrature.hpp
@@ -170,69 +169,12 @@ SET(HEADERS ${HEADERS}
   Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
-  Stokhos_EpetraSparse3Tensor.hpp
-  Stokhos_ParallelData.hpp
-  Stokhos_SGOperator.hpp
-  Stokhos_MatrixFreeOperator.hpp
-  Stokhos_KLMatrixFreeOperator.hpp
-  Stokhos_KLReducedMatrixFreeOperator.hpp
-  Stokhos_FullyAssembledOperator.hpp
-  Stokhos_SGOperatorFactory.hpp
-  Stokhos_SGPreconditioner.hpp
-  Stokhos_MeanBasedPreconditioner.hpp
-  Stokhos_ApproxGaussSeidelPreconditioner.hpp
-  Stokhos_ApproxJacobiPreconditioner.hpp
-  Stokhos_ApproxSchurComplementPreconditioner.hpp
-  Stokhos_KroneckerProductPreconditioner.hpp
-  Stokhos_FullyAssembledPreconditioner.hpp
-  Stokhos_SGPreconditionerFactory.hpp
-  Stokhos_AbstractPreconditionerFactory.hpp
-  Stokhos_IfpackPreconditionerFactory.hpp
-  Stokhos_MLPreconditionerFactory.hpp
-  Stokhos_PreconditionerFactory.hpp
-  Stokhos_MLPrecOp.hpp
-  Stokhos_SGModelEvaluator.hpp
-  Stokhos_SGQuadModelEvaluator.hpp
-  Stokhos_SGInverseModelEvaluator.hpp
-  Stokhos_ResponseStatisticModelEvaluator.hpp
-  Stokhos_ProductContainer.hpp
-  Stokhos_ProductContainerImp.hpp
-  Stokhos_VectorOrthogPoly.hpp
-  Stokhos_VectorOrthogPolyImp.hpp
-  Stokhos_Epetra.hpp
-  Stokhos_VectorOrthogPolyTraitsEpetra.hpp
-  Stokhos_ProductEpetraVector.hpp
-  Stokhos_ProductEpetraMultiVector.hpp
-  Stokhos_ProductEpetraOperator.hpp
-  Stokhos_ProductEpetraMultiVectorOperator.hpp
-  Stokhos_EpetraVectorOrthogPoly.hpp
-  Stokhos_EpetraMultiVectorOrthogPoly.hpp
-  Stokhos_EpetraOperatorOrthogPoly.hpp
-  Stokhos_EpetraMultiVectorOperatorOrthogPoly.hpp
-  Stokhos_PCECovarianceOp.hpp
-  Stokhos_PCEAnasaziKL.hpp
   Stokhos_KL_OneDEigenPair.hpp
   Stokhos_KL_ProductEigenPair.hpp
   Stokhos_KL_OneDExponentialCovarianceFunction.hpp
   Stokhos_KL_OneDExponentialCovarianceFunctionImp.hpp
   Stokhos_KL_ExponentialRandomField.hpp
   Stokhos_KL_ExponentialRandomFieldImp.hpp
-  Stokhos_EpetraMultiVectorOperator.hpp
-  Stokhos_BlockDiagonalOperator.hpp
-  Stokhos_MPPreconditioner.hpp
-  Stokhos_MPBlockDiagonalPreconditioner.hpp
-  Stokhos_MPMeanBasedPreconditioner.hpp
-  Stokhos_MPPreconditionerFactory.hpp
-  Stokhos_MPModelEvaluator.hpp
-  Stokhos_SGQuadMPModelEvaluator.hpp
-  Stokhos_MPModelEvaluatorAdapter.hpp
-  Stokhos_MPInverseModelEvaluator.hpp
-  Stokhos_InterlacedOperator.hpp
-  Stokhos_SGModelEvaluator_Interlaced.hpp
-  Stokhos_SGModelEvaluator_Adaptive.hpp
-  Stokhos_BasisInteractionGraph.hpp
-  Stokhos_AdaptivityUtils.hpp
-  Stokhos_AdaptivityManager.hpp
   Stokhos_Operator.hpp
   Stokhos_DiagPreconditioner.hpp
   Stokhos_JacobiPreconditioner.hpp
@@ -248,54 +190,122 @@ SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_SparseGridQuadrature.cpp
   Stokhos_AnisoSparseGridQuadrature.cpp
-  Stokhos_EpetraSparse3Tensor.cpp
-  Stokhos_ParallelData.cpp
-  Stokhos_MatrixFreeOperator.cpp
-  Stokhos_KLMatrixFreeOperator.cpp
-  Stokhos_KLReducedMatrixFreeOperator.cpp
-  Stokhos_FullyAssembledOperator.cpp
-  Stokhos_SGOperatorFactory.cpp
-  Stokhos_MeanBasedPreconditioner.cpp
-  Stokhos_ApproxGaussSeidelPreconditioner.cpp
-  Stokhos_ApproxJacobiPreconditioner.cpp
-  Stokhos_ApproxSchurComplementPreconditioner.cpp
-  Stokhos_KroneckerProductPreconditioner.cpp
-  Stokhos_FullyAssembledPreconditioner.cpp
-  Stokhos_SGPreconditionerFactory.cpp
-  Stokhos_IfpackPreconditionerFactory.cpp
-  Stokhos_MLPreconditionerFactory.cpp
-  Stokhos_PreconditionerFactory.cpp
-  Stokhos_MLPrecOp.cpp
-  Stokhos_ProductEpetraVector.cpp
-  Stokhos_ProductEpetraMultiVector.cpp
-  Stokhos_ProductEpetraOperator.cpp
-  Stokhos_ProductEpetraMultiVectorOperator.cpp
-  Stokhos_EpetraVectorOrthogPoly.cpp
-  Stokhos_EpetraMultiVectorOrthogPoly.cpp
-  Stokhos_EpetraOperatorOrthogPoly.cpp
-  Stokhos_EpetraMultiVectorOperatorOrthogPoly.cpp
-  Stokhos_SGModelEvaluator.cpp
-  Stokhos_SGQuadModelEvaluator.cpp
-  Stokhos_SGInverseModelEvaluator.cpp
-  Stokhos_ResponseStatisticModelEvaluator.cpp
-  Stokhos_PCECovarianceOp.cpp
-  Stokhos_PCEAnasaziKL.cpp
-  Stokhos_EpetraMultiVectorOperator.cpp
-  Stokhos_BlockDiagonalOperator.cpp
-  Stokhos_MPBlockDiagonalPreconditioner.cpp
-  Stokhos_MPMeanBasedPreconditioner.cpp
-  Stokhos_MPPreconditionerFactory.cpp
-  Stokhos_MPModelEvaluator.cpp
-  Stokhos_SGQuadMPModelEvaluator.cpp
-  Stokhos_MPModelEvaluatorAdapter.cpp
-  Stokhos_MPInverseModelEvaluator.cpp
-  Stokhos_InterlacedOperator.cpp
-  Stokhos_SGModelEvaluator_Interlaced.cpp
-  Stokhos_SGModelEvaluator_Adaptive.cpp
-  Stokhos_BasisInteractionGraph.cpp
-  Stokhos_AdaptivityUtils.cpp
-  Stokhos_AdaptivityManager.cpp
 )
+
+# Epetra
+IF (Stokhos_ENABLE_EpetraExt)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+  SET(HEADERS ${HEADERS}
+    epetra/Stokhos_Sparse3TensorUtilities.hpp
+    epetra/Stokhos_EpetraSparse3Tensor.hpp
+    epetra/Stokhos_SGOperator.hpp
+    epetra/Stokhos_MatrixFreeOperator.hpp
+    epetra/Stokhos_KLMatrixFreeOperator.hpp
+    epetra/Stokhos_KLReducedMatrixFreeOperator.hpp
+    epetra/Stokhos_FullyAssembledOperator.hpp
+    epetra/Stokhos_SGOperatorFactory.hpp
+    epetra/Stokhos_SGPreconditioner.hpp
+    epetra/Stokhos_MeanBasedPreconditioner.hpp
+    epetra/Stokhos_ApproxGaussSeidelPreconditioner.hpp
+    epetra/Stokhos_ApproxJacobiPreconditioner.hpp
+    epetra/Stokhos_ApproxSchurComplementPreconditioner.hpp
+    epetra/Stokhos_KroneckerProductPreconditioner.hpp
+    epetra/Stokhos_FullyAssembledPreconditioner.hpp
+    epetra/Stokhos_SGPreconditionerFactory.hpp
+    epetra/Stokhos_AbstractPreconditionerFactory.hpp
+    epetra/Stokhos_IfpackPreconditionerFactory.hpp
+    epetra/Stokhos_MLPreconditionerFactory.hpp
+    epetra/Stokhos_PreconditionerFactory.hpp
+    epetra/Stokhos_MLPrecOp.hpp
+    epetra/Stokhos_SGModelEvaluator.hpp
+    epetra/Stokhos_SGQuadModelEvaluator.hpp
+    epetra/Stokhos_SGInverseModelEvaluator.hpp
+    epetra/Stokhos_ResponseStatisticModelEvaluator.hpp
+    epetra/Stokhos_Epetra.hpp
+    epetra/Stokhos_ParallelData.hpp
+    epetra/Stokhos_PCECovarianceOp.hpp
+    epetra/Stokhos_PCEAnasaziKL.hpp
+    epetra/Stokhos_ProductContainer.hpp
+    epetra/Stokhos_ProductContainerImp.hpp
+    epetra/Stokhos_VectorOrthogPoly.hpp
+    epetra/Stokhos_VectorOrthogPolyImp.hpp
+    epetra/Stokhos_VectorOrthogPolyTraitsEpetra.hpp
+    epetra/Stokhos_ProductEpetraVector.hpp
+    epetra/Stokhos_ProductEpetraMultiVector.hpp
+    epetra/Stokhos_ProductEpetraOperator.hpp
+    epetra/Stokhos_ProductEpetraMultiVectorOperator.hpp
+    epetra/Stokhos_EpetraVectorOrthogPoly.hpp
+    epetra/Stokhos_EpetraMultiVectorOrthogPoly.hpp
+    epetra/Stokhos_EpetraOperatorOrthogPoly.hpp
+    epetra/Stokhos_EpetraMultiVectorOperatorOrthogPoly.hpp
+    epetra/Stokhos_EpetraMultiVectorOperator.hpp
+    epetra/Stokhos_BlockDiagonalOperator.hpp
+    epetra/Stokhos_MPPreconditioner.hpp
+    epetra/Stokhos_MPBlockDiagonalPreconditioner.hpp
+    epetra/Stokhos_MPMeanBasedPreconditioner.hpp
+    epetra/Stokhos_MPPreconditionerFactory.hpp
+    epetra/Stokhos_MPModelEvaluator.hpp
+    epetra/Stokhos_SGQuadMPModelEvaluator.hpp
+    epetra/Stokhos_MPModelEvaluatorAdapter.hpp
+    epetra/Stokhos_MPInverseModelEvaluator.hpp
+    epetra/Stokhos_InterlacedOperator.hpp
+    epetra/Stokhos_SGModelEvaluator_Interlaced.hpp
+    epetra/Stokhos_SGModelEvaluator_Adaptive.hpp
+    epetra/Stokhos_BasisInteractionGraph.hpp
+    epetra/Stokhos_AdaptivityUtils.hpp
+    epetra/Stokhos_AdaptivityManager.hpp
+    )
+
+  SET(SOURCES ${SOURCES}
+    epetra/Stokhos_EpetraSparse3Tensor.cpp
+    epetra/Stokhos_MatrixFreeOperator.cpp
+    epetra/Stokhos_KLMatrixFreeOperator.cpp
+    epetra/Stokhos_KLReducedMatrixFreeOperator.cpp
+    epetra/Stokhos_FullyAssembledOperator.cpp
+    epetra/Stokhos_SGOperatorFactory.cpp
+    epetra/Stokhos_MeanBasedPreconditioner.cpp
+    epetra/Stokhos_ApproxGaussSeidelPreconditioner.cpp
+    epetra/Stokhos_ApproxJacobiPreconditioner.cpp
+    epetra/Stokhos_ApproxSchurComplementPreconditioner.cpp
+    epetra/Stokhos_KroneckerProductPreconditioner.cpp
+    epetra/Stokhos_FullyAssembledPreconditioner.cpp
+    epetra/Stokhos_SGPreconditionerFactory.cpp
+    epetra/Stokhos_IfpackPreconditionerFactory.cpp
+    epetra/Stokhos_MLPreconditionerFactory.cpp
+    epetra/Stokhos_PreconditionerFactory.cpp
+    epetra/Stokhos_MLPrecOp.cpp
+    epetra/Stokhos_ParallelData.cpp
+    epetra/Stokhos_PCECovarianceOp.cpp
+    epetra/Stokhos_PCEAnasaziKL.cpp
+    epetra/Stokhos_ProductEpetraVector.cpp
+    epetra/Stokhos_ProductEpetraMultiVector.cpp
+    epetra/Stokhos_ProductEpetraOperator.cpp
+    epetra/Stokhos_ProductEpetraMultiVectorOperator.cpp
+    epetra/Stokhos_EpetraVectorOrthogPoly.cpp
+    epetra/Stokhos_EpetraMultiVectorOrthogPoly.cpp
+    epetra/Stokhos_EpetraOperatorOrthogPoly.cpp
+    epetra/Stokhos_EpetraMultiVectorOperatorOrthogPoly.cpp
+    epetra/Stokhos_SGModelEvaluator.cpp
+    epetra/Stokhos_SGQuadModelEvaluator.cpp
+    epetra/Stokhos_SGInverseModelEvaluator.cpp
+    epetra/Stokhos_ResponseStatisticModelEvaluator.cpp
+    epetra/Stokhos_EpetraMultiVectorOperator.cpp
+    epetra/Stokhos_BlockDiagonalOperator.cpp
+    epetra/Stokhos_MPBlockDiagonalPreconditioner.cpp
+    epetra/Stokhos_MPMeanBasedPreconditioner.cpp
+    epetra/Stokhos_MPPreconditionerFactory.cpp
+    epetra/Stokhos_MPModelEvaluator.cpp
+    epetra/Stokhos_SGQuadMPModelEvaluator.cpp
+    epetra/Stokhos_MPModelEvaluatorAdapter.cpp
+    epetra/Stokhos_MPInverseModelEvaluator.cpp
+    epetra/Stokhos_InterlacedOperator.cpp
+    epetra/Stokhos_SGModelEvaluator_Interlaced.cpp
+    epetra/Stokhos_SGModelEvaluator_Adaptive.cpp
+    epetra/Stokhos_BasisInteractionGraph.cpp
+    epetra/Stokhos_AdaptivityUtils.cpp
+    epetra/Stokhos_AdaptivityManager.cpp
+    )
+ENDIF()
 
 # Sacado
 IF (Stokhos_ENABLE_Sacado)
@@ -328,9 +338,11 @@ IF (Stokhos_ENABLE_Sacado)
     )
   IF (Stokhos_ENABLE_KokkosCore)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
       sacado/kokkos/Stokhos_LocalStorage.hpp
@@ -340,11 +352,49 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
-      sacado/kokkos/Sacado_MP_Vector.hpp
-      sacado/kokkos/Sacado_MP_VectorTraits.hpp
-      sacado/kokkos/Sacado_MP_Vector_ops.hpp
-      sacado/kokkos/Sacado_MP_ExpressionTraits.hpp
-    )
+      sacado/kokkos/Stokhos_ViewStorage.hpp
+      sacado/kokkos/Stokhos_ViewStridedStorage.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector.hpp
+      sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
+      sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
+      sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
+      sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
+      )
+    IF (Stokhos_ENABLE_KokkosLinAlg)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
+        )
+      IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
+          )
+      ENDIF()
+    ENDIF()
+    IF (Stokhos_ENABLE_Tpetra AND
+        NOT Tpetra_ENABLE_Kokkos_DistObject AND
+        NOT Tpetra_ENABLE_Kokkos_Refactor)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
+      IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/tpetra/Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp
+          )
+        SET(SOURCES ${SOURCES}
+          sacado/kokkos/vector/tpetra/Tpetra_MultiVector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_Vector.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_RowMatrix.cpp
+          sacado/kokkos/vector/tpetra/Tpetra_DistObject.cpp
+          )
+      ENDIF()
+    ENDIF()
+    IF (Stokhos_ENABLE_Belos)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
+        )
+    ENDIF()
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
@@ -362,11 +412,11 @@ IF (Stokhos_ENABLE_Sacado)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
     IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
-	tpetra/tpetra_pce_instantiations.cpp
-	)
+        tpetra/tpetra_pce_instantiations.cpp
+        )
       SET(HEADERS ${HEADERS}
-	tpetra/kokkos_pce_specializations.hpp
-	)
+        tpetra/kokkos_pce_specializations.hpp
+        )
     ENDIF()
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Belos)
@@ -382,15 +432,14 @@ IF (Stokhos_ENABLE_Sacado)
       )
     IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
-	ifpack2/ifpack2_pce_instantiations.cpp
-	)
+        ifpack2/ifpack2_pce_instantiations.cpp
+        )
     ENDIF()
   ENDIF()
 ENDIF()
 
 IF (Stokhos_ENABLE_KokkosCore)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Stokhos_Multiply.hpp
     kokkos/Stokhos_CrsMatrix.hpp
@@ -399,33 +448,41 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Stokhos_SymmetricDiagonalSpec.hpp
     kokkos/Stokhos_CrsProductTensor.hpp
     kokkos/Stokhos_TiledCrsProductTensor.hpp
+    kokkos/Stokhos_SimpleTiledCrsProductTensor.hpp
     kokkos/Stokhos_CooProductTensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
     kokkos/Stokhos_LinearSparse3Tensor.hpp
     kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
-    kokkos/Threads/Stokhos_Threads_TinyVec.hpp
-    kokkos/Threads/Stokhos_Threads_CrsMatrix.hpp
-    kokkos/Threads/Stokhos_Threads_BlockCrsMatrix.hpp
-    kokkos/Threads/Stokhos_Threads_StochasticProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_SymmetricDiagonalSpec.hpp
-    kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_TiledCrsProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_CooProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_FlatSparse3Tensor.hpp
-    kokkos/Threads/Stokhos_Threads_FlatSparse3Tensor_kji.hpp
-    kokkos/Threads/Stokhos_Threads_LinearSparse3Tensor.hpp
-    kokkos/Threads/Stokhos_Threads_LexicographicBlockSparse3Tensor.hpp
+    kokkos/Stokhos_TinyVec.hpp
+    kokkos/Stokhos_Update.hpp
+    kokkos/Stokhos_MatrixMarket.hpp
     )
+  IF(Kokkos_ENABLE_Pthread)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
+    SET(HEADERS ${HEADERS}
+      kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
+      )
+  ENDIF()
+  IF(Kokkos_ENABLE_OpenMP)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
+    SET(HEADERS ${HEADERS}
+      kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
+      kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
+      )
+  ENDIF()
   IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
     SET(HEADERS ${HEADERS}
+      kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp
+      kokkos/Cuda/Stokhos_Cuda_WarpShuffle.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_SimpleTiledCrsProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
@@ -440,13 +497,13 @@ IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     NOX_ENABLE_EpetraExt)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nox)
   SET(HEADERS ${HEADERS}
-    Stokhos_GaussSeidelPreconditioner.hpp
+    epetra/Stokhos_GaussSeidelPreconditioner.hpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.hpp
     nox/NOX_Epetra_LinearSystem_SGGS.hpp
     nox/NOX_Epetra_LinearSystem_MPBD.hpp
     )
   SET(SOURCES ${SOURCES}
-    Stokhos_GaussSeidelPreconditioner.cpp
+    epetra/Stokhos_GaussSeidelPreconditioner.cpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.cpp
     nox/NOX_Epetra_LinearSystem_SGGS.cpp
     nox/NOX_Epetra_LinearSystem_MPBD.cpp
@@ -492,7 +549,7 @@ IF (Stokhos_ENABLE_Cusp)
     cusp/detail/dispatch/MVmultiply.h
     cusp/precond/block_smoothed_aggregation.h
     cusp/relaxation/block_polynomial.h
-    cusp/relaxation/block_jacobi.h     
+    cusp/relaxation/block_jacobi.h
     )
   SET(SOURCES ${SOURCES} ${CUDA_SOURCES}
     cusp/krylov/blockcg.inl

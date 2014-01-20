@@ -269,7 +269,7 @@ public:
                 scalar_t distance = (lmins[j] - minMaxBoundaries[j]);
                 partId_t minInd = 0;
                 if (distance > _EPSILON && sliceSizes[j] > _EPSILON){
-                    minInd = (lmins[j] - minMaxBoundaries[j])/ sliceSizes[j];
+                    minInd = static_cast<partId_t>(floor((lmins[j] - minMaxBoundaries[j])/ sliceSizes[j]));
                 }
 
                 if(minInd >= numSlicePerDim){
@@ -278,7 +278,7 @@ public:
                 partId_t maxInd = 0;
                 distance = (lmaxs[j] - minMaxBoundaries[j]);
                 if (distance > _EPSILON && sliceSizes[j] > _EPSILON){
-                    maxInd = (lmaxs[j] - minMaxBoundaries[j])/ sliceSizes[j];
+                    maxInd = static_cast<partId_t>(ceil((lmaxs[j] - minMaxBoundaries[j])/ sliceSizes[j]));
                 }
                 if(maxInd >= numSlicePerDim){
                     maxInd = numSlicePerDim - 1;

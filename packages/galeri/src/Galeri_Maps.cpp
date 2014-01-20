@@ -42,6 +42,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_Exception.h"
 #include "Galeri_Utils.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
@@ -54,25 +55,26 @@
 
 namespace Galeri {
 
+template<typename int_type>
 Epetra_Map* 
-CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
+TCreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 {
   // global parameters
-  int n = List.get("n", -1);
+  int_type n = List.get("n", -1);
 
   // Cycle on map type //
   if (MapType == "Linear")
   {
     // get the parameters
-    return(Maps::Linear(Comm, n));
+    return(Maps::TLinear<int_type>(Comm, n));
   }
   else if (MapType == "Interlaced")
   {
-    return(Maps::Interlaced(Comm, n));
+    return(Maps::TInterlaced<int_type>(Comm, n));
   }
   else if (MapType == "Random")
   {
-    return(Maps::Random(Comm, n));
+    return(Maps::TRandom<int_type>(Comm, n));
   }
   else if (MapType == "Cartesian2D")
   {
@@ -88,7 +90,7 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
       nx = (int)sqrt((double)n);
       ny = nx;
-      if (nx * ny != n) 
+      if ((int_type)nx * (int_type)ny != n) 
         throw(Exception(__FILE__, __LINE__,
                         "The number of global elements (n) must be",
                         "a perfect square, otherwise set nx and ny"));
@@ -115,7 +117,7 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
     } 
 
 
-    return(Maps::Cartesian2D(Comm, nx, ny, mx, my));
+    return(Maps::TCartesian2D<int_type>(Comm, nx, ny, mx, my));
   }
   else if (MapType == "NodeCartesian2D")
   {
@@ -131,7 +133,7 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
       nx = (int)sqrt((double)n);
       ny = nx;
-      if (nx * ny != n) 
+      if ((int_type)nx * (int_type)ny != n) 
         throw(Exception(__FILE__, __LINE__,
                         "The number of global elements (n) must be",
                         "a perfect square, otherwise set nx and ny"));
@@ -170,7 +172,7 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
       }
     } 
   
-    return(Maps::NodeCartesian2D(Comm, *NodeComm, MyNodeID, nx, ny, ndx, ndy, px,py));
+    return(Maps::TNodeCartesian2D<int_type>(Comm, *NodeComm, MyNodeID, nx, ny, ndx, ndy, px,py));
   }  
   else if (MapType == "Cartesian3D")
   {
@@ -188,7 +190,7 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
       nx = (int)pow((double)n, 0.333334);
       ny = nx;
       nz = nx;
-      if (nx * ny * nz != n) 
+      if ((int_type)nx * (int_type)ny * (int_type)nz != n) 
         throw(Exception(__FILE__, __LINE__,
                         "The number of global elements n (" +
                         toString(n) + ") must be",
@@ -245,7 +247,7 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
                         + ", mz = " + toString(mz)));
     }
 
-    return(Maps::Cartesian3D(Comm, nx, ny, nz, mx, my, mz));
+    return(Maps::TCartesian3D<int_type>(Comm, nx, ny, nz, mx, my, mz));
   }
   else 
   {
@@ -254,6 +256,21 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
                     "in input to function CreateMap()",
                     "Check the documentation for a list of valid choices"));
   }
-} // CreateMap()
+} // TCreateMap()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map* 
+CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List) {
+  return TCreateMap<int>(MapType, Comm, List);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map* 
+CreateMap64(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List) {
+  return TCreateMap<long long>(MapType, Comm, List);
+}
+#endif
+
 
 } // namespace Galeri

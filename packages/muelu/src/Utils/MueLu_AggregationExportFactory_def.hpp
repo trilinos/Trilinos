@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -130,7 +130,7 @@ namespace MueLu {
 
     ArrayRCP<LO>            aggStart;
     ArrayRCP<GlobalOrdinal> aggToRowMap;
-    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
+    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
 
     // write to file
     //std::string outFile = outputFileName_;

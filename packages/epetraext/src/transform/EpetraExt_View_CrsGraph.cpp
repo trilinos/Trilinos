@@ -73,10 +73,10 @@ operator()( OriginalTypeRef orig )
 
   bool matched = true;
   for( int i = 0; i < nNumRows; ++i )
-    matched = matched && ( oRowMap.GID(i) == NewRowMap_->GID(i) );
+    matched = matched && ( oRowMap.GID64(i) == NewRowMap_->GID64(i) );
   if( nNumCols )
     for( int i = 0; i < nNumCols; ++i )
-      matched = matched && ( oColMap.GID(i) == NewColMap_->GID(i) );
+      matched = matched && ( oColMap.GID64(i) == NewColMap_->GID64(i) );
 
   if( !matched ) std::cout << "EDT_CrsGraph_View: Bad Row or Col Mapping\n";
   assert( matched );
@@ -90,7 +90,7 @@ operator()( OriginalTypeRef orig )
     int j = 0;
     if( nNumCols )
     {
-      while( j < numIndices[i] && NewColMap_->GID(indices[i][j]) != -1 ) ++j;
+      while( j < numIndices[i] && NewColMap_->GID64(indices[i][j]) != -1 ) ++j;
       numIndices[i] = j;
     }
   }

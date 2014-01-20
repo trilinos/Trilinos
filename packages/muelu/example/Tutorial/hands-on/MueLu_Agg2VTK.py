@@ -266,9 +266,10 @@ def readin_aggregates(filename_prototype,procs,level):
     filename = filename.replace("%LEVEL",str(level))
     filename = filename.replace("%PROC",str(proc))
     print "process ", filename  
-    [aggid2nodesfromproc,aggid2procsfromproc] = read_aggregates_from_file(filename,proc)
-    aggid2nodes.update(aggid2nodesfromproc)
-    aggid2procs.update(aggid2procsfromproc)
+    if os.path.exists(filename):
+      [aggid2nodesfromproc,aggid2procsfromproc] = read_aggregates_from_file(filename,proc)
+      aggid2nodes.update(aggid2nodesfromproc)
+      aggid2procs.update(aggid2procsfromproc)
    
   return aggid2nodes,aggid2procs
 
@@ -372,7 +373,8 @@ def check_files_for_next_level(nextlevel,procs,file_prototype):
     if os.path.isfile("nodes"+str(nextlevel)+".txt") == False:
       return False
   
-  for p in range(0,procs):
+  #for p in range(0,procs):
+  for p in range(0,1): # check only processor one
     filename = file_prototype
     filename = filename.replace("%LEVEL",str(nextlevel))
     filename = filename.replace("%PROC",str(p))

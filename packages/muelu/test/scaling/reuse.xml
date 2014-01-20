@@ -149,7 +149,7 @@
     <Parameter name="reuse"                                 type="bool"     value="true"/>      <!-- Allow factories to call Build method multiple times -->
     <!-- <Parameter name="dependencyOutputLevel"                 type="int"      value="0"/> -->
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <!-- <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/> -->
@@ -160,12 +160,7 @@
       <!-- <Parameter name="Aggregates"                          type="string"   value="UserAggregationFact"/> -->
       <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-      <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
 
   </ParameterList>

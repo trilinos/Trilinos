@@ -55,24 +55,24 @@ namespace Intrepid {
   Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::Basis_HGRAD_TET_COMP12_FEM()
   {
     this -> basisCardinality_  = 10;
-    this -> basisDegree_       = 1;    
+    this -> basisDegree_       = 1;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<11> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
   }
-  
-  
+
+
 template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
+
   // Basis-dependent intializations
   int tagSize  = 4;        // size of DoF tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
   int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
   int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration
   int tags[]  = { 0, 0, 0, 1,
                   0, 1, 0, 1,
                   0, 2, 0, 1,
@@ -84,7 +84,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::initializeTags() {
                   1, 4, 0, 1,
                   1, 5, 0, 1,
   };
-  
+
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
   Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
                               this -> ordinalToTag_,
@@ -102,7 +102,7 @@ template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                                 const ArrayScalar &  inputPoints,
                                                                 const EOperator      operatorType) const {
-  
+
   // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
   Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
@@ -111,23 +111,24 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-  
+
   // Number of evaluation points = dim 0 of inputPoints
-  int dim0 = inputPoints.dimension(0);  
-  
+  int dim0 = inputPoints.dimension(0);
+
   // Temporaries: (x,y,z) coordinates of the evaluation point
-  Scalar x = 0.0;                                    
-  Scalar y = 0.0;   
+  Scalar x = 0.0;
+  Scalar y = 0.0;
   Scalar z = 0.0;
-  
+
   // Temporary for the auxiliary node basis function
   Scalar aux = 0.0;
 
   // Array to store all the subtets containing the given pt
   Teuchos::Array<int> pt_tets;
-  
+
+
   switch (operatorType) {
-    
+
     case OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0, 0);
@@ -139,182 +140,158 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
 	// idependent verification shows that a given point will produce
 	// the same shape functions for each tet that contains it, so
 	// we only need to use the first one returned.
-	//for (int pt = 0; pt < pt_tets.size(); ++pt) 
-	int subtet = pt_tets[0]; //pt_tets[pt];
-	aux = 0.0;
-	// outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-	switch (subtet) {
-	case 0:
-	  outputValues(0, i0) = 1. - 2. * (x + y + z);
-	  outputValues(4, i0) = 2. * x;
-	  outputValues(6, i0) = 2. * y;
-	  outputValues(7, i0) = 2. * z;
-	  break; 
-	case 1:
-	  outputValues(1, i0) = 2. * x - 1.;
-	  outputValues(4, i0) = 2. - 2. * (x + y + z);
-	  outputValues(5, i0) = 2. * y;
-	  outputValues(8, i0) = 2. * z;
-	  break; 
-	case 2:
-	  outputValues(2, i0) = 2. * y - 1.;
-	  outputValues(5, i0) = 2. * x;
-	  outputValues(6, i0) = 2. - 2. * (x + y + z);
-	  outputValues(9, i0) = 2. * z;
-	  break; 
-	case 3:
-	  outputValues(3, i0) = 2. * z - 1.;
-	  outputValues(7, i0) = 2. - 2. * (x + y + z);
-	  outputValues(8, i0) = 2. * x;
-	  outputValues(9, i0) = 2. * y;
-	  break;
-	case 4:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(5, i0) = 2. * (x + y) - 1.;
-	  outputValues(8, i0) = 2. * (x + z) - 1.;
-	  aux = 2. - 4. * x;
-	  break; 
-	case 5:
-	  outputValues(5, i0) = 1. - 2. * (x + y);
-	  outputValues(8, i0) = 1. - 2. * (x + z);
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 4. - 4. * (x + y + z);
-	  break;
-	case 6:
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  outputValues(8, i0) = 2. * (x + z) - 1.;
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 2. - 4. * z;
-	  break;
-	case 7:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  outputValues(8, i0) = 2. * (x + z) - 1.;
-	  aux = 4. * y;
-	  break;
-	case 8:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(5, i0) = 2. * (x + y) - 1.;
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  aux = 4. * z;
-	  break;
-	case 9:
-	  outputValues(5, i0) = 2. * (x + y) - 1.;
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 2. - 4. * y;
-	  break;
-	case 10:
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 4. * x;
-	  break;
-	case 11:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  aux = 4. * (x + y + z) - 2.;
-	  break; 
-	}
-	outputValues(4, i0) += aux/6.0;
-	outputValues(5, i0) += aux/6.0;
-	outputValues(6, i0) += aux/6.0;
-	outputValues(7, i0) += aux/6.0;
-	outputValues(8, i0) += aux/6.0;
-	outputValues(9, i0) += aux/6.0;
-	//}
+	//for (int pt = 0; pt < pt_tets.size(); ++pt)
+        if (pt_tets[0] != -1) {
+          int subtet = pt_tets[0];
+          aux = 0.0;
+          // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+          switch (subtet) {
+          case 0:
+            outputValues(0, i0) = 1. - 2. * (x + y + z);
+            outputValues(4, i0) = 2. * x;
+            outputValues(6, i0) = 2. * y;
+            outputValues(7, i0) = 2. * z;
+            break;
+          case 1:
+            outputValues(1, i0) = 2. * x - 1.;
+            outputValues(4, i0) = 2. - 2. * (x + y + z);
+            outputValues(5, i0) = 2. * y;
+            outputValues(8, i0) = 2. * z;
+            break;
+          case 2:
+            outputValues(2, i0) = 2. * y - 1.;
+            outputValues(5, i0) = 2. * x;
+            outputValues(6, i0) = 2. - 2. * (x + y + z);
+            outputValues(9, i0) = 2. * z;
+            break;
+          case 3:
+            outputValues(3, i0) = 2. * z - 1.;
+            outputValues(7, i0) = 2. - 2. * (x + y + z);
+            outputValues(8, i0) = 2. * x;
+            outputValues(9, i0) = 2. * y;
+            break;
+          case 4:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(5, i0) = 2. * (x + y) - 1.;
+            outputValues(8, i0) = 2. * (x + z) - 1.;
+            aux = 2. - 4. * x;
+            break;
+          case 5:
+            outputValues(5, i0) = 1. - 2. * (x + y);
+            outputValues(8, i0) = 1. - 2. * (x + z);
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 4. - 4. * (x + y + z);
+            break;
+          case 6:
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            outputValues(8, i0) = 2. * (x + z) - 1.;
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 2. - 4. * z;
+            break;
+          case 7:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            outputValues(8, i0) = 2. * (x + z) - 1.;
+            aux = 4. * y;
+            break;
+          case 8:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(5, i0) = 2. * (x + y) - 1.;
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            aux = 4. * z;
+            break;
+          case 9:
+            outputValues(5, i0) = 2. * (x + y) - 1.;
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 2. - 4. * y;
+            break;
+          case 10:
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 4. * x;
+            break;
+          case 11:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            aux = 4. * (x + y + z) - 2.;
+            break;
+          }
+          outputValues(4, i0) += aux/6.0;
+          outputValues(5, i0) += aux/6.0;
+          outputValues(6, i0) += aux/6.0;
+          outputValues(7, i0) += aux/6.0;
+          outputValues(8, i0) += aux/6.0;
+          outputValues(9, i0) += aux/6.0;
+        }
       }
       break;
-      
+
   case OPERATOR_GRAD:
   case OPERATOR_D1:
     {
       // initialize to 0.0 since we will be accumulating
       outputValues.initialize(0.0);
 
-      // local looping indices 
-      // NOTE: bc is barycentric coord
-      int node, tet, pt, dim, bc1, bc2;
+      FieldContainer<Scalar> Lopt(10,3);
+      for (int pt=0; pt < dim0; ++pt) {
 
-      // get 12 subtet gradients sized as 3, 11, 12
-      Intrepid::FieldContainer<Scalar> dx = getSubTetGrads();
-      // get subtet jacobian determinants (12)
-      Intrepid::FieldContainer<Scalar> xJ = getSubTetDetF();
-      // get integration weights (numPoints, 12)
-      Intrepid::FieldContainer<Scalar> w = getWeights(inputPoints);
-      // get Barycentric Coordinates of points
-      Intrepid::FieldContainer<Scalar> lambda = getBarycentricCoords(inputPoints);
-      
-      // declare FieldContainer for intermediate calcs
-      // a - for the 4x4 projection matrix
-      FieldContainer<Scalar> a(4, 4);
-      FieldContainer<Scalar> ai;
+        Scalar r = inputPoints(pt, 0);
+        Scalar s = inputPoints(pt, 1);
+        Scalar t = inputPoints(pt, 2);
 
-      // b - for the 3 x 4 x 10 integrated gradients
-      FieldContainer<Scalar> b(3,4,10);
+        Lopt(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
+        Lopt(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
+        Lopt(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
+        Lopt(1,0) = -0.375 + (5*r)/2.;
+        Lopt(1,1) = 0.;
+        Lopt(1,2) = 0.;
+        Lopt(2,0) = 0.;
+        Lopt(2,1) = -0.375 + (5*s)/2.;
+        Lopt(2,2) = 0.;
+        Lopt(3,0) = 0.;
+        Lopt(3,1) = 0.;
+        Lopt(3,2) = -0.375 + (5*t)/2.;
+        Lopt(4,0) = (-35*(-1 + 2*r + s + t))/12.;
+        Lopt(4,1) = (-4 - 35*r + 5*s + 10*t)/12.;
+        Lopt(4,2) = (-4 - 35*r + 10*s + 5*t)/12.;
+        Lopt(5,0) = (-1 + 5*r + 40*s - 5*t)/12.;
+        Lopt(5,1) = (-1 + 40*r + 5*s - 5*t)/12.;
+        Lopt(5,2) = (-5*(-1 + r + s + 2*t))/12.;
+        Lopt(6,0) = (-4 + 5*r - 35*s + 10*t)/12.;
+        Lopt(6,1) = (-35*(-1 + r + 2*s + t))/12.;
+        Lopt(6,2) = (-4 + 10*r - 35*s + 5*t)/12.;
+        Lopt(7,0) = (-4 + 5*r + 10*s - 35*t)/12.;
+        Lopt(7,1) = (-4 + 10*r + 5*s - 35*t)/12.;
+        Lopt(7,2) = (-35*(-1 + r + s + 2*t))/12.;
+        Lopt(8,0) = (-1 + 5*r - 5*s + 40*t)/12.;
+        Lopt(8,1) = (-5*(-1 + r + 2*s + t))/12.;
+        Lopt(8,2) = (-1 + 40*r - 5*s + 5*t)/12.;
+        Lopt(9,0) = (-5*(-1 + 2*r + s + t))/12.;
+        Lopt(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
+        Lopt(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
 
-      // c - product of inv(a) and b
-      FieldContainer<Scalar> c(4,3,10);
-
-      // again initialize for safety
-      a.initialize(0.0);
-      b.initialize(0.0);
-      c.initialize(0.0);
-
-      for (pt=0; pt < dim0; ++pt) 
-      {
-	// compute a
-	for (tet=0; tet < 12; ++tet)
-	  for (bc1=0; bc1 < 4; ++bc1)
-	    for (bc2=0; bc2 < 4; ++bc2)
-	      a(bc1,bc2) += xJ(tet) * w(pt,tet) * lambda(pt,bc1) * lambda(pt,bc2);
-
-	// compute b
-	for (tet=0; tet < 12; ++tet)
-	{
-	  for (node=0; node < 10; ++node)
-	    for (bc1=0; bc1 < 4; ++bc1)
-	      for (dim=0; dim < 3; ++dim)
-		b(dim,bc1,node) += xJ(tet) * w(pt,tet) * lambda(pt,bc1) * dx(dim,node,tet);
-
-	  // add in contribution from the auxiliary node, averaged over the 6 mid-edge ndoes
-	  for (node=4; node < 10; ++node)
-	    for (bc1=0; bc1 < 4; ++bc1)
-	      for (dim=0; dim < 3; ++dim)
-		b(dim,bc1,node) += xJ(tet) * w(pt,tet) * lambda(pt,bc1) * dx(dim,10,tet)/6;
-	}
-      } // loop over pts
-
-      // compute inverse of a (4x4 inverse)
-      ai = inverse44(a);
-
-      // compute c
-      for (node=0; node < 10; ++node)
-	for (bc1=0; bc1 < 4; ++bc1)
-	  for (bc2=0; bc2 < 4; ++bc2)
-	    for (dim=0; dim < 3; ++dim)
-	      c(bc1,dim,node) += ai(bc1,bc2) * b(dim,bc2,node);
-
-      // fill in shape function derivatives
-      for (pt=0; pt < dim0; ++pt) 
-	for (node=0; node < 10; ++node)
-	  for (dim=0; dim < 3; ++dim)
-	    for (bc1=0; bc1 < 4; ++bc1)
-	      outputValues(node,pt,dim) += lambda(pt,bc1) * c(bc1,dim,node);
+        for (int node=0; node < 10; ++node) {
+          for (int dim=0; dim < 3; ++dim) {
+            outputValues(node,pt,dim) = Lopt(node,dim);
+          }
+        }
+      }
     }
     break;
-      
+
     case OPERATOR_CURL:
       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
+
     case OPERATOR_DIV:
       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
+
     case OPERATOR_D2:
     case OPERATOR_D3:
     case OPERATOR_D4:
@@ -326,7 +303,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
     case OPERATOR_D10:
       {
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, DkCardinality)
-        int DkCardinality = Intrepid::getDkCardinality(operatorType, 
+        int DkCardinality = Intrepid::getDkCardinality(operatorType,
                                                        this -> basisCellTopology_.getDimension() );
         for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
           for (int i0 = 0; i0 < dim0; i0++) {
@@ -344,7 +321,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
 }
 
 
-  
+
 template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
                                                              const ArrayScalar &    inputPoints,
@@ -369,25 +346,26 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar &
                       ">>> ERROR: (Intrepid::Basis_HGRAD_TET_COMP12_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
 #endif
 
-  DofCoords(0,0) = 0.0;   DofCoords(0,1) = 0.0; DofCoords(0,2) = 0.0;  
-  DofCoords(1,0) = 1.0;   DofCoords(1,1) = 0.0; DofCoords(1,2) = 0.0;  
-  DofCoords(2,0) = 0.0;   DofCoords(2,1) = 1.0; DofCoords(2,2) = 0.0;  
-  DofCoords(3,0) = 0.0;   DofCoords(3,1) = 0.0; DofCoords(3,2) = 1.0;  
-  DofCoords(4,0) = 0.5;   DofCoords(4,1) = 0.0; DofCoords(4,2) = 0.0;  
-  DofCoords(5,0) = 0.5;   DofCoords(5,1) = 0.5; DofCoords(5,2) = 0.0;  
-  DofCoords(6,0) = 0.0;   DofCoords(6,1) = 0.5; DofCoords(6,2) = 0.0;  
+  DofCoords(0,0) = 0.0;   DofCoords(0,1) = 0.0; DofCoords(0,2) = 0.0;
+  DofCoords(1,0) = 1.0;   DofCoords(1,1) = 0.0; DofCoords(1,2) = 0.0;
+  DofCoords(2,0) = 0.0;   DofCoords(2,1) = 1.0; DofCoords(2,2) = 0.0;
+  DofCoords(3,0) = 0.0;   DofCoords(3,1) = 0.0; DofCoords(3,2) = 1.0;
+  DofCoords(4,0) = 0.5;   DofCoords(4,1) = 0.0; DofCoords(4,2) = 0.0;
+  DofCoords(5,0) = 0.5;   DofCoords(5,1) = 0.5; DofCoords(5,2) = 0.0;
+  DofCoords(6,0) = 0.0;   DofCoords(6,1) = 0.5; DofCoords(6,2) = 0.0;
   DofCoords(7,0) = 0.0;   DofCoords(7,1) = 0.0; DofCoords(7,2) = 0.5;
-  DofCoords(8,0) = 0.5;   DofCoords(8,1) = 0.0; DofCoords(8,2) = 0.5;  
-  DofCoords(9,0) = 0.0;   DofCoords(9,1) = 0.5; DofCoords(9,2) = 0.5;  
+  DofCoords(8,0) = 0.5;   DofCoords(8,1) = 0.0; DofCoords(8,2) = 0.5;
+  DofCoords(9,0) = 0.0;   DofCoords(9,1) = 0.5; DofCoords(9,2) = 0.5;
 }
 
 template<class Scalar, class ArrayScalar>
-Teuchos::Array<int> 
+Teuchos::Array<int>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x, Scalar y, Scalar z) const
 {
-  
+
   Teuchos::Array<int> subTets;
-  
+  int count(0);
+
   // local coords
   Scalar xyz = x + y + z;
   Scalar xy = x + y;
@@ -397,52 +375,81 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x,
   // cycle through each subdomain and push back if the point lies within
 
   // subtet #0 E0 := 0.0 <= r + s + t <= 0.5 && 0.0 <= r <= 0.5 && 0.0 <= s <= 0.5 && 0.0 <= t <= 0.5
-  if ( (0.0 <= xyz && xyz <= 0.5) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) )
+  if ( (0.0 <= xyz && xyz <= 0.5) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(0);
+  }
 
   // subtet #1 E1 := 0.5 <= r + s + t <= 1.0 && 0.5 <= r <= 1.0 && 0.0 <= s <= 0.5 && 0.0 <= t <= 0.5
-  if ( (0.5 <= xyz && xyz <= 1.0) && (0.5 <= x && x <= 1.0) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) )
+  if ( (0.5 <= xyz && xyz <= 1.0) && (0.5 <= x && x <= 1.0) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(1);
+  }
 
   // subtet #2 E2 := 0.5 <= r + s + t <= 1.0 && 0.0 <= r <= 0.5 && 0.5 <= s <= 1.0 && 0.0 <= t <= 0.5
-  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.5 <= y && y <= 1.0) && (0.0 <= z && z<= 0.5) )
+  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.5 <= y && y <= 1.0) && (0.0 <= z && z<= 0.5) ) {
+    count++;
     subTets.push_back(2);
+  }
 
   // subtet #3 E3 := 0.5 <= r + s + t <= 1.0 && 0.0 <= r <= 0.5 && 0.0 <= s <= 0.5 && 0.5 <= t <= 1.0
-  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.5 <= z && z <= 1.0) )
+  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.5 <= z && z <= 1.0) ) {
+    count++;
     subTets.push_back(3);
+  }
 
   // subtet #4 E4 := 0.0 <= s + t <= 0.5 && 0.5 <= r + s <= 1.0 && 0.5 <= r + t <= 1.0 && 0.0 <= r <= 0.5
-  if ( (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.0 <= x && x <= 0.5) )
+  if ( (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.0 <= x && x <= 0.5) ) {
+    count++;
     subTets.push_back(4);
+  }
 
   // subtet #5 E5 := 0.5 <= r + s <= 1.0 && 0.5 <= s + t <= 1.0 && 0.5 <= r + t <= 1.0 && 0.75 <= r + s + t <= 1.0
-  if ( (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.75 <= xyz && xyz <= 1.0) )
+  if ( (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.75 <= xyz && xyz <= 1.0) ) {
+    count++;
     subTets.push_back(5);
+  }
 
   // subtet #6 E6 := 0.5 <= s + t <= 1.0 && 0.0 <= r + s <= 0.5 && 0.5 <= r + t <= 1.0 && 0.0 <= t <= 0.5
-  if ( (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= z && z <= 0.5) )
+  if ( (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(6);
+  }
 
   // subtet #7 E7 := 0.0 <= s + t <= 0.5 && 0.0 <= r + s <= 0.5 && 0.5 <= r + t <= 1.0 && 0.0 <= s <= 0.25
-  if ( (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= y && y <= 0.25) )
+  if ( (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= y && y <= 0.25) ) {
+    count++;
     subTets.push_back(7);
+  }
 
   // subtet #8 E8 := 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 &&  0.5 <= r + s <= 1.0 && 0.0 <= t <= 0.25
-  if ( (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.0 <= z && z <= 0.5) )
+  if ( (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(8);
+  }
 
   // subtet #9 E9 := 0.0 <= r + t <= 0.5 && 0.5 <= r + s <= 1.0 &&  0.5 <= s + t <= 1.0 && 0.0 <= s <= 0.5
-  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.0 <= y && y <= 0.5) )
+  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.0 <= y && y <= 0.5) ) {
+    count++;
     subTets.push_back(9);
+  }
 
   // subtet #10 E10 := 0.0 <= r + t <= 0.5 && 0.5 <= s + t <= 1.0 && 0.0 <= r + s <= 0.5 && 0.0 <= r <= 0.25
-  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.0 <= x && x <= 0.25) )
+  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.0 <= x && x <= 0.25) ) {
+    count++;
     subTets.push_back(10);
+  }
 
   // subtet #11 E11 := 0.5 <= r + s + t <= 0.75 && 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 && 0.0 <= r + s <= 0.5
-  if ( (0.5 <= xyz && xyz <= 0.75) && (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) )
+  if ( (0.5 <= xyz && xyz <= 0.75) && (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) ) {
+    count++;
     subTets.push_back(11);
+  }
+
+  // if the point doesn't lie in the parent domain return -1
+  if (count == 0) {
+    subTets.push_back(-1);
+  }
 
   return subTets;
 }
@@ -466,7 +473,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & 
   for (int pt = 0; pt < numPoints; ++pt)
     for (int i = 0; i < pt_tets[pt].size(); ++i)
       flat.push_back(pt_tets[pt][i]);
-  
+
   for (int i = 0; i < flat.size(); ++i)
     count(flat[i])++;
 
@@ -480,12 +487,12 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & 
 
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getBarycentricCoords(const ArrayScalar & inPts) const
 {
   int numPoints = inPts.dimension(0);
   Intrepid::FieldContainer<Scalar> lambda(numPoints, 4);
-  
+
   for (int pt = 0; pt < numPoints; ++pt)
   {
     lambda(pt,0) = 1. - inPts(pt,0) - inPts(pt,1) - inPts(pt,2);
@@ -501,36 +508,36 @@ template<class Scalar, class ArrayScalar>
 Scalar
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::det44(const Intrepid::FieldContainer<Scalar> a) const
 {
-  Scalar det = a(0,3) * a(1,2) * a(2,1) * a(3,0) 
-    - a(0,2) * a(1,3) * a(2,1) * a(3,0) 
-    - a(0,3) * a(1,1) * a(2,2) * a(3,0) 
-    + a(0,1) * a(1,3) * a(2,2) * a(3,0) 
-    + a(0,2) * a(1,1) * a(2,3) * a(3,0) 
-    - a(0,1) * a(1,2) * a(2,3) * a(3,0) 
-    - a(0,3) * a(1,2) * a(2,0) * a(3,1) 
-    + a(0,2) * a(1,3) * a(2,0) * a(3,1) 
-    + a(0,3) * a(1,0) * a(2,2) * a(3,1) 
-    - a(0,0) * a(1,3) * a(2,2) * a(3,1) 
-    - a(0,2) * a(1,0) * a(2,3) * a(3,1) 
-    + a(0,0) * a(1,2) * a(2,3) * a(3,1) 
-    + a(0,3) * a(1,1) * a(2,0) * a(3,2) 
-    - a(0,1) * a(1,3) * a(2,0) * a(3,2) 
-    - a(0,3) * a(1,0) * a(2,1) * a(3,2) 
-    + a(0,0) * a(1,3) * a(2,1) * a(3,2) 
-    + a(0,1) * a(1,0) * a(2,3) * a(3,2) 
-    - a(0,0) * a(1,1) * a(2,3) * a(3,2) 
-    - a(0,2) * a(1,1) * a(2,0) * a(3,3) 
-    + a(0,1) * a(1,2) * a(2,0) * a(3,3) 
-    + a(0,2) * a(1,0) * a(2,1) * a(3,3) 
-    - a(0,0) * a(1,2) * a(2,1) * a(3,3) 
-    - a(0,1) * a(1,0) * a(2,2) * a(3,3) 
+  Scalar det = a(0,3) * a(1,2) * a(2,1) * a(3,0)
+    - a(0,2) * a(1,3) * a(2,1) * a(3,0)
+    - a(0,3) * a(1,1) * a(2,2) * a(3,0)
+    + a(0,1) * a(1,3) * a(2,2) * a(3,0)
+    + a(0,2) * a(1,1) * a(2,3) * a(3,0)
+    - a(0,1) * a(1,2) * a(2,3) * a(3,0)
+    - a(0,3) * a(1,2) * a(2,0) * a(3,1)
+    + a(0,2) * a(1,3) * a(2,0) * a(3,1)
+    + a(0,3) * a(1,0) * a(2,2) * a(3,1)
+    - a(0,0) * a(1,3) * a(2,2) * a(3,1)
+    - a(0,2) * a(1,0) * a(2,3) * a(3,1)
+    + a(0,0) * a(1,2) * a(2,3) * a(3,1)
+    + a(0,3) * a(1,1) * a(2,0) * a(3,2)
+    - a(0,1) * a(1,3) * a(2,0) * a(3,2)
+    - a(0,3) * a(1,0) * a(2,1) * a(3,2)
+    + a(0,0) * a(1,3) * a(2,1) * a(3,2)
+    + a(0,1) * a(1,0) * a(2,3) * a(3,2)
+    - a(0,0) * a(1,1) * a(2,3) * a(3,2)
+    - a(0,2) * a(1,1) * a(2,0) * a(3,3)
+    + a(0,1) * a(1,2) * a(2,0) * a(3,3)
+    + a(0,2) * a(1,0) * a(2,1) * a(3,3)
+    - a(0,0) * a(1,2) * a(2,1) * a(3,3)
+    - a(0,1) * a(1,0) * a(2,2) * a(3,3)
     + a(0,0) * a(1,1) * a(2,2) * a(3,3);
 
   return det;
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid::FieldContainer<Scalar> a) const
 {
   Intrepid::FieldContainer<Scalar> ai(4,4);
@@ -545,12 +552,12 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid::Field
   ai(1,1) = (1/xj) * (-a(0,3) * a(2,2) * a(3,0) + a(0,2) * a(2,3) * a(3,0) + a(0,3) * a(2,0) * a(3,2) - a(0,0) * a(2,3) * a(3,2) - a(0,2) * a(2,0) * a(3,3) + a(0,0) * a(2,2) * a(3,3));
   ai(1,2) = (1/xj) * ( a(0,3) * a(1,2) * a(3,0) - a(0,2) * a(1,3) * a(3,0) - a(0,3) * a(1,0) * a(3,2) + a(0,0) * a(1,3) * a(3,2) + a(0,2) * a(1,0) * a(3,3) - a(0,0) * a(1,2) * a(3,3));
   ai(1,3) = (1/xj) * (-a(0,3) * a(1,2) * a(2,0) + a(0,2) * a(1,3) * a(2,0) + a(0,3) * a(1,0) * a(2,2) - a(0,0) * a(1,3) * a(2,2) - a(0,2) * a(1,0) * a(2,3) + a(0,0) * a(1,2) * a(2,3));
-  
+
   ai(2,0) = (1/xj) * (-a(1,3) * a(2,1) * a(3,0) + a(1,1) * a(2,3) * a(3,0) + a(1,3) * a(2,0) * a(3,1) - a(1,0) * a(2,3) * a(3,1) - a(1,1) * a(2,0) * a(3,3) + a(1,0) * a(2,1) * a(3,3));
   ai(2,1) = (1/xj) * ( a(0,3) * a(2,1) * a(3,0) - a(0,1) * a(2,3) * a(3,0) - a(0,3) * a(2,0) * a(3,1) + a(0,0) * a(2,3) * a(3,1) + a(0,1) * a(2,0) * a(3,3) - a(0,0) * a(2,1) * a(3,3));
   ai(2,2) = (1/xj) * (-a(0,3) * a(1,1) * a(3,0) + a(0,1) * a(1,3) * a(3,0) + a(0,3) * a(1,0) * a(3,1) - a(0,0) * a(1,3) * a(3,1) - a(0,1) * a(1,0) * a(3,3) + a(0,0) * a(1,1) * a(3,3));
   ai(2,3) = (1/xj) * ( a(0,3) * a(1,1) * a(2,0) - a(0,1) * a(1,3) * a(2,0) - a(0,3) * a(1,0) * a(2,1) + a(0,0) * a(1,3) * a(2,1) + a(0,1) * a(1,0) * a(2,3) - a(0,0) * a(1,1) * a(2,3));
-  
+
   ai(3,0) = (1/xj) * ( a(1,2) * a(2,1) * a(3,0) - a(1,1) * a(2,2) * a(3,0) - a(1,2) * a(2,0) * a(3,1) + a(1,0) * a(2,2) * a(3,1) + a(1,1) * a(2,0) * a(3,2) - a(1,0) * a(2,1) * a(3,2));
   ai(3,1) = (1/xj) * (-a(0,2) * a(2,1) * a(3,0) + a(0,1) * a(2,2) * a(3,0) + a(0,2) * a(2,0) * a(3,1) - a(0,0) * a(2,2) * a(3,1) - a(0,1) * a(2,0) * a(3,2) + a(0,0) * a(2,1) * a(3,2));
   ai(3,2) = (1/xj) * ( a(0,2) * a(1,1) * a(3,0) - a(0,1) * a(1,2) * a(3,0) - a(0,2) * a(1,0) * a(3,1) + a(0,0) * a(1,2) * a(3,1) + a(0,1) * a(1,0) * a(3,2) - a(0,0) * a(1,1) * a(3,2));
@@ -560,7 +567,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid::Field
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetGrads() const
 {
   Intrepid::FieldContainer<Scalar> dx(3,11,12);
@@ -659,13 +666,13 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetGrads() const
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetDetF() const
 {
   Intrepid::FieldContainer<Scalar> xJ(12);
   // set sub-elem jacobians
   xJ(0) = 1./48.; xJ(1) = 1./48.; xJ(2) = 1./48.; xJ(3) = 1./48.;
-  xJ(4) = 1./96.; xJ(5) = 1./96.; xJ(6) = 1./96.; xJ(7) = 1./96.; 
+  xJ(4) = 1./96.; xJ(5) = 1./96.; xJ(6) = 1./96.; xJ(7) = 1./96.;
   xJ(8) = 1./96.; xJ(9) = 1./96.; xJ(10) = 1./96.; xJ(11) = 1./96.;
 
   return xJ;

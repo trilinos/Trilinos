@@ -152,11 +152,10 @@ public:
       reduce_op.push_back( work_count , functor_type( nwork , work_beg ) );
     }
 
-    reduce_op.execute();
-
     value_type result ;
 
-    reduce_op.output( & result );
+    reduce_op.execute( & result );
+    reduce_op.wait();
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

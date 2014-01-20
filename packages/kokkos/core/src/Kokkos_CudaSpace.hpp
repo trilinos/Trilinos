@@ -65,8 +65,6 @@ namespace Kokkos {
 class CudaSpace {
 public:
 
-  enum { WORK_ALIGNMENT   = 32 /* WarpSize */ };
-
   typedef CudaSpace     memory_space ;
   typedef unsigned int  size_type ;
 
@@ -168,8 +166,13 @@ struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
 template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , CudaSpace >
 {
+#ifdef KOKKOS_USE_UVM
+  inline static void verify( void ) { }
+  inline static void verify( const void * p ) { }
+#else
   inline static void verify( void ) { CudaSpace::access_error(); }
   inline static void verify( const void * p ) { CudaSpace::access_error(p); }
+#endif
 };
 
 } // namespace Kokkos

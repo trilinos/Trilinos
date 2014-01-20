@@ -59,22 +59,23 @@ namespace Test{
 
 void test_Host( int beg, int end, int runs, int threads)
 {
-  const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
-  const unsigned                     core_cap  = Kokkos::hwloc::get_core_capacity();
+  const unsigned numa_count = Kokkos::hwloc::get_available_numa_count();
+  const unsigned core_numa = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned thread_core = Kokkos::hwloc::get_available_threads_per_core();
 
   if ( 0 < threads ) {
-    const size_t node_thread_count = ( threads + core_topo.first - 1 ) / core_topo.first ;
+    const size_t node_thread_count = ( threads + numa_count - 1 ) / numa_count ;
 
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( core_topo.first , node_thread_count ) );
+    Kokkos::Threads::initialize( numa_count * node_thread_count , numa_count );
 
     std::cout << std::endl << "\"Threads with manually set threads = \" , "
-              << core_topo.first * node_thread_count << std::endl ;
+              << numa_count * node_thread_count << std::endl ;
   }
   else {
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( core_topo.first , core_topo.second * core_cap ) );
+    Kokkos::Threads::initialize( numa_count * core_numa * thread_core , numa_count );
 
     std::cout << std::endl << "\"Threads with detected sequential threads = \" , "
-              << core_topo.first * node_thread_count << std::endl ;
+              << numa_count * node_thread_count << std::endl ;
   }
 
   explicit_dynamics::driver<float,Kokkos::Threads>("Threads-float", beg, end, runs);

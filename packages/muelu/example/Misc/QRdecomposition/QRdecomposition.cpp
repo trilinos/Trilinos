@@ -20,9 +20,10 @@
 #include "MueLu_QR_InterfaceEx.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using std::cout;
   using std::endl;

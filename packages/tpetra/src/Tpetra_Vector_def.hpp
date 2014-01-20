@@ -207,70 +207,168 @@ namespace Tpetra {
     return ScalarTraits<Mag>::squareroot(norm / this->getGlobalLength());
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const {
+  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+              size_t offset) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> V;
+
+    const size_t newNumRows = subMap->getNodeNumElements ();
+    const bool tooManyElts = newNumRows + offset > this->lclMV_.getOrigNumRows ();
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows + offset > MVT::getNumRows (this->lclMV_),
+        std::runtime_error,
+        "Tpetra::Vector::offsetView: Invalid input Map.  Input Map owns "
+        << subMap->getNodeNumElements () << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the Vector contains only "
+        << this->lclMV_.getOrigNumRows () << " on this process.");
+    }
+
+    KokkosClassic::MultiVector<Scalar, Node> newLocalMV =
+      this->lclMV_.offsetView (newNumRows, this->lclMV_.getNumCols (), offset, 0);
+    return rcp (new V (subMap, newLocalMV.getValuesNonConst (), COMPUTE_VIEW_CONSTRUCTOR));
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+                      size_t offset)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> V;
+
+    const size_t newNumRows = subMap->getNodeNumElements ();
+    const bool tooManyElts = newNumRows + offset > this->lclMV_.getOrigNumRows ();
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows + offset > MVT::getNumRows (this->lclMV_),
+        std::runtime_error,
+        "Tpetra::Vector::offsetViewNonconst: Invalid input Map.  Input Map owns "
+        << subMap->getNodeNumElements () << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+        << this->lclMV_.getOrigNumRows () << " on this process.");
+    }
+
+    KokkosClassic::MultiVector<Scalar, Node> newLocalMV =
+      this->lclMV_.offsetViewNonConst (newNumRows, this->lclMV_.getNumCols (), offset, 0);
+    return rcp (new V (subMap, newLocalMV.getValuesNonConst (), COMPUTE_VIEW_CONSTRUCTOR));
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
+  {
+    using Teuchos::TypeNameTraits;
+
     std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    oss << "{length="<<this->getGlobalLength()
+    oss << "\"Tpetra::Vector\": {"
+        << "Template parameters: {"
+        << "Scalar: " << TypeNameTraits<Scalar>::name ()
+        << ", LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name ()
+        << ", GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name ()
+        << ", Node: " << TypeNameTraits<Node>::name ()
         << "}";
-    return oss.str();
+    if (this->getObjectLabel () != "") {
+      oss << ", Label: \"" << this->getObjectLabel () << "\", ";
+    }
+    oss << "Global length: " << this->getGlobalLength ()
+        << "}";
+    return oss.str ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel) const
+  {
     using std::endl;
     using std::setw;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+    using Teuchos::TypeNameTraits;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-    const int myImageID = comm->getRank(),
-              numImages = comm->getSize();
-    size_t width = 1;
-    for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
-      ++width;
-    }
-    Teuchos::OSTab tab(out);
+
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+    const Map<LocalOrdinal, GlobalOrdinal, Node>& map = * (this->getMap ());
+    RCP<const Comm<int> > comm = map.getComm ();
+    const int myImageID = comm->getRank ();
+    const int numImages = comm->getSize ();
+    Teuchos::OSTab tab0 (out);
+
     if (vl != VERB_NONE) {
-      // VERB_LOW and higher prints description()
-      if (myImageID == 0) out << this->description() << std::endl;
+      if (myImageID == 0) {
+        out << "\"Tpetra::Vector\":" << endl;
+      }
+      Teuchos::OSTab tab1 (out);// applies to all processes
+      if (myImageID == 0) {
+        out << "Template parameters:";
+        {
+          Teuchos::OSTab tab2 (out);
+          out << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
+              << "LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name () << endl
+              << "GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name () << endl
+              << "Node: " << TypeNameTraits<Node>::name () << endl;
+        }
+        out << endl;
+        if (this->getObjectLabel () != "") {
+          out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
+        }
+        out << "Global length: " << this->getGlobalLength () << endl;
+      }
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
             // VERB_MEDIUM and higher prints getLocalLength()
-            out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
-            if (vl != VERB_MEDIUM) {
-              // VERB_HIGH and higher prints isConstantStride() and stride()
-              if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-                RCP<Node> node = this->lclMV_.getNode();
-                KOKKOS_NODE_TRACE("Vector::describe()")
-                ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-                                                               this->getLocalLength(),
-                                                               MVT::getValues(this->lclMV_) );
-                // VERB_EXTREME prints values
-                for (size_t i=0; i<this->getLocalLength(); ++i) {
-                  out << setw(width) << this->getMap()->getGlobalElement(i)
-                      << ": "
-                      << myview[i] << endl;
-                }
-                myview = Teuchos::null;
+            out << "Process: " << myImageID << endl;
+            Teuchos::OSTab tab2 (out);
+            out << "Local length: " << this->getLocalLength () << endl;
+
+            if (vl == VERB_EXTREME && this->getLocalLength () > 0) {
+              // VERB_EXTREME prints values
+              out << "Global indices and values:" << endl;
+              Teuchos::OSTab tab3 (out);
+              RCP<Node> node = this->lclMV_.getNode ();
+              ArrayRCP<const Scalar> myview =
+                node->template viewBuffer<Scalar> (this->getLocalLength (),
+                                                   MVT::getValues (this->lclMV_));
+              for (size_t i = 0; i < this->getLocalLength (); ++i) {
+                out << map.getGlobalElement (i) << ": " << myview[i] << endl;
               }
             }
-            else {
-              out << endl;
-            }
           }
+          std::flush (out); // give output time to complete
         }
-        comm->barrier();
+        comm->barrier (); // give output time to complete
+        comm->barrier ();
+        comm->barrier ();
       }
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+    createCopy( const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
+    return src;
+  }
 } // namespace Tpetra
 
 //
@@ -279,9 +377,15 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_Vector_def.hpp"
+#endif
+
+
 #define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class Vector< SCALAR , LO , GO , NODE >; \
+  template Vector< SCALAR , LO , GO , NODE > createCopy( const Vector< SCALAR , LO , GO , NODE >& src); \
 
 
 #endif // TPETRA_VECTOR_DEF_HPP

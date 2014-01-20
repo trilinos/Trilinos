@@ -552,7 +552,7 @@ struct throw_no_scalar_support_exception {
     }
 #endif
 
-#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL) 
+#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
     if(solverName == "amesos2_cholmod")
       return handle_solver_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
 #endif

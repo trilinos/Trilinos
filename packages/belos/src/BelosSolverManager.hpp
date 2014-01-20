@@ -57,7 +57,7 @@
 
 /*! \class Belos::SolverManager
   \brief The Belos::SolverManager is a templated virtual base class that defines the
-	basic interface that any solver manager will support.
+        basic interface that any solver manager will support.
 */
 
 namespace Belos {
@@ -69,11 +69,11 @@ class StatusTest;
 
 template<class ScalarType, class MV, class OP>
 class SolverManager : virtual public Teuchos::Describable {
-    
+
   public:
 
-  //!@name Constructors/Destructor 
-  //@{ 
+  //!@name Constructors/Destructor
+  //@{
 
   //! Empty constructor.
   SolverManager() {};
@@ -81,9 +81,9 @@ class SolverManager : virtual public Teuchos::Describable {
   //! Destructor.
   virtual ~SolverManager() {};
   //@}
-  
+
   //! @name Accessor methods
-  //@{ 
+  //@{
 
   //! Return a reference to the linear problem being solved by this solver manager.
   virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
@@ -95,7 +95,7 @@ class SolverManager : virtual public Teuchos::Describable {
   virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const = 0;
 
   /// \brief Tolerance achieved by the last \c solve() invocation.
-  /// 
+  ///
   /// This is the maximum over all right-hand sides' achieved
   /// convergence tolerances, and is set whether or not the solve
   /// actually managed to achieve the desired convergence tolerance.
@@ -112,17 +112,17 @@ class SolverManager : virtual public Teuchos::Describable {
   //! Get the iteration count for the most recent call to \c solve().
   virtual int getNumIters() const = 0;
 
-  /*! \brief Returns whether a loss of accuracy was detected in the solver. 
+  /*! \brief Returns whether a loss of accuracy was detected in the solver.
    *  \note This method is normally applicable to GMRES-type solvers.
   */
   virtual bool isLOADetected() const = 0;
- 
+
   //@}
 
   //! @name Set methods
   //@{
 
-  //! Set the linear problem that needs to be solved. 
+  //! Set the linear problem that needs to be solved.
   virtual void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
 
   /// \brief Set the parameters to use when solving the linear problem.
@@ -161,7 +161,7 @@ class SolverManager : virtual public Teuchos::Describable {
   //@}
 
   //! @name Solver application methods
-  //@{ 
+  //@{
 
   /// \brief Iterate until the status test tells us to stop.
   //
@@ -177,9 +177,101 @@ class SolverManager : virtual public Teuchos::Describable {
   ///     specification desired by the solver manager.
   virtual ReturnType solve() = 0;
   //@}
-  
+
 };
 
-} // end Belos namespace
+
+namespace Details {
+
+  /// \class RealSolverManager
+  /// \brief Base class for Belos::SolverManager subclasses which
+  ///   normally can only compile for real ScalarType.
+  ///
+  /// It can be a lot of trouble to make a solver implementation
+  /// compile correctly for both real and complex ScalarType.  That's
+  /// why this class exists.  If a Belos solver inherits from this
+  /// class, that indicates that the solver's implementation can only
+  /// compile if ScalarType is real (not complex).  If you attempt to
+  /// invoke the solver's constructor when <tt>ScalarType</tt> is
+  /// complex, the constructor will throw an exception.
+  ///
+  /// The point of this class is to ensure that Belos::SolverFactory
+  /// will always compile, even if some Belos solvers' implementations
+  /// cannot compile when ScalarType is complex.  See GCRODRSolMgr for
+  /// an example of how to use this class to avoid compilation of code
+  /// that only works for real ScalarType.
+  template<class ScalarType,
+           class MV,
+           class OP,
+           const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
+  class RealSolverManager;
+
+  // Specialization for isComplex = true adds nothing to SolverManager.
+  template<class ScalarType, class MV, class OP>
+  class RealSolverManager<ScalarType, MV, OP, false> :
+    public SolverManager<ScalarType, MV, OP> {
+  public:
+    RealSolverManager () {}
+    virtual ~RealSolverManager () {}
+  };
+
+  // Specialization for isComplex = true (ScalarType is complex) adds
+  // a constructor that always throws std::logic_error.  Subclasses
+  // must always call the base class constructor.
+  //
+  // The complex version (isComplex = true) needs to implement all the
+  // pure virtual methods in SolverManager, even though they can never
+  // actually be called, since the constructor throws.
+  template<class ScalarType, class MV, class OP>
+  class RealSolverManager<ScalarType, MV, OP, true> :
+    public SolverManager<ScalarType, MV, OP> {
+  public:
+    RealSolverManager () {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual ~RealSolverManager () {}
+
+    virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual int getNumIters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual bool isLOADetected() const {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual void reset (const ResetType type) {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+    virtual ReturnType solve () {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "This solver is not implemented for complex ScalarType." );
+    }
+  };
+} // namespace Details
+
+
+} // End Belos namespace
 
 #endif /* BELOS_SOLVERMANAGER_HPP */

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -128,43 +128,6 @@ namespace MueLu {
       //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I, false, Ptent, false);
       //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
 
-      RCP<Matrix> AP;
-      {
-        SubFactoryMonitor m2(*this, "MxM: A x Ptentative", coarseLevel);
-        //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
-        //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
-        //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
-        bool doFillComplete=true;
-
-        bool optimizeStorage=true;
-
-        // FIXME: ADD() need B.getProfileType()==DynamicProfile
-        if (A->getRowMap()->lib() == Xpetra::UseTpetra) {
-          optimizeStorage=false;
-        }
-
-        bool allowMLMultiply = true;
-#ifdef HAVE_MUELU_EXPERIMENTAL
-        // Energy minimization uses AP pattern for restriction. The problem with ML multiply is that it automatically
-        // removes zero valued entries in the matrix product, resulting in incorrect pattern for the minimization.
-        // One could try to mitigate that by multiply matrices with all entries equal to zero, which would produce the
-        // correct graph. However, that is one extra MxM we don't need.
-        // Instead, I disable ML multiply when experimental option is specified.
-        // NOTE: Thanks to C.Siefert, native EPetra MxM multiply version should actually be comparable with ML in time
-        allowMLMultiply      = false;
-#endif
-
-        AP = Utils::Multiply(*A, false, *Ptent, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage, allowMLMultiply);
-      }
-
-      {
-        SubFactoryMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}", coarseLevel);
-        bool doFillComplete=true;
-        bool optimizeStorage=false;
-        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
-        Utils::MyOldScaleMatrix(*AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
-      }
-
       Scalar lambdaMax;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
@@ -181,17 +144,11 @@ namespace MueLu {
       }
 
       {
-        SubFactoryMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)", coarseLevel);
+        SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
+        Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
 
-        bool doTranspose=false;
-        bool PtentHasFixedNnzPerRow=true;
-        Utils2::TwoMatrixAdd(*Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), *AP, doTranspose, -dampingFactor/lambdaMax, finalP,
-                             GetOStream(Statistics2,0), PtentHasFixedNnzPerRow);
-      }
-
-      {
-        SubFactoryMonitor m2(*this, "FillComplete() of P", coarseLevel);
-        finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
+	SC omega = dampingFactor / lambdaMax;
+	finalP=Utils::Jacobi(omega,*invDiag,*A, *Ptent, finalP,GetOStream(Statistics2,0));
       }
 
     } else {

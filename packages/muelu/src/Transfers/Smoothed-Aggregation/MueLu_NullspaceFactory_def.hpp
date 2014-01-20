@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -60,12 +60,12 @@ namespace MueLu {
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
 
     // only request "A" in DeclareInput if
-    // 1) there is not nspName_ (e.g. "Nullspace") is available in Level AND
+    // 1) there is not nspName_ (e.g. "Nullspace") is available in Level, AND
     // 2) it is the finest level (i.e. LevelID == 0)
     if (currentLevel.IsAvailable(nspName_, NoFactory::get()) == false && currentLevel.GetLevelID() == 0)
       Input(currentLevel, "A");
 
-    if (currentLevel.GetLevelID() !=0) {
+    if (currentLevel.GetLevelID() != 0) {
 
       // validate nullspaceFact_
 

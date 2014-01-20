@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -60,7 +60,6 @@
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_Hashtable.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -85,12 +84,13 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>        ("startLevel",                  1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>         ("minRowsPerProcessor",      1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<int>        ("startLevel",                  2, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>         ("minRowsPerProcessor",       800, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
     validParamList->set<double>     ("nonzeroImbalance",          1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
 
-    validParamList->set<bool>       ("remapPartitions",         false, "Perform partition remapping to minimize data movement");
+    validParamList->set<bool>       ("remapPartitions",          true, "Perform partition remapping to minimize data movement");
+    validParamList->set<int>        ("numRemapValues",              4, "Number of maximum components from each processor used to construct partial bipartite graph");
     validParamList->set<bool>       ("alwaysKeepProc0",          true, "Always keep processor 0 in subcommunicator");
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
@@ -277,6 +277,40 @@ namespace MueLu {
     // ======================================================================================================
     // Remap if necessary
     // ======================================================================================================
+    // From a user perspective, we want user to not care about remapping, thinking of it as only a performance feature.
+    // There are two problems, however.
+    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses NATURAL or RANDOM orderings.
+    //     This also means that remapping affects next level aggregation, despite the fact that the _set_ of GIDs for
+    //     each partition is the same.
+    // (2) Even with the fixed order of GIDs, the remapping may influence the aggregation for the next-next level.
+    //     Let us consider the following example. Lets assume that when we don't do remapping, processor 0 would have
+    //     GIDs {0,1,2}, and processor 1 GIDs {3,4,5}, and if we do remapping processor 0 would contain {3,4,5} and
+    //     processor 1 {0,1,2}. Now, when we run repartitioning algorithm on the next level (say Zoltan1 RCB), it may
+    //     be dependent on whether whether it is [{0,1,2}, {3,4,5}] or [{3,4,5}, {0,1,2}]. Specifically, the tie-breaking
+    //     algorithm can resolve these differently. For instance, running
+    //         mpirun -np 5 ./MueLu_ScalingTestParamList.exe --easy --xml=easy_sa.xml --nx=12 --ny=12 --nz=12
+    //     with
+    //         <ParameterList name="MueLu">
+    //           <Parameter name="coarse: max size"                type="int"      value="1"/>
+    //           <Parameter name="repartition: enable"             type="bool"     value="true"/>
+    //           <Parameter name="repartition: min rows per proc"  type="int"      value="2"/>
+    //           <ParameterList name="level 1">
+    //             <Parameter name="repartition: remap parts"      type="bool"     value="false/true"/>
+    //           </ParameterList>
+    //         </ParameterList>
+    //     produces different repartitioning for level 2.
+    //     This different repartitioning may then escalate into different aggregation for the next level.
+    //
+    // We fix (1) by fixing the order of GIDs in a vector by sorting the resulting vector.
+    // Fixing (2) is more complicated.
+    // FIXME: Fixing (2) in Zoltan may not be enough, as we may use some arbitration in MueLu,
+    // for instance with CoupledAggregation. What we really need to do is to use the same order of processors containing
+    // the same order of GIDs. To achieve that, the newly created subcommunicator must be conforming with the order. For
+    // instance, if we have [{0,1,2}, {3,4,5}], we create a subcommunicator where processor 0 gets rank 0, and processor 1
+    // gets rank 1. If, on the other hand, we have [{3,4,5}, {0,1,2}], we assign rank 1 to processor 0, and rank 0 to processor 1.
+    // This rank permutation requires help from Epetra/Tpetra, both of which have no such API in place.
+    // One should also be concerned that if we had such API in place, rank 0 in subcommunicator may no longer be rank 0 in
+    // MPI_COMM_WORLD, which may lead to issues for logging.
     if (remapPartitions) {
       SubFactoryMonitor m1(*this, "DeterminePartitionPlacement", currentLevel);
 
@@ -431,8 +465,10 @@ namespace MueLu {
       myParts[cnt++] = it->first;
 
     // Step 1: Find out how many processors send me data
-    RCP<Map>    partsIHave  = MapFactory   ::Build(lib, Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), myParts(), indexBase, comm);
-    RCP<Map>    partsIOwn   = MapFactory   ::Build(lib,                                                 numProcs,  myPart(), indexBase, comm);
+    // partsIndexBase starts from zero, as the processors ids start from zero
+    GO partsIndexBase = 0;
+    RCP<Map>    partsIHave  = MapFactory   ::Build(lib, Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), myParts(), partsIndexBase, comm);
+    RCP<Map>    partsIOwn   = MapFactory   ::Build(lib,                                                 numProcs,  myPart(), partsIndexBase, comm);
     RCP<Export> partsExport = ExportFactory::Build(partsIHave, partsIOwn);
 
     RCP<GOVector> partsISend    = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(partsIHave);
@@ -483,6 +519,9 @@ namespace MueLu {
         memcpy(myGIDs.getRawPtr() + offset, it->second.getRawPtr(), len*sizeof(GO));
       }
     }
+    // NOTE 2: The general sorting algorithm could be sped up by using the knowledge that original myGIDs and all received chunks
+    // (i.e. it->second) are sorted. Therefore, a merge sort would work well in this situation.
+    std::sort(myGIDs.begin(), myGIDs.end());
 
     // Step 3: Construct importer
     RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
@@ -501,7 +540,7 @@ namespace MueLu {
       std::vector<char> areActive(numProcs, 0);
       MPI_Gather(&amActive, 1, MPI_CHAR, &areActive[0], 1, MPI_CHAR, 0, *rawMpiComm);
 
-      int rowWidth = Teuchos::as<int>(ceil(sqrt(numProcs)));
+      int rowWidth = std::min(Teuchos::as<int>(ceil(sqrt(numProcs))), 100);
       for (int proc = 0; proc < numProcs; proc += rowWidth) {
         for (int j = 0; j < rowWidth; j++)
           if (proc + j < numProcs)
@@ -529,24 +568,22 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition,
                                                                                                                GO numPartitions, bool keepProc0) const {
-    RCP<const Map>         rowMap    = A.getRowMap();
-    GO                     indexBase = rowMap->getIndexBase();
-    //Xpetra::UnderlyingLib  lib       = rowMap->lib(); // unused variable
+    RCP<const Map> rowMap = A.getRowMap();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
-    //int myRank   = comm->getRank(); // unused variable
     int numProcs = comm->getSize();
 
     RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
+    const Teuchos::ParameterList& pL = GetParameterList();
 
     // maxLocal is a constant which determins the number of largest edges which are being exchanged
     // The idea is that we do not want to construct the full bipartite graph, but simply a subset of
     // it, which requires less communication. By selecting largest local edges we hope to achieve
     // similar results but at a lower cost.
-    const int maxLocal = 4;
+    const int maxLocal = pL.get<int>("numRemapValues");
     const int dataSize = 2*maxLocal;
 
     ArrayRCP<GO> decompEntries;
@@ -578,7 +615,7 @@ namespace MueLu {
     // We do not store processor id in data, as we can compute that by looking on the offset in the gData.
     Array<GO> lData(dataSize, -1), gData(numProcs * dataSize);
     int numEdges = 0;
-    for (typename std::map<GO,GO>::reverse_iterator rit = revlEdges.rbegin(); rit != revlEdges.rend() && numEdges < maxLocal; rit++) {
+    for (typename std::multimap<GO,GO>::reverse_iterator rit = revlEdges.rbegin(); rit != revlEdges.rend() && numEdges < maxLocal; rit++) {
       lData[2*numEdges+0] = rit->second; // part id
       lData[2*numEdges+1] = rit->first;  // edge weight
       numEdges++;
@@ -629,7 +666,7 @@ namespace MueLu {
     GetOStream(Statistics0, 0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4 [optional]: Keep processor 0
-    if (keepProc0)
+    if (keepProc0) {
       if (matchedRanks[0] == 0) {
         // Reassign partition to processor 0
         // The hope is that partition which we mapped last has few elements in it
@@ -637,7 +674,12 @@ namespace MueLu {
         matchedRanks[match[lastMatchedPart]] = 0;       // unassign processor which was matched to lastMatchedPart part
         matchedRanks[0] = 1;                            // assign processor 0
         match[lastMatchedPart] = 0;                     // match part to processor 0
+
+      } else {
+        GetOStream(Statistics0, 0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
+            " as processor 0 already receives some data" << std::endl;
       }
+    }
 
     // Step 5: Assign unassigned partitions
     // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a subset of [0, numProcs).

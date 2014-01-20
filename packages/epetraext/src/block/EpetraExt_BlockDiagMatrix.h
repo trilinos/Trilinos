@@ -153,13 +153,19 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   int NumMyBlocks() const {return(Map().NumMyElements());}
 
   //! Returns the number of global blocks
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int NumGlobalBlocks() const {return(Map().NumGlobalElements());}
-  
+#endif
+  long long NumGlobalBlocks64() const {return(Map().NumGlobalElements64());}
+
   //! Returns the number of local unknowns
   int NumMyUnknowns() const {return(Map().NumMyPoints());}
 
   //! Returns the number of global unknowns
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int NumGlobalUnknowns() const {return(Map().NumGlobalPoints());}
+#endif
+  long long NumGlobalUnknowns64() const {return(Map().NumGlobalPoints64());}
 
   //! Returns the size of the total Data block
   int NumData() const {return DataMap_->NumMyPoints();}

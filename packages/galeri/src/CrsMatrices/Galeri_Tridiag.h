@@ -50,18 +50,20 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 Tridiag(const Epetra_Map* Map, const double a, const double b, const double c)
 {
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  3);
 
-  int NumGlobalElements = Map->NumGlobalElements();
+  int_type NumGlobalElements = (int_type) Map->NumGlobalElements64();
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   vector<double> Values(2);
-  vector<int> Indices(2);
+  vector<int_type> Indices(2);
   int NumEntries;
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
@@ -103,6 +105,24 @@ Tridiag(const Epetra_Map* Map, const double a, const double b, const double c)
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+Epetra_CrsMatrix* 
+Tridiag(const Epetra_Map* Map, const double a, const double b, const double c)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Tridiag<int>(Map, a, b, c);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Tridiag<long long>(Map, a, b, c);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Tridiag: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

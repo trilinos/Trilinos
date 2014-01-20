@@ -118,10 +118,21 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::rcp;
 
   // provide a constant target value to map into residual
-  {
+  if(basis->isScalarBasis()) {
     ParameterList p("BC Constant Dirichlet");
     p.set("Name", "Constant_" + this->m_bc.equationSetName());
     p.set("Data Layout", basis->functional);
+    p.set("Value", this->m_bc.params()->template get<double>("Value"));
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+  else if(basis->isVectorBasis()) {
+    ParameterList p("BC Constant Dirichlet");
+    p.set("Name", "Constant_" + this->m_bc.equationSetName());
+    p.set("Data Layout", basis->functional_grad);
     p.set("Value", this->m_bc.params()->template get<double>("Value"));
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 

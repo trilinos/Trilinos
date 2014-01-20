@@ -51,16 +51,16 @@
 template <typename Scalar>
 struct InitOp {
   Scalar *x;
-  inline KERNEL_PREFIX void execute(int i) {
+  inline KERNEL_PREFIX void execute(int i) const {
     x[i] = 1;
   }
 };
 
 struct NullOp {
   typedef int ReductionType;
-  static inline KERNEL_PREFIX int identity() {return 0;}
-  static inline KERNEL_PREFIX int reduce(int x, int y) {return x+y;}
-  static inline KERNEL_PREFIX int generate(int i) {return 0;}
+  inline KERNEL_PREFIX int identity() const {return 0;}
+  inline KERNEL_PREFIX int reduce(int x, int y) const {return x+y;}
+  inline KERNEL_PREFIX int generate(int i) const {return 0;}
 };
 
 template <typename Scalar>
@@ -69,15 +69,15 @@ struct SumOp {
 
   const Scalar *x;
 
-  static inline KERNEL_PREFIX ReductionType identity() {
+  inline KERNEL_PREFIX ReductionType identity() const {
     return (Scalar)0;
   }
 
-  static inline KERNEL_PREFIX ReductionType reduce(ReductionType x, ReductionType y) {
+  inline KERNEL_PREFIX ReductionType reduce(ReductionType x, ReductionType y) const {
     return x+y;
   }
 
-  inline KERNEL_PREFIX Scalar generate(int i) {
+  inline KERNEL_PREFIX Scalar generate(int i) const {
     return x[i];
   }
 };

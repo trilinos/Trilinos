@@ -180,7 +180,7 @@ namespace SEAMS {
     if (length == 0)
       return false;
 
-    if (!isalpha(var[0])) {
+    if (!isalpha(var[0]) && var[0] != '_') {
       return false;
     }
 

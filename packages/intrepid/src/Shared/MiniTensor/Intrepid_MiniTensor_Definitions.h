@@ -49,6 +49,10 @@
 
 namespace Intrepid {
 
+/// Static assertion
+#define STATIC_ASSERT(condition, name)\
+  typedef char static_assertion_failed_ ## name [(condition) ? 1 : -1]
+
 /// Indexing type
 typedef unsigned int Index;
 
@@ -258,12 +262,12 @@ struct Promote<Index, complex<float> > {
 /// Sacado traits specializations for Vector
 template <typename T, Index N>
 struct ScalarType< Vector<T, N> > {
-  typedef T type;
+  typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N>
 struct ValueType< Vector<T, N> > {
-  typedef T type;
+  typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N>
@@ -273,19 +277,19 @@ struct IsADType< Vector<T, N> > {
 
 template <typename T, Index N>
 struct IsScalarType< Vector<T, N> > {
-  static bool const value = false;
+  static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N>
 struct Value< Vector<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  static const Vector<value_type, N> &
+  typedef typename ValueType< Vector<T, N> >::type value_type;
+  static const Vector<value_type, N>
   eval(Vector<T, N> const & x)
   {
     Vector<value_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = x[i].val();
+      v[i] = Value<T>::eval(x[i]);
     }
 
     return v;
@@ -294,15 +298,14 @@ struct Value< Vector<T, N> > {
 
 template <typename T, Index N>
 struct ScalarValue< Vector<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  typedef typename ScalarType<T>::type scalar_type;
-  static const Vector<scalar_type, N> &
+  typedef typename ScalarType< Vector<T, N> >::type scalar_type;
+  static const Vector<scalar_type, N>
   eval(Vector<T, N> const & x)
   {
     Vector<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
     return v;
   }
@@ -337,12 +340,12 @@ struct IsStaticallySized< Vector<T, DYNAMIC> >
 /// Sacado traits specializations for Tensor
 template <typename T, Index N>
 struct ScalarType< Tensor<T, N> > {
-  typedef T type;
+  typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N>
 struct ValueType< Tensor<T, N> > {
-  typedef T type;
+  typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N>
@@ -352,19 +355,19 @@ struct IsADType< Tensor<T, N> > {
 
 template <typename T, Index N>
 struct IsScalarType< Tensor<T, N> > {
-  static bool const value = false;
+  static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N>
 struct Value< Tensor<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  static const Tensor<value_type, N> &
+  typedef typename ValueType< Tensor<T, N> >::type value_type;
+  static const Tensor<value_type, N>
   eval(Tensor<T, N> const & x)
   {
     Tensor<value_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = x[i].val();
+      v[i] = Value<T>::eval(x[i]);
     }
 
     return v;
@@ -373,15 +376,14 @@ struct Value< Tensor<T, N> > {
 
 template <typename T, Index N>
 struct ScalarValue< Tensor<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  typedef typename ScalarType<T>::type scalar_type;
-  static const Tensor<scalar_type, N> &
+  typedef typename ScalarType< Tensor<T, N> >::type scalar_type;
+  static const Tensor<scalar_type, N>
   eval(Tensor<T, N> const & x)
   {
     Tensor<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
 
     return v;
@@ -417,12 +419,12 @@ struct IsStaticallySized< Tensor<T, DYNAMIC> >
 /// Sacado traits specializations for Tensor3
 template <typename T, Index N>
 struct ScalarType< Tensor3<T, N> > {
-  typedef T type;
+  typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N>
 struct ValueType< Tensor3<T, N> > {
-  typedef T type;
+  typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N>
@@ -432,19 +434,19 @@ struct IsADType< Tensor3<T, N> > {
 
 template <typename T, Index N>
 struct IsScalarType< Tensor3<T, N> > {
-  static bool const value = false;
+  static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N>
 struct Value< Tensor3<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  static const Tensor3<value_type, N> &
+  typedef typename ValueType< Tensor3<T, N> >::type value_type;
+  static const Tensor3<value_type, N>
   eval(Tensor3<T, N> const & x)
   {
     Tensor3<value_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = x[i].val();
+      v[i] = Value<T>::eval(x[i]);
     }
 
     return v;
@@ -453,15 +455,14 @@ struct Value< Tensor3<T, N> > {
 
 template <typename T, Index N>
 struct ScalarValue< Tensor3<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  typedef typename ScalarType<T>::type scalar_type;
-  static const Tensor3<scalar_type, N> &
+  typedef typename ScalarType< Tensor3<T, N> >::type scalar_type;
+  static const Tensor3<scalar_type, N>
   eval(Tensor3<T, N> const & x)
   {
     Tensor3<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
 
     return v;
@@ -498,12 +499,12 @@ struct IsStaticallySized< Tensor3<T, DYNAMIC> >
 /// Sacado traits specializations for Tensor4
 template <typename T, Index N>
 struct ScalarType< Tensor4<T, N> > {
-  typedef T type;
+  typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N>
 struct ValueType< Tensor4<T, N> > {
-  typedef T type;
+  typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N>
@@ -513,19 +514,19 @@ struct IsADType< Tensor4<T, N> > {
 
 template <typename T, Index N>
 struct IsScalarType< Tensor4<T, N> > {
-  static bool const value = false;
+  static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N>
 struct Value< Tensor4<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  static const Tensor4<value_type, N> &
+  typedef typename ValueType< Tensor4<T, N> >::type value_type;
+  static const Tensor4<value_type, N>
   eval(Tensor4<T, N> const & x)
   {
     Tensor4<value_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = x[i].val();
+      v[i] = Value<T>::eval(x[i]);
     }
 
     return v;
@@ -534,15 +535,14 @@ struct Value< Tensor4<T, N> > {
 
 template <typename T, Index N>
 struct ScalarValue< Tensor4<T, N> > {
-  typedef typename ValueType<T>::type value_type;
-  typedef typename ScalarType<T>::type scalar_type;
-  static const Tensor4<scalar_type, N> &
+  typedef typename ScalarType< Tensor4<T, N> >::type scalar_type;
+  static const Tensor4<scalar_type, N>
   eval(Tensor4<T, N> const & x)
   {
     Tensor4<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
 
     return v;

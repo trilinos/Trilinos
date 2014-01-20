@@ -1,0 +1,18 @@
+<ParameterList name="ProlongatorTest">
+
+  <ParameterList name="CoalesceDrop">
+    <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+    <!--
+    <Parameter name="aggregation threshold"               type="double" value="0.1"/>
+    -->
+  </ParameterList>
+
+  <ParameterList name="Aggregates">
+  </ParameterList>
+
+  <ParameterList name="Prolongator">
+    <Parameter name="Damping factor" type="double" value="1.3333"/>
+  </ParameterList>
+
+
+</ParameterList>

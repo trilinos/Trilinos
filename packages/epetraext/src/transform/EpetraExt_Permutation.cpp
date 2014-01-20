@@ -44,6 +44,18 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_CrsGraph.h>
 
-//template class EpetraExt::Permutation<Epetra_MultiVector>;
-//template class EpetraExt::Permutation<Epetra_CrsMatrix>;
-//template class EpetraExt::Permutation<Epetra_CrsGraph>;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+template class EpetraExt::Permutation<Epetra_MultiVector>;
+template class EpetraExt::Permutation<Epetra_CrsMatrix>;
+template class EpetraExt::Permutation<Epetra_CrsGraph>;
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+template class EpetraExt::Permutation64<Epetra_MultiVector>;
+template class EpetraExt::Permutation64<Epetra_CrsMatrix>;
+template class EpetraExt::Permutation64<Epetra_CrsGraph>;
+
+#endif

@@ -57,6 +57,9 @@
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#endif
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -88,6 +91,30 @@ namespace Details {
     }
     return theNode;
   }
+
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  // Full specializations for the new Kokkos wrapper Node types.
+
+#ifdef KOKKOS_HAVE_CUDA
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> ();
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_OPENMP
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> ();
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> ();
+#endif // KOKKOS_HAVE_PTHREAD
+
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+
 } // namespace Details
 
   /** \brief Class to specify %Kokkos default node type and instantiate the default node.
@@ -103,6 +130,17 @@ namespace Details {
       typedef OpenMPNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
       typedef ThrustGPUNode DefaultNodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
+#    pragma message "Kokkos default Node type: Kokkos::Compat::CudaWrapperNode"
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
+#  else
+      typedef SerialNode DefaultNodeType;
+#  endif // defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 #else
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
@@ -110,11 +148,8 @@ namespace Details {
 
       //! \brief Return a pointer to the default node.
       static RCP<DefaultNodeType> getDefaultNode();
-
-    private:
-      static RCP<DefaultNodeType> node_;
   };
 
-}
+} // namespace KokkosClassic
 
 #endif

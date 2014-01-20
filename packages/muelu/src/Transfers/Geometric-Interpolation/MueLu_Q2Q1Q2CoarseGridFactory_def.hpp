@@ -36,10 +36,10 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
-// 
+//
 // ***********************************************************************
 //
 // @HEADER
@@ -82,7 +82,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    
+
     Input(fineLevel, "VElementList");
     Input(fineLevel, "PElementList");
     Input(fineLevel, "MElementList");
@@ -91,52 +91,52 @@ namespace MueLu {
     Input(coarseLevel, "PElementList");
     Input(coarseLevel, "MElementList");
 
-        
+
     //currentLevel.DeclareInput(varName_,factory_,this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
-    
+
     std::cout << "Starting 'build' routine...\n";
 
     // This will create a list of elements on the coarse grid with a
     // predictable structure, as well as modify the fine grid list of
     // elements, if necessary (i.e. if fineLevel.GetLevelID()==0);
     //BuildCoarseGrid(fineLevel,coarseLevel);
-    
+
     // This will actually build our prolongator P
     return BuildCoarseGrid(fineLevel,coarseLevel);
 
   }
 
-    
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const 
+  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const
   {
-    
+
     std::cout << "starting 'BuildCoarseGrid' routine...\n";
 
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineElementPDOFs = Get< RCP<Teuchos::SerialDenseMatrix<GO,GO> > >(fineLevel,"PElementList");
-    
+
     GO totalFineElements = fineElementPDOFs->numRows();
-    
+
     // Compute number of coarse grid elements in total:
     GO totalCoarseElements = totalFineElements/4;
     LO nCoarseElements = sqrt(totalCoarseElements);
-    
+
     // Initialize some counters:
     size_t EdgeCount = (nCoarseElements + 1) * (nCoarseElements + 1);
     size_t CenterCount = EdgeCount + 2 * nCoarseElements * (nCoarseElements + 1);
-    
-    
+
+
     // Initialize arrays of the proper size:
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > coarseElementVDOFs = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalCoarseElements,18));
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > coarseElementPDOFs = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalCoarseElements,4));
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > coarseElementMDOFs = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalCoarseElements,9));
 
-    
-    for ( GO coarseElement=0; coarseElement < totalCoarseElements; coarseElement++ ) 
+
+    for ( GO coarseElement=0; coarseElement < totalCoarseElements; coarseElement++ )
       {
 
         // ***************************************************************
@@ -162,24 +162,24 @@ namespace MueLu {
             //Bottom Nodes
             (*coarseElementMDOFs)(coarseElement,0) = (*coarseElementMDOFs)(coarseElement-nCoarseElements,3);
             (*coarseElementMDOFs)(coarseElement,1) = (*coarseElementMDOFs)(coarseElement-nCoarseElements,2);
-            
+
             //Bottom Edge
             (*coarseElementMDOFs)(coarseElement,4) = (*coarseElementMDOFs)(coarseElement-nCoarseElements,6);
-                
+
           }
 
-        
+
         //Right and Top Edges -- must be determined before left edge
         (*coarseElementMDOFs)(coarseElement,5) = EdgeCount++;
         (*coarseElementMDOFs)(coarseElement,6) = EdgeCount++;
-        
+
 
         //if (coarseElement is on the Left Edge)
-        if (coarseElement % nCoarseElements == 0) 
+        if (coarseElement % nCoarseElements == 0)
           {
             //Top left node
             (*coarseElementMDOFs)(coarseElement,3) = (*coarseElementMDOFs)(coarseElement,0)+nCoarseElements+1;
-            
+
             //Left Edge
             (*coarseElementMDOFs)(coarseElement,7) = EdgeCount++;
 
@@ -198,9 +198,9 @@ namespace MueLu {
 
         //Center Node
         (*coarseElementMDOFs)(coarseElement,8) = CenterCount++;
-        
-        
-        
+
+
+
         // With Magnetics built, Pressure and Velocity follow without effort.
         // First, Velocity:
         (*coarseElementVDOFs)(coarseElement,0) = 2*(*coarseElementMDOFs)(coarseElement,0);
@@ -221,15 +221,15 @@ namespace MueLu {
         (*coarseElementVDOFs)(coarseElement,15) = 2*(*coarseElementMDOFs)(coarseElement,7)+1;
         (*coarseElementVDOFs)(coarseElement,16) = 2*(*coarseElementMDOFs)(coarseElement,8);
         (*coarseElementVDOFs)(coarseElement,17) = 2*(*coarseElementMDOFs)(coarseElement,8)+1;
-        
+
         // Lastly, Pressure:
         (*coarseElementPDOFs)(coarseElement,0) = (*coarseElementMDOFs)(coarseElement,0);
         (*coarseElementPDOFs)(coarseElement,1) = (*coarseElementMDOFs)(coarseElement,1);
         (*coarseElementPDOFs)(coarseElement,2) = (*coarseElementMDOFs)(coarseElement,2);
         (*coarseElementPDOFs)(coarseElement,3) = (*coarseElementMDOFs)(coarseElement,3);
-        
+
       }// Loop over elements
-    
+
     Set(coarseLevel,"VElementList",coarseElementVDOFs);
     Set(coarseLevel,"PElementList",coarseElementPDOFs);
     Set(coarseLevel,"MElementList",coarseElementMDOFs);
@@ -240,7 +240,7 @@ namespace MueLu {
 
   }//BuildCoarseGrid
 
-  
+
 } // namespace MueLu
 
 #define MUELU_Q2Q1Q2COARSEGRIDFACTORY_SHORT

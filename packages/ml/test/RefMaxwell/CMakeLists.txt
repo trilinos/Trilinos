@@ -13,7 +13,6 @@ IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt AND
   SOURCE_FILES coord_node.dat
                M0.dat
   	       M1.dat
-               Ms.dat
                S.dat
                Tclean.dat
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}

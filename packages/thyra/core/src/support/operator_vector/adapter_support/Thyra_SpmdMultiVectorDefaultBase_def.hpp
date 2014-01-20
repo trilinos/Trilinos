@@ -491,12 +491,30 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
   timer.start();
 #endif
  
-  const bool isNonLocalAdjoint = 
+  // determine if both fields are locally replicated. If they are
+  // there is no need to do any reduction operations.
+  bool locallyReplicated = false;
+  {
+    bool locallyReplicated_this = spmdSpc.isLocallyReplicated();
+    bool locallyReplicated_x    = locallyReplicated_this; // x must be compatible with "this"
+    bool locallyReplicated_y    = false;
+
+    Ptr<SpmdMultiVectorBase<Scalar> > spmd_Y = Teuchos::ptr_dynamic_cast<SpmdMultiVectorBase<Scalar> >(Y);
+    if (nonnull(spmd_Y))
+      locallyReplicated_y = spmd_Y->spmdSpace()->isLocallyReplicated();
+   
+    locallyReplicated = locallyReplicated_this && locallyReplicated_x && locallyReplicated_y;
+  }
+
+  bool isNonLocalAdjoint = 
     (
       real_trans(M_trans) == TRANS
       &&
       (globalDim_ > localSubDim_  || (nonnull(comm) && comm->getSize() > 1))
       );
+
+  if (locallyReplicated)
+    isNonLocalAdjoint = false;
 
   Workspace<Scalar> Y_local_tmp_store(wss, Y_local.subDim()*Y_local.numSubCols(), false);
   RTOpPack::SubMultiVectorView<Scalar> Y_local_tmp;
@@ -600,7 +618,7 @@ void SpmdMultiVectorDefaultBase<Scalar>::euclideanApply(
     //
     // Perform the global reduction of Y_local_tmp back into Y_local
     //
- 
+
     if (isNonLocalAdjoint) {
       // Contiguous buffer for final reduction
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);

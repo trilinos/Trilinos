@@ -105,7 +105,7 @@
     <Parameter name="maxCoarseSize"                         type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
@@ -114,12 +114,7 @@
       <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-      <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
 
   </ParameterList>

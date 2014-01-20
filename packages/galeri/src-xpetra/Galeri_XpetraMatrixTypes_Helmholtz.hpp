@@ -106,9 +106,6 @@ namespace Galeri {
       Scalar one = (Scalar) 1.0;
       Scalar two = (Scalar) 2.0;
       comm->barrier();
-      if (comm->getRank() == 0) {
-        std::cout << "starting global insert" << std::endl;
-      }
       Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
       for (LocalOrdinal i = 0; i < NumMyElements; ++i) {

@@ -25,6 +25,7 @@ APPEND_SET(CUDA_HEADERS
     Kokkos_CUDANodeMemoryModelImpl.hpp
     Kokkos_ThrustGPUNode.cuh
     Kokkos_ThrustGPUNode.hpp
+    Kokkos_ThrustGPUWrappers.hpp
     Kokkos_CUDANodeUtils.hpp
 )
 APPEND_SET(CUDA_SOURCES
@@ -115,6 +116,36 @@ IF (KokkosClassic_ENABLE_TBB)
   APPEND_SET(SOURCES ${TBB_SOURCES})
 ENDIF()
 
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+ASSERT_DEFINED(KokkosClassic_ENABLE_KokkosCompat)
+IF (KokkosClassic_ENABLE_KokkosCompat)
+IF (Kokkos_ENABLE_OpenMP)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosOpenMPWrapperNode")
+  MESSAGE(STATUS "Enabling node: OpenMP/Wrapper")
+  APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+ENDIF()
+ENDIF()
+
+ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+ASSERT_DEFINED(KokkosClassic_ENABLE_KokkosCompat)
+IF (KokkosClassic_ENABLE_KokkosCompat)
+IF (Kokkos_ENABLE_Pthread)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosThreadsWrapperNode")
+  MESSAGE(STATUS "Enabling node: Threads/Wrapper")
+  APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+ENDIF()
+ENDIF()
+
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+ASSERT_DEFINED(KokkosClassic_ENABLE_KokkosCompat)
+IF (KokkosClassic_ENABLE_KokkosCompat)
+IF (Kokkos_ENABLE_Cuda)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosCudaWrapperNode")
+  MESSAGE(STATUS "Enabling node: Cuda/Wrapper")
+  APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+ENDIF()
+ENDIF()
+
 IF(NOT DEFINED KokkosClassic_DefaultNode)
   SET(KokkosClassic_DefaultNode ${kokkos_defaultnode_default})
 ENDIF()
@@ -129,6 +160,12 @@ ELSEIF(KokkosClassic_DefaultNode STREQUAL "KokkosClassic::ThrustGPUNode" AND Kok
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE ON CACHE BOOL "")
 ELSEIF(KokkosClassic_DefaultNode STREQUAL "KokkosClassic::SerialNode")
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
+ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE ON CACHE BOOL "")
+ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosOpenMPWrapperNode")
+  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE ON CACHE BOOL "")
+ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosThreadsWrapperNode")
+  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE ON CACHE BOOL "")
 ELSE()
   MESSAGE(WARNING "Unrecognized or disabled node type; setting default node to KokkosClassic::SerialNode.")
   SET(KokkosClassic_DefaultNode "KokkosClassic::SerialNode")

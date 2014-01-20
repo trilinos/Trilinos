@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -82,7 +82,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    
+
     Input(fineLevel, "A00");
     Input(fineLevel, "A10");
     Input(fineLevel, "A20");
@@ -90,52 +90,52 @@ namespace MueLu {
     Input(fineLevel, "VElementList");
     Input(fineLevel, "PElementList");
     Input(fineLevel, "MElementList");
-    
-    
+
+
     Input(coarseLevel,"VElementList");
     Input(coarseLevel,"PElementList");
     Input(coarseLevel,"MElementList");
-    
+
 /*
     coarseLevel.DeclareInput("VElementList",coarseLevel.GetFactoryManager()->GetFactory("VElementList").get(),this);
     coarseLevel.DeclareInput("PElementList",coarseLevel.GetFactoryManager()->GetFactory("PElementList").get(),this);
     coarseLevel.DeclareInput("MElementList",coarseLevel.GetFactoryManager()->GetFactory("PElementList").get(),this);
-    
+
     fineLevel.DeclareInput("VElementList",fineLevel.GetFactoryManager()->GetFactory("VElementList").get(),this);
     fineLevel.DeclareInput("PElementList",fineLevel.GetFactoryManager()->GetFactory("PElementList").get(),this);
     fineLevel.DeclareInput("MElementList",fineLevel.GetFactoryManager()->GetFactory("PElementList").get(),this);
-*/ 
+*/
 
     //currentLevel.DeclareInput(varName_,factory_,this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
-    
+
     std::cout << "Starting 'build' routine...\n";
 
     // This will create a list of elements on the coarse grid with a
     // predictable structure, as well as modify the fine grid list of
     // elements, if necessary (i.e. if fineLevel.GetLevelID()==0);
     //BuildCoarseGrid(fineLevel,coarseLevel);
-    
+
     // This will actually build our prolongator P
     return BuildP(fineLevel,coarseLevel);
 
   }
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
 
     typedef Teuchos::SerialDenseMatrix<GO,GO> SerialDenseMatrixType;
-    
+
     std::cout << "Starting 'BuildP' routine...\n";
-    
+
     //DEBUG
     //Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
-    //fineLevel.print(fout,Teuchos::VERB_HIGH);    
+    //fineLevel.print(fout,Teuchos::VERB_HIGH);
 
-    // Get finegrid element lists    
+    // Get finegrid element lists
     RCP<SerialDenseMatrixType> fineElementPDOFs = Get< RCP<SerialDenseMatrixType> > (fineLevel, "PElementList");
     RCP<SerialDenseMatrixType> fineElementVDOFs = Get< RCP<SerialDenseMatrixType> > (fineLevel, "VElementList");
     RCP<SerialDenseMatrixType> fineElementMDOFs = Get< RCP<SerialDenseMatrixType> > (fineLevel, "MElementList");
@@ -144,17 +144,17 @@ namespace MueLu {
     std::cout << "done getting fine level elements...\n";
     std::cout << "getting coarse level elements...\n";
     //coarseLevel.print(fout,Teuchos::VERB_HIGH);
-    
 
-    // Get coarse grid element lists    
+
+    // Get coarse grid element lists
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > coarseElementVDOFs,
       coarseElementPDOFs,
       coarseElementMDOFs;
-    
+
     coarseLevel.Get("VElementList",coarseElementVDOFs,coarseLevel.GetFactoryManager()->GetFactory("VElementList").get());
     coarseLevel.Get("PElementList",coarseElementPDOFs,coarseLevel.GetFactoryManager()->GetFactory("PElementList").get());
     coarseLevel.Get("MElementList",coarseElementMDOFs,coarseLevel.GetFactoryManager()->GetFactory("MElementList").get());
-    
+
 
     std::cout << "computing various numbers...\n";
     // Number of elements?
@@ -162,19 +162,19 @@ namespace MueLu {
     LO nFineElements = sqrt(totalFineElements);
     GO totalCoarseElements = coarseElementMDOFs->numRows();
     LO nCoarseElements = sqrt(totalCoarseElements);
-    
+
     // Set sizes for *COARSE GRID*
     GO nM = (2*nCoarseElements+1)*(2*nCoarseElements+1);
     GO nV = 2*nM;
     GO nP = (nCoarseElements+1)*(nCoarseElements+1);
-    
+
     // Get the row maps for the Ps
     RCP<Matrix> fineA00 = Get<RCP<Matrix> > (fineLevel,"A00");
     RCP<Matrix> fineA10 = Get<RCP<Matrix> > (fineLevel,"A10");
-    RCP<Matrix> fineA20 = Get<RCP<Matrix> > (fineLevel,"A20");    
-    
+    RCP<Matrix> fineA20 = Get<RCP<Matrix> > (fineLevel,"A20");
+
     std::cout << "creating coarse grid maps...\n";
-    
+
     RCP<const Map> rowMapforPV = fineA00->getRowMap();
     RCP<const Map> rowMapforPP = fineA10->getRowMap();
     RCP<const Map> rowMapforPM = fineA20->getRowMap();
@@ -188,25 +188,25 @@ namespace MueLu {
 
     // Create rowMap for P
     RCP<const Map> rowMapforP  = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,fNV+fNP+fNM,comm);
-    
+
     // Create colMaps for the coarse grid
     RCP<const Map> colMapforPV = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nV,comm);
     RCP<const Map> colMapforPP = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nP,comm);
     RCP<const Map> colMapforPM = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nM,comm);
-    
 
-    std::cout << "creating coarse grid matrices...\n";    
+
+    std::cout << "creating coarse grid matrices...\n";
     //Create our final output Ps for the coarseGrid
     size_t maxEntriesPerRowV = 9,//No overlap of VX and VY
       maxEntriesPerRowP = 4,
-      maxEntriesPerRowM = 9;    
-    
+      maxEntriesPerRowM = 9;
+
     RCP<Matrix> P  = rcp(new CrsMatrixWrap(rowMapforP ,maxEntriesPerRowV,Xpetra::StaticProfile));
     RCP<Matrix> PV = rcp(new CrsMatrixWrap(rowMapforPV,maxEntriesPerRowV,Xpetra::StaticProfile));
     RCP<Matrix> PP = rcp(new CrsMatrixWrap(rowMapforPP,maxEntriesPerRowP,Xpetra::StaticProfile));
     RCP<Matrix> PM = rcp(new CrsMatrixWrap(rowMapforPM,maxEntriesPerRowM,Xpetra::StaticProfile));
-    
-    
+
+
     //*****************************************************************/
     //
     //All 25 fine grid dofs are completely determined by the coarse
@@ -216,7 +216,7 @@ namespace MueLu {
     //future elements! But duplicates are easy - just the bottom and
     //left edges.
     //
-    //  
+    //
     //Looking at a fine grid patch, define the following Local-Global
     //relationship (magnetics as an example):
     //
@@ -229,7 +229,7 @@ namespace MueLu {
     // 3 -> (*fineElementMDOFs)(fineElement[1],4)
     // 4 -> (*fineElementMDOFs)(fineElement[1],2)
     //
-    // Left Edge:    
+    // Left Edge:
     // 5 -> (*fineElementMDOFs)(fineElement[0],7)
     // 6 -> (*fineElementMDOFs)(fineElement[0],3)
     // 7 -> (*fineElementMDOFs)(fineElement[2],7)
@@ -254,21 +254,21 @@ namespace MueLu {
     // 24 -> (*fineElementMDOFs)(fineElement[3],8)
     //
     //*****************************************************************/
-    
+
     size_t nnz = 0; // Just to make my copy-paste life easier...
     Teuchos::ArrayRCP<GO> colPtrV(maxEntriesPerRowV,0);
     Teuchos::ArrayRCP<GO> colPtrM(maxEntriesPerRowM,0);
     Teuchos::ArrayRCP<SC> valPtrM(maxEntriesPerRowM,0.);
-    
+
     Teuchos::ArrayRCP<GO> colPtrP(maxEntriesPerRowP,0);
     Teuchos::ArrayRCP<SC> valPtrP(maxEntriesPerRowP,0.);
-    
+
     //About which fine-grid elements do we care?
     GO fineElement[4] = {0,1,nFineElements,nFineElements+1};
-    
+
     std::cout << "start building matrices...\n";
     std::cout << "nCoarseElements = " << nCoarseElements << std::endl;
-    
+
     for ( GO coarseElement=0; coarseElement<totalCoarseElements; coarseElement++)
       {
         // We don't really care what is shared with future elements -
@@ -279,7 +279,7 @@ namespace MueLu {
         // superset of the work required for an interior node.
 
         //if (CoarseElement is on bottom edge)
-        if (coarseElement < nCoarseElements) 
+        if (coarseElement < nCoarseElements)
           {
             //fill in the bottom edge of the element patch
             // FP = 1
@@ -296,13 +296,13 @@ namespace MueLu {
             colPtrV[0] = 2*colPtrM[0];
             colPtrV[1] = 2*colPtrM[1];
             colPtrV[2] = 2*colPtrM[2];
-            
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],8),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
             colPtrV[0] = 2*colPtrM[0]+1;
             colPtrV[1] = 2*colPtrM[1]+1;
             colPtrV[2] = 2*colPtrM[2]+1;
-        
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],9),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
             // FPr = 1
@@ -313,11 +313,11 @@ namespace MueLu {
 
             nnz = 2;
             PP->insertGlobalValues((*fineElementPDOFs)(fineElement[0],1),colPtrP.view(0,nnz),valPtrP.view(0,nnz));
-            
+
             // FP = 2
             colPtrM[0] = (*coarseElementMDOFs)(coarseElement,4);
             valPtrM[0] = 1.0;
-            
+
             nnz = 1;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],1),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -344,30 +344,30 @@ namespace MueLu {
             valPtrM[1] = 0.375;
             colPtrM[2] = (*coarseElementMDOFs)(coarseElement,4);
             valPtrM[2] = 0.75;
-            
+
             nnz = 3;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[1],4),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-            
+
             colPtrV[0] = 2*colPtrM[0];
             colPtrV[1] = 2*colPtrM[1];
             colPtrV[2] = 2*colPtrM[2];
-            
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],8),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
             colPtrV[0] = 2*colPtrM[0]+1;
             colPtrV[1] = 2*colPtrM[1]+1;
             colPtrV[2] = 2*colPtrM[2]+1;
-        
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],9),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
             // FP = 4
             colPtrM[0] = (*coarseElementMDOFs)(coarseElement,1);
             valPtrM[0] = 1.0;
-            
+
             nnz = 1;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[1],1),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-            
+
             colPtrV[0] = 2*colPtrM[0];
 
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],2),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
@@ -379,19 +379,19 @@ namespace MueLu {
             //if (CoarseElement is on the bottom left corner)
             if (coarseElement == 0)
               {
-                
+
                 //fill in the bottom left corner
                 // FP = 0
                 colPtrM[0] = (*coarseElementMDOFs)(coarseElement,0);
                 valPtrM[0] = 1.0;
-                
+
                 nnz = 1;
                 PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],0),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-                
+
                 colPtrV[0] = 2*colPtrM[0];
 
                 PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],0),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
-                
+
                 colPtrV[0] = 2*colPtrM[0]+1;
 
                 PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],1),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
@@ -402,10 +402,10 @@ namespace MueLu {
 
                 nnz = 1;
                 PP->insertGlobalValues((*fineElementPDOFs)(fineElement[0],0),colPtrP.view(0,nnz),valPtrP.view(0,nnz));
-                
+
               }//if (coarseElement is on the bottom left corner)
           }//if (coarseElement is on the bottom edge)
-        
+
         //if (CoarseElement is on left edge)
         if (coarseElement % (nCoarseElements) == 0)
           {
@@ -417,29 +417,29 @@ namespace MueLu {
             valPtrM[1] = -0.125;
             colPtrM[2] = (*coarseElementMDOFs)(coarseElement,7);
             valPtrM[2] = 0.75;
-            
+
             nnz = 3;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],7),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-            
+
             colPtrV[0] = 2*colPtrM[0];
             colPtrV[1] = 2*colPtrM[1];
             colPtrV[2] = 2*colPtrM[2];
-            
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],14),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
             colPtrV[0] = 2*colPtrM[0]+1;
             colPtrV[1] = 2*colPtrM[1]+1;
             colPtrV[2] = 2*colPtrM[2]+1;
-        
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],15),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
             // FP = 6
             colPtrM[0] = (*coarseElementMDOFs)(coarseElement,7);
             valPtrM[0] = 1.0;
-            
+
             nnz = 1;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],3),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-            
+
             colPtrV[0] = 2*colPtrM[0];
 
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],6),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
@@ -455,30 +455,30 @@ namespace MueLu {
             valPtrM[1] = 0.375;
             colPtrM[2] = (*coarseElementMDOFs)(coarseElement,7);
             valPtrM[2] = 0.75;
-            
+
             nnz = 3;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[2],7),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-            
+
             colPtrV[0] = 2*colPtrM[0];
             colPtrV[1] = 2*colPtrM[1];
             colPtrV[2] = 2*colPtrM[2];
-            
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],14),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
             colPtrV[0] = 2*colPtrM[0]+1;
             colPtrV[1] = 2*colPtrM[1]+1;
             colPtrV[2] = 2*colPtrM[2]+1;
-        
+
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],15),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
             // FP = 8
             colPtrM[0] = (*coarseElementMDOFs)(coarseElement,3);
             valPtrM[0] = 1.0;
-            
+
             nnz = 1;
             PM->insertGlobalValues((*fineElementMDOFs)(fineElement[2],3),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-            
+
             colPtrV[0] = 2*colPtrM[0];
 
             PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],6),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
@@ -494,28 +494,28 @@ namespace MueLu {
             valPtrP[0] = 0.5;
             colPtrP[1] = (*coarseElementPDOFs)(coarseElement,3);
             valPtrP[1] = 0.5;
-            
+
             nnz = 2;
             PP->insertGlobalValues((*fineElementPDOFs)(fineElement[0],3),colPtrP.view(0,nnz),valPtrP.view(0,nnz));
 
             // FPr = 4
             colPtrP[0] = (*coarseElementPDOFs)(coarseElement,3);
             valPtrP[0] = 1.0;
-            
+
             nnz = 1;
             PP->insertGlobalValues((*fineElementPDOFs)(fineElement[2],3),colPtrP.view(0,nnz),valPtrP.view(0,nnz));
 
 
           }//endif (coarseElement is on left edge)
-        
+
         //fill in the rest of the patch
         // FP = 9
         colPtrM[0] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[0] = 1.0;
-        
+
         nnz = 1;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[3],0),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-        
+
         colPtrV[0] = 2*colPtrM[0];
 
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[3],0),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
@@ -527,7 +527,7 @@ namespace MueLu {
         // FP = 10
         colPtrM[0] = (*coarseElementMDOFs)(coarseElement,5);
         valPtrM[0] = 1.0;
-        
+
         nnz = 1;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[3],1),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -542,7 +542,7 @@ namespace MueLu {
         // FP = 11
         colPtrM[0] = (*coarseElementMDOFs)(coarseElement,2);
         valPtrM[0] = 1.0;
-        
+
         nnz = 1;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[3],2),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -557,7 +557,7 @@ namespace MueLu {
         // FP = 12
         colPtrM[0] = (*coarseElementMDOFs)(coarseElement,6);
         valPtrM[0] = 1.0;
-        
+
         nnz = 1;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[3],3),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -576,20 +576,20 @@ namespace MueLu {
         valPtrM[1] = -0.125;
         colPtrM[2] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[2] = 0.75;
-        
+
         nnz = 3;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],5),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-            
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],10),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],11),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
@@ -600,20 +600,20 @@ namespace MueLu {
         valPtrM[1] = 0.375;
         colPtrM[2] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[2] = 0.75;
-        
+
         nnz = 3;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],6),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-        
+
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-            
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],12),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[0],13),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
@@ -631,13 +631,13 @@ namespace MueLu {
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-            
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],10),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],11),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
@@ -648,20 +648,20 @@ namespace MueLu {
         valPtrM[1] = -0.125;
         colPtrM[2] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[2] = 0.75;
-        
+
         nnz = 3;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[1],6),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-            
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],12),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[1],13),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
@@ -672,20 +672,20 @@ namespace MueLu {
         valPtrM[1] = 0.375;
         colPtrM[2] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[2] = 0.75;
-        
+
         nnz = 3;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[2],5),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-        
+
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],10),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],11),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
@@ -696,7 +696,7 @@ namespace MueLu {
         valPtrM[1] = 0.375;
         colPtrM[2] = (*coarseElementMDOFs)(coarseElement,6);
         valPtrM[2] = 0.75;
-        
+
         nnz = 3;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[2],6),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -705,11 +705,11 @@ namespace MueLu {
         colPtrV[2] = 2*colPtrM[2];
 
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],12),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
-        
+
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[2],13),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
 
@@ -720,20 +720,20 @@ namespace MueLu {
         valPtrM[1] = 0.375;
         colPtrM[2] = (*coarseElementMDOFs)(coarseElement,5);
         valPtrM[2] = 0.75;
-        
+
         nnz = 3;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[3],5),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-            
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[3],10),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
 
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[3],11),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -751,16 +751,16 @@ namespace MueLu {
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[3],12),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
         colPtrV[0] = 2*colPtrM[0]+1;
         colPtrV[1] = 2*colPtrM[1]+1;
         colPtrV[2] = 2*colPtrM[2]+1;
-        
+
         PV->insertGlobalValues((*fineElementVDOFs)(fineElement[3],13),colPtrV.view(0,nnz),valPtrM.view(0,nnz));
 
-        
+
         // FP = 21
         colPtrM[0] = (*coarseElementMDOFs)(coarseElement,0);
         valPtrM[0] = 0.140625;
@@ -783,7 +783,7 @@ namespace MueLu {
 
         nnz = 9;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[0],8),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
-        
+
         colPtrV[0] = 2*colPtrM[0];
         colPtrV[1] = 2*colPtrM[1];
         colPtrV[2] = 2*colPtrM[2];
@@ -827,7 +827,7 @@ namespace MueLu {
         valPtrM[7] = -0.09375;
         colPtrM[8] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[8] = 0.5625;
-        
+
         nnz = 9;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[1],8),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -874,7 +874,7 @@ namespace MueLu {
         valPtrM[7] = 0.28125;
         colPtrM[8] = (*coarseElementMDOFs)(coarseElement,8);
         valPtrM[8] = 0.5625;
-        
+
         nnz = 9;
         PM->insertGlobalValues((*fineElementMDOFs)(fineElement[2],8),colPtrM.view(0,nnz),valPtrM.view(0,nnz));
 
@@ -988,7 +988,7 @@ namespace MueLu {
         nnz = 2;
         PP->insertGlobalValues((*fineElementPDOFs)(fineElement[3],3),colPtrP.view(0,nnz),valPtrP.view(0,nnz));
 
-        
+
         // Update counters:
         if ((coarseElement+1) % (nCoarseElements) == 0)//if the end of a row of c.g. elements
           {
@@ -1005,17 +1005,17 @@ namespace MueLu {
             fineElement[3] = fineElement[2]+1;
           }
       }// END OF BUILD LOOP
-  
-    
+
+
 
     //Loop over V rows
     for (GO VRow = 0; VRow < fNV; VRow++)
       {
         Teuchos::ArrayView<const LO> colPtr;
         Teuchos::ArrayView<const SC> valPtr;
-    
+
         PV->getGlobalRowView(VRow,colPtr,valPtr);
-      
+
         //Can be directly inserted!
         P->insertGlobalValues(VRow,colPtr,valPtr);
 
@@ -1026,7 +1026,7 @@ namespace MueLu {
       {
         Teuchos::ArrayView<const LO> colPtr;
         Teuchos::ArrayView<const SC> valPtr;
-    
+
         //Now do pressure column:
         PP->getGlobalRowView(PRow,colPtr,valPtr);
 
@@ -1046,7 +1046,7 @@ namespace MueLu {
       {
         Teuchos::ArrayView<const LO> colPtr;
         Teuchos::ArrayView<const SC> valPtr;
-        
+
         //Now do magnetics column:
         PM->getGlobalRowView(MRow,colPtr,valPtr);
 
@@ -1060,8 +1060,8 @@ namespace MueLu {
         P->insertGlobalValues(MRow+fNV+fNP,newColPtr.view(0,colPtr.size()),valPtr);
 
       }
-  
-    
+
+
 
 
 
@@ -1078,14 +1078,14 @@ namespace MueLu {
     Set(coarseLevel,"PP",PP);
     Set(coarseLevel,"PM",PM);
     Set(coarseLevel,"P" ,P );
-    
+
     Set(coarseLevel,"NV",nV);
     Set(coarseLevel,"NP",nP);
     Set(coarseLevel,"NM",nM);
 
   }//end buildp
 
-  
+
 } // namespace MueLu
 
 #define MUELU_GEOINTERPFACTORY_SHORT

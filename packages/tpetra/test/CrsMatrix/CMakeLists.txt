@@ -22,10 +22,33 @@ ENDIF()
 # compilation time for each file and improve build parallelism.
 #
 
+IF(Kokkos_ENABLE_Cuda)
+  #
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_COMPILE(CRSMATRIX_UT1_OBJECTS_CUDA CrsMatrix_UnitTests_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_UT2_OBJECTS_CUDA CrsMatrix_UnitTests2_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_UT3_OBJECTS_CUDA CrsMatrix_UnitTests3_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_UT4_OBJECTS_CUDA CrsMatrix_UnitTests4_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_NLAR_OBJECTS_CUDA CrsMatrix_NonlocalAfterResume_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_NC_OBJECTS_CUDA CrsMatrix_NodeConversion_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_TS_OBJECTS_CUDA CrsMatrix_TriSolve_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_LRS_OBJECTS_CUDA CrsMatrix_LeftRightScale_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_WG_OBJECTS_CUDA CrsMatrix_WithGraph_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_RDMAI_OBJECTS_CUDA CrsMatrix_ReplaceDomainMapAndImporter_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_BE_OBJECTS_CUDA CrsMatrix_BlockExtraction_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_NLSI_OBJECTS_CUDA CrsMatrix_NonlocalSumInto_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_NLSII_OBJECTS_CUDA CrsMatrix_NonlocalSumInto_Ignore_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_GS_OBJECTS_CUDA CrsMatrix_gaussSeidel_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_B5978_OBJECTS_CUDA bug5978_CU.cu)
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
+    ${CRSMATRIX_UT1_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -37,6 +60,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests2
   SOURCES
     CrsMatrix_UnitTests2
+    ${CRSMATRIX_UT2_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -48,6 +72,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests3
   SOURCES
     CrsMatrix_UnitTests3
+    ${CRSMATRIX_UT3_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -59,6 +84,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests4
   SOURCES
     CrsMatrix_UnitTests4
+    ${CRSMATRIX_UT4_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -70,6 +96,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalAfterResume
   SOURCES
     CrsMatrix_NonlocalAfterResume
+    ${CRSMATRIX_NLAR_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   ${MAXNP}
@@ -81,6 +108,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NodeConversion
   SOURCES
     CrsMatrix_NodeConversion
+    ${CRSMATRIX_NC_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   ${MAXNP}
@@ -92,6 +120,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_TriSolve
   SOURCES
     CrsMatrix_TriSolve
+    ${CRSMATRIX_TS_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   ${MAXNP}
@@ -103,6 +132,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_LeftRightScale
   SOURCES
     CrsMatrix_LeftRightScale
+    ${CRSMATRIX_LRS_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   ${MAXNP}
@@ -114,6 +144,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_WithGraph
   SOURCES
     CrsMatrix_WithGraph
+    ${CRSMATRIX_WG_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -125,6 +156,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceDomainMapAndImporter
   SOURCES
     CrsMatrix_ReplaceDomainMapAndImporter
+    ${CRSMATRIX_RDMAI_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   ${MAXNP}
@@ -136,6 +168,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_BlockExtraction
   SOURCES
     CrsMatrix_BlockExtraction
+    ${CRSMATRIX_BE_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   # ARGS ${ARGS}
   COMM serial mpi
@@ -158,6 +191,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalSumInto
   SOURCES
     CrsMatrix_NonlocalSumInto
+    ${CRSMATRIX_NLSI_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -170,6 +204,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalSumInto_Ignore
   SOURCES
     CrsMatrix_NonlocalSumInto_Ignore
+    ${CRSMATRIX_NLSII_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -181,10 +216,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_gaussSeidel
   SOURCES
     CrsMatrix_gaussSeidel
+    ${CRSMATRIX_GS_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi
   NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only makes sense for exactly 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug5978
+  SOURCES
+    bug5978
+    ${CRSMATRIX_B5978_OBJECTS_CUDA}
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
 

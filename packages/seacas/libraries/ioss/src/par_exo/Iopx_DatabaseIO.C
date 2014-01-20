@@ -455,6 +455,14 @@ namespace Iopx {
     m_groupCount[EX_GLOBAL]     = 1; // To make some common code work more cleanly.
     m_groupCount[EX_NODE_BLOCK] = 1; // To make some common code work more cleanly.
 
+    if (!is_parallel_consistent()) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Parallel IO cannot be used in an application that is not guaranteeing "
+	     << "parallel consistent calls of the get and put field data functions.\n"
+	     << "The application created this database with a 'false' setting for the isParallelConsistent property.";
+       IOSS_ERROR(errmsg);
+    }
+
     // A history file is only written on processor 0...
     if (db_usage == Ioss::WRITE_HISTORY)
       isParallel = false;
@@ -2020,7 +2028,7 @@ namespace Iopx {
                 // cases where we don't need to read it, but if we are
                 // already reading it (to split the sidesets), then use
                 // the data when we have it.
-                if (side_map.size() > 0) {
+                if (!side_map.empty()) {
                   // Set a property indicating which element side
                   // (1-based) all sides in this block are applied to.
                   // If they are not all assigned to the same element
@@ -6970,7 +6978,7 @@ namespace Iopx {
                                         Iopx::TopologyMap &side_map,
                                         Ioss::SurfaceSplitType split_type)
     {
-      if (element.size() > 0) {
+      if (!element.empty()) {
         Ioss::ElementBlock *block = NULL;
         // Topology of sides in current element block
         const Ioss::ElementTopology *common_ftopo = NULL;

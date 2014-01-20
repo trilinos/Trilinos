@@ -90,6 +90,7 @@ protected:
    std::pair<panzer::Ordinal64,panzer::Ordinal64> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
    std::pair<panzer::Ordinal64,panzer::Ordinal64> determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const;
 
+   void addSides(STK_Interface & mesh) const; // this adds side entities only (does not inject them into side sets)
    void addSideSets(STK_Interface & mesh) const;
    void addNodeSets(STK_Interface & mesh) const;
 
@@ -106,6 +107,8 @@ protected:
    mutable int xProcs_, yProcs_, zProcs_;
 
    mutable unsigned int machRank_, machSize_;
+
+   bool buildSubcells_;
 
    mutable Teuchos::Tuple<std::size_t,3> procTuple_;
 };

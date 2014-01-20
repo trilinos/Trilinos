@@ -328,6 +328,7 @@
         <String value=\"minimum_degree\"/> \
         <String value=\"natural\"/> \
         <String value=\"random\"/> \
+        <String value=\"sorted_degree\"/> \
       </Validator> \
       <Validator defaultParameterName=\"compute_metrics\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"15\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -82,12 +82,12 @@ namespace MueLu {
       RCP<SingleLevelFactory> Afact;
       Level currentLevel;
       RCP<Matrix> thisLevelA;
-      thisLevelA = currentLevel.Get<Matrix>("A",Afact.get());
+      thisLevelA = currentLevel.Get<Matrix>("A", Afact.get());
     @endcode
 
     @todo If Afact is null (actually, Teuchos::null), then the FactoryManager associated with currentLevel will determine whether a default factory has
     been specified for creating A.  If "yes", then that factory will be called, A will be stored in currentLevel, and an RCP will be returned by
-    the Get call.  If "no", then the FactoryManager will <b>throw an exception indicating that it does not know how to generate A</b>.
+    the Get call. If "no", then the FactoryManager will <b>throw an exception indicating that it does not know how to generate A</b>.
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -100,23 +100,19 @@ namespace MueLu {
     //! @name Constructor/Destructors
     //@{
 
-    /*! @brief Constructor.
-
-            @param[in] PFact Factory to generate the prolongation operator.
-            @param[in] RFact Factory to generate the restriction operator.
-            @param[in] AcFact Factory to generate the coarse grid operator A.
-    */
-    FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null);
+    //! @brief Constructor.
+    FactoryManager() {
+      SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
+    }
 
     //! Constructor used by HierarchyFactory (temporary, will be removed)
-    FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable)
-    {
+    FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable) {
       factoryTable_ = factoryTable;
       SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour) //TODO: use parent class constructor instead
     }
 
     //! Destructor.
-    virtual ~FactoryManager();
+    virtual ~FactoryManager() { }
 
     //@}
 
@@ -130,21 +126,23 @@ namespace MueLu {
         @param[in] name of variable
         @param[in] factory that generates the data
     */
-    void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
+    void SetFactory(const std::string & varName, const RCP<const FactoryBase>& factory);
 
     /*! @brief Get factory associated with a particular data name.
 
        @param[in] varName name of variable.
 
     */
-    const RCP<const FactoryBase> GetFactory(const std::string & varName) const;
+    const RCP<const FactoryBase> GetFactory(const std::string& varName) const;
 
     //!
-    const RCP<const FactoryBase> GetDefaultFactory(const std::string & varName) const;
+    const RCP<const FactoryBase> GetDefaultFactory(const std::string& varName) const;
 
     //@}
 
-    void Clean() const;
+    void Clean() const { defaultFactoryTable_.clear(); }
+
+    void Print() const;
 
   private:
 
@@ -156,13 +154,13 @@ namespace MueLu {
      @todo TODO factory->setObjectLabel("Default " + varName + "Factory");
     */
 
-    const RCP<const FactoryBase> SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const;
-
-    //! Test if factoryTable_[varName] exists
-    static bool IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable);
+    const RCP<const FactoryBase> SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const;
     //@}
 
     /*! @brief User-defined factories.
+     *
+     * User may overwrite default behaviour. The user provided factories are stored in a separate table. When we try to determine
+     * which factory generates the data, this table is searched first.
 
       Note: we distinguish 'user defined factory' and 'default factory' to allow the deallocation of default factories separately.
     */

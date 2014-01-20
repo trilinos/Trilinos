@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -78,32 +78,26 @@ namespace MueLu {
   public:
 
     //!
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1)   // TODO: default values should be query from Hierarchy class to avoid duplication
-    { }
+    // TODO: default values should be query from Hierarchy class to avoid duplication
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }
 
-    // Unused
-    // void AddFactoryManager(int levelID, RCP<FactoryManagerBase>& manager) {
-    //   if (levelManagers_.size() < levelID + 1) levelManagers_.resize(levelID + 1);
-    //   levelManagers_[levelID] = manager;
-    // }
-
     //!
     void AddFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase> manager) {
       const int lastLevel = startLevel + numDesiredLevel - 1;
-      if (levelManagers_.size() < lastLevel + 1) levelManagers_.resize(lastLevel + 1);
+      if (levelManagers_.size() < lastLevel + 1)
+        levelManagers_.resize(lastLevel + 1);
 
-      for(int iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
+      for (int iLevel = startLevel; iLevel <= lastLevel; iLevel++)
         levelManagers_[iLevel] = manager;
-      }
     }
 
     //!
     Teuchos::Ptr<FactoryManagerBase> GetFactoryManager(int levelID) const {
-      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
-      return levelManagers_[levelID](); // throw exception if out of bound.
+      // NOTE: last levelManager is used for all the remaining levels
+      return (levelID >= levelManagers_.size() ? levelManagers_[levelManagers_.size()-1]() : levelManagers_[levelID]());
     }
 
     //! returns number of factory managers stored in levelManagers_ vector.
@@ -112,15 +106,9 @@ namespace MueLu {
     }
 
     //!
-    void SetFactoryManagerCoarsestLevel(RCP<FactoryManagerBase>& manager) {
-      coarsestLevelManager_ = manager;
-    }
-
-    //!
     void CheckConfig() {
-      for(int i=0; i<levelManagers_.size(); i++) {
+      for (int i = 0; i < levelManagers_.size(); i++)
         TEUCHOS_TEST_FOR_EXCEPTION(levelManagers_[i] == Teuchos::null, Exceptions::RuntimeError, "MueLu:HierarchyConfig::CheckConfig(): Undefined configuration for level:");
-      }
     }
 
     //@{
@@ -195,30 +183,30 @@ namespace MueLu {
   protected: //TODO: access function
 
     //! Setup Matrix object
-    virtual void SetupMatrix(Matrix & Op) const { }
+    virtual void SetupMatrix(Matrix& Op) const { }
 
     //! Setup extra data
     // TODO: merge with SetupMatrix ?
-    virtual void SetupExtra(Hierarchy & H) const { }
+    virtual void SetupExtra(Hierarchy& H) const { }
 
     // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
     Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
+      // NOTE: the order of 'if' statements is important
+      if (levelID == -1)                    // levelID = -1 corresponds to the finest level
+        return Teuchos::null;
 
-      // Please not that the order of the 'if' statements is important.
+      if (levelID == lastLevelID+1)         // levelID = 'lastLevelID+1' corresponds to the last level (i.e., no nextLevel)
+        return Teuchos::null;
 
-      if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
-      if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
-
-      if (0       == levelManagers_.size()) {                     // default factory manager.
-        // the default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager.
+      if (levelManagers_.size() == 0) {     // default factory manager.
+        // The default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager
         static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
         return defaultMngr();
       }
-      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
 
-      return levelManagers_[levelID](); // throw exception if out of bound.
+      return GetFactoryManager(levelID);
     }
 
     // Hierarchy parameters
@@ -233,24 +221,24 @@ namespace MueLu {
   private:
 
     template<class T>
-    void WriteData(Hierarchy & H, Teuchos::Array<int> const &data, std::string const &name) const {
-      for (int i=0; i<data.size(); ++i) {
-        std::ostringstream buf; buf << data[i];
-        std::string fileName = name + "_" + buf.str() + ".m";
+    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
+      for (int i = 0; i < data.size(); ++i) {
+        std::string fileName = name + "_" + toString(data[i]) + ".m";
+
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
+
           if (L->IsAvailable(name)) {
-            RCP<T> M = L-> template Get< RCP<T> >(name);
-            if ( !( M.is_null() ) )
-              Utils::Write(fileName,*M);
+            RCP<T> M = L->template Get< RCP<T> >(name);
+            if (!M.is_null())
+              Utils::Write(fileName,* M);
           }
         }
       }
-    } //WriteData
+    }
 
     // Levels
-    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
-    RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
+    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level (the last levelManager is used for all the remaining levels)
 
   }; // class HierarchyManager
 

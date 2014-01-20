@@ -56,11 +56,11 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph_in, int LevelFi
     Comm_(Graph_in.Comm()),
     LevelFill_(LevelFill_in),
     LevelOverlap_(LevelOverlap_in),
-    IndexBase_(Graph_in.IndexBase()),
-    NumGlobalRows_(Graph_in.NumGlobalRows()),
-    NumGlobalCols_(Graph_in.NumGlobalCols()),
-    NumGlobalBlockRows_(Graph_in.NumGlobalBlockRows()),
-    NumGlobalBlockCols_(Graph_in.NumGlobalBlockCols()),
+    IndexBase_(Graph_in.IndexBase64()),
+    NumGlobalRows_(Graph_in.NumGlobalRows64()),
+    NumGlobalCols_(Graph_in.NumGlobalCols64()),
+    NumGlobalBlockRows_(Graph_in.NumGlobalBlockRows64()),
+    NumGlobalBlockCols_(Graph_in.NumGlobalBlockCols64()),
     NumGlobalBlockDiagonals_(0),
     NumGlobalNonzeros_(0),
     NumGlobalEntries_(0),
@@ -403,12 +403,12 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   // Compute global quantities
 
   NumGlobalBlockDiagonals_ = 0;
+  long long NumMyBlockDiagonals_LL = NumMyBlockDiagonals_;
+  EPETRA_CHK_ERR(L_Graph_->Comm().SumAll(&NumMyBlockDiagonals_LL, &NumGlobalBlockDiagonals_, 1));
 
-  EPETRA_CHK_ERR(L_Graph_->Comm().SumAll(&NumMyBlockDiagonals_, &NumGlobalBlockDiagonals_, 1));
-
-  NumGlobalNonzeros_ = L_Graph_->NumGlobalNonzeros()+U_Graph_->NumGlobalNonzeros();
+  NumGlobalNonzeros_ = L_Graph_->NumGlobalNonzeros64()+U_Graph_->NumGlobalNonzeros64();
   NumMyNonzeros_ = L_Graph_->NumMyNonzeros()+U_Graph_->NumMyNonzeros();
-  NumGlobalEntries_ = L_Graph_->NumGlobalEntries()+U_Graph_->NumGlobalEntries();
+  NumGlobalEntries_ = L_Graph_->NumGlobalEntries64()+U_Graph_->NumGlobalEntries64();
   NumMyEntries_ = L_Graph_->NumMyEntries()+U_Graph_->NumMyEntries();
   return(ierr);
 }

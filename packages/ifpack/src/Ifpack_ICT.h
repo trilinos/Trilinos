@@ -180,7 +180,10 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
   // Attribute access functions
     
   //! Returns the number of nonzero entries in the global graph.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int NumGlobalNonzeros() const {return(H().NumGlobalNonzeros());};
+#endif
+  long long NumGlobalNonzeros64() const {return(H().NumGlobalNonzeros64());};
  
   //! Returns the number of nonzero entries in the local graph.
   int NumMyNonzeros() const {return(H().NumMyNonzeros());};
@@ -387,9 +390,12 @@ private:
   //! Used for timing purposes.
   mutable Epetra_Time Time_;
   //! Global number of nonzeros in L and U factors
-  int GlobalNonzeros_;
+  long long GlobalNonzeros_;
   Teuchos::RefCountPtr<Epetra_SerialComm> SerialComm_;
   Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
+
+  template<typename int_type>
+  int TCompute();
 };
 
 #endif /* IFPACK_ICT_H */

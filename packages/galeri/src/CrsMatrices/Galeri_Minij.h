@@ -50,26 +50,28 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* Minij(const Epetra_Map* Map)
 {
   // this is actually a dense matrix, stored into Crs format
-  int NumGlobalElements = Map->NumGlobalElements();
+  int_type NumGlobalElements = (int_type) Map->NumGlobalElements64();
   int NumMyElements     = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, 
                                                   NumGlobalElements);
 
   vector<double> Values(NumGlobalElements);
-  vector<int>    Indices(NumGlobalElements);
+  vector<int_type> Indices(NumGlobalElements);
 
   for (int i = 0 ; i < NumGlobalElements ; ++i) Indices[i] = i;
   
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
-    int iGlobal = MyGlobalElements[i];
-    for (int jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) 
+    int_type iGlobal = MyGlobalElements[i];
+    for (int_type jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) 
     {
       if (iGlobal >= jGlobal) Values[jGlobal] = 1.0 * (jGlobal + 1);
       else                    Values[jGlobal] = 1.0 * (iGlobal + 1);
@@ -84,6 +86,23 @@ Epetra_CrsMatrix* Minij(const Epetra_Map* Map)
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+Epetra_CrsMatrix* Minij(const Epetra_Map* Map)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Minij<int>(Map);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Minij<long long>(Map);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Minij: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

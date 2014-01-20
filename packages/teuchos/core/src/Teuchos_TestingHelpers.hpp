@@ -133,7 +133,7 @@ public:
 };
 
 
-/** \brief . 
+/** \brief .
  *
  * \ingroup teuchos_testing_grp
  */
@@ -448,26 +448,57 @@ bool compareFloatingArrays(
   }
 
 
-/** \brief Test that a chunk of code throws an expected exception.
+/** \brief Test that the chunk of code 'code' throws an expected exception.
  *
- * This macro is not complicated so take a look for yourself!
+ * 'code' is a chunk of code to execute.  It will be executed exactly
+ * once.  If it throws an exception of type ExceptType, this test
+ * passes (and prints "passed").  Otherwise, it prints "failed" with
+ * an informative message.  The macro prints all messages to the given
+ * output stream (std::ostream&) out.  Furthermore, if the test
+ * passes, it assigns true to success; if the test fails, it assigns
+ * false to success.
+ *
+ * The macro's implementation does not evaluate 'out' more than once.
  *
  * \ingroup teuchos_testing_grp
  */
 #define TEUCHOS_TEST_THROW( code, ExceptType, out, success  ) \
-  try { \
-    (out) << "Test that code {"#code";} throws " \
-          <<Teuchos::TypeNameTraits<ExceptType>::name()<<": "; \
-    code; \
-    (success) = false; \
-    (out) << "failed\n"; \
-  } \
-  catch (const ExceptType& except) { \
-    out << "passed\n"; \
-    out << "\nException message for expected exception:\n\n"; \
-    { \
-      Teuchos::OSTab l_tab(out); \
-      out << except.what() << "\n\n"; \
+  { \
+    std::ostream& l_out = (out); \
+    try { \
+      l_out << "Test that code {"#code";} throws " \
+            << Teuchos::TypeNameTraits<ExceptType>::name () << ": "; \
+      code; \
+      (success) = false; \
+      l_out << "failed (code did not throw an exception at all)\n"; \
+    } \
+    catch (const ExceptType& except) { \
+      l_out << "passes\n";                                        \
+      l_out << "\nException message for expected exception:\n\n";   \
+      { \
+        Teuchos::OSTab l_tab (out); \
+        l_out << except.what () << "\n\n"; \
+      } \
+    } \
+    catch (std::exception& except) { \
+      l_out << "The code was supposed to throw an exception of type "   \
+            << Teuchos::TypeNameTraits<ExceptType>::name () << ", but " \
+            << "instead threw an exception of type " \
+            << typeid (except).name () << ", which is a subclass of " \
+            << "std::exception.  The exception's message is:\n\n"; \
+      { \
+        Teuchos::OSTab l_tab (out); \
+        l_out << except.what () << "\n\n"; \
+      } \
+      l_out << "failed\n"; \
+    } \
+    catch (...) { \
+      l_out << "The code was supposed to throw an exception of type "   \
+            << Teuchos::TypeNameTraits<ExceptType>::name () << ", but " \
+            << "instead threw an exception of some unknown type, which is " \
+            << "not a subclass of std::exception.  This means we cannot " \
+            << "show you the exception's message, if it even has one.\n\n"; \
+      l_out << "failed\n"; \
     } \
   }
 
@@ -479,16 +510,34 @@ bool compareFloatingArrays(
  * \ingroup teuchos_testing_grp
  */
 #define TEUCHOS_TEST_NOTHROW( code, out, success  ) \
-  try { \
-    (out) << "Test that code {"#code";} does not throw : "; \
-    code; \
-    (out) << "passes\n"; \
-  } \
-  catch (...) { \
-    (success) = false; \
-    out << "failed\n"; \
+  { \
+    std::ostream& l_out = (out); \
+    try { \
+      l_out << "Test that code {"#code";} does not throw : "; \
+      code; \
+      l_out << "passes\n"; \
+    } \
+    catch (std::exception& except) { \
+      (success) = false; \
+      l_out << "The code was not supposed to throw an exception, but " \
+            << "instead threw an exception of type " \
+            << typeid (except).name () << ", which is a subclass of " \
+            << "std::exception.  The exception's message is:\n\n"; \
+      { \
+        Teuchos::OSTab l_tab (out); \
+        l_out << except.what () << "\n\n"; \
+      } \
+      l_out << "failed\n"; \
+    } \
+    catch (...) { \
+      (success) = false; \
+      l_out << "The code was not supposed to throw an exception, but " \
+            << "instead threw an exception of some unknown type, which is " \
+            << "not a subclass of std::exception.  This means we cannot " \
+            << "show you the exception's message, if it even has one.\n\n"; \
+      l_out << "failed\n"; \
+    } \
   }
-
 
 //
 // Implementations
@@ -585,11 +634,11 @@ bool Teuchos::compareArrays(
 
   // Compare sizes
   if (as<int>(a2.size()) != n) {
-    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
         << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
     return false;
   }
-  
+
   // Compare elements
   for( int i = 0; i < n; ++i ) {
     const bool result = ( a1[i] == a2[i] ); // Tests C::operator[](i) const
@@ -625,11 +674,11 @@ bool Teuchos::compareFloatingArrays(
 
   // Compare sizes
   if (as<int>(a2.size()) != n) {
-    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
         << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
     return false;
   }
-  
+
   // Compare elements
   for( int i = 0; i < n; ++i ) {
     const ScalarMag err = relErr( a1[i], a2[i] );

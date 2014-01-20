@@ -799,16 +799,64 @@ namespace Tpetra {
     ///   method may return different results on different processes.
     bool isUpperTriangular() const;
 
-    //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
+    /// \brief Whether column indices are stored using local indices on the calling process.
+    ///
+    /// If the graph stores column indices as local indices on the
+    /// calling process, this returns true.  Otherwise, it returns
+    /// false.  Exactly one of the following is true:
+    /// <ol>
+    ///   <li> <tt>! isLocallyIndexed() && ! isGloballyIndexed()</tt> </li>
+    ///   <li> <tt>! isLocallyIndexed() && isGloballyIndexed()</tt> </li>
+    ///   <li> <tt>isLocallyIndexed() && ! isGloballyIndexed()</tt> </li>
+    /// </ol>
+    /// The first condition means that the calling process does not
+    /// own any graph entries.  The second condition means that the
+    /// graph does not (yet) have a column Map, so no process can be
+    /// locally indexed.  The third condition means that the graph has
+    /// a column Map.
     bool isLocallyIndexed() const;
 
-    //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
+    /// \brief Whether column indices are stored using global indices on the calling process.
+    ///
+    /// If the graph stores column indices as global indices on the
+    /// calling process, this returns true.  Otherwise, it returns
+    /// false.  Exactly one of the following is true:
+    /// <ol>
+    ///   <li> <tt>! isLocallyIndexed() && ! isGloballyIndexed()</tt> </li>
+    ///   <li> <tt>! isLocallyIndexed() && isGloballyIndexed()</tt> </li>
+    ///   <li> <tt>isLocallyIndexed() && ! isGloballyIndexed()</tt> </li>
+    /// </ol>
+    /// The first condition means that the calling process does not
+    /// own any graph entries.  The second condition means that the
+    /// graph does not (yet) have a column Map, so no process can be
+    /// locally indexed.  The third condition means that the graph has
+    /// a column Map.
     bool isGloballyIndexed() const;
 
-    //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
+    /// \brief Whether fillComplete() has been called and the graph is in compute mode.
+    ///
+    /// This state is the same on all processes in the graph's
+    /// communicator.  Exactly one of the following is true:
+    /// <ol>
+    ///   <li> <tt>isFillActive() && ! isFillComplete()</tt> </li>
+    ///   <li> <tt>! isFillActive() && isFillComplete()</tt> </li>
+    /// </ol>
     bool isFillComplete() const;
 
-    //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
+    /// \brief Whether resumeFill() has been called and the graph is in edit mode.
+    ///
+    /// This method returns true under the following conditions:
+    ///   - The graph has just been created, and fillComplete() has
+    ///     not yet been called.
+    ///   - resumeFill() has been called without an intervening call
+    ///     to fillComplete().
+    ///
+    /// This state is the same on all processes in the graph's
+    /// communicator.  Exactly one of the following is true:
+    /// <ol>
+    ///   <li> <tt>isFillActive() && ! isFillComplete()</tt> </li>
+    ///   <li> <tt>! isFillActive() && isFillComplete()</tt> </li>
+    /// </ol>
     bool isFillActive() const;
 
     //! Indicates whether the graph indices in all rows are known to be sorted.
@@ -829,59 +877,154 @@ namespace Tpetra {
     //! Returns \c true if the graph was allocated with static data structures.
     ProfileType getProfileType() const;
 
-    //! Extract a list of elements in a specified global row of the graph. Put into pre-allocated storage.
-    /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param NumIndices - (Out) Number of indices.
+    /// \brief Get a copy of the column indices (as global indices) in the given row.
+    ///
+    /// \param GlobalRow [in] Global index of the row.
+    ///
+    /// \param Indices [out] Global column indices owned by the
+    ///   calling process in row \c GlobalRow.  This is a view of an
+    ///   array that you, the caller, must allocate in advance.  You
+    ///   may call getNumEntriesInGlobalRow() to find the number of
+    ///   entries in this row on the calling process, or
+    ///   getNumAllocatedEntriesInGlobalRow() to get the maximum
+    ///   number of entries in all rows on the calling process.  (The
+    ///   latter may be useful when looping over all rows on the
+    ///   calling process.)
+    ///
+    /// \param NumIndices [out] The number of column indices stored in
+    ///   \c Indices.  If \c GlobalRow does not belong to (i.e., is
+    ///   not in the row Map on) the calling process, then \c Indices
+    ///   is unchanged and \c NumIndices is returned as
+    ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
+    ///
+    /// This method only returns the column indices owned by the
+    /// calling process.  This is a <i>local</i> operation with
+    /// respect to MPI interprocess communication.  It could be the
+    /// case that multiple processes store different sets of column
+    /// indices in the same row.  In that case, this method only
+    /// returns the column indices stored on the calling process.  Use
+    /// the row Map to determine which process(es) own which rows.
+    ///
+    /// This method throws std::runtime_error if the output array
+    /// <tt>Indices</tt> is not large enough to hold the column
+    /// indices in the given row.
+    ///
+    /// You may call this method at any time, whether or not the graph
+    /// has a column Map or is fill complete.
+    ///
+    /// \note Stay tuned for the following possible future changes to
+    ///   this method.  First, this method will return the number of
+    ///   indices in the row, and the output argument \c NumIndices
+    ///   will go away.  It will be the caller's responsibility to
+    ///   test whether this is less than the size of \c Indices.
+    ///   Second, instead of throwing an exception if \c GlobalRow is
+    ///   not owned by the calling process, this method will simply
+    ///   return zero.  (This indicates that the calling process does
+    ///   not own any column indices in that row, which is true even
+    ///   if the row index is not in the row Map on any process.)
+    ///   Third, this method will take a Kokkos::View instead of a
+    ///   Teuchos::ArrayView.
+    void
+    getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                      const ArrayView<GlobalOrdinal>& Indices,
+                      size_t& NumIndices) const;
 
-      Note: A std::runtime_error exception is thrown indices is not large enough to hold the column indices associated
-      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is
-      returned as OrdinalTraits<size_t>::invalid().
-    */
-    void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                          const ArrayView<GlobalOrdinal> &Indices,
-                          size_t &NumIndices
-                          ) const;
+    /// \brief Get a copy of the column indices (as local indices) in the given row.
+    ///
+    /// \param LocalRow [in] Local index of the row.
+    ///
+    /// \param indices [out] Local column indices owned by the calling
+    ///   process in row \c LocalRow.  This is a view of an array that
+    ///   you, the caller, must allocate in advance.  You may call
+    ///   getNumEntriesInLocalRow() to find the number of entries in
+    ///   this row on the calling process, or
+    ///   getNumAllocatedEntriesInLocalRow() to get the maximum number
+    ///   of entries in all rows on the calling process.  (The latter
+    ///   may be useful when looping over all rows on the calling
+    ///   process.)
+    ///
+    /// \param NumIndices [out] The number of column indices stored in
+    ///   \c indices.  If \c LocalRow does not belong to (i.e., is not
+    ///   in the row Map on) the calling process, then \c indices is
+    ///   unchanged and \c NumIndices is returned as
+    ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
+    ///
+    /// This method only returns the column indices owned by the
+    /// calling process.  This is a <i>local</i> operation with
+    /// respect to MPI interprocess communication.  It could be the
+    /// case that multiple processes store different sets of column
+    /// indices in the same row.  In that case, this method only
+    /// returns the column indices stored on the calling process.  Use
+    /// the row Map to determine which process(es) own which rows.
+    ///
+    /// This method throws std::runtime_error if the output array
+    /// <tt>indices</tt> is not large enough to hold the column
+    /// indices in the given row.
+    ///
+    /// \pre <tt>isLocallyIndexed() || hasColMap()</tt>.
+    ///
+    /// \note Stay tuned for the following possible future changes to
+    ///   this method.  First, this method will return the number of
+    ///   indices in the row, and the output argument \c NumIndices
+    ///   will go away.  It will be the caller's responsibility to
+    ///   test whether this is less than the size of \c indices.
+    ///   Second, instead of throwing an exception if \c LocalRow is
+    ///   not owned by the calling process, this method will simply
+    ///   return zero.  (This indicates that the calling process does
+    ///   not own any column indices in that row, which is true even
+    ///   if the row index is not in the row Map on any process.)
+    ///   Third, this method will take a Kokkos::View instead of a
+    ///   Teuchos::ArrayView.
+    void
+    getLocalRowCopy (LocalOrdinal LocalRow,
+                     const ArrayView<LocalOrdinal>& indices,
+                     size_t& NumIndices) const;
 
-    //! Extract a list of elements in a specified local row of the graph. Put into storage allocated by calling routine.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices - (Out) Local column indices corresponding to values.
-      \param NumIndices - (Out) Number of indices.
+    /// \brief Return a const, nonpersisting view of global indices in the given row.
+    ///
+    /// \param GlobalRow [in] Global index of the row.
+    /// \param Indices [out] View of the column indices (as global
+    ///   indices) owned by the calling process in row \c GlobalRow.
+    ///   If \c GlobalRow does not belong to the calling process, then
+    ///   \c Indices is set to \c null.
+    ///
+    /// \pre <tt> ! isLocallyIndexed () </tt>
+    /// \post <tt> indices.size () == getNumEntriesInGlobalRow (GlobalRow) </tt>
+    ///
+    /// \note Stay tuned for the following possible future changes to
+    ///   this method.  First, instead of throwing an exception if
+    ///   <tt>GlobalRow</tt> is not owned by the calling process, this
+    ///   method will simply return an empty view.  (This indicates
+    ///   that the calling process does not own any column indices in
+    ///   that row, which is true even if the row index is not in the
+    ///   row Map on any process.)  Second, this method will return a
+    ///   Kokkos::View instead of a Teuchos::ArrayView.
+    void
+    getGlobalRowView (GlobalOrdinal GlobalRow,
+                      ArrayView<const GlobalOrdinal>& Indices) const;
 
-      Note: A std::runtime_error exception is thrown indices is not large enough to hold the column indices associated
-      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is
-      returned as OrdinalTraits<size_t>::invalid().
-
-      \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
-    */
-    void getLocalRowCopy(LocalOrdinal LocalRow,
-                         const ArrayView<LocalOrdinal> &indices,
-                         size_t &NumIndices
-                         ) const;
-
-    //! Extract a const, non-persisting view of global indices in a specified row of the graph.
-    /*!
-      \param GlobalRow - (In) Global row number for which indices are desired.
-      \param Indices   - (Out) Global column indices corresponding to values.
-      \pre <tt>isLocallyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-
-      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-    */
-    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const;
-
-    //! Extract a const, non-persisting view of local indices in a specified row of the graph.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
-      \pre <tt>isGloballyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
-
-      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-    */
-    void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const;
+    /// \brief Return a const, nonpersisting view of local indices in the given row.
+    ///
+    /// \param LocalRow [in] Local index of the row.
+    /// \param Indices [out] View of the column indices (as local
+    ///   indices) owned by the calling process in row \c LocalRow.
+    ///   If \c LocalRow does not belong to the calling process, then
+    ///   \c indices is set to \c null.
+    ///
+    /// \pre <tt> ! isGloballyIndexed () </tt>
+    /// \post <tt> indices.size () == getNumEntriesInLocalRow (LocalRow) </tt>
+    ///
+    /// \note Stay tuned for the following possible future changes to
+    ///   this method.  First, instead of throwing an exception if
+    ///   <tt>LocalRow</tt> is not owned by the calling process, this
+    ///   method will simply return an empty view.  (This indicates
+    ///   that the calling process does not own any column indices in
+    ///   that row, which is true even if the row index is not in the
+    ///   row Map on any process.)  Second, this method will return a
+    ///   Kokkos::View instead of a Teuchos::ArrayView.
+    void
+    getLocalRowView (LocalOrdinal LocalRow,
+                     ArrayView<const LocalOrdinal>& indices) const;
 
     //@}
     //! @name Overridden from Teuchos::Describable
@@ -897,37 +1040,37 @@ namespace Tpetra {
     //! @name Implementation of DistObject
     //@{
 
-    virtual bool 
+    virtual bool
     checkSizes (const SrcDistObject& source);
 
-    virtual void 
+    virtual void
     copyAndPermute (const SrcDistObject& source,
-		    size_t numSameIDs,
-		    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-		    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+                    size_t numSameIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
-		    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-		    Teuchos::Array<GlobalOrdinal> &exports,
-		    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
-		    size_t& constantNumPackets,
-		    Distributor &distor);
+                    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                    Teuchos::Array<GlobalOrdinal> &exports,
+                    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor &distor);
 
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	  Teuchos::Array<GlobalOrdinal>& exports,
-	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	  size_t& constantNumPackets,
-	  Distributor& distor) const;
+          Teuchos::Array<GlobalOrdinal>& exports,
+          const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+          size_t& constantNumPackets,
+          Distributor& distor) const;
 
-    virtual void 
+    virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
-		      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-		      size_t constantNumPackets,
-		      Distributor &distor,
-		      CombineMode CM);
+                      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
+                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                      size_t constantNumPackets,
+                      Distributor &distor,
+                      CombineMode CM);
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -954,6 +1097,14 @@ namespace Tpetra {
     /*!  The returned buffer exists in host-memory.
      */
     ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
+
+    /// \brief Replace the current colMap with the given object.
+    ///
+    /// \param newColMap [in] New colMap.  Must be nonnull.
+    ///
+    /// \pre The matrix must have no entries inserted yet
+    void
+    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
@@ -1038,21 +1189,34 @@ namespace Tpetra {
     ArrayRCP<Array<T> > allocateValues2D () const;
 
     template <ELocalGlobal lg, class T>
-    RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, Array<T>& rowVals);
+    RowInfo updateAllocAndValues (RowInfo rowinfo, size_t newAllocSize, Array<T>& rowVals)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
+      TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) ||
+                               (lg == GlobalIndices && ! isGloballyIndexed()) );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
+      TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
+#endif
+      // ArrayRCP::resize automatically copies over values on reallocation.
+      if (lg == LocalIndices) {
+        lclInds2D_[rowinfo.localRow].resize (newAllocSize);
+      }
+      else { // lg == GlobalIndices
+        gblInds2D_[rowinfo.localRow].resize (newAllocSize);
+      }
+      rowVals.resize (newAllocSize);
+      nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
+      rowinfo.allocSize = newAllocSize;
+      return rowinfo;
+    }
 
     //! \name Methods governing changes between global and local indices
     //@{
 
-    /// \brief Set collectively whether the graph uses global or local indices.
-    ///
-    /// If at least one process has set local indices, set all the
-    /// processes to use local indices.  Likewise, if at least one
-    /// process has set global indices, set all the processes to use
-    /// global indices.
-    ///
-    /// \note To developers: See this method's internal comments.
-    void computeIndexState();
-    void makeColMap (); //!< Make the column Map.
+    //! Make the graph's column Map, if it does not already have one.
+    void makeColMap ();
     void makeIndicesLocal ();
     void makeImportExport ();
 
@@ -1066,11 +1230,74 @@ namespace Tpetra {
     template<class T>
     size_t
     filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
-                                  const ArrayView<T>& vals) const;
+                                  const ArrayView<T>& vals) const
+    {
+      const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
+      size_t numFiltered = 0;
+      typename ArrayView<T>::iterator fvalsend = vals.begin();
+      typename ArrayView<T>::iterator valscptr = vals.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numFiltered_debug = 0;
+#endif
+      typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
+      typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
+      while (cptr != ginds.end()) {
+        if (cmap.isNodeGlobalElement (*cptr)) {
+          *fend++ = *cptr;
+          *fvalsend++ = *valscptr;
+#ifdef HAVE_TPETRA_DEBUG
+          ++numFiltered_debug;
+#endif
+        }
+        ++cptr;
+        ++valscptr;
+      }
+      numFiltered = fend - ginds.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+      TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+      const size_t numFilteredActual =
+        Teuchos::as<size_t> (fvalsend - vals.begin ());
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+#endif
+      return numFiltered;
+    }
+
     template<class T>
     size_t
     filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
-                                 const ArrayView<T>& vals) const;
+                                 const ArrayView<T>& vals) const
+    {
+      const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
+      size_t numFiltered = 0;
+      typename ArrayView<T>::iterator fvalsend = vals.begin();
+      typename ArrayView<T>::iterator valscptr = vals.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numFiltered_debug = 0;
+#endif
+      typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
+      typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
+      while (cptr != linds.end()) {
+        if (cmap.isNodeLocalElement (*cptr)) {
+          *fend++ = *cptr;
+          *fvalsend++ = *valscptr;
+#ifdef HAVE_TPETRA_DEBUG
+          ++numFiltered_debug;
+#endif
+        }
+        ++cptr;
+        ++valscptr;
+      }
+      numFiltered = fend - linds.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+      TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+      const size_t numFilteredActual =
+        Teuchos::as<size_t> (fvalsend - vals.begin ());
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+#endif
+      return numFiltered;
+    }
 
     /// \brief Insert indices into the given row.
     ///
@@ -1153,7 +1380,15 @@ namespace Tpetra {
                             const ArrayView<Scalar>& oldRowVals,
                             const ArrayView<const Scalar>& newRowVals,
                             const ELocalGlobal lg,
-                            const ELocalGlobal I);
+                            const ELocalGlobal I)
+    {
+      const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
+      typename ArrayView<const Scalar>::const_iterator newRowValsBegin =
+        newRowVals.begin ();
+      std::copy (newRowValsBegin, newRowValsBegin + numNewInds,
+                 oldRowVals.begin () + rowInfo.numEntries);
+    }
+
     void
     insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const ArrayView<const GlobalOrdinal> &indices);
@@ -1198,7 +1433,24 @@ namespace Tpetra {
                           const Teuchos::ArrayView<Scalar>& rowVals,
                           const Teuchos::ArrayView<const LocalOrdinal>& inds,
                           const Teuchos::ArrayView<const Scalar>& newVals,
-                          BinaryFunction f) const;
+                          BinaryFunction f) const
+    {
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+      const size_t numElts = Teuchos::as<size_t> (inds.size ());
+      size_t hint = 0; // Guess for the current index k into rowVals
+
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+
+      for (size_t j = 0; j < numElts; ++j) {
+        const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
+        if (k != STINV) {
+          rowVals[k] = f( rowVals[k], newVals[j] );
+          hint = k+1;
+        }
+      }
+    }
 
     /// \brief Transform the given values using global indices.
     ///
@@ -1220,7 +1472,20 @@ namespace Tpetra {
                            const Teuchos::ArrayView<Scalar>& rowVals,
                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
                            const Teuchos::ArrayView<const Scalar>& newVals,
-                           BinaryFunction f) const;
+                           BinaryFunction f) const
+    {
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+      const size_t numElts = Teuchos::as<size_t> (inds.size ());
+      size_t hint = 0; // hint is a guess as to wheter the index is
+
+      for (size_t j = 0; j < numElts; ++j) {
+        const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
+        if (k != STINV) {
+          rowVals[k] = f( rowVals[k], newVals[j] );
+          hint = k+1;
+        }
+      }
+    }
 
     //@}
     //! \name Methods for sorting and merging column indices.
@@ -1309,12 +1574,46 @@ namespace Tpetra {
     // global consts
     void clearGlobalConstants();
     void computeGlobalConstants();
-    // graph data accessors
-    RowInfo                         getRowInfo(size_t myRow) const;
-    ArrayView<const LocalOrdinal>   getLocalView(RowInfo rowinfo) const;
-    ArrayView<LocalOrdinal>         getLocalViewNonConst(RowInfo rowinfo);
-    ArrayView<const GlobalOrdinal>  getGlobalView(RowInfo rowinfo) const;
-    ArrayView<GlobalOrdinal>        getGlobalViewNonConst(RowInfo rowinfo);
+
+    //! \name Methods to access the graph's data
+    //@{
+
+    /// \brief Return indexing information for the given (local) row index.
+    ///
+    /// \param myRow [in] Local row index, as a \c size_t.
+    RowInfo getRowInfo (size_t myRow) const;
+
+    /// \brief Get a const view of the local column indices in the given row.
+    ///
+    /// This is one of the methods that take a RowInfo object returned
+    /// by getRowInfo().  Note that it returns a view of all space for
+    /// column indices in the row.  The valid entries are the first
+    /// <tt>rowinfo.numEntries</tt> entries of the returned view.
+    ArrayView<const LocalOrdinal> getLocalView (RowInfo rowinfo) const;
+
+    /// \brief Get a nonconst view of the local column indices in the given row.
+    ///
+    /// This is one of the methods that take a RowInfo object returned
+    /// by getRowInfo().  Note that it returns a view of all space for
+    /// column indices in the row.  The valid entries are the first
+    /// <tt>rowinfo.numEntries</tt> entries of the returned view.
+    ArrayView<LocalOrdinal> getLocalViewNonConst (RowInfo rowinfo);
+
+    /// \brief Get a const view of the global column indices in the given row.
+    ///
+    /// This is one of the methods that take a RowInfo object returned
+    /// by getRowInfo().  Note that it returns a view of all space for
+    /// column indices in the row.  The valid entries are the first
+    /// <tt>rowinfo.numEntries</tt> entries of the returned view.
+    ArrayView<const GlobalOrdinal> getGlobalView (RowInfo rowinfo) const;
+
+    /// \brief Get a nonconst view of the global column indices in the given row.
+    ///
+    /// This is one of the methods that take a RowInfo object returned
+    /// by getRowInfo().  Note that it returns a view of all space for
+    /// column indices in the row.  The valid entries are the first
+    /// <tt>rowinfo.numEntries</tt> entries of the returned view.
+    ArrayView<GlobalOrdinal> getGlobalViewNonConst (RowInfo rowinfo);
 
     /// \brief Find the column offset corresponding to the given
     ///   (local) column index.
@@ -1398,11 +1697,24 @@ namespace Tpetra {
     /// 2-D storage).
     size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
 
-    // local Kokkos objects
+    //@}
+    //! \name Methods to set or access the local Kokkos graph.
+    //@{
+
     void fillLocalGraph(const RCP<ParameterList> &params);
     const RCP<const local_graph_type> getLocalGraph() const;
     const RCP<local_graph_type> getLocalGraphNonConst();
-    // debugging
+
+    //@}
+
+    /// \brief Check whether the graph's state is valid.
+    ///
+    /// This method is useful for debugging.  It gets called often in
+    /// a debug build.
+    ///
+    /// \note This method is <i>not</i> a collective.  It does not
+    ///   communicate (between MPI processes).  Developers: Please do
+    ///   not invoke communication in this method!
     void checkInternalState() const;
 
     //! The Map describing the distribution of rows of the graph.
@@ -1517,9 +1829,27 @@ namespace Tpetra {
     //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
-    //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
+    /// \brief Nonlocal data given to insertGlobalValues() or
+    ///   sumIntoGlobalValues().
+    ///
+    /// "Nonlocal" means "corresponding to rows not in the row Map on
+    /// the calling process."  These data are communicated and emptied
+    /// out in globalAssemble().  That method is in turn called, if
+    /// necessary, in fillComplete().
     std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
 
+    /// \brief Whether it is valid to call getRowInfo().
+    ///
+    /// FIXME (mfh 21 Oct 2013) As far as I can tell, this is always
+    /// true.  Why do we need it?  Furthermore, why can't we just use
+    /// the test in hasRowInfo() (that defines \c actuallyHasRowInfo)?
+    /// It looks like, historically, the graph (by default) "deleted
+    /// row info" at fillComplete().  This is probably why many
+    /// CrsGraph methods check whether hasRowInfo() returns true
+    /// before doing anything.  However, I think that nonintuitive
+    /// behavior was fixed later, such that hasRowInfo() should
+    /// <i>always</i> return true.  If this is actually the case, then
+    /// we should dispense with both haveRowInfo_ and hasRowInfo().
     bool haveRowInfo_;
 
     inline bool hasRowInfo() const {
@@ -1555,5 +1885,10 @@ namespace Tpetra {
 
 
 } // namespace Tpetra
+
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_CrsGraph_decl.hpp"
+#endif
 
 #endif

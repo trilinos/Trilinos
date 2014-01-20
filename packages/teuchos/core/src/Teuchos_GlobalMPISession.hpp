@@ -109,27 +109,36 @@ public:
   /** \brief Calls <tt>MPI_Init()</tt> if MPI is enabled.
    *
    * \param argc [in] Address of the argument passed into
-   * <tt>main(argc,argv)</tt>.  Same as the first argument of MPI_Init().
+   *   <tt>main(argc,argv)</tt>.  Same as the first argument of
+   *   MPI_Init().
    *
    * \param argv [in] Address of the argument passed into
-   * <tt>main(argc,argv)</tt>.  Same as the second argument of MPI_Init().
+   *   <tt>main(argc,argv)</tt>.  Same as the second argument of
+   *   MPI_Init().
    *
-   * \param out [in] If <tt>out!=NULL</tt>, then a small message on each
-   * processor will be printed to this stream.  The default is
-   * <tt>&std::cout</tt>.
+   * \param out [in] If <tt> out != NULL</tt>, then a small message on
+   *   will be printed to this stream on <i>each</i> process in
+   *   <tt>MPI_COMM_WORLD</tt>.  The default is <tt>&std::cout</tt>.
    *
-   * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
-   * this option will be removed from <tt>argv[]</tt> before being passed to
-   * <tt>MPI_Init(...)</tt> and the startup output message to <tt>*out</tt>
-   * will be suppressed.
+   * If the command-line arguments include the option
+   * <tt>--teuchos-suppress-startup-banner</tt>, the this option will
+   * be removed from <tt>argv[]</tt> before being passed to
+   * <tt>MPI_Init(...)</tt>, and the startup output message to
+   * <tt>*out</tt> will be suppressed.
    *
    * If Teuchos was <i>not</i> built with MPI support, the constructor
    * just prints a startup banner (unless the banner was suppressed --
    * see previous paragraph).
    *
-   * \warning This constructor can only be called once per executable.
-   * Otherwise, an error is printed to <tt>*out</tt> and an std::exception
-   * will be thrown!
+   * \warning The default third parameter may result in a lot of lines
+   *   printed to std::cout, if <tt>MPI_COMM_WORLD</tt> is large!
+   *   Users should generally pass in <tt>NULL</tt> for the third
+   *   argument.  On the other hand, it can be useful to see that
+   *   startup banner, just to know that MPI is working.
+   *
+   * \warning This constructor may only be called once per executable.
+   *   Otherwise, it prints an error message to <tt>*out</tt> and
+   *   throws an std::runtime_error exception.
    */
   GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );
 
@@ -141,50 +150,88 @@ public:
   //! @name Static functions
   //@{
 
-  //! Return whether MPI was initialized.
+  /// \brief Return whether MPI was initialized.
+  ///
+  /// This is always true if the constructor returned.  If the
+  /// constructor was not called, it may or may not be true, depending
+  /// on whether the user called MPI_Init() themselves.  If the
+  /// constructor was called but threw an exception, then some MPI
+  /// function returned an error code.
   static bool mpiIsInitialized();
 
-  //! Return whether MPI was already finalized.
+  /// \brief Return whether MPI was already finalized.
+  ///
+  /// This is always true if the destructor was called.  If the
+  /// destructor was not called, it may or may not be true, depending
+  /// on whether the user called MPI_Init() themselves.
   static bool mpiIsFinalized();
 
-  /** \brief Returns the process rank relative to <tt>MPI_COMM_WORLD</tt>
+  /** \brief The rank of the calling process in <tt>MPI_COMM_WORLD</tt>.
    *
-   * Returns <tt>0</tt> if MPI is not enabled.
+   * \return <tt>0</tt> if MPI has not yet been initialized, else the
+   *   rank of the calling process in <tt>MPI_COMM_WORLD</tt>.
    *
-   * Note, this function can be called even if the above constructor was never
-   * called so it is safe to use no matter how <tt>MPI_Init()</tt> got called
-   * (but it must have been called somewhere).
+   * You may call this method even if the constructor was never
+   * called.  Thus, it is safe to use no matter how MPI_Init() was
+   * called.  However, MPI_Init() must have been called somehow in
+   * order for this method to return a sensible result.
    */
   static int getRank();
 
-  /** \brief Returns the number of processors relative to
-   * <tt>MPI_COMM_WORLD</tt>
+  /** \brief The number of processes in <tt>MPI_COMM_WORLD</tt>.
    *
-   * Returns <tt>1</tt> if MPI is not enabled.
+   * \return <tt>1</tt> if MPI has not yet been initialized, else the
+   *   number of processes in <tt>MPI_COMM_WORLD</tt>.
    *
-   * Note, this function can be called even if the above constructor was never
-   * called so it is safe to use no matter how <tt>MPI_Init()</tt> got called
-   * (but it must have been called somewhere).
+   * You may call this method even if the constructor was never
+   * called.  Thus, it is safe to use no matter how MPI_Init() was
+   * called.  However, MPI_Init() must have been called somehow in
+   * order for this method to return a sensible result.
    */
   static int getNProc();
 
-  /** \brief Perform a barrier so that all processes line up.
-   */
+  /// \brief Call MPI_Barrier() on <tt>MPI_COMM_WORLD</tt>.
+  ///
+  /// This method must be called collectively on all processes in
+  /// <tt>MPI_COMM_WORLD</tt>.
+  ///
+  /// \note Users should invoke barrier through the Teuchos::Comm
+  ///   interface.  We only expose this method for Teuchos-internal
+  ///   functionality.
   static void barrier();
 
   /** \brief Sum a set of integers across processes.
    *
+   * This performs an MPI_Allreduce() of localVal over
+   * <tt>MPI_COMM_WORLD</tt>, and returns the result (which is the
+   * same on all processes).
+   *
+   * This method must be called collectively on all processes in
+   * <tt>MPI_COMM_WORLD</tt>.
+   *
    * \param localVal [in] Value on local process to sum across processes.
+   * \return The global sum (on all processes).
+   *
+   * \note Users should invoke reductions through the Teuchos::Comm
+   *   interface.  We only expose this method for Teuchos-internal
+   *   functionality.
    */
   static int sum(int localVal);
 
   /** \brief Global all-to-all of a set of integers across processes.
    *
+   * This performs an MPI_Allgather() of localVal over
+   * <tt>MPI_COMM_WORLD</tt>, and writes the results (which are the
+   * same on all processes) to allVals.
+   *
+   * This method must be called collectively on all processes in
+   * <tt>MPI_COMM_WORLD</tt>.
+   *
    * \param localVal [in] Value on local process to pass to all processes.
    *
-   * \param allVals [out] Array (length getNProc()) that gives the value of
-   * localVal for each process.  On output, allVals[k] is localVal for process
-   * k.
+   * \param allVals [out] Array (length getNProc()) that gives the
+   *   value of localVal for each process.  On output, allVals[k] is
+   *   localVal for process k.
    */
   static void allGather(int localVal, const ArrayView<int> &allVals);
 

@@ -50,7 +50,15 @@
 #include <vector>
 
 #include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_HAVE_OPENMP
+#include <Kokkos_OpenMP.hpp>
+#else
+#ifdef KOKKOS_HAVE_PTHREAD
 #include <Kokkos_Threads.hpp>
+#else
+#include <Kokkos_Serial.hpp>
+#endif
+#endif
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
@@ -61,7 +69,7 @@
 namespace Kokkos {
 namespace Impl {
 class CudaExec ;
-}
+} // namespace Impl
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
@@ -70,27 +78,50 @@ namespace Kokkos {
 
 /// \class Cuda
 /// \brief Kokkos device that uses CUDA to run on GPUs.
+///
+/// A "device" represents a parallel execution model.  It tells Kokkos
+/// how to parallelize the execution of kernels in a parallel_for or
+/// parallel_reduce.  For example, the Threads device uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
+/// extensions, and the Serial device executes "parallel" kernels
+/// sequentially.  The Cuda device uses NVIDIA's CUDA programming
+/// model to execute kernels in parallel on GPUs.
 class Cuda {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The device type (same as this class).
   typedef Cuda                  device_type ;
+  //! This device's preferred memory space.
   typedef CudaSpace             memory_space ;
+  //! The size_type typedef best suited for this device.
   typedef CudaSpace::size_type  size_type ;
+  //! This device's preferred array layout.
   typedef LayoutLeft            array_layout ;
+  //! This device's host mirror type.
+#ifdef KOKKOS_HAVE_OPENMP
+  typedef Kokkos::OpenMP       host_mirror_device_type ;
+#else
+#ifdef KOKKOS_HAVE_PTHREAD
   typedef Kokkos::Threads       host_mirror_device_type ;
-
+#else
+  typedef Kokkos::Serial       host_mirror_device_type ;
+#endif
+#endif
   //@}
-  //--------------------------------------------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
+  /// \brief True if and only if this method is being called in a
+  ///   thread-parallel function.
+  KOKKOS_INLINE_FUNCTION static int in_parallel() { 
 #if defined( __CUDA_ARCH__ ) 
-  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return true ; }
+    return true; 
 #else
-  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return false ; }
+    return false;
 #endif
+  }
 
   /** \brief  Set the device in a "sleep" state.
    *
@@ -123,10 +154,11 @@ public:
   //! Free any resources being consumed by the device.
   static void finalize();
 
-  /** \brief  Print Cuda configuation */
-  static void print_configuration( std::ostream & );
+  //! Print configuration information to the given output stream.
+  static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
+  //--------------------------------------------------------------------------
   //! \name Device-specific functions
   //@{
 
@@ -136,18 +168,17 @@ public:
     explicit SelectDevice( int id ) : cuda_device_id( id ) {}
   };
 
-  /** \brief  Initialize, telling the CUDA run-time library which device to use. */
+  //! Initialize, telling the CUDA run-time library which device to use.
   static void initialize( const SelectDevice = SelectDevice() );
 
   static int is_initialized();
 
-  /** \brief  Cuda device architecture of the selected device.
-   *          Matches the __CUDA_ARCH__ specification.
-   */
+  /// \brief Cuda device architecture of the selected device.
+  /// 
+  /// This matches the __CUDA_ARCH__ specification.
   static size_type device_arch();
 
-
-  /** \brief  Query device count. */
+  //! Query device count.
   static size_type detect_device_count();
 
   /** \brief  Detect the available devices and their architecture
@@ -155,13 +186,15 @@ public:
    */
   static std::vector<unsigned> detect_device_arch();
 
+  static unsigned team_max();
+
   //@}
   //--------------------------------------------------------------------------
-
 #if defined( __CUDA_ARCH__ )
-
   //! \name Functions for the functor device interface
   //@{
+
+  __device__ inline static void memory_fence() { __threadfence(); }
 
   __device__ inline int league_size() const { return gridDim.x ; }
   __device__ inline int league_rank() const { return blockIdx.x ; }
@@ -173,30 +206,35 @@ public:
   __device__ inline unsigned int team_barrier_count(bool value) const
              { return __syncthreads_count(value); }
 
-  /* Collectively compute the league-wide unordered exclusive prefix sum.
-   * Values are ordered within a team, but not between teams (i.e. the start
-   * values of thread 0 in each team are not ordered according to team number).
-   * This call does not use a global synchronization. Multiple unordered scans
-   * can be in-flight at the same time (using different scratch_views).
-   * The scratch-view will hold the complete sum in the end.
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
    */
-  template< class VT >
-  __device__ inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
+  template< typename Type >
+  __device__ inline Type team_scan( const Type & value );
 
-  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-   * Values are ordered, the last thread returns the sum of all values
-   * in the team less its own value
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
    */
-  template< typename T >
-  __device__ inline T team_scan(T& value);
+  template< typename TypeLocal , typename TypeGlobal >
+  __device__ inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
+
+  //! Get a pointer to shared memory for this team.
   __device__ inline void * get_shmem( const int size );
 
   __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
   __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
 
   //@}
+  //--------------------------------------------------------------------------
 
 private:
 
@@ -204,6 +242,8 @@ private:
 
   //--------------------------------------------------------------------------
 #else
+
+  static void memory_fence();
 
   int league_size() const ;
   int league_rank() const ;
@@ -214,11 +254,11 @@ private:
   void team_barrier() const ;
   unsigned int team_barrier_count(bool) const ;
 
-  template< class VT >
-    inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
   template< typename T >
-    inline T team_scan(T& value);
+    inline T team_scan(const T& value);
+
+  template< typename TypeLocal , typename TypeGlobal >
+    inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
   void * get_shmem( const int size );
 
@@ -256,7 +296,7 @@ inline
 void parallel_for( const CudaWorkConfig & work_config ,
                    const FunctorType    & functor )
 {
-  Impl::ParallelFor< FunctorType , Cuda , CudaWorkConfig >
+  Impl::ParallelFor< FunctorType , CudaWorkConfig , Cuda >
     ( work_config , functor );
 }
 
@@ -277,10 +317,8 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 /*--------------------------------------------------------------------------*/
 
 #include <Cuda/Kokkos_CudaExec.hpp>
-
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
-#include <Cuda/Kokkos_Cuda_ParallelReduce.hpp>
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */
 

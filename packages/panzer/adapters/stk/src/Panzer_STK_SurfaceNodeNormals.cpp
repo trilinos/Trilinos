@@ -62,7 +62,7 @@
 
 namespace panzer_stk {
 
-  void computeSidesetNodeNormals(std::map<unsigned,std::vector<double> >& normals,
+  void computeSidesetNodeNormals(boost::unordered_map<unsigned,std::vector<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
@@ -100,7 +100,7 @@ namespace panzer_stk {
     // into faces
 
     // maps a panzer local element id to a list of normals
-    std::map<unsigned,std::vector<double> > nodeNormals;
+    boost::unordered_map<unsigned,std::vector<double> > nodeNormals;
     
     TEUCHOS_ASSERT(sides.size() == localSideTopoIDs.size());
     TEUCHOS_ASSERT(localSideTopoIDs.size() == parentElements.size());
@@ -146,8 +146,8 @@ namespace panzer_stk {
     }
 
     // Now do the averaging of contributions
-    //std::map<unsigned,std::vector<double> > normals;
-    for (std::map<unsigned,std::vector<double> >::const_iterator node = nodeNormals.begin(); node != nodeNormals.end(); ++node) {
+    //boost::unordered_map<unsigned,std::vector<double> > normals;
+    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = nodeNormals.begin(); node != nodeNormals.end(); ++node) {
 
       TEUCHOS_ASSERT( (node->second.size() % parentTopology->getDimension()) == 0);
 
@@ -205,6 +205,67 @@ namespace panzer_stk {
 
     }
     
+  }
+
+  void computeSidesetNodeNormals(boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& normals,
+				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
+				 const std::string& sidesetName,
+				 const std::string& elementBlockName,
+				 std::ostream* out,
+				 std::ostream* pout)
+  {    
+    using Teuchos::RCP;
+    
+    boost::unordered_map<unsigned,std::vector<double> > nodeEntityIdToNormals;
+    
+    computeSidesetNodeNormals(nodeEntityIdToNormals,mesh,sidesetName,elementBlockName,out,pout);
+
+    RCP<stk::mesh::fem::FEMMetaData> metaData = mesh->getMetaData();
+    RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
+
+    // Grab all nodes for a surface including ghosted to get correct contributions to normal average    
+    stk::mesh::Part * sidePart = mesh->getSideset(sidesetName);
+    stk::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
+    stk::mesh::Selector sideSelector = *sidePart;
+    stk::mesh::Selector blockSelector = *elmtPart;
+    stk::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
+    std::vector<stk::mesh::Entity*> sides;
+    stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
+
+    RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
+
+    std::vector<std::size_t> localSideTopoIDs;
+    std::vector<stk::mesh::Entity*> parentElements;
+    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    
+    std::vector<stk::mesh::Entity*>::const_iterator side = sides.begin();
+    std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
+    std::vector<stk::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
+    for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
+    
+      // loop over nodes in nodes in side element
+      stk::mesh::PairIterRelation nodeRelations = (*parentElement)->relations(mesh->getNodeRank());
+
+      normals[mesh->elementLocalId(*parentElement)].resize(nodeRelations.size(),parentTopology->getDimension()); 
+
+      int nodeIndex = 0;
+      for (stk::mesh::PairIterRelation::iterator node = nodeRelations.begin(); node != nodeRelations.end(); ++node,++nodeIndex) {
+	// if the node is on the sideset, insert, otherwise set normal
+	// to zero (it is an interior node of the parent element).
+	if (nodeEntityIdToNormals.find(node->entity()->identifier()) != nodeEntityIdToNormals.end()) { 
+	  for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
+	    (normals[mesh->elementLocalId(*parentElement)])(nodeIndex,dim) = (nodeEntityIdToNormals[node->entity()->identifier()])[dim];
+	  }
+	}
+	else {
+	  for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
+	    (normals[mesh->elementLocalId(*parentElement)])(nodeIndex,dim) = 0.0;
+	  }
+	}
+      }
+ 
+    }
+
   }
 
 }

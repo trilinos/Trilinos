@@ -107,7 +107,7 @@ void AlgRCB(
 
   std::bitset<NUM_RCB_PARAMS> params;
 
-  env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
+  env->debug(DETAILED_STATUS, "Entering AlgPartRCB");
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
@@ -118,6 +118,7 @@ void AlgRCB(
   //    objective
   //    imbalance_tolerance
 
+  env->debug(DETAILED_STATUS, "Accessing parameters");
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
   string obj;
 
@@ -193,6 +194,7 @@ void AlgRCB(
   //    coordinate weights, if any
   //    coordinate global Ids
 
+  env->debug(DETAILED_STATUS, "Accessing coordinate model");
   typedef StridedData<lno_t, scalar_t> input_t;
 
   int coordDim = coords->getCoordinateDim();
@@ -213,6 +215,7 @@ void AlgRCB(
     values[dim] = ar;
   }
 
+  env->debug(DETAILED_STATUS, "Storing weights");
   int criteriaDim = (weightDim ? weightDim : 1);
   bool ignoreWeights = params.test(rcb_balanceCount);
 
@@ -255,6 +258,7 @@ void AlgRCB(
   // From the Solution we get part information.
   // If the part sizes for a given criteria are not uniform,
   // then they are values that sum to 1.0.
+  env->debug(DETAILED_STATUS, "Getting part info");
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -302,6 +306,7 @@ void AlgRCB(
   // dimension, plus a vector for each weight dimension that is not
   // uniform.
 
+  env->debug(DETAILED_STATUS, "Creating multivec");
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
 
@@ -348,6 +353,7 @@ void AlgRCB(
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////
 
+  env->debug(DETAILED_STATUS, "Beginning algorithm");
   partId_t part0 = 0;
   partId_t part1 = numGlobalParts-1;
   int sanityCheck = numGlobalParts;

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -64,7 +64,6 @@
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
 #include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
-#include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -75,6 +74,7 @@
 #endif
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp; //
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   H->Iterate(*mueluB, nIts, *mueluX);
 
   // Print relative residual norm
-  ST::magnitudeType residualNorms = Utils::ResidualNorm(*mueluA, *mueluX, *mueluB)[0];
+  Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*mueluA, *mueluX, *mueluB)[0];
   if (comm.MyPID() == 0)
     std::cout << "||Residual|| = " << residualNorms << std::endl;
 

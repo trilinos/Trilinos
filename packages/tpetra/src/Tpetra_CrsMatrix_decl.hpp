@@ -845,6 +845,20 @@ namespace Tpetra {
                   const ArrayRCP<LocalOrdinal>& columnIndices,
                   const ArrayRCP<Scalar>& values);
 
+    //! Gets the 1D pointer arrays of the graph.
+    /**
+       \pre <tt>hasColMap() == true</tt>
+       \pre <tt>getGraph() != Teuchos::null</tt>
+       \pre <tt>fillComplete() has been called</tt>
+
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    void
+    getAllValues (ArrayRCP<const size_t>& rowPointers,
+                  ArrayRCP<const LocalOrdinal>& columnIndices,
+                  ArrayRCP<const Scalar>& values) const;
+    
+
     //@}
     //! @name Transformational methods
     //@{
@@ -949,6 +963,15 @@ namespace Tpetra {
                               const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
                               const RCP<ParameterList> &params=Teuchos::null);
+
+    /// \brief Replace the current colMap with the given object.
+    ///
+    /// \param newColMap [in] New colMap.  Must be nonnull.
+    ///
+    /// \pre The matrix must have no entries inserted yet
+    void
+    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
+
 
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
@@ -1443,6 +1466,41 @@ namespace Tpetra {
                       const RangeScalar& dampingFactor,
                       const KokkosClassic::ESweepDirection direction) const;
 
+    /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
+    /// executed on a local subset of unknowns.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: KokkosClassic::Forward or
+    ///   KokkosClassic::Backward.  ("Symmetric" requires interprocess
+    ///   communication (before each sweep), which is not part of the
+    ///   local kernel.)
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedLocalGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+			       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+			       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+			       const ArrayView<LocalOrdinal> & rowIndices,
+			       const RangeScalar& dampingFactor,
+			       const KokkosClassic::ESweepDirection direction) const;
+    
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
     /// X is required to be post-imported, i.e., described by the
@@ -1579,6 +1637,82 @@ namespace Tpetra {
                  const ESweepDirection direction,
                  const int numSweeps) const;
 
+
+    /// \brief Reordered "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
+    ///
+    /// "Hybrid" means Successive Over-Relaxation (SOR) or
+    /// Gauss-Seidel within an (MPI) process, but Jacobi between
+    /// processes.  Gauss-Seidel is a special case of SOR, where the
+    /// damping factor is one.  The ordering can be a partial one, in which case the Gauss-Seidel is only
+    /// executed on a local subset of unknowns.
+    ///
+    /// The Forward or Backward sweep directions have their usual SOR
+    /// meaning within the process.  Interprocess communication occurs
+    /// once before the sweep, as it normally would in Jacobi.
+    ///
+    /// The Symmetric sweep option means two sweeps: first Forward,
+    /// then Backward.  Interprocess communication occurs before each
+    /// sweep, as in Jacobi.  Thus, Symmetric results in two
+    /// interprocess communication steps.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param dampingFactor [in] SOR damping factor.  A damping
+    ///   factor of one results in Gauss-Seidel.    
+    /// \param direction [in] Sweep direction: Forward, Backward, or
+    ///   Symmetric.
+    /// \param numSweeps [in] Number of sweeps.  We count each
+    ///   Symmetric sweep (including both its Forward and its Backward
+    ///   sweep) as one.
+    ///
+    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    ///
+    /// This method has the following requirements:
+    ///
+    /// 1. X is in the domain Map of the matrix.
+    /// 2. The domain and row Maps of the matrix are the same.
+    /// 3. The column Map contains the domain Map, and both start at the same place.
+    /// 4. The row Map is uniquely owned.
+    /// 5. D is in the row Map of the matrix.
+    /// 6. X is actually a view of a column Map multivector.
+    /// 7. Neither B nor D alias X.
+    ///
+    /// #1 is just the usual requirement for operators: the input
+    /// multivector must always be in the domain Map.  The
+    /// Gauss-Seidel kernel imposes additional requirements, since it
+    ///
+    /// - overwrites the input multivector with the output (which
+    ///   implies #2), and
+    /// - uses the same local indices for the input and output
+    ///   multivector (which implies #2 and #3).
+    ///
+    /// #3 is reasonable if the matrix constructed the column Map,
+    /// because the method that does this (CrsGraph::makeColMap) puts
+    /// the local GIDs (those in the domain Map) in front and the
+    /// remote GIDs (not in the domain Map) at the end of the column
+    /// Map.  However, if you constructed the column Map yourself, you
+    /// are responsible for maintaining this invariant.  #6 lets us do
+    /// the Import from the domain Map to the column Map in place.
+    ///
+    /// The Gauss-Seidel kernel also assumes that each process has the
+    /// entire value (not a partial value to sum) of all the diagonal
+    /// elements in the rows in its row Map.  (We guarantee this anyway
+    /// though the separate D vector.)  This is because each element of
+    /// the output multivector depends nonlinearly on the diagonal
+    /// elements.  Shared ownership of off-diagonal elements would
+    /// produce different results.
+    void
+    reorderedGaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+			  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+			  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+			  const ArrayView<LocalOrdinal> & rowIndices,
+			  const Scalar& dampingFactor,
+			  const ESweepDirection direction,
+			  const int numSweeps) const;
+
     /// \brief Version of gaussSeidel(), with fewer requirements on X.
     ///
     /// This method is just like gaussSeidel(), except that X need
@@ -1591,7 +1725,7 @@ namespace Tpetra {
     ///   result multivector(s).
     /// \param B [in] Right-hand side(s), in the range Map.
     /// \param D [in] Inverse of diagonal entries of the matrix,
-    ///   in the row Map.
+    ///   in the row Map.    
     /// \param dampingFactor [in] SOR damping factor.  A damping
     ///   factor of one results in Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward, Backward, or
@@ -1615,6 +1749,45 @@ namespace Tpetra {
                      const ESweepDirection direction,
                      const int numSweeps,
                      const bool zeroInitialGuess) const;
+
+    /// \brief Version of reorderedGaussSeidel(), with fewer requirements on X.
+    ///
+    /// This method is just like reorderedGaussSeidel(), except that X need
+    /// only be in the domain Map.  This method does not require that
+    /// X be a domain Map view of a column Map multivector.  As a
+    /// result, this method must copy X into a domain Map multivector
+    /// before operating on it.
+    ///
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param B [in] Right-hand side(s), in the range Map.
+    /// \param D [in] Inverse of diagonal entries of the matrix,
+    ///   in the row Map.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param dampingFactor [in] SOR damping factor.  A damping
+    ///   factor of one results in Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward, Backward, or
+    ///   Symmetric.
+    /// \param numSweeps [in] Number of sweeps.  We count each
+    ///   Symmetric sweep (including both its Forward and its
+    ///   Backward sweep) as one.
+    /// \param zeroInitialGuess [in] If true, this method will fill X
+    ///   with zeros initially.  If false, this method will assume
+    ///   that X contains a possibly nonzero initial guess on input.
+    ///   Note that a nonzero initial guess may impose an additional
+    ///   nontrivial communication cost (an additional Import).
+    ///
+    /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
+    /// \pre No other argument aliases X.
+    void
+    reorderedGaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+			      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+			      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+			      const ArrayView<LocalOrdinal> & rowIndices,
+			      const Scalar& dampingFactor,
+			      const ESweepDirection direction,
+			      const int numSweeps,
+			      const bool zeroInitialGuess) const;
 
     /// \brief Implementation of RowMatrix::add: return <tt>alpha*A + beta*this</tt>.
     ///
@@ -1745,7 +1918,7 @@ namespace Tpetra {
     importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
                            const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
-                           const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
     /// \brief Export from <tt>this</tt> to the result, and fillComplete the result.
     ///
@@ -1759,7 +1932,19 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
-  private:
+    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to the result, and fillComplete the result.
+    /// This method implements the nonmember "constructors"
+    /// [import|export]AndFillCompleteCrsMatrix.  It's convenient to put that
+    /// function's implementation inside the CrsMatrix class, so that
+    /// we don't have to put much code in the _decl header file.
+    template<class TransferType>
+    Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
+    transferAndFillComplete (const TransferType& rowTransfer,
+			     const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+			     const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+			     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+
+
     // We forbid copy construction by declaring this method private
     // and not implementing it.
     CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
@@ -2383,6 +2568,11 @@ namespace Tpetra {
     return sourceMatrix->exportAndFillComplete (exporter, domainMap, rangeMap, params);
   }
 } // namespace Tpetra
+
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
+#endif
 
 /**
   \example LocalMatOpExample.cpp

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -74,7 +74,7 @@ SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Small
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+void SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
@@ -115,6 +115,8 @@ LocalOrdinal SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }
+
+      numNonAggregatedNodes -= ag.list.size();
     } // end if NodeStats::SMALLAGG
 
     iNode1++;
@@ -122,19 +124,6 @@ LocalOrdinal SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 0 (small aggregates):", graph, aggregates, aggStat);
-
-  // collect some local information
-  LO nLocalAggregated    = 0;
-  LO nLocalNotAggregated = 0;
-  for (LO i = 0; i < nRows; i++) {
-    if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-    else nLocalNotAggregated++;
-  }
-
-  return nLocalNotAggregated;
 }
 
 } // end namespace

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -63,9 +63,10 @@
 #include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Constructor)
   {
@@ -120,7 +121,7 @@ namespace MueLuTests {
     mvtf->Build(fineLevel,coarseLevel);
 
     RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
-    Teuchos::Array<ST::magnitudeType> vn(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> vn(1);
     coarseOnes->norm2(vn);
 
     TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);
@@ -198,7 +199,7 @@ namespace MueLuTests {
 
 /*
     RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
-    Teuchos::Array<ST::magnitudeType> vn(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> vn(1);
     coarseOnes->norm2(vn);
 
     TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);

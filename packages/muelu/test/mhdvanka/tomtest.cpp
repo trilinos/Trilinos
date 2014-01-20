@@ -38,7 +38,6 @@
 #include <MueLu_MHDRAPFactory_def.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
@@ -47,7 +46,9 @@
 
 //#include "EditCopies/MueLu_MHDVankaSmoother_def.hpp"
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP; //reference count pointers
 
   typedef MueLu::GeoInterpFactory<SC,LO,GO,NO,LMO> GeoInterpFactory;

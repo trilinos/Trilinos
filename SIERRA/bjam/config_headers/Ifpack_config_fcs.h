@@ -43,12 +43,5 @@
 /* #undef HAVE_IFPACK_SUPPORTGRAPH */
 
 /* Add macros for declaring functions deprecated */
-#ifndef IFPACK_DEPRECATED
-#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define IFPACK_DEPRECATED  __attribute__((__deprecated__))
-#  else
-#    define IFPACK_DEPRECATED
-#  endif
-#endif
-
+#define IFPACK_DEPRECATED
 

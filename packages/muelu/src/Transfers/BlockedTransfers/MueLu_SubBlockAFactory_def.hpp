@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -123,9 +123,9 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sFullRgMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: full rangeMap is not a strided map");
       std::vector<size_t> stridedData = sFullRgMap->getStridingData();
       if(stridedData.size() == 1 && row_ > 0) // we have block matrices. use striding block information 0
-        srgMap = StridedMapFactory::Build(rgMap->lib(), rgMap, stridedData, 0, sFullRgMap->getOffset());
+        srgMap = StridedMapFactory::Build(rgMap, stridedData, 0, sFullRgMap->getOffset());
       else // we have strided matrices. use striding information of the corresponding block
-        srgMap = StridedMapFactory::Build(rgMap->lib(), rgMap, stridedData, row_, sFullRgMap->getOffset());
+        srgMap = StridedMapFactory::Build(rgMap, stridedData, row_, sFullRgMap->getOffset());
     }
 
     if(sdoMap == Teuchos::null) {
@@ -134,9 +134,9 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sFullDoMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: full domainMap is not a strided map");
       std::vector<size_t> stridedData2 = sFullDoMap->getStridingData();
       if(stridedData2.size() == 1 && row_ > 0) // we have block matrices. use striding block information 0
-        sdoMap = StridedMapFactory::Build(doMap->lib(), doMap, stridedData2, 0, sFullDoMap->getOffset());
+        sdoMap = StridedMapFactory::Build(doMap, stridedData2, 0, sFullDoMap->getOffset());
       else // we have strided matrices. use striding information of the corresponding block
-        sdoMap = StridedMapFactory::Build(doMap->lib(), doMap, stridedData2, col_, sFullDoMap->getOffset());
+        sdoMap = StridedMapFactory::Build(doMap, stridedData2, col_, sFullDoMap->getOffset());
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(srgMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: rangeMap " << row_ << " is not a strided map");

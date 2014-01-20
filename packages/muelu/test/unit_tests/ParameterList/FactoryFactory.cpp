@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -64,9 +64,10 @@
 #include "MueLu_FactoryFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 #define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn)
 
@@ -95,7 +96,7 @@ namespace MueLuTests {
 
         // Test when it is not a sublist
         try {
-          const std::string& testparam = Teuchos::getValue<std::string>(paramValue);
+          Teuchos::getValue<std::string>(paramValue);
           RUN;
           continue;
         } catch (Teuchos::bad_any_cast) { }
@@ -104,7 +105,7 @@ namespace MueLuTests {
 
         // Test when sublist does not contain type
         try {
-          std::string type = sublist.get<std::string>("type");
+          sublist.get<std::string>("type");
         } catch (Teuchos::Exceptions::InvalidParameterName) {
           RUN;
           continue;

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -55,11 +55,15 @@
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_BaseClass.hpp"
+
 #include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 namespace MueLu {
 
@@ -82,30 +86,36 @@ namespace MueLu {
 
   public:
 
-    AmalgamationInfo() {
-      nodegid2dofgids_ = Teuchos::null;
+    AmalgamationInfo(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids,
+                     RCP<std::vector<GlobalOrdinal> > nodegids) {
+      nodegid2dofgids_ = nodegid2dofgids;
+      gNodeIds_        = nodegids;
     }
 
     virtual ~AmalgamationInfo() {}
 
     /// Return a simple one-line description of this object.
-    std::string description() const;
+    std::string description() const { return "AmalgamationInfo"; }
 
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids) const;
+    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const   { return nodegid2dofgids_; }
+    RCP<std::vector<GlobalOrdinal> >                          GetNodeGIDVector() const              { return gNodeIds_; }
+    GlobalOrdinal                                             GetNumberOfNodes() const              { return gNodeIds_.is_null() ? 0 : gNodeIds_->size(); }
 
-    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const;
+    /*! @brief UnamalgamateAggregates
 
-    void SetNodeGIDVector(RCP<std::vector<GlobalOrdinal> > nodegids) const;
+       Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
+    */
+    void UnamalgamateAggregates(const Aggregates& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const;
 
-    RCP<std::vector<GlobalOrdinal> > GetNodeGIDVector() const;
-
-    void SetNumberOfNodes(GlobalOrdinal cntNodes) const { cntNodes_ = cntNodes; }
-    GlobalOrdinal GetNumberOfNodes() const { return cntNodes_; }
+    /*! @brief ComputeUnamalgamatedImportDofMap
+     * build overlapping dof row map from aggregates needed for overlapping null space
+     */
+    Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
   private:
 
@@ -113,13 +123,10 @@ namespace MueLu {
     //@{
 
     // map of global node id on current processor to global DOFs ids on current processor
-    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_; //< used for building overlapping ImportDofMap
+    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_; //< used for building overlapping ImportDofMap
 
     // contains global node ids on current proc (used by CoalesceDropFactory to build nodeMap)
-    mutable RCP<std::vector<GlobalOrdinal> > gNodeIds_;
-
-    /// number of nodes on current proc
-    mutable GlobalOrdinal cntNodes_;
+    RCP<std::vector<GlobalOrdinal> > gNodeIds_;
 
     //@}
 

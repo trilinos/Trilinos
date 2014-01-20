@@ -166,6 +166,11 @@ int main(int argc, char *argv[])
     TestPassed = false;
   }
 
+  if (!Test< Ifpack_AdditiveSchwarz<Ifpack_Krylov> >(Matrix,List)) {
+    TestPassed = false;
+  }
+
+
   if (!Test<Ifpack_Amesos>(Matrix,List)) 
   {
     TestPassed = false;

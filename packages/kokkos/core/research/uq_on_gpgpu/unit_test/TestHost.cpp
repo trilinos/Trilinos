@@ -130,11 +130,10 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 {
-  const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
+  const unsigned team_count = Kokkos::hwloc::get_available_numa_count();
+  const unsigned threads_per_team = ( Kokkos::hwloc::get_available_cores_per_numa() + 1 ) / 2 ;
 
-  const std::pair<unsigned,unsigned> league_gang( core_topo.first , ( core_topo.second + 1 ) / 2 );
-
-  Kokkos::Threads::initialize( league_gang );
+  Kokkos::Threads::initialize( team_count * threads_per_team );
 
   typedef Kokkos::Threads device ;
 

@@ -147,10 +147,14 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::MatrixFreeDecorator::createOutA
      outArgs.setSupports(OUT_ARG_DgDx, i, modelOutArgs.supports(OUT_ARG_DgDx, i));
    }
     
-  for (int i=0; i<ng; i++) 
+  for (int i=0; i<ng; i++) {
    if (!modelOutArgs.supports(OUT_ARG_DgDx_dot, i).none()) {
      outArgs.setSupports(OUT_ARG_DgDx_dot, i, modelOutArgs.supports(OUT_ARG_DgDx_dot, i));
    }
+   if (!modelOutArgs.supports(OUT_ARG_DgDx_dotdot, i).none()) {
+     outArgs.setSupports(OUT_ARG_DgDx_dotdot, i, modelOutArgs.supports(OUT_ARG_DgDx_dotdot, i));
+   }
+  }
 
   for (int i=0; i<np; i++) 
     for (int j=0; j<ng; j++) 
@@ -165,6 +169,8 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::MatrixFreeDecorator::createOutA
 			modelOutArgs.supports(OUT_ARG_DgDx_sg, i));
     outArgs.setSupports(OUT_ARG_DgDx_dot_sg, i, 
 			modelOutArgs.supports(OUT_ARG_DgDx_dot_sg, i));
+    outArgs.setSupports(OUT_ARG_DgDx_dotdot_sg, i, 
+			modelOutArgs.supports(OUT_ARG_DgDx_dotdot_sg, i));
     for (int j=0; j<np; j++) 
       outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
 			  modelOutArgs.supports(OUT_ARG_DgDp_sg, i, j));
@@ -232,7 +238,15 @@ void Piro::Epetra::MatrixFreeDecorator::evalModel( const InArgs& inArgs,
         haveXdot = true;
       }
     }
-    W_mfo->setBase(clonedInArgs, fBase, haveXdot);
+    bool haveXdotdot = false;
+    if (inArgs.supports(IN_ARG_x_dotdot)) {
+      RCP<const Epetra_Vector> xdotdot = inArgs.get_x_dotdot();
+      if (nonnull(xdotdot)) {
+        clonedInArgs.set_x_dotdot(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x_dotdot())));
+        haveXdotdot = true;
+      }
+    }
+    W_mfo->setBase(clonedInArgs, fBase, haveXdot, haveXdotdot);
   }
 }
 
@@ -246,6 +260,7 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
   solutionNorm(0.0),
   baseIsSet(false),
   haveXdot(false),
+  haveXdotdot(false),
   lambda(lambda_)
 {
   using Teuchos::rcp;
@@ -259,16 +274,18 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
   xPert = rcp(new Epetra_Vector(*map));
   fPert = rcp(new Epetra_Vector(*(model->get_f_map())));
   xdotPert = rcp(new Epetra_Vector(*map));
+  xdotdotPert = rcp(new Epetra_Vector(*map));
 }
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
              const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
              Teuchos::RCP<Epetra_Vector> fBase_,
-             const bool haveXdot_)
+             const bool haveXdot_, const bool haveXdotdot_)
 {
   // Deep copy base solution, shallow copy residual base
   modelInArgs = modelInArgs_;
   haveXdot = haveXdot_;
+  haveXdotdot = haveXdotdot_;
 
   fBase = fBase_;
   modelInArgs.get_x()->Norm2(&solutionNorm);
@@ -288,7 +305,9 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
   Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(Copy, Y, 0));
   Teuchos::RCP<const Epetra_Vector> xBase = modelInArgs.get_x();
   Teuchos::RCP<const Epetra_Vector> xdotBase;
+  Teuchos::RCP<const Epetra_Vector> xdotdotBase;
   if (haveXdot) xdotBase = modelInArgs.get_x_dot();
+  if (haveXdotdot) xdotdotBase = modelInArgs.get_x_dotdot();
   double vectorNorm;
   v->Norm2(&vectorNorm);
 
@@ -300,12 +319,17 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
 
   const double eta = lambda * (lambda + solutionNorm/vectorNorm);
 
-  if (haveXdot) {
+  if (haveXdot || haveXdotdot) {
     const double alpha_W = modelInArgs.get_alpha();
     const double beta_W = modelInArgs.get_beta();
 
     xPert->Update(1.0, *xBase, beta_W * eta, *v, 0.0);
-    xdotPert->Update(1.0, *xdotBase, alpha_W * eta, *v, 0.0);
+    if (haveXdot)
+      xdotPert->Update(1.0, *xdotBase, alpha_W * eta, *v, 0.0);
+    if (haveXdotdot) {
+      const double omega_W = modelInArgs.get_omega();
+      xdotdotPert->Update(1.0, *xdotdotBase, omega_W * eta, *v, 0.0);
+    }
   } else {
     xPert->Update(1.0, *xBase, eta, *v, 0.0);
   }
@@ -315,6 +339,7 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
 
   modelInArgs.set_x(xPert);
   if (haveXdot) modelInArgs.set_x_dot(xdotPert);
+  if (haveXdotdot) modelInArgs.set_x_dotdot(xdotdotPert);
 
   // Alert model that this is a perturbed calculation, in case it does something different.
   EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> fPertEval(fPert, EpetraExt::ModelEvaluator::EVAL_TYPE_APPROX_DERIV);
@@ -324,6 +349,7 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
 
   modelInArgs.set_x(xBase);
   if (haveXdot) modelInArgs.set_x_dot(xdotBase);
+  if (haveXdotdot) modelInArgs.set_x_dotdot(xdotdotBase);
   modelOutArgs.set_f(fBase);
 
   y->Update(1.0, *fPert, -1.0, *fBase, 0.0);
@@ -339,6 +365,7 @@ Piro::Epetra::MatrixFreeOperator::~MatrixFreeOperator() {
    // relinquish pointers
    modelInArgs.set_x(Teuchos::null); 
    if (haveXdot) modelInArgs.set_x_dot(Teuchos::null); 
+   if (haveXdotdot) modelInArgs.set_x_dotdot(Teuchos::null); 
    for (int l = 0; l < modelInArgs.Np(); ++l) 
      modelInArgs.set_p(l,Teuchos::null);
 }

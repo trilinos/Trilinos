@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -95,7 +95,7 @@ namespace MueLu {
     //!    @param[in] paramList parameter list with parameters for smoother (default: empty)
     //!    @param[in] overlap   LocalOrdinal with overlap inforation (default: 0)
     //!    @param[in] permFact  factory, generating permutation and scaling matrices (default: Teuchos::null -> use internal PermutationFactory instance)
-    PermutingSmoother(std::string const & mapName, const RCP<const FactoryBase> & mapFact, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const & overlap = 0, RCP<FactoryBase> permFact = Teuchos::null);
+    PermutingSmoother(std::string const & mapName, const RCP<const FactoryBase> & mapFact, std::string const & type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), LO const & overlap = 0, RCP<FactoryBase> permFact = Teuchos::null);
 
     //! Destructor
     virtual ~PermutingSmoother();
@@ -140,9 +140,6 @@ namespace MueLu {
   private:
     //! ifpack1/2-specific key phrase that denote smoother type
     std::string type_;
-
-    //! parameter list that is used by Ifpack/Ifpack2 internally
-    Teuchos::ParameterList paramList_;
 
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;

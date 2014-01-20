@@ -1,6 +1,7 @@
 %{
 #include "aprepro.h"
 #include "apr_util.h"
+#include "apr_array.h"
 
 #include <stdlib.h>
 #include <cmath>
@@ -43,6 +44,7 @@ namespace SEAMS {
   double  val;		/* For returning numbers.		*/
   struct symrec *tptr;	/* For returning symbol-table pointers	*/
   char   *string;	/* For returning quoted strings		*/
+  struct array  *arrval;       /* For returning arrays                 */
 }
 
 %token	<val>	NUM		/* Simple double precision number	*/
@@ -52,9 +54,12 @@ namespace SEAMS {
 %token	<tptr>	SVAR 	/* String Variable */
 %token  <tptr>  IMMVAR  /* Immutable Variable */
 %token	<tptr>	IMMSVAR /* Immutable String Variable */
+%token  <tptr>  AVAR    /* array data [i,j] */
 %token  <tptr>  FNCT
 %token  <tptr>  SFNCT
+%token  <tptr>  AFNCT
 %type	<val>	exp 
+%type   <arrval> aexp 
 %type   <val>   bool
 %type	<string>	sexp
 
@@ -107,6 +112,7 @@ line:	  '\n'			{ if (echo) aprepro.lexer->LexerOutput("\n", 1); }
 				    aprepro.lexer->LexerOutput($2, strlen($2));
                                   }
                                 }
+        | LBRACE aexp RBRACE    {                                       }
 	| LBRACE RBRACE	        {                                       }
 	| error RBRACE	        { yyerrok;				}
 ;
@@ -132,6 +138,49 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);	}
         | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);	}
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);	}
 
+aexp:   AVAR                    { $$ = $1->value.avar;}
+        | AFNCT LPAR sexp RPAR  { $$ = (*($1->value.arrfnct_c))($3);      }
+        | AFNCT LPAR exp COMMA exp RPAR  
+                                { $$ = (*($1->value.arrfnct_dd))($3,$5);   }
+        | AFNCT LPAR exp RPAR  
+                                { $$ = (*($1->value.arrfnct_d))($3);      }
+        | AFNCT LPAR aexp RPAR  
+                                { $$ = (*($1->value.arrfnct_a))($3);      }
+        | AVAR EQUAL aexp          { $$ = $3; $1->value.avar = $3; 
+                                  redefined_warning(aprepro, $1);
+                                  set_type(aprepro, $1, token::AVAR); }
+        | UNDVAR EQUAL aexp        { $$ = $3; $1->value.avar = $3; 
+                                  set_type(aprepro, $1, token::AVAR); }
+        | aexp PLU aexp         { if ($1->cols == $3->cols && $1->rows == $3->rows ) {
+                                     $$ = array_add($1, $3); 
+                                  }
+                                  else {
+                                    yyerror(aprepro, "Arrays do not have same row and column count"); 
+                                    yyerrok;
+                                  }
+                                }
+        | SUB aexp %prec UNARY  { $$ = array_scale($2, -1.0);           }
+
+        | aexp SUB aexp         { if ($1->cols == $3->cols && $1->rows == $3->rows ) {
+                                     $$ = array_sub($1, $3); 
+                                  }
+                                  else {
+                                    yyerror(aprepro, "Arrays do not have same row and column count"); 
+                                    yyerrok;
+                                  }
+                                }
+        | aexp TIM exp          { $$ = array_scale($1, $3);             }
+        | aexp DIV exp          { $$ = array_scale($1, 1.0/$3);         }
+        | exp  TIM aexp         { $$ = array_scale($3, $1);             }
+        | aexp TIM aexp         { if ($1->cols == $3->rows) {
+                                    $$ = array_mult($1, $3);
+                                  }
+                                  else {
+                                    yyerror(aprepro, "Column count of first array does not match row count of second array"); 
+                                    yyerrok;
+                                  }
+				}
+
 sexp:     QSTRING		{ $$ = $1;				}
         | SVAR			{ $$ = (char*)$1->value.svar;			}
         | IMMSVAR		{ $$ = (char*)$1->value.svar;			}
@@ -149,6 +198,7 @@ sexp:     QSTRING		{ $$ = $1;				}
         | SFNCT LPAR sexp RPAR	{ $$ = (char*)(*($1->value.strfnct_c))($3);	}
 	| SFNCT LPAR RPAR	{ $$ = (char*)(*($1->value.strfnct))();	}
         | SFNCT LPAR exp  RPAR	{ $$ = (char*)(*($1->value.strfnct_d))($3);	}
+        | SFNCT LPAR aexp RPAR	{ $$ = (char*)(*($1->value.strfnct_a))($3);	}
         | sexp CONCAT sexp	{ concat_string($1, $3, &$$); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR
 				{ $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
@@ -230,6 +280,7 @@ exp:	  NUM			{ $$ = $1; 				}
 	| FNCT LPAR RPAR		{ $$ = (*($1->value.fnctptr))();	}
 	| FNCT LPAR exp RPAR	{ $$ = (*($1->value.fnctptr_d))($3); 	}
 	| FNCT LPAR sexp RPAR	{ $$ = (*($1->value.fnctptr_c))($3); 	}
+	| FNCT LPAR aexp RPAR	{ $$ = (*($1->value.fnctptr_a))($3); 	}
 	| FNCT LPAR sexp COMMA exp RPAR
                                 { $$ = (*($1->value.fnctptr_cd))($3, $5); 	}
 	| FNCT LPAR sexp COMMA sexp RPAR
@@ -272,6 +323,32 @@ exp:	  NUM			{ $$ = $1; 				}
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }
         | bool '?' exp ':' exp   { $$ = ($1) ? ($3) : ($5);              }
+        | AVAR LBRACK exp COMMA exp RBRACK { array *arr = $1->value.avar;
+                                      int cols = arr->cols;
+                                      int rows = arr->rows;
+                                      if ($3 < rows && $5 < cols) {
+                                        int offset = $3*cols+$5;
+                                        $$ = $1->value.avar->data[offset];
+                                      }
+                                      else {
+                                        yyerror(aprepro, "Row or Column index out of range"); 
+                                        yyerrok;
+                                      }
+                                    }
+        | AVAR LBRACK exp COMMA exp RBRACK EQUAL exp 
+                                  { $$ = $8;
+                                    array *arr = $1->value.avar;
+                                    int cols = arr->cols;
+                                    int rows = arr->rows;
+                                    if ($3 < rows && $5 < cols) {
+                                      int offset = $3*cols+$5;
+                                      $1->value.avar->data[offset] = $8;
+                                    }
+                                    else {
+                                      yyerror(aprepro, "Row or Column index out of range"); 
+                                      yyerrok;
+                                    }
+                                  }
 
 
 /* End of grammar */

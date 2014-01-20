@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -104,10 +104,13 @@
 
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
+
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 // helper routines
 bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
@@ -363,6 +366,8 @@ bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
   return true;
 }
 
+}
+
 /*!
  *  2d Navier Stokes example (for Epetra)
  *
@@ -371,8 +376,11 @@ bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
 
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -435,15 +443,16 @@ int main(int argc, char *argv[]) {
   // xstridedfullmap: full map (velocity and pressure dof gids), continous
   // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
   // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedfullmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,globalNumDofs,0,stridingInfo,comm,-1));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedvelmap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,globalNumDofs,0,stridingInfo,comm,0));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedpremap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,globalNumDofs,0,stridingInfo,comm,1));
+  Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+  RCP<const StridedMap> xstridedfullmap = StridedMapFactory::Build(lib,globalNumDofs,0,stridingInfo,comm,-1);
+  RCP<const StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap,0);
+  RCP<const StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap,1);
 
   /////////////////////////////////////// transform Xpetra::Map objects to Epetra
   // this is needed for our splitting routine
-  const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcpFromRef(xstridedfullmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcpFromRef(xstridedvelmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map());
+  const RCP<const Epetra_Map> fullmap = rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
+  RCP<const Epetra_Map>       velmap  = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
+  RCP<const Epetra_Map>       premap  = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
@@ -602,7 +611,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVector(epv));
   // calculate initial (absolute) residual
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   xR->norm2(norms);
   *out << "Test: ||x_0|| = " << norms[0] << std::endl;

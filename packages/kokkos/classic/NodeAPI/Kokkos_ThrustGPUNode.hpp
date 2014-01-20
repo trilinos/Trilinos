@@ -46,6 +46,13 @@
 #include "Kokkos_CUDANodeMemoryModel.hpp"
 #include "Kokkos_ThrustGPUWrappers.hpp"
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  include "KokkosCore_config.h"
+#  ifdef KOKKOS_HAVE_CUDA
+#    include "Kokkos_Cuda.hpp"
+#  endif
+#endif
+
 namespace KokkosClassic {
 
 /** \brief %Kokkos node interface to the Thrust library for NVIDIA CUDA-capable GPUs.
@@ -110,5 +117,17 @@ ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd)
 }
 
 } // namespace KokkosClassic
+
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+namespace Kokkos {
+  namespace Compat {
+    template <>
+    struct NodeDevice<KokkosClassic::ThrustGPUNode> {
+      typedef Kokkos::Cuda type;
+    };
+  }
+}
+#endif
 
 #endif

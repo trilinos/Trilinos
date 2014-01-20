@@ -23,3 +23,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 4
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  explicit_model_evaluator
+  SOURCES explicit_model_evaluator.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  )

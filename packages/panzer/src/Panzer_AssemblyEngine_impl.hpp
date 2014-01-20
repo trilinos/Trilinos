@@ -70,18 +70,25 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   in.ghostedContainer_->setRequiresDirichletAdjustment(true);
 
   GlobalEvaluationDataContainer gedc;
-  in.fillGlobalEvaluationDataContainer(gedc);
-  gedc.initialize(); // make sure all ghosted data is ready to go
-  gedc.globalToGhost(LOC::X | LOC::DxDt);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::TypeString<EvalT>::value+")");
 
-  // Push solution, x and dxdt into ghosted domain
-  m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
-  m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+    in.fillGlobalEvaluationDataContainer(gedc);
+    gedc.initialize(); // make sure all ghosted data is ready to go
+    gedc.globalToGhost(LOC::X | LOC::DxDt);
+
+    // Push solution, x and dxdt into ghosted domain
+    m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
+    m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+  }
 
   // *********************
   // Volumetric fill
   // *********************
-  this->evaluateVolume(in);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::TypeString<EvalT>::value+")");
+    this->evaluateVolume(in);
+  }
 
   // *********************
   // BC fill
@@ -90,18 +97,27 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // bcs overwrite equations where neumann sum into equations.  Make
   // sure all neumann are done before dirichlet.
 
-  this->evaluateNeumannBCs(in);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::TypeString<EvalT>::value+")");
+    this->evaluateNeumannBCs(in);
+  }
 
   // Dirchlet conditions require a global matrix
-  this->evaluateDirichletBCs(in);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::TypeString<EvalT>::value+")");
+    this->evaluateDirichletBCs(in);
+  }
 
-  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::TypeString<EvalT>::value+")");
+    m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
-  m_lin_obj_factory->beginFill(*in.container_);
-  gedc.ghostToGlobal(LOC::F | LOC::Mat);
-  m_lin_obj_factory->endFill(*in.container_);
+    m_lin_obj_factory->beginFill(*in.container_);
+    gedc.ghostToGlobal(LOC::F | LOC::Mat);
+    m_lin_obj_factory->endFill(*in.container_);
 
-  m_lin_obj_factory->endFill(*in.ghostedContainer_);
+    m_lin_obj_factory->endFill(*in.ghostedContainer_);
+  }
 
   return;
 }
@@ -267,6 +283,15 @@ evaluateBCs(const panzer::BCType bc_type,
   gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
   in.fillGlobalEvaluationDataContainer(gedc);
 
+  // this helps work around issues when constructing a mass
+  // matrix using an evaluation of only the transient terms.
+  // In particular, the terms associated with the dirichlet
+  // conditions.
+  double betaValue = in.beta; // default to the passed in beta
+  if(bc_type==panzer::BCT_Dirichlet && in.apply_dirichlet_beta) {
+    betaValue = in.dirichlet_beta;
+  }
+
   {
     const std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
@@ -318,7 +343,7 @@ evaluateBCs(const panzer::BCType bc_type,
 
           // build and evaluate fields for the workset: only one workset per face
 	  workset.alpha = in.alpha;
-	  workset.beta = in.beta;
+	  workset.beta = betaValue;
 	  workset.time = in.time;
           workset.evaluate_transient_terms = in.evaluate_transient_terms;
 	  

@@ -50,12 +50,14 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* Hanowa(const Epetra_Map* Map, const double value)
 {
   int NumMyElements     = Map->NumMyElements();
-  int NumGlobalElements = Map->NumGlobalElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type NumGlobalElements = (int_type) Map->NumGlobalElements64();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   if (NumGlobalElements % 2) 
     throw(Exception(__FILE__, __LINE__,
@@ -64,14 +66,14 @@ Epetra_CrsMatrix* Hanowa(const Epetra_Map* Map, const double value)
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, 2);
 
   double Values[2];
-  int    Indices[2];
+  int_type Indices[2];
 
-  int half = NumGlobalElements / 2;
+  int_type half = NumGlobalElements / 2;
   
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
     int NumEntries = 2;
-    int Global = MyGlobalElements[i];
+    int_type Global = MyGlobalElements[i];
     Indices[0] = Global;
     if (Global < half) Indices[1] = Global + half;
     else               Indices[1] = Global - half;
@@ -90,6 +92,23 @@ Epetra_CrsMatrix* Hanowa(const Epetra_Map* Map, const double value)
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+Epetra_CrsMatrix* Hanowa(const Epetra_Map* Map, const double value)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Hanowa<int>(Map, value);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Hanowa<long long>(Map, value);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Hanowa: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

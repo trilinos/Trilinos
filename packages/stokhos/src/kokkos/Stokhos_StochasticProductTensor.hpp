@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -45,6 +45,7 @@
 #include <ostream>
 
 #include "Kokkos_View.hpp"
+#include "Kokkos_Cuda.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -78,16 +79,16 @@ template< typename ValueType , typename TensorType, class Device >
 class StochasticProductTensor {
 public:
 
-  typedef Device                                      device_type ;
-  typedef typename device_type::size_type             size_type ;
-  typedef ValueType                                   value_type ;
-  typedef TensorType                                  tensor_type ;
+  typedef Device                          device_type ;
+  typedef ValueType                       value_type ;
+  typedef TensorType                      tensor_type ;
+  typedef typename tensor_type::size_type size_type ;
 
 private:
 
-  tensor_type                                     m_tensor ;
+  tensor_type                                m_tensor ;
   Kokkos::View< size_type** , device_type >  m_degree_map ;
-  size_type                                       m_variable ;
+  size_type                                  m_variable ;
 
 public:
 
@@ -125,6 +126,17 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_tensor.dimension(); }
+
+   /** \brief  Aligned dimension: length of the vector block properly aligned.
+   */
+  KOKKOS_INLINE_FUNCTION
+  size_type aligned_dimension() const {
+    const bool is_cuda =
+      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+    const size_type AlignBytes = is_cuda ? 128 : 64;
+    const size_type NumAlign = AlignBytes/sizeof(value_type);
+    return (dimension() + NumAlign-1) & ~(NumAlign-1);
+  }
 
   /** \brief  How many variables are being expanded. */
   KOKKOS_INLINE_FUNCTION
@@ -211,6 +223,27 @@ create_stochastic_product_tensor(
   return StochasticProductTensor<ValueType, TensorType, Device>::create(
     basis, Cijk, params);
 }
+
+template < typename ValueType , typename Device, class TensorType >
+class BlockMultiply< StochasticProductTensor< ValueType, TensorType, Device > >
+{
+public:
+  typedef Device device_type ;
+  typedef typename device_type::size_type size_type ;
+  typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const block_type  & block ,
+                     const MatrixValue *       a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    typedef BlockMultiply< typename block_type::tensor_type > tensor_multiply ;
+
+    tensor_multiply::apply( block.tensor() , a , x , y );
+  }
+};
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

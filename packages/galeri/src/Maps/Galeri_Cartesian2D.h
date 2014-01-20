@@ -51,9 +51,10 @@ namespace Galeri {
 
 namespace Maps {
 
+template<typename int_type>
 inline
 Epetra_Map* 
-Cartesian2D(const Epetra_Comm& Comm, const int nx, const int ny,
+TCartesian2D(const Epetra_Comm& Comm, const int nx, const int ny,
             const int mx, const int my)
 {
   if (nx <= 0 || ny <= 0 || mx <= 0 || my <= 0 || (mx > nx) || (my > ny))
@@ -86,17 +87,37 @@ Cartesian2D(const Epetra_Comm& Comm, const int nx, const int ny,
   if ( ypid < NBigYDir) endy++;
 
   int NumMyElements = (endx - startx) * (endy - starty);
-  vector<int> MyGlobalElements(NumMyElements);
+  vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
 
   for (int i = startx ; i < endx ; ++i) 
     for (int j = starty ; j < endy ; ++j) 
       MyGlobalElements[count++] = i + j * nx;
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   return(new Epetra_Map(nx * ny,  NumMyElements, &MyGlobalElements[0],
                         0, Comm));
+#else
+  return(new Epetra_Map);
+#endif
 
-} // Cartesian2D()
+} // TCartesian2D()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map* 
+Cartesian2D(const Epetra_Comm& Comm, const int nx, const int ny,
+            const int mx, const int my) {
+  return TCartesian2D<int>(Comm, nx, ny, mx, my);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map* 
+Cartesian2D64(const Epetra_Comm& Comm, const int nx, const int ny,
+            const int mx, const int my) {
+  return TCartesian2D<long long>(Comm, nx, ny, mx, my);
+}
+#endif
 
 } // namespace Maps
 } // namespace Galeri

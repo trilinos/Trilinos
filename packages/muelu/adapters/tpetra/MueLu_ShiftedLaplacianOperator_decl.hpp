@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -108,7 +108,7 @@ namespace MueLu {
       RCP<Matrix> Ac;
       Ac = MUtils::Multiply(*R_, false, *AP, false, Ac, true, doOptimizedStorage);
       Ac_ = MUtils::Op2NonConstTpetraCrs(Ac);
-      
+
       // Setup Belos for two-level correction
       BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
       BelosList_ -> set("Maximum Iterations", iters_ );

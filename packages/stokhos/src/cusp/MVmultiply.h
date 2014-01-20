@@ -15,7 +15,7 @@
  */
 
 /*! \file multiply.h
- *  \brief Matrix multiplication 
+ *  \brief Matrix multiplication
  */
 
 #pragma once
@@ -29,8 +29,15 @@ template <typename LinearOperator,
           typename MatrixOrVector1,
           typename MatrixOrVector2>
 void MVmultiply(LinearOperator&  A,
-              MatrixOrVector1& B,
-              MatrixOrVector2& C);
+                MatrixOrVector1& B,
+                MatrixOrVector2& C);
+
+template <typename LinearOperator,
+          typename MatrixOrVector1,
+          typename MatrixOrVector2>
+void OVmultiply(LinearOperator&  A,
+                MatrixOrVector1& B,
+                MatrixOrVector2& C);
 
 
 template <typename MatrixOrVector,
@@ -44,10 +51,10 @@ template <typename ValueType,
           typename MatrixOrVector1,
           typename MatrixOrVector2>
 void axpby_array(const ValueType&  a,
-              const MatrixOrVector1& x,
-	      const ValueType&  b,
-              const MatrixOrVector1& y,
-              MatrixOrVector2& z);
+                 const MatrixOrVector1& x,
+                 const ValueType&  b,
+                 const MatrixOrVector1& y,
+                 MatrixOrVector2& z);
 
 
 

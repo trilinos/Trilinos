@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -73,8 +73,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PermutingSmoother(const std::string& mapName, const RCP<const FactoryBase>& mapFact, const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap, RCP<FactoryBase> permFact)
-  : type_(type), paramList_(paramList), overlap_(overlap), permQT_(Teuchos::null), permP_(Teuchos::null), diagScalingOp_(Teuchos::null)
+  : type_(type), overlap_(overlap), permQT_(Teuchos::null), permP_(Teuchos::null), diagScalingOp_(Teuchos::null)
   {
+    this->SetParameterList(paramList);
+
     permFact_ = permFact;
     if (permFact_ == Teuchos::null) {
       RCP<PermutationFactory> newPermFact = Teuchos::rcp(new PermutationFactory());
@@ -86,12 +88,12 @@ namespace MueLu {
     // create internal smoother
     if (type_ == "ILU") {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      s_ = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(type_, paramList_, overlap_);
+      s_ = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(type_, this->GetParameterList(), overlap_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PermutingSmoother requires Epetra and Ifpack.");
 #endif
     } else {
-      s_ = Teuchos::rcp(new TrilinosSmoother(type_, paramList_, overlap_));
+      s_ = Teuchos::rcp(new TrilinosSmoother(type_, this->GetParameterList(), overlap_));
     }
     TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
 

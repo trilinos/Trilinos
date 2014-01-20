@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -133,7 +133,6 @@ namespace MueLu {
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
     zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &problemDimension);
-    // zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry,     (void *) Coords.get());
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry,     (void *) Coords.get());
 
     // Data pointers that Zoltan requires.

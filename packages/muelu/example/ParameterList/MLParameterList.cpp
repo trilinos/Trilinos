@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -71,11 +71,12 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -211,7 +212,7 @@ int main(int argc, char *argv[]) {
     H->Iterate(*B, nIts, *X);
 
     // Print relative residual norm
-    ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+    Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
 
@@ -256,7 +257,7 @@ int main(int argc, char *argv[]) {
         RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
         RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
         // Print relative residual norm
-        ST::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+        Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)
           std::cout << "||Residual|| = " << residualNorms2 << std::endl;
       }
@@ -318,7 +319,7 @@ int main(int argc, char *argv[]) {
       RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
       RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
       // Print relative residual norm
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
     }

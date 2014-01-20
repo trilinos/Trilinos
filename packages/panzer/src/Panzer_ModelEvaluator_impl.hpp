@@ -87,6 +87,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   , build_transient_support_(build_transient_support)
   , lof_(lof)
   , solverFactory_(solverFactory)
+  , oneTimeDirichletBeta_on_(false)
+  , oneTimeDirichletBeta_(0.0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -397,6 +399,18 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     ae_inargs.evaluate_transient_terms = true;
   }
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+
+  // handle application of the one time dirichlet beta in the
+  // assembly engine. Note that this has to be set explicitly
+  // each time because this badly breaks encapsulation. Essentially
+  // we must work around the model evaluator abstraction!
+  ae_inargs.apply_dirichlet_beta = false;
+  if(oneTimeDirichletBeta_on_) {
+    ae_inargs.dirichlet_beta = oneTimeDirichletBeta_;
+    ae_inargs.apply_dirichlet_beta = true;
+
+    oneTimeDirichletBeta_on_ = false;
+  }
   
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
@@ -513,6 +527,14 @@ required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) cons
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
 
    return activeGArgs;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+setOneTimeDirichletBeta(const Scalar & beta) const
+{
+  oneTimeDirichletBeta_on_ = true;
+  oneTimeDirichletBeta_    = beta;
 }
 
 #endif

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -146,7 +146,7 @@ namespace MueLu {
     // aggToRowMap[aggStart[i]]..aggToRowMap[aggStart[i+1]-1] are the DOFs in aggregate i
     ArrayRCP<LO> aggStart;
     ArrayRCP< GO > aggToRowMap;
-    AmalgamationFactory::UnamalgamateAggregates(aggregates, amalgInfo, aggStart, aggToRowMap);
+    amalgInfo.UnamalgamateAggregates(aggregates, aggStart, aggToRowMap);
 
     // find size of the largest aggregate
     LO maxAggSize=0;
@@ -161,7 +161,7 @@ namespace MueLu {
     // index base for coarse Dof map (usually 0)
     GO indexBase=fineA.getRowMap()->getIndexBase();
 
-    const RCP<const Map> nonUniqueMap = AmalgamationFactory::ComputeUnamalgamatedImportDofMap(aggregates, amalgInfo);
+    const RCP<const Map> nonUniqueMap = amalgInfo.ComputeUnamalgamatedImportDofMap(aggregates);
     const RCP<const Map> uniqueMap    = fineA.getDomainMap();
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);

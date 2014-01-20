@@ -47,9 +47,11 @@
 */
  
 #include "Teuchos_ScalarTraitsDecl.hpp"
-
+#include "Teuchos_ScalarTraits.hpp"
+#include <cfloat>
 namespace Teuchos {
 
+#ifdef __CUDA_ARCH__
 template<>
 struct ScalarTraits<int>
 {
@@ -114,17 +116,34 @@ struct ScalarTraits<long int>
   static inline __device__ __host__ long int pow(long int x, long int y) { return (long int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
 };
 
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
+template<>
+struct ScalarTraits<long unsigned int>
+{
+  typedef long unsigned int magnitudeType;
+  typedef long unsigned int halfPrecision;
+  typedef long unsigned int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline __device__ __host__ magnitudeType magnitude(long unsigned int a) { return (long unsigned int)fabsf((float)a); }
+  static inline __device__ __host__ long unsigned int zero()  { return 0; }
+  static inline __device__ __host__ long unsigned int one()   { return 1; }
+  static inline __device__ __host__ long unsigned int conjugate(long unsigned int x) { return x; }
+  static inline __device__ __host__ long unsigned int real(long unsigned int x) { return x; }
+  static inline __device__ __host__ long unsigned int imag(long unsigned int) { return 0; }
+  static inline __device__ __host__ bool isnaninf(int) { return false; }
+  static inline __device__ __host__ long unsigned int squareroot(long unsigned int x) { return (long unsigned int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
+  static inline __device__ __host__ long unsigned int pow(long unsigned int x, long unsigned int y) { return (long unsigned int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+};
+
 template<>
 struct ScalarTraits<float>
 {
   typedef float magnitudeType;
   typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
   typedef double doublePrecision;
-#else
-  typedef float  doublePrecision;
-#endif
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -138,19 +157,20 @@ struct ScalarTraits<float>
   static inline __device__ __host__ bool  isnaninf(float x) { return isnan(x) || isinf(x); }
   static inline __device__ __host__ float squareroot(float x) { return sqrtf(x); }
   static inline __device__ __host__ float pow(float x, float y) { return powf(x,y); }
+  static inline __device__ __host__ float eps() { return FLT_EPSILON; }
+  static inline __device__ __host__ float t() { return FLT_MANT_DIG; }
+  static inline __device__ __host__ float base() { return FLT_RADIX; }
+  static inline __device__ __host__ float log10(float x ) { return ::log10f(x); }
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ float random() { return 9.0f; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
-#endif // HAVE_KOKKOSCLASSIC_CUDA_FLOAT
 
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
 template<>
 struct ScalarTraits<double>
 {
   typedef double magnitudeType;
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
   typedef float  halfPrecision;
-#else
-  typedef double halfPrecision;
-#endif
   typedef double doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
@@ -165,8 +185,15 @@ struct ScalarTraits<double>
   static inline __device__ __host__ bool  isnaninf(double x) { return isnan(x) || isinf(x); }
   static inline __device__ __host__ double squareroot(double x) { return sqrt(x); }
   static inline __device__ __host__ double pow(double x, double y) { return pow(x,y); }
+  static inline __device__ __host__ double eps() { return DBL_EPSILON; }
+  static inline __device__ __host__ double t() { return DBL_MANT_DIG; }
+  static inline __device__ __host__ double base() { return FLT_RADIX; }
+  static inline __device__ __host__ double log10(double x ) { return ::log10(x); }
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ double random() { return 9.0; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
-#endif // HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
+#endif // __CUDA_ARCH__
 
 } // Teuchos namespace
 

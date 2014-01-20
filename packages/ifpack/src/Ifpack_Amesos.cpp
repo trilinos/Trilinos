@@ -145,11 +145,11 @@ int Ifpack_Amesos::Initialize()
 #endif
 
   // only square matrices
-  if (Matrix_->NumGlobalRows() != Matrix_->NumGlobalCols())
+  if (Matrix_->NumGlobalRows64() != Matrix_->NumGlobalCols64())
     IFPACK_CHK_ERR(-1);
 
   // if the matrix has a dimension of 0, this is an empty preconditioning object.
-  if (Matrix_->NumGlobalRows() == 0) {
+  if (Matrix_->NumGlobalRows64() == 0) {
     IsEmpty_ = true;
     IsInitialized_ = true;
     ++NumInitialize_;
@@ -168,6 +168,7 @@ int Ifpack_Amesos::Initialize()
   if (Solver_ == Teuchos::null) 
   {
     // try to create KLU, it is generally enabled
+    Label_ = "Amesos_Klu";
     Solver_ = Teuchos::rcp( Factory.Create("Amesos_Klu",*Problem_) );
   }
   if (Solver_ == Teuchos::null)
@@ -186,6 +187,7 @@ int Ifpack_Amesos::Initialize()
            << ")" << endl;
       FirstTime = false;
     }
+    Label_ = "Amesos_Lapack";
     Solver_ = Teuchos::rcp( Factory.Create("Amesos_Lapack",*Problem_) );
   }
   // if empty, give up.
@@ -350,7 +352,7 @@ std::ostream& Ifpack_Amesos::Print(std::ostream& os) const
     os << "================================================================================" << endl;
     os << "Ifpack_Amesos: " << Label () << endl << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    os << "Global number of rows            = " << Matrix_->NumGlobalRows64() << endl;
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;

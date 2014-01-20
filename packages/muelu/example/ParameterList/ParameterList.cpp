@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -50,7 +50,6 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -58,6 +57,8 @@
 
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP; // reference count pointers
 
   //
@@ -103,6 +104,7 @@ int main(int argc, char *argv[]) {
   // Multigrid Hierarchy
   ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+  H->SetMaxCoarseSize(50);
   H->GetLevel(0)->Set("A", A);
 
   mueLuFactory.SetupHierarchy(*H);
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]) {
   H->Iterate(*B, nIts, *X);
 
   // Print relative residual norm
-  ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+  Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
   if (comm->getRank() == 0)
     std::cout << "||Residual|| = " << residualNorms << std::endl;
 

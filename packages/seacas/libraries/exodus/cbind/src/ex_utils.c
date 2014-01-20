@@ -571,7 +571,7 @@ int ex_id_lkup( int exoid,
   int64_t *id_vals=NULL;
   int *stat_vals=NULL;
 
-  static int filled=FALSE;
+  static int filled=EX_FALSE;
   struct obj_stats *tmp_stats;
   int status;
   char errmsg[MAX_ERR_LENGTH];
@@ -744,16 +744,16 @@ int ex_id_lkup( int exoid,
     }
 
     /* check if values in stored arrays are filled with non-zeroes */
-    filled = TRUE;
+    filled = EX_TRUE;
     for (i=0;i<dim_len;i++) {
       if (id_vals[i] == EX_INVALID_ID || id_vals[i] == NC_FILL_INT) {
-        filled = FALSE;
+        filled = EX_FALSE;
         break; /* id array hasn't been completely filled with valid ids yet */
       }
     }
 
     if (filled) {
-      tmp_stats->valid_ids = TRUE;
+      tmp_stats->valid_ids = EX_TRUE;
       tmp_stats->num = dim_len;
       tmp_stats->id_vals = id_vals;
     }
@@ -812,7 +812,7 @@ int ex_id_lkup( int exoid,
 
       if (tmp_stats->valid_ids) {  
         /* status array is valid only if ids are valid */
-        tmp_stats->valid_stat = TRUE;
+        tmp_stats->valid_stat = EX_TRUE;
         tmp_stats->stat_vals = stat_vals;
       }
 
@@ -1156,7 +1156,7 @@ int ex_get_num_props (int exoid, ex_entity_type obj_type)
   /* loop until there is not a property variable defined; the name of */
   /* the variables begin with an increment of 1 ("xx_prop1") so use cntr+1 */
 
-  while (TRUE)
+  while (EX_TRUE)
     {
       switch (obj_type)
 	{
@@ -1427,7 +1427,7 @@ void ex_iqsort64(int64_t v[], int64_t iv[], int64_t N)
  */
 int ex_large_model(int exoid)
 {
-  static int message_output = FALSE;
+  static int message_output = EX_FALSE;
   if (exoid < 0) {
     /* If exoid not specified, then query is to see if user specified
      * the large model via an environment variable
@@ -1438,14 +1438,14 @@ int ex_large_model(int exoid)
 	if (!message_output) {
 	  fprintf(stderr,
 		  "EXODUSII: Small model size selected via EXODUS_LARGE_MODEL environment variable\n");
-	  message_output = TRUE;
+	  message_output = EX_TRUE;
 	}
         return 0;
       } else {
 	if (!message_output) {
 	  fprintf(stderr,
 		  "EXODUSII: Large model size selected via EXODUS_LARGE_MODEL environment variable\n");
-	  message_output = TRUE;
+	  message_output = EX_TRUE;
 	}
         return 1;
       }

@@ -159,6 +159,10 @@ int main(int argc, char *argv[])
 
   solve_status = solver->solve(initial_guess.get(), &solve_criteria);
 
+  TEUCHOS_ASSERT(solve_status.extraParameters->isType<int>("Number of Iterations"));
+
+  TEUCHOS_ASSERT(solve_status.extraParameters->get<int>("Number of Iterations") == 7);
+
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -49,7 +49,9 @@
 
 #include "MueLu_CoupledAggregationFactory.hpp"
 
-namespace {
+namespace MueLuTests {
+
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
   using std::string; //?? TODO
 
@@ -59,7 +61,6 @@ namespace {
             class Node,
             class LocalMatOps>
   void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& aggregates, Teuchos::FancyOStream& out) {
-#include "MueLu_UseShortNamesOrdinal.hpp"
     RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
 
     ArrayRCP<LO> Final = Final_->getDataNonConst(0);
@@ -75,7 +76,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
-#include "MueLu_UseShortNames.hpp"
 
       out << "version: " << MueLu::Version() << std::endl;
       RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());

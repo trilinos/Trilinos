@@ -1497,6 +1497,70 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 }
 
 /* ------------------------------------------------------------------------- */
+/* generate line smoothers                                                   */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
+       int ntimes, double omega, int nBlocks, int *blockIndices, int *blockOffset,
+       int  (*fun)(ML_Smoother *, int, double *, int, double *))
+{
+   double         myomega;
+   ML_Sm_BGS_Data *data;
+   char           prestr[80];
+   char           str[80];
+
+   if (nl == ML_ALL_LEVELS) {
+      printf("ML_Gen_Smoother_LineSmoother: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_LineSmoother: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
+   if (omega == ML_DDEFAULT) myomega = .5;
+   else                     myomega = omega;
+
+   if (fun == ML_Smoother_LineJacobi) {
+      sprintf(prestr,"LineJac");
+   }
+   else if (fun == ML_Smoother_LineGS) {
+      sprintf(prestr,"LineGS");
+   }
+   else {
+      printf("ML_Gen_Smoother_LineSmoother: unknown function\n");
+      return 1;
+   }
+
+   ML_Smoother_Create_BGS_Data(&data);
+
+   ML_Smoother_Gen_LineSmootherFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices, blockOffset);
+
+   if (pre_or_post == ML_PRESMOOTHER) {
+      sprintf(str,"%s_pre%d",prestr,nl);
+      ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), 
+                        (void *) data, fun, ntimes, myomega, str));
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER) {
+      sprintf(str,"%s_post%d",prestr,nl);
+      ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
+                             (void *) data, fun, ntimes, myomega, str));
+   }
+   else if (pre_or_post == ML_BOTH) {
+      sprintf(str,"%s_pre%d",prestr,nl);
+      ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), 
+                        (void *) data, fun, ntimes, myomega, str);
+      sprintf(str,"%s_post%d",prestr,nl);
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
+                             (void *) data, fun, ntimes, myomega, str));
+   }
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
 /* generate the variable block Gauss Seidel smoother                         */
 /* ------------------------------------------------------------------------- */
 

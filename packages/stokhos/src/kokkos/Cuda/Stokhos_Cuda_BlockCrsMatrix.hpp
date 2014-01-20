@@ -57,13 +57,8 @@ namespace Stokhos {
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , Kokkos::Cuda > ,
-  Kokkos::View< VectorValue** ,
-                     Kokkos::LayoutLeft ,
-                     Kokkos::Cuda > ,
-  Kokkos::View< VectorValue** ,
-                     Kokkos::LayoutLeft ,
-                     Kokkos::Cuda > ,
-  DefaultSparseMatOps >
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Cuda > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Cuda > >
 {
 public:
 
@@ -106,7 +101,7 @@ public:
         const VectorValue * const x = & m_x( 0 , m_A.graph.entries(iEntry) );
         const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
-        y += Multiply< BlockSpec >::apply( m_A.block , a , x );
+        y += BlockMultiply< BlockSpec >::apply( m_A.block , a , x );
       }
 
       if ( threadIdx.x + blockDim.x * threadIdx.y < m_A.block.dimension() ) {
@@ -126,10 +121,10 @@ public:
 
     const dim3 grid(
       std::min( row_count , Kokkos::Impl::cuda_internal_maximum_grid_count() ) , 1 , 1 );
-    const dim3 block = Multiply<BlockSpec>::thread_block( A.block );
+    const dim3 block = BlockMultiply<BlockSpec>::thread_block( A.block );
 
     const size_type shmem =
-      Multiply<BlockSpec>::template shmem_size<block_vector_type>( A.block );
+      BlockMultiply<BlockSpec>::template shmem_size<block_vector_type>( A.block );
 
     if ( thread_max < block.x * block.y ) {
       std::ostringstream msg ;
@@ -148,4 +143,3 @@ public:
 } // namespace Stokhos
 
 #endif /* #ifndef STOKHOS_CUDA_BLOCKCRSMATRIX_HPP */
-

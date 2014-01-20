@@ -45,6 +45,7 @@
 #define EPETRAEXT_XMLREADER_H
 
 #include "EpetraExt_ConfigDefs.h"
+#include "Epetra_ConfigDefs.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include <fstream>
 
@@ -121,17 +122,45 @@ class XMLReader
     // @}
     // @{ \name Read operations
     
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     //! Reads the Epetra_Map stored with label \c Label.
     void Read(const std::string& Label, Epetra_Map*& Map);
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    //! Reads the Epetra_Map stored with label \c Label. Long Long version.
+    void Read64(const std::string& Label, Epetra_Map*& Map);
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     //! Reads the Epetra_CrsGraph stored with label \c Label.
     void Read(const std::string& Label, Epetra_CrsGraph*& Graph);
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    //! Reads the Epetra_CrsGraph stored with label \c Label. Long Long version.
+    void Read64(const std::string& Label, Epetra_CrsGraph*& Graph);
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     //! Reads the Epetra_CrsMatrix stored with label \c Label.
     void Read(const std::string& Label, Epetra_CrsMatrix*& Matrix);
+#endif
 
-    //! Reads the Epetra_MultiVector stored with label \c Label.
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    //! Reads the Epetra_CrsMatrix stored with label \c Label. Long Long version.
+    void Read64(const std::string& Label, Epetra_CrsMatrix*& Matrix);
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	//! Reads the Epetra_MultiVector stored with label \c Label.
     void Read(const std::string& Label, Epetra_MultiVector*& MultiVector);
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+	//! Reads the Epetra_MultiVector stored with label \c Label. Long Long version.
+    void Read64(const std::string& Label, Epetra_MultiVector*& MultiVector);
+#endif
 
     //! Reads a std::vector of strings with label \c Label.
     void Read(const std::string& Label, std::vector<std::string>& Content);

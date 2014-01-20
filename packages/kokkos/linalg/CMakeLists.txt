@@ -1,10 +1,11 @@
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddOptionAndDefine)
+
 INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(LinAlg)
 
 ADD_SUBDIRECTORY(src)
+
+TRIBITS_ADD_TEST_DIRECTORIES(unit_test)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

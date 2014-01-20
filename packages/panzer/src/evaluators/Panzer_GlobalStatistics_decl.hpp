@@ -53,7 +53,7 @@
 
 namespace panzer {
 
-class GlobalData;
+struct GlobalData;
     
 PHX_EVALUATOR_CLASS_PP(GlobalStatistics)
   

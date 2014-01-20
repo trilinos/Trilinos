@@ -141,8 +141,10 @@ solveWithBelos (bool& converged,
   RCP<ParameterList> belosParams = parameterList ();
   belosParams->set ("Block Size", numColsB);
   belosParams->set ("Maximum Iterations", maxNumIters);
+  belosParams->set ("Num Blocks", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
   belosParams->set ("Orthogonalization", "ICGS");
+  belosParams->set ("maxNumOrthogPasses", 1);
   belosParams->set("Output Frequency",10);
   belosParams->set("Output Style",1);
   belosParams->set("Verbosity",33);

@@ -50,28 +50,30 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* Fielder(const Epetra_Map* Map)
 {
   // this is actually a dense matrix, stored into Crs format
-  int NumGlobalElements = Map->NumGlobalElements();
+  int_type NumGlobalElements = (int_type) Map->NumGlobalElements64();
   int NumMyElements     = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, NumGlobalElements);
 
   vector<double> Values(NumGlobalElements);
-  vector<int>    Indices(NumGlobalElements);
+  vector<int_type> Indices(NumGlobalElements);
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
-    int NumEntries = NumGlobalElements;
-    int iGlobal = MyGlobalElements[i];
+    int_type NumEntries = NumGlobalElements;
+    int_type iGlobal = MyGlobalElements[i];
     
-    for (int j = 0 ; j < NumGlobalElements ; ++j) 
+    for (int_type j = 0 ; j < NumGlobalElements ; ++j) 
     {
       Indices[j] = j;
-      Values[j]  = (double)abs(iGlobal - j);
+      Values[j]  = (double)abs((double) (iGlobal - j));
     }
 
     Matrix->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
@@ -84,6 +86,23 @@ Epetra_CrsMatrix* Fielder(const Epetra_Map* Map)
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+Epetra_CrsMatrix* Fielder(const Epetra_Map* Map)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Fielder<int>(Map);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Fielder<long long>(Map);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Fielder: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

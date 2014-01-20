@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -61,9 +61,10 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   TEUCHOS_UNIT_TEST(SaPFactory, Test0)
   {
@@ -96,7 +97,7 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    Teuchos::Array<ST::magnitudeType> results(2);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> results(2);
 
     // run test only on 1 proc
     if(comm->getSize() == 1)
@@ -124,7 +125,7 @@ namespace MueLuTests {
             // build nullspace
             RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
             nullSpace->putScalar( (SC) 1.0);
-            Teuchos::Array<ST::magnitudeType> norms(1);
+            Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
             nullSpace->norm1(norms);
             if (comm->getRank() == 0)
               out << "||NS|| = " << norms[0] << std::endl;

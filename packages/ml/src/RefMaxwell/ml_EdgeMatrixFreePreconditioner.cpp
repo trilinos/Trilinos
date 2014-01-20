@@ -179,7 +179,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   double ** d_coords;    
   
   /* Check the List - Do we have a nullspace pre-provided? */
-  string nulltype=List_.get("null space: type","default vectors");
+  std::string nulltype=List_.get("null space: type","default vectors");
   double* nullvecs=List_.get("null space: vectors",(double*)0);
   int nulldim=List_.get("null space: dimension",0);
   if (nulltype=="pre-computed" && nullvecs && (nulldim==2 || nulldim==3)){
@@ -203,7 +203,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 
     /* Sanity Checks */
     if(dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord))){
-      cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n";
+      std::cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n";
       exit(-1);
     }/*end if*/
     
@@ -414,6 +414,10 @@ void ML_Epetra::EdgeMatrixFreePreconditioner::Print(int whichHierarchy)
 {
   /*ofstream ofs("Pmat.edge.m");
     if(Prolongator_) Prolongator_->Print(ofs);*/
+  if(Prolongator_) EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);   
+  if(CoarseMatrix) EpetraExt::RowMatrixToMatlabFile("coarsemat.dat",*CoarseMatrix);
+
+
   if(CoarsePC) CoarsePC->Print();
 }/*end Print*/
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -117,13 +117,14 @@ typedef int GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
-#include "MueLu_UseShortNames.hpp"
-
 /////////////////////////
 // helper function
 
-Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+namespace MueLuTests {
 
+#include "MueLu_UseShortNames.hpp"
+
+Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
   Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
   LocalOrdinal NumMyElements = map->getNodeNumElements();
@@ -181,10 +182,14 @@ Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> 
   return mtx;
 }
 
+}
+
 /////////////////
 // MAIN
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::TimeMonitor;
 
@@ -255,8 +260,8 @@ int main(int argc, char *argv[]) {
 
   Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > mapExtractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(bigMap, maps);
 
-  RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
-  RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
+  RCP<CrsMatrixWrap> Op11 = MueLuTests::GenerateProblemMatrix(map1,2,-1,-1);
+  RCP<CrsMatrixWrap> Op22 = MueLuTests::GenerateProblemMatrix(map2,3,-2,-1);
 
   /*Op11->describe(*out,Teuchos::VERB_EXTREME);
   Op22->describe(*out,Teuchos::VERB_EXTREME);*/
@@ -273,6 +278,7 @@ int main(int argc, char *argv[]) {
 
   // build hierarchy
   Hierarchy H;
+  H.SetMaxCoarseSize(50);
   RCP<Level> levelOne = H.GetLevel();
   levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
@@ -347,6 +353,7 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Smoother",     smootherFact); // TODO fix me
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
+  H.SetVerbLevel(MueLu::Test);
   H.Setup(M);
 
   std::cout << "main AcFact = " << AcFact.get() << std::endl;

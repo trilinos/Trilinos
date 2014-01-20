@@ -55,12 +55,20 @@ namespace Intrepid {
 ///
 /// Type for setting components all at once
 ///
-enum ComponentValue {ZEROS, ONES, SEQUENCE, RANDOM, NANS};
+enum ComponentValue {
+  ZEROS,
+  ONES,
+  SEQUENCE,
+  RANDOM_UNIFORM,
+  RANDOM_NORMAL,
+  NANS};
 
 ///
 /// Base class for all vector and tensor types.
+/// R, S, T: Component types
+/// SR, SS, ST: Corresponding storage types.
 ///
-template<typename T, typename Store>
+template<typename T, typename ST>
 class TensorBase
 {
 public:
@@ -68,7 +76,12 @@ public:
   ///
   /// Component type
   ///
-  typedef T type;
+  typedef T value_type;
+
+  ///
+  /// Storage type
+  ///
+  typedef ST storage_type;
 
   ///
   /// Default constructor
@@ -108,14 +121,14 @@ public:
   /// Copy constructor
   /// \param X the values of its components are copied to the new tensor
   ///
-  TensorBase(TensorBase<T, Store> const & X);
+  TensorBase(TensorBase<T, ST> const & X);
 
   ///
   /// Copy assignment
   /// \param X the values of its components are copied to this tensor
   ///
-  TensorBase<T, Store> &
-  operator=(TensorBase<T, Store> const & X);
+  TensorBase<T, ST> &
+  operator=(TensorBase<T, ST> const & X);
 
   ///
   /// Simple destructor
@@ -168,15 +181,17 @@ public:
   /// Component increment
   /// \param X components are added to current components
   ///
-  TensorBase<T, Store> &
-  operator+=(TensorBase<T, Store> const & X);
+  template<typename S, typename SS>
+  TensorBase<T, ST> &
+  operator+=(TensorBase<S, SS> const & X);
 
   ///
   /// Component decrement
   /// \param X components are subtracted to current components
   ///
-  TensorBase<T, Store> &
-  operator-=(TensorBase<T, Store> const & X);
+  template<typename S, typename SS>
+  TensorBase<T, ST> &
+  operator-=(TensorBase<S, SS> const & X);
 
   ///
   /// Fill with zeros
@@ -208,7 +223,7 @@ protected:
   ///
   /// TensorBase components
   ///
-  Store
+  ST
   components_;
 
   ///
@@ -222,78 +237,80 @@ protected:
 ///
 /// Frobenius norm
 ///
-template<typename T, typename Store>
+template<typename T, typename ST>
 T
-norm_f(TensorBase<T, Store> const & X);
+norm_f(TensorBase<T, ST> const & X);
 
 ///
 /// Square of Frobenius norm
 ///
-template<typename T, typename Store>
+template<typename T, typename ST>
 T
-norm_f_square(TensorBase<T, Store> const & X);
+norm_f_square(TensorBase<T, ST> const & X);
 
 ///
 /// Base addition
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename SR, typename SS,
+typename ST>
 void
 add(
-    TensorBase<R, Store> const & A,
-    TensorBase<S, Store> const & B,
-    TensorBase<T, Store> & C);
+    TensorBase<R, SR> const & A,
+    TensorBase<S, SS> const & B,
+    TensorBase<T, ST> & C);
 
 ///
 /// Base subtraction
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename SR, typename SS,
+typename ST>
 void
 subtract(
-    TensorBase<R, Store> const & A,
-    TensorBase<S, Store> const & B,
-    TensorBase<T, Store> & C);
+    TensorBase<R, SR> const & A,
+    TensorBase<S, SS> const & B,
+    TensorBase<T, ST> & C);
 
 ///
 /// Base minus
 ///
-template<typename T, typename Store>
+template<typename T, typename ST>
 void
-minus(TensorBase<T, Store> const & A, TensorBase<T, Store> & B);
+minus(TensorBase<T, ST> const & A, TensorBase<T, ST> & B);
 
 ///
 /// Base equality
 ///
-template<typename T, typename Store>
+template<typename T, typename ST>
 bool
-equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
+equal(TensorBase<T, ST> const & A, TensorBase<T, ST> const & B);
 
 ///
 /// Base not equality
 ///
-template<typename T, typename Store>
+template<typename T, typename ST>
 bool
-not_equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
+not_equal(TensorBase<T, ST> const & A, TensorBase<T, ST> const & B);
 
 ///
 /// Base scaling
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename SR, typename ST>
 void
-scale(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+scale(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B);
 
 ///
 /// Base division
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename SR, typename ST>
 void
-divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+divide(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B);
 
 ///
 /// Base split (scalar divided by tensor)
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename SR, typename ST>
 void
-split(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+split(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B);
 
 } // namespace Intrepid
 

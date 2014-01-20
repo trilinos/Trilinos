@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <stdio.h>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -159,6 +160,109 @@ public:
 };
 
 }
+
+/*--------------------------------------------------------------------------*/
+
+namespace Test {
+
+template< class DeviceType >
+class ScanRequestFunctor
+{
+public:
+  typedef DeviceType  device_type ;
+  typedef long int    value_type ;
+  Kokkos::View< value_type , device_type > accum ;
+  Kokkos::View< value_type , device_type > total ;
+
+  ScanRequestFunctor() : accum("accum"), total("total") {}
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & error ) const { error = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( value_type volatile & error ,
+             value_type volatile const & input ) const
+    { if ( input ) error = 1 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( device_type dev , value_type & error ) const
+  {
+    if ( 0 == dev.league_rank() && 0 == dev.team_rank() ) {
+      const long int thread_count = dev.league_size() * dev.team_size();
+      *total = ( thread_count * ( thread_count + 1 ) ) / 2 ;
+    }
+
+    const long int answer =
+      ( dev.league_rank() + 1 ) * dev.team_rank() +
+      ( dev.team_rank() * ( dev.team_rank() + 1 ) ) / 2 ;
+    
+    const long int result =
+      dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+
+    const long int result2 =
+      dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+
+    if ( answer != result || answer != result2 ) {
+      printf("ScanRequestFunctor[%d.%d of %d.%d] %ld != %ld or %ld\n",
+             dev.league_rank(), dev.team_rank(),
+             dev.league_size(), dev.team_size(),
+             answer,result,result2);
+      error = 1 ;
+    }
+
+    const long int thread_rank = dev.team_rank() +
+                                 dev.team_size() * dev.league_rank();
+    dev.team_scan( 1 + thread_rank , accum.ptr_on_device() );
+  }
+};
+
+template< class DeviceType >
+class TestScanRequest
+{
+public:
+  typedef DeviceType  device_type ;
+  typedef long int    value_type ;
+
+  typedef Test::ScanRequestFunctor<DeviceType> functor_type ;
+
+  //------------------------------------
+
+  TestScanRequest( const size_t nteam )
+  {
+    run_test(nteam);
+  }
+
+  void run_test( const size_t nteam )
+  {
+    const unsigned REPEAT = 100000 ;
+    const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
+
+    Kokkos::ParallelWorkRequest request ; 
+
+    request.team_size   = device_type::team_max();
+    request.league_size = nteam ;
+
+    functor_type functor ;
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      long int accum = 0 ;
+      long int total = 0 ;
+      long int error = 0 ;
+      Kokkos::deep_copy( functor.accum , total );
+      Kokkos::parallel_reduce( request , functor , error );
+      DeviceType::fence();
+      Kokkos::deep_copy( accum , functor.accum );
+      Kokkos::deep_copy( total , functor.total );
+
+      ASSERT_EQ( error , 0 );
+      ASSERT_EQ( total , accum );
+    }
+
+    device_type::fence();
+  }
+};
+
+} // namespace Test
 
 /*--------------------------------------------------------------------------*/
 

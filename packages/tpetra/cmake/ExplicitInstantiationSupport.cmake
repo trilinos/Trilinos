@@ -51,8 +51,9 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE(STATUS "ETI set (before exclusions): ${Tpetra_ETI_LIBRARYSET}")
   ENDIF()
-ELSEIF()
+ELSE()
   # no ETI: these macros are used only for testing
+  JOIN(Tpetra_ETI_NODES   "|" FALSE ${Tpetra_ETI_NODES}  )
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=double" 
                                                    "LO=int" 
                                                    "GO=int" 

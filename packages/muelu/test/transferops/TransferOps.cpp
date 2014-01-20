@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -105,8 +105,10 @@ typedef int GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 //
-#include "MueLu_UseShortNames.hpp"
 
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
 Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > & map,
@@ -185,8 +187,13 @@ Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > TriDia
   return mtx;
 } //TriDiag
 
+}
+
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
+  using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

@@ -179,6 +179,15 @@ namespace Ioss {
     static std::string variable_name_kluge(const std::string &name,
 					   size_t component_count, size_t copies,
 					   size_t max_var_len);
-      };
+
+  /*!
+   * The model for a history file is a single sphere element (1 node, 1 element)
+   * This is needed for some applications that read this file that require a "mesh"
+   * even though a history file is just a collection of global variables with no
+   * real mesh. This routine will add the mesh portion to a history file.
+   */
+    static void generate_history_mesh(Ioss::Region *region);
+  };
+
 }
 #endif

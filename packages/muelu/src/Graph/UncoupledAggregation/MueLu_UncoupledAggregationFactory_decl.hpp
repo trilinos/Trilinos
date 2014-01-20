@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -66,6 +66,7 @@
 #include "MueLu_AggregationAlgorithmBase.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
 #include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
@@ -128,9 +129,9 @@ public:
   }
 
   // deprecated
-  AggOptions::Ordering GetOrdering() const {
-    const ParameterList & pL = GetParameterList();
-    AggOptions::Ordering ordering = pL.get<AggOptions::Ordering>("Ordering");
+  Ordering GetOrdering() const {
+    const ParameterList& pL = GetParameterList();
+    Ordering ordering = pL.get<Ordering>("Ordering");
     return ordering;
   }
   // deprecated

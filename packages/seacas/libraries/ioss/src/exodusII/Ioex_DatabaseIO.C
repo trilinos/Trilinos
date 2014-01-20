@@ -468,6 +468,8 @@ namespace Ioex {
       return dbState != Ioss::STATE_INVALID;
     }
 
+    int app_opt_val = ex_opts(EX_DEFAULT); 
+
     // File has not yet been opened, so verify that it is readable or
     // writable.  HOWEVER, *DO NOT* overwrite the file here if it exists
     // and the mode is WRITE.
@@ -491,11 +493,21 @@ namespace Ioex {
 				  &cpu_word_size, &dbRealWordSize);
     }
 
+    ex_opts(app_opt_val); // Reset back to what it was.
+
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
+    int global_file_ptr = exodus_file_ptr;
+    if (isParallel) {
+      global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
+    }
     if (global_file_ptr < 0 && (write_message || error_msg != NULL || bad_count != NULL)) {
       Ioss::IntVector status;
-      util().all_gather(exodus_file_ptr, status);
+      if (isParallel) {
+	util().all_gather(exodus_file_ptr, status);
+      }
+      else {
+	status.push_back(exodus_file_ptr);
+      }
 
       if (write_message || error_msg != NULL) {
 	// See which processors could not open/create the file...
@@ -769,6 +781,7 @@ namespace Ioex {
         Ioss::ElementBlock *eb = new Ioss::ElementBlock(this, "e1", "sphere", 1);
         eb->property_add(Ioss::Property("id", 1));
         get_region()->add(eb);
+        get_step_times();
         add_region_fields();
       }
       return;
@@ -950,56 +963,79 @@ namespace Ioex {
     int timestep_count = 0;
     std::vector<double> tsteps(0);
 
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-      timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-      if (timestep_count <= 0)
-        return;
+    if (dbUsage == Ioss::WRITE_HISTORY) {
+      if (myProcessor == 0) {
+	timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+	if (timestep_count <= 0)
+	  return;
+	
+	// For an exodusII file, timesteps are global and are stored in the region.
+	// A history file only stores that last time / step
+	// Read the timesteps and add them to the region.
+	// Since we can't access the Region's stateCount directly, we just add
+	// all of the steps and assume the Region is dealing with them directly...
+	tsteps.resize(timestep_count);
+	int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));
+	if (error < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-      // For an exodusII file, timesteps are global and are stored in the region.
-      // Read the timesteps and add to the region
-      tsteps.resize(timestep_count);
-      int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));
-      if (error < 0)
-        exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	Ioss::Region *this_region = get_region();
+	for (int i=0; i < timestep_count; i++) {
+	  this_region->add_state(tsteps[i]*timeScaleFactor);
+	}
+      }
+    } else {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+	timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+	if (timestep_count <= 0)
+	  return;
+	
+	// For an exodusII file, timesteps are global and are stored in the region.
+	// Read the timesteps and add to the region
+	tsteps.resize(timestep_count);
+	int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));
+	if (error < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-      // See if the "last_written_time" attribute exists and if it
-      // does, check that it matches the largest time in 'tsteps'.
-      Ioex::Internals data(get_file_pointer(), maximumNameLength);
-      exists = data.read_last_time_attribute(&last_time);
-    }
+	// See if the "last_written_time" attribute exists and if it
+	// does, check that it matches the largest time in 'tsteps'.
+	Ioex::Internals data(get_file_pointer(), maximumNameLength);
+	exists = data.read_last_time_attribute(&last_time);
+      }
 
-    if (exists) {
-      // Assume that if it exists on 1 processor, it exists on
-      // all... Sync value among processors since could have a
-      // corrupt step on only a single database.
-      last_time = util().global_minmax(last_time, Ioss::ParallelUtils::DO_MIN);
-    }
+      if (exists && isParallel) {
+	// Assume that if it exists on 1 processor, it exists on
+	// all... Sync value among processors since could have a
+	// corrupt step on only a single database.
+	last_time = util().global_minmax(last_time, Ioss::ParallelUtils::DO_MIN);
+      }
 
-    // Only add states that are less than or equal to the
-    // 'last_time' value which is either DBL_MAX or the value of
-    // the last time successfully written to the database and
-    // flushed to disk.  This is used to avoid corrupt data arising
-    // from a job that crashed during the writing of the last step
-    // on the database.  Output a warning message if there is
-    // potentially corrupt data on the database...
+      // Only add states that are less than or equal to the
+      // 'last_time' value which is either DBL_MAX or the value of
+      // the last time successfully written to the database and
+      // flushed to disk.  This is used to avoid corrupt data arising
+      // from a job that crashed during the writing of the last step
+      // on the database.  Output a warning message if there is
+      // potentially corrupt data on the database...
 
-    Ioss::Region *this_region = get_region();
-    for (int i=0; i < timestep_count; i++) {
-      if (tsteps[i] <= last_time) {
-        this_region->add_state(tsteps[i]*timeScaleFactor);
-      } else {
-        if (myProcessor == 0) {
-          // NOTE: Don't want to warn on all processors if there are
-          // corrupt steps on all databases, but this will only print
-          // a warning if there is a corrupt step on processor
-          // 0... Need better warnings which won't overload in the
-          // worst case...
-          IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
-		       << " in database file\n\t" << get_filename()
-		       << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
-		       << last_time << ".\n";
-        }
+      Ioss::Region *this_region = get_region();
+      for (int i=0; i < timestep_count; i++) {
+	if (tsteps[i] <= last_time) {
+	  this_region->add_state(tsteps[i]*timeScaleFactor);
+	} else {
+	  if (myProcessor == 0) {
+	    // NOTE: Don't want to warn on all processors if there are
+	    // corrupt steps on all databases, but this will only print
+	    // a warning if there is a corrupt step on processor
+	    // 0... Need better warnings which won't overload in the
+	    // worst case...
+	    IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
+			 << " in database file\n\t" << get_filename()
+			 << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
+			 << last_time << ".\n";
+	  }
+	}
       }
     }
   }
@@ -1530,7 +1566,8 @@ namespace Ioex {
 	if (get_use_generic_canonical_name()) {
 	  db_name = &alias;
 	}
-	block->property_add(Ioss::Property("db_name", *db_name));
+	if (alias != block_name)
+	  block->property_add(Ioss::Property("db_name", *db_name));
       }
 
       // Maintain block order on output database...
@@ -2003,7 +2040,6 @@ namespace Ioex {
         std::string side_set_name;
         Ioss::SideSet *side_set = NULL;
 
-        int64_t number_distribution_factors = 0;
         {
           Ioss::SerializeIO	serializeIO__(this);
 
@@ -2037,7 +2073,8 @@ namespace Ioex {
 	      if (get_use_generic_canonical_name()) {
 		db_name = &alias;
 	      }
-	      side_set->property_add(Ioss::Property("db_name", *db_name));
+	      if (alias != side_set_name)
+		side_set->property_add(Ioss::Property("db_name", *db_name));
 	    }
 
             get_region()->add((Ioss::SideSet*)side_set);
@@ -2293,7 +2330,7 @@ namespace Ioex {
                 // cases where we don't need to read it, but if we are
                 // already reading it (to split the sidesets), then use
                 // the data when we have it.
-                if (side_map.size() > 0) {
+                if (!side_map.empty()) {
                   // Set a property indicating which element side
                   // (1-based) all sides in this block are applied to.
                   // If they are not all assigned to the same element
@@ -2554,7 +2591,8 @@ namespace Ioex {
 	      if (get_use_generic_canonical_name()) {
 		db_name = &alias;
 	      }
-	      Xset->property_add(Ioss::Property("db_name", *db_name));
+	      if (alias != Xset_name)
+		Xset->property_add(Ioss::Property("db_name", *db_name));
 	    }
             get_region()->add(Xset);
             get_region()->add_alias(Xset_name, alias);
@@ -2816,40 +2854,56 @@ namespace Ioex {
             }
 
             else if (field.get_name() == "owning_processor") {
-              Ioss::CommSet *css = get_region()->get_commset("commset_node");
-              if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-                int64_t *idata = static_cast<int64_t*>(data);
-                for (int64_t i=0; i < nodeCount; i++) {
-                  idata[i] = myProcessor;
-                }
+	      if (isParallel) {
+		Ioss::CommSet *css = get_region()->get_commset("commset_node");
+		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+		  int64_t *idata = static_cast<int64_t*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = myProcessor;
+		  }
+		  
+		  std::vector<int64_t> ent_proc;
+		  css->get_field_data("entity_processor_raw", ent_proc);
+		  for (size_t i=0; i < ent_proc.size(); i+=2) {
+		    int64_t node = ent_proc[i+0];
+		    int64_t proc = ent_proc[i+1];
+		    if (proc < myProcessor) {
+		      idata[node-1] = proc;
+		    }
+		  }
+		}
+		else {
+		  int *idata = static_cast<int*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = myProcessor;
+		  }
 
-                std::vector<int64_t> ent_proc;
-                css->get_field_data("entity_processor_raw", ent_proc);
-                for (size_t i=0; i < ent_proc.size(); i+=2) {
-                  int64_t node = ent_proc[i+0];
-                  int64_t proc = ent_proc[i+1];
-                  if (proc < myProcessor) {
-                    idata[node-1] = proc;
-                  }
-                }
-              }
-              else {
-                int *idata = static_cast<int*>(data);
-                for (int64_t i=0; i < nodeCount; i++) {
-                  idata[i] = myProcessor;
-                }
-
-                std::vector<int> ent_proc;
-                css->get_field_data("entity_processor_raw", ent_proc);
-                for (size_t i=0; i < ent_proc.size(); i+=2) {
-                  int node = ent_proc[i+0];
-                  int proc = ent_proc[i+1];
-                  if (proc < myProcessor) {
-                    idata[node-1] = proc;
-                  }
-                }
-              }
-            }
+		  std::vector<int> ent_proc;
+		  css->get_field_data("entity_processor_raw", ent_proc);
+		  for (size_t i=0; i < ent_proc.size(); i+=2) {
+		    int node = ent_proc[i+0];
+		    int proc = ent_proc[i+1];
+		    if (proc < myProcessor) {
+		      idata[node-1] = proc;
+		    }
+		  }
+		}
+	      }
+	      else {
+		// Serial case...
+		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+		  int64_t *idata = static_cast<int64_t*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = 0;
+		  }
+		} else {
+		  int *idata = static_cast<int*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = 0;
+		  }
+		}
+	      }
+	    }
             else {
               num_to_get = Ioss::Utils::field_warning(nb, field, "input");
             }
@@ -6039,7 +6093,7 @@ namespace Ioex {
         if (get_region()->property_exists("my_processor")) {
           meta->processorId = get_region()->get_property("my_processor").get_int();
         }
-        if (get_region()->get_commsets().size() > 0) {
+        if (!get_region()->get_commsets().empty()) {
           isSerialParallel = true;
           meta->outputNemesis = true;
         }
@@ -6648,7 +6702,7 @@ namespace Ioex {
 	  // higher-order storage type.
 	  
 	  for (int i=0; i < attribute_count; i++) {
-	    int writ = std::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
+	    int writ = ::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
 	    if (writ > maximumNameLength)
 	      names[i][maximumNameLength] = '\0';
 	  }
@@ -7743,7 +7797,7 @@ namespace Ioex {
                                         Ioex::TopologyMap &side_map,
                                         Ioss::SurfaceSplitType split_type)
     {
-      if (element.size() > 0) {
+      if (!element.empty()) {
         Ioss::ElementBlock *block = NULL;
         // Topology of sides in current element block
         const Ioss::ElementTopology *common_ftopo = NULL;

@@ -11,10 +11,12 @@ namespace Test {
 
 int test_host( comm::Machine machine , std::istream & input )
 {
-  const std::pair<unsigned,unsigned> core_top  = Kokkos::hwloc::get_core_topology();
-  const unsigned                     core_size = Kokkos::hwloc::get_core_capacity();
+  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-  std::pair<unsigned,unsigned> gang_top( core_top.first , core_top.second * core_size );
+  unsigned team_count = numa_count ;
+  unsigned threads_per_team = cores_per_numa * threads_per_core ;
 
   unsigned elem_beg = 3 ;
   unsigned elem_end = 4 ;
@@ -25,9 +27,9 @@ int test_host( comm::Machine machine , std::istream & input )
 
     input >> which ;
 
-    if ( which == std::string("gang") ) {
-      input >> gang_top.first ;
-      input >> gang_top.second ;
+    if ( which == std::string("team") ) {
+      input >> team_count ;
+      input >> threads_per_team ;
     }
     else if ( which == std::string("implicit") ) {
       input >> elem_beg ;
@@ -43,32 +45,32 @@ int test_host( comm::Machine machine , std::istream & input )
 
   if ( 0 == comm::rank( machine ) ) {
     std::cout << "\"P" << comm::rank( machine )
-              << ": hwloc[ " << core_top.first
-              << " x " << core_top.second
-              << " x " << core_size
-              << " ] Threads[ " << gang_top.first
-              << " x " << gang_top.second
+              << ": hwloc[ " << numa_count
+              << " x " << cores_per_numa
+              << " x " << threads_per_core
+              << " ] Threads[ " << team_count
+              << " x " << threads_per_team
               << " ]\"" << std::endl ;
   }
 
-  Kokkos::Threads::initialize( gang_top , core_top );
+  Kokkos::Threads::initialize( team_count * threads_per_team , numa_count );
 
   {
     std::ostringstream label ;
 
-    label << "Scalar, Threads[" << gang_top.first << "x" << gang_top.second << "]" ;
+    label << "Scalar, Threads[" << team_count << "x" << threads_per_team << "]" ;
 
     implicit_driver<double,Kokkos::Threads>(
-      label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
+      label.str().c_str() , machine , team_count , elem_beg , elem_end , run );
   }
 
   {
     std::ostringstream label ;
 
-    label << "Ensemble[32], Threads[" << gang_top.first << "x" << gang_top.second << "]" ;
+    label << "Ensemble[32], Threads[" << team_count << "x" << threads_per_team << "]" ;
 
     implicit_driver< Kokkos::Array<double,32> , Kokkos::Threads>(
-      label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
+      label.str().c_str() , machine , team_count , elem_beg , elem_end , run );
   }
 
   Kokkos::Threads::finalize();

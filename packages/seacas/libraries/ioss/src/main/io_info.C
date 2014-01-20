@@ -165,10 +165,6 @@ int main(int argc, char *argv[])
   OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
   OUTPUT << '\n';
 
-  if (interface.use_generic_names()) {
-    Ioss::DatabaseIO::set_use_generic_canonical_name_default(true);
-  }
-  
   file_info(interface.filename(), interface.type(), interface);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
@@ -207,6 +203,10 @@ namespace {
       std::exit(EXIT_FAILURE);
     }
 
+    if (interface.use_generic_names()) {
+      dbi->set_use_generic_canonical_name(true);
+    }
+  
     dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
     dbi->set_field_separator(interface.field_suffix_separator());
     if (interface.ints_64_bit())

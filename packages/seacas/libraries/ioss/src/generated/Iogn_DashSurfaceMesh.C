@@ -325,7 +325,7 @@ int64_t ExodusMesh::nodeset_count() const
 
 int64_t ExodusMesh::sideset_count() const
 {
-    return 0;
+    return mExodusData.sidesetConnectivity.size();
 }
 
 int64_t ExodusMesh::element_count_proc() const
@@ -396,7 +396,14 @@ std::pair<std::string, int> ExodusMesh::topology_type(int64_t blockNumber) const
 
 void ExodusMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const
 {
-    elem_sides.clear();
+    elem_sides.resize(mExodusData.sidesetConnectivity[setId-1].size());
+    elem_sides.insert(elem_sides.begin(), mExodusData.sidesetConnectivity[setId-1].begin(), mExodusData.sidesetConnectivity[setId-1].end());
+}
+
+
+std::vector<std::string> ExodusMesh::sideset_touching_blocks(int64_t setId) const
+{
+  return mExodusData.sidesetTouchingBlocks[setId-1];
 }
 
 void ExodusMesh::nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const

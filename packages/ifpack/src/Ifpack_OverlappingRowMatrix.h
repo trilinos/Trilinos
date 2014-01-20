@@ -50,7 +50,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Import.h"
 #include "Epetra_Map.h"
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 #include "Epetra_IntVector.h"
 #else
 # ifdef IFPACK_NODE_AWARE_CODE
@@ -70,7 +70,7 @@ class Ifpack_OverlappingRowMatrix : public virtual Epetra_RowMatrix {
 public:
 
   //@{ Constructors/Destructors
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in, int subdomainID);
 #else
@@ -82,7 +82,7 @@ public:
   Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in);
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   ~Ifpack_OverlappingRowMatrix() {};
 #else
 # ifdef IFPACK_NODE_AWARE_CODE
@@ -128,7 +128,7 @@ public:
     \return Integer error code, set to 0 if successful.
     */
   virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   virtual int ExtractGlobalRowCopy(int MyRow, int Length, int & NumEntries, double* Values, int* Indices) const;
 #else
 # ifdef IFPACK_NODE_AWARE_CODE
@@ -323,7 +323,7 @@ public:
   //! Returns the Epetra_Map object associated with the columns of this matrix.
   virtual const Epetra_Map & RowMatrixColMap() const
   {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
     return(*colMap_);
 #else
 #   ifdef IFPACK_NODE_AWARE_CODE
@@ -405,7 +405,7 @@ int ImportMultiVector(const Epetra_MultiVector& X,
 int ExportMultiVector(const Epetra_MultiVector& OvX,
                       Epetra_MultiVector& X,
                       Epetra_CombineMode CM = Add);
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   inline const Epetra_RowMatrix& A() const 
   {
     return(*Matrix_);
@@ -430,7 +430,7 @@ int ExportMultiVector(const Epetra_MultiVector& OvX,
 #endif
 
 private: 
-#ifndef IFPACK_SUBCOMM_CODE
+#ifndef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 # ifndef IFPACK_NODE_AWARE_CODE
   inline const Epetra_RowMatrix& A() const 
   {
@@ -455,7 +455,7 @@ private:
   bool UseTranspose_;
 
   Teuchos::RefCountPtr<const Epetra_Map> Map_;
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   const Epetra_Map *colMap_;
 #else
 # ifdef IFPACK_NODE_AWARE_CODE
@@ -471,6 +471,9 @@ private:
 
   int OverlapLevel_;
   string Label_;
+
+  template<typename int_type>
+  void BuildMap(int OverlapLevel_in);
 
 }; // class Ifpack_OverlappingRowMatrix
 

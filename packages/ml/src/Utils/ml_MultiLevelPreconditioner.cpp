@@ -1034,6 +1034,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   Epetra_Time Time(Comm());
   Epetra_Time InitialTime(Comm());
+  Epetra_Time TotalTime(Comm());
   {
     int NumCompute = OutputList_.get("number of construction phases", 0);
     OutputList_.set("number of construction phases", ++NumCompute);
@@ -1674,7 +1675,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
                   + OutputList_.get("time: final setup", 0.0));
   InitialTime.ResetStartTime();
 
-  if (ML_Get_PrintLevel() == 10 && Comm().MyPID() == 0) {
+  if (ML_Get_PrintLevel() >= 10 && Comm().MyPID() == 0) {
     std::cout << std::endl;
     std::cout << "Cumulative timing for construction so far: " << std::endl;
     std::cout << PrintMsg_ << "- for initial setup   = " 
@@ -1687,6 +1688,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
          << OutputList_.get("time: coarse solver setup", 0.0) << " (s)" << std::endl;
     std::cout << PrintMsg_ << "- for final setup     = " 
          << OutputList_.get("time: final setup", 0.0) << " (s)" << std::endl;
+    std::cout << PrintMsg_ << "Total for this setup  = "
+         << TotalTime.ElapsedTime() << " (s)" << std::endl;
   }
 
 

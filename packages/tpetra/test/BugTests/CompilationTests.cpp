@@ -41,6 +41,24 @@
 // @HEADER
 */
 
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
+
+#ifdef DO_COMPILATION
+
 #include <Teuchos_UnitTestHarness.hpp>
 
 // include all the Tpetra headers twice to check if headers are protected by #ifndef FILE_HPP #define ... #endif
@@ -127,4 +145,7 @@ TEUCHOS_UNIT_TEST( Compilation, Bug_ClassDeclarationOutsideOfNamespace )
 {
    
 }
+
+
+#endif  //DO_COMPILATION
 

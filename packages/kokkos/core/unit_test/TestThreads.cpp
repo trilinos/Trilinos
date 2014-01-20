@@ -56,10 +56,12 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestAggregate.hpp>
 #include <TestAtomic.hpp>
 
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
 
@@ -72,41 +74,39 @@ protected:
     // Finalize without initialize is a no-op:
     Kokkos::Threads::finalize();
 
-    const std::pair<unsigned,unsigned> core_top =
-      Kokkos::hwloc::get_core_topology();
+    const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+    const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+    const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-    const unsigned core_size =
-      Kokkos::hwloc::get_core_capacity();
-
-    std::pair<unsigned,unsigned> team_league ;
+    unsigned team_count = 0 ;
+    unsigned threads_per_team = 0 ;
 
     // Initialize and finalize with no threads:
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>(1,1) );
+    Kokkos::Threads::initialize( 1u );
     Kokkos::Threads::finalize();
 
-    team_league.first  = std::max( 1u , core_top.first );
-    team_league.second = std::max( 2u , core_top.second * core_size );
-    Kokkos::Threads::initialize( team_league );
+    team_count       = std::max( 1u , numa_count );
+    threads_per_team = std::max( 2u , cores_per_numa * threads_per_core );
+
+    Kokkos::Threads::initialize( team_count * threads_per_team );
     Kokkos::Threads::finalize();
 
-    team_league.first  = std::max( 1u , core_top.first * 2 );
-    team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
-    Kokkos::Threads::initialize( team_league );
+    team_count       = std::max( 1u , numa_count * 2 );
+    threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
     Kokkos::Threads::finalize();
 
     // Quick attempt to verify thread start/terminate don't have race condition:
-    team_league.first  = std::max( 1u , core_top.first );
-    team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
+    team_count       = std::max( 1u , numa_count );
+    threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
     for ( unsigned i = 0 ; i < 10 ; ++i ) {
-      Kokkos::Threads::initialize( team_league );
+      Kokkos::Threads::initialize( team_count * threads_per_team );
       Kokkos::Threads::sleep();
       Kokkos::Threads::wake();
       Kokkos::Threads::finalize();
     }
 
-    team_league.first  = std::max( 1u , core_top.first );
-    team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
-    Kokkos::Threads::initialize( team_league );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
     Kokkos::Threads::print_configuration( std::cout );
   }
 
@@ -126,6 +126,10 @@ TEST_F( threads, view_impl) {
 
 TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
+}
+
+TEST_F( threads, view_aggregate ) {
+  TestViewAggregate< Kokkos::Threads >();
 }
 
 TEST_F( threads, long_reduce) {
@@ -319,5 +323,37 @@ TEST_F( threads , atomics )
 
 //----------------------------------------------------------------------------
 
-} // namespace test
+TEST_F( threads , scan_small )
+{
+  typedef TestScan< Kokkos::Threads , Kokkos::Impl::ThreadsExecUseScanSmall > TestScanFunctor ;
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScanFunctor( 10 );
+    TestScanFunctor( 10000 );
+  }
+  TestScanFunctor( 1000000 );
+  TestScanFunctor( 10000000 );
+
+  Kokkos::Threads::fence();
+}
+
+TEST_F( threads , scan )
+{
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScan< Kokkos::Threads >( 10 );
+    TestScan< Kokkos::Threads >( 10000 );
+  }
+  TestScan< Kokkos::Threads >( 1000000 );
+  TestScan< Kokkos::Threads >( 10000000 );
+  Kokkos::Threads::fence();
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( threads , team_scan )
+{
+  TestScanRequest< Kokkos::Threads >( 10 );
+  TestScanRequest< Kokkos::Threads >( 10000 );
+}
+
+} // namespace Test
 

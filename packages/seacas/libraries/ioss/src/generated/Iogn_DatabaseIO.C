@@ -36,6 +36,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
+#include <Ioss_SideBlock.h>
 #include <string>
 
 namespace {
@@ -691,24 +692,59 @@ namespace Iogn {
       sideset->property_add(Ioss::Property("id", ifs+1));
       get_region()->add(sideset);
 
-      std::string ef_block_name = name + "_quad4";
-      std::string side_topo_name = "quad4";
-      std::string elem_topo_name = "unknown";
-      int64_t number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
+      std::vector<std::string> touching_blocks = m_generatedMesh->sideset_touching_blocks(ifs+1);
+      if(touching_blocks.size() == 1)
+      {
+        std::string ef_block_name = name + "_quad4";
+        std::string side_topo_name = "quad4";
+        std::string elem_topo_name = "unknown";
+        int64_t number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
 
-      Ioss::SideBlock *ef_block = new Ioss::SideBlock(this, ef_block_name,
-                                                      side_topo_name,
-                                                      elem_topo_name,
-                                                      number_faces);
-      sideset->add(ef_block);
-      ef_block->property_add(Ioss::Property("id", ifs+1));
+        Ioss::SideBlock *ef_block = new Ioss::SideBlock(this, ef_block_name,
+                                                        side_topo_name,
+                                                        elem_topo_name,
+                                                        number_faces);
+        sideset->add(ef_block);
+        ef_block->property_add(Ioss::Property("id", ifs+1));
 
-      std::string storage = "Real[";
-      storage += Ioss::Utils::to_string(4);
-      storage += "]";
-      ef_block->field_add(Ioss::Field("distribution_factors",
-                                      Ioss::Field::REAL, storage,
-                                      Ioss::Field::MESH, number_faces));
+        std::string storage = "Real[";
+        storage += Ioss::Utils::to_string(4);
+        storage += "]";
+        ef_block->field_add(Ioss::Field("distribution_factors",
+                                        Ioss::Field::REAL, storage,
+                                        Ioss::Field::MESH, number_faces));
+
+        Ioss::ElementBlock * el_block = get_region()->get_element_block(touching_blocks[0]);
+        ef_block->set_parent_element_block(el_block);
+      }
+      else
+      {
+        for(std::vector<std::string>::const_iterator it = touching_blocks.begin(); it != touching_blocks.end(); ++it)
+        {
+          const std::string & touching_block = *it;
+          std::string ef_block_name = "surface_" + touching_block + "_edge2_" + Ioss::Utils::to_string(ifs+1);
+          std::string side_topo_name = "quad4";
+          std::string elem_topo_name = "unknown";
+          int64_t number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
+
+          Ioss::SideBlock *ef_block = new Ioss::SideBlock(this, ef_block_name,
+                                                          side_topo_name,
+                                                          elem_topo_name,
+                                                          number_faces);
+          sideset->add(ef_block);
+          ef_block->property_add(Ioss::Property("id", ifs+1));
+
+          std::string storage = "Real[";
+          storage += Ioss::Utils::to_string(4);
+          storage += "]";
+          ef_block->field_add(Ioss::Field("distribution_factors",
+                                          Ioss::Field::REAL, storage,
+                                          Ioss::Field::MESH, number_faces));
+
+          Ioss::ElementBlock * el_block = get_region()->get_element_block(touching_block);
+          ef_block->set_parent_element_block(el_block);
+        }
+      }
     }
   }
 

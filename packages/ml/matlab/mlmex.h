@@ -70,6 +70,12 @@ public:
 
   /* Gets the stored Epetra_CrsMatrix if we're in Epetra mode */
   virtual Epetra_CrsMatrix * GetMatrix()=0;
+
+  /* Returns the number of rows */
+  virtual int NumMyRows()=0;
+
+  /* Returns the number of cols */
+  virtual int NumMyCols()=0;
 public:
   int id;
   Teuchos::ParameterList *List;
@@ -109,6 +115,12 @@ public:
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
   int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters);  
+
+  /* Returns the number of rows */
+  int NumMyRows(){return A->NumMyRows();}
+
+  /* Returns the number of cols */
+  int NumMyCols(){return A->NumMyCols();}
 
 private:
   int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * A, double*b, double*x, int &iters) {return 0;}
@@ -157,7 +169,13 @@ public:
 
   /*GetMatrix - Returns a pointer to the matrix */
   Epetra_CrsMatrix * GetMatrix(){return A;}
-  
+    
+  /* Returns the number of rows */
+  int NumMyRows(){return A->NumMyRows();}
+
+  /* Returns the number of cols */
+  int NumMyCols(){return A->NumMyCols();}
+public:
 private:
   Epetra_CrsMatrix * A;
   ML_Epetra::MultiLevelPreconditioner *Prec;
@@ -205,12 +223,18 @@ public:
   /*GetMatrix - Returns a pointer to the matrix */
   Epetra_CrsMatrix * GetMatrix(){return EdgeMatrix;}  
   
+  /* Returns the number of rows */
+  int NumMyRows(){return EdgeMatrix->NumMyRows();}
+
+  /* Returns the number of cols */
+  int NumMyCols(){return EdgeMatrix->NumMyCols();}
+
 private:
   // Disabled
   int setup(int N,int* rowind,int* colptr, double* vals){return 0;}
 
 
-  Epetra_CrsMatrix *EdgeMatrix, *GradMatrix, *NodeMatrix;
+  Epetra_CrsMatrix *EdgeMatrix, *GradMatrix, *NodeMatrix, *DummyMatrix, *DummyMatrix2;
   //  ML_Epetra::MultiLevelPreconditioner *Prec;
   ML_Epetra::RefMaxwellPreconditioner *Prec;
 

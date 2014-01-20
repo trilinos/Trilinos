@@ -1,14 +1,12 @@
-// $Id$
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -48,10 +46,14 @@
 
 #include "Kokkos_Macros.hpp"
 
+#include "Sacado_Traits.hpp"
+#include "Stokhos_KokkosTraits.hpp"
+#include <sstream>
+
 namespace Stokhos {
 
   //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, int Num, typename node_t>
+  template <typename ordinal_t, typename value_t, int Num, typename device_t>
   class StaticStorage {
   public:
 
@@ -61,24 +63,24 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,node_type> ss;
+    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
 
     //! Turn StaticStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
     struct apply {
-      typedef StaticStorage<ord_t,val_t,Num,node_type> type;
+      typedef StaticStorage<ord_t,val_t,Num,dev_t> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     StaticStorage(const ordinal_type& sz,
-		  const value_type& x = value_type(0.0)) : sz_(sz) { 
-      ss::fill(coeff_, sz_, x); 
+                  const value_type& x = value_type(0.0)) : sz_(sz) {
+      ss::fill(coeff_, sz_, x);
     }
 
     //! Copy constructor
@@ -101,37 +103,37 @@ namespace Stokhos {
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
-    void init(const_reference v) { 
-      ss::fill(coeff_, sz_, v); 
+    void init(const_reference v) {
+      ss::fill(coeff_, sz_, v);
     }
 
     //! Initialize values to an array of values
     KOKKOS_INLINE_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       if (sz == 0)
-      	ss::copy(v, coeff_, sz_);
+        ss::copy(v, coeff_, sz_);
       else
-      	ss::copy(v, coeff_, sz);
+        ss::copy(v, coeff_, sz);
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
-    void load(pointer v) { 
-      ss::copy(coeff_, v, sz_); 
+    void load(pointer v) {
+      ss::copy(coeff_, v, sz_);
     }
 
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
-    void resize(const ordinal_type& sz) { 
+    void resize(const ordinal_type& sz) {
       if (sz > sz_)
-	ss::fill(coeff_+sz_, sz-sz_, value_type(0.0));
-      sz_ = sz; 
+        ss::fill(coeff_+sz_, sz-sz_, value_type(0.0));
+      sz_ = sz;
     }
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
-    void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned) {}
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) {}
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
@@ -139,7 +141,7 @@ namespace Stokhos {
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
-    const_reference operator[] (const ordinal_type& i) const { 
+    const_reference operator[] (const ordinal_type& i) const {
       return coeff_[i];
     }
 
@@ -173,6 +175,24 @@ namespace Stokhos {
 
   };
 
+}
+
+namespace Sacado {
+  template <typename ordinal_t, typename value_t, int Num, typename device_t>
+  struct StringName< Stokhos::StaticStorage<ordinal_t,
+                                            value_t,
+                                            Num,
+                                            device_t> > {
+    static std::string eval() {
+      std::stringstream ss;
+      ss << "Stokhos::StaticStorage<"
+         << StringName<ordinal_t>::eval() << ","
+         << StringName<value_t>::eval() << ","
+         << Num << ","
+         << StringName<device_t>::eval() << ">";
+      return ss.str();
+    }
+  };
 }
 
 #endif // STOKHOS_STATIC_STORAGE_HPP

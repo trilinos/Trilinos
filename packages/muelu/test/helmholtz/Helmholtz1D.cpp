@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -59,7 +59,6 @@
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_UseShortNames.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 // Belos
@@ -69,22 +68,23 @@
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
 
-typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
-typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
-
-typedef Belos::OperatorT<TMV>                        TOP;
-typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
-typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
-typedef Belos::LinearProblem<SC,TMV,TOP>             TProblem;
-typedef Belos::SolverManager<SC,TMV,TOP>             TBelosSolver;
-typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          TBelosGMRES;
-
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
+  typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
+  typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
+  typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
+  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
+  typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
+  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
+
+  typedef Belos::OperatorT<TMV>                        TOP;
+  typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
+  typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
+  typedef Belos::LinearProblem<SC,TMV,TOP>             TProblem;
+  typedef Belos::SolverManager<SC,TMV,TOP>             TBelosSolver;
+  typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          TBelosGMRES;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

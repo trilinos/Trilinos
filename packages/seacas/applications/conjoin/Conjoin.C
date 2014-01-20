@@ -482,11 +482,23 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     // A database will include all times from step 0 up to the
     // last time that is less than t_min on the following database.
     // Note that we are iterating through the databases from last to first...
+    
+    // Check delta between the last used timestep on this database
+    // and the first time on the previous (later in time) database
+    // (which is t_min). It must be > user-specified minimum delta.
+    // Set by -interpart_minimum_time_delta {delta} command line option.
+    
+    // NOTE that this is not the delta between individual timesteps
+    // within a database, it is the delta between the last timestep 
+    // on one database and the first on the next database.
+    
     int i = 0;
     for (i=nts; i > 0; i--) {
       if (times[i-1] <t_min) {
-	used = true;
-	global_times.push_back(TimeStepMap<T>(p-1, i-1, times[i-1]));
+	if (used == true || t_min - times[i-1] >= interface.interpart_minimum_time_delta()) {
+	  used = true;
+	  global_times.push_back(TimeStepMap<T>(p-1, i-1, times[i-1]));
+	}
       }
     }
     local_mesh[p-1].timestepCount = i;
@@ -495,7 +507,9 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
       std::string part = "Part " + to_string(p) + ": ";
       part += interface.inputFiles_[p-1];
       std::cerr << "\nWARNING: " << part
-		<< " does not contain any time steps which will be used in conjoined file.\n";
+		<< " does not contain any time steps which will be used in conjoined file.\n"
+		<< " Current minimum time = " << t_min << ", timestep range on this part is "
+		<< times[0] << " to " << times[nts-1] << "\n";
       local_mesh[p-1].isActive = false;
     }
   }
@@ -589,7 +603,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
-    if (global_element_map.size() > 0) {
+    if (!global_element_map.empty()) {
       std::vector<INT> global_map(global.count(ELEM));
       for (size_t i=0; i < global.count(ELEM); i++) {
 	global_map[i] = global_element_map[i].first;
@@ -2371,7 +2385,7 @@ namespace {
     // has restricted the output of certain variables to certain element
     // blocks. If so, then the truth table is modified to match the
     // users request.
-    if (variable_names.size() == 0)
+    if (variable_names.empty())
       return;
 
     // Check for a non-zero id entry in the variable_names list which

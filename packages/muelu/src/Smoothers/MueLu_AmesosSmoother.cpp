@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -64,18 +64,24 @@
 namespace MueLu {
 
   AmesosSmoother::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type), paramList_(paramList) {
+    : type_(type) {
+    this->SetParameterList(paramList);
+
     if (!type_.empty()) {
       // Transform string to "Abcde" notation
       std::transform(type_.begin(),   type_.end(),   type_.begin(), ::tolower);
       std::transform(type_.begin(), ++type_.begin(), type_.begin(), ::toupper);
     }
-    if (type_ == "Amesos_klu")     type_ = "Klu";
-    if (type_ == "Amesos_umfpack") type_ = "Umfpack";
-    if (type_ == "Superlu_dist")   type_ = "Superludist";
+    if (type_ == "Amesos_klu")      type_ = "Klu";
+    if (type_ == "Klu2")            type_ = "Klu";
+    if (type_ == "Amesos_umfpack")  type_ = "Umfpack";
+    if (type_ == "Superlu_dist")    type_ = "Superludist";
 
-    // set default solver type
-    if (type_ == "") {
+    // Try to come up with something availble
+    // Order corresponds to our preference
+    // TODO: It would be great is Amesos provides directly this kind of logic for us
+    std::string oldtype = type_;
+    if (type_ == "" || Amesos().Query(type_) == false) {
 #if defined(HAVE_AMESOS_SUPERLU)
       type_ = "Superlu";
 #elif defined(HAVE_AMESOS_KLU)
@@ -84,31 +90,15 @@ namespace MueLu {
       type_ = "Superludist";
 #elif defined(HAVE_AMESOS_UMFPACK)
       type_ = "Umfpack";
+#else
+      throw Exceptions::RuntimeError("Amesos have been compiled without SuperLU_DIST, SuperLU, Umfpack or Klu. By default, MueLu tries"
+                                     "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
+                                     "a valid Amesos solver have to be specified explicitly.");
 #endif
-    }
-
-    // check for valid direct solver type
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Umfpack",
-                               Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Solver '" + type_ + "' not supported");
-    if (type_ == "Superlu") {
-#if not defined(HAVE_AMESOS_SUPERLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");
-#endif
-    }
-    if (type_ == "Superludist") {
-#if not defined(HAVE_AMESOS_SUPERLUDIST)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. Cannot define a solver by default for this AmesosSmoother object");
-#endif
-    }
-    if (type_ == "Klu") {
-#if not defined(HAVE_AMESOS_KLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. Cannot define a solver by default for this AmesosSmoother object");
-#endif
-    }
-    if (type_ == "Umfpack") {
-#if not defined(HAVE_AMESOS_UMFPACK)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without Umfpack. Cannot define a solver by default for this AmesosSmoother object");
-#endif
+      if (oldtype != "")
+        this->GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
+      else
+        this->GetOStream(Warnings0, 0) << "MueLu::AmesosSmoother: using \"" << type_ << "\"" << std::endl;
     }
   }
 
@@ -137,9 +127,14 @@ namespace MueLu {
     // set Reindex flag, if A is distributed with non-contiguous maps
     // unfortunately there is no reindex for Amesos2, yet. So, this only works for Epetra based problems
     if (A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
-      paramList_.set("Reindex", true);
+      const_cast<ParameterList&>(this->GetParameterList()).set("Reindex", true);
 
-    prec_->SetParameters(paramList_);
+    const ParameterList& paramList = this->GetParameterList();
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(paramList);
+
+    prec_->SetParameters(*precList);
+
+    const_cast<ParameterList&>(paramList).setParameters(*precList);
 
     int r = prec_->NumericFactorization();
     TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " +
@@ -182,17 +177,20 @@ namespace MueLu {
   void AmesosSmoother::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
     if (verbLevel & Parameters1) {
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl;
+      Teuchos::OSTab tab2(out);
+      out << this->GetParameterList();
     }
 
-    if (verbLevel & External) {
-      if (prec_ != Teuchos::null) { prec_->PrintStatus(); prec_->PrintTiming(); } //TODO: redirect output?
-    }
+    if (verbLevel & External)
+      if (prec_ != Teuchos::null) {
+        prec_->PrintStatus();
+        prec_->PrintTiming();
+      }
 
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl

@@ -49,14 +49,14 @@
 /*! \brief Test of GraphModel interface.
  *
  *  \todo test all methods of GraphModel
- *  \todo test with GraphInput: add testGraphInput which is 
-           like testMatrixInput except is uses GraphInput
+ *  \todo test with GraphAdapter: add testGraphAdapter which is 
+           like testMatrixAdapter except is uses GraphAdapter
            queries and it may have edges weights.
  *  \todo Address the TODOs in the code below.
  */
 
 #include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <string>
@@ -82,9 +82,10 @@ typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 using std::string;
 using std::vector;
 
-void printGraph(lno_t nrows, const gno_t *v, const lno_t *elid, 
-    const gno_t *egid,
-    const int *owner, const lno_t *idx, const RCP<const Comm<int> > &comm)
+void printGraph(lno_t nrows, const gno_t *v,
+    const lno_t *elid, const gno_t *egid,
+    const int *owner, const lno_t *idx,
+    const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -131,7 +132,7 @@ void printGraph(lno_t nrows, const gno_t *v, const lno_t *elid,
   comm->barrier();
 }
 
-void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
+void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
     int rowWeightDim, int nnzDim, int coordDim,
@@ -149,8 +150,8 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // Create a matrix input adapter.
 
-  typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
+  typedef Zoltan2::MatrixAdapter<tcrsMatrix_t> base_adapter_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> adapter_t;
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
@@ -185,17 +186,17 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
 
-  adapter_t tmi(M, coordDim, rowWeightDim);
+  adapter_t tmi(M, rowWeightDim, coordDim);
 
   for (int i=0; i < rowWeightDim; i++){
     if (nnzDim == i)
       tmi.setRowWeightIsNumberOfNonZeros(i);
     else
-      tmi.setRowWeights(i, rowWeights[i], 1);
+      tmi.setRowWeights(rowWeights[i], 1, i);
   }
 
   for (int i=0; i < coordDim; i++){
-    tmi.setRowCoordinates(i, coords[i], 1);
+    tmi.setRowCoordinates(coords[i], 1, i);
   }
 
   int numLocalDiags = M->getNodeNumDiags();
@@ -205,10 +206,6 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   const RCP<const tmap_t> colMap = M->getColMap();
 
   // How many neighbor vertices are not on my process.
-
-  // we know GIDs are consecutive
-  int minLocalGID = rowMap->getMinGlobalIndex();
-  int maxLocalGID = rowMap->getMaxGlobalIndex();
 
   int *numNbors = new int [nLocalRows];
   int *numLocalNbors = new int [nLocalRows];
@@ -226,10 +223,14 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     for (lno_t j=0; j < idx.size(); j++){
       if (idx[j] == i){
         haveDiag[i] = true;
+        numLocalNbors[i]++;
+        totalLocalNbors++;
       }
       else{
         gno_t gidVal = colMap->getGlobalElement(idx[j]);
-        if (gidVal >= minLocalGID && gidVal <= maxLocalGID){
+        if (rowMap->getLocalElement(gidVal) !=
+            Teuchos::OrdinalTraits<lno_t>::invalid()) {
+          // nbor is local to this process
           numLocalNbors[i]++;
           totalLocalNbors++;
         }
@@ -239,6 +240,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // Create a GraphModel based on this input data.
 
+  if (rank == 0) std::cout << "        Creating GraphModel" << std::endl;
   Zoltan2::GraphModel<base_adapter_t> *model = NULL;
   const base_adapter_t *baseTmi = &tmi;
 
@@ -250,10 +252,11 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     std::cerr << rank << ") " << e.what() << std::endl;
     fail = 1;
   }
-  TEST_FAIL_AND_EXIT(*comm, !fail, "Creating xpetra graph model", 1)
+  TEST_FAIL_AND_EXIT(*comm, !fail, "Creating graph model", 1)
 
   // Test the GraphModel interface
 
+  if (rank == 0) std::cout << "        Checking counts" << std::endl;
   if (model->getLocalNumVertices() != size_t(nLocalRows))
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumVertices", 1)
@@ -268,12 +271,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
 
-  num = totalLocalNbors;
-  if (!removeSelfEdges){
-    for (lno_t i=0; i < nLocalRows; i++)
-      if (haveDiag[i])
-        num++;
-  }
+  num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags) : totalLocalNbors);
 
   if (model->getLocalNumLocalEdges() != num)
     fail = 1;
@@ -297,6 +295,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getCoordinateDim", 1)
 
+  if (rank == 0) std::cout << "        Checking vertices" << std::endl;
   ArrayView<const gno_t> vertexGids;
   ArrayView<input_t> crds;
   ArrayView<input_t> wgts;
@@ -312,11 +311,11 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   if (vertexGids.size() != nLocalRows)
     fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList", 1)
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList size", 1)
 
   // We know model stores things in same order we gave it.
-
   if (idsAreConsecutive){
+    int minLocalGID = rowMap->getMinGlobalIndex();
     for (lno_t i=0; i < nLocalRows; i++){
       if (vertexGids[i] != minLocalGID + i) {
         fail = 1;
@@ -325,11 +324,32 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
   else{  // round robin ids
-    gno_t myGid = rank;
-    for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
-      if (vertexGids[i] != myGid){
-        fail = 1;
-        break;
+    if (consecutiveIdsRequested) {
+      gno_t myFirstRow;
+      gno_t tnLocalRows = nLocalRows;
+      scan(*comm, Teuchos::REDUCE_SUM, 1, &tnLocalRows, &myFirstRow);
+      myFirstRow -= nLocalRows;
+      for (lno_t i=0; i < nLocalRows; i++){
+        if (vertexGids[i] != myFirstRow+i){
+          std::cout << rank << " Row " << i << " of " << nLocalRows
+                    << " myFirstRow+i " << myFirstRow+i
+                    << " vertexGids " << vertexGids[i] 
+                    << std::endl;
+          fail = 1;
+          break;
+        }
+      }
+    }
+    else {
+      gno_t myGid = rank;
+      for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
+        if (vertexGids[i] != myGid){
+          std::cout << rank << " Row " << i << " of " << nLocalRows
+                    << " myGid " << myGid << " vertexGids " << vertexGids[i] 
+                    << std::endl;
+          fail = 1;
+          break;
+        }
       }
     }
   }
@@ -342,7 +362,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   for (int i=0; !fail && i < coordDim; i++){
     for (lno_t j=0; j < nLocalRows; j++){
-      if (crds[i][j] != 200000*i + j){
+      if (crds[i][j] != 100000*i + j){
         fail = 1;
         break;
       }
@@ -364,7 +384,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
     else{
       for (lno_t j=0; j < nLocalRows; j++){
-        if (wgts[i][j] != 100000*i + j){
+        if (wgts[i][j] != 200000*i + j){
           fail = 1;
           break;
         }
@@ -374,6 +394,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "row weight values", 1)
   
+  if (rank == 0) std::cout << "        Checking edges" << std::endl;
   ArrayView<const gno_t> edgeGids;
   ArrayView<const int> procIds;
   ArrayView<const lno_t> offsets;
@@ -406,6 +427,8 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   TEST_FAIL_AND_EXIT(*comm, numEdges==num, "getEdgeList size", 1)
 
   if (nGlobalRows < 200){
+    if (rank == 0)
+      std::cout << "Printing global graph now " << nGlobalRows << std::endl;
     printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
       edgeGids.getRawPtr(), procIds.getRawPtr(), offsets.getRawPtr(), comm);
   }
@@ -416,6 +439,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // Get graph restricted to this process
 
+  if (rank == 0) std::cout << "        Checking local edges" << std::endl;
   ArrayView<const lno_t> localEdges;
   ArrayView<const lno_t> localOffsets;
   size_t numLocalNeighbors=0;
@@ -424,32 +448,39 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     numLocalNeighbors= model->getLocalEdgeList(localEdges, localOffsets, wgts);
   }
   catch(std::exception &e){
+    std::cout << rank << ") Error " << e.what() << std::endl;
     std::cerr << rank << ") Error " << e.what() << std::endl;
     fail = 1;
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList", 1)
+  TEST_FAIL_AND_EXIT(*comm, ((localOffsets.size()-1) == nLocalRows),
+                     "getLocalEdgeList localOffsets.size", 1)
 
-#ifdef THIS_CODE_DOESNT_FAIL
   num = 0;
-  for (size_t i=0; i < localOffsets.size()-1; i++){
+  for (lno_t i=0; i < nLocalRows; i++){
     size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
     num += edgeListSize;
     size_t val = numLocalNbors[i];
     if (removeSelfEdges && haveDiag[i])
       val--;
     if (edgeListSize != val){
+        std::cout << rank << "vtx " << i << " of " << localOffsets.size()
+                  << " Number of local edges in model " << edgeListSize
+                  << " not equal to expected number of edges " << val 
+                  << std::endl;
       fail = 1;
       break;
     }
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList list sizes", 1)
 
-  TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num, "getLocalEdgeList size", 1)
+  TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num,
+                     "getLocalEdgeList sum size", 1)
 
-  if (size_t(totalLocalNbors) != numLocalNeighbors)
-    fail = 1;
-
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList size", 1)
+  fail = ((removeSelfEdges ? size_t(totalLocalNbors-numLocalDiags)
+                           : size_t(totalLocalNbors))
+          != numLocalNeighbors);
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList total size", 1)
 
   if (nGlobalRows < 200){
     if (totalLocalNbors == 0){
@@ -461,8 +492,8 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
         localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
     }
   }
-#endif
 
+  if (rank == 0) std::cout << "        Cleaning up" << std::endl;
   delete model;
 
   if (nLocalRows){
@@ -538,22 +569,23 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with consecutive IDs");
 
+  if (rank == 0) std::cout << "   TEST with Consecutive IDs" << std::endl;
   bool idsAreConsecutive = true;
 
-  testMatrixInput(Mconsec, comm,  idsAreConsecutive,
+  testMatrixAdapter(Mconsec, comm,  idsAreConsecutive,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
 #if 0
-  testGraphInput(Mconsec, comm, idsAreConsecutive,
+  testGraphAdapter(Mconsec, comm, idsAreConsecutive,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 #endif
 
   // Do a round robin migration so that global IDs are not consecutive.
 
-#ifdef TODO_THESE_HAVE_BEEN_TESTED
   Array<gno_t> myNewRows;
+  int nprocs = comm->getSize();
   for (size_t i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
 
@@ -566,19 +598,19 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with non-consecutive IDs");
 
+  if (rank == 0) std::cout << "   TEST with Round-Robin IDs" << std::endl;
   idsAreConsecutive = false;
 
-  testMatrixInput(Mnonconsec, comm, idsAreConsecutive,
+  testMatrixAdapter(Mnonconsec, comm, idsAreConsecutive,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
 #if 0
-  testGraphInput(Mnonconsec, comm, idsAreConsecutive,
+  testGraphAdapter(Mnonconsec, comm, idsAreConsecutive,
      rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 #endif
 
-#endif
 
   delete input;
 }
@@ -597,23 +629,30 @@ int main(int argc, char *argv[])
   bool consecutiveIdsRequested=false, removeSelfEdges=false;
   string fname("simple");
 
+  if (rank == 0)
+    std::cout << "TESTING base case" << std::endl;
   testGraphModel(fname, 0, 0, 0, comm,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
-#ifdef TODO_THESE_HAVE_BEEN_TESTED
+  if (rank == 0)
+    std::cout << "TESTING with row weights" << std::endl;
   rowWeightDim = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
+  if (rank == 0)
+    std::cout << "TESTING with weights = nnz" << std::endl;
   nnzDim = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
+  if (rank == 0)
+    std::cout << "TESTING with multiple row weights and coords" << std::endl;
   rowWeightDim = 2;
   coordDim = 3;
 
@@ -621,24 +660,29 @@ int main(int argc, char *argv[])
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
+  if (rank == 0)
+    std::cout << "TESTING with consecutiveIdsRequested" << std::endl;
   consecutiveIdsRequested = true;
 
   testGraphModel(fname, 0, 0, 0, comm,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
+  if (rank == 0)
+    std::cout << "TESTING with removeSelfEdges" << std::endl;
   removeSelfEdges = true;
 
   testGraphModel(fname, 0, 0, 0, comm,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
+  if (rank == 0)
+    std::cout << "TESTING with consecutiveIdsRequested=false" << std::endl;
   consecutiveIdsRequested = false;
 
   testGraphModel(fname, 0, 0, 0, comm,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
-#endif
 
   if (rank==0)
     cout << "PASS" << endl;

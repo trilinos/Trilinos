@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -89,6 +89,12 @@ typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Mu
 typedef Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory;
 #endif
 
+#ifdef HAVE_XPETRA_EXPERIMENTAL
+#ifdef XPETRA_MATRIXFACTORY2_SHORT
+typedef Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory2;
+#endif
+#endif
+
 #ifdef XPETRA_TPETRACRSMATRIX_SHORT
 typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
@@ -101,11 +107,20 @@ typedef Xpetra::EpetraCrsMatrix EpetraCrsMatrix;
 typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif
 
+#ifdef XPETRA_TPETRAVECTOR_SHORT
+typedef Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraVector;
+#endif
+
+#ifdef XPETRA_MAPEXTRACTOR_SHORT
+typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
+#endif
+
+#ifdef XPETRA_MAPEXTRACTORFACTORY_SHORT
+typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactory;
+#endif
+
 // TODO: add namespace {} for shortcut types
 
 // Define convenient shortcut for data types
 typedef Scalar    SC;
-#ifdef _TEUCHOS_SCALARTRAITS_DECL_HPP_
-typedef Teuchos::ScalarTraits<SC> ST;
-#endif
 // TODO: do the same for Epetra object (problem of namespace)

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -131,14 +131,7 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::De
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixClass;
-  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixClass;
-  typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixWrapClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix;
-  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
-  typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactoryClass;
-  typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
-  typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactoryClass;
 
 
   //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -157,8 +150,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
 
   // build blocked prolongator
   std::vector<RCP<Matrix> > subBlockP;
-  std::vector<RCP<const MapClass> >  subBlockPRangeMaps;
-  std::vector<RCP<const MapClass    > > subBlockPDomainMaps;
+  std::vector<RCP<const Map> >  subBlockPRangeMaps;
+  std::vector<RCP<const Map    > > subBlockPDomainMaps;
   std::vector<GO> fullRangeMapVector;
   std::vector<GO> fullDomainMapVector;
   subBlockP.reserve(FactManager_.size());       // reserve size for block P operators
@@ -215,7 +208,7 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
 
   // build full range map.
   // If original range map has striding information, then transfer it to the new range map
-  RCP<const MapExtractorClass> rangeAMapExtractor = bA->getRangeMapExtractor();
+  RCP<const MapExtractor> rangeAMapExtractor = bA->getRangeMapExtractor();
   Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
   Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeAMapExtractor->getFullMap());
   Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
@@ -241,7 +234,7 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
             bA->getRangeMap()->getComm());
   }
 
-  RCP<const MapExtractorClass> domainAMapExtractor = bA->getDomainMapExtractor();
+  RCP<const MapExtractor> domainAMapExtractor = bA->getDomainMapExtractor();
   Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
   Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
   Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
@@ -270,13 +263,13 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   }
 
   // build map extractors
-  Teuchos::RCP<const MapExtractorClass> rangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap,  subBlockPRangeMaps);
-  Teuchos::RCP<const MapExtractorClass> domainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockPDomainMaps);
+  Teuchos::RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps);
+  Teuchos::RCP<const MapExtractor> domainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps);
 
   Teuchos::RCP<BlockedCrsOMatrix> bP = Teuchos::rcp(new BlockedCrsOMatrix(rangeMapExtractor,domainMapExtractor,10));
   for(size_t i = 0; i<subBlockPRangeMaps.size(); i++) {
-    Teuchos::RCP<CrsMatrixWrapClass> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrapClass>(subBlockP[i]);
-    Teuchos::RCP<CrsMatrixClass> crsMatii = crsOpii->getCrsMatrix();
+    Teuchos::RCP<CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(subBlockP[i]);
+    Teuchos::RCP<CrsMatrix> crsMatii = crsOpii->getCrsMatrix();
     bP->setMatrix(i,i,crsMatii);
   }
 
@@ -288,14 +281,14 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   if(!restrictionMode_)
   {
     // prolongation factory is in prolongation mode
-    coarseLevel.Set("P", Teuchos::rcp_dynamic_cast<MatrixClass>(bP), this);
+    coarseLevel.Set("P", Teuchos::rcp_dynamic_cast<Matrix>(bP), this);
   }
   else
   {
     // prolongation factory is in restriction mode
     // we do not have to transpose the blocked R operator since the subblocks on the diagonal
     // are already valid R subblocks
-    coarseLevel.Set("R", Teuchos::rcp_dynamic_cast<MatrixClass>(bP), this);
+    coarseLevel.Set("R", Teuchos::rcp_dynamic_cast<Matrix>(bP), this);
   }
 
 }

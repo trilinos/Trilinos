@@ -158,6 +158,9 @@ extern "C" {
  
   extern int im_ex_get_ids_l (int  exoid, long long obj_type, long long *ids);
   extern int im_ex_get_elem_blk_ids_l (int  exoid, long long *ids);
+  extern int im_ex_get_elem_blk_parent_mesh_l(int  exoid, long long *ids);
+  extern int im_ex_get_ns_parent_mesh_l(int  exoid, long long *ids);
+  extern int im_ex_get_ss_parent_mesh_l(int  exoid, long long *ids);
   extern int im_ex_get_elem_block_l (int   exoid,
 				long long   elem_blk_id,
 				char *elem_type,

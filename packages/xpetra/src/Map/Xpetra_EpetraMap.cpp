@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -330,19 +330,17 @@ namespace Xpetra {
   }
 
 
-
-
-
   const Epetra_Map & toEpetra(const Map<int,int> &map) {
     // TODO: throw exception
-    const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
+    const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(*map.getMap());
     return epetraMap.getEpetra_Map();
   }
 
-  const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &map) {
-    XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map, epetraMap, "toEpetra");
+  const Epetra_Map & toEpetra(const RCP< const Map<int,int> > &map) {
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map->getMap(), epetraMap, "toEpetra");
     return epetraMap->getEpetra_Map();
   }
+
 
 //   const RCP< const Map<int, int> > toXpetra(const RCP< const Epetra_Map > &map) {
 //     return rcp( new EpetraMap(map) );

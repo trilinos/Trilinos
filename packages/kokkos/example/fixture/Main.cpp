@@ -212,16 +212,18 @@ int main()
 //  test_elem();
   {
     std::cout << "test_fixture< Threads >" << std::endl ;
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( 1 , 1 ) );
+    Kokkos::Threads::initialize( 1 );
     Kokkos::Example::test_fixture< Kokkos::Threads >();
     Kokkos::Threads::finalize();
   }
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;
+    Kokkos::Cuda::host_mirror_device_type::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     Kokkos::Example::test_fixture< Kokkos::Cuda >();
     Kokkos::Cuda::finalize();
+    Kokkos::Cuda::host_mirror_device_type::finalize();
   }
 #endif
 }

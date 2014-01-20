@@ -61,11 +61,11 @@ struct ViewAssignable
   // Compatible 'const' qualifier
   // Cannot assign managed = unmannaged
   enum { assignable_value =
-    ( is_same< typename ViewLHS::value_type ,
-               typename ViewRHS::value_type >::value
+    ( is_same< typename ViewLHS::scalar_type ,
+               typename ViewRHS::scalar_type >::value
       ||
-      is_same< typename ViewLHS::value_type ,
-               typename ViewRHS::const_value_type >::value )
+      is_same< typename ViewLHS::scalar_type ,
+               typename ViewRHS::const_scalar_type >::value )
     &&
     is_same< typename ViewLHS::memory_space ,
              typename ViewRHS::memory_space >::value
@@ -313,86 +313,6 @@ struct ViewTracking< ViewTraits ,
 namespace Kokkos {
 namespace Impl {
 
-template< class DstMemorySpace , class SrcMemorySpace >
-struct DeepCopy ;
-
-template< class OutputView , unsigned Rank = OutputView::Rank >
-struct ViewInit
-{
-  typedef typename OutputView::device_type device_type ;
-  typedef typename OutputView::scalar_type scalar_type ;
-  typedef typename device_type::size_type  size_type ;
-
-  const OutputView output ;
-
-  explicit ViewInit( const OutputView & arg_out ) : output( arg_out )
-    { parallel_for( output.dimension_0() , *this ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i0 ) const
-  {
-    const scalar_type default_value = scalar_type();
-
-    for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
-      new (&output.at(i0,i1,i2,i3,i4,i5,i6,i7)) scalar_type(default_value) ;
-    }}}}}}}
-  }
-};
-
-template< class OutputView >
-struct ViewInit< OutputView , 1 >
-{
-  typedef typename OutputView::device_type device_type ;
-  typedef typename OutputView::value_type  value_type ;
-  typedef typename device_type::size_type  size_type ;
-
-  const OutputView output ;
-
-  explicit ViewInit( const OutputView & arg_out ) : output( arg_out )
-    { parallel_for( output.dimension_0() , *this ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i0 ) const
-  {
-    value_type default_value = value_type();
-    new (&output(i0)) value_type(default_value) ;
-  }
-};
-
-template< class OutputView >
-struct ViewInit< OutputView , 0 >
-{
-  typedef typename OutputView::device_type device_type ;
-  typedef typename OutputView::value_type  value_type ;
-  typedef typename device_type::size_type  size_type ;
-
-  const OutputView output ;
-
-  explicit ViewInit( const OutputView & arg_out ) : output( arg_out )
-    { parallel_for( 1 , *this ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type /*i0*/ ) const
-  {
-    value_type default_value = value_type();
-    new (&(*output)) value_type(default_value) ;
-  }
-};
-
-template< class Device >
-struct ViewInitialize
-{
-  template< class ViewType >
-  inline explicit ViewInitialize( const ViewType & view )
-    { ViewInit<ViewType> init( view ); }
-};
-
 template< class OutputView , class InputView  , unsigned Rank = OutputView::Rank >
 struct ViewRemap
 {
@@ -454,6 +374,8 @@ struct ViewRemap< OutputView ,  InputView , 0 >
   }
 };
 
+//----------------------------------------------------------------------------
+
 template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewFill
 {
@@ -468,6 +390,7 @@ struct ViewFill
     : output( arg_out ), input( arg_in )
     {
       parallel_for( output.dimension_0() , *this );
+      device_type::fence();
     }
 
   KOKKOS_INLINE_FUNCTION

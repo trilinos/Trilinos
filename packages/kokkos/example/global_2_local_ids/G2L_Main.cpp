@@ -109,44 +109,41 @@ int main(int argc, char *argv[])
 
 
   // query the topology of the host
-  std::pair<unsigned, unsigned> team_league(1,4);
+  unsigned team_count = 1 ;
+  unsigned threads_count = 4 ;
+
+  //avoid unused variable warning
+  (void)team_count;
+
   if (Kokkos::hwloc::available()) {
-    const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
-    const unsigned num_hyper_threads =  Kokkos::hwloc::get_core_capacity();
-    team_league.first  = core_top.first ;
-    team_league.second = core_top.second;
-    //team_league.second = core_top.second * num_hyper_threads;
+    threads_count = Kokkos::hwloc::get_available_numa_count() *
+                    Kokkos::hwloc::get_available_cores_per_numa();
   }
 
-  Kokkos::Threads::initialize( team_league );
-
-#ifdef KOKKOS_HAVE_OPENMP
-  Kokkos::OpenMP::initialize( team_league.first , team_league.second );
-#endif
-
-#ifdef KOKKOS_HAVE_CUDA
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-#endif
-
-
-  std::cout << "Thread groups: " << team_league.first << " Group Workers: " << team_league.second << std::endl;
+  std::cout << "Threads: " << threads_count << std::endl;
   std::cout << "Number of ids: " << num_ids << std::endl;
   std::cout << "Number of find iterations: " << num_find_iterations << std::endl;
 
   size_t num_errors = 0;
 
   num_errors += G2L::run_serial(num_ids,num_find_iterations);
-  num_errors += G2L::run_threads(num_ids,num_find_iterations);
-  num_errors += G2L::run_openmp(num_ids,num_find_iterations);
-  num_errors += G2L::run_cuda(num_ids,num_find_iterations);
 
+#ifdef KOKKOS_HAVE_PTHREAD
+  Kokkos::Threads::initialize( threads_count );
+  num_errors += G2L::run_threads(num_ids,num_find_iterations);
   Kokkos::Threads::finalize();
+#endif
 
 #ifdef KOKKOS_HAVE_OPENMP
+  Kokkos::OpenMP::initialize( threads_count );
+  num_errors += G2L::run_openmp(num_ids,num_find_iterations);
   Kokkos::OpenMP::finalize();
 #endif
 
 #ifdef KOKKOS_HAVE_CUDA
+  Kokkos::Cuda::host_mirror_device_type::initialize(1);
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+  num_errors += G2L::run_cuda(num_ids,num_find_iterations);
   Kokkos::Cuda::finalize();
 #endif
 

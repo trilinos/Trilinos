@@ -70,7 +70,6 @@
 #include "Stokhos_PseudoSpectralOrthogPolyExpansion.hpp"
 //#include "Stokhos_DerivOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
-#include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_ExpansionFactory.hpp"
 
 // Quadrature methods

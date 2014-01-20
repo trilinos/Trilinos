@@ -43,23 +43,23 @@
 
 #define DEBUG_PRINT 0
 
-#if DEBUG_PRINT
 #include <iostream>
-#endif
+#include <sstream>
 
 #include <KokkosCore_config.h>
 #include <Kokkos_hwloc.hpp>
+#include <impl/Kokkos_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 namespace Impl {
 
-int host_thread_binding( const std::pair<unsigned,unsigned> gang_topo ,
+int host_thread_binding( const std::pair<unsigned,unsigned> team_topo ,
                                std::pair<unsigned,unsigned> thread_coord[] )
 {
   const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
-  const int thread_count = gang_topo.first * gang_topo.second ;
+  const int thread_count = team_topo.first * team_topo.second ;
 
   int i = 0 ;
 
@@ -85,7 +85,7 @@ int host_thread_binding( const std::pair<unsigned,unsigned> gang_topo ,
 #if DEBUG_PRINT
     if ( current != thread_coord[i] ) {
       std::cout << "  host_thread_binding("
-                << gang_topo.first << "x" << gang_topo.second
+                << team_topo.first << "x" << team_topo.second
                 << ") rebinding from ("
                 << current.first << ","
                 << current.second
@@ -104,7 +104,7 @@ int host_thread_binding( const std::pair<unsigned,unsigned> gang_topo ,
 }
 
 
-void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+void host_thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
                           const std::pair<unsigned,unsigned> core_use ,
                           const std::pair<unsigned,unsigned> core_topo ,
                                 std::pair<unsigned,unsigned> thread_coord[] )
@@ -112,35 +112,35 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
   const std::pair<unsigned,unsigned> base( core_topo.first  - core_use.first ,
                                            core_topo.second - core_use.second );
 
-  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
-  for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
+  for ( unsigned thread_rank = 0 , team_rank = 0 ; team_rank < team_topo.first ; ++team_rank ) {
+  for ( unsigned worker_rank = 0 ; worker_rank < team_topo.second ; ++worker_rank , ++thread_rank ) {
 
-    unsigned gang_in_numa_count = 0 ;
-    unsigned gang_in_numa_rank  = 0 ;
+    unsigned team_in_numa_count = 0 ;
+    unsigned team_in_numa_rank  = 0 ;
 
-    { // Distribute gangs among NUMA regions:
-      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
-      const unsigned bin  = gang_topo.first / core_use.first ;
+    { // Distribute teams among NUMA regions:
+      // team_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+      const unsigned bin  = team_topo.first / core_use.first ;
       const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_use.first * bin1 - gang_topo.first ;
+      const unsigned k    = core_use.first * bin1 - team_topo.first ;
       const unsigned part = k * bin ;
 
-      if ( gang_rank < part ) {
-        thread_coord[ thread_rank ].first = base.first + gang_rank / bin ;
-        gang_in_numa_rank  = gang_rank % bin ;
-        gang_in_numa_count = bin ;
+      if ( team_rank < part ) {
+        thread_coord[ thread_rank ].first = base.first + team_rank / bin ;
+        team_in_numa_rank  = team_rank % bin ;
+        team_in_numa_count = bin ;
       }
       else {
-        thread_coord[ thread_rank ].first = base.first + k + ( gang_rank - part ) / bin1 ;
-        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
-        gang_in_numa_count = bin1 ;
+        thread_coord[ thread_rank ].first = base.first + k + ( team_rank - part ) / bin1 ;
+        team_in_numa_rank  = ( team_rank - part ) % bin1 ;
+        team_in_numa_count = bin1 ;
       }
     }
 
     { // Distribute workers to cores within this NUMA region:
       // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-      const unsigned worker_in_numa_count = gang_in_numa_count * gang_topo.second ;
-      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * gang_topo.second + worker_rank ;
+      const unsigned worker_in_numa_count = team_in_numa_count * team_topo.second ;
+      const unsigned worker_in_numa_rank  = team_in_numa_rank  * team_topo.second + worker_rank ;
 
       const unsigned bin  = worker_in_numa_count / core_use.second ;
       const unsigned bin1 = bin + 1 ;
@@ -158,11 +158,11 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
 
   std::cout << "Kokkos::host_thread_mapping (unrotated)" << std::endl ;
 
-  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
-    std::cout << "  gang[" << g
+  for ( unsigned g = 0 , t = 0 ; g < team_topo.first ; ++g ) {
+    std::cout << "  team[" << g
               << "] on numa[" << thread_coord[t].first
               << "] cores(" ;
-    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
+    for ( unsigned w = 0 ; w < team_topo.second ; ++w , ++t ) {
       std::cout << " " << thread_coord[t].second ;
     }
     std::cout << " )" << std::endl ;
@@ -172,16 +172,16 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
 
 }
 
-void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+void host_thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
                           const std::pair<unsigned,unsigned> core_use ,
                           const std::pair<unsigned,unsigned> core_topo ,
                           const std::pair<unsigned,unsigned> master_coord ,
                                 std::pair<unsigned,unsigned> thread_coord[] )
 {
-  const unsigned thread_count = gang_topo.first * gang_topo.second ;
+  const unsigned thread_count = team_topo.first * team_topo.second ;
   const unsigned core_base    = core_topo.second - core_use.second ;
 
-  host_thread_mapping( gang_topo , core_use , core_topo , thread_coord );
+  host_thread_mapping( team_topo , core_use , core_topo , thread_coord );
 
   // The master core should be thread #0 so rotate all coordinates accordingly ...
 
@@ -198,11 +198,11 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
 
   std::cout << "Kokkos::host_thread_mapping (rotated)" << std::endl ;
 
-  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
-    std::cout << "  gang[" << g
+  for ( unsigned g = 0 , t = 0 ; g < team_topo.first ; ++g ) {
+    std::cout << "  team[" << g
               << "] on numa[" << thread_coord[t].first
               << "] cores(" ;
-    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
+    for ( unsigned w = 0 ; w < team_topo.second ; ++w , ++t ) {
       std::cout << " " << thread_coord[t].second ;
     }
     std::cout << " )" << std::endl ;
@@ -212,9 +212,369 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
 
 }
 
-}
+} /* namespace Impl */
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace hwloc {
+
+/* Return 0 if asynchronous, 1 if synchronous and include process. */
+unsigned thread_mapping( const char * const label ,
+                         const bool allow_async ,
+                         unsigned & thread_count ,
+                         unsigned & use_numa_count ,
+                         unsigned & use_cores_per_numa ,
+                         std::pair<unsigned,unsigned> threads_coord[] )
+{
+  const bool     hwloc_avail            = Kokkos::hwloc::available();
+  const unsigned avail_numa_count       = hwloc_avail ? hwloc::get_available_numa_count() : 1 ;
+  const unsigned avail_cores_per_numa   = hwloc_avail ? hwloc::get_available_cores_per_numa() : thread_count ;
+  const unsigned avail_threads_per_core = hwloc_avail ? hwloc::get_available_threads_per_core() : 1 ;
+
+  // (numa,core) coordinate of the process:
+  const std::pair<unsigned,unsigned> proc_coord = Kokkos::hwloc::get_this_thread_coordinate();
+
+  //------------------------------------------------------------------------
+  // Defaults for unspecified inputs:
+
+  if ( ! use_numa_count ) {
+    // Default to use all NUMA regions
+    use_numa_count = ! thread_count ? avail_numa_count : (
+                       thread_count < avail_numa_count ? thread_count : avail_numa_count );
+  }
+
+  if ( ! use_cores_per_numa ) {
+    // Default to use all but one core if asynchronous, all cores if synchronous.
+    const unsigned threads_per_numa = thread_count / use_numa_count ;
+
+    use_cores_per_numa = ! threads_per_numa ? avail_cores_per_numa - ( allow_async ? 1 : 0 ) : (
+                           threads_per_numa < avail_cores_per_numa ? threads_per_numa : avail_cores_per_numa );
+  }
+
+  if ( ! thread_count ) {
+    thread_count = use_numa_count * use_cores_per_numa * avail_threads_per_core ;
+  }
+
+  //------------------------------------------------------------------------
+  // Input verification:
+
+  const bool valid_numa      = use_numa_count <= avail_numa_count ;
+  const bool valid_cores     = use_cores_per_numa &&
+                               use_cores_per_numa <= avail_cores_per_numa ;
+  const bool valid_threads   = thread_count &&
+                               thread_count <= use_numa_count * use_cores_per_numa * avail_threads_per_core ;
+  const bool balanced_numa   = ! ( thread_count % use_numa_count );
+  const bool balanced_cores  = ! ( thread_count % ( use_numa_count * use_cores_per_numa ) );
+
+  const bool valid_input = valid_numa && valid_cores && valid_threads && balanced_numa && balanced_cores ;
+
+  if ( ! valid_input ) {
+
+    std::ostringstream msg ;
+
+    msg << label << " HWLOC ERROR(s)" ;
+
+    if ( ! valid_threads ) {
+      msg << " : thread_count(" << thread_count
+          << ") exceeds capacity("
+          << use_numa_count * use_cores_per_numa * avail_threads_per_core
+          << ")" ;
+    }
+    if ( ! valid_numa ) {
+      msg << " : use_numa_count(" << use_numa_count
+          << ") exceeds capacity(" << avail_numa_count << ")" ;
+    }
+    if ( ! valid_cores ) {
+      msg << " : use_cores_per_numa(" << use_cores_per_numa
+          << ") exceeds capacity(" << avail_cores_per_numa << ")" ;
+    }
+    if ( ! balanced_numa ) {
+      msg << " : thread_count(" << thread_count
+          << ") imbalanced among numa(" << use_numa_count << ")" ;
+    }
+    if ( ! balanced_cores ) {
+      msg << " : thread_count(" << thread_count
+          << ") imbalanced among cores(" << use_numa_count * use_cores_per_numa << ")" ;
+    }
+
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  const unsigned thread_spawn_synchronous =
+    ( allow_async &&
+      1 < thread_count &&
+      ( use_numa_count     < avail_numa_count ||
+        use_cores_per_numa < avail_cores_per_numa ) )
+     ? 0 /* asyncronous */
+     : 1 /* synchronous, threads_coord[0] is process core */ ;
+
+  // Determine binding coordinates for to-be-spawned threads so that
+  // threads may be bound to cores as they are spawned.
+
+  const unsigned threads_per_core = thread_count / ( use_numa_count * use_cores_per_numa );
+
+  if ( thread_spawn_synchronous ) {
+    // Working synchronously and include process core as threads_coord[0].
+    // Swap the NUMA coordinate of the process core with 0
+    // Swap the CORE coordinate of the process core with 0
+    for ( unsigned i = 0 , inuma = avail_numa_count - use_numa_count ; inuma < avail_numa_count ; ++inuma ) {
+      const unsigned numa_coord = 0 == inuma ? proc_coord.first : ( proc_coord.first == inuma ? 0 : inuma );
+      for ( unsigned icore = avail_cores_per_numa - use_cores_per_numa ; icore < avail_cores_per_numa ; ++icore ) {
+        const unsigned core_coord = 0 == icore ? proc_coord.second : ( proc_coord.second == icore ? 0 : icore );
+        for ( unsigned ith = 0 ; ith < threads_per_core ; ++ith , ++i ) {
+          threads_coord[i].first  = numa_coord ;
+          threads_coord[i].second = core_coord ;
+        }
+      }
+    }
+  }
+  else if ( use_numa_count < avail_numa_count ) {
+    // Working asynchronously and omit the process' NUMA region from the pool.
+    // Swap the NUMA coordinate of the process core with ( ( avail_numa_count - use_numa_count ) - 1 )
+    const unsigned numa_coord_swap = ( avail_numa_count - use_numa_count ) - 1 ;
+    for ( unsigned i = 0 , inuma = avail_numa_count - use_numa_count ; inuma < avail_numa_count ; ++inuma ) {
+      const unsigned numa_coord = proc_coord.first == inuma ? numa_coord_swap : inuma ;
+      for ( unsigned icore = avail_cores_per_numa - use_cores_per_numa ; icore < avail_cores_per_numa ; ++icore ) {
+        const unsigned core_coord = icore ;
+        for ( unsigned ith = 0 ; ith < threads_per_core ; ++ith , ++i ) {
+          threads_coord[i].first  = numa_coord ;
+          threads_coord[i].second = core_coord ;
+        }
+      }
+    }
+  }
+  else if ( use_cores_per_numa < avail_cores_per_numa ) {
+    // Working asynchronously and omit the process' core from the pool.
+    // Swap the CORE coordinate of the process core with ( ( avail_cores_per_numa - use_cores_per_numa ) - 1 )
+    const unsigned core_coord_swap = ( avail_cores_per_numa - use_cores_per_numa ) - 1 ;
+    for ( unsigned i = 0 , inuma = avail_numa_count - use_numa_count ; inuma < avail_numa_count ; ++inuma ) {
+      const unsigned numa_coord = inuma ;
+      for ( unsigned icore = avail_cores_per_numa - use_cores_per_numa ; icore < avail_cores_per_numa ; ++icore ) {
+        const unsigned core_coord = proc_coord.second == icore ? core_coord_swap : icore ;
+        for ( unsigned ith = 0 ; ith < threads_per_core ; ++ith , ++i ) {
+          threads_coord[i].first  = numa_coord ;
+          threads_coord[i].second = core_coord ;
+        }
+      }
+    }
+  }
+
+  return thread_spawn_synchronous ;
 }
 
+} /* namespace hwloc */
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace hwloc {
+
+std::pair<unsigned,unsigned> use_core_topology( const unsigned thread_count )
+{
+  const unsigned hwloc_numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned hwloc_cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned hwloc_threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
+  const unsigned hwloc_capacity         = hwloc_numa_count * hwloc_cores_per_numa * hwloc_threads_per_core ;
+
+  if ( hwloc_capacity < thread_count ) {
+    std::ostringstream msg ;
+
+    msg << "Kokkos::hwloc::use_core_topology FAILED : Requested more cores or threads than HWLOC reports are available "
+        << " numa_count(" << hwloc_numa_count << ") , cores_per_numa(" << hwloc_cores_per_numa << ")"
+        << " capacity(" << hwloc_capacity << ")" ;
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  const std::pair<unsigned,unsigned> core_topo( hwloc_numa_count , hwloc_cores_per_numa );
+
+  // Start by assuming use of all available cores
+  std::pair<unsigned,unsigned> use_core_topo = core_topo ;
+
+  if ( thread_count <= ( core_topo.first - 1 ) * core_topo.second ) {
+    // Can spawn all requested threads on their own core within fewer NUMA regions of cores.
+    use_core_topo.first = ( thread_count + core_topo.second - 1 ) / core_topo.second ;
+  }
+
+  if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) ) {
+    // Can spawn all requested threads on their own core and have excess core.
+    use_core_topo.second = ( thread_count + core_topo.first - 1 ) / core_topo.first ;
+  }
+
+  if ( core_topo.first * core_topo.second < thread_count &&
+       thread_count <= core_topo.first * ( core_topo.second - 1 ) * hwloc_threads_per_core ) {
+    // Will oversubscribe cores and can omit one core
+    --use_core_topo.second ;
+  }
+
+  return use_core_topo ;
+}
+
+int thread_binding( const std::pair<unsigned,unsigned> team_topo ,
+                          std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
+  const int thread_count = team_topo.first * team_topo.second ;
+
+  int i = 0 ;
+
+  // Match one of the requests:
+  for ( i = 0 ; i < thread_count && current != thread_coord[i] ; ++i );
+
+  if ( thread_count == i ) {
+    // Match the NUMA request:
+    for ( i = 0 ; i < thread_count && current.first != thread_coord[i].first ; ++i );
+  }
+
+  if ( thread_count == i ) {
+    // Match any unclaimed request:
+    for ( i = 0 ; i < thread_count && ~0u == thread_coord[i].first  ; ++i );
+  }
+
+  if ( i < thread_count ) {
+    if ( ! hwloc::bind_this_thread( thread_coord[i] ) ) i = thread_count ;
+  }
+
+  if ( i < thread_count ) {
+
+#if DEBUG_PRINT
+    if ( current != thread_coord[i] ) {
+      std::cout << "  host_thread_binding("
+                << team_topo.first << "x" << team_topo.second
+                << ") rebinding from ("
+                << current.first << ","
+                << current.second
+                << ") to ("
+                << thread_coord[i].first << ","
+                << thread_coord[i].second
+                << ")" << std::endl ;
+    }
+#endif
+
+    thread_coord[i].first  = ~0u ;
+    thread_coord[i].second = ~0u ;
+  }
+
+  return i < thread_count ? i : -1 ;
+}
+
+
+void thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
+                     const std::pair<unsigned,unsigned> core_use ,
+                     const std::pair<unsigned,unsigned> core_topo ,
+                           std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const std::pair<unsigned,unsigned> base( core_topo.first  - core_use.first ,
+                                           core_topo.second - core_use.second );
+
+  for ( unsigned thread_rank = 0 , team_rank = 0 ; team_rank < team_topo.first ; ++team_rank ) {
+  for ( unsigned worker_rank = 0 ; worker_rank < team_topo.second ; ++worker_rank , ++thread_rank ) {
+
+    unsigned team_in_numa_count = 0 ;
+    unsigned team_in_numa_rank  = 0 ;
+
+    { // Distribute teams among NUMA regions:
+      // team_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+      const unsigned bin  = team_topo.first / core_use.first ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.first * bin1 - team_topo.first ;
+      const unsigned part = k * bin ;
+
+      if ( team_rank < part ) {
+        thread_coord[ thread_rank ].first = base.first + team_rank / bin ;
+        team_in_numa_rank  = team_rank % bin ;
+        team_in_numa_count = bin ;
+      }
+      else {
+        thread_coord[ thread_rank ].first = base.first + k + ( team_rank - part ) / bin1 ;
+        team_in_numa_rank  = ( team_rank - part ) % bin1 ;
+        team_in_numa_count = bin1 ;
+      }
+    }
+
+    { // Distribute workers to cores within this NUMA region:
+      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned worker_in_numa_count = team_in_numa_count * team_topo.second ;
+      const unsigned worker_in_numa_rank  = team_in_numa_rank  * team_topo.second + worker_rank ;
+
+      const unsigned bin  = worker_in_numa_count / core_use.second ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.second * bin1 - worker_in_numa_count ;
+      const unsigned part = k * bin ;
+
+      thread_coord[ thread_rank ].second = base.second +
+        ( ( worker_in_numa_rank < part )
+          ? ( worker_in_numa_rank / bin )
+          : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
+    }
+  }}
+
+#if DEBUG_PRINT
+
+  std::cout << "Kokkos::hwloc::thread_mapping (unrotated)" << std::endl ;
+
+  for ( unsigned g = 0 , t = 0 ; g < team_topo.first ; ++g ) {
+    std::cout << "  team[" << g
+              << "] on numa[" << thread_coord[t].first
+              << "] cores(" ;
+    for ( unsigned w = 0 ; w < team_topo.second ; ++w , ++t ) {
+      std::cout << " " << thread_coord[t].second ;
+    }
+    std::cout << " )" << std::endl ;
+  }
+
+#endif
+
+}
+
+void thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
+                     const std::pair<unsigned,unsigned> core_use ,
+                     const std::pair<unsigned,unsigned> core_topo ,
+                     const std::pair<unsigned,unsigned> master_coord ,
+                           std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const unsigned thread_count = team_topo.first * team_topo.second ;
+  const unsigned core_base    = core_topo.second - core_use.second ;
+
+  thread_mapping( team_topo , core_use , core_topo , thread_coord );
+
+  // The master core should be thread #0 so rotate all coordinates accordingly ...
+
+  const std::pair<unsigned,unsigned> offset
+    ( ( thread_coord[0].first  < master_coord.first  ? master_coord.first  - thread_coord[0].first  : 0 ) ,
+      ( thread_coord[0].second < master_coord.second ? master_coord.second - thread_coord[0].second : 0 ) );
+
+  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
+    thread_coord[i].first  = ( thread_coord[i].first + offset.first ) % core_use.first ;
+    thread_coord[i].second = core_base + ( thread_coord[i].second + offset.second - core_base ) % core_use.second ;
+  }
+
+#if DEBUG_PRINT
+
+  std::cout << "Kokkos::hwloc::thread_mapping (rotated)" << std::endl ;
+
+  for ( unsigned g = 0 , t = 0 ; g < team_topo.first ; ++g ) {
+    std::cout << "  team[" << g
+              << "] on numa[" << thread_coord[t].first
+              << "] cores(" ;
+    for ( unsigned w = 0 ; w < team_topo.second ; ++w , ++t ) {
+      std::cout << " " << thread_coord[t].second ;
+    }
+    std::cout << " )" << std::endl ;
+  }
+
+#endif
+
+}
+
+} /* namespace hwloc */
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #if defined( KOKKOS_HAVE_HWLOC )
@@ -238,6 +598,7 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace hwloc {
 namespace {
 
 enum { MAX_CORE = 1024 };
@@ -249,211 +610,22 @@ hwloc_bitmap_t               s_hwloc_location(0);
 hwloc_bitmap_t               s_process_binding(0);
 hwloc_bitmap_t               s_core[ MAX_CORE ];
 
-}
+struct Sentinel {
+  ~Sentinel();
+  Sentinel();
+};
 
-inline
-void print_bitmap( std::ostream & s , const hwloc_const_bitmap_t bitmap )
-{
-  s << "{" ;
-  for ( int i = hwloc_bitmap_first( bitmap ) ;
-        -1 != i ; i = hwloc_bitmap_next( bitmap , i ) ) {
-    s << " " << i ;
-  }
-  s << " }" ;
-}
+void sentinel()
+{ static Sentinel self ; }
 
-//----------------------------------------------------------------------------
-
-bool hwloc::available()
-{ return true ; }
-
-unsigned hwloc::bind_this_thread(
-  const unsigned               coordinate_count ,
-  std::pair<unsigned,unsigned> coordinate[] )
-{
-  unsigned i = 0 ;
-
-  try {
-    const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
-
-    // Match one of the requests:
-    for ( i = 0 ; i < coordinate_count && current != coordinate[i] ; ++i );
-
-    if ( coordinate_count == i ) {
-      // Match the first request (typically NUMA):
-      for ( i = 0 ; i < coordinate_count && current.first != coordinate[i].first ; ++i );
-    }
-
-    if ( coordinate_count == i ) {
-      // Match any unclaimed request:
-      for ( i = 0 ; i < coordinate_count && ~0u == coordinate[i].first  ; ++i );
-    }
-
-    if ( coordinate_count == i || ! hwloc::bind_this_thread( coordinate[i] ) ) {
-       // Failed to bind:
-       i = ~0u ;
-    }
-
-    if ( i < coordinate_count ) {
-
-#if DEBUG_PRINT
-      if ( current != coordinate[i] ) {
-        std::cout << "  host_thread_binding: rebinding from ("
-                  << current.first << ","
-                  << current.second
-                  << ") to ("
-                  << coordinate[i].first << ","
-                  << coordinate[i].second
-                  << ")" << std::endl ;
-      }
-#endif
-
-      coordinate[i].first  = ~0u ;
-      coordinate[i].second = ~0u ;
-    }
-  }
-  catch( ... ) {
-    i = ~0u ;
-  }
-
-  return i ;
-}
-
-
-bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> coord )
-{
-  sentinel();
-
-#if DEBUG_PRINT
-
-  std::cout << "Kokkos::hwloc::bind_this_thread() at " ;
-
-  hwloc_get_last_cpu_location( s_hwloc_topology ,
-                               s_hwloc_location , HWLOC_CPUBIND_THREAD );
-
-  print_bitmap( std::cout , s_hwloc_location );
-
-  std::cout << " to " ;
-
-  print_bitmap( std::cout , s_core[ coord.second + coord.first * s_core_topology.second ] );
-
-  std::cout << std::endl ;
-
-#endif
-
-  // As safe and fast as possible.
-  // Fast-lookup by caching the coordinate -> hwloc cpuset mapping in 's_core'.
-  return coord.first  < s_core_topology.first &&
-         coord.second < s_core_topology.second &&
-         0 == hwloc_set_cpubind( s_hwloc_topology ,
-                                 s_core[ coord.second + coord.first * s_core_topology.second ] ,
-                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
-}
-
-bool hwloc::unbind_this_thread()
-{
-  sentinel();
-
-#define HWLOC_DEBUG_PRINT 0
-
-#if HWLOC_DEBUG_PRINT
-
-  std::cout << "Kokkos::hwloc::unbind_this_thread() from " ;
-
-  hwloc_get_cpubind( s_hwloc_topology , s_hwloc_location , HWLOC_CPUBIND_THREAD );
-
-  print_bitmap( std::cout , s_hwloc_location );
-
-#endif
-
-  const bool result =
-    s_hwloc_topology &&
-    0 == hwloc_set_cpubind( s_hwloc_topology ,
-                            s_process_binding ,
-                            HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
-
-#if HWLOC_DEBUG_PRINT
-
-  std::cout << " to " ;
-
-  hwloc_get_cpubind( s_hwloc_topology , s_hwloc_location , HWLOC_CPUBIND_THREAD );
-
-  print_bitmap( std::cout , s_hwloc_location );
-
-  std::cout << std::endl ;
-
-#endif
-
-  return result ;
-
-#undef HWLOC_DEBUG_PRINT
-
-}
-
-//----------------------------------------------------------------------------
-
-std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
-{
-  sentinel();
-
-  const unsigned n = s_core_topology.first * s_core_topology.second ;
-
-  std::pair<unsigned,unsigned> coord(0,0);
-
-  // Using the pre-allocated 's_hwloc_location' to avoid memory
-  // allocation by this thread.  This call is NOT thread-safe.
-  hwloc_get_last_cpu_location( s_hwloc_topology ,
-                               s_hwloc_location , HWLOC_CPUBIND_THREAD );
-
-  unsigned i = 0 ;
-
-  while ( i < n && ! hwloc_bitmap_intersects( s_hwloc_location , s_core[ i ] ) ) ++i ;
-
-  if ( i < n ) {
-    coord.first  = i / s_core_topology.second ;
-    coord.second = i % s_core_topology.second ;
-  }
-  else {
-    std::ostringstream msg ;
-    msg << "Kokkos::hwloc::get_this_thread_coordinate() FAILED :" ;
-
-    if ( 0 != s_process_binding && 0 != s_hwloc_location ) {
-      msg << " cpu_location" ;
-      print_bitmap( msg , s_hwloc_location );
-      msg << " is not a member of the process_cpu_set" ;
-      print_bitmap( msg , s_process_binding );
-    }
-    else {
-      msg << " not initialized" ;
-    }
-    throw std::runtime_error( msg.str() );
-  }
-  return coord ;
-}
-
-//----------------------------------------------------------------------------
-
-std::pair<unsigned,unsigned>
-hwloc::get_core_topology()
-{ sentinel(); return s_core_topology ; }
-
-unsigned
-hwloc::get_core_capacity()
-{ sentinel(); return s_core_capacity ; }
-
-void hwloc::sentinel()
-{ static hwloc self ; }
-
-//----------------------------------------------------------------------------
-
-hwloc::~hwloc()
+Sentinel::~Sentinel()
 {
   hwloc_topology_destroy( s_hwloc_topology );
   hwloc_bitmap_free( s_process_binding );
   hwloc_bitmap_free( s_hwloc_location );
 }
 
-hwloc::hwloc()
+Sentinel::Sentinel()
 {
   s_core_topology   = std::pair<unsigned,unsigned>(0,0);
   s_core_capacity   = 0 ;
@@ -625,39 +797,234 @@ hwloc::hwloc()
   }
 }
 
+
+inline
+void print_bitmap( std::ostream & s , const hwloc_const_bitmap_t bitmap )
+{
+  s << "{" ;
+  for ( int i = hwloc_bitmap_first( bitmap ) ;
+        -1 != i ; i = hwloc_bitmap_next( bitmap , i ) ) {
+    s << " " << i ;
+  }
+  s << " }" ;
+}
+
+} // namespace
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+bool available()
+{ return true ; }
+
+unsigned get_available_numa_count()
+{ sentinel(); return s_core_topology.first ; }
+
+unsigned get_available_cores_per_numa()
+{ sentinel(); return s_core_topology.second ; }
+
+unsigned get_available_threads_per_core()
+{ sentinel(); return s_core_capacity ; }
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+unsigned bind_this_thread(
+  const unsigned               coordinate_count ,
+  std::pair<unsigned,unsigned> coordinate[] )
+{
+  unsigned i = 0 ;
+
+  try {
+    const std::pair<unsigned,unsigned> current = get_this_thread_coordinate();
+
+    // Match one of the requests:
+    for ( i = 0 ; i < coordinate_count && current != coordinate[i] ; ++i );
+
+    if ( coordinate_count == i ) {
+      // Match the first request (typically NUMA):
+      for ( i = 0 ; i < coordinate_count && current.first != coordinate[i].first ; ++i );
+    }
+
+    if ( coordinate_count == i ) {
+      // Match any unclaimed request:
+      for ( i = 0 ; i < coordinate_count && ~0u == coordinate[i].first  ; ++i );
+    }
+
+    if ( coordinate_count == i || ! bind_this_thread( coordinate[i] ) ) {
+       // Failed to bind:
+       i = ~0u ;
+    }
+
+    if ( i < coordinate_count ) {
+
+#if DEBUG_PRINT
+      if ( current != coordinate[i] ) {
+        std::cout << "  host_thread_binding: rebinding from ("
+                  << current.first << ","
+                  << current.second
+                  << ") to ("
+                  << coordinate[i].first << ","
+                  << coordinate[i].second
+                  << ")" << std::endl ;
+      }
+#endif
+
+      coordinate[i].first  = ~0u ;
+      coordinate[i].second = ~0u ;
+    }
+  }
+  catch( ... ) {
+    i = ~0u ;
+  }
+
+  return i ;
+}
+
+
+bool bind_this_thread( const std::pair<unsigned,unsigned> coord )
+{
+  sentinel();
+
+#if DEBUG_PRINT
+
+  std::cout << "Kokkos::bind_this_thread() at " ;
+
+  hwloc_get_last_cpu_location( s_hwloc_topology ,
+                               s_hwloc_location , HWLOC_CPUBIND_THREAD );
+
+  print_bitmap( std::cout , s_hwloc_location );
+
+  std::cout << " to " ;
+
+  print_bitmap( std::cout , s_core[ coord.second + coord.first * s_core_topology.second ] );
+
+  std::cout << std::endl ;
+
+#endif
+
+  // As safe and fast as possible.
+  // Fast-lookup by caching the coordinate -> hwloc cpuset mapping in 's_core'.
+  return coord.first  < s_core_topology.first &&
+         coord.second < s_core_topology.second &&
+         0 == hwloc_set_cpubind( s_hwloc_topology ,
+                                 s_core[ coord.second + coord.first * s_core_topology.second ] ,
+                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
+}
+
+bool unbind_this_thread()
+{
+  sentinel();
+
+#define HWLOC_DEBUG_PRINT 0
+
+#if HWLOC_DEBUG_PRINT
+
+  std::cout << "Kokkos::unbind_this_thread() from " ;
+
+  hwloc_get_cpubind( s_hwloc_topology , s_hwloc_location , HWLOC_CPUBIND_THREAD );
+
+  print_bitmap( std::cout , s_hwloc_location );
+
+#endif
+
+  const bool result =
+    s_hwloc_topology &&
+    0 == hwloc_set_cpubind( s_hwloc_topology ,
+                            s_process_binding ,
+                            HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
+
+#if HWLOC_DEBUG_PRINT
+
+  std::cout << " to " ;
+
+  hwloc_get_cpubind( s_hwloc_topology , s_hwloc_location , HWLOC_CPUBIND_THREAD );
+
+  print_bitmap( std::cout , s_hwloc_location );
+
+  std::cout << std::endl ;
+
+#endif
+
+  return result ;
+
+#undef HWLOC_DEBUG_PRINT
+
+}
+
+//----------------------------------------------------------------------------
+
+std::pair<unsigned,unsigned> get_this_thread_coordinate()
+{
+  sentinel();
+
+  const unsigned n = s_core_topology.first * s_core_topology.second ;
+
+  std::pair<unsigned,unsigned> coord(0,0);
+
+  // Using the pre-allocated 's_hwloc_location' to avoid memory
+  // allocation by this thread.  This call is NOT thread-safe.
+  hwloc_get_last_cpu_location( s_hwloc_topology ,
+                               s_hwloc_location , HWLOC_CPUBIND_THREAD );
+
+  unsigned i = 0 ;
+
+  while ( i < n && ! hwloc_bitmap_intersects( s_hwloc_location , s_core[ i ] ) ) ++i ;
+
+  if ( i < n ) {
+    coord.first  = i / s_core_topology.second ;
+    coord.second = i % s_core_topology.second ;
+  }
+  else {
+    std::ostringstream msg ;
+    msg << "Kokkos::get_this_thread_coordinate() FAILED :" ;
+
+    if ( 0 != s_process_binding && 0 != s_hwloc_location ) {
+      msg << " cpu_location" ;
+      print_bitmap( msg , s_hwloc_location );
+      msg << " is not a member of the process_cpu_set" ;
+      print_bitmap( msg , s_process_binding );
+    }
+    else {
+      msg << " not initialized" ;
+    }
+    throw std::runtime_error( msg.str() );
+  }
+  return coord ;
+}
+
+//----------------------------------------------------------------------------
+
+} /* namespace hwloc */
 } /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #else /* ! defined( KOKKOS_HAVE_HWLOC ) */
 
 namespace Kokkos {
+namespace hwloc {
 
-bool hwloc::available()
-{ return false ; }
+bool available() { return false ; }
 
-unsigned hwloc::bind_this_thread( const unsigned , std::pair<unsigned,unsigned>[] )
+unsigned get_available_numa_count() { return 1 ; }
+unsigned get_available_cores_per_numa() { return 1 ; }
+unsigned get_available_threads_per_core() { return 1 ; }
+
+unsigned bind_this_thread( const unsigned , std::pair<unsigned,unsigned>[] )
 { return ~0 ; }
 
-bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> )
+bool bind_this_thread( const std::pair<unsigned,unsigned> )
 { return false ; }
 
-bool hwloc::unbind_this_thread()
+bool unbind_this_thread()
 { return true ; }
 
-std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
+std::pair<unsigned,unsigned> get_this_thread_coordinate()
 { return std::pair<unsigned,unsigned>(0,0); }
 
-std::pair<unsigned,unsigned> hwloc::get_core_topology()
-{ return std::pair<unsigned,unsigned>(1,1); }
-
-unsigned hwloc::get_core_capacity()
-{ return 1 ; }
-
-hwloc::~hwloc() {}
-
-hwloc::hwloc() {}
-
+} // namespace hwloc
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

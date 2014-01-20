@@ -46,13 +46,24 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
+#include <Kokkos_Macros.hpp>
+
+#if defined(KOKKOS_HAVE_OPENMP)
+
 #include <omp.h>
 #include <cstddef>
+#include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 
-#include <OpenMP/Kokkos_Host_Thread.hpp>
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+class OpenMPexec ;
+} // namespace Impl
+} // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
 
@@ -62,6 +73,7 @@ namespace Kokkos {
 /// \brief Kokkos device for multicore processors in the host memory space.
 class OpenMP {
 public:
+  //------------------------------------
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
@@ -72,6 +84,7 @@ public:
   typedef OpenMP                host_mirror_device_type ;
 
   //@}
+  //------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
@@ -86,6 +99,9 @@ public:
   /** \brief Wait until all dispatched functors complete. A noop for OpenMP. */
   static void fence() {}
 
+  /// \brief Print configuration information to the given output stream.
+  static void print_configuration( std::ostream & , const bool detail = false );
+
   /// \brief Free any resources being consumed by the device.
   static void finalize();
 
@@ -98,43 +114,80 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-  static void initialize( const unsigned gang_count = 1 ,
-                          const unsigned worker_per_gang = 0 );
+#if 0
+  static void initialize( const unsigned team_count         = 1 ,
+                          const unsigned threads_per_team   = 1 ,
+                          const unsigned use_numa_count     = 0 ,
+                          const unsigned use_cores_per_numa = 0 );
+#endif
+
+  static void initialize( unsigned thread_count = 0 ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 );
+
+  static int is_initialized();
+
+  static unsigned league_max();
+  static unsigned team_max();
+  //@}
+  //------------------------------------
+  //! \name Function for the functor device interface */
+  //@{
+
+  /** \TODO: compiler dependent implementation */
+  inline static void memory_fence() {};
 
 
-  static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
-                          const std::pair<unsigned,unsigned> core_use =
-                                std::make_pair (0u, 0u) );
+  inline int league_rank() const ;
+  inline int league_size() const ;
+  inline int team_rank() const ;
+  inline int team_size() const ;
+
+  inline void team_barrier();
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  inline Type team_scan( const Type & value );
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename TypeLocal , typename TypeGlobal >
+  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
+
+
+  inline void * get_shmem( const int size );
+
+  explicit inline OpenMP( Impl::OpenMPexec & );
 
   //------------------------------------
 
-  static void resize_reduce_scratch( unsigned );
-
-  static void * root_reduce_scratch();
-
-  static void assert_ready( const char * const );
-
-  inline static
-  Impl::HostThread * get_host_thread()
-    { return m_host_threads[ omp_get_thread_num() ]; }
-
-  inline static
-  Impl::HostThread * get_host_thread( const unsigned i )
-    { return m_host_threads[ i ]; }
-
 private:
-  static Impl::HostThread * m_host_threads[ Impl::HostThread::max_thread_count ];
-};
 
-/*--------------------------------------------------------------------------*/
+  Impl::OpenMPexec & m_exec ;
+
+};
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+
+#include <OpenMP/Kokkos_OpenMPexec.hpp>
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>
-#include <OpenMP/Kokkos_OpenMP_View.hpp>
 
-#endif /* #define KOKKOS_OPENMP_HPP */
+/*--------------------------------------------------------------------------*/
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#endif /* #if defined(KOKKOS_HAVE_OPENMP) */
+#endif /* #ifndef KOKKOS_OPENMP_HPP */
+
 

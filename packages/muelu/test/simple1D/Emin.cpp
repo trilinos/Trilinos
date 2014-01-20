@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -91,7 +91,6 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -107,6 +106,10 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
+
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
@@ -191,8 +194,12 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
   //verbose mode: return rcp (new MergedSmoother(smootherList, true));
 }
 
+}
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
+  using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -288,7 +295,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
@@ -344,9 +351,9 @@ int main(int argc, char *argv[]) {
 #ifdef NEUMANN
   // Use coarse level projection solver
   RCP<SmootherPrototype> projectedSolver = rcp(new ProjectorSmoother(coarseProto));
-  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(projectedSolver));
+  RCP<SmootherFactory>   coarseSolveFact = rcp(new SmootherFactory(projectedSolver, Teuchos::null));
 #else
-  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(coarseProto));
+  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(coarseProto, Teuchos::null));
 #endif
   M.SetFactory("CoarseSolver", coarseSolveFact);
 

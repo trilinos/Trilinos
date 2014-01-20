@@ -124,7 +124,7 @@ To use the installed version of cmake-"""+cmakeVersion+""" add the path:
 
   """+self.inOptions.installDir+"""/bin
 
-to your path and taht should be it!
+to your path and that should be it!
 """
 
 

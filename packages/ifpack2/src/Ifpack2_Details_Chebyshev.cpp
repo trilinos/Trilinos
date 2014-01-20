@@ -40,25 +40,38 @@
 //@HEADER
 */
 
+#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #include "Ifpack2_Details_Chebyshev_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
+
+namespace Ifpack2 {
+namespace Details {
 
 // Expand this macro only in the Ifpack2::Details namespace!  It
 // explicitly instantiates the Ifpack2::Details::Chebyshev class for
 // the given S (scalar), LO (local ordinal), and GO (global ordinal)
 // types.
-#define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) \
-  template<> \
-  class Chebyshev<S, \
-		  Tpetra::MultiVector<S,LO,GO>, \
-		  Tpetra::CrsMatrix<S,LO,GO> >;
+//
+// mfh 12 Dec 2013: For some reason, this all has to be on one line,
+// otherwise the macro definition includes the whole rest of the file.
+#define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) template class Chebyshev<S, Tpetra::MultiVector<S,LO,GO> >;
 
-namespace Ifpack2 {
-namespace Details {
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template <>
+  class Chebyshev<double,
+                  Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode> >;
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template <>
+  class Chebyshev<double,
+                  Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
+#endif
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

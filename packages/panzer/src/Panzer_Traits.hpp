@@ -95,10 +95,10 @@ namespace panzer {
     
     // Scalar types we plan to use
     typedef double RealType;
-    typedef Sacado::Fad::DFad<double> FadType;
+    //typedef Sacado::Fad::DFad<double> FadType;
     //typedef Sacado::CacheFad::DFad<double> FadType;
     //typedef Sacado::ELRFad::DFad<double> FadType;
-    //typedef Sacado::ELRCacheFad::DFad<double> FadType;
+    typedef Sacado::ELRCacheFad::DFad<double> FadType;
 
     #ifdef HAVE_STOKHOS
        typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
@@ -129,17 +129,17 @@ namespace panzer {
     // Create the data types for each evaluation type
     
     // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector< RealType > ResidualDataTypes;
+    typedef Sacado::mpl::vector< RealType,bool > ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType > JacobianDataTypes;
+    typedef Sacado::mpl::vector< FadType,bool > JacobianDataTypes;
 
     // Tangent (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType > TangentDataTypes;
+    typedef Sacado::mpl::vector< FadType,bool > TangentDataTypes;
 
     #ifdef HAVE_STOKHOS
-       typedef Sacado::mpl::vector< SGType > SGResidualDataTypes;
-       typedef Sacado::mpl::vector< SGFadType > SGJacobianDataTypes;
+       typedef Sacado::mpl::vector< SGType,bool > SGResidualDataTypes;
+       typedef Sacado::mpl::vector< SGFadType,bool > SGJacobianDataTypes;
     #endif
 
     // Maps the key EvalType a vector of DataTypes
@@ -226,6 +226,9 @@ namespace PHX {
      template<> struct TypeString< panzer::Traits::SGFadType> 
      { static const std::string value; };
   #endif 
+
+  template<> struct TypeString<bool> 
+  { static const std::string value; };
 
 }
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -61,6 +61,8 @@ namespace MueLuTests {
     namespace Smoothers {
 
 #include "MueLu_UseShortNames.hpp"
+
+      typedef Teuchos::ScalarTraits<SC> ST;
 
       //! Test if Apply() throw an exception when called before Setup()
       void testApplyNoSetup(SmootherPrototype const & smoother, Teuchos::FancyOStream & out, bool & success);

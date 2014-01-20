@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -53,7 +53,7 @@
 // This should be general enough for 1-3 dimensions, but is originally
 // implemented to work with two, so deal with it if there are bugs
 // initially.
-// 
+//
 // ASSUMPTIONS TO ELIMINATE:
 //   1. none that i can think of currently
 //

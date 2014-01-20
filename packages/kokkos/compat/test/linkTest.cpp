@@ -6,10 +6,10 @@
 //         Manycore Performance-Portable Multidimensional Arrays
 //
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -38,7 +38,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,7 +46,15 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <KokkosCompat_TMM.hpp>
 #include <Teuchos_Array.hpp>
+
+// FIXME (mfh 04 Dec 2013) Disable dependency on KokkosClassic for now
+// to make this test build correctly, given that we are reversing Kokkos
+// subpackage dependencies so that KokkosClassic has an optional dependency
+// on KokkosCompat (rather than KokkosCompat having a required dependency
+// on KokkosClassic, which was the case previously).
+#if 0
 #include <Kokkos_MultiVector.hpp> // Kokkos Classic
+#endif // 0
 
 namespace {
 
@@ -59,7 +67,7 @@ namespace {
   public:
     // Functors need a device_type typedef.
     typedef Device device_type;
-    
+
     // Constructor accepts a View of a 1-D array.
     FillFunctor (const Kokkos::View<double*, Device>& vec) : vec_ (vec) {}
 
@@ -110,7 +118,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
   TEST_EQUALITY_CONST( xView.size(), 5 );
   for (size_type k = 0; k < xView.size (); ++k) {
     TEST_EQUALITY( xView[k], x[k+3] );
-  }  
+  }
 
   typedef Kokkos::View<double*, Kokkos::Threads> ka_view_type;
   ka_view_type y ("y", numElts);
@@ -175,7 +183,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
 
   // This ensures that conversions from double* to const double* work correctly.
   // x.getRawPtr() returns double*.
-  ka_const_view_type x_view_const (x.getRawPtr (), x.size ());
+  ka_const_view_type x_view_const ( (const double*) x.getRawPtr (), x.size ());
 
   TEST_EQUALITY( x.size(), static_cast<size_type>(x_view_const.dimension_0()) );
   for (size_type k = 0; k < x.size (); ++k) {
@@ -293,7 +301,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
       // Stride between X_j(i,j) and X_j(i,j+1), even though X_j only
       // has one column.  The stride must be at least as given, but
       // can be greater (due to possible padding for alignment).
-      TEST_ASSERT(strides[1] >= stride); 
+      TEST_ASSERT(strides[1] >= stride);
     }
 
     // Create a nonowning "view" of X_j's data.  The ArrayRCP has a
@@ -307,6 +315,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 }
 
 
+// FIXME (mfh 04 Dec 2013) See note at top of file.
+#if 0
 // Create a 2-D LayoutLeft HostSpace-memory View, and create a
 // KokkosClassic::MultiVector which views its memory and holds a
 // reference to the View.  The latter will ensure that the
@@ -381,7 +391,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   // Create the KokkosClassic::MultiVector.  Initialization takes two steps.
   KMV Y (node);
   Y.initializeValues (numRows, numCols, Y_values, stride);
-  
+
   // Test that the dimensions, stride, and pointers of Y are correct.
   TEST_EQUALITY(Y.getNumRows(), numRows);
   TEST_EQUALITY(Y.getNumCols(), numCols);
@@ -389,4 +399,4 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   TEST_EQUALITY(Y.getValues().getRawPtr(), X.ptr_on_device());
   TEST_EQUALITY(Y.getValues().getRawPtr(), X_view.ptr_on_device());
 }
-
+#endif // 0

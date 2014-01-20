@@ -51,6 +51,7 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 Star2D(const Epetra_Map* Map, const int nx, const int ny,
@@ -62,11 +63,12 @@ Star2D(const Epetra_Map* Map, const int nx, const int ny,
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  9);
 
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper;
   double Values[9];
-  int    Indices[9];
+  int_type Indices[9];
 
   //  z3  e  z4
   //   b  a  c
@@ -138,6 +140,29 @@ Star2D(const Epetra_Map* Map, const int nx, const int ny,
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+inline
+Epetra_CrsMatrix* 
+Star2D(const Epetra_Map* Map, const int nx, const int ny,
+       const double a, const double b, const double c,
+       const double d, const double e,
+       const double z1, const double z2,
+       const double z3, const double z4)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Star2D<int>(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Star2D<long long>(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Star2D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

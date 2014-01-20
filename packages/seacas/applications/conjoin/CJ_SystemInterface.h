@@ -53,6 +53,7 @@ namespace Excn {
       bool ints_64_bit() const {return ints64Bit_;}
       double alive_value() const {return aliveValue_;}
       
+      double interpart_minimum_time_delta() const {return interpartMinimumTimeDelta_;}
       StringIdVector global_var_names() const {return globalVarNames_;}
       StringIdVector node_var_names() const {return nodeVarNames_;}
       StringIdVector elem_var_names() const {return elemVarNames_;}
@@ -87,6 +88,7 @@ namespace Excn {
       bool ints64Bit_;
       
       double aliveValue_;
+      double interpartMinimumTimeDelta_;
       
       std::string elementStatusVariable_;
       std::string nodalStatusVariable_;

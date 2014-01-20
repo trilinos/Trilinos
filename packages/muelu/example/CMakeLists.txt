@@ -10,7 +10,7 @@ KokkosClassic_ENABLE_Thrust AND KokkosClassic_ENABLE_ThreadPool)
 ADD_SUBDIRECTORY(Clone)
 ENDIF()
 
-#ADD_SUBDIRECTORY(MultipleSolve)
+ADD_SUBDIRECTORY(MultipleSolve)
 
 ADD_SUBDIRECTORY(Misc/Aggregation)
 ADD_SUBDIRECTORY(Misc/MultipleFactoryManager)

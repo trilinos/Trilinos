@@ -56,6 +56,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 namespace panzer {
 
@@ -183,6 +184,7 @@ public:
   const std::pair<std::vector<int>,std::vector<int> > & 
   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
+  //! Get the owned element block
   const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const
   { return connMngr_->getElementBlock(blockId); }
 
@@ -247,33 +249,84 @@ public:
   void enableTieBreak(bool enable)   
   { useTieBreak_ = enable; }
 
+  /** Turn on/off the use of ghosting in the construction
+    * of the global ids. If on, then the shared GIDs
+    * will include GIDs from ghosted elements. And you will
+    * be able to call getElement(G/L)IDs for elements in the
+    * one ring of this processor.
+    */
+  void enableGhosting(bool enable)   
+  { buildGhosted_ = enable; }
+
+  // These functions are primarily for testing purposes
+  // they are not intended to be useful otherwise (thus they are not 
+  // documented in the Doxygen style
+
+  // Return the number of elemnts as measured by the count of GID arrays.
+  // note that this will include ghosted elements!
+  std::size_t getNumberElementGIDArrays() const
+  { return elementGIDs_.size(); }
+
 protected:
 
-   /** Use Zoltan2 to locally reorder with RCM.
-     */
-   Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
-   runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > &);
+  /** Use Zoltan2 to locally reorder with RCM.
+    */
+  Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+  runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > &);
 
-   /** Using the natural ordering associated with the std::vector
-     * retrieved from the connection manager
-     */
-   std::size_t blockIdToIndex(const std::string & blockId) const;
+  /** Using the natural ordering associated with the std::vector
+    * retrieved from the connection manager
+    */
+  std::size_t blockIdToIndex(const std::string & blockId) const;
+
+  /** This small struct is a utility meant to unify access
+    * to elements and allow better code reuse. Basically
+    * it provides a switch between the neighbor element blocks
+    * and the owned element blocks.
+    */
+  class ElementBlockAccess {
+    bool useOwned_;
+    Teuchos::RCP<const ConnManager<LO,GO> > connMngr_;
+  public:
+    ElementBlockAccess(bool owned,const Teuchos::RCP<const ConnManager<LO,GO> > & connMngr) 
+      : useOwned_(owned), connMngr_(connMngr) {}
+    
+    const std::vector<LO> & getElementBlock(const std::string & eBlock) const 
+    {
+      if(useOwned_==true)
+        return connMngr_->getElementBlock(eBlock);
+      else
+        return connMngr_->getNeighborElementBlock(eBlock);
+    }
+  };
+
+  /** Build the overlapped communication map given an element access object.
+    * This map is used to construct the GIDs, and also to communicate the used
+    * GIDs. (this is steps 1 and 2)
+    */
+  Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+  buildOverlapMapFromElements(const ElementBlockAccess & access) const; 
+
+  void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
+                                std::vector<std::vector< GO > > & elementGIDs,
+                                const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlapmap,
+                                const Tpetra::MultiVector<GO,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlap_mv) const;
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
 
   //Please note: AID=absolute ID. This is an attempt to remember that
-  //fieldPatterns_ is unchanging storage for FPs.
+  // fieldPatterns_ is unchanging storage for FPs.
   std::vector<Teuchos::RCP<const FieldPattern> > fieldPatterns_;
   std::map<std::string,int> fieldNameToAID_;
 
-  std::vector<std::string> blockOrder_; //To be got from the ConnManager.
-  std::map<std::string,int> blockNameToID_; //I'm not sure the above vector is needed, this might suffice.
-  std::vector<std::vector<int> > blockToAssociatedFP_; //each sub-vector is associated by
-  //a block, with ordering given in blockOrder_. ints refer to the order in fieldPatterns_;
+  std::vector<std::string> blockOrder_; // To be got from the ConnManager.
+  std::map<std::string,int> blockNameToID_; // I'm not sure the above vector is needed, this might suffice.
+  std::vector<std::vector<int> > blockToAssociatedFP_; // each sub-vector is associated by
+  // a block, with ordering given in blockOrder_. ints refer to the order in fieldPatterns_;
   std::vector<std::string> fieldStringOrder_;
-  std::vector<int> fieldAIDOrder_; //Both of these must be updated and edited together.
-  //The AID offers a simpler way to manage FPs internally.
+  std::vector<int> fieldAIDOrder_; // Both of these must be updated and edited together.
+  // The AID offers a simpler way to manage FPs internally.
 
   Teuchos::RCP<const panzer::FieldPattern> ga_fp_; // geometric aggregate field pattern
   std::vector<Teuchos::RCP<panzer::FieldAggPattern> > fa_fps_; //Ordered by blockOrder_;
@@ -281,11 +334,11 @@ protected:
   std::vector<GO> owned_;
   std::vector<GO> owned_and_ghosted_;
 
-  //Element GIDS ordered by LID.
+  // Element GIDS ordered by LID.
   std::vector<std::vector< GO > > elementGIDs_;
 
-  //Mimics the functionality of the getElemenentBlockGIDCount in
-  //the original DOFManager. Indexed according to blockOrder_.
+  // Mimics the functionality of the getElemenentBlockGIDCount in
+  // the original DOFManager. Indexed according to blockOrder_.
   std::vector<int> elementBlockGIDCount_;
 
   int numFields_;
@@ -296,6 +349,7 @@ protected:
   std::vector<std::vector<char> > orientation_;
 
   bool useTieBreak_;
+  bool buildGhosted_;
 };
 
 }

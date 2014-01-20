@@ -50,6 +50,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
 
 // MueLu
 #include "MueLu.hpp"
@@ -59,13 +60,17 @@
 #include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_CoupledRBMFactory.hpp>
 #include <MueLu_RAPShiftFactory.hpp>
-#include <MueLu_ShiftedLaplacian_fwd.hpp>
+#include <MueLu_PgPFactory.hpp>
+#include <MueLu_GenericRFactory.hpp>
+#include <MueLu_SchwarzSmoother.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_ShiftedLaplacianOperator.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
+#include <BelosBlockCGSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
 
 namespace MueLu {
@@ -82,72 +87,72 @@ namespace MueLu {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
-    
+
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
     typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
     typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
+    typedef Belos::BlockCGSolMgr<SC,TMV,OP>              BelosCG;
     typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
-    
+
   public:
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
-	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1), tol_(1.0e-4),
-	nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
+	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1),
+	tol_(1.0e-4), nsweeps_(5), ncycles_(1), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
+	smoother_sweeps_(4), smoother_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5), krylov_preconditioner_(1),
+	ilu_leveloffill_(5.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_diagpivotthresh_(0.1), ilu_drop_tol_(0.01), ilu_fill_tol_(0.01), ilu_relax_val_(1.0),
+	ilu_rowperm_("LargeDiag"), ilu_colperm_("COLAMD"), ilu_drop_rule_("DROP_BASIC"), ilu_normtype_("INF_NORM"), ilu_milutype_("SILU"),
+	schwarz_overlap_(0), schwarz_usereorder_(true), schwarz_combinemode_(Tpetra::ADD), schwarz_ordermethod_("rcm"),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
-	LevelShiftsSet_(false)
+	LevelShiftsSet_(false), isSymmetric_(true), useKrylov_(true)
     { }
 
     // Destructor
     virtual ~ShiftedLaplacian();
-    
-    // Input
-    void setParameters(const Teuchos::ParameterList List);
+
+    // Parameters
+    void setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList);
 
     // Set matrices
     void setLaplacian(RCP<Matrix>& L);
     void setProblemMatrix(RCP<Matrix>& A);
+    void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA);
     void setPreconditioningMatrix(RCP<Matrix>& P);
     void setstiff(RCP<Matrix>& K);
     void setmass(RCP<Matrix>& M);
     void setdamp(RCP<Matrix>& C);
-
-    // set parameters
     void setcoords(RCP<MultiVector>& Coords);
+    void setNullSpace(RCP<MultiVector> NullSpace);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
     void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
     void setLevelShifts(std::vector<Scalar> levelshifts);
-    void setAggregation(int stype);
-    void setSmoother(int stype);
-    void setSolver(int stype);
-    void setSweeps(int nsweeps);
-    void setCycles(int ncycles);
-    void setIterations(int iters);
-    void setTolerance(double tol);
-    void setCoarseGridSize(int coarsegridsize);
 
     // various initialization/setup functions
     void initialize();
     void setupFastRAP();
     void setupSlowRAP();
+    void setupNormalRAP();
+    void resetLinearProblem();
 
     // Solve phase
-    void solve(const RCP<TMV> B, RCP<TMV>& X);
+    int solve(const RCP<TMV> B, RCP<TMV>& X);
+    void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
+    int GetIterations();
 
   private:
 
     // Problem options
     // Problem  -> acoustic, elastic, acoustic-elastic
     // numPDEs_ -> number of DOFs at each node
-    
-    std::string Problem_; 
-    int numPDEs_;
-    int numSetups_;
+
+    std::string Problem_;
+    int numPDEs_, numSetups_;
 
     // Multigrid options
     // numLevels_      -> number of Multigrid levels
@@ -165,8 +170,7 @@ namespace MueLu {
     // ashift1, ashift2, pshift1, pshift2 are user-defined scalar values.
 
     double     omega_;
-    SC         ashift1_, ashift2_;
-    SC         pshift1_, pshift2_;
+    SC         ashift1_, ashift2_, pshift1_, pshift2_;
     std::vector<SC> levelshifts_;
 
     // Krylov solver inputs
@@ -174,22 +178,31 @@ namespace MueLu {
     // tol    -> residual tolerance
     // FMGRES -> if true, FGMRES is chosen as solver
 
-    int    iters_;
-    int    blksize_;
+    int    iters_, blksize_;
     double tol_;
-    int    nsweeps_;
-    int    ncycles_;
-    bool   FGMRESoption_;
-    int    cycles_;
-    int    subiters_;
-    int    option_;
-    int    nproblems_;
+    int    nsweeps_, ncycles_;
+    int    cycles_, subiters_, option_, nproblems_, solverType_;
+
+    // Smoother parameters
+    int    smoother_sweeps_;
+    Scalar smoother_damping_;
+    int    krylov_type_;
+    int    krylov_iterations_;
+    int    krylov_preconditioner_;
+    double ilu_leveloffill_, ilu_abs_thresh_, ilu_rel_thresh_, ilu_diagpivotthresh_;
+    double ilu_drop_tol_, ilu_fill_tol_, ilu_relax_val_;
+    std::string ilu_rowperm_, ilu_colperm_, ilu_drop_rule_, ilu_normtype_, ilu_milutype_;
+    int    schwarz_overlap_;
+    bool   schwarz_usereorder_;
+    Tpetra::CombineMode schwarz_combinemode_;
+    std::string schwarz_ordermethod_;
 
     // flags for setup
     bool GridTransfersExist_;
     bool UseLaplacian_, VariableShift_;
     bool LaplaceOperatorSet_, ProblemMatrixSet_, PreconditioningMatrixSet_;
     bool StiffMatrixSet_, MassMatrixSet_, DampMatrixSet_, LevelShiftsSet_;
+    bool isSymmetric_, useKrylov_;
 
     // Xpetra matrices
     // K_ -> stiffness matrix
@@ -199,7 +212,7 @@ namespace MueLu {
     // A_ -> Problem matrix
     // P_ -> Preconditioning matrix
     RCP<Matrix>                       K_, C_, M_, L_, A_, P_;
-    RCP<MultiVector>                  Coords_;
+    RCP<MultiVector>                  Coords_, NullSpace_;
 
     // Multigrid Hierarchy and Factory Manager
     RCP<Hierarchy>                    Hierarchy_;
@@ -207,18 +220,21 @@ namespace MueLu {
 
     // Factories and prototypes
     RCP<TentativePFactory>            TentPfact_;
-    RCP<SaPFactory>                   Pfact_;
-    RCP<TransPFactory>                Rfact_;
+    RCP<PFactory>                     Pfact_;
+    RCP<PgPFactory>                   PgPfact_;
+    RCP<TransPFactory>                TransPfact_;
+    RCP<GenericRFactory>              Rfact_;
     RCP<RAPFactory>                   Acfact_;
     RCP<RAPShiftFactory>              Acshift_;
+    RCP<CoalesceDropFactory>          Dropfact_;
     RCP<CoupledAggregationFactory>    Aggfact_;
     RCP<UncoupledAggregationFactory>  UCaggfact_;
     RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;
     RCP<SmootherFactory>              smooFact_,  coarsestSmooFact_;
     Teuchos::ParameterList            coarsestSmooList_;
-    std::string                       ifpack2Type_;
-    Teuchos::ParameterList            ifpack2List_;
-    
+    std::string                       precType_;
+    Teuchos::ParameterList            precList_;
+
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;
