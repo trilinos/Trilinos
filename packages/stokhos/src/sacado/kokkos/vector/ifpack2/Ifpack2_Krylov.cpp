@@ -48,8 +48,7 @@
 #include "Ifpack2_Krylov_def.hpp"
 
 #define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
-  template class Krylov< Tpetra::CrsMatrix<S, LO, GO, N>, \
-                         Ifpack2::Preconditioner<S, LO, GO, N> >;
+  template class Krylov< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
 
