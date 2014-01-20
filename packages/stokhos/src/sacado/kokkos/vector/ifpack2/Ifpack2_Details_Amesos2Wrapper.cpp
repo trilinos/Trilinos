@@ -49,7 +49,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Ifpack2_Details_Amesos2Wrapper_def.hpp"
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#if defined(HAVE_IFPACK2_AMESOS2)
 
 #define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
   template class Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
