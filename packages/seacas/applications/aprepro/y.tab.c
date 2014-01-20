@@ -2626,11 +2626,11 @@ yyreduce:
   case 121:
 /* Line 1787 of yacc.c  */
 #line 337 "aprepro.y"
-    { (yyval.val) = (yyvsp[(8) - (8)].val);
-                                    array *arr = (yyvsp[(1) - (8)].tptr)->value.avar;
+    {                               array *arr = (yyvsp[(1) - (8)].tptr)->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-                                    if ((yyvsp[(3) - (8)].val) < rows && (yyvsp[(5) - (8)].val) < cols) {
+				    (yyval.val) = (yyvsp[(8) - (8)].val);
+				    if ((yyvsp[(3) - (8)].val) < rows && (yyvsp[(5) - (8)].val) < cols) {
                                       int offset = (yyvsp[(3) - (8)].val)*cols+(yyvsp[(5) - (8)].val);
                                       (yyvsp[(1) - (8)].tptr)->value.avar->data[offset] = (yyvsp[(8) - (8)].val);
                                     }

@@ -334,11 +334,11 @@ exp:      NUM                   { $$ = $1;                              }
                                       }
                                     }
         | AVAR '[' exp ',' exp ']' '=' exp 
-                                  { $$ = $8;
-                                    array *arr = $1->value.avar;
+                                  { array *arr = $1->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-                                    if ($3 < rows && $5 < cols) {
+				    $$ = $8;
+				    if ($3 < rows && $5 < cols) {
                                       int offset = $3*cols+$5;
                                       $1->value.avar->data[offset] = $8;
                                     }

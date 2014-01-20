@@ -1218,7 +1218,7 @@ array *do_csv_array(const char *filename)
   while (std::getline(*file, line)) {
     std::vector<std::string> tokens;
     tokenize(line, delim, tokens);
-    for (size_t i=0; i < array_data->cols; i++) {
+    for (size_t i=0; i < (size_t)array_data->cols; i++) {
       if (i < tokens.size()) {
 	array_data->data[idx++] = atof(tokens[i].c_str());
       }
@@ -1228,7 +1228,7 @@ array *do_csv_array(const char *filename)
     }
     rows++;
   }
-  assert(rows == array_data->rows);
+  assert((int)rows == array_data->rows);
   return array_data;
 }
 

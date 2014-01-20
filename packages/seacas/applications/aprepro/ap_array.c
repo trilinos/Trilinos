@@ -1,4 +1,5 @@
 #include "my_aprepro.h"
+#include <stdlib.h>
 
 array *array_add(array *a, array *b)
 {

@@ -768,7 +768,6 @@ double do_csvcols(char * filename)
   size_t len = 0;
   char *line = NULL;
 
-  double tempCols = 0;
   double cols = 0;
   FILE *fp = open_file(filename, "r");
 
@@ -1193,6 +1192,8 @@ char *do_print_array(array *my_array_data)
     int cols = my_array_data->cols;
     int idx=0;
 
+    symrec *format = getsym("_FORMAT");
+
     /* Assume a maximum of 32 characters per array entry.
      * Total space for the array data is then 32*rows*cols
      */
@@ -1201,7 +1202,6 @@ char *do_print_array(array *my_array_data)
     lines = malloc(size * sizeof(char) + 1);
     lines[0] = '\0';
     
-    symrec *format = getsym("_FORMAT");
     for (ir=0; ir < rows; ir++) {
       if (ir > 0)
 	strcat(lines, "\n");
@@ -1282,16 +1282,15 @@ array *do_csv_array(char *filename)
   
   FILE *fp = NULL;
   
-  double tempCols = 0;
   array *array_data = (array*) malloc(sizeof(array));
 
   fp = open_file(filename, "r");
   while (getline(&line, &len, fp) != -1) {
-    rows++;
     double tempCols = do_word_count(line,   delim);
     if (tempCols > cols) {
       cols = tempCols;
     }
+    rows++;
   }
   array_data->rows = rows;
   array_data->cols = cols;
