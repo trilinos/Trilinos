@@ -1020,25 +1020,25 @@ public:
   void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
 
   // NKC OPT, move this to a field function
-  unsigned field_data_size(const FieldBase& f, Entity e) const
-  {
+  unsigned field_data_size(const FieldBase& f, Entity e) const {
+    ThrowAssert(f.entity_rank() == entity_rank(e));
     return field_data_size_per_entity(f, bucket(e));
   }
 
   // NKC OPT, move this to a field function
   unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) const
   {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
-
     const EntityRank rank   = b.entity_rank();
-
     return f.get_meta_data_for_field()[rank][b.bucket_id()].m_size;
   }
 
   // NKC OPT, move this to a field function
   bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) const
   {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
 
@@ -1061,6 +1061,7 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b) const
   {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
 
@@ -1075,6 +1076,7 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
   {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
 
@@ -1090,6 +1092,7 @@ public:
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
   {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
 
@@ -1104,6 +1107,7 @@ public:
   typename FieldTraits<FieldType>::data_type*
   nodal_field_data(const FieldType & f, const Bucket& b ) const
   {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
     ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
@@ -1150,6 +1154,8 @@ public:
 // investigate if it can be removed entirely
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & f, const Bucket& b ) const
   {
+
+    ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(this == &f.get_mesh());
     ThrowAssert(this == &b.mesh());
     const EntityRank rank = b.entity_rank();

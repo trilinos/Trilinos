@@ -1374,6 +1374,8 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         if (m_num_fields > 0) {
           BOOST_FOREACH(FieldBase* field, all_fields) {
 
+            if(field->entity_rank() != bucket->entity_rank()) continue;
+
             FieldMetaData field_meta_data = field->get_meta_data_for_field()[i][bucket->bucket_id()];
 
             unsigned data_size = field_meta_data.m_size;

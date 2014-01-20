@@ -127,6 +127,9 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
   const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
   for(size_t i=0; i<entity_comm_list.size(); ++i) {
     stk::mesh::Entity node = entity_comm_list[i].entity;
+
+    if(!bulk_data.is_matching_rank(field_1, node)) continue;
+
     const double* field_1_ptr = bulk_data.field_data(field_1, node);
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
     if (entity_comm.size() > 0) {
@@ -173,6 +176,8 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
   for ( size_t i=0; i<node_buckets.size(); ++i) {
     stk::mesh::Bucket & b = *node_buckets[i];
 
+
+
     double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
     double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));
     double* field_3_ptr = reinterpret_cast<double*>(b.field_data_location(field_3));
@@ -199,9 +204,15 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
   const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
   for(size_t i=0; i<entity_comm_list.size(); ++i) {
     stk::mesh::Entity node = entity_comm_list[i].entity;
+
+    if(!bulk_data.is_matching_rank(field_1, node)) continue;
+
     const double* field_1_ptr = bulk_data.field_data(field_1, node);
     const double* field_2_ptr = bulk_data.field_data(field_2, node);
     const double* field_3_ptr = bulk_data.field_data(field_3, node);
+
+
+
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
     if (entity_comm.size() > 0) {
       const double num_sharing_procs = entity_comm.size() + 1;
@@ -275,6 +286,9 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
   const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
   for(size_t i=0; i<entity_comm_list.size(); ++i) {
     stk::mesh::Entity node = entity_comm_list[i].entity;
+
+    if(!bulk_data.is_matching_rank(field_1, node)) continue;
+
     const double* field_1_ptr = bulk_data.field_data(field_1, node);
     const double* field_2_ptr = bulk_data.field_data(field_2, node);
     const double* field_3_ptr = bulk_data.field_data(field_3, node);
