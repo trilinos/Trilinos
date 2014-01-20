@@ -61,13 +61,6 @@ class EntityRepository;
 
 }
 
-//
-//  Field access free functions
-//
-  inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
-  }
 
 struct EntityCommListInfo
 {
@@ -1027,20 +1020,6 @@ public:
   { return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0); }
 
   void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
-
-  // NKC OPT, move this to a field function
-  unsigned field_data_size(const FieldBase& f, Entity e) const {
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(f.entity_rank() == entity_rank(e));
-    return field_data_size_per_entity(f, bucket(e));
-  }
-
-  unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) const {
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
-  }
 
 
   // NKC OPT, move this to a field function
@@ -2055,6 +2034,21 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 #endif
 }
 
+
+//
+//  Field free access methods
+//
+
+  inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
+    ThrowAssert(&f.get_mesh() == &b.mesh());
+    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
+  }
+  inline unsigned field_data_size(const FieldBase& f, Entity e) {  
+    BulkData& bulk(f.get_mesh());
+    ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+    return field_data_size_per_entity(f, bulk.bucket(e));
+  }
 
 
 

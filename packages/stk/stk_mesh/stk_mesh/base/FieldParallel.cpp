@@ -50,7 +50,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
       const FieldBase & f = **fi ;
      
       if(mesh.is_matching_rank(f, e)) {
-        e_size += mesh.field_data_size( f , e );
+        e_size += field_data_size( f , e );
       }
     }
 
@@ -94,7 +94,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
         if(!mesh.is_matching_rank(f, e)) continue;
 
-        const unsigned size = mesh.field_data_size( f , e );
+        const unsigned size = field_data_size( f , e );
 	
 
         if ( size ) {
@@ -129,7 +129,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
         const FieldBase & f = **fi ;
 
         if(!mesh.is_matching_rank(f, e)) continue;
-        const unsigned size = mesh.field_data_size( f , e );
+        const unsigned size = field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
@@ -181,7 +181,7 @@ void communicate_field_data(
       const FieldBase & f = **fi ;
 
       if(mesh.is_matching_rank(f, e)) {
-        e_size += mesh.field_data_size( f , e );
+        e_size += field_data_size( f , e );
       }
     }
 
@@ -226,7 +226,7 @@ void communicate_field_data(
 
         if(!mesh.is_matching_rank(f, e)) continue;
 
-        const unsigned size = mesh.field_data_size( f , e );
+        const unsigned size = field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
@@ -261,7 +261,7 @@ void communicate_field_data(
  
         if(!mesh.is_matching_rank(f, e)) continue;
 
-        const unsigned size = mesh.field_data_size( f , e );
+        const unsigned size = field_data_size( f , e );
 
         if ( size ) {
           unsigned char * ptr =
@@ -318,7 +318,7 @@ void communicate_field_data(
 
 	if(!mesh.is_matching_rank(f, e)) continue;
 
-        e_size += mesh.field_data_size( f , e );
+        e_size += field_data_size( f , e );
       }
       send_size[ p ] += e_size ;
     }
@@ -335,7 +335,7 @@ void communicate_field_data(
 
 	if(!mesh.is_matching_rank(f, e)) continue;
 
-        e_size += mesh.field_data_size( f , e );
+        e_size += field_data_size( f , e );
       }
       recv_size[ p ] += e_size ;
     }
@@ -364,7 +364,7 @@ void communicate_field_data(
 
 	if(!mesh.is_matching_rank(f, e)) continue;
 
-        const unsigned size = mesh.field_data_size( f , e );
+        const unsigned size = field_data_size( f , e );
         if ( size ) {
           unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
           b.pack<unsigned char>( ptr , size );
@@ -390,7 +390,7 @@ void communicate_field_data(
 
 	if(!mesh.is_matching_rank(f, e)) continue;
 
-        const unsigned size = mesh.field_data_size( f , e );
+        const unsigned size = field_data_size( f , e );
 
 
         if ( size ) {
@@ -429,7 +429,7 @@ void communicate_field_data(
 
       if(!mesh.is_matching_rank(f, e)) continue;
 
-      const unsigned size = mesh.field_data_size( f , e );
+      const unsigned size = field_data_size( f , e );
       if ( size ) {
         PairIterEntityComm ec = mesh.entity_comm(i->key);
         for (; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
@@ -456,7 +456,7 @@ void communicate_field_data(
 
       if(!mesh.is_matching_rank(f, e)) continue;
 
-      const unsigned size = mesh.field_data_size( f , e );
+      const unsigned size = field_data_size( f , e );
       if ( size ) {
         unsigned char * ptr =
           reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
