@@ -558,7 +558,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
-  double h = 1.0 / static_cast<double>(nrow);
+  BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   RCP<Node> node = rcp(new Node);
@@ -587,7 +587,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Set values in matrix
   Array<Scalar> vals(3);
-  //Scalar val(VectorSize, BaseScalar(0.0));
+  Scalar a_val(VectorSize, BaseScalar(0.0));
+  for (LocalOrdinal j=0; j<VectorSize; ++j) {
+    a_val.fastAccessCoeff(j) =
+      BaseScalar(1.0) + BaseScalar(j) / BaseScalar(VectorSize);
+  }
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     if (row == 0 || row == nrow-1) { // Boundary nodes
@@ -599,9 +603,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       columnIndices[0] = row-1;
       columnIndices[1] = row;
       columnIndices[2] = row+1;
-      vals[0] = Scalar(1.0);
-      vals[1] = Scalar(-2.0);
-      vals[2] = Scalar(1.0);
+      vals[0] = Scalar(1.0) * a_val;
+      vals[1] = Scalar(-2.0) * a_val;
+      vals[2] = Scalar(1.0) * a_val;
       matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3));
     }
   }
@@ -610,12 +614,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+  Scalar b_val(VectorSize, BaseScalar(0.0));
+  for (LocalOrdinal j=0; j<VectorSize; ++j) {
+    b_val.fastAccessCoeff(j) =
+      BaseScalar(-1.0) + BaseScalar(j) / BaseScalar(VectorSize);
+  }
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     if (row == 0 || row == nrow-1)
       b_view[i] = Scalar(0.0);
     else
-      b_view[i] = Scalar(-1.0 * h * h);
+      b_view[i] = Scalar(b_val * h * h);
   }
 
   // Create preconditioner
@@ -656,26 +665,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
 
-  x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-              Teuchos::VERB_EXTREME);
+  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
 
-  /* Need to update this for this problem
-  // Check -- Correct answer is:
-  //     [ 0, 0,   ..., 0            ]
-  //     [ 1, 1/2, ..., 1/VectorSize ]
-  //     [ 0, 0,   ..., 0            ]
-  //     [ 1, 1/2, ..., 1/VectorSize ]
-  //     ....
+  // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+  Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
-    if (row % 2) {
-      for (LocalOrdinal j=0; j<VectorSize; ++j) {
-        val.fastAccessCoeff(j) = BaseScalar(1.0) / BaseScalar(j+1);
-      }
+    BaseScalar xx = row * h;
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      val.fastAccessCoeff(j) =
+        BaseScalar(0.5) * (b_val.coeff(j)/a_val.coeff(j)) * xx * (xx - BaseScalar(1.0));
     }
-    else
-      val = Scalar(0.0);
     TEST_EQUALITY( x_view[i].size(), VectorSize );
 
     // Set small values to zero
@@ -683,12 +685,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
       if (ST::magnitude(v.coeff(j)) < tol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
+      if (ST::magnitude(val.coeff(j)) < tol)
+        val.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
     for (LocalOrdinal j=0; j<VectorSize; ++j)
       TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
   }
-  */
+
 }
 
 #else
