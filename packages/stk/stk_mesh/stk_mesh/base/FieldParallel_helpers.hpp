@@ -58,7 +58,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
     Entity entity = i->entity;
     const MeshIndex& mi = mesh.mesh_index(entity);
     if (mesh.is_valid(entity) && (0 == selector || (*selector)(mi.bucket) ) ) {
-      if(!mesh.is_matching_rank(field, *mi.bucket)) continue;
+      if(!is_matching_rank(field, *mi.bucket)) continue;
 
       array_type array( field , *mi.bucket, mi.bucket_ordinal );
       Type * const ptr_beg = array.contiguous_data();
@@ -106,7 +106,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
     Entity entity = i->entity;
     const Bucket& bucket = mesh.bucket(entity);
 
-    if(!mesh.is_matching_rank(field, bucket)) continue;
+    if(!is_matching_rank(field, bucket)) continue;
 
     if (mesh.is_valid(entity) && (0 == selector || (*selector)(bucket) ) ) {
       Type * const ptr_beg = reinterpret_cast<Type*>(mesh.field_data(field, entity));

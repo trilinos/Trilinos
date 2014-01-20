@@ -1100,22 +1100,6 @@ public:
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
-  // NKC OPT, move this to a field function
-  template<class FieldType>
-  bool is_matching_rank(const FieldType& f, Entity e) const {
-    const MeshIndex& mi           = mesh_index(e);
-    return is_matching_rank(f, *mi.bucket);
-  }
-
-  template<class FieldType>
-  bool is_matching_rank(const FieldType& f, const Bucket& b) const {
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
-    return(b.entity_rank() == f.entity_rank());    
-  }
-
-
-
 
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
@@ -2045,6 +2029,22 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
     return field_data_size_per_entity(f, bulk.bucket(e));
   }
+
+
+
+  inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
+    ThrowAssert(&f.get_mesh() == &b.mesh());
+    return(b.entity_rank() == f.entity_rank());    
+  }
+
+
+  // NKC OPT, move this to a field function
+  inline bool is_matching_rank(const FieldBase& f, Entity e) {
+    return is_matching_rank(f, f.get_mesh().bucket(e));
+  }
+
+
+
 
 
 

@@ -49,7 +49,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
      
-      if(mesh.is_matching_rank(f, e)) {
+      if(is_matching_rank(f, e)) {
         e_size += field_data_size( f , e );
       }
     }
@@ -92,7 +92,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-        if(!mesh.is_matching_rank(f, e)) continue;
+        if(!is_matching_rank(f, e)) continue;
 
         const unsigned size = field_data_size( f , e );
 	
@@ -128,7 +128,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-        if(!mesh.is_matching_rank(f, e)) continue;
+        if(!is_matching_rank(f, e)) continue;
         const unsigned size = field_data_size( f , e );
 
         if ( size ) {
@@ -180,7 +180,7 @@ void communicate_field_data(
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
 
-      if(mesh.is_matching_rank(f, e)) {
+      if(is_matching_rank(f, e)) {
         e_size += field_data_size( f , e );
       }
     }
@@ -224,7 +224,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-        if(!mesh.is_matching_rank(f, e)) continue;
+        if(!is_matching_rank(f, e)) continue;
 
         const unsigned size = field_data_size( f , e );
 
@@ -259,7 +259,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
  
-        if(!mesh.is_matching_rank(f, e)) continue;
+        if(!is_matching_rank(f, e)) continue;
 
         const unsigned size = field_data_size( f , e );
 
@@ -316,7 +316,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-	if(!mesh.is_matching_rank(f, e)) continue;
+	if(!is_matching_rank(f, e)) continue;
 
         e_size += field_data_size( f , e );
       }
@@ -333,7 +333,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-	if(!mesh.is_matching_rank(f, e)) continue;
+	if(!is_matching_rank(f, e)) continue;
 
         e_size += field_data_size( f , e );
       }
@@ -362,7 +362,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-	if(!mesh.is_matching_rank(f, e)) continue;
+	if(!is_matching_rank(f, e)) continue;
 
         const unsigned size = field_data_size( f , e );
         if ( size ) {
@@ -388,7 +388,7 @@ void communicate_field_data(
       for ( fi = fb ; fi != fe ; ++fi ) {
         const FieldBase & f = **fi ;
 
-	if(!mesh.is_matching_rank(f, e)) continue;
+	if(!is_matching_rank(f, e)) continue;
 
         const unsigned size = field_data_size( f , e );
 
@@ -427,7 +427,7 @@ void communicate_field_data(
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
       Entity e = i->entity;
 
-      if(!mesh.is_matching_rank(f, e)) continue;
+      if(!is_matching_rank(f, e)) continue;
 
       const unsigned size = field_data_size( f , e );
       if ( size ) {
@@ -454,7 +454,7 @@ void communicate_field_data(
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
       Entity e = i->entity;
 
-      if(!mesh.is_matching_rank(f, e)) continue;
+      if(!is_matching_rank(f, e)) continue;
 
       const unsigned size = field_data_size( f , e );
       if ( size ) {
