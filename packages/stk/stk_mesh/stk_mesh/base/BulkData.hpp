@@ -61,6 +61,14 @@ class EntityRepository;
 
 }
 
+//
+//  Field access free functions
+//
+  inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
+    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
+  }
+
 struct EntityCommListInfo
 {
   EntityKey key;
@@ -2047,13 +2055,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 #endif
 }
 
-//
-//  Field access free functions
-//
-  inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
-    ThrowAseert(f.entity_rank() == b.entity_rank());
-    return f.get_meta_data_for_field()[b.entity_rank()][b.bucket_id()].m_size;
-  }
+
 
 
 
