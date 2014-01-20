@@ -2,11 +2,11 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsAddExecutable)
 
 IF(Kokkos_ENABLE_Cuda)
-  MESSAGE("OH HAI I AM TEH HEREZ")
+  MESSAGE("CUDA is enabled")
 
-  # mfh 01 Jan 2014: This is magic boilerplate I found in
-  # kokkos/core/unit_test/CMakeLists.txt.  I have no idea
-  # if it works.
+  # mfh 01 Jan 2014: This is boilerplate I found in
+  # kokkos/core/unit_test/CMakeLists.txt.  It does
+  # seem to work but I have no idea how fragile it is.
   #
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( "." )
