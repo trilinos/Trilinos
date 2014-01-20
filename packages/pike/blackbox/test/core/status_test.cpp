@@ -10,7 +10,8 @@
 // Status tests to check
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_StatusTest_MaxIterations.hpp"
-#include "Pike_StatusTest_ModelConvergence.hpp"
+#include "Pike_StatusTest_GlobalModelConvergence.hpp"
+#include "Pike_StatusTest_LocalModelFailure.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 #include "Pike_StatusTest_Factory.hpp"
 
@@ -47,7 +48,7 @@ namespace pike {
     TEST_EQUALITY(solver->getNumberOfIterations(),4);
   }
 
-  TEUCHOS_UNIT_TEST(status_test, ModelConvergence_Local)
+  TEUCHOS_UNIT_TEST(status_test, LocalModelFailure)
   {
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -58,13 +59,11 @@ namespace pike {
       failure.set("Type","Maximum Iterations");
       failure.set("Maximum Iterations",10);
       Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
-      app1LocalConv.set("Type","Model Convergence");
+      app1LocalConv.set("Type","Local Model Failure");
       app1LocalConv.set("Model Name","app1");
-      app1LocalConv.set("Check Type","Local");
       Teuchos::ParameterList& app2GlobalConv = statusTestParams->sublist("Converged");
-      app2GlobalConv.set("Type","Model Convergence");
+      app2GlobalConv.set("Type","Global Model Convergence");
       app2GlobalConv.set("Model Name","app2");
-      app2GlobalConv.set("Check Type","Global");
     }
 
     Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
@@ -88,7 +87,7 @@ namespace pike {
     TEST_EQUALITY(solver->getNumberOfIterations(),7);
   }
 
-  TEUCHOS_UNIT_TEST(status_test, ModelConvergence_Global)
+  TEUCHOS_UNIT_TEST(status_test, GlobalModelConvergence)
   {
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -99,13 +98,11 @@ namespace pike {
       failure.set("Type","Maximum Iterations");
       failure.set("Maximum Iterations",10);
       Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
-      app1LocalConv.set("Type","Model Convergence");
+      app1LocalConv.set("Type","Local Model Failure");
       app1LocalConv.set("Model Name","app1");
-      app1LocalConv.set("Check Type","Local");
       Teuchos::ParameterList& app2GlobalConv = statusTestParams->sublist("Converged");
-      app2GlobalConv.set("Type","Model Convergence");
+      app2GlobalConv.set("Type","Global Model Convergence");
       app2GlobalConv.set("Model Name","app2");
-      app2GlobalConv.set("Check Type","Global");
     }
 
     Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
@@ -330,13 +327,11 @@ namespace pike {
       failure.set("Type","Maximum Iterations");
       failure.set("Maximum Iterations",6);
       Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
-      app1LocalConv.set("Type","Model Convergence");
+      app1LocalConv.set("Type","Local Model Failure");
       app1LocalConv.set("Model Name","app1");
-      app1LocalConv.set("Check Type","Local");
       Teuchos::ParameterList& app2LocalConv = statusTestParams->sublist("Failure 3");      
-      app2LocalConv.set("Type","Model Convergence");
+      app2LocalConv.set("Type","Local Model Failure");
       app2LocalConv.set("Model Name","app2");
-      app2LocalConv.set("Check Type","Local");
       Teuchos::ParameterList& converged = statusTestParams->sublist("Converged");
       converged.set("Type","Composite AND");
       Teuchos::ParameterList& relTolApp1 = converged.sublist("App 1");
@@ -350,13 +345,11 @@ namespace pike {
       relTolApp2.set("Response Name","Mock Response");
       relTolApp2.set("Tolerance",1.0e-3);
       Teuchos::ParameterList& app1GlobalConv = converged.sublist("Global App 1");
-      app1GlobalConv.set("Type","Model Convergence");
+      app1GlobalConv.set("Type","Global Model Convergence");
       app1GlobalConv.set("Model Name","app1");
-      app1GlobalConv.set("Check Type","Global");
       Teuchos::ParameterList& app2GlobalConv = converged.sublist("Global App 2");
-      app2GlobalConv.set("Type","Model Convergence");
+      app2GlobalConv.set("Type","Global Model Convergence");
       app2GlobalConv.set("Model Name","app2");
-      app2GlobalConv.set("Check Type","Global");
     }
 
     Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);

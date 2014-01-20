@@ -4,7 +4,8 @@
 // Status Tests
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_StatusTest_MaxIterations.hpp"
-#include "Pike_StatusTest_ModelConvergence.hpp"
+#include "Pike_StatusTest_GlobalModelConvergence.hpp"
+#include "Pike_StatusTest_LocalModelFailure.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 
 namespace pike {
@@ -28,8 +29,13 @@ namespace pike {
       mi->setParameterList(p);
       test = mi;
     }
-    else if (testType == "Model Convergence") {
-      Teuchos::RCP<pike::ModelConvergence> mc = Teuchos::rcp(new pike::ModelConvergence);
+    else if (testType == "Global Model Convergence") {
+      Teuchos::RCP<pike::GlobalModelConvergence> mc = Teuchos::rcp(new pike::GlobalModelConvergence);
+      mc->setParameterList(p);
+      test = mc;
+    }
+    else if (testType == "Local Model Failure") {
+      Teuchos::RCP<pike::LocalModelFailure> mc = Teuchos::rcp(new pike::LocalModelFailure);
       mc->setParameterList(p);
       test = mc;
     }

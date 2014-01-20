@@ -1,5 +1,5 @@
-#ifndef PIKE_STATUS_TESTS_MODEL_CONVERGENCE_HPP
-#define PIKE_STATUS_TESTS_MODEL_CONVERGENCE_HPP
+#ifndef PIKE_STATUS_TESTS_GLOBAL_MODEL_CONVERGENCE_HPP
+#define PIKE_STATUS_TESTS_GLOBAL_MODEL_CONVERGENCE_HPP
 
 #include "Pike_StatusTest.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
@@ -9,20 +9,15 @@ namespace pike {
 
   class BlackBoxModelEvaluator;
 
-  /** \brief Failure test for local convergence of a model or convergence test for global convergence of a model.
+  /** \brief Convergence test for global convergence of a model.
    */
-  class ModelConvergence : 
+  class GlobalModelConvergence : 
     public pike::StatusTest,
     public Teuchos::ParameterListAcceptorDefaultBase {
 
   public:
 
-    enum ConvergenceType {
-      Local,
-      Global
-    };
-
-    ModelConvergence();
+    GlobalModelConvergence();
 
     pike::SolveStatus checkStatus(const pike::Solver& solver, const CheckType checkType = pike::COMPLETE);
     
@@ -38,8 +33,6 @@ namespace pike {
 
   private:
     std::string applicationName_;
-    ConvergenceType convergenceType_;
-    bool isLocallyConverged_;
     bool isGloballyConverged_;
     pike::SolveStatus status_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;
