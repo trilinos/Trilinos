@@ -193,7 +193,8 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
+PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
+  dimension_(0)
 {
   setPrimaryEntityType(typestr);
 
@@ -301,6 +302,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
       a++;
     }
   }
+
+  Rcoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
+  Fcoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
+  Ecoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
+  Vcoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
 }
 
   
