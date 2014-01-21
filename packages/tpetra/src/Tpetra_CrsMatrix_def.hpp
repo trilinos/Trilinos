@@ -5249,7 +5249,6 @@ namespace Tpetra {
     Teuchos::Array<int> SourcePids;
     Teuchos::Array<int> TargetPids;
     int MyPID = getComm()->getRank();
-    int OriginalPID = getComm()->getRank();
     
     // The new Domain & Range maps
     RCP<const map_type> MyRowMap    = reverseMode ? RowTransfer.getSourceMap() : RowTransfer.getTargetMap(); 
