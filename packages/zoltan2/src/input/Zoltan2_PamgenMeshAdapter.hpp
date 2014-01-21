@@ -161,7 +161,22 @@ public:
     }
 
     size_t length;
-    coords_[dim].getStridedList(length, coords, stride);
+    
+    if (MESH_REGION == etype) {
+      Rcoords_[dim].getStridedList(length, coords, stride);
+    }
+
+    if (MESH_FACE == etype) {
+      Fcoords_[dim].getStridedList(length, coords, stride);
+    }
+
+    if (MESH_EDGE == etype) {
+      Ecoords_[dim].getStridedList(length, coords, stride);
+    }
+
+    if (MESH_VERTEX == etype) {
+      Vcoords_[dim].getStridedList(length, coords, stride);
+    }
   }
 
 private:
@@ -169,7 +184,8 @@ private:
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 
   int dimension_;
-  ArrayRCP<&StridedData<lno_t, scalar_t> > coords_;
+  ArrayRCP<&StridedData<lno_t, scalar_t> > Rcoords_, Fcoords_, Ecoords_,
+					Vcoords_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -181,19 +197,23 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
 {
   setPrimaryEntityType(typestr);
 
-  int exoid, num_dim, num_nodes, num_elem;
-  int num_elem_blk, num_node_sets, num_side_sets;
-  im_ex_get_init( exoid, "PAMGEN Inline Mesh", &num_dim, &num_nodes,
-		  &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
+  int error = 0;
+  int exoid = 0;
+  int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+  error += im_ex_get_init ( exoid, "PAMGEN Inline Mesh", &num_dim, &num_nodes,
+			    &num_elem, &num_elem_blk, &num_node_sets,
+			    &num_side_sets);
 
-  dimension_ = num_dim;
+  double * Vcoord = (double *)malloc(num_nodes*num_dim*sizeof(double));
+  double * Acoord = (double *)malloc(num_elem*num_dim*sizeof(double));
 
-  double * coord = (double *) malloc (num_nodes * num_dim * sizeof (double));
-  im_ex_get_coord(exoid, coord, coord+num_nodes, coord+2*num_nodes);
+  error += im_ex_get_coord(exoid, Vcoord, Vcoord+num_nodes,
+			   Vcoord+2*num_nodes);
 
-  if ( 3 == num_dim && num_elem ) {
-    int * element_num_map = ( int * ) malloc ( num_elem * sizeof ( int ) );
-    im_ex_get_elem_num_map( exoid, element_num_map);
+  if (3 == num_dim && num_elem) {
+    int * element_num_map = (int *)malloc(num_elem*sizeof(int));
+    error += im_ex_get_elem_num_map(exoid, element_num_map);
+
     RnumIds_ = num_elem;
     RidList_ = element_num_map;
   } else {
@@ -201,9 +221,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
     RidList_ = NULL;
   }
 
-  if ( 2 == num_dim && num_elem ) {
-    int * element_num_map = ( int * ) malloc ( num_elem * sizeof ( int ) );
-    im_ex_get_elem_num_map( exoid, element_num_map);
+  if (2 == num_dim && num_elem) {
+    int * element_num_map = (int *)malloc(num_elem*sizeof(int));
+    error += im_ex_get_elem_num_map(exoid, element_num_map);
+
     FnumIds_ = num_elem;
     FidList_ = element_num_map;
   } else {
@@ -215,13 +236,70 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
   EidList_ = NULL;
 
   if (num_nodes) {
-    int * node_num_map = ( int * ) malloc ( num_nodes * sizeof ( int ) );
-    im_ex_get_node_num_map( exoid, node_num_map);
+    int * node_num_map = (int *)malloc(num_nodes * sizeof(int));
+    error += im_ex_get_node_num_map(exoid, node_num_map);
+
     VnumIds_ = num_nodes;
     VidList_ = node_num_map;
   } else {
     VnumIds_ = 0;
     VidList_ = NULL;
+  }
+
+  dimension_ = num_dim;
+
+  int * elem_blk_ids       = (int *)malloc(num_elem_blk*sizeof(int));
+  int * num_nodes_per_elem = (int *)malloc(num_elem_blk*sizeof(int));
+  int * num_attr           = (int *)malloc(num_elem_blk*sizeof(int));
+  int * num_elem_this_blk  = (int *)malloc(num_elem_blk*sizeof(int));
+  char ** elem_type        = (char **)malloc(num_elem_blk*sizeof(char *));
+  int ** connect           = (int **)malloc(num_elem_blk*sizeof(int*));
+
+  error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
+
+  for(int i = 0; i < num_elem_blk; i++){
+    char * elem_type[i] = (char *)malloc((MAX_STR_LENGTH + 1)*sizeof(char));
+    error += im_ex_get_elem_block(exoid, elem_blk_id[i], elem_type[i],
+				  (int*)&(num_elem_this_blk[i]),
+				  (int*)&(num_nodes_per_elem[i]),
+				  (int*)&(num_attr[i]));
+  }
+
+  int a = 0;
+
+  for(int b = 0; b < num_elem_blk; b++){
+    int * connect[b] = (int*)malloc(num_nodes_per_elem[b]*
+				    num_elem_this_blk[b]*sizeof(int));
+    error += im_ex_get_elem_conn(exoid,elem_blk_id[b],connect[b]);
+
+    for(int i = 0; i < num_elem_this_blk[b]; i++){
+      Acoord[a] = 0;
+      Acoord[num_nodes+a] = 0;
+
+      if (3 == num_dim) {
+	Acoord[2*num_nodes+a] = 0;
+      }
+
+      for(int j = 0; j < num_nodes_per_elem[b]; j++){
+	Acoord[a] +=
+	  Vcoords[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	Acoord[num_nodes+a] +=
+	  Vcoords[connect[b]
+		  [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+
+	if(3 == num_dim) {
+	  Acoord[2*num_nodes+a] +=
+	    Vcoords[connect[b]
+		    [2*num_nodes+i*num_elem_this_blk[b]+
+		     num_nodes_per_elem[b]]-1];
+	}
+      }
+
+      Acoord[a] /= num_nodes_per_elem[b];
+      Acoord[num_nodes+a] /= num_nodes_per_elem[b];
+      Acoord[2*num_nodes+a] /= num_nodes_per_elem[b];
+      a++;
+    }
   }
 }
 

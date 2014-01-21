@@ -462,6 +462,21 @@ h) Removing warnings as errors for CLEANED packages:
     -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
 
 
+Enabling support for C++11
+--------------------------
+
+To enable support for C++11 in packages that support C++11 (either optionally
+or required), configure with::
+
+  -D Trilinos_ENABLE_CXX11:BOOL=ON \
+  -D CMAKE_CXX_FLAGS:STRING=-std=c++11
+
+where the C++ flags passed in may depend on the compiler you are using.  This
+will be followed by a set of configure-time tests to see if several C++11
+features are actually supported by the configured C++ compiler and support
+will be disabled if all of these features are not supported.
+
+
 Disabling the Fortran compiler and all Fortran code
 ---------------------------------------------------
 
@@ -470,7 +485,7 @@ set::
 
   -D Trilinos_ENABLE_Fortran:BOOL=OFF
 
-NOTE: The fortran compiler will be disabled automatically by default on
+NOTE: The fortran compiler may be disabled automatically by default on
 systems like MS Windows.
 
 NOTE: Most Apple Macs do not come with a compatible Fortran compiler by
@@ -1103,7 +1118,34 @@ their current versions using::
 
 This will cause a TrilinosRepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
-soruce distribution tarball.
+source distribution tarball.
+
+
+CMake configure-time development mode and debug checking
+--------------------------------------------------------
+
+To turn off CMake configure-time development-mode checking, set::
+
+  -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
+
+This turns off a number of CMake configure-time checks for the Trilinos
+TriBITS/CMake files including checking the package dependencies.  These checks
+can be expensive and may also not be appropriate for a tarball release of the
+software.  For a release of Trilinos this option is set OFF by default.
+
+One of the CMake configure-time debug-mode checks performed as part of
+``Trilinos_ENABLE_DEVELOPMENT_MODE=ON`` is to assert the existence of TriBITS
+package directories.  In development mode, the failure to find a package
+directory is usually a programming error (i.e. a miss-spelled package
+directory name).  But in a tarball release of the project, package directories
+may be purposefully missing (see `Creating a tarball of the source tree`) and
+must be ignored.  When building from a reduced tarball created from the
+development sources, set::
+
+  -D Trilinos_ASSERT_MISSING_PACKAGES:BOOL=OFF
+
+Setting this off will cause the TriBITS CMake configure to simply ignore any
+missing packages and turn off all dependencies on these missing packages.
 
 
 Building (Makefile generator)
@@ -1326,7 +1368,38 @@ Setting the install prefix at configure time
 In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example::
 
-  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/trilinos/mpi/opt
+  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/Trilinos/mpi/opt
+
+The default location for the installation of libraries, headers, and
+executables is given by the variables (with defaults)::
+
+  -D Trilinos_INSTALL_INCLUDE_DIR:PATH="include" \
+  -D Trilinos_INSTALL_LIB_DIR:PATH="lib" \
+  -D Trilinos_INSTALL_RUNTIME_DIR:PATH="bin"
+
+If these paths are relative (i.e. don't start with "/") then they are relative
+to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise the paths can be absolute and don't
+have to be under ``${CMAKE_INSTALL_PREFIX}``.
+
+
+Avoiding installing libraries and headers
+-----------------------------------------
+
+By default, any libraries and header files defined by in the TriBITS project
+Trilinos will get installed into the installation directories specified by
+``CMAKE_INSTALL_PREFIX``, ``Trilinos_INSTALL_INCLUDE_DIR`` and
+``Trilinos_INSTALL_LIB_DIR``.  However, if the primary desire is to install
+executables only, then the user can set::
+
+   -D Trilinos_INSTALL_LIBRARIES_AND_HEADERS:BOOL=ON
+
+which, if in addition static libraries are being built
+(i.e. ``BUILD_SHARED_LIBS=OFF``), this this option will result in no libraries
+or headers being installed into the ``<install>/include/`` and
+``<install>/lib/`` directories, respectively.  However, if shared libraries
+are being built (i.e. ``BUILD_SHARED_LIBS=ON``), they the libraries will be
+installed in ``<install>/lib/`` along with the executables because the
+executables can't run without the shared libraries being installed.
 
 
 Installing the software
@@ -1382,11 +1455,11 @@ While this TriBITS project has a default, disabled subpackages can be include
 or excluded from the tarball by setting
 ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
 ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
-to include some subpackages that are otherwise excluded, just enble them or
+to include some subpackages that are otherwise excluded, just enable them or
 their outer package so they will be included in the source tarball.
 
-While a default set of CPack source generator types is defined, it can be
-overridded using, for exmaple::
+While a set of default CPack source generator types is defined, it can be
+overridden using, for example::
 
   -D Trilinos_CPACK_SOURCE_GENERATOR:STRING="TGZ;TBZ2"
 

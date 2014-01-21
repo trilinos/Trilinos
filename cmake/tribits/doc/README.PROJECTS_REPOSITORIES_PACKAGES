@@ -104,6 +104,13 @@ NOTES:
   repository-specific requirements change.  However, we will try to only add files
   and not change existing ones.
 
+* If a given TPL <TPLNAME> is declared in more than one Repository's
+  TPLsList.cmake file (i.e. a duplicate TPL definition), then the
+  FindTPL<TPLNAME>.cmake file used for the TPL <TPLNAME> will be the one for
+  the last Repository processed.  This allows downstream Repositories to
+  redefine and modify the definition of TPLs to add augmented functionality
+  (subject to backward compatibility of the upstream Repository's
+  FindTPL<TPLNAME>.cmake module).
 
 B) CMake Variables:
 -------------------

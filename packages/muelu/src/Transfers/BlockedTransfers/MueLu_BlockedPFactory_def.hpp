@@ -265,8 +265,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   }
 
   // build map extractors
-  Teuchos::RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps);
-  Teuchos::RCP<const MapExtractor> domainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps);
+  Teuchos::RCP<const MapExtractor> rangeMapExtractor  = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(fullRangeMap,  subBlockPRangeMaps);
+  Teuchos::RCP<const MapExtractor> domainMapExtractor = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(fullDomainMap, subBlockPDomainMaps);
 
   Teuchos::RCP<BlockedCrsOMatrix> bP = Teuchos::rcp(new BlockedCrsOMatrix(rangeMapExtractor,domainMapExtractor,10));
   for(size_t i = 0; i<subBlockPRangeMaps.size(); i++) {

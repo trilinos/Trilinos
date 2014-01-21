@@ -151,7 +151,7 @@ class test_egdist(unittest.TestCase):
 
   def test_default(self):
     cmndOut = getCmndOutput(egdistPathNoColor)
-    cmndOut_expected = "Must specify eg command. See 'eg --help' for options."
+    cmndOut_expected = "Must specify eg/git command. See 'eg/git --help' for options."
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
@@ -185,6 +185,49 @@ class test_egdist(unittest.TestCase):
       "\n*** Base Git Repo: MockTrilinos\n" \
       "['mockeg', 'log', 'HEAD', '-1']\n\n" \
       "*** Git Repo: extraTrilinosRepo\n" \
+      "['mockeg', 'log', 'HEAD', '-1']\n"
+    self.assertEqual(cmndOut, cmndOut_expected)
+
+
+  def test_log_args_extra_repo_2_not_first(self):
+    cmndOut = getCmndOutputInMockProjectDir(
+      egdistPathMock+\
+        " --dist-extra-repos=extraTrilinosRepo,extraRepoOnePackage "+\
+        " --dist-not-extra-repos=extraTrilinosRepo "+\
+        " log HEAD -1"
+      )
+    cmndOut_expected = \
+      "\n*** Base Git Repo: MockTrilinos\n" \
+      "['mockeg', 'log', 'HEAD', '-1']\n\n" \
+      "*** Git Repo: extraRepoOnePackage\n" \
+      "['mockeg', 'log', 'HEAD', '-1']\n"
+    self.assertEqual(cmndOut, cmndOut_expected)
+
+
+  def test_log_args_extra_repo_2_not_second(self):
+    cmndOut = getCmndOutputInMockProjectDir(
+      egdistPathMock+\
+        " --dist-extra-repos=extraTrilinosRepo,extraRepoOnePackage "+\
+        " --dist-not-extra-repos=extraTrilinosRepo "+\
+        " log HEAD -1"
+      )
+    cmndOut_expected = \
+      "\n*** Base Git Repo: MockTrilinos\n" \
+      "['mockeg', 'log', 'HEAD', '-1']\n\n" \
+      "*** Git Repo: extraRepoOnePackage\n" \
+      "['mockeg', 'log', 'HEAD', '-1']\n"
+    self.assertEqual(cmndOut, cmndOut_expected)
+
+
+  def test_log_args_extra_repo_1_not_base(self):
+    cmndOut = getCmndOutputInMockProjectDir(
+      egdistPathMock+\
+        " --dist-extra-repos=extraTrilinosRepo "+\
+        " --dist-not-base-repo "+\
+        " log HEAD -1"
+      )
+    cmndOut_expected = \
+      "\n*** Git Repo: extraTrilinosRepo\n" \
       "['mockeg', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
