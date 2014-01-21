@@ -569,8 +569,10 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
 
             // We are intentionally not using the much-faster style of accessing
             // fields by bucket instead of by entity.
+
             for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
               Entity node = bucket[e];
+
               stk::mesh::MeshIndex mi = bulk.mesh_index(node);
               for (int f = 0; f < num_fields_per_chunk; ++f) {
                 const double* x_field_data = bulk.field_data(*x_fields[f], *mi.bucket, mi.bucket_ordinal);
@@ -579,7 +581,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
 
                 if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
                   ++dummy;
-                }
+		}
               }
             }
           }
@@ -607,7 +609,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   const int z_dim = 20;
   const int chunk_span = 5; // low fragmentation
   const int num_fields_per_chunk = 3;
-  const int spatial_dim = 3;
 
   // Set up mesh
   std::vector<PartVector> element_parts; // element_parts[dim][chunk]
@@ -625,12 +626,40 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   std::vector<std::vector<std::vector<BucketVector> > > bucket_map; // bucket_map[x_chunk][y_chunk][z_chunk]
   fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, chunk_span);
 
+
+
   CALLGRIND_TOGGLE_COLLECT;
 
-  std::vector<FieldMetaDataVector const*> field_meta(num_fields_per_chunk * spatial_dim, NULL);
+  //
+  // Model caching of the bucket index and ordinals
+  //
+  std::vector<std::vector<unsigned int  > >bucket_ind; 
+  std::vector<std::vector<unsigned short> >bucket_ord; 
+  bucket_ind.resize(345);
+  bucket_ord.resize(345);
+  for (int x = 0; x < x_chunks; ++x) {
+    for (int y = 0; y < y_chunks; ++y) {
+      for (int z = 0; z < z_chunks; ++z) {
+        BucketVector const& chunk_buckets = bucket_map[x][y][z];
+        for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
+          Bucket& bucket = *bucket_map[x][y][z][b];
+          int bucket_id = bucket.bucket_id();
+          if(bucket_ind[bucket_id].size() > 0) continue;
+          for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
+            bucket_ind[bucket_id].push_back(bucket_id);
+            bucket_ord[bucket_id].push_back(e);
+	  }
+	}
+      }
+    }
+  }
+  
+  std::vector<FieldMetaDataVector const*> x_field_meta(num_fields_per_chunk, NULL);
+  std::vector<FieldMetaDataVector const*> y_field_meta(num_fields_per_chunk, NULL);
+  std::vector<FieldMetaDataVector const*> z_field_meta(num_fields_per_chunk, NULL);
   const int num_iterations = 100;
   size_t dummy = 0;
-  for (int i = 0; i < num_iterations; ++i) {
+   for (int i = 0; i < num_iterations; ++i) {
     for (int x = 0; x < x_chunks; ++x) {
       std::vector<SimpleField*> const& x_fields = fields[0][x];
       for (int y = 0; y < y_chunks; ++y) {
@@ -639,26 +668,33 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
           std::vector<SimpleField*> const& z_fields = fields[2][z];
 
           for (int f = 0; f < num_fields_per_chunk; ++f) {
-            field_meta[f * spatial_dim]     = &x_fields[f]->get_meta_data_for_field();
-            field_meta[f * spatial_dim + 1] = &y_fields[f]->get_meta_data_for_field();
-            field_meta[f * spatial_dim + 2] = &z_fields[f]->get_meta_data_for_field();
+            x_field_meta[f] =  &x_fields[f]->get_meta_data_for_field();
+            y_field_meta[f] =  &y_fields[f]->get_meta_data_for_field();
+            z_field_meta[f] =  &z_fields[f]->get_meta_data_for_field();
           }
 
           BucketVector const& chunk_buckets = bucket_map[x][y][z];
           for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
             Bucket& bucket = *bucket_map[x][y][z][b];
+            int bid = bucket.bucket_id();
 
-            for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
-              Entity node = bucket[e];
-              MeshIndex index = bulk.mesh_index(node);
-              unsigned bucket_id = index.bucket->bucket_id();
+            std::vector<unsigned int  >& bucket_indZ = bucket_ind[bid]; 
+            std::vector<unsigned short>& bucket_ordZ = bucket_ord[bid]; 
+
+
+            for (size_t e = 0, ee = bucket_indZ.size(); e < ee; ++e) {
+              unsigned int bucket_id = bucket_indZ[e];
+              unsigned short bucket_ord = bucket_ordZ[e];
 
               // We are intentionally not using the much-faster style of accessing
               // fields by bucket instead of by entity.
-              for (int f = 0; f < num_fields_per_chunk * spatial_dim; f += spatial_dim) {
-                const double* x_field_data = reinterpret_cast<const double*>((*field_meta[f])[bucket_id].m_data) + index.bucket_ordinal;
-                const double* y_field_data = reinterpret_cast<const double*>((*field_meta[f+1])[bucket_id].m_data) + index.bucket_ordinal;
-                const double* z_field_data = reinterpret_cast<const double*>((*field_meta[f+2])[bucket_id].m_data) + index.bucket_ordinal;
+
+	      for (int f = 0; f < num_fields_per_chunk; ++f) {
+
+                const double* x_field_data = reinterpret_cast<const double*>((*x_field_meta[f])[bucket_id].m_data) + bucket_ord;
+                const double* y_field_data = reinterpret_cast<const double*>((*y_field_meta[f])[bucket_id].m_data) + bucket_ord;
+                const double* z_field_data = reinterpret_cast<const double*>((*z_field_meta[f])[bucket_id].m_data) + bucket_ord;
+
 
                 if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
                   ++dummy;
