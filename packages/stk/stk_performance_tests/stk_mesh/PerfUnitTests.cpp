@@ -654,9 +654,11 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
     }
   }
   
-  std::vector<FieldMetaDataVector const*> x_field_meta(num_fields_per_chunk, NULL);
-  std::vector<FieldMetaDataVector const*> y_field_meta(num_fields_per_chunk, NULL);
-  std::vector<FieldMetaDataVector const*> z_field_meta(num_fields_per_chunk, NULL);
+  FieldMetaDataVector const* default_val = NULL;
+  std::vector<FieldMetaDataVector const*> x_field_meta(num_fields_per_chunk, default_val);
+  std::vector<FieldMetaDataVector const*> y_field_meta(num_fields_per_chunk, default_val);
+  std::vector<FieldMetaDataVector const*> z_field_meta(num_fields_per_chunk, default_val);
+  
   const int num_iterations = 100;
   size_t dummy = 0;
    for (int i = 0; i < num_iterations; ++i) {
