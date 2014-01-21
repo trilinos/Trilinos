@@ -97,7 +97,7 @@ class AlgRCM
     const size_t nVtx = model->getLocalNumVertices();
     model->getLocalEdgeList(edgeIds, offsets, wgts); 
   
-#ifdef 0
+#if 0
     // Debug
     cout << "Debug: Local graph from getLocalEdgeList" << endl;
     cout << "rank " << comm->getRank() << ": nVtx= " << nVtx << endl;
