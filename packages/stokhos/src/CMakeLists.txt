@@ -420,7 +420,9 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      IF (Stokhos_ENABLE_Belos)
+      # Belos is a required dependency for Ifpack2, so we need the Belos
+      # adapters if either is enabled.
+      IF (Stokhos_ENABLE_Belos OR Stokhos_ENABLE_Ifpack2)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
         SET(HEADERS ${HEADERS}
           sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
