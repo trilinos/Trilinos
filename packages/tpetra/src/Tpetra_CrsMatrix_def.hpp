@@ -5249,12 +5249,15 @@ namespace Tpetra {
     Teuchos::Array<int> SourcePids;
     Teuchos::Array<int> TargetPids;
     int MyPID = getComm()->getRank();
+    int OriginalPID = getComm()->getRank();
     
     // The new Domain & Range maps
     RCP<const map_type> MyRowMap    = reverseMode ? RowTransfer.getSourceMap() : RowTransfer.getTargetMap(); 
     RCP<const map_type> MyColMap;
     RCP<const map_type> MyDomainMap = !domainMap.is_null() ? domainMap : getDomainMap();
     RCP<const map_type> MyRangeMap  = !rangeMap.is_null()  ? rangeMap  : getRangeMap();
+    RCP<const map_type> BaseRowMap  = MyRowMap;
+    RCP<const map_type> BaseDomainMap  = MyDomainMap;
 
     // Temp variables for sub-communicators
     RCP<const map_type> ReducedRowMap,ReducedColMap,ReducedDomainMap,ReducedRangeMap;
@@ -5267,7 +5270,30 @@ namespace Tpetra {
     destMat = rcp(new this_type(MyRowMap,0, StaticProfile, matrixparams));
 
     /***************************************************/
-    /***** 1) From Tpera::DistObject::doTransfer() ****/
+    /***** 1) First communicator restriction phase ****/
+    /***************************************************/
+    if(restrictComm) {
+      ReducedRowMap    = MyRowMap->removeEmptyProcesses();
+      ReducedComm      = ReducedRowMap.is_null () ? Teuchos::null : ReducedRowMap->getComm();
+      destMat->removeEmptyProcessesInPlace(ReducedRowMap);
+      
+      ReducedDomainMap = MyRowMap.getRawPtr() == MyDomainMap.getRawPtr() ? ReducedRowMap : MyDomainMap->replaceCommWithSubset(ReducedComm);
+      ReducedRangeMap  = MyRowMap.getRawPtr() == MyRangeMap.getRawPtr()  ? ReducedRowMap : MyRangeMap->replaceCommWithSubset(ReducedComm);
+
+      // Reset the "my" maps
+      MyRowMap    = ReducedRowMap;
+      MyDomainMap = ReducedDomainMap;
+      MyRangeMap  = ReducedRangeMap;
+
+      // Update my PID, if we've restricted the communicator
+      if(!ReducedComm.is_null()) MyPID = ReducedComm->getRank();
+      else MyPID=-2; // For Debugging
+    }
+    else
+      ReducedComm = MyRowMap->getComm();
+
+    /***************************************************/
+    /***** 2) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
     TEUCHOS_TEST_FOR_EXCEPTION(
       !destMat->checkSizes(*this), std::invalid_argument,
@@ -5280,15 +5306,19 @@ namespace Tpetra {
     // Get the owning PIDs
     RCP<const Import<LO,GO,NT> > MyImporter = getGraph()->getImporter();
 
-    if(domainMap.is_null() || domainMap->isSameAs(*getDomainMap())) {
+    if(!restrictComm && !MyImporter.is_null() && BaseDomainMap->isSameAs(*getDomainMap())) { 
       // Same domain map as source matrix
-      if(!MyImporter.is_null()) Import_Util::getPids(*MyImporter,SourcePids,false);
-      else {
-	SourcePids.resize(getColMap()->getNodeNumElements());
-	SourcePids.assign(getColMap()->getNodeNumElements(),MyPID);
-      }
+      // NOTE: This won't work for restrictComm (because the Importer doesn't know the restricted PIDs), though
+      // writing and optimized version for that case would be easy (Import an IntVector of the new PIDs).  Might
+      // want to add this later.
+      Import_Util::getPids(*MyImporter,SourcePids,false);
     }
-    else if(domainMap->isSameAs(*MyRowMap) && getDomainMap()->isSameAs(*getRowMap())){
+    else if(MyImporter.is_null() && BaseDomainMap->isSameAs(*getDomainMap())) {
+      // Matrix has no off processor entries
+      SourcePids.resize(getColMap()->getNodeNumElements());
+      SourcePids.assign(getColMap()->getNodeNumElements(),MyPID);
+    }
+    else if(BaseDomainMap->isSameAs(*BaseRowMap) && getDomainMap()->isSameAs(*getRowMap())){
       // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
       IntVectorType TargetRow_pids(domainMap);
       IntVectorType SourceRow_pids(getRowMap());
@@ -5379,10 +5409,10 @@ namespace Tpetra {
     }
 
     /*********************************************************************/
-    /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
+    /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
     size_t mynnz = Import_Util::unpackAndCombineWithOwningPIDsCount(*this,RemoteLIDs,destMat->imports_(),destMat->numImportPacketsPerLID_(),constantNumPackets,Distor,INSERT,NumSameIDs,PermuteToLIDs,PermuteFromLIDs);
-    size_t N = MyRowMap->getNodeNumElements();
+    size_t N = BaseRowMap->getNodeNumElements();
 
     // Allocations
     ArrayRCP<size_t> CSR_rowptr(N+1);
@@ -5395,42 +5425,34 @@ namespace Tpetra {
     else CSR_colind_LID.resize(mynnz);
 
     Import_Util::unpackAndCombineIntoCrsArrays(*this,RemoteLIDs,destMat->imports_(),destMat->numImportPacketsPerLID_(),constantNumPackets,Distor,INSERT,NumSameIDs,
-					       PermuteToLIDs,PermuteFromLIDs,N,mynnz,CSR_rowptr(),CSR_colind_GID(),CSR_vals(),SourcePids(),TargetPids);
+					       PermuteToLIDs,PermuteFromLIDs,N,mynnz,MyPID,CSR_rowptr(),CSR_colind_GID(),CSR_vals(),SourcePids(),TargetPids);
 
     /**************************************************************/
-    /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
+    /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
     // Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
     Teuchos::Array<int> RemotePids;
-    Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr(),CSR_colind_LID(),CSR_colind_GID(),MyDomainMap,
+    Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr(),CSR_colind_LID(),CSR_colind_GID(),BaseDomainMap,
 						      TargetPids,RemotePids,MyColMap);
 
     /*******************************************************/
-    /**** 4) Restrict communicator (Build reduced maps) ****/
+    /**** 4) Second communicator restriction phase      ****/
     /*******************************************************/
     if(restrictComm) {
-      ReducedRowMap    = MyRowMap->removeEmptyProcesses();
-      ReducedComm      = ReducedRowMap.is_null () ? Teuchos::null : ReducedRowMap->getComm();
-      destMat->removeEmptyProcessesInPlace(ReducedRowMap);
-      
-      ReducedDomainMap = MyRowMap.getRawPtr() == MyDomainMap.getRawPtr() ? ReducedRowMap : MyDomainMap->replaceCommWithSubset(ReducedComm);
-      ReducedRangeMap  = MyRowMap.getRawPtr() == MyRangeMap.getRawPtr()  ? ReducedRowMap : MyRangeMap->replaceCommWithSubset(ReducedComm);
       ReducedColMap    = MyRowMap.getRawPtr() == MyColMap.getRawPtr()    ? ReducedRowMap : MyColMap->replaceCommWithSubset(ReducedComm);
 
       // Reset the "my" maps
-      MyRowMap    = ReducedRowMap;
-      MyColMap    = ReducedColMap;
-      MyDomainMap = ReducedDomainMap;
-      MyRangeMap  = ReducedRangeMap;
-      
-      // Short circuit if the processor is no longer in the communicator
-      // NOTE: Epetra replaces modifies all "removed" processors so they have a dummy (serial) map that doesn't touch the original
-      // communicator.  Duplicating that here might be a good idea.
-      if(ReducedComm.is_null())
-	return destMat;
+      MyColMap    = ReducedColMap;      
     }
-    else
-      ReducedComm = MyRowMap->getComm();
+
+    // Replace the col map
+    destMat->replaceColMap(MyColMap);
+
+    // Short circuit if the processor is no longer in the communicator
+    // NOTE: Epetra replaces modifies all "removed" processors so they have a dummy (serial) map that doesn't touch the original
+    // communicator.  Duplicating that here might be a good idea.
+    if(ReducedComm.is_null())
+      return destMat;
 
     /***************************************************/
     /**** 5) Sort                                   ****/
@@ -5441,7 +5463,6 @@ namespace Tpetra {
     /**** 6) Reset the colmap and the arrays        ****/
     /***************************************************/
     // Fire off the constructor for the new matrix (restricted as needed)
-    destMat->replaceColMap(MyColMap);
     destMat->setAllValues(CSR_rowptr,CSR_colind_LID,CSR_vals);
 
     /***************************************************/
@@ -5449,6 +5470,7 @@ namespace Tpetra {
     /***************************************************/
     // Pre-build the importer using the existing PIDs
     RCP<Tpetra::Import<LO,GO,NT> > MyImport = rcp(new Tpetra::Import<LO,GO,NT>(MyDomainMap,MyColMap,RemotePids));
+    // RCP<Tpetra::Import<LO,GO,NT> > MyImport = rcp(new Tpetra::Import<LO,GO,NT>(MyDomainMap,MyColMap));
     destMat->expertStaticFillComplete(MyDomainMap,MyRangeMap,MyImport);
 
     return destMat;
