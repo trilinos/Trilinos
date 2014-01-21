@@ -222,7 +222,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
             rangeIndexBase,
             stridedData,
             bA->getRangeMap()->getComm(),
-            stridedRgFullMap->getStridedBlockId(),
+            -1, /* the full map vector should always have strided block id -1! */
+            /*stridedRgFullMap->getStridedBlockId(),*/
             stridedRgFullMap->getOffset());
   } else {
     fullRangeMap =
@@ -249,7 +250,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
             domainIndexBase,
             stridedData2,
             bA->getDomainMap()->getComm(),
-            stridedDoFullMap->getStridedBlockId(),
+            -1, /* the full map vector should always have strided block id -1! */
+            /*stridedDoFullMap->getStridedBlockId(),*/
             stridedDoFullMap->getOffset());
   } else {
 
