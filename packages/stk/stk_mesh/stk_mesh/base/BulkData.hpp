@@ -1071,34 +1071,6 @@ public:
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
 
-  // NKC OPT, remove once rank refactor complete
-  template<class FieldType>
-  typename FieldTraits<FieldType>::data_type*
-  nodal_field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
-  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
-
-    ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
-  }
-
-// NKC OPT, remove once rank refactor complete
-  template<class FieldType>
-  typename FieldTraits<FieldType>::data_type*
-  nodal_field_data(const FieldType & f, const Bucket& b ) const
-  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
-    ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
-  }
 
 
   template<class FieldType>
@@ -1109,14 +1081,6 @@ public:
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
 
-// NKC OPT, remove once rank refactor complete
-  template<class FieldType>
-  typename FieldTraits<FieldType>::data_type*
-  nodal_field_data(const FieldType & f, Entity e) const
-  {
-    const MeshIndex& mi           = mesh_index(e);
-    return nodal_field_data(f, *mi.bucket, mi.bucket_ordinal);
-  }
 
 // NKC OPT, move this to a field function, also not at all clear what stride even is, 
 // investigate if it can be removed entirely
