@@ -139,17 +139,19 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
     for (k=0; k< indices.size(); k++){
-      if (perm){
-        i = iperm[ii];
-        j = iperm[indices[k]];
-      } else {
-        i = ii;
-        j = indices[k];
+      if (indices[k] < n){ // locally owned
+        if (perm){
+          i = iperm[ii];
+          j = iperm[indices[k]];
+        } else {
+          i = ii;
+          j = indices[k];
+        }
+        if (j-i > bw_right)
+          bw_right = j-i;
+        if (i-j > bw_left)
+          bw_left = i-j;
       }
-      if (j-i > bw_right)
-        bw_right = j-i;
-      if (i-j > bw_left)
-        bw_left = i-j;
     }
   }
 
