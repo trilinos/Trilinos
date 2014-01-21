@@ -80,6 +80,11 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",  Teuchos::null, "Generating factory for null space.");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",  Teuchos::null, "Generating factory of previous coarse map. (must be set by user!).");
+
+    // do we need this?
+    validParamList->set< std::string  >("Striding info", "{}", "Striding information");
+    validParamList->set< LocalOrdinal >("Strided block id", -1, "Strided block id");
+
     return validParamList;
   }
 
