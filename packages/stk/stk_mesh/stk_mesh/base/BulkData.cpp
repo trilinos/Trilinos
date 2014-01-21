@@ -1260,7 +1260,7 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
   }
   const std::vector<FieldBase*>  field_set = mesh_meta_data().get_fields();
 
-  if(field_set.size() == 0) return;
+  if (field_set.empty()) return;
 
   if (m_field_raw_data[rank][bucket_id] != NULL) {
     size_t bytes_to_delete = 0;
