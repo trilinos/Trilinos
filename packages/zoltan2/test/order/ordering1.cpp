@@ -275,7 +275,11 @@ int main(int narg, char** arg)
     ofstream permFile;
 
     // Write permutation (0-based) to file
-    permFile.open(outputFile.c_str());
+    // each process writes local perm to a separate file
+    //std::string fname = outputFile + "." + me;
+    std::stringstream fname;
+    fname << outputFile << "." << comm->getSize() << "." << me;
+    permFile.open(fname.str().c_str());
     for (size_t i=0; i<checkLength; i++){
       permFile << " " << checkPerm[i] << endl;
     }
