@@ -85,35 +85,36 @@ class AlgRCM
   
     // Check size of communicator: serial only.
     // TODO: Remove this test when RCM works on local graph.
-    if (comm->getSize() > 1){
-      throw std::runtime_error("RCM currently only works in serial.");
-    }
+    //if (comm->getSize() > 1){
+    //  throw std::runtime_error("RCM currently only works in serial.");
+    //}
   
     // Get local graph.
-    ArrayView<const gno_t> edgeIds;
+    ArrayView<const lno_t> edgeIds;
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts;
   
-    // TODO: edgeIds should be of type lno_t for getLocalEdgeList. Needs revisit.
-    //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
-    // Use global graph for now. This only works in serial!
-    ArrayView<const int> procIds;
-    size_t numEdges = model->getEdgeList( edgeIds, procIds, offsets, wgts);
-  
-    //cout << "Debug: Local graph from getLocalEdgeList" << endl;
-    //cout << "edgeIds: " << edgeIds << endl;
-    //cout << "offsets: " << offsets << endl;
-  
     const size_t nVtx = model->getLocalNumVertices();
+    model->getLocalEdgeList(edgeIds, offsets, wgts); 
+  
+#if 0
+    // Debug
+    cout << "Debug: Local graph from getLocalEdgeList" << endl;
+    cout << "rank " << comm->getRank() << ": nVtx= " << nVtx << endl;
+    cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
+    cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
+#endif
+  
     // RCM constructs invPerm, not perm
     ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
   
     // Check if there are actually edges to reorder.
     // If there are not, then just use the natural ordering.
-    if (numEdges == 0) {
+    if (offsets[nVtx] == 0) {
       for (size_t i = 0; i < nVtx; ++i) {
         invPerm[i] = i;
       }
+      solution->setHaveInverse(true);
       return 0;
     }
   
@@ -211,7 +212,7 @@ class AlgRCM
   lno_t findSmallestDegree(
     lno_t v,
     lno_t nVtx,
-    ArrayView<const gno_t> edgeIds,
+    ArrayView<const lno_t> edgeIds,
     ArrayView<const lno_t> offsets)
   {
     std::queue<lno_t> Q;
@@ -253,7 +254,7 @@ class AlgRCM
   lno_t findPseudoPeripheral(
     lno_t v,
     lno_t nVtx,
-    ArrayView<const gno_t> edgeIds,
+    ArrayView<const lno_t> edgeIds,
     ArrayView<const lno_t> offsets)
   {
     std::queue<lno_t> Q;
