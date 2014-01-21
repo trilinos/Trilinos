@@ -856,18 +856,18 @@ void build_test_map(const RCP<const MapType> & oldMap, RCP<MapType> & newMap) {
   int NumProc = oldMap->getComm()->getSize();
   int MyPID   = oldMap->getComm()->getRank();
 
-  if(NumProc<=2) {
+  if(NumProc<3) {
     // Dump everything onto -proc 0
     global_size_t num_global = oldMap->getGlobalNumElements();
     size_t num_local = MyPID==0 ? num_global : 0;
     newMap = rcp(new MapType(num_global,num_local,0,oldMap->getComm()));
   }
   else {
-    // Split everything between procs 0 and 1
+    // Split everything between procs 0 and 2 (leave proc 1 empty)
     global_size_t num_global = oldMap->getGlobalNumElements();
     size_t num_local=0;
     if(MyPID==0) num_local = num_global/2;
-    else if(MyPID==1) num_local =  num_global - ((size_t)num_global/2);
+    else if(MyPID==2) num_local =  num_global - ((size_t)num_global/2);
     newMap = rcp(new MapType(num_global,num_local,0,oldMap->getComm()));
   } 
 }
@@ -1004,11 +1004,8 @@ void build_test_map(const RCP<const MapType> & oldMap, RCP<MapType> & newMap) {
   // Test 5: Tridiagonal Matrix; Migrate to Proc 0, Replace Maps
   /////////////////////////////////////////////////////////
   {
-    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
-
-    // New map with all on Proc1
-    if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
-    else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+    // New map with all on Proc 0 / 2
+    build_test_map<MapType>(A->getRowMap(),Map1);
 
     // Execute fused import
     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
@@ -1033,11 +1030,8 @@ void build_test_map(const RCP<const MapType> & oldMap, RCP<MapType> & newMap) {
   // Test 6: Tridiagonal Matrix; Migrate to Proc 0, Replace Comm
   /////////////////////////////////////////////////////////
   {
-    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
-
-    // New map with all on Proc1
-    if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
-    else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+    // New map with all on Proc 0 / 2
+    build_test_map<MapType>(A->getRowMap(),Map1);
 
     // Parameters
     Teuchos::ParameterList params;
@@ -1440,7 +1434,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
     Tpetra::Import_Util::unpackAndCombineIntoCrsArrays<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),constantNumPackets,
 											     distor,Tpetra::INSERT,Importer->getNumSameIDs(),Importer->getPermuteToLIDs(),
-											     Importer->getPermuteFromLIDs(),MapTarget->getNodeNumElements(),nnz2,rowptr(),
+											     Importer->getPermuteFromLIDs(),MapTarget->getNodeNumElements(),nnz2,MyPID,rowptr(),
 											     colind(),vals(),SourcePids(),TargetPids);
     // Do the comparison
     Teuchos::ArrayRCP<const size_t>  Browptr;
