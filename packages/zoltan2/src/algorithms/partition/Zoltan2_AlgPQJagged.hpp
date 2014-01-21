@@ -7027,7 +7027,7 @@ void AlgPQJagged(
             freeArray<pq_scalar_t>(pqJagged_weights[i]);
         }
 
-        //freeArray<pq_gno_t>(pq_gnos);
+        freeArray<pq_gno_t>(pq_gnos);
         freeArray<int>(actual_owner_of_coordinate);
     }
 #endif
