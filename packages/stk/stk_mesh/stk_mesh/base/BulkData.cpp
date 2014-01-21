@@ -1057,7 +1057,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
   // Sizing loop
   size_t total_field_data_size = 0;
   for (int i = 0; i < m_num_fields; ++i) {
-    FieldMetaData field_meta_data = {0, NULL, NULL};
+    FieldMetaData field_meta_data = {NULL, 0, NULL};
 
     const FieldBase  & field = * field_set[i];
     if (field.entity_rank() == rank)
