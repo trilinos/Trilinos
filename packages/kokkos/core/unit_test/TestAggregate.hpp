@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#ifndef TEST_AGGREGATE_HPP
+#define TEST_AGGREGATE_HPP
+
 #include <gtest/gtest.h>
 
 #include <stdexcept>
@@ -49,9 +52,9 @@
 
 /*--------------------------------------------------------------------------*/
 
-#if 0
-
 namespace Test {
+
+struct EmbedArray {};
 
 struct ArrayProxyContiguous {};
 struct ArrayProxyStrided {};
@@ -66,9 +69,12 @@ public:
   enum { StaticLength = 0 };
   T * const value ;
   const unsigned count ;
+
+  KOKKOS_INLINE_FUNCTION
   Array( T * v , unsigned n ) : value(v), count(n) {}
 
   template< class Proxy >
+  KOKKOS_INLINE_FUNCTION
   Array & operator = ( const Array<T,0,Proxy> & rhs ) { return *this ; }
 };
 
@@ -78,9 +84,12 @@ struct Array<T,N,ArrayProxyContiguous>
 public:
   enum { StaticLength = N };
   T * const value ;
+
+  KOKKOS_INLINE_FUNCTION
   Array( T * v , unsigned ) : value(v) {}
 
   template< class Proxy >
+  KOKKOS_INLINE_FUNCTION
   Array & operator = ( const Array<T,N,Proxy> & rhs ) { return *this ; }
 };
 
@@ -91,9 +100,12 @@ public:
   enum { StaticLength = N };
   T * const value ;
   const unsigned stride ;
+
+  KOKKOS_INLINE_FUNCTION
   Array( T * v , unsigned , unsigned s ) : value(v), stride(s) {}
 
   template< class Proxy >
+  KOKKOS_INLINE_FUNCTION
   Array & operator = ( const Array<T,N,Proxy> & rhs ) { return *this ; }
 };
 
@@ -105,9 +117,12 @@ public:
   T * const value ;
   const unsigned count ;
   const unsigned stride ;
+
+  KOKKOS_INLINE_FUNCTION
   Array( T * v , unsigned n , unsigned s ) : value(v), count(n), stride(s) {}
 
   template< class Proxy >
+  KOKKOS_INLINE_FUNCTION
   Array & operator = ( const Array<T,0,Proxy> & rhs ) { return *this ; }
 };
 
@@ -119,8 +134,12 @@ public:
   T * value ;
   const unsigned count ;
 
+  KOKKOS_INLINE_FUNCTION
+  Array() : value(0) , count(0) {}
+
   template< unsigned N , class Proxy >
-  Array & operator = ( const Array<T,N,Proxy> & rhs ) { return *this ; }
+  KOKKOS_INLINE_FUNCTION
+  Array( const Array<T,N,Proxy> & rhs ) : value(rhs.value), count(N) {}
 };
 
 template< typename T , unsigned N >
@@ -131,10 +150,9 @@ public:
   T value[N] ;
 
   template< class Proxy >
-  Array & operator = ( const Array<T,N,Proxy> & rhs ) { return *this ; }
+  KOKKOS_INLINE_FUNCTION
+  Array & operator = ( const Array<T,N,Proxy> & ) { return *this ; }
 };
-
-struct LayoutEmbedArray {};
 
 } // namespace Test
 
@@ -151,6 +169,8 @@ struct AnalyzeShape< Test::Array< T , N > >
 private:
   typedef AnalyzeShape< T > nested ;
 public:
+
+  typedef Test::EmbedArray specialize ;
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
@@ -178,6 +198,8 @@ private:
   typedef AnalyzeShape< T > nested ;
 public:
 
+  typedef Test::EmbedArray specialize ;
+
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type  scalar_type ;
@@ -198,46 +220,26 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
-template< typename ScalarType , unsigned Count ,
-          class Rank , class RankDynamic ,
-          class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType ,
-                       Test::Array< ScalarType , Count > ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       MemorySpace , MemoryTraits >
-{ typedef Test::LayoutEmbedArray type ; };
+template< class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType
+                     , Test::EmbedArray
+                     , LayoutLeft 
+                     , MemorySpace
+                     , MemoryTraits >
+{ typedef Test::EmbedArray type ; };
 
-template< typename ScalarType , unsigned Count ,
-          class Rank , class RankDynamic ,
-          class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType ,
-                       Test::Array< ScalarType , Count > ,
-                       LayoutRight , Rank , RankDynamic ,
-                       MemorySpace , MemoryTraits >
-{ typedef Test::LayoutEmbedArray type ; };
-
-template< typename ScalarType , unsigned Count ,
-          class Rank , class RankDynamic ,
-          class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< const ScalarType ,
-                       const Test::Array< ScalarType , Count > ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       MemorySpace , MemoryTraits >
-{ typedef Test::LayoutEmbedArray type ; };
-
-template< typename ScalarType , unsigned Count ,
-          class Rank , class RankDynamic ,
-          class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< const ScalarType ,
-                       const Test::Array< ScalarType , Count > ,
-                       LayoutRight , Rank , RankDynamic ,
-                       MemorySpace , MemoryTraits >
-{ typedef Test::LayoutEmbedArray type ; };
+template< class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType 
+                     , Test::EmbedArray
+                     , LayoutRight 
+                     , MemorySpace
+                     , MemoryTraits >
+{ typedef Test::EmbedArray type ; };
 
 /*--------------------------------------------------------------------------*/
 
 template<>
-struct ViewAssignment< Test::LayoutEmbedArray , Test::LayoutEmbedArray , void >
+struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
 {
   //------------------------------------
   /** \brief  Compatible value and shape */
@@ -245,8 +247,8 @@ struct ViewAssignment< Test::LayoutEmbedArray , Test::LayoutEmbedArray , void >
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,Test::LayoutEmbedArray> & dst
-                , const View<ST,SL,SD,SM,Test::LayoutEmbedArray> & src
+  ViewAssignment(       View<DT,DL,DD,DM,Test::EmbedArray> & dst
+                , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 , const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
                                     ViewTraits<ST,SL,SD,SM> >::value
@@ -272,7 +274,7 @@ struct ViewAssignment< Test::LayoutEmbedArray , Test::LayoutEmbedArray , void >
 };
 
 template<>
-struct ViewAssignment< LayoutDefault , Test::LayoutEmbedArray , void >
+struct ViewAssignment< LayoutDefault , Test::EmbedArray , void >
 {
   //------------------------------------
   /** \brief  Compatible value and shape */
@@ -281,7 +283,7 @@ struct ViewAssignment< LayoutDefault , Test::LayoutEmbedArray , void >
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst
-                , const View<ST,SL,SD,SM,Test::LayoutEmbedArray> & src
+                , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 , const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
                                     ViewTraits<ST,SL,SD,SM> >::value
@@ -319,7 +321,7 @@ template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,
           class Arg3Type >
-class View< DataType , Arg1Type , Arg2Type , Arg3Type , Test::LayoutEmbedArray >
+class View< DataType , Arg1Type , Arg2Type , Arg3Type , Test::EmbedArray >
   : public ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type >
 {
 public:
@@ -623,7 +625,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return LeftValue( m_ptr_on_device + i0 , m_shape.N1 , m_stride );
+      return LeftValue( m_ptr_on_device + i0 , m_shape.N1 , m_stride.value );
     }
 
   template< typename iType0 >
@@ -634,7 +636,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return LeftValue( m_ptr_on_device + i0 , m_shape.N1 , m_stride );
+      return LeftValue( m_ptr_on_device + i0 , m_shape.N1 , m_stride.value );
     }
 
   template< typename iType0 >
@@ -646,7 +648,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return LeftValue( m_ptr_on_device + i0 , m_shape.N1 , m_stride );
+      return LeftValue( m_ptr_on_device + i0 , m_shape.N1 , m_stride.value );
     }
 
   //------------------------------------
@@ -709,8 +711,6 @@ public:
 
 } // namespace Kokkos
 
-#endif
-
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
@@ -719,7 +719,6 @@ namespace Test {
 template< class DeviceType >
 int TestViewAggregate()
 {
-#if 0
   typedef Kokkos::View< Test::Array<double,32> * , DeviceType > a32_type ;
   typedef Kokkos::View< double *[32] , DeviceType > a32_base_type ;
 
@@ -737,10 +736,10 @@ int TestViewAggregate()
 
   typename a32_type::array_type a32_array = a32 ;
   typename a0_type::array_type  a0_array = a32 ;
-#endif
 
   return 0 ;
 }
 
 }
 
+#endif /* #ifndef TEST_AGGREGATE_HPP */

@@ -70,6 +70,8 @@ namespace Impl {
 template< class T >
 struct AnalyzeShape : public Shape< sizeof(T) , 0 >
 {
+  typedef void specialize ;
+
   typedef Shape< sizeof(T), 0 >  shape ;
 
   typedef       T  scalar_type ;
@@ -89,6 +91,8 @@ struct AnalyzeShape : public Shape< sizeof(T) , 0 >
 template<>
 struct AnalyzeShape<void> : public Shape< 0 , 0 >
 {
+  typedef void specialize ;
+
   typedef Shape< 0 , 0 >  shape ;
 
   typedef       void  scalar_type ;
@@ -111,6 +115,8 @@ struct AnalyzeShape< const T > : public AnalyzeShape<T>::shape
 private:
   typedef AnalyzeShape<T> nested ;
 public:
+
+  typedef typename nested::specialize specialize ;
 
   typedef typename nested::shape shape ;
 
@@ -138,6 +144,8 @@ private:
   typedef AnalyzeShape<T> nested ;
 public:
 
+  typedef typename nested::specialize specialize ;
+
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type  scalar_type ;
@@ -163,6 +171,8 @@ struct AnalyzeShape< T[] >
 private:
   typedef AnalyzeShape<T> nested ;
 public:
+
+  typedef typename nested::specialize specialize ;
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
@@ -190,6 +200,8 @@ private:
   typedef AnalyzeShape< const T > nested ;
 public:
 
+  typedef typename nested::specialize specialize ;
+
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type scalar_type ;
@@ -216,6 +228,8 @@ private:
   typedef AnalyzeShape<T> nested ;
 public:
 
+  typedef typename nested::specialize specialize ;
+
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
   typedef typename nested::scalar_type scalar_type ;
@@ -241,6 +255,8 @@ struct AnalyzeShape< const T[N] >
 private:
   typedef AnalyzeShape< const T > nested ;
 public:
+
+  typedef typename nested::specialize specialize ;
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 

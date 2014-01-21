@@ -53,19 +53,11 @@ namespace Impl {
 struct LayoutTileLeftFast ;
 struct LayoutTileLeftSlow ;
 
-template< typename ScalarType , unsigned N0 , unsigned N1 ,
-          class RankDynamic , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType , ScalarType ,
-                       LayoutTileLeft<N0,N1,true> , unsigned_<2> , RankDynamic ,
+template< class ValueType , unsigned N0 , unsigned N1 , bool B , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType , void ,
+                       LayoutTileLeft<N0,N1,B> ,
                        MemorySpace , MemoryTraits >
-{ typedef LayoutTileLeftFast type ; };
-
-template< typename ScalarType , unsigned N0 , unsigned N1 ,
-          class RankDynamic , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType , ScalarType ,
-                       LayoutTileLeft<N0,N1,false> , unsigned_<2> , RankDynamic ,
-                       MemorySpace , MemoryTraits >
-{ typedef LayoutTileLeftSlow type ; };
+{ typedef typename if_c< B , LayoutTileLeftFast , LayoutTileLeftSlow >::type type ; };
 
 //----------------------------------------------------------------------------
 

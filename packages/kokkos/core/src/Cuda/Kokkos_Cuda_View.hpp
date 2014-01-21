@@ -258,23 +258,18 @@ struct CudaTexture {};
 #if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
 /** \brief  Replace LayoutDefault specialization with Cuda texture fetch specialization
- *          if 'const' scalar type and random access.
+ *          if 'const' value type and random access.
  */
-
-template< typename ScalarType , typename Rank , typename RankDynamic , class Memory >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       CudaSpace , Memory >
+template< class ValueType , class MemoryTraits >
+struct ViewSpecialize< const ValueType , void , LayoutLeft , CudaSpace , MemoryTraits >
 {
-  typedef typename if_c< Memory::RandomAccess , CudaTexture , LayoutDefault >::type type ;
+  typedef typename if_c< MemoryTraits::RandomAccess , CudaTexture , LayoutDefault >::type type ;
 };
 
-template< typename ScalarType , typename Rank , typename RankDynamic , class Memory >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , Rank , RankDynamic ,
-                       CudaSpace , Memory >
+template< class ValueType , class MemoryTraits >
+struct ViewSpecialize< const ValueType , void , LayoutRight , CudaSpace , MemoryTraits >
 {
-  typedef typename if_c< Memory::RandomAccess , CudaTexture , LayoutDefault >::type type ;
+  typedef typename if_c< MemoryTraits::RandomAccess , CudaTexture , LayoutDefault >::type type ;
 };
 
 #endif

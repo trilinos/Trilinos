@@ -75,119 +75,49 @@ namespace Impl {
 struct ViewSpecializeSacadoMPVector {};
 struct ViewSpecializeSacadoMPVectorStatic {};
 
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
+template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
-  < typename StorageType::value_type  // ViewTraits::scalar_type
-  , Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutLeft , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
+  < ValueType 
+  , ViewSpecializeSacadoMPVector
+  , LayoutLeft
+  , MemorySpace
+  , MemoryTraits >
 {
   typedef ViewSpecializeSacadoMPVector type ;
 };
 
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
+template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
-  < typename StorageType::value_type  // ViewTraits::scalar_type
-  , Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutRight , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
+  < ValueType 
+  , ViewSpecializeSacadoMPVector
+  , LayoutRight
+  , MemorySpace
+  , MemoryTraits >
 {
   typedef ViewSpecializeSacadoMPVector type ;
 };
 
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
+template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
-  < const typename StorageType::value_type  // ViewTraits::scalar_type
-  , const Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutLeft , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
-{
-  typedef ViewSpecializeSacadoMPVector type ;
-};
-
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
-struct ViewSpecialize
-  < const typename StorageType::value_type  // ViewTraits::scalar_type
-  , const Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutRight , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
-{
-  typedef ViewSpecializeSacadoMPVector type ;
-};
-
-
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
-struct ViewSpecialize
-  < Sacado::MP::Vector< StorageType > // ViewTraits::scalar_type
-  , Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutRight , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
+  < ValueType 
+  , ViewSpecializeSacadoMPVectorStatic
+  , LayoutLeft
+  , MemorySpace
+  , MemoryTraits >
 {
   typedef ViewSpecializeSacadoMPVectorStatic type ;
 };
 
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
+template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
-  < Sacado::MP::Vector< StorageType > // ViewTraits::scalar_type
-  , Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutLeft , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
+  < ValueType 
+  , ViewSpecializeSacadoMPVectorStatic
+  , LayoutRight
+  , MemorySpace
+  , MemoryTraits >
 {
   typedef ViewSpecializeSacadoMPVectorStatic type ;
 };
-
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
-struct ViewSpecialize
-  < const Sacado::MP::Vector< StorageType > // ViewTraits::scalar_type
-  , const Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutRight , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
-{
-  typedef ViewSpecializeSacadoMPVectorStatic type ;
-};
-
-template< class StorageType ,
-          class Rank , class RankDynamic ,
-          class MemoryTraits >
-struct ViewSpecialize
-  < const Sacado::MP::Vector< StorageType > // ViewTraits::scalar_type
-  , const Sacado::MP::Vector< StorageType > // ViewTraits::value_type
-  , LayoutLeft , Rank , RankDynamic
-  , typename StorageType::device_type::memory_space
-  , MemoryTraits
-  >
-{
-  typedef ViewSpecializeSacadoMPVectorStatic type ;
-};
-
 
 
 template< class T , class Device > struct RebindStokhosStorageDevice ;
@@ -1584,6 +1514,8 @@ private:
   typedef AnalyzeShape< typename StorageType::value_type > nested ;
 public:
 
+  typedef ViewSpecializeSacadoMPVector specialize ;
+
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
   typedef typename nested::scalar_type            scalar_type ;
@@ -1619,6 +1551,12 @@ private:
   typedef AnalyzeShape< typename StorageType::value_type > nested ;
 
 public:
+
+  typedef typename
+    if_c< is_static 
+         , ViewSpecializeSacadoMPVectorStatic
+         , ViewSpecializeSacadoMPVector
+         >::type specialize ;
 
   typedef typename
     if_c< is_static

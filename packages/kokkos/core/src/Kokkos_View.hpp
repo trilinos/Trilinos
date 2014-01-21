@@ -64,9 +64,11 @@ namespace Kokkos {
 namespace Impl {
 
 /** \brief  View specialization mapping of view traits to a specialization tag */
-template< typename ScalarType , class ValueType ,
-          class ArrayLayout , class uRank , class uRankDynamic ,
-          class MemorySpace , class MemoryTraits >
+template< class ValueType ,
+          class ArraySpecialize ,
+          class ArrayLayout ,
+          class MemorySpace ,
+          class MemoryTraits >
 struct ViewSpecialize ;
 
 template< class DstViewSpecialize ,
@@ -182,15 +184,14 @@ public:
   enum { is_random_access   = memory_traits::RandomAccess == 1 };
 
   //------------------------------------
-  // Specialization:
+  // Specialization tag:
+
   typedef typename
-    Impl::ViewSpecialize< scalar_type ,
-                          value_type ,
-                          array_layout ,
-                          Impl::unsigned_<rank> ,
-                          Impl::unsigned_<rank_dynamic> ,
-                          memory_space ,
-                          memory_traits
+    Impl::ViewSpecialize< value_type
+                        , typename analysis::specialize
+                        , array_layout
+                        , memory_space
+                        , memory_traits
                         >::type specialize ;
 };
 
@@ -202,21 +203,16 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-/** \brief  Default view specialization has ScalarType == ValueType
- *          and LayoutLeft or LayoutRight.
- */
-struct LayoutDefault ;
+class LayoutDefault {};
 
-template< typename ScalarType , class Rank , class RankDynamic , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType , ScalarType ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       MemorySpace , MemoryTraits >
+/** \brief  Default view specialization has LayoutLeft or LayoutRight.
+ */
+template< class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType , void , LayoutLeft , MemorySpace , MemoryTraits >
 { typedef LayoutDefault type ; };
 
-template< typename ScalarType , class Rank , class RankDynamic , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType , ScalarType ,
-                       LayoutRight , Rank , RankDynamic ,
-                       MemorySpace , MemoryTraits >
+template< class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType , void , LayoutRight , MemorySpace , MemoryTraits >
 { typedef LayoutDefault type ; };
 
 } /* namespace Impl */
