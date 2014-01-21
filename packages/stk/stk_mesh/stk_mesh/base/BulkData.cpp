@@ -1057,7 +1057,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
   // Sizing loop
   size_t total_field_data_size = 0;
   for (int i = 0; i < m_num_fields; ++i) {
-    FieldMetaData field_meta_data = {NULL, 0, NULL};
+    FieldMetaData field_meta_data = {NULL, 0};
 
     const FieldBase  & field = * field_set[i];
     if (field.entity_rank() == rank)
@@ -1077,7 +1077,6 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
 
           if (num_bytes_per_entity > 0) {
             field_meta_data.m_size   = num_bytes_per_entity;
-            field_meta_data.m_stride = &restriction.stride(0); // JGF: why is this a pointer?
 
             total_field_data_size += num_bytes_per_entity * capacity;
           }

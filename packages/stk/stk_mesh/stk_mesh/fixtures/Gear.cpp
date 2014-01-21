@@ -274,18 +274,18 @@ void Gear::move( const GearMovement & data) {
       ++b_itr)
   {
     Bucket & b = **b_itr;
-    BucketArray<CylindricalField> cylindrical_data( cylindrical_coord_field, b);  // ONE STATE
-    BucketArray<CartesianField>   translation_data( translation_field, b); // ONE STATE
-    const BucketArray<CartesianField>   old_coordinate_data( cartesian_coord_field, b); // ONE STATE
-    BucketArray<CartesianField>   new_displacement_data( displacement_field.field_of_state(StateNew), b); // TWO STATE
+    double* cylindrical_data = bulk_data.field_data( cylindrical_coord_field, b);  // ONE STATE
+    double*   translation_data = bulk_data.field_data( translation_field, b); // ONE STATE
+    const double*   old_coordinate_data = bulk_data.field_data( cartesian_coord_field, b); // ONE STATE
+    double*   new_displacement_data = bulk_data.field_data( displacement_field.field_of_state(StateNew), b); // TWO STATE
 
     double new_coordinate_data[3] = {0,0,0};
     for (size_t i = 0; i < b.size(); ++i) {
       int index = i;
 
-      const double   radius = cylindrical_data(0,index);
-            double & angle  = cylindrical_data(1,index);
-      const double   height = cylindrical_data(2,index);
+      const double   radius = cylindrical_data[0+index*3];
+            double & angle  = cylindrical_data[1+index*3];
+      const double   height = cylindrical_data[2+index*3];
 
 
       angle += data.rotation;
@@ -297,18 +297,17 @@ void Gear::move( const GearMovement & data) {
         angle -= TWO_PI;
       }
 
-      translation_data(0,index) += data.x;
-      translation_data(1,index) += data.y;
-      translation_data(2,index) += data.z;
+      translation_data[0+index*3] += data.x;
+      translation_data[1+index*3] += data.y;
+      translation_data[2+index*3] += data.z;
 
-      new_coordinate_data[0] = translation_data(0,index) + radius * std::cos(angle);
-      new_coordinate_data[1] = translation_data(1,index) + radius * std::sin(angle);
-      new_coordinate_data[2] = translation_data(2,index) + height;
+      new_coordinate_data[0] = translation_data[0+index*3] + radius * std::cos(angle);
+      new_coordinate_data[1] = translation_data[1+index*3] + radius * std::sin(angle);
+      new_coordinate_data[2] = translation_data[2+index*3] + height;
 
-      new_displacement_data(0,index) = new_coordinate_data[0] - old_coordinate_data(0,index);
-      new_displacement_data(1,index) = new_coordinate_data[1] - old_coordinate_data(1,index);
-      new_displacement_data(2,index) = new_coordinate_data[2] - old_coordinate_data(2,index);
-
+      new_displacement_data[0+index*3] = new_coordinate_data[0] - old_coordinate_data[0+index*3];
+      new_displacement_data[1+index*3] = new_coordinate_data[1] - old_coordinate_data[1+index*3];
+      new_displacement_data[2+index*3] = new_coordinate_data[2] - old_coordinate_data[2+index*3];
     }
   }
 }

@@ -213,13 +213,14 @@ void move_detached_wedges(
   {
     stk::mesh::Bucket & b = **b_itr;
 
-    const stk::mesh::BucketArray<CartesianField>  velocity_data( velocity_field, b);
-    stk::mesh::BucketArray<CartesianField>  old_displacement_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
-    stk::mesh::BucketArray<CartesianField>  new_displacement_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
+    const typename stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = fixture.bulk_data.field_data(velocity_field, b);
+    typename stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = fixture.bulk_data.field_data(fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
+    typename stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = fixture.bulk_data.field_data(fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
+    int ndim = fixture.meta_data.spatial_dimension();
 
     for (size_t i = 0; i < b.size(); ++i) {
       for (size_t j = 0; j < fixture.meta_data.spatial_dimension(); ++j) {
-        new_displacement_data(j,i) = old_displacement_data(j,i) + velocity_data(j,i);
+        new_displacement_data[j+i*ndim] = old_displacement_data[j+i*ndim] + velocity_data[j+i*ndim];
       }
     }
   }
@@ -244,9 +245,9 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
       ++b_itr)
   {
     stk::mesh::Bucket & b = **b_itr;
-    stk::mesh::BucketArray<IntField> processor_data( processor_field, b);
+    int* processor_data = fixture.bulk_data.field_data(processor_field, b);
     for (size_t index = 0; index < b.size(); ++index) {
-      processor_data(index) = p_rank;
+      processor_data[index] = p_rank;
     }
   }
 }

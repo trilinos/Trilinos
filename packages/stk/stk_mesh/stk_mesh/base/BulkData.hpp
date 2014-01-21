@@ -1081,20 +1081,6 @@ public:
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
 
-
-// NKC OPT, move this to a field function, also not at all clear what stride even is, 
-// investigate if it can be removed entirely
-  const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & f, const Bucket& b ) const
-  {
-
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-
-    return f.get_meta_data_for_field()[b.bucket_id()].m_stride;
-  }
-
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
   size_t generate_next_local_offset();
 

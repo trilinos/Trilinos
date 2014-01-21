@@ -157,18 +157,15 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // The array is two dimensional ( Cartesian X NumberNodes )
       // and indexed by ( 0..2 , 0..NumberNodes-1 )
 
-      stk::mesh::BucketArray<VectorFieldType>
-        coordinates_array( m_coordinates_field, bucket );
+      double*
+        coordinates_array = m_bulkData.field_data( m_coordinates_field, bucket );
 
-      const int num_nodes_in_bucket = coordinates_array.dimension(1);
-
-      ThrowRequireMsg( coordinates_array.dimension(0) == SpatialDim , "Expected coordinates_array.dimension(0) "
-                       << coordinates_array.dimension(0) << " to equal SpatialDim " << SpatialDim );
+      const int num_nodes_in_bucket = bucket.size();
 
       // For each node in the bucket populate its nodal coordinates.
       for ( int i=0 ; i < num_nodes_in_bucket ; ++i ) {
         const unsigned node_id = m_bulkData.identifier(bucket[i]);
-        usecase_2_node_coordinates( node_id, & coordinates_array(0,i) );
+        usecase_2_node_coordinates( node_id, & coordinates_array[i*SpatialDim] );
       }
 
       // Fill the nodal temperature field.
@@ -177,17 +174,17 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // The array is one dimensional ( NumberNodes )
       // and indexed by ( 0..NumberNodes-1 )
 
-      stk::mesh::BucketArray<ScalarFieldType>
-        temperature_array( m_temperature_field, bucket );
+      double*
+        temperature_array = m_bulkData.field_data( m_temperature_field, bucket );
 
-      const int num_temps = temperature_array.dimension(0);
+      const int num_temps = bucket.size();
 
       ThrowRequireMsg( num_nodes_in_bucket == num_temps , "Expected num_temps "
                        << num_temps << " to equal num_nodes_in_bucket " << num_nodes_in_bucket );
 
       // For each node in the bucket assign the temperature field to a constant.
       for ( int i=0 ; i < num_nodes_in_bucket ; ++i) {
-        temperature_array(i) = TEMPERATURE_VALUE_GOLD ;
+        temperature_array[i] = TEMPERATURE_VALUE_GOLD ;
       }
     }
   }
@@ -215,17 +212,14 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // The array is one dimensional ( NumberElements )
       // and indexed by ( 0..NumberElements-1 )
 
-      stk::mesh::BucketArray<ScalarFieldType>
-        volume_array( m_volume_field, element_bucket );
+      double*
+        volume_array = m_bulkData.field_data( m_volume_field, element_bucket );
 
-      const unsigned num_elements = volume_array.dimension(0);
-
-      ThrowRequireMsg( element_bucket.size() == num_elements , "Expected element_bucket.size() "
-                       << element_bucket.size() << " to equal num_elements " << num_elements );
+      const unsigned num_elements = element_bucket.size();
 
       // Populate volume field
       for ( unsigned volume_index=0 ; volume_index < num_elements ; ++volume_index) {
-        volume_array(volume_index) = VOLUME_VAL;
+        volume_array[volume_index] = VOLUME_VAL;
       }
     }
   }
@@ -516,16 +510,13 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
     // Verify volume_field
 
-    stk::mesh::BucketArray<ScalarFieldType> volume_array(
-        volume_field,
-        **element_bucket_it
-        );
+    double* volume_array = bulkData.field_data( volume_field, **element_bucket_it );
 
     // For all elements volume field should be VOLUME_VAL
     for ( unsigned volume_index=0 ; volume_index < num_elements_in_bucket ; ++volume_index) {
-      if ( volume_array(volume_index) != VOLUME_VAL ) {
+      if ( volume_array[volume_index] != VOLUME_VAL ) {
         std::cerr << "Error!  volume_array(" << volume_index << ") == "
-          << volume_array(volume_index) << " != " << VOLUME_VAL
+          << volume_array[volume_index] << " != " << VOLUME_VAL
           << " == VOLUME_VAL " << std::endl;
         result = false;
       }
@@ -546,18 +537,15 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
           node_bucket_it = node_buckets.begin();
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
       const stk::mesh::Bucket & bucket = **node_bucket_it;
-      stk::mesh::BucketArray<ScalarFieldType> temperature_array(
-          temperature_field,
-          bucket
-          );
+      double* temperature_array = bulkData.field_data( temperature_field, bucket );
 
       // For all nodes in bucket temperature field should be
       // TEMPERATURE_VALUE_GOLD
-      int num_nodes_in_bucket = temperature_array.dimension(0);
+      int num_nodes_in_bucket = bucket.size();
       for ( int i=0 ; i < num_nodes_in_bucket ; ++i) {
-        if (temperature_array(i) != TEMPERATURE_VALUE_GOLD) {
+        if (temperature_array[i] != TEMPERATURE_VALUE_GOLD) {
           std::cerr << "Error!  temperature_array("<<i<<") == "
-            << temperature_array(i) << " != " << TEMPERATURE_VALUE_GOLD
+            << temperature_array[i] << " != " << TEMPERATURE_VALUE_GOLD
             << " == TEMPERATURE_VALUE_GOLD" << std::endl;
           result = false;
         }

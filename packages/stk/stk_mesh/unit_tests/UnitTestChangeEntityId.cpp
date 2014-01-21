@@ -105,8 +105,8 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
   const BucketVector & node_buckets = mesh.buckets(MetaData::NODE_RANK);
 
   BOOST_FOREACH(Bucket * b, node_buckets) {
-    BucketArray< Field<int> > nodal_field(simple_nodal_field,*b);
-    for (int i =0; i<nodal_field.size(); ++i) {
+    int* nodal_field = mesh.field_data( simple_nodal_field, *b );
+    for (size_t i =0; i<b->size(); ++i) {
       nodal_field[i] = 1;
     }
   }
@@ -140,8 +140,8 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
   STKUNIT_EXPECT_TRUE(old_ids == new_ids_minus_num_elems);
 
   BOOST_FOREACH(Bucket * b, node_buckets) {
-    BucketArray< Field<int> > nodal_field(simple_nodal_field,*b);
-    for (int i =0; i<nodal_field.size(); ++i) {
+    int* nodal_field = mesh.field_data( simple_nodal_field, *b );
+    for (size_t i =0; i<b->size(); ++i) {
       STKUNIT_EXPECT_TRUE( nodal_field[i] == 1);
     }
   }
