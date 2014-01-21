@@ -186,7 +186,10 @@ FUNCTION(TRIBITS_SETUP_MPI)
       CACHE STRING
       "The default mumber of processes to use when running MPI programs." )
 
-    ADVANCED_SET( MPI_EXEC_MAX_NUMPROCS "4"
+    IF ( "${MPI_EXEC_MAX_NUMPROCS_DEFAULT}" STREQUAL "" )
+      SET(MPI_EXEC_MAX_NUMPROCS_DEFAULT 4)
+    ENDIF()
+    ADVANCED_SET( MPI_EXEC_MAX_NUMPROCS ${MPI_EXEC_MAX_NUMPROCS_DEFAULT}
       CACHE STRING
       "The maximum mumber of processes to use when running MPI programs.  Tests with more procs are excluded." )
 
