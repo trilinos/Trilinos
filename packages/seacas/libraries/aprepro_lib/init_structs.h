@@ -1,6 +1,9 @@
 #ifndef INIT_STRUCTS_H
 #define INIT_STRUCTS_H
-#include "apr_array.h"
+
+namespace SEAMS {
+  struct array;
+}
 
 struct init_d
   {
@@ -45,7 +48,7 @@ struct init_c
 struct init_a
   {
     const char *fname;
-    double (*fnct)(const array*);
+    double (*fnct)(const SEAMS::array*);
     const char *syntax;
     const char *description;
   };
@@ -77,7 +80,7 @@ struct str_d_init
 struct str_a_init
   {
     const char *fname;
-    const char *(*fnct)(const array*);
+    const char *(*fnct)(const SEAMS::array*);
     const char *syntax;
     const char *description;
   };
@@ -101,7 +104,7 @@ struct str_ccc_init
 struct array_c_init
   {
     const char *fname;
-    array *(*fnct)(const char*);
+    SEAMS::array *(*fnct)(const char*);
     const char *syntax;
     const char *description;
   };
@@ -109,7 +112,7 @@ struct array_c_init
 struct array_dd_init
   {
     const char *fname;
-    array *(*fnct)(double, double);
+    SEAMS::array *(*fnct)(double, double);
     const char *syntax;
     const char *description;
   };
@@ -117,7 +120,7 @@ struct array_dd_init
 struct array_d_init
   {
     const char *fname;
-    array *(*fnct)(double);
+    SEAMS::array *(*fnct)(double);
     const char *syntax;
     const char *description;
   };
@@ -125,7 +128,7 @@ struct array_d_init
 struct array_a_init
   {
     const char *fname;
-    array *(*fnct)(const array*);
+    SEAMS::array *(*fnct)(const SEAMS::array*);
     const char *syntax;
     const char *description;
   };
