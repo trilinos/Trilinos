@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
   std::string mapFile;                               clp.setOption("map",                   &mapFile,          "map data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
+  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds, "#times to rebuild hierarchy");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -248,13 +249,18 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-  RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+  RCP<Hierarchy> H;
+  for (int i=0; i< numRebuilds+1; ++i) {
+    H = mueLuFactory->CreateHierarchy();
+    H->GetLevel(0)->Set("A",           A);
+    H->GetLevel(0)->Set("Nullspace",   nullspace);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueLuFactory->SetupHierarchy(*H);
 
-  H->GetLevel(0)->Set("A",           A);
-  H->GetLevel(0)->Set("Nullspace",   nullspace);
-  H->GetLevel(0)->Set("Coordinates", coordinates);
+    if (i<numRebuilds)
+      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-  mueLuFactory->SetupHierarchy(*H);
+  }
 
   comm->barrier();
   tm = Teuchos::null;
