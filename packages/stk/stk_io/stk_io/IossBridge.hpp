@@ -349,7 +349,7 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  *	attributed is defined via the stk::io::put_io_part_attribute()
  *	function.
  */
-bool is_part_io_part(mesh::Part &part);
+bool is_part_io_part(const mesh::Part &part);
 
 /** Define an attribute on the specified part 'part' indicating that
  * this part should be used for io.  \see is_part_io_part()

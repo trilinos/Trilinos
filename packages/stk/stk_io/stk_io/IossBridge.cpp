@@ -1737,7 +1737,7 @@ void write_output_db(Ioss::Region& io_region,
 }
 
 //----------------------------------------------------------------------
-bool is_part_io_part(stk::mesh::Part &part)
+bool is_part_io_part(const stk::mesh::Part &part)
 {
   return NULL != part.attribute<Ioss::GroupingEntity>();
 }
