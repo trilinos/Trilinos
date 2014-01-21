@@ -96,14 +96,14 @@ class AlgRCM
   
     const size_t nVtx = model->getLocalNumVertices();
     model->getLocalEdgeList(edgeIds, offsets, wgts); 
-    // Use global graph for now. This only works in serial!
-    //ArrayView<const int> procIds;
-    //size_t numEdges = model->getEdgeList( edgeIds, procIds, offsets, wgts);
   
+#ifdef 0
+    // Debug
     cout << "Debug: Local graph from getLocalEdgeList" << endl;
     cout << "rank " << comm->getRank() << ": nVtx= " << nVtx << endl;
     cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
     cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
+#endif
   
     // RCM constructs invPerm, not perm
     ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
