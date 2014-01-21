@@ -39,26 +39,32 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_DistObject.hpp"
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_DistObject_def.hpp"
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
 
-#define TPETRA_DISTOBJECT_INSTANT_MP_VECTOR_N(N)               \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_DISTOBJECT_INSTANT, N)
+#include "Tpetra_ETIHelperMacros.h"
+#include "MueLu_SteepestDescentSolver_def.hpp"
 
-namespace Tpetra {
+#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+  template class MueLu::SteepestDescentSolver<S, LO, GO, N>;
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+#define MUELU_INST_N(N) \
+  INSTANTIATE_TPETRA_MP_VECTOR_N(MUELU_INST_S_LO_GO_N, N)
 
-  // Currently excluding GPU nodes because SparseOps may not be
-  // implemented, I think depending on the choice of TPLs
-  TPETRA_INSTANTIATE_N_NOGPU(TPETRA_DISTOBJECT_INSTANT_MP_VECTOR_N)
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-} // namespace Tpetra
+// Currently excluding GPU nodes because SparseOps may not be
+// implemented, I think depending on the choice of TPLs
+//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
+MUELU_INST_N(KokkosClassic_SerialNode)
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif
+
+#endif

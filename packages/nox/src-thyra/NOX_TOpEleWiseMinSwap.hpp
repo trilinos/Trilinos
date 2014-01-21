@@ -44,6 +44,7 @@
 #define RTOPPACK_TOP_ELE_WISE_MIN_SWAP_HPP
 
 #include "RTOpPack_RTOpTHelpers.hpp"
+#include "Thyra_VectorBase.hpp"
 #include <cmath>
 
 namespace RTOpPack {
@@ -91,12 +92,12 @@ namespace Thyra {
  * \relates VectorBase
  */
 template<class Scalar>
-void ele_wise_min_swap( const VectorBase<Scalar>& x,
-  const Ptr<VectorBase<Scalar> > &y )
+void ele_wise_min_swap( const ::Thyra::VectorBase<Scalar>& x,
+			const Teuchos::Ptr< ::Thyra::VectorBase<Scalar> > &y )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpEleWiseMinSwap<Scalar> ele_wise_min_swap_op;
-  applyOp<Scalar>( ele_wise_min_swap_op, tuple(ptrInArg(x)),
+  ::Thyra::applyOp<Scalar>( ele_wise_min_swap_op, tuple(ptrInArg(x)),
     tuple(y), null );
 }
 

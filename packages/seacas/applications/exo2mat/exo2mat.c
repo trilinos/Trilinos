@@ -223,7 +223,7 @@ int main (int argc, char *argv[])
 {
 
   char  
-    *str,**str2,*(*qa_records)[4],*line, *oname, *dot, *filename;
+    *str,**str2,*line, *oname, *dot, *filename;
 
   const char* ext=EXT;
 

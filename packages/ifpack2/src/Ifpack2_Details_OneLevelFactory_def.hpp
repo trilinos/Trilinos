@@ -50,10 +50,11 @@
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
+#include "Ifpack2_Krylov.hpp"
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
-#endif //  defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#endif // HAVE_IFPACK2_AMESOS2
 
 namespace Ifpack2 {
 namespace Details {
@@ -86,14 +87,14 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     prec = rcp (new Details::DenseSolver<MatrixType> (matrix));
   }
   else if (precTypeUpper == "AMESOS2") {
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#ifdef HAVE_IFPACK2_AMESOS2
     prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory: "
       "You may not ask for the preconditioner \"AMESOS2\" unless "
       "you have built Trilinos with the Amesos2 package enabled.");
-#endif
+#endif // HAVE_IFPACK2_AMESOS2
   }
   else if (precTypeUpper == "DIAGONAL") {
     prec = rcp (new Diagonal<MatrixType> (matrix));
@@ -106,6 +107,9 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   }
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
+  }
+  else if (precTypeUpper == "KRYLOV") {
+    prec = rcp (new Krylov<MatrixType> (matrix));
   }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
     prec = rcp (new IdentitySolver<MatrixType> (matrix));

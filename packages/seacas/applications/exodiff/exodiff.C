@@ -872,12 +872,12 @@ namespace {
       // Make sure there is an operation to perform (compare times, variables, ...)
       if ((min_num_times == 0 && interface.coord_tol.type == IGNORE) ||
 	  (min_num_times >  0 && interface.time_tol.type == IGNORE &&
-	   interface.glob_var_names.size() == 0 &&
-	   interface.node_var_names.size() == 0 &&
-	   interface.elmt_var_names.size() == 0 &&
-	   interface.elmt_att_names.size() == 0 &&
-	   interface.ns_var_names.size()   == 0 &&
-	   interface.ss_var_names.size()   == 0)) {
+	   interface.glob_var_names.empty() &&
+	   interface.node_var_names.empty() &&
+	   interface.elmt_var_names.empty() &&
+	   interface.elmt_att_names.empty() &&
+	   interface.ns_var_names.empty()   &&
+	   interface.ss_var_names.empty())) {
 	std::cout << "\nWARNING: No comparisons were performed during "
 	  "this execution.\n";
 	diff_flag = true;
@@ -1126,7 +1126,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 		       elem_id_map, mm_ss, var_vals ) )
       *diff_flag = true;
   } else {
-    if (interface.ns_var_names.size() > 0 || interface.ss_var_names.size() > 0) {
+    if (!interface.ns_var_names.empty() || !interface.ss_var_names.empty()) {
       std::cout << "WARNING: nodeset and sideset variables not (yet) "
 	"compared for partial map\n";
     }
@@ -1151,7 +1151,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     // ----------------------------------------------------------------------
     // Output file containing differences...
     if (out_file_id >= 0) {
-      if (interface.glob_var_names.size() > 0) {
+      if (!interface.glob_var_names.empty()) {
 	SMART_ASSERT(gvals != 0);
 	for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
 	  const string& name = (interface.glob_var_names)[out_idx];
@@ -1181,7 +1181,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     // -------------------------------------------------------------------
     // Determine if any diffs and output to terminal
     int name_length = max_string_length(file1.Global_Var_Names())+1;
-    if (!interface.quiet_flag && interface.glob_var_names.size() > 0)
+    if (!interface.quiet_flag && !interface.glob_var_names.empty())
       std::cout << "Global variables:" << std::endl;
     
     for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
@@ -1281,7 +1281,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     SMART_ASSERT(!interface.summary_flag && out_file_id <0);
     // ----------------------------------------------------------------------
     // Determine if any diffs and output to terminal
-    if (!interface.quiet_flag && interface.node_var_names.size() > 0)
+    if (!interface.quiet_flag && !interface.node_var_names.empty())
       std::cout << "Nodal variables:" << std::endl;
     int name_length = max_string_length(file1.Nodal_Var_Names())+1;
     
@@ -1365,7 +1365,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     
     if (out_file_id >= 0) {SMART_ASSERT(evals != 0);}
   
-    if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag && interface.elmt_var_names.size() > 0)
+    if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag && !interface.elmt_var_names.empty())
       std::cout << "Element variables:" << std::endl;
     
     int name_length = max_string_length(interface.elmt_var_names)+1;
@@ -1552,7 +1552,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     int name_length = max_string_length(file1.NS_Var_Names())+1;
       
     if ( out_file_id < 0 && !interface.quiet_flag &&
-	 !interface.summary_flag && interface.ns_var_names.size() > 0 )
+	 !interface.summary_flag && !interface.ns_var_names.empty())
       std::cout << "Nodeset variables:" << std::endl;
     
     for (unsigned e_idx = 0; e_idx < interface.ns_var_names.size(); ++e_idx) {
@@ -1705,7 +1705,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
   
     int name_length = max_string_length(file1.SS_Var_Names())+1;
       
-    if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag && interface.ss_var_names.size() > 0)
+    if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag && !interface.ss_var_names.empty())
       std::cout << "Sideset variables:" << std::endl;
     
     double norm_d = 0.0;

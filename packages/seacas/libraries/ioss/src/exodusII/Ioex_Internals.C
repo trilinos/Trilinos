@@ -1846,7 +1846,7 @@ int Internals::put_non_define_data(const Mesh&,
       ncnt_cmap += comm.nodeMap[icm].entityCount;
     }
 
-    if (comm.nodeMap.size() > 0 && ncnt_cmap > 0) {
+    if (!comm.nodeMap.empty() && ncnt_cmap > 0) {
       int n_varid;
       status=nc_inq_varid(exodusFilePtr, VAR_N_COMM_STAT, &n_varid);
       if (status != NC_NOERR) {
@@ -1902,7 +1902,7 @@ int Internals::put_non_define_data(const Mesh&,
     for (size_t icm=0; icm < comm.elementMap.size(); icm++)
       ecnt_cmap += comm.elementMap[icm].entityCount;
 
-    if (comm.elementMap.size() > 0 && ecnt_cmap > 0) {
+    if (!comm.elementMap.empty() && ecnt_cmap > 0) {
 
       // Get variable ID for elemental status vector
       int e_varid;

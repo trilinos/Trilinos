@@ -603,7 +603,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
-    if (global_element_map.size() > 0) {
+    if (!global_element_map.empty()) {
       std::vector<INT> global_map(global.count(ELEM));
       for (size_t i=0; i < global.count(ELEM); i++) {
 	global_map[i] = global_element_map[i].first;
@@ -2385,7 +2385,7 @@ namespace {
     // has restricted the output of certain variables to certain element
     // blocks. If so, then the truth table is modified to match the
     // users request.
-    if (variable_names.size() == 0)
+    if (variable_names.empty())
       return;
 
     // Check for a non-zero id entry in the variable_names list which

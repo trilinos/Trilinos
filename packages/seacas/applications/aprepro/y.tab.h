@@ -53,7 +53,7 @@ extern int yydebug;
      SVAR = 262,
      IMMVAR = 263,
      IMMSVAR = 264,
-     ARRAY = 265,
+     AVAR = 265,
      FNCT = 266,
      SFNCT = 267,
      AFNCT = 268,
@@ -84,7 +84,7 @@ extern int yydebug;
 #define SVAR 262
 #define IMMVAR 263
 #define IMMSVAR 264
-#define ARRAY 265
+#define AVAR 265
 #define FNCT 266
 #define SFNCT 267
 #define AFNCT 268
@@ -112,11 +112,11 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 52 "aprepro.y"
+#line 53 "aprepro.y"
 
-  double  val;		/* For returning numbers.		*/
-  symrec *tptr;		/* For returning symbol-table pointers	*/
-  char   *string;	/* For returning quoted strings		*/
+  double  val;          /* For returning numbers.               */
+  symrec *tptr;         /* For returning symbol-table pointers  */
+  char   *string;       /* For returning quoted strings         */
   array  *array;
 
 

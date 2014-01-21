@@ -56,7 +56,7 @@ Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
   Ioss::DatabaseIO *db = NULL;
   Ioss::IOFactoryMap::iterator iter = registry()->find(type);
   if (iter == registry()->end()) {
-    if (registry()->size() == 0) {
+    if (registry()->empty()) {
       std::ostringstream errmsg;
       errmsg << "ERROR: No database types have been registered.\n"
 	     << "       Was Ioss::Init::Initializer() called?\n\n";

@@ -50,12 +50,9 @@
 
 #include <Ioss_ElementTopology.h>
 
-
-using namespace Ioss;
-
 // ========================================================================
 static int  test_all_elements();
-static void test_aliases(const NameList &elements);
+static void test_aliases(const Ioss::NameList &elements);
 static bool test_element(const std::string& type);
 // ========================================================================
 
@@ -65,7 +62,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
 
-  StorageInitializer initialize_storage;
+  Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer  initialize_topologies;
 
   int err_count = test_all_elements();
@@ -86,7 +83,7 @@ int test_all_elements()
 {
   int err_count = 0;
 
-  NameList elements;
+  Ioss::NameList elements;
   int element_count = Ioss::ElementTopology::describe(&elements);
 
   OUTPUT.setf(std::ios::left);
@@ -278,7 +275,7 @@ bool test_element(const std::string& type)
   }
 
   // Variable types...
-  const VariableType *vt = VariableType::factory(element->name());
+  const Ioss::VariableType *vt = Ioss::VariableType::factory(element->name());
   if (vt == NULL) {
     OUTPUT << "\n\tVariable Type does not exist for this name";
     result = false;
@@ -369,7 +366,7 @@ bool test_element(const std::string& type)
   return result;
 }
 
-void test_aliases(const NameList &elements)
+void test_aliases(const Ioss::NameList &elements)
 {
   int count = elements.size();
   OUTPUT << "\n\nTesting Element Topology Aliases...\n";

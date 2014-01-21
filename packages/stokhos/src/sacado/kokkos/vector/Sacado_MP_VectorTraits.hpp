@@ -162,6 +162,7 @@ namespace Sacado {
 #include "Teuchos_ScalarTraits.hpp"
 #include "Sacado_ETV_ScalarTraitsImp.hpp"
 #include "Teuchos_SerializationTraits.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Teuchos {
 
@@ -253,11 +254,11 @@ namespace Teuchos {
       //   m += a.fastAccessCoeff(i)*a.fastAccessCoeff(i);
       // return std::sqrt(m);
     }
-    static value_type zero()  {
-      return value_type(0.0);
+    static ScalarType zero()  {
+      return ScalarType(0.0);
     }
-    static value_type one()   {
-      return value_type(1.0);
+    static ScalarType one()   {
+      return ScalarType(1.0);
     }
 
     // Conjugate is only defined for real derivative components
@@ -302,8 +303,8 @@ namespace Teuchos {
     static void seedrandom(unsigned int s) {
       Teuchos::ScalarTraits<value_type>::seedrandom(s);
     }
-    static value_type random() {
-      return Teuchos::ScalarTraits<value_type>::random();
+    static ScalarType random() {
+      return ScalarType(Teuchos::ScalarTraits<value_type>::random());
     }
     static std::string name() {
       return Sacado::StringName<ScalarType>::eval();
@@ -313,6 +314,12 @@ namespace Teuchos {
     }
     static ScalarType pow(const ScalarType& x, const ScalarType& y) {
       return std::pow(x,y);
+    }
+    static ScalarType log(const ScalarType& x) {
+      return std::log(x);
+    }
+    static ScalarType log10(const ScalarType& x) {
+      return std::log10(x);
     }
   };
 
@@ -338,6 +345,55 @@ namespace Teuchos {
                         Ordinal sz = 0) :
       Base(vs, sz) {}
   };
+
+//! Specializations for Teuchos::as<T>
+template<class TypeTo, class StorageFrom>
+class ValueTypeConversionTraits< TypeTo, Sacado::MP::Vector<StorageFrom> > {
+public:
+  typedef Sacado::MP::Vector<StorageFrom> TypeFrom;
+  //! Convert t from a TypeFrom object to a TypeTo object.
+  static TypeTo convert (const TypeFrom& t) {
+    // This default implementation is just an implicit conversion and
+    // may generate compiler warnings on dangerous conversions.
+    return Teuchos::as<TypeTo>(t.coeff(0));
+  }
+
+  //! Convert t from a TypeFrom object to a TypeTo object, with checks for validity.
+  static TypeTo safeConvert (const TypeFrom& t) {
+    // This default implementation is just an implicit conversion and
+    // may generate compiler warnings on dangerous conversions.  No
+    // runtime checking (e.g., for overflow) can be done by default;
+    // only specializations can define meaningful and portable
+    // run-time checks of conversions.
+    return Teuchos::as<TypeTo>(t.coeff(0));
+  }
+};
+
+template<class TypeTo, class ExprFrom>
+class ValueTypeConversionTraits< TypeTo, Sacado::MP::Expr<ExprFrom> > {
+public:
+  typedef Sacado::MP::Expr<ExprFrom> TypeFrom;
+  //! Convert t from a TypeFrom object to a TypeTo object.
+  static TypeTo convert (const TypeFrom& t) {
+    // This default implementation is just an implicit conversion and
+    // may generate compiler warnings on dangerous conversions.
+    return Teuchos::as<TypeTo>(t.derived().coeff(0));
+  }
+
+  //! Convert t from a TypeFrom object to a TypeTo object, with checks for validity.
+  static TypeTo safeConvert (const TypeFrom& t) {
+    // This default implementation is just an implicit conversion and
+    // may generate compiler warnings on dangerous conversions.  No
+    // runtime checking (e.g., for overflow) can be done by default;
+    // only specializations can define meaningful and portable
+    // run-time checks of conversions.
+    return Teuchos::as<TypeTo>(t.derived().coeff(0));
+  }
+};
+
+// Should also do TypeTo, and TypeTo,TypeFrom as MP::Vector, but the real way
+// to fix is to make sure it is never called at all (requires fixing
+// magnitudeType)
 
 }
 #endif // HAVE_SACADO_TEUCHOS

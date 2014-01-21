@@ -78,7 +78,11 @@ TEUCHOS_UNIT_TEST( CrsMatrix, Bug5978 )
   comm->barrier ();
 
   Teuchos::ArrayRCP<size_t> count (rowGIDs.size ());
-  count.assign (rowGIDs.size (), 1);
+
+  // mfh 16 Jan 2014: The explicit cast will hopefully prevent gcc
+  // 4.3.3 from confusing the non-template method assign(size_type,
+  // const T&) from the template method assign(Iter, Iter).
+  count.assign (rowGIDs.size (), static_cast<size_t> (1));
   matrix_type A (rowMap, colMap, count);
 
   out << "Proc " << myRank << ": Filling matrix" << endl;

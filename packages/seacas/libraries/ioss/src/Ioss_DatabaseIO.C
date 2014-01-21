@@ -522,14 +522,14 @@ namespace Ioss {
 	  side_topo.insert(std::make_pair(block->topology(), ftopo));
 	}
       }
-      assert(side_topo.size() > 0);
-      assert(sideTopology.size() == 0);
+      assert(!side_topo.empty());
+      assert(sideTopology.empty());
       // Copy into the sideTopology container...
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
       std::copy(side_topo.begin(), side_topo.end(),
 		std::back_inserter(new_this->sideTopology));
     }
-    assert(sideTopology.size() > 0);
+    assert(!sideTopology.empty());
   }
 
   AxisAlignedBoundingBox DatabaseIO::get_bounding_box(const Ioss::ElementBlock *eb) const

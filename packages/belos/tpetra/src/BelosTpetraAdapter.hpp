@@ -329,7 +329,8 @@ namespace Belos {
         timer = Teuchos::TimeMonitor::getNewCounter (timerName);
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error, "Belos::MvTimesMatAddMv: "
+        timer.is_null (), std::logic_error,
+        "Belos::MultiVecTraits::MvTimesMatAddMv: "
         "Failed to look up timer \"" << timerName << "\".  "
         "Please report this bug to the Belos developers.");
 
@@ -338,16 +339,15 @@ namespace Belos {
 #endif
 
       // Check if B is 1-by-1, in which case we can just call update()
-      if (B.numRows() == 1 && B.numCols() == 1) {
-        mv.update(alpha*B(0,0), A, beta);
+      if (B.numRows () == 1 && B.numCols () == 1) {
+        mv.update (alpha*B(0,0), A, beta);
         return;
       }
 
-      // create local map
+      // Create local map
       Teuchos::SerialComm<int> serialComm;
-      // FIXME (mfh 07 Mar 2013) Shouldn't we use the same index base
-      // for this Map as for the Maps of A and B?
-      map_type LocalMap (B.numRows (), 0, rcpFromRef<const Comm<int> > (serialComm),
+      map_type LocalMap (B.numRows (), A.getMap ()->getIndexBase (),
+                         rcpFromRef<const Comm<int> > (serialComm),
                          Tpetra::LocallyReplicated, A.getMap ()->getNode ());
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       ArrayView<const Scalar> Bvalues (B.values (), B.stride () * B.numCols ());

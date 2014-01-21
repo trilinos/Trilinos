@@ -67,6 +67,17 @@ namespace MueLu {
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R",                 Teuchos::null, "Restrictor factory");
+
+    return validParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(coarseLevel, "R");
     Input(fineLevel,   "A");

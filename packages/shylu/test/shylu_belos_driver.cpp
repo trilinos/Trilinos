@@ -49,6 +49,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
+#include "Ifpack_ConfigDefs.h"
 #include "shylu.h"
 #include "shylu_util.h"
 #include "Ifpack_ShyLU.h"
@@ -223,7 +224,13 @@ int main(int argc, char *argv[])
         ftime.start();
 //#endif
                 prec = new Ifpack_ShyLU(A);
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+                Teuchos::ParameterList shyluParameters;
+                shyluParameters.set<Teuchos::ParameterList>("ShyLU list", shyLUList);
+                prec->SetParameters(shyluParameters);
+#else
                 prec->SetParameters(shyLUList);
+#endif
                 prec->Initialize();
 //#ifdef TIMING_OUTPUT
         ftime.stop();

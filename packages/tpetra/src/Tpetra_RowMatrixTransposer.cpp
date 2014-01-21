@@ -71,7 +71,7 @@ namespace Tpetra {
   //    type other than void.)
 
   // Let Tpetra's ETI system handle non-GPU types.
-  TPETRA_INSTANTIATE_SLGN_NOGPU(TPETRA_ROWMATRIXTRANSPOSE_INSTANT)
+  TPETRA_INSTANTIATE_SLGN_NOGPU(TPETRA_ROWMATRIXTRANSPOSER_INSTANT)
 
   // mfh 21 Jul 2013: Since we're rolling explicit instantiation by
   // hand here, we don't have to use the typedefs.  (The typedefs work

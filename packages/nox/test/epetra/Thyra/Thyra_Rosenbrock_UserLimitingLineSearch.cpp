@@ -241,35 +241,3 @@ TEUCHOS_UNIT_TEST(rosenbrock, user_limiting_ls)
   // Final return value (0 = successfull, non-zero = failure)
   TEST_ASSERT(status == 0);
 }
-
-TEUCHOS_UNIT_TEST(rosenbrock, user_limiting_rtop)
-{
-  int status = 0;
-   
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  TEST_ASSERT(Comm.NumProc() == 1);
-
-  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel = 
-    Teuchos::rcp(new RosenbrockModelEvaluator(Teuchos::rcp(&Comm,false)));
-
-  Teuchos::RCP< ::Thyra::VectorBase<double> > updateLimits = ::Thyra::createMember<double>(thyraModel->get_x_space());
-  ::Thyra::put_scalar(Teuchos::ScalarTraits<double>::rmax(),updateLimits.ptr());
-  ::Thyra::set_ele(1,0.5,updateLimits.ptr());
-  Teuchos::RCP< ::Thyra::VectorBase<double> > dir = ::Thyra::createMember<double>(thyraModel->get_x_space());
-  ::Thyra::set_ele(0,10.0,dir.ptr());
-  ::Thyra::set_ele(1,-8.0,dir.ptr());
-
-  ::Thyra::ele_wise_min_swap(*updateLimits,dir.ptr());
-
-  double i0 = ::Thyra::get_ele(*dir,0);
-  double i1 = ::Thyra::get_ele(*dir,1);
-  double tol = Teuchos::ScalarTraits<double>::eps() * 100.0;
-  TEST_FLOATING_EQUALITY(i0,10.0,tol);
-  TEST_FLOATING_EQUALITY(i1,-0.5,tol);
-}

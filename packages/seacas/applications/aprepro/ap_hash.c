@@ -97,7 +97,7 @@ void dumpsym (int type, int doInternal)
 
   char* comment = getsym("_C_")->value.svar;
   
-  if (type == VAR || type == SVAR || type == ARRAY) {
+  if (type == VAR || type == SVAR || type == AVAR) {
     printf ("\n%s   Variable = Value\n", comment);
     for (hashval = 0; hashval < HASHSIZE; hashval++) {
       for (ptr = sym_table[hashval]; ptr != (symrec *) 0; ptr = ptr->next) {
@@ -110,7 +110,7 @@ void dumpsym (int type, int doInternal)
 	    printf ("%s  {%-10s\t= \"%s\"}\n", comment, ptr->name, ptr->value.svar);
 	  else if (ptr->type == IMMSVAR)
 	    printf ("%s  {%-10s\t= \"%s\"} (immutable)\n", comment, ptr->name, ptr->value.svar);
-	  else if (ptr->type == ARRAY) {
+	  else if (ptr->type == AVAR) {
 	    array *arr = ptr->value.avar;
 	    printf ("%s  {%-10s\t (array) rows = %d, cols = %d} \n",
 		    comment, ptr->name, arr->rows, arr->cols);

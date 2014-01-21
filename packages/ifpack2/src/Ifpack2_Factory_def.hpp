@@ -104,7 +104,7 @@ Factory::create (const std::string& precType,
     prec = rcp (new AdditiveSchwarz<MatrixType> (matrix, overlap));
   }
   else if (precTypeUpper == "KRYLOV") {
-    prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
+    prec = rcp (new Krylov<MatrixType> (matrix));
   }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {
@@ -184,7 +184,7 @@ Factory::create (const std::string& precType,
     prec = rcp (new AdditiveSchwarz<MatrixType> (matrix));
   }
   else if (precTypeUpper == "KRYLOV") {
-    prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
+    prec = rcp (new Krylov<MatrixType> (matrix));
   }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {

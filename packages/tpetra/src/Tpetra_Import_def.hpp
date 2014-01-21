@@ -81,6 +81,7 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+	bool useRemotePIDs,
 	Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
@@ -120,7 +121,7 @@ namespace Tpetra {
       *out_ << os.str ();
     }
     if (source->isDistributed ()) {
-      setupExport (remoteGIDs,remotePIDs);
+      setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
     }
     if (debug_) {
       std::ostringstream os;
@@ -141,7 +142,7 @@ namespace Tpetra {
     debug_ (tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
-    init (source, target, dummy, Teuchos::null);
+    init (source, target, false, dummy, Teuchos::null);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -153,7 +154,7 @@ namespace Tpetra {
     debug_ (tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
-    init (source, target, dummy, Teuchos::null);
+    init (source, target, false, dummy, Teuchos::null);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -165,7 +166,7 @@ namespace Tpetra {
     debug_ (tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
-    init (source, target, dummy, plist);
+    init (source, target, false, dummy, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -178,7 +179,7 @@ namespace Tpetra {
     debug_ (tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
-    init (source, target, dummy, plist);
+    init (source, target, false, dummy, plist);
   }
   
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -188,7 +189,7 @@ namespace Tpetra {
 	  Teuchos::Array<int> & remotePIDs) :
     debug_ (tpetraImportDebugDefault)
   {
-    init (source, target, remotePIDs, Teuchos::null);
+    init (source, target, true, remotePIDs, Teuchos::null);
   }
 
 
@@ -496,7 +497,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, Teuchos::Array<int> & userRemotePIDs)
+  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & userRemotePIDs)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -518,7 +519,9 @@ namespace Tpetra {
       *out_ << os.str ();
     }
 
-    // Sanity check
+    // Sanity checks
+    TEUCHOS_TEST_FOR_EXCEPTION((!useRemotePIDs && (userRemotePIDs.size() > 0)),std::invalid_argument,
+			       "Tpetra::Import::setupExport: remotePIDs are non-empty but their use has not been requested");
     TEUCHOS_TEST_FOR_EXCEPTION((userRemotePIDs.size() > 0) && (remoteGIDs.size() != userRemotePIDs.size()),std::invalid_argument, 
 			       "Tpetra::Import::setupExport: remotePIDs must either be of size zero or match the size of remoteGIDs");
 			     
@@ -548,13 +551,12 @@ namespace Tpetra {
     Array<int> newRemotePIDs;
     LookupStatus lookup = AllIDsPresent;
 
-    if(userRemotePIDs.size() == 0) {
+    if(!useRemotePIDs) {
       newRemotePIDs.resize(remoteGIDsView.size());
       lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs());
-      
     }
-    Array<int> &remoteProcIDs = userRemotePIDs.size() ? userRemotePIDs : newRemotePIDs;
-      
+    Array<int> &remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
+
     if (debug_) {
       std::ostringstream os;
       const int myRank = source.getComm ()->getRank ();
