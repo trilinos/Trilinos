@@ -21,7 +21,7 @@ namespace {
       //+ 1.0 at time 1.0, and 2.0 at time 2.0
       stk::io::StkMeshIoBroker stkIo(communicator);
 
-      const std::string generatedFileName = "generated:8x8x8";
+      const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
       stkIo.open_mesh_database(generatedFileName, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 

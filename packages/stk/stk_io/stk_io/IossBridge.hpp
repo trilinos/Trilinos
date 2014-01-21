@@ -179,13 +179,15 @@ struct FieldAndName
 {
 public:
   FieldAndName(stk::mesh::FieldBase *my_field, const std::string& my_db_name) :
-    m_field(my_field), m_db_name(my_db_name) {}
+    m_field(my_field), m_dbName(my_db_name), m_wasFound(false) {}
   stk::mesh::FieldBase *field() const {return m_field;};
-  std::string db_name() const {return m_db_name;}
-  void set_db_name(const std::string &name) {m_db_name = name;}
+  std::string db_name() const {return m_dbName;}
+  void set_db_name(const std::string &name) {m_dbName = name;}
 private:
   stk::mesh::FieldBase *m_field;
-  std::string m_db_name;
+  std::string m_dbName;
+public:
+  bool m_wasFound;
 };
 
 std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);
