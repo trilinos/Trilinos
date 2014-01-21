@@ -612,7 +612,6 @@ namespace Ioex {
             IOSS_ERROR(errmsg);
           }
         }
-        ex_set_max_name_length(exodusFilePtr, maximumNameLength);
       }
 
       if (exodusFilePtr < 0) {
@@ -628,10 +627,11 @@ namespace Ioex {
         // Check for maximum name length used on the input file.
         int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
         if (max_name_length > maximumNameLength) {
-          ex_set_max_name_length(exodusFilePtr, max_name_length);
           maximumNameLength = max_name_length;
         }
       }
+
+      ex_set_max_name_length(exodusFilePtr, maximumNameLength);
 
       // Check properties handled post-create/open...
       if (properties.exists("COMPRESSION_LEVEL")) {

@@ -71,6 +71,10 @@ struct ScalarTraits<int>
   static inline __device__ __host__ bool isnaninf(int) { return false; }
   static inline __device__ __host__ int squareroot(int x) { return (int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
   static inline __device__ __host__ int pow(int x, int y) { return (int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ int random() { return 9; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
 
 template<>
@@ -92,6 +96,10 @@ struct ScalarTraits<unsigned int>
   static inline __device__ __host__ bool isnaninf(unsigned int) { return false; }
   static inline __device__ __host__ unsigned int squareroot(unsigned int x) { return (unsigned int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
   static inline __device__ __host__ unsigned int pow(unsigned int x, unsigned int y) { return (unsigned int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ unsigned int random() { return 9; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
 
 template<>
@@ -114,6 +122,10 @@ struct ScalarTraits<long int>
   static inline __device__ __host__ bool isnaninf(int) { return false; }
   static inline __device__ __host__ long int squareroot(long int x) { return (long int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
   static inline __device__ __host__ long int pow(long int x, long int y) { return (long int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ long int random() { return 9; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
 
 template<>
@@ -136,6 +148,10 @@ struct ScalarTraits<long unsigned int>
   static inline __device__ __host__ bool isnaninf(int) { return false; }
   static inline __device__ __host__ long unsigned int squareroot(long unsigned int x) { return (long unsigned int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
   static inline __device__ __host__ long unsigned int pow(long unsigned int x, long unsigned int y) { return (long unsigned int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ long unsigned int random() { return 9; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
 
 template<>
