@@ -157,18 +157,18 @@ function execute_loadbalance {
     then
 	echo ${txtblu}
 	echo "Executing:"
-	echo "   $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+	echo "   launch -n 1 $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
 	echo "   ...see $output for nem_slice status"
 	echo ${txtrst}
-	($NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
+	(launch -n 1 $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
 	load_rc=$?
     else
 	echo ${txtblu}
 	echo "Executing:"
-	echo "   $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
+	echo "   launch -n 1 $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
 	echo "   ...see $output for nem_slice status"
 	echo ${txtrst}
-	($NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
+	(launch -n 1 $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
 	load_rc=$?
     fi
     return $load_rc

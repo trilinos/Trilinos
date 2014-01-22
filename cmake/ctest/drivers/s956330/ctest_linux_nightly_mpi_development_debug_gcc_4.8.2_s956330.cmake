@@ -54,29 +54,49 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.clang.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s956330.gcc4.8.2.cmake")
 
 #
 # Set the options specific to this build case
 #
 
 SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_OPT_DEV_CLANG_STABLE)
-SET(CTEST_TEST_TYPE Nightly)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME MPI_DEBUG_DEV)
+SET(ENV{LD_LIBRARY_PATH} "/projects/sems/compilers/gcc/4.8.2/lib:/projects/sems/compilers/gcc/openmpi_1.6.5_gcc_4.8.2/lib:$ENV{LD_LIBRARY_PATH}")
+SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
+SET( CTEST_BUILD_FLAGS "-j12 -i" )
+SET( CTEST_PARALLEL_LEVEL "12" )
 
-SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos SEACAS)
+SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+
+SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos )
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
-  "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
-  "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
-  "-DHDF5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
-  "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
-  "-DZoltan2_ENABLE_Experimental=ON"
-  "-DFEI_ENABLE_TESTS:BOOL=OFF"
+  "-DTPL_ENABLE_Pthread:BOOL=ON"
+  "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/boost_1.49.0"
+  "-DTPL_ENABLE_SuperLU=ON"
+  "-DSuperLU_INCLUDE_DIRS:PATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/SuperLU_4.3/SRC"
+  "-DSuperLU_LIBRARY_DIRS:PATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/SuperLU_4.3/lib"
+  "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
+  "-DTPL_ENABLE_HDF5:BOOL=ON"
+  "-DHDF5_INCLUDE_DIRS:FILEPATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/phdf5_1.8.12/include"
+  "-DHDF5_LIBRARY_DIRS:FILEPATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/phdf5_1.8.12/lib"
+  "-DTPL_ENABLE_Netcdf:BOOL=ON"
+  "-DNetcdf_LIBRARY_DIRS=/projects/sems/tpls/gcc_4.8.2/arch_x86/pnetcdf_4.3.0/lib"  
+  "-DNetcdf_INCLUDE_DIRS=/projects/sems/tpls/gcc_4.8.2/arch_x86/pnetcdf_4.3.0/include"
+  "-DTPL_ENABLE_ParMETIS:BOOL=ON"
+  "-DTPL_ParMETIS_LIBRARIES:STRING=-L/projects/sems/tpls/gcc_4.8.2/arch_x86/parmetis_4.0.3/lib -lparmetis -L/projects/sems/tpls/gcc_4.8.2/arch_x86/metis_5.1.0/lib -lmetis"
+  "-DTPL_ParMETIS_INCLUDE_DIRS=/projects/sems/tpls/gcc_4.8.2/arch_x86/parmetis_4.0.3/include"
+  "-DTPL_ENABLE_METIS:BOOL=ON"
+  "-DMETIS_LIBRARY_DIRS:PATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/metis_5.1.0/lib"
+  "-DMETIS_INCLUDE_DIRS:PATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/metis_5.1.0/include"
+  "-DSWIG_EXECUTABLE:FILEPATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/swig_2.0.11/bin/swig"
+  "-DTPL_QT_QMAKE_EXECUTABLE:FILEPATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/qt_4.8.5/bin/qmake"
   )
 
 #

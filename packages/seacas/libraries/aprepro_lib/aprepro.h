@@ -15,11 +15,16 @@
 #include <ostream>
 #include <sstream>
 
-#include "apr_array.h"
-
 /** The SEAMS namespace is used to encapsulate the three parser classes
  * SEAMS::Parser, SEAMS::Scanner and SEAMS::Aprepro */
 namespace SEAMS {
+
+  /* Array structure */
+  struct array {
+    double *data;
+    int rows;
+    int cols;
+  };
 
   struct symrec
   {
