@@ -23,7 +23,6 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Stencils.hpp>

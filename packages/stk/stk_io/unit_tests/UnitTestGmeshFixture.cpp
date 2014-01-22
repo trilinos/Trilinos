@@ -8,7 +8,6 @@
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>

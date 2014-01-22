@@ -8,7 +8,6 @@
 #include <stdexcept>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 #include <boost/foreach.hpp>
 

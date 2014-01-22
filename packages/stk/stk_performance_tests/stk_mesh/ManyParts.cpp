@@ -12,7 +12,6 @@
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <sstream>

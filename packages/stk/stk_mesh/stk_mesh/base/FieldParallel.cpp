@@ -14,7 +14,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 
 namespace stk {

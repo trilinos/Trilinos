@@ -18,7 +18,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/base/CoordinateSystems.hpp>
 

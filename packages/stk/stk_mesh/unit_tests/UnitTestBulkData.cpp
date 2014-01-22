@@ -21,7 +21,6 @@
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>

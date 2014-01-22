@@ -28,7 +28,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 

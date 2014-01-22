@@ -18,7 +18,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 
 #include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;

@@ -17,7 +17,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Part.hpp>

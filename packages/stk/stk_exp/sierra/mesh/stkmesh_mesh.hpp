@@ -4,7 +4,6 @@
 #include <sierra/mesh/stkmesh_mesh_traits.hpp>
 #include <sierra/mesh/stkmesh_field_traits.hpp>
 
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 

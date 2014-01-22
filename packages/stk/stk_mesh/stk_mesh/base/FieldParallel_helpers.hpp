@@ -60,9 +60,10 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
     if (mesh.is_valid(entity) && (0 == selector || (*selector)(mi.bucket) ) ) {
       if(!is_matching_rank(field, *mi.bucket)) continue;
 
+      size_t bytes_per_scalar = field.data_traits().size_of;
       typename FieldTraits<field_type>::data_type *array = mesh.field_data(field , *mi.bucket, mi.bucket_ordinal);
       Type * const ptr_beg = array;
-      Type * const ptr_end = ptr_beg + field_data_size_per_entity(field, *mi.bucket);
+      Type * const ptr_end = ptr_beg + field_data_size_per_entity(field, *mi.bucket)/bytes_per_scalar;
 
       if (ptr_beg == NULL || ptr_end == NULL) continue;
 

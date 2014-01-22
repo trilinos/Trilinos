@@ -17,7 +17,6 @@
 #include <stk_io/IossBridge.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Stencils.hpp>
 

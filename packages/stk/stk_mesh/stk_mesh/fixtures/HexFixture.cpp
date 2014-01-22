@@ -12,7 +12,6 @@
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkModification.hpp>

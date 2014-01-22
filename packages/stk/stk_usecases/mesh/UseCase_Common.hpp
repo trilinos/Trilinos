@@ -11,7 +11,6 @@
 
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk {

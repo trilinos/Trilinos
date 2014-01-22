@@ -15,7 +15,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>

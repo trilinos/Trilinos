@@ -16,7 +16,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Relation.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 
 namespace stk {
 namespace mesh {
