@@ -243,14 +243,14 @@ namespace MueLu {
 
 
       if (paramValue.isList()) {
-        Teuchos::ParameterList paramList = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
-        if(paramList.isParameter("factory")) { // default: just a factory definition
+        Teuchos::ParameterList paramList1 = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
+        if(paramList1.isParameter("factory")) { // default: just a factory definition
           factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn, factoryManagers);
-        } else if (paramList.isParameter("group")) { // definitiion of a factory group (for a factory manager)
-          std::string groupType = paramList.get<std::string>("group");
+        } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
+          std::string groupType = paramList1.get<std::string>("group");
           TEUCHOS_TEST_FOR_EXCEPTION(groupType!="FactoryManager", Exceptions::RuntimeError, "group must be of type \"FactoryManager\".");
 
-          Teuchos::ParameterList groupList = paramList; // copy because list temporally modified (remove 'id')
+          Teuchos::ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
           groupList.remove("group");
 
           FactoryMap groupFactoryMap;
@@ -264,7 +264,7 @@ namespace MueLu {
           factoryManagers[paramName] = m;
 
         } else {
-          this->GetOStream(Warnings0,  0) << "Warning: Could not interpret parameter list " << paramList << std::endl;
+          this->GetOStream(Warnings0,  0) << "Warning: Could not interpret parameter list " << paramList1 << std::endl;
           TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
         }
       } else {

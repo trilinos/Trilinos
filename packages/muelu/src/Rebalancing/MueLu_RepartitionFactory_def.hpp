@@ -288,7 +288,7 @@ namespace MueLu {
     //     processor 1 {0,1,2}. Now, when we run repartitioning algorithm on the next level (say Zoltan1 RCB), it may
     //     be dependent on whether whether it is [{0,1,2}, {3,4,5}] or [{3,4,5}, {0,1,2}]. Specifically, the tie-breaking
     //     algorithm can resolve these differently. For instance, running
-    //         mpirun -np 5 ./MueLu_ScalingTestParamList.exe --easy --xml=easy_sa.xml --nx=12 --ny=12 --nz=12
+    //         mpirun -np 5 ./MueLu_ScalingTestParamList.exe --xml=easy_sa.xml --nx=12 --ny=12 --nz=12
     //     with
     //         <ParameterList name="MueLu">
     //           <Parameter name="coarse: max size"                type="int"      value="1"/>
