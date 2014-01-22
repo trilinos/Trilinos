@@ -58,7 +58,7 @@ INCLUDE(TribitsTplDeclareLibraries)
 IF (TPL_ENABLE_MPI)
    TRIBITS_TPL_DECLARE_LIBRARIES( Scotch
     REQUIRED_HEADERS ptscotch.h
-    REQUIRED_LIBS_NAMES ptscotch ptscotcherr
+    REQUIRED_LIBS_NAMES ptscotch ptscotcherr scotch
    )
 ELSE()
    TRIBITS_TPL_DECLARE_LIBRARIES( Scotch
