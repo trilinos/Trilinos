@@ -558,7 +558,7 @@ int Zoltan_Scotch(
   ZZ *zz,               /* Zoltan structure */
   float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
                            containing the percentage of work to be
-                           assigned to each partition.               */
+                           assigned to each part.           */
   int *num_imp,         /* number of objects to be imported */
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
@@ -732,9 +732,11 @@ int Zoltan_Scotch(
 
 
   /* Compute size we want for each part */
+  /* TODO KDD 1/22/14:  This computation of goal_sizes does not account for
+   *                    weights; it accounts only for the number of vertices. */
 #ifdef ZOLTAN_PTSCOTCH
   if (IS_GLOBAL_GRAPH(gr.graph_type))
-    SCOTCH_dgraphSize (&grafdat, NULL, &velosum, NULL, NULL);
+    SCOTCH_dgraphSize (&grafdat, &velosum, NULL, NULL, NULL);
   else
 #endif /* ZOLTAN_PTSCOTCH */
     SCOTCH_graphStat (&cgrafdat, NULL, NULL, &velosum, NULL, NULL,
