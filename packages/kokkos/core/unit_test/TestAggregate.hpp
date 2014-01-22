@@ -256,8 +256,8 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
                   )
   {
     typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
-    typedef typename View<DT,DL,DD,DM,LayoutDefault>::shape_type   shape_type ;
-    typedef typename View<DT,DL,DD,DM,LayoutDefault>::stride_type  stride_type ;
+    typedef typename View<DT,DL,DD,DM,ViewDefault>::shape_type   shape_type ;
+    typedef typename View<DT,DL,DD,DM,ViewDefault>::stride_type  stride_type ;
 
     ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
 
@@ -274,7 +274,7 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
 };
 
 template<>
-struct ViewAssignment< LayoutDefault , Test::EmbedArray , void >
+struct ViewAssignment< ViewDefault , Test::EmbedArray , void >
 {
   //------------------------------------
   /** \brief  Compatible value and shape */
@@ -282,7 +282,7 @@ struct ViewAssignment< LayoutDefault , Test::EmbedArray , void >
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst
+  ViewAssignment(       View<DT,DL,DD,DM,ViewDefault> & dst
                 , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 , const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
@@ -291,8 +291,8 @@ struct ViewAssignment< LayoutDefault , Test::EmbedArray , void >
                   )
   {
     typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
-    typedef typename View<DT,DL,DD,DM,LayoutDefault>::shape_type   shape_type ;
-    typedef typename View<DT,DL,DD,DM,LayoutDefault>::stride_type  stride_type ;
+    typedef typename View<DT,DL,DD,DM,ViewDefault>::shape_type   shape_type ;
+    typedef typename View<DT,DL,DD,DM,ViewDefault>::stride_type  stride_type ;
 
     ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
 

@@ -860,6 +860,41 @@ public:
   { return StokhosStorageStaticDimension; }
 };
 
+/** \brief  A deep copy between views of the same specialization, compatible type,
+ *          same rank, same layout are handled by that specialization.
+ */
+template< class DT , class DL , class DD , class DM ,
+          class ST , class SL , class SD , class SM >
+inline
+void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVector> & dst ,
+                const View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVector> & src ,
+                typename Impl::enable_if<(
+                  Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVector>::value_type::storage_type::value_type ,
+                                 typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVector>::value_type::storage_type::value_type >::value
+                  &&
+                  Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVector>::array_layout ,
+                                 typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVector>::array_layout >::value
+                  &&
+                  ( unsigned(View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVector>::rank) ==
+                    unsigned(View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVector>::rank) )
+                )>::type * = 0 )
+{
+  typedef  View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVector>  dst_type ;
+  typedef  View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVector>  src_type ;
+
+  typedef typename dst_type::memory_space  dst_memory_space ;
+  typedef typename src_type::memory_space  src_memory_space ;
+
+  if ( dst.ptr_on_device() != src.ptr_on_device() ) {
+
+    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
+
+    const size_t nbytes = sizeof(typename dst_type::value_type::storage_type::value_type) * dst.capacity();
+
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+  }
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -913,6 +948,9 @@ private:
   // m_stride = 1 for original allocation.
 
 public:
+
+  // This needs to be public so that we know what the return type of () is
+  typedef Sacado::MP::Vector< stokhos_storage_type >  sacado_mp_vector_view_type ;
 
   // Whether the storage type is statically sized
   static const bool is_static = true ;
@@ -1082,7 +1120,7 @@ public:
         memory_space::allocate( if_allocation_constructor::select( label ) ,
                                 typeid(value_type) ,
                                 sizeof(value_type) ,
-                                Impl::capacity( m_shape , m_stride ) );
+                                Impl::cardinality_count( m_shape ) );
 
       (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
     }
@@ -1110,7 +1148,7 @@ public:
         memory_space::allocate( if_allocation_constructor::select( label ) ,
                                 typeid(value_type) ,
                                 sizeof(value_type) ,
-                                Impl::capacity( m_shape , m_stride ) );
+                                Impl::cardinality_count( m_shape ) );
     }
 
   //------------------------------------
@@ -1380,13 +1418,48 @@ public:
   // Count of contiguously allocated data members including padding.
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type capacity() const
-  { return Impl::capacity( m_shape , m_stride ); }
+  { return Impl::cardinality_count( m_shape ) * m_stride ; }
 
   // Static storage size
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type static_storage_size() const
   { return StokhosStorageStaticDimension; }
 };
+
+/** \brief  A deep copy between views of the same specialization, compatible type,
+ *          same rank, same layout are handled by that specialization.
+ */
+template< class DT , class DL , class DD , class DM ,
+          class ST , class SL , class SD , class SM >
+inline
+void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVectorStatic> & dst ,
+                const View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVectorStatic> & src ,
+                typename Impl::enable_if<(
+                  Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVectorStatic>::value_type::storage_type::value_type ,
+                                 typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVectorStatic>::value_type::storage_type::value_type >::value
+                  &&
+                  Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVectorStatic>::array_layout ,
+                                 typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVectorStatic>::array_layout >::value
+                  &&
+                  ( unsigned(View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVectorStatic>::rank) ==
+                    unsigned(View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVectorStatic>::rank) )
+                )>::type * = 0 )
+{
+  typedef  View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVectorStatic>  dst_type ;
+  typedef  View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoMPVectorStatic>  src_type ;
+
+  typedef typename dst_type::memory_space  dst_memory_space ;
+  typedef typename src_type::memory_space  src_memory_space ;
+
+  if ( (void*) dst.ptr_on_device() != (void*) src.ptr_on_device() ) {
+
+    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
+
+    const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
+
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+  }
+}
 
 } // namespace Kokkos
 
@@ -1438,10 +1511,10 @@ public:
 
 template< class StorageType >
 struct AnalyzeShape< Sacado::MP::Vector< StorageType > >
-  : typename if_c< StorageType::is_static
-                 , Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > // Treat as a scalar
-                 , typename ShapeInsert< typename AnalyzeShape< typename StorageType::value_type >::shape , 0 >::type
-                 >::type
+  : if_c< StorageType::is_static
+        , Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > // Treat as a scalar
+        , typename ShapeInsert< typename AnalyzeShape< typename StorageType::value_type >::shape , 0 >::type
+        >::type
 {
 private:
 
@@ -1461,29 +1534,19 @@ public:
         , typename ShapeInsert< typename nested::shape , 0 >::type 
         >::type shape ;
 
-  typedef typename
-    if_c< StorageType::is_static
-        , Sacado::MP::Vector< StorageType >
-        , typename nested::scalar_type
-        >::type scalar_type ;
+  typedef typename nested::scalar_type        scalar_type ;
+  typedef typename nested::const_scalar_type  const_scalar_type ;
+  typedef scalar_type                         non_const_scalar_type ;
 
   typedef typename
     if_c< StorageType::is_static
-        , const Sacado::MP::Vector< StorageType >
-        , typename nested::const_scalar_type
-        >::type const_scalar_type ;
-
-  typedef scalar_type non_const_scalar_type ;
-
-  typedef typename
-    if_c< StorageType::is_static
-        , Sacado::MP::Vector< StorageType >
+        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
         , typename nested::array_type *
         >::type array_type ;
 
   typedef typename
     if_c< StorageType::is_static
-        , const Sacado::MP::Vector< StorageType >
+        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
         , typename nested::const_array_type *
         >::type const_array_type ;
 
@@ -1647,36 +1710,37 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,ViewSpecializeSacadoMPVectorStatic> & dst
-                , const View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic> & src
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst
+                , const View<ST,SL,SD,SM,specialize> & src
                 , typename enable_if<(
                     // Same intrinsic value type
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::value_type::storage_type::value_type ,
-                             typename ViewTraits<ST,SL,SD,SM>::value_type::storage_type::value_type >::value
+                    is_same< typename View<DT,DL,DD,DM,specialize>::value_type::storage_type::value_type ,
+                             typename View<ST,SL,SD,SM,specialize>::value_type::storage_type::value_type >::value
                     &&
                     // Same memory space
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::memory_space ,
-                             typename ViewTraits<ST,SL,SD,SM>::memory_space >::value
+                    is_same< typename View<DT,DL,DD,DM,specialize>::memory_space ,
+                             typename View<ST,SL,SD,SM,specialize>::memory_space >::value
                     &&
                     // Same layout
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
-                             typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                    is_same< typename View<DT,DL,DD,DM,specialize>::array_layout ,
+                             typename View<ST,SL,SD,SM,specialize>::array_layout >::value
                     &&
-                    // Compatible shape
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
+                    // Same rank
+                    ( unsigned(View<DT,DL,DD,DM,specialize>::Rank) ==
+                      unsigned(View<ST,SL,SD,SM,specialize>::Rank) )
                     &&
                     // Destination is not managed
-                    ! ViewTraits<DT,DL,DD,DM>::is_managed
+                    ! View<DT,DL,DD,DM,specialize>::is_managed
                   ), const Sacado::MP::VectorPartition & >::type part )
   {
-    typedef View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>  src_type ;
-    typedef View<DT,DL,DD,DM,ViewSpecializeSacadoMPVectorStatic>  dst_type ;
-    typedef typename dst_type::shape_type                         dst_shape_type ;
-    typedef typename dst_type::value_type                         dst_sacado_mp_vector_type ;
-    typedef typename src_type::value_type                         src_sacado_mp_vector_type ;
-    typedef typename dst_sacado_mp_vector_type::storage_type      dst_stokhos_storage_type ;
-    typedef typename src_sacado_mp_vector_type::storage_type      src_stokhos_storage_type ;
+    typedef View<ST,SL,SD,SM,specialize>   src_type ;
+    typedef View<DT,DL,DD,DM,specialize>   dst_type ;
+    typedef typename dst_type::shape_type  dst_shape_type ;
+    typedef typename dst_type::value_type  dst_sacado_mp_vector_type ;
+    typedef typename src_type::value_type  src_sacado_mp_vector_type ;
+
+    typedef typename dst_sacado_mp_vector_type::storage_type  dst_stokhos_storage_type ;
+    typedef typename src_sacado_mp_vector_type::storage_type  src_stokhos_storage_type ;
 
     // Must have: begin = i * dst_stokhos_storage_type::static_size
     //            end   = begin + dst_stokhos_storage_type::static_size
@@ -1704,7 +1768,7 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
 
 
 template<>
-struct ViewAssignment< LayoutDefault , ViewSpecializeSacadoMPVector , void >
+struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVector , void >
 {
   //------------------------------------
   /** \brief  Compatible value and shape */
@@ -1737,7 +1801,7 @@ struct ViewAssignment< LayoutDefault , ViewSpecializeSacadoMPVector , void >
 };
 
 template<>
-struct ViewAssignment< LayoutDefault , ViewSpecializeSacadoMPVectorStatic , void >
+struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
 {
   //------------------------------------
   /** \brief  Compatible value and shape */
@@ -1755,7 +1819,7 @@ struct ViewAssignment< LayoutDefault , ViewSpecializeSacadoMPVectorStatic , void
     typedef typename dst_type::shape_type   dst_shape_type ;
     typedef typename dst_type::stride_type  dst_stride_type ;
 
-    if ( src.m_stride.value != 1 ) {
+    if ( src.m_stride != 1 ) {
       const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
       cuda_abort(msg);

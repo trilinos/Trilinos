@@ -253,23 +253,23 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-struct CudaTexture {};
+struct ViewCudaTexture {};
 
 #if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
-/** \brief  Replace LayoutDefault specialization with Cuda texture fetch specialization
+/** \brief  Replace ViewDefault specialization with Cuda texture fetch specialization
  *          if 'const' value type and random access.
  */
 template< class ValueType , class MemoryTraits >
 struct ViewSpecialize< const ValueType , void , LayoutLeft , CudaSpace , MemoryTraits >
 {
-  typedef typename if_c< MemoryTraits::RandomAccess , CudaTexture , LayoutDefault >::type type ;
+  typedef typename if_c< MemoryTraits::RandomAccess , ViewCudaTexture , ViewDefault >::type type ;
 };
 
 template< class ValueType , class MemoryTraits >
 struct ViewSpecialize< const ValueType , void , LayoutRight , CudaSpace , MemoryTraits >
 {
-  typedef typename if_c< MemoryTraits::RandomAccess , CudaTexture , LayoutDefault >::type type ;
+  typedef typename if_c< MemoryTraits::RandomAccess , ViewCudaTexture , ViewDefault >::type type ;
 };
 
 #endif
@@ -277,21 +277,21 @@ struct ViewSpecialize< const ValueType , void , LayoutRight , CudaSpace , Memory
 //----------------------------------------------------------------------------
 
 template<>
-struct ViewAssignment< CudaTexture , CudaTexture , void >
+struct ViewAssignment< ViewCudaTexture , ViewCudaTexture , void >
 {
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
-                  const View<ST,SL,SD,SM,CudaTexture> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewCudaTexture> & dst ,
+                  const View<ST,SL,SD,SM,ViewCudaTexture> & src ,
                   const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
+    typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
@@ -312,22 +312,22 @@ struct ViewAssignment< CudaTexture , CudaTexture , void >
 
 
 template<>
-struct ViewAssignment< CudaTexture , LayoutDefault , void >
+struct ViewAssignment< ViewCudaTexture , ViewDefault , void >
 {
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   inline
-  ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewCudaTexture> & dst ,
+                  const View<ST,SL,SD,SM,ViewDefault> & src ,
                   const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
+    typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type  shape_type ;
     typedef typename DstViewType::scalar_type scalar_type ;
@@ -357,7 +357,7 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
 
 namespace Kokkos {
 template< class T , class L, class D , class M >
-class View< T , L , D , M , Impl::CudaTexture >
+class View< T , L , D , M , Impl::ViewCudaTexture >
   : public ViewTraits< T , L , D , M >
 {
 public:
@@ -381,7 +381,7 @@ private:
 
 public:
 
-  typedef Impl::CudaTexture specialize ;
+  typedef Impl::ViewCudaTexture specialize ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -443,7 +443,7 @@ public:
 
   View & operator = ( const View & rhs )
     {
-      (void)Impl::ViewAssignment< Impl::CudaTexture , Impl::CudaTexture >( *this , rhs );
+      (void)Impl::ViewAssignment< Impl::ViewCudaTexture , Impl::ViewCudaTexture >( *this , rhs );
       return *this ;
     }
 
@@ -451,13 +451,13 @@ public:
   View( const View<RT,RL,RD,RM,RS> & rhs )
     : m_texture(0)
     {
-      Impl::ViewAssignment< Impl::CudaTexture , RS >( *this , rhs );
+      Impl::ViewAssignment< Impl::ViewCudaTexture , RS >( *this , rhs );
     }
 
   template< class RT , class RL, class RD, class RM , class RS >
   View & operator = ( const View<RT,RL,RD,RM,RS> & rhs )
     {
-      Impl::ViewAssignment< Impl::CudaTexture , RS >( *this , rhs );
+      Impl::ViewAssignment< Impl::ViewCudaTexture , RS >( *this , rhs );
       return *this ;
     }
 

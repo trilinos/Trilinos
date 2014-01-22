@@ -51,9 +51,9 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
-struct ViewAssignment< LayoutDefault , LayoutDefault , void >
+struct ViewAssignment< ViewDefault , ViewDefault , void >
 {
-  typedef LayoutDefault Specialize ;
+  typedef ViewDefault Specialize ;
 
   //------------------------------------
   /** \brief  Compatible value and shape */

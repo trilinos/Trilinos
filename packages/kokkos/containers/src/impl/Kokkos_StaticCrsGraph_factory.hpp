@@ -64,7 +64,7 @@ typename StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
 create_mirror( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType > & view )
 {
   // Force copy:
-  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
+  typedef Impl::ViewAssignment< Impl::ViewDefault > alloc ;
   typedef StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType >  staticcrsgraph_type ;
 
   typename staticcrsgraph_type::HostMirror               tmp ;
