@@ -204,7 +204,15 @@ public:
   void addContent(const std::string& contentLine);
   //@}
 
-private:
+  void appendContentLine(const size_t& i, const std::string &str) {
+    ptr_->appendContentLine(i, str);
+  }
+
+  void removeContentLine(const size_t& i) {
+    ptr_->removeContentLine(i);
+  }
+  
+protected:
 
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
 #ifdef _MSC_VER
