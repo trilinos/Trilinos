@@ -128,7 +128,7 @@ namespace MueLu {
     template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
     friend class Ifpack2Smoother;
 
-    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
+    Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LO& overlap = 0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
     virtual ~Ifpack2Smoother() { }

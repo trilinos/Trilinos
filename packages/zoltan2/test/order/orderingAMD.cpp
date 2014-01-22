@@ -92,20 +92,19 @@ int validatePerm(size_t n, z2TestLO *perm)
 {
   std::vector<int> count(n);
   int status = 0;
-  size_t i;
 
-  for (i=0; i<n; i++)
+  for (size_t i=0; i<n; i++)
     count[i]=0;
 
-  for (i=0; i<n; i++){
-    if ((perm[i]<0) || (perm[i]>=n))
+  for (size_t i=0; i<n; i++){
+    if (perm[i] < 0 || static_cast<size_t> (perm[i]) >= n)
       status = -1;
     else
       count[perm[i]]++;
   }
 
   // Each index should occur exactly once (count==1)
-  for (i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     if (count[i] != 1){
       status = -2;
       break;
@@ -222,7 +221,7 @@ int main(int narg, char** arg)
   checkGIDs = soln->getGids();
   checkPerm = soln->getPermutation();
 
-  for (int ii = 0; ii < checkLength; ii++)
+  for (size_t ii = 0; ii < checkLength; ii++)
       cout << checkPerm[ii] << " ";
   cout << endl;
   // Verify that checkPerm is a permutation

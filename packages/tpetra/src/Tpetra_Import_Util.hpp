@@ -143,6 +143,7 @@ namespace Tpetra {
 				       const ArrayView<const LocalOrdinal> &permuteFromLIDs,
 				       size_t TargetNumRows,
 				       size_t TargetNumNonzeros,
+				       int MyTargetPID,
 				       const ArrayView<size_t> &rowPointers,
 				       const ArrayView<GlobalOrdinal> &columnIndices,
 				       const ArrayView<Scalar> &values,
@@ -333,10 +334,6 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
 
   // Get a reference to the matrix's row Map.
   const map_type& rowMap = * (SourceMatrix.getRowMap());
-
-  // Sanity
-
-
   constantNumPackets = 0;
 
   // Get the GIDs of the rows we want to pack.
@@ -492,6 +489,7 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
                                                         const ArrayView<const LocalOrdinal> &permuteFromLIDs,
                                                         size_t TargetNumRows,
                                                         size_t TargetNumNonzeros,
+							int MyTargetPID,
                                                         const ArrayView<size_t> &CSR_rowptr,
                                                         const ArrayView<GlobalOrdinal> &CSR_colind,
                                                         const ArrayView<Scalar> &CSR_vals,
@@ -508,7 +506,9 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   size_t i,j;
   size_t N=TargetNumRows;
   size_t mynnz = TargetNumNonzeros;
-  int MyPID = SourceMatrix.getComm()->getRank();
+  // In the case of reduced communicators, the SourceMatrix won't have the right "MyPID", so thus we have to supply it.
+  int MyPID = MyTargetPID; 
+
 
   // Zero the rowptr
   TEUCHOS_TEST_FOR_EXCEPTION(N+1 != as<size_t>(CSR_rowptr.size()),
@@ -647,9 +647,12 @@ void Tpetra::Import_Util::sortCrsEntries(const Teuchos::ArrayView<size_t> &CRS_r
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from  Epetra_CrsMatrix::SortEntries()
-  int NumRows = CRS_rowptr.size()-1;
-  for(int i = 0; i < NumRows; i++){
+  size_t NumRows = CRS_rowptr.size()-1;
+  size_t nnz = CRS_colind.size();
+
+  for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
+    if(start >= nnz) continue;
 
     Scalar* locValues   = &CRS_vals[start];
     size_t NumEntries   = CRS_rowptr[i+1] - start;
@@ -716,7 +719,6 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   // the remote count.  These numberings will be separate because no local LID is greater 
   // than numDomainElements. 
   
-
   size_t NumLocalColGIDs = 0;
   LocalOrdinal NumRemoteColGIDs = 0;
   for(size_t i = 0; i < numMyRows; i++) {

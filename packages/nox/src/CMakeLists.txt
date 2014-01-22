@@ -231,6 +231,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MatrixFree_ModelEvaluatorDecorator.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_LineSearch_UserDirectionChange.hpp
   )
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C
@@ -240,6 +241,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_PrePostOperator_RowSumScaling.C
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MeritFunction_Weighted.cpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Solver_PseudoTransient.cpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_LineSearch_UserDirectionChange.cpp
   )
 ENDIF()
 

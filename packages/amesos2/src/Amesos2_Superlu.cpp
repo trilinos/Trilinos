@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -66,5 +66,22 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int);
 #endif
 }
+
+//
+// mfh 16 Jan 2014: Hack to make explicit instantiation for
+// Ifpack2::Details::Amesos2Wrapper work.
+//
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+namespace Amesos2 {
+  // template class
+  // SolverCore<Superlu,
+  //            Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
+  //            Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
+
+  template class
+  Superlu<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
+          Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
+} // namespace Amesos2
+#endif
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

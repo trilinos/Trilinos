@@ -23,12 +23,12 @@ eg config --global alias.show-tracking-branch "rev-parse --abbrev-ref --symbolic
 # Summarizing changes locally and remotely
 eg config --global alias.local-stat "!git status ; echo ; echo 'Commits in local repo not yet pushed to '\`git show-tracking-branch\`':' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --name-status HEAD ^\`git show-tracking-branch\`"
 eg config --global alias.local-stat-nc "!git status ; echo ; echo 'Commits in local repo not yet pushed to '\`git show-tracking-branch\`':' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --name-status HEAD ^\`git show-tracking-branch\`"
-eg config --global alias.remote-stat "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --name-status ^HEAD origin/master"
-eg config --global alias.remote-stat-nc "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --name-status ^HEAD origin/master"
+eg config --global alias.remote-stat "!git status ; echo ; echo 'Commits in '\`git show-tracking-branch\`' not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --name-status ^HEAD \`git show-tracking-branch\`"
+eg config --global alias.remote-stat-nc "!git status ; echo ; echo 'Commits in '\`git show-tracking-branch\`' not in local repo:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --name-status ^HEAD \`git show-tracking-branch\`"
 eg config --global alias.local-stat-short "!git status ; echo ; echo 'Commits in local repo not yet pushed to '\`git show-tracking-branch\`':' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 HEAD ^\`git show-tracking-branch\`"
 eg config --global alias.local-stat-short-nc "!git status ; echo ; echo 'Commits in local repo not yet pushed to '\`git show-tracking-branch\`':' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 HEAD ^\`git show-tracking-branch\`"
-eg config --global alias.remote-stat-short "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 ^HEAD origin/master"
-eg config --global alias.remote-stat-short-nc "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 ^HEAD origin/master"
+eg config --global alias.remote-stat-short "!git status ; echo ; echo 'Commits in '\`git show-tracking-branch\`' not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 ^HEAD \`git show-tracking-branch\`"
+eg config --global alias.remote-stat-short-nc "!git status ; echo ; echo 'Commits '\`git show-tracking-branch\`' not in local repo:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 ^HEAD \`git show-tracking-branch\`"
 
 # Diffing text files like latex (undocumented option --color-words)
 eg config --global alias.wlog "log --color-words"

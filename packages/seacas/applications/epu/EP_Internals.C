@@ -273,7 +273,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh,
 	  SMART_ASSERT((size_t)blocks[i].attributeCount == blocks[i].attributeNames.size());
 	  for (int j=0; j < blocks[i].attributeCount; j++) {
 	    std::memset(names[j], '\0', name_size+1);
-	    if (blocks[i].attributeNames[j].size() > 0) {
+	    if (!blocks[i].attributeNames[j].empty()) {
 	      std::strncpy(names[j], blocks[i].attributeNames[j].c_str(),
 			   name_size);
 	      names[j][name_size] = 0;
@@ -544,7 +544,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<Block> &blocks)
 
   int status  = 0; // clear error code
 
-  if (blocks.size() == 0)
+  if (blocks.empty())
     return (EX_NOERR);
 
   // Get number of element blocks defined for this file

@@ -264,6 +264,7 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 				  char* Imports,
 				  int TargetNumRows,
 				  int TargetNumNonzeros,
+				  int MyTargetPID,
 				  int * CSR_rowptr,
 				  int_type * CSR_colind,
 				  double * CSR_vals,
@@ -283,7 +284,8 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
   int i,j,rv;
   int N = TargetNumRows;
   int mynnz = TargetNumNonzeros;
-  int MyPID = SourceMatrix.Comm().MyPID();
+  // In the case of reduced communicators, the SourceMatrix won't have the right "MyPID", so thus we have to supply it.
+  int MyPID = MyTargetPID;
 
   int SizeofIntType = sizeof(int_type);
 
@@ -415,6 +417,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 				  char* Imports,
 				  int TargetNumRows,
 				  int TargetNumNonzeros,
+				  int MyTargetPID,
 				  int * CSR_rowptr,
 				  int * CSR_colind,
 				  double * CSR_values,
@@ -423,7 +426,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 {
   if(SourceMatrix.RowMap().GlobalIndicesInt()) {
     return TUnpackAndCombineIntoCrsArrays<int>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,
-					       PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,
+					       PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,MyTargetPID,
 					       CSR_rowptr,CSR_colind,CSR_values,SourcePids,TargetPids);
   }
   else 
@@ -443,6 +446,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 				  char* Imports,
 				  int TargetNumRows,
 				  int TargetNumNonzeros,
+				  int MyTargetPID,
 				  int * CSR_rowptr,
 				  long long * CSR_colind,
 				  double * CSR_values,
@@ -451,7 +455,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 {
   if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
     return TUnpackAndCombineIntoCrsArrays<long long>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,
-						     PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,
+						     PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,MyTargetPID,
 						     CSR_rowptr,CSR_colind,CSR_values,SourcePids,TargetPids);
   }
   else

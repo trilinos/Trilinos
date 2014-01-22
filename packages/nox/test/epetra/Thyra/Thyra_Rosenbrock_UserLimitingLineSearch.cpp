@@ -80,9 +80,11 @@
 #include "NOX_PrePostOperator_RowSumScaling.H"
 #include "Thyra_VectorBase.hpp"
 
+#include "NOX_TOpEleWiseMinSwap.hpp"
+
 using namespace std;
 
-TEUCHOS_UNIT_TEST(dimension, default)
+TEUCHOS_UNIT_TEST(rosenbrock, user_limiting_ls)
 {
   int status = 0;
    

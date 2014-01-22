@@ -9,6 +9,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Containers            containers        EX       OPTIONAL
   LinAlg                linalg            EX       OPTIONAL
   Example               example           EX       OPTIONAL
+  MpiComm               mpicomm           EX       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES )

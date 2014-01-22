@@ -53,7 +53,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#ifdef HAVE_IFPACK2_AMESOS2
 #include <Amesos2.hpp>
 
 namespace Ifpack2 {
@@ -270,6 +270,8 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     solverType = "klu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     solverType = "superludist";
+#elif defined(HAVE_AMESOS2_CHOLMOD)
+    solverType = "cholmod";
 #elif defined(HAVE_AMESOS2_LAPACK)
     solverType = "lapack";
 #endif
@@ -414,20 +416,23 @@ std::string Amesos2Wrapper<MatrixType>::description() const {
   using Teuchos::TypeNameTraits;
   std::ostringstream os;
 
-  os << "Ifpack2::Amesos2Wrapper: {"
-     << "MatrixType: \"" << TypeNameTraits<MatrixType>::name ()
-     << "\", ";
+  os << "\"Ifpack2::Amesos2Wrapper\": {";
   if (this->getObjectLabel () != "") {
     os << "Label: \"" << this->getObjectLabel () << "\", ";
   }
   os << "Initialized: " << (isInitialized () ? "true" : "false")
      << ", "
-     << "Computed: " << (isComputed () ? "true" : "false")
-     << ", "
-     << "Number of rows: " << A_->getGlobalNumRows ()
-     << ", "
-     << "Number of columns: " << A_->getGlobalNumCols ()
-     << "}";
+     << "Computed: " << (isComputed () ? "true" : "false");
+
+  if (A_.is_null ()) {
+    os << ", Matrix: null";
+  }
+  else {
+    os << ", Matrix: not null"
+       << ", Number of rows: " << A_->getGlobalNumRows ()
+       << ", Number of columns: " << A_->getGlobalNumCols ();
+  }
+  os << "}";
   return os.str();
 }
 
@@ -450,7 +455,7 @@ describe (Teuchos::FancyOStream& out,
   // describe() starts, by convention, with a tab before it prints anything.
   OSTab tab0 (out);
   if (vl > Teuchos::VERB_NONE) {
-    out << "Ifpack2::Amesos2Wrapper:" << endl;
+    out << "\"Ifpack2::Amesos2Wrapper\":" << endl;
     OSTab tab1 (out);
     out << "MatrixType: \"" << TypeNameTraits<MatrixType>::name ()
         << "\"" << endl;
@@ -479,5 +484,4 @@ describe (Teuchos::FancyOStream& out,
 } // namespace Ifpack2
 
 #endif // HAVE_IFPACK2_AMESOS2
-#endif /* IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP */
-
+#endif // IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP

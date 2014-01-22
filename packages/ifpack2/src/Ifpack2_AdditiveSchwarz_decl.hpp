@@ -54,6 +54,7 @@
 #include "Ifpack2_ReorderFilter_decl.hpp"
 #include "Ifpack2_SingletonFilter_decl.hpp"
 
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
 
 
@@ -268,6 +269,10 @@ class AdditiveSchwarz :
                                   typename MatrixType::local_ordinal_type,
                                   typename MatrixType::global_ordinal_type,
                                   typename MatrixType::node_type>,
+    virtual public Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                              typename MatrixType::local_ordinal_type,
+                                                              typename MatrixType::global_ordinal_type,
+                                                              typename MatrixType::node_type> >,
     virtual public Details::NestedPreconditioner<Preconditioner<typename MatrixType::scalar_type,
                                                                 typename MatrixType::local_ordinal_type,
                                                                 typename MatrixType::global_ordinal_type,
@@ -368,6 +373,8 @@ public:
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //@}
+  //! \name Implementation of Ifpack2::Details::NestedPreconditioner
+  //@{
 
   /// \brief Set the inner preconditioner.
   ///
@@ -388,11 +395,65 @@ public:
   ///   different instance.
   ///
   /// \pre <tt>&*innerPrec != this</tt>.
+  ///
+  /// We assume that if you created the inner preconditioner yourself,
+  /// then whatever parameters may be in the input ParameterList are
+  /// no longer valid.  In fact, calling this method clears all
+  /// parameters related to the inner preconditioner from this
+  /// instance's current ParameterList.  It also sets the "inner
+  /// preconditioner name" parameter to "CUSTOM", as a helpful
+  /// reminder that you set a custom inner preconditioner.
+  ///
+  /// Calling setInnerPreconditioner() with a null argument marks this
+  /// AdditiveSchwarz instance so that it will not attempt to create a
+  /// default inner preconditioner.  It does so via the "CUSTOM"
+  /// option mentioned above.  If you call setInnerPreconditioner()
+  /// with a null input, and then call initialize(), initialize() will
+  /// notice that the inner preconditioner is null and the "inner
+  /// preconditioner name" parameter's value is "CUSTOM".  In that
+  /// case, initialize() will throw an exception, rather than
+  /// attempting to create a default inner preconditioner.  You may
+  /// clear this mark by calling setParameters() and specifying a
+  /// value other than "CUSTOM" for the "inner preconditioner name"
+  /// parameter.
+  ///
+  /// This method has collective semantics, because it may call
+  /// initialize() or compute() on \c innerPrec.
   virtual void
   setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
                                                             local_ordinal_type,
                                                             global_ordinal_type,
                                                             node_type> >& innerPrec);
+
+  //@}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
+
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param[in] A The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method resets the preconditioner's state.  After
+  /// calling this method with a nonnull input, you must first call
+  /// initialize() and compute() (in that order) before you may call
+  /// apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  //@}
 
   //! The input matrix.
   virtual Teuchos::RCP<const row_matrix_type> getMatrix() const;
@@ -470,6 +531,7 @@ public:
   ///   - "ILUT": Ifpack2::ILUT
   ///   - "RELAXATION": Ifpack2::Relaxation
   ///   - "RILUK": Ifpack2::RILUK
+  ///   - "KRYLOV": Ifpack2::Krylov
   ///
   /// This name <i>need not necessarily</i> correspond with
   /// <tt>LocalInverseType</tt>.  If the user does <i>not</i> specify
@@ -489,6 +551,13 @@ public:
   ///      <i>before</i> calling initialize() on the AdditiveSchwarz
   ///      instance. </li>
   /// </ol>
+  ///
+  /// The subdomain solver name "INVALID" is reserved for internal
+  /// use.  The subdomain solver name "CUSTOM" is an optional way for
+  /// users to indicate that they want to set a custom subdomain
+  /// solver by calling setInnerPreconditioner().  The
+  /// setInnerPreconditioner() method may set the subdomain solver
+  /// name to "CUSTOM", in order to indicate this.
   ///
   /// \subsection Ifpack2_AdditiveSchwarz_setParameters_subdomain_setInner Subdomain solver parameters and setInnerPreconditioner
   ///
@@ -644,15 +713,27 @@ private:
   //! Set up the localized matrix and the singleton filter.
   void setup ();
 
+  /// \brief Whether the current ParameterList has a parameter for the
+  ///   inner preconditioner's name.
+  bool hasInnerPrecName () const;
+
   //! The current inner preconditioner name.
   std::string innerPrecName () const;
 
+  /// \brief Remove the inner preconditioner name parameter, if it
+  ///   exists, from the current ParameterList.
+  void removeInnerPrecName ();
+
   /// \brief Parameters to give to the inner preconditioner.
   ///
-  /// \return The parameters, and whether the input ParameterList
-  ///   actually had a sublist for the inner preconditioner's
-  ///   parameters.
+  /// \return The parameters, and whether the current ParameterList
+  ///   actually has a sublist for the inner preconditioner's
+  ///   parameters.  That sublist may be empty.
   std::pair<Teuchos::ParameterList, bool> innerPrecParams () const;
+
+  /// \brief Remove the inner preconditioner's sublist of parameters,
+  ///   if it exists, from the current ParameterList.
+  void removeInnerPrecParams ();
 
   //! The default inner preconditioner name.
   static std::string defaultInnerPrecName ();

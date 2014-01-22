@@ -282,8 +282,14 @@ int main(int argc, char *argv[]) {
   RCP<Level> levelOne = H.GetLevel();
   levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
-  RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
-  RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
+  RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());
+  A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+  A11Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
+  A11Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
+  RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory());
+  A22Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+  A22Fact->SetParameter("block row",Teuchos::ParameterEntry(1));
+  A22Fact->SetParameter("block col",Teuchos::ParameterEntry(1));
 
   RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory());
   RCP<TransPFactory> R11Fact = rcp(new TransPFactory());

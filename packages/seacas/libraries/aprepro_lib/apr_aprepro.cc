@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.17 (2013/09/12)";
+  const char* version_string = "4.01 (2014/01/15)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -34,7 +34,7 @@ namespace SEAMS {
     : sym_table(HASHSIZE), stateImmutable(false)
   {
     ap_file_list.push(file_rec());
-    init_table('#');
+    init_table("#");
     ap_options.debugging = false;
     ap_options.trace_parsing = false;
     aprepro = this;
@@ -160,6 +160,9 @@ namespace SEAMS {
       case STRING_VARIABLE:
 	parser_type = Parser::token::SVAR;
 	break;
+      case ARRAY_VARIABLE:
+	parser_type = Parser::token::AVAR;
+	break;
       case IMMUTABLE_VARIABLE:
 	parser_type = Parser::token::IMMVAR;
 	break;
@@ -174,6 +177,9 @@ namespace SEAMS {
 	break;
       case STRING_FUNCTION:
 	parser_type = Parser::token::SFNCT;
+	break;
+      case ARRAY_FUNCTION:
+	parser_type = Parser::token::AFNCT;
 	break;
       }
     symrec *ptr = new symrec(sym_name, parser_type, is_internal);
@@ -291,26 +297,31 @@ namespace SEAMS {
 
   void Aprepro::dumpsym (int type, bool doInternal) const
   {
-    char comment = getsym("_C_")->value.svar[0];
+    const char *comment = getsym("_C_")->value.svar;
   
-    if (type == Parser::token::VAR || type == Parser::token::SVAR) {
-      printf ("\n%c   Variable    = Value\n", comment);
+    if (type == Parser::token::VAR || type == Parser::token::SVAR || type == Parser::token::AVAR) {
+      printf ("\n%s   Variable    = Value\n", comment);
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	    if (ptr->type == Parser::token::VAR)
-	      printf ("%c  {%-10s\t= %.10g}\n", comment, ptr->name.c_str(), ptr->value.var);
+	      printf ("%s  {%-10s\t= %.10g}\n", comment, ptr->name.c_str(), ptr->value.var);
 	    else if (ptr->type == Parser::token::IMMVAR)
-	      printf ("%c  {%-10s\t= %.10g}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.var);
+	      printf ("%s  {%-10s\t= %.10g}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.var);
 	    else if (ptr->type == Parser::token::SVAR)
-	      printf ("%c  {%-10s\t= \"%s\"}\n", comment, ptr->name.c_str(), ptr->value.svar);
+	      printf ("%s  {%-10s\t= \"%s\"}\n", comment, ptr->name.c_str(), ptr->value.svar);
 	    else if (ptr->type == Parser::token::IMMSVAR)
-	      printf ("%c  {%-10s\t= \"%s\"}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.svar);
+	      printf ("%s  {%-10s\t= \"%s\"}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.svar);
+	    else if (ptr->type == Parser::token::AVAR) {
+	      array *arr = ptr->value.avar;
+	      printf ("%s  {%-10s\t (array) rows = %d, cols = %d} \n",
+		      comment, ptr->name.c_str(), arr->rows, arr->cols);
+	    }
 	  }
 	}
       }
     }
-    else if (type == Parser::token::FNCT || type == Parser::token::SFNCT) {
+    else if (type == Parser::token::FNCT || type == Parser::token::SFNCT || type == Parser::token::AFNCT) {
       printf ("\nFunctions returning double:\n");
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
@@ -323,6 +334,15 @@ namespace SEAMS {
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::SFNCT) {
+	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
+	  }
+	}
+      }
+      
+      printf ("\nFunctions returning array:\n");
+      for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
+	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
+	  if (ptr->type == Parser::token::AFNCT) {
 	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
 	  }
 	}

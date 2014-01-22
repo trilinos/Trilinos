@@ -159,7 +159,7 @@ Teuchos::Polynomial<CoeffT>::setCoefficientPtr(
 template <typename CoeffT>
 void
 Teuchos::Polynomial<CoeffT>::evaluate(
-			  typename Teuchos::Polynomial<CoeffT>::scalar_type t, 
+			  typename Teuchos::Polynomial<CoeffT>::scalar_type& t, 
 			  CoeffT* x, CoeffT* xdot) const
 {
   bool evaluate_xdot = (xdot != NULL);

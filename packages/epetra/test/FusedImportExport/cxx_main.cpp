@@ -246,6 +246,24 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
 }
 
 
+void build_test_map(const Epetra_Map & oldMap, Epetra_Map *& newMap) {
+  int NumProc = oldMap.Comm().NumProc();
+  int MyPID   = oldMap.Comm().MyPID();
+
+  int num_global = oldMap.NumGlobalElements();
+  if(NumProc<3) {
+    // Dump everything onto -proc 0
+    int num_local = MyPID==0 ? num_global : 0;
+    newMap = new Epetra_Map(num_global,num_local,0,oldMap.Comm());
+  }
+  else {
+    // Split everything between procs 0 and 2 (leave proc 1 empty)
+    int num_local=0;
+    if(MyPID==0) num_local = num_global/2;
+    else if(MyPID==2) num_local =  num_global - ((int)num_global/2);
+    newMap = new Epetra_Map(num_global,num_local,0,oldMap.Comm());
+  } 
+}
 
 
 int main(int argc, char *argv[])
@@ -482,11 +500,9 @@ int main(int argc, char *argv[])
   {
     double diff;
     ierr=build_test_matrix(Comm,1,A); 
-    int num_global = A->RowMap().NumGlobalElements();
-    
-    // New map with all on Proc1
-    if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,0,Comm);
-    else         Map1=new Epetra_Map(num_global,0,0,Comm);
+
+    // New map with all on Procs 0 and 2
+    build_test_map(A->RowMap(),Map1);    
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
@@ -521,11 +537,9 @@ int main(int argc, char *argv[])
   {
     double diff;
     ierr=build_test_matrix(Comm,1,A); 
-    int num_global = A->RowMap().NumGlobalElements();
     
-    // New map with all on Proc1
-    if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,0,Comm);
-    else         Map1=new Epetra_Map(num_global,0,0,Comm);
+    // New map with all on Procs 0 and 2
+    build_test_map(A->RowMap(),Map1);
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());

@@ -87,16 +87,15 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 #define epsilon 0.00000001
 
 int validatePerm(size_t n, z2TestLO *perm)
-// returns 0 if permutation is valid
+// returns 0 if permutation is valid, negative if invalid
 {
   std::vector<int> count(n);
   int status = 0;
-  size_t i;
 
-  for (i=0; i<n; i++)
+  for (size_t i=0; i<n; i++)
     count[i]=0;
 
-  for (i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     if ((perm[i]<0) || (perm[i]>=z2TestLO(n)))
       status = -1;
     else
@@ -104,7 +103,7 @@ int validatePerm(size_t n, z2TestLO *perm)
   }
 
   // Each index should occur exactly once (count==1)
-  for (i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     if (count[i] != 1){
       status = -2;
       break;
@@ -140,17 +139,19 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
     for (k=0; k< indices.size(); k++){
-      if (perm){
-        i = iperm[ii];
-        j = iperm[indices[k]];
-      } else {
-        i = ii;
-        j = indices[k];
+      if (indices[k] < n){ // locally owned
+        if (perm){
+          i = iperm[ii];
+          j = iperm[indices[k]];
+        } else {
+          i = ii;
+          j = indices[k];
+        }
+        if (j-i > bw_right)
+          bw_right = j-i;
+        if (i-j > bw_left)
+          bw_left = i-j;
       }
-      if (j-i > bw_right)
-        bw_right = j-i;
-      if (i-j > bw_left)
-        bw_left = i-j;
     }
   }
 
@@ -274,7 +275,11 @@ int main(int narg, char** arg)
     ofstream permFile;
 
     // Write permutation (0-based) to file
-    permFile.open(outputFile.c_str());
+    // each process writes local perm to a separate file
+    //std::string fname = outputFile + "." + me;
+    std::stringstream fname;
+    fname << outputFile << "." << comm->getSize() << "." << me;
+    permFile.open(fname.str().c_str());
     for (size_t i=0; i<checkLength; i++){
       permFile << " " << checkPerm[i] << endl;
     }

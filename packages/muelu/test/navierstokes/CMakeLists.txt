@@ -34,6 +34,22 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Navier2DBlocked_xml
+      SOURCES Navier2DBlocked_xml.cpp
+      ARGS "--xml=myXML.xml"
+      COMM serial mpi
+      DEPLIBS muelu xpetra
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Navier2DBlocked_xml2
+      SOURCES Navier2DBlocked_xml.cpp
+      ARGS "--xml=myXMLg.xml"
+      COMM serial mpi
+      DEPLIBS muelu xpetra
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2DBlocked_BraessSarazinSmoother
       SOURCES Navier2DBlocked_BraessSarazinSmoother.cpp
       COMM serial mpi
@@ -114,7 +130,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     #  )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cp
-      SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
+      SOURCE_FILES A5932_re1000.txt b5932_re1000.txt myXML.xml myXMLg.xml
       )
   ENDIF()
 

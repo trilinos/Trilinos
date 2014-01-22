@@ -89,8 +89,10 @@ namespace MueLu {
 
     //! Constructor
     NullspaceFactory(const std::string & nspName = "Nullspace")
-      : nspName_(nspName)
-    { }
+      /*: nspName_(nspName)*/
+    {
+      SetParameter("Fine level nullspace", ParameterEntry(nspName));
+    }
 
     //! Destructor
     virtual ~NullspaceFactory() { }
@@ -98,7 +100,12 @@ namespace MueLu {
     //@}
 
     //! @name Input
+
     //@{
+
+    /*! @brief Define valid parameters for internal factory parameters */
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
         If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
@@ -120,7 +127,7 @@ namespace MueLu {
   private:
 
     //! name of nullspace vector on finest level
-    std::string nspName_;
+    //std::string nspName_;
 
   }; //class NullspaceFactory
 

@@ -44,8 +44,8 @@
 #include <sys/types.h>
 #include "init_structs.h"
 
-void init_table(char comment);
-char comm_string[2];
+void init_table(char *comment);
+char comm_string[32];
 
 extern double
   do_fabs(double x), do_acos(double x), do_acosd(double x), do_asin(double x), do_asind(double x),
@@ -66,7 +66,8 @@ extern double
   do_log1p(double x), do_acosh(double x), do_asinh(double x), do_atanh(double x),
   do_word_count(char *string, char *delm), do_strtod(char *string),
   do_nint(double x), do_option(char *option, double value),
-  do_csvrows(char *filename), do_csvcols(char *filename);
+  do_csvrows(char *filename), do_csvcols(char *filename),
+  do_rows(array *arr), do_cols(array *arr);
 
 struct init arith_fncts[] =
 {
@@ -127,6 +128,8 @@ struct init arith_fncts[] =
   {"option",         do_option, "option(?,?)","Internal"},
   {"csv_rows",       do_csvrows, "csv_rows(FILE)","Returns the number of rows in a CSV file. "},
   {"csv_cols",       do_csvcols, "csv_cols(FILE)","Returns the number of columns in a CSV file. "},
+  {"rows",           do_rows, "rows(array)","Returns the number of rows in the array. "},
+  {"cols",           do_cols, "cols(array)","Returns the number of columns in the array. "},
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
@@ -142,7 +145,9 @@ extern char *do_switch(double x), *do_case(double x),
 #endif
   *do_include_path(char *new_path), *do_intout(double intval), *do_get_date(void), *do_get_iso_date(void), *do_get_time(void),
   *do_extract(char *string, char *begin, char *end),
-  *do_get_csv(char *filename, double i, double j);
+  *do_get_csv(char *filename, double i, double j),
+  *do_print_array(const array *arr), *do_allocate_csv(char *filename);
+  
   
 
 struct str_init string_fncts[] =
@@ -181,10 +186,30 @@ struct str_init string_fncts[] =
   {"get_time",       do_get_time,    "get_time()","Returns a string representing the current time in the form HH:MM:SS."},
   {"extract",        do_extract,     "extract(s, b, e)","Return substring [b,e). 'b' is included; 'e' is not. If 'b' not found, return empty; If 'e' not found, return rest of string. If 'b' empty, start at beginning; if 'e' empty, return rest of string."},
   {"get_csv",        do_get_csv,      "get_csv(file,row,column)","Retrieves string from the specified column and row of the specified CSV file."},
+  {"allocate_csv",   do_allocate_csv, "allocate_csv(file)","Opens the specified csv file and reads all data for use in later csv calls."},
+  {"print_array",    do_print_array,  "print_array(array)","Prints the data in the array."},
 #if !defined(NO_EXODUSII)
   {"exodus_info",    do_exodus_info, "exodus_info(ex_fn)","Parses the info records extracted from the exodus file 'ex_fn'"},
   {"exodus_meta",    do_exodus_meta, "exodus_meta(ex_fn)","Creates several variables related to the exodusII metadata in the specified file. Experimental."},
 #endif
+  {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+};
+
+extern array *do_csv_array(const char *filename);
+extern array *do_make_array(double rows, double cols);
+extern array *do_identity(double size);
+extern array *do_transpose(array *array);
+
+struct array_init array_fncts[] =
+{
+  {"csv_array",         do_csv_array,      "csv_array(filename)",
+   "Create a 2D array from the data in a csv file."},
+  {"make_array",        do_make_array,     "make_array(rows, cols)",
+   "Create a 2D array of size 'rows' by 'cols' initialized to zero."},
+  {"identity",          do_identity,     "identity(size)",
+   "Create a 2D identity array with 'size' rows and columns. Diagonal = 1.0"},
+  {"transpose",         do_transpose,      "transpose(array)",
+   "Return the transpose of input array"},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
 };
 
@@ -214,7 +239,7 @@ struct svar_init svariables[] =
  *	 initialize is differently than the other string variables.
  */
 
-void init_table(char comment)
+void init_table(char *comment)
 {
   int i;
   symrec *ptr;
@@ -232,6 +257,13 @@ void init_table(char comment)
       ptr->info = string_fncts[i].description;
       ptr->syntax = string_fncts[i].syntax;
     }
+  for (i = 0; array_fncts[i].fname != 0; i++)
+    {
+      ptr = putsym(array_fncts[i].fname, AFNCT, 1);
+      ptr->value.arrfnct = array_fncts[i].fnct;
+      ptr->info = array_fncts[i].description;
+      ptr->syntax = array_fncts[i].syntax;
+    }
   for (i = 0; variables[i].vname != 0; i++)
     {
       ptr = putsym(variables[i].vname, VAR, 1);
@@ -242,7 +274,7 @@ void init_table(char comment)
       ptr = putsym(svariables[i].vname, SVAR, 1);
       ptr->value.svar = svariables[i].value;
     }
-  sprintf(comm_string, "%c", comment);
+  sprintf(comm_string, "%s", comment);
   ptr = putsym("_C_", SVAR, 1);
   ptr->value.svar = comm_string;
   {

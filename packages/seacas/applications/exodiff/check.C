@@ -378,7 +378,7 @@ namespace {
     // Do the following check(s) only if there are nodeset varibles...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
-    if (interface.ns_var_names.size() > 0 || interface.pedantic) {
+    if (!interface.ns_var_names.empty() || interface.pedantic) {
       for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
 	Node_Set<INT>* set1 = file1.Get_Node_Set_by_Index(b);
 	Node_Set<INT>* set2 = file2.Get_Node_Set_by_Id(set1->Id());
@@ -462,7 +462,7 @@ namespace {
     // Do the following check(s) only if there are sideset varibles... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
-    if (interface.ss_var_names.size() > 0 || interface.pedantic) {
+    if (!interface.ss_var_names.empty() || interface.pedantic) {
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* set1 = file1.Get_Side_Set_by_Index(b);
 	Side_Set<INT>* set2 = file2.Get_Side_Set_by_Id(set1->Id());

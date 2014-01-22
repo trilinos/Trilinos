@@ -964,6 +964,15 @@ namespace Tpetra {
                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
                               const RCP<ParameterList> &params=Teuchos::null);
 
+    /// \brief Replace the current colMap with the given object.
+    ///
+    /// \param newColMap [in] New colMap.  Must be nonnull.
+    ///
+    /// \pre The matrix must have no entries inserted yet
+    void
+    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
+
+
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
     /// \param newDomainMap [in] New domain Map.  Must be nonnull.
@@ -1909,7 +1918,7 @@ namespace Tpetra {
     importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
                            const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
-                           const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
     /// \brief Export from <tt>this</tt> to the result, and fillComplete the result.
     ///
@@ -1923,7 +1932,19 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
-  private:
+    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to the result, and fillComplete the result.
+    /// This method implements the nonmember "constructors"
+    /// [import|export]AndFillCompleteCrsMatrix.  It's convenient to put that
+    /// function's implementation inside the CrsMatrix class, so that
+    /// we don't have to put much code in the _decl header file.
+    template<class TransferType>
+    Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
+    transferAndFillComplete (const TransferType& rowTransfer,
+			     const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+			     const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+			     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+
+
     // We forbid copy construction by declaring this method private
     // and not implementing it.
     CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);

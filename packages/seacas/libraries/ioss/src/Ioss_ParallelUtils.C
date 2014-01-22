@@ -212,7 +212,7 @@ void Ioss::ParallelUtils::global_count(const IntVector &local_counts, IntVector 
   // Assumes that ordering is the same on all processors
   global_counts.resize(local_counts.size());
 #ifdef HAVE_MPI
-  if (local_counts.size() > 0 && parallel_size() > 1) {
+  if (!local_counts.empty() && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
       errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();
@@ -243,7 +243,7 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts, Int64Vec
   // Assumes that ordering is the same on all processors
   global_counts.resize(local_counts.size());
 #ifdef HAVE_MPI
-  if (local_counts.size() > 0 && parallel_size() > 1) {
+  if (!local_counts.empty() && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
       errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();

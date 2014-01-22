@@ -12,9 +12,9 @@ repartition: partitioner = zoltan   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -32,6 +32,7 @@ Level 1
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
+      MaxNodesPerAggregate = 100   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -46,10 +47,11 @@ Level 1
       [empty list]
       
       Nullspace factory (MueLu::NullspaceFactory)
-      [empty list]
+      Fine level nullspace = Nullspace
       
       Build (MueLu::CoarseMapFactory)
-      [empty list]
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
       
      [empty list]
      
@@ -89,9 +91,9 @@ Level 1
  useSubcomm = 1   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -109,6 +111,7 @@ Level 2
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
+      MaxNodesPerAggregate = 100   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -123,10 +126,11 @@ Level 2
       [empty list]
       
       Nullspace factory (MueLu::NullspaceFactory)
-      [empty list]
+      Fine level nullspace = Nullspace
       
       Build (MueLu::CoarseMapFactory)
-      [empty list]
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
       
      [empty list]
      

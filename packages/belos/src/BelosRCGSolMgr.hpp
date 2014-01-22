@@ -69,16 +69,46 @@
 #endif
 
 /*! \class Belos::RCGSolMgr
- *
- *  \brief The Belos::RCGSolMgr provides a powerful and fully-featured solver manager over the RCG (Recycling Conjugate Gradient) linear solver.
+\brief Implementation of the RCG (Recycling Conjugate Gradient) iterative linear solver.
+\ingroup belos_solver_framework
+\author Michael Parks and Heidi Thornquist
 
- \ingroup belos_solver_framework
+\section Belos_GCRODR_summary Summary
 
- \author Michael Parks and Heidi Thornquist
- */
+This class implements the GCRODR (Recycling GMRES) iterative linear
+solver.  This solver is suited for solving sequences of related linear
+systems \f$A_i x_i = b_i\f$, where each matrix \f$A_i\f$ is symmetric
+positive definite.
+
+\section Belos_RCG_real ScalarType must be real
+
+This RCG implementation currently only supports real-valued (not
+complex-valued) ScalarType types.  You may check whether ScalarType is
+complex using the following code:
+\code
+if (Teuchos::ScalarTraits<ScalarType>::isComplex) {
+  // ScalarType is complex valued.
+} else {
+  // ScalarType is real valued.
+}
+\endcode
+
+This is not a limitation of the RCG method itself, just of the current
+implementation.  If there is sufficient interest, we can remedy this
+deficiency.  For now, if you attempt to invoke the constructor when
+<tt>ScalarType</tt> is complex, the constructor will throw an
+exception.  This is why this class inherits from
+Details::RealSolverManager.  RCGSolMgr can still compile if
+<tt>ScalarType</tt> is complex, but you will not be able to construct
+a RCGSolMgr instance in that case, due to the aforementioned run-time
+error that the constructor raises.  We do this so that the class will
+still compile, whether ScalarType is real or complex.  This helps make
+SolverFactory valid to compile, whether ScalarType is real or complex.
+
+*/
 
 namespace Belos {
-  
+
   //! @name RCGSolMgr Exceptions
   //@{
 
@@ -91,7 +121,7 @@ namespace Belos {
   class RCGSolMgrLinearProblemFailure : public BelosError {public:
     RCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
- 
+
   /** \brief RCGSolMgrLAPACKFailure is thrown when a nonzero value is retuned
    * from an LAPACK call.
    *
@@ -113,10 +143,38 @@ namespace Belos {
     {}};
 
   //@}
-  
+
+
+  // Partial specialization for complex ScalarType.
+  // This contains a trivial implementation.
+  // See discussion in the class documentation above.
+  template<class ScalarType, class MV, class OP,
+           const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
+  class RCGSolMgr :
+    public Details::RealSolverManager<ScalarType, MV, OP,
+                                      Teuchos::ScalarTraits<ScalarType>::isComplex>
+  {
+    static const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
+    typedef Details::RealSolverManager<ScalarType, MV, OP, isComplex> base_type;
+
+  public:
+    RCGSolMgr () :
+      base_type ()
+    {}
+    RCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+               const Teuchos::RCP<Teuchos::ParameterList> &pl) :
+      base_type ()
+    {}
+    virtual ~RCGSolMgr () {}
+  };
+
+
+  // Partial specialization for real ScalarType.
+  // This contains the actual working implementation of RCG.
+  // See discussion in the class documentation above.
   template<class ScalarType, class MV, class OP>
-  class RCGSolMgr : public SolverManager<ScalarType,MV,OP> {
-    
+  class RCGSolMgr<ScalarType, MV, OP, false> :
+    public Details::RealSolverManager<ScalarType, MV, OP, false> {
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef MultiVecTraitsExt<ScalarType,MV> MVText;
@@ -124,11 +182,11 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
-    
+
     //! @name Constructors/Destructor
-    //@{ 
+    //@{
 
     /*! \brief Empty constructor for RCGSolMgr.
      * This constructor takes no arguments and sets the default values for the solver.
@@ -143,42 +201,42 @@ namespace Belos {
      * to a parameter list of options for the solver manager. These options include the following:
      *   - "Num Blocks" - a \c int specifying length of a cycle (and thus number of max number of search vectors kept). Default: 25
      *   - "Num Recycled Blocks" - a \c int specifying the number of vectors selected for recycling. Default: 3
-     *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the 
+     *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the
      *                            underlying solver is allowed to perform. Default: 1000
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
      *   - "Output Stream" - a reference-counted pointer to the output stream where all
      *                       solver output is sent.  Default: Teuchos::rcp(&std::cout,false)
-     *   - "Output Frequency" - an \c int specifying how often convergence information should be 
+     *   - "Output Frequency" - an \c int specifying how often convergence information should be
      *                          outputted.  Default: -1 (never)
      *   - "Show Maximum Residual Norm Only" - a \c bool specifying whether that only the maximum
-     *                                         relative residual norm is printed if convergence 
+     *                                         relative residual norm is printed if convergence
      *                                         information is printed. Default: false
      *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
      */
 
     RCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		   const Teuchos::RCP<Teuchos::ParameterList> &pl );
-    
+                   const Teuchos::RCP<Teuchos::ParameterList> &pl );
+
     //! Destructor.
     virtual ~RCGSolMgr() {};
     //@}
-    
+
     //! @name Accessor methods
-    //@{ 
-    
+    //@{
+
     const LinearProblem<ScalarType,MV,OP>& getProblem() const {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object. */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    
+
     /*! \brief Get a parameter list containing the current parameters for this object. */
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
-    
-    /*! \brief Return the timers for this object. 
+
+    /*! \brief Return the timers for this object.
      *
      * The timers are ordered as follows:
      *   - time spent in solve() routine
@@ -188,7 +246,7 @@ namespace Belos {
     }
 
     /// \brief Tolerance achieved by the last \c solve() invocation.
-    /// 
+    ///
     /// This is set whether or not the solve actually managed to
     /// achieve the desired convergence tolerance.
     MagnitudeType achievedTol() const {
@@ -202,48 +260,48 @@ namespace Belos {
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve. */
     bool isLOADetected() const { return false; }
- 
+
     //@}
-    
+
     //! @name Set methods
     //@{
-   
-    //! Set the linear problem that needs to be solved. 
+
+    //! Set the linear problem that needs to be solved.
     void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
-   
-    //! Set the parameters the solver manager should use to solve the linear problem. 
+
+    //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
-    
+
     //@}
-   
+
     //! @name Reset method
     //@{
     /*! \brief Performs a reset of the solver manager specified by the \c ResetType.  This informs the
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy. Belos::Problem forces a call to setProblem on the linear problem, and
      *  Belos::RecycleSubspace causes the solver manager to "forget" the recycle space generated by previous calls to the solver.
-     *  In the latter case, the next call to solve() will act as if the solver has never been called before. 
+     *  In the latter case, the next call to solve() will act as if the solver has never been called before.
      */
-    void reset( const ResetType type ) { 
-      if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); 
+    void reset( const ResetType type ) {
+      if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem();
       else if (type & Belos::RecycleSubspace) existU_ = false;
     }
     //@}
- 
+
     //! @name Solver application methods
-    //@{ 
-    
-    /*! \brief This method performs possibly repeated calls to the underlying linear solver's 
-     *         iterate() routine until the problem has been solved (as decided by the solver manager) 
+    //@{
+
+    /*! \brief This method performs possibly repeated calls to the underlying linear solver's
+     *         iterate() routine until the problem has been solved (as decided by the solver manager)
      *         or the solver manager decides to quit.
      *
-     * This method calls RCGIter::iterate(), which will return either because a 
+     * This method calls RCGIter::iterate(), which will return either because a
      * specially constructed status test evaluates to ::Passed or an std::exception is thrown.
      *
      * A return from RCGIter::iterate() signifies one of the following scenarios:
-     *    - the maximum number of iterations has been exceeded. In this scenario, the current solutions 
+     *    - the maximum number of iterations has been exceeded. In this scenario, the current solutions
      *      to the linear system will be placed in the linear problem and return ::Unconverged.
-     *    - global convergence has been met. In this case, the current solutions to the linear system 
+     *    - global convergence has been met. In this case, the current solutions to the linear system
      *      will be placed in the linear problem and the solver manager will return ::Converged
      *
      * \returns ::ReturnType specifying:
@@ -251,28 +309,28 @@ namespace Belos {
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
     ReturnType solve();
-    
+
     //@}
-    
+
     /** \name Overridden from Teuchos::Describable */
     //@{
-    
+
     /** \brief Method to return description of the RCG solver manager */
     std::string description() const;
-    
+
     //@}
-    
+
   private:
 
     // Called by all constructors; Contains init instructions common to all constructors
     void init();
- 
+
     //  Computes harmonic eigenpairs of projected matrix created during one cycle.
     //  Y contains the harmonic Ritz vectors corresponding to the recycleBlocks eigenvalues of smallest magnitude.
-    void getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType> &F, 
-                         const Teuchos::SerialDenseMatrix<int,ScalarType> &G, 
+    void getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType> &F,
+                         const Teuchos::SerialDenseMatrix<int,ScalarType> &G,
                          Teuchos::SerialDenseMatrix<int,ScalarType>& Y);
- 
+
     // Sort list of n floating-point numbers and return permutation vector
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
 
@@ -281,7 +339,7 @@ namespace Belos {
 
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
-    
+
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
     Teuchos::RCP<std::ostream> outputStream_;
@@ -294,7 +352,7 @@ namespace Belos {
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
-    
+
     // Default solver values.
     static const MagnitudeType convtol_default_;
     static const int maxIters_default_;
@@ -316,7 +374,7 @@ namespace Belos {
     MagnitudeType convtol_;
 
     /// \brief Tolerance achieved by the last \c solve() invocation.
-    /// 
+    ///
     /// This is set whether or not the solve actually managed to
     /// achieve the desired convergence tolerance.
     MagnitudeType achievedTol_;
@@ -393,7 +451,7 @@ namespace Belos {
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > AUTAP_, AU1TU_;
     ScalarType dold;
     /////////////////////////////////////////////////////////////////////////
-    
+
     // Timers.
     std::string label_;
     Teuchos::RCP<Teuchos::Time> timerSolve_;
@@ -405,49 +463,50 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename RCGSolMgr<ScalarType,MV,OP>::MagnitudeType RCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename RCGSolMgr<ScalarType,MV,OP,false>::MagnitudeType
+RCGSolMgr<ScalarType,MV,OP,false>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+const int RCGSolMgr<ScalarType,MV,OP,false>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 25;
+const int RCGSolMgr<ScalarType,MV,OP,false>::numBlocks_default_ = 25;
 
 template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
- 
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::recycleBlocks_default_ = 3;
+const int RCGSolMgr<ScalarType,MV,OP,false>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
-const bool RCGSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
+const int RCGSolMgr<ScalarType,MV,OP,false>::recycleBlocks_default_ = 3;
 
 template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+const bool RCGSolMgr<ScalarType,MV,OP,false>::showMaxResNormOnly_default_ = false;
 
 template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+const int RCGSolMgr<ScalarType,MV,OP,false>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+const int RCGSolMgr<ScalarType,MV,OP,false>::outputStyle_default_ = Belos::General;
 
 template<class ScalarType, class MV, class OP>
-const std::string RCGSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+const int RCGSolMgr<ScalarType,MV,OP,false>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> RCGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const std::string RCGSolMgr<ScalarType,MV,OP,false>::label_default_ = "Belos";
+
+template<class ScalarType, class MV, class OP>
+const Teuchos::RCP<std::ostream> RCGSolMgr<ScalarType,MV,OP,false>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-RCGSolMgr<ScalarType,MV,OP>::RCGSolMgr() {
+RCGSolMgr<ScalarType,MV,OP,false>::RCGSolMgr() {
   init();
 }
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-RCGSolMgr<ScalarType,MV,OP>::RCGSolMgr( 
-						     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-						     const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+RCGSolMgr<ScalarType,MV,OP,false>::RCGSolMgr(
+                                                     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem)
 {
   init();
@@ -455,13 +514,13 @@ RCGSolMgr<ScalarType,MV,OP>::RCGSolMgr(
 
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if ( !is_null(pl) ) {
-    setParameters( pl );  
+    setParameters( pl );
   }
 }
 
 // Common instructions executed in all constructors
 template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP>::init()
+void RCGSolMgr<ScalarType,MV,OP,false>::init()
 {
   outputStream_ = outputStream_default_;
   convtol_ = convtol_default_;
@@ -512,7 +571,7 @@ void RCGSolMgr<ScalarType,MV,OP>::init()
 }
 
 template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+void RCGSolMgr<ScalarType,MV,OP,false>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
@@ -537,20 +596,20 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
     numBlocks_ = params->get("Num Blocks",numBlocks_default_);
     TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
                        "Belos::RCGSolMgr: \"Num Blocks\" must be strictly positive.");
- 
+
     // Update parameter in our list.
     params_->set("Num Blocks", numBlocks_);
   }
- 
+
   // Check for the maximum number of blocks.
   if (params->isParameter("Num Recycled Blocks")) {
     recycleBlocks_ = params->get("Num Recycled Blocks",recycleBlocks_default_);
     TEUCHOS_TEST_FOR_EXCEPTION(recycleBlocks_ <= 0, std::invalid_argument,
                        "Belos::RCGSolMgr: \"Num Recycled Blocks\" must be strictly positive.");
- 
+
     TEUCHOS_TEST_FOR_EXCEPTION(recycleBlocks_ >= numBlocks_, std::invalid_argument,
                        "Belos::RCGSolMgr: \"Num Recycled Blocks\" must be less than \"Num Blocks\".");
- 
+
     // Update parameter in our list.
     params_->set("Num Recycled Blocks", recycleBlocks_);
   }
@@ -622,8 +681,8 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   // Create output manager if we need to.
   if (printer_ == Teuchos::null) {
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
-  }  
-  
+  }
+
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
@@ -637,7 +696,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
     if (convTest_ != Teuchos::null)
       convTest_->setTolerance( convtol_ );
   }
-  
+
   if (params->isParameter("Show Maximum Residual Norm Only")) {
     showMaxResNormOnly_ = Teuchos::getParameter<bool>(*params,"Show Maximum Residual Norm Only");
 
@@ -652,21 +711,21 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
     maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-  
+
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_ == Teuchos::null)
     convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
-  
+
   if (sTest_ == Teuchos::null)
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
+
   if (outputTest_ == Teuchos::null) {
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
     StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
-    
+
     // Set the solver string for the output test
     std::string solverDesc = " Recycling CG ";
     outputTest_->setSolverDesc( solverDesc );
@@ -684,13 +743,13 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
   params_Set_ = true;
 }
 
-    
+
 template<class ScalarType, class MV, class OP>
-Teuchos::RCP<const Teuchos::ParameterList> 
-RCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
+Teuchos::RCP<const Teuchos::ParameterList>
+RCGSolMgr<ScalarType,MV,OP,false>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
-  
+
   // Set all the valid parameters and their default values.
   if(is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
@@ -714,7 +773,7 @@ RCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "to the output stream.");
     pl->set("Output Frequency", outputFreq_default_,
       "How often convergence information should be outputted\n"
-      "to the output stream.");  
+      "to the output stream.");
     pl->set("Output Stream", outputStream_default_,
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
@@ -731,7 +790,7 @@ RCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 // initializeStateStorage
 template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
+void RCGSolMgr<ScalarType,MV,OP,false>::initializeStateStorage() {
 
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> rhsMV = problem_->getRHS();
@@ -1018,7 +1077,7 @@ void RCGSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
 }
 
 template<class ScalarType, class MV, class OP>
-ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
+ReturnType RCGSolMgr<ScalarType,MV,OP,false>::solve() {
 
   Teuchos::LAPACK<int,ScalarType> lapack;
   std::vector<int> index(recycleBlocks_);
@@ -1029,7 +1088,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
   int cycle = 0;
 
   // Set the current parameters if they were not set before.
-  // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
   if (!params_Set_) {
     setParameters(Teuchos::parameterList(*getValidParameters()));
@@ -1077,12 +1136,12 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::ParameterList plist;
   plist.set("Num Blocks",numBlocks_);
   plist.set("Recycled Blocks",recycleBlocks_);
-  
-  // Reset the status test.  
+
+  // Reset the status test.
   outputTest_->reset();
 
   // Assume convergence is achieved, then let any failed convergence set this to false.
-  bool isConverged = true;	
+  bool isConverged = true;
 
   // Compute AU = A*U, UTAU = U'*AU, AUTAU = (AU)'*(AU)
   if (existU_) {
@@ -1147,7 +1206,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
       // reset cycle count
       cycle = 0;
 
-      // Get the current residual 
+      // Get the current residual
       problem_->computeCurrResVec( &*r_ );
 
       // If U exists, find best soln over this space first
@@ -1168,7 +1227,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 
         // Update solution (x = x + U*y)
         MVT::MvTimesMatAddMv( one, *Utmp, Utr, one, *problem_->getCurrLHSVec() );
- 
+
         // Update residual ( r = r - AU*y )
         index.resize(recycleBlocks_);
         for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
@@ -1181,7 +1240,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
       } else {
         z_ = r_;
       }
-   
+
       // rTz_old = r'*z
       MVT::MvTransMv( one, *r_, *z_, *rTz_old_ );
 
@@ -1215,7 +1274,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
       // Set the new state and initialize the solver.
       RCGIterState<ScalarType,MV> newstate;
 
-      // Create RCP views here 
+      // Create RCP views here
       index.resize( numBlocks_+1 );
       for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
       newstate.P  = MVT::CloneViewNonConst( *P_,  index );
@@ -1225,11 +1284,11 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
       index.resize( recycleBlocks_ );
       for (int ii=0; ii<recycleBlocks_; ++ii) { index[ii] = ii; }
       newstate.AU  = MVT::CloneViewNonConst( *AU_,  index );
-      newstate.Alpha = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Alpha_, numBlocks_, 1 ) ); 
-      newstate.Beta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Beta_, numBlocks_, 1 ) ); 
-      newstate.D = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *D_, numBlocks_, 1 ) ); 
-      newstate.Delta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_, 0, 1 ) ); 
-      newstate.LUUTAU = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *LUUTAU_, recycleBlocks_, recycleBlocks_ ) ); 
+      newstate.Alpha = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Alpha_, numBlocks_, 1 ) );
+      newstate.Beta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Beta_, numBlocks_, 1 ) );
+      newstate.D = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *D_, numBlocks_, 1 ) );
+      newstate.Delta = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *Delta_, recycleBlocks_, numBlocks_, 0, 1 ) );
+      newstate.LUUTAU = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *LUUTAU_, recycleBlocks_, recycleBlocks_ ) );
       // assign the rest of the values in the struct
       newstate.curDim = 1; // We have initialized the first search vector
       newstate.Ap = Ap_;
@@ -1243,35 +1302,35 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 
       while(1) {
 
-	// tell rcg_iter to iterate
-	try {
-	  rcg_iter->iterate();
+        // tell rcg_iter to iterate
+        try {
+          rcg_iter->iterate();
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check convergence first
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convTest_->getStatus() == Passed ) {
-	    // We have convergence
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check convergence first
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          if ( convTest_->getStatus() == Passed ) {
+            // We have convergence
             break; // break from while(1){rcg_iter->iterate()}
-	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for maximum iterations
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( maxIterTest_->getStatus() == Passed ) {
-	    // we don't have convergence
-	    isConverged = false;
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for maximum iterations
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( maxIterTest_->getStatus() == Passed ) {
+            // we don't have convergence
+            isConverged = false;
             break; // break from while(1){rcg_iter->iterate()}
-	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check if cycle complete; update for next cycle
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( rcg_iter->getCurSubspaceDim() == rcg_iter->getMaxSubspaceDim() ) {
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check if cycle complete; update for next cycle
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( rcg_iter->getCurSubspaceDim() == rcg_iter->getMaxSubspaceDim() ) {
             // index into P_ of last search vector generated this cycle
             int lastp = -1;
             // index into Beta_ of last entry generated this cycle
@@ -1293,7 +1352,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                        Gtmp(ii-1,ii) = -Dtmp(ii,0)/Alphatmp(ii-1,0);
                        Gtmp(ii,ii-1) = -Dtmp(ii,0)/Alphatmp(ii-1,0);
                      }
-                     Ftmp(ii,ii) = Dtmp(ii,0); 
+                     Ftmp(ii,ii) = Dtmp(ii,0);
                    }
 
                    // compute harmonic Ritz vectors
@@ -1331,7 +1390,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    for (int ii=0; ii<recycleBlocks_; ++ii) {
                       AU1TAPtmp(ii,0) = Ytmp(numBlocks_-1,ii) * alphatmp;
                    }
- 
+
                    // indicate that updated recycle space now defined
                    existU1_ = true;
 
@@ -1414,7 +1473,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
- 
+
                    // AU1TAU1     = Y'*G*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
                    GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
@@ -1433,7 +1492,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
                    //Teuchos::SerialDenseMatrix<int,ScalarType> AU1TU1tmp( Teuchos::View, *AU1TU1_, recycleBlocks_, recycleBlocks_ );
                    AU1TU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,FYtmp,zero);
- 
+
                    // Indicate the size of the P, Beta structures generated this cycle
                    lastp = numBlocks_+1;
                    lastBeta = numBlocks_;
@@ -1483,7 +1542,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    for(int ii=0;ii<numBlocks_;ii++) {
                      F22(ii,ii) = Dtmp(ii,0);
                    }
- 
+
                    // G = [AUTAU AUTAP; AUTAP' APTAP];
                    Teuchos::SerialDenseMatrix<int,ScalarType> Gtmp( Teuchos::View, *G_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
@@ -1526,13 +1585,13 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    MVT::MvAddMv(one,*UY1tmp, one, *PY2tmp, *U1tmp);
 
                    // Precompute some variables for next cycle
- 
+
                    // AU1TAU1     = Y'*G*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
                    GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
                    Teuchos::SerialDenseMatrix<int,ScalarType> AU1TAU1tmp( Teuchos::View, *AU1TAU1_, recycleBlocks_, recycleBlocks_ );
                    AU1TAU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
- 
+
                    // AU1TU1      = Y'*F*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
                    FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
@@ -1547,7 +1606,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    dold = Dtmp(numBlocks_-1,0);
 
                    // indicate that updated recycle space now defined
-                   existU1_ = true; 
+                   existU1_ = true;
 
                    // Indicate the size of the P, Beta structures generated this cycle
                    lastp = numBlocks_;
@@ -1606,7 +1665,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    for(int ii=0;ii<numBlocks_;ii++) {
                      F22(ii,ii) = Dtmp(ii,0);
                    }
- 
+
                    // G = [AU1TAU1 AU1TAP; AU1TAP' APTAP];
                    Teuchos::SerialDenseMatrix<int,ScalarType> Gtmp( Teuchos::View, *G_, (numBlocks_+recycleBlocks_), (numBlocks_+recycleBlocks_) );
                    Teuchos::SerialDenseMatrix<int,ScalarType> G11( Teuchos::View, *G_, recycleBlocks_, recycleBlocks_ );
@@ -1642,14 +1701,14 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
                    MVT::MvTimesMatAddMv( one, *Ptmp, Y2, zero, *PY2tmp );
                    MVT::MvTimesMatAddMv( one, *U1tmp, Y1, zero, *U1Y1tmp );
                    MVT::MvAddMv(one,*U1Y1tmp, one, *PY2tmp, *U1tmp);
- 
+
                    // Precompute some variables for next cycle
 
                    // AU1TAU1     = Y'*G*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> GYtmp( Teuchos::View, *GY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
                    GYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Gtmp,Ytmp,zero);
                    AU1TAU1tmp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,Ytmp,GYtmp,zero);
- 
+
                    // AU1TU1      = Y'*F*Y;
                    Teuchos::SerialDenseMatrix<int,ScalarType> FYtmp( Teuchos::View, *FY_, (numBlocks_+recycleBlocks_), recycleBlocks_ );
                    FYtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Ftmp,Ytmp,zero);
@@ -1669,7 +1728,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
             // Cleanup after end of cycle
 
             // P = P(:,end-1:end);
-            index.resize( 2 ); 
+            index.resize( 2 );
             index[0] = lastp-1; index[1] = lastp;
             Teuchos::RCP<const MV> Ptmp2 = MVT::CloneView( *P_,  index );
             index[0] = 0;       index[1] = 1;
@@ -1677,7 +1736,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 
             // Beta = Beta(end);
             (*Beta_)(0,0) = (*Beta_)(lastBeta,0);
- 
+
             // Delta = Delta(:,end);
             if (existU_) { // Delta only initialized if U exists
               Teuchos::SerialDenseMatrix<int,ScalarType> mu1( Teuchos::View, *Delta_, recycleBlocks_, 1, 0, 0 );
@@ -1705,36 +1764,36 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
             // increment cycle count
             cycle = cycle + 1;
 
-	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // we returned from iterate(), but none of our status tests Passed.
-	  // something is wrong, and it is probably our fault.
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
-	  }
-	}
-	catch (const std::exception &e) {
-	  printer_->stream(Errors) << "Error! Caught std::exception in RCGIter::iterate() at iteration " 
-				   << rcg_iter->getNumIters() << std::endl 
-				   << e.what() << std::endl;
-	  throw;
-	}
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // we returned from iterate(), but none of our status tests Passed.
+          // something is wrong, and it is probably our fault.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                               "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
+          }
+        }
+        catch (const std::exception &e) {
+          printer_->stream(Errors) << "Error! Caught std::exception in RCGIter::iterate() at iteration "
+                                   << rcg_iter->getNumIters() << std::endl
+                                   << e.what() << std::endl;
+          throw;
+        }
       }
 
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
-      
+
       // Update indices for the linear systems to be solved.
       numRHS2Solve -= 1;
       if ( numRHS2Solve > 0 ) {
         currIdx[0]++;
-	// Set the next indices.
-	problem_->setLSIndex( currIdx );
-      } 
+        // Set the next indices.
+        problem_->setLSIndex( currIdx );
+      }
       else {
         currIdx.resize( numRHS2Solve );
       }
@@ -1790,14 +1849,14 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
           }
         } // if (numRHS2Solve > 0)
 
-      } // if (existU1) 
+      } // if (existU1)
     }// while ( numRHS2Solve > 0 )
-    
+
   }
 
   // print final summary
   sTest_->print( printer_->stream(FinalSummary) );
- 
+
   // print timing information
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
   // Calling summarize() can be expensive, so don't call unless the
@@ -1815,13 +1874,13 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
     using Teuchos::rcp_dynamic_cast;
     typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
     // testValues is nonnull and not persistent.
-    const std::vector<MagnitudeType>* pTestValues = 
+    const std::vector<MagnitudeType>* pTestValues =
       rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
       "Belos::RCGSolMgr::solve(): The convergence test's getTestValue() "
       "method returned NULL.  Please report this bug to the Belos developers.");
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
       "Belos::RCGSolMgr::solve(): The convergence test's getTestValue() "
       "method returned a vector of length zero.  Please report this bug to the "
@@ -1832,30 +1891,30 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
     // just for the vectors from the last deflation?
     achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
   }
-  
+
   if (!isConverged) {
-    return Unconverged; // return from RCGSolMgr::solve() 
+    return Unconverged; // return from RCGSolMgr::solve()
   }
-  return Converged; // return from RCGSolMgr::solve() 
+  return Converged; // return from RCGSolMgr::solve()
 }
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP>::getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType>& F,
+void RCGSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType>& F,
                                                   const Teuchos::SerialDenseMatrix<int,ScalarType>& G,
                                                         Teuchos::SerialDenseMatrix<int,ScalarType>& Y) {
-  // order of F,G 
-  int n = F.numCols(); 
+  // order of F,G
+  int n = F.numCols();
 
   // The LAPACK interface
   Teuchos::LAPACK<int,ScalarType> lapack;
- 
+
   // Magnitude of harmonic Ritz values
   std::vector<MagnitudeType> w(n);
- 
+
   // Sorted order of harmonic Ritz values
   std::vector<int> iperm(n);
- 
+
   // Compute k smallest harmonic Ritz pairs
   // SUBROUTINE DSYGV( ITYPE, JOBZ, UPLO, N, A, LDA, B, LDB, W, WORK, LWORK, INFO )
   int itype = 1; // solve A*x = (lambda)*B*x
@@ -1869,63 +1928,63 @@ void RCGSolMgr<ScalarType,MV,OP>::getHarmonicVecs(const Teuchos::SerialDenseMatr
   Teuchos::SerialDenseMatrix<int,ScalarType> G2( Teuchos::Copy, *G_, G_->numRows(), G_->numCols() );
 
   // query for optimal workspace size
-  lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info); 
+  lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                      "Belos::RCGSolMgr::solve(): LAPACK SYGV failed to query optimal work size.");
   lwork = (int)work[0];
   work.resize(lwork);
-  lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info); 
+  lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGSolMgrLAPACKFailure,
                      "Belos::RCGSolMgr::solve(): LAPACK SYGV failed to compute eigensolutions.");
 
 
   // Construct magnitude of each harmonic Ritz value
   this->sort(w,n,iperm);
- 
+
   // Select recycledBlocks_ smallest eigenvectors
   for( int i=0; i<recycleBlocks_; i++ ) {
     for( int j=0; j<n; j++ ) {
       Y(j,i) = G2(j,iperm[i]);
     }
   }
- 
+
 }
 
 // This method sorts list of n floating-point numbers and return permutation vector
 template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm)
+void RCGSolMgr<ScalarType,MV,OP,false>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm)
 {
   int l, r, j, i, flag;
   int    RR2;
   double dRR, dK;
- 
+
   // Initialize the permutation vector.
   for(j=0;j<n;j++)
     iperm[j] = j;
- 
+
   if (n <= 1) return;
- 
+
   l    = n / 2 + 1;
   r    = n - 1;
   l    = l - 1;
   dRR  = dlist[l - 1];
   dK   = dlist[l - 1];
- 
+
   RR2 = iperm[l - 1];
   while (r != 0) {
     j = l;
     flag = 1;
- 
+
     while (flag == 1) {
       i = j;
       j = j + j;
- 
+
       if (j > r + 1)
         flag = 0;
       else {
         if (j < r + 1)
           if (dlist[j] > dlist[j - 1]) j = j + 1;
- 
+
         if (dlist[j - 1] > dK) {
           dlist[i - 1] = dlist[j - 1];
           iperm[i - 1] = iperm[j - 1];
@@ -1958,13 +2017,13 @@ void RCGSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, int n, st
 
 //  This method requires the solver manager to return a std::string that describes itself.
 template<class ScalarType, class MV, class OP>
-std::string RCGSolMgr<ScalarType,MV,OP>::description() const
+std::string RCGSolMgr<ScalarType,MV,OP,false>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::RCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   return oss.str();
 }
-  
+
 } // end Belos namespace
 
 #endif /* BELOS_RCG_SOLMGR_HPP */

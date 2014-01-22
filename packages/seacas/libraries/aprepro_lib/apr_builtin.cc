@@ -105,6 +105,8 @@ double do_juldayhms(double mon, double day, double year,
 			    double h, double mi, double se);
 double do_julday(double mon, double day, double year);
 double do_log1p(double mag);
+double do_rows(array *arr);
+double do_cols(array *arr);
 
 const char  *do_execute(char *string);
 const char  *do_getenv(char *string);
@@ -122,6 +124,12 @@ const char  *do_file_to_string(char *filename);
 const char  *do_extract(char *string, char *begin, char *end);
 const char  *do_include_path(char *newpath);
 const char  *do_intout(double intval);
+const char  *do_print_array(array *my_array_data);
+
+array *do_make_array(double rows, double cols);
+array *do_identity(double size);
+array *do_transpose(array *a);
+array *do_csv_array(char *filename);
 
 /* DO_INT:  Calculate integer nearest to zero from value */
 double do_int(double x)
@@ -697,6 +705,17 @@ double do_atanh(double x)
   x = x / (1.0 - x);
   return (z * LOG1P(x + x));
 }
+
+double do_rows(const array *arr)
+{
+  return arr->rows;
+}
+
+double do_cols(const array *arr)
+{
+  return arr->cols;
+}
+
 /*
   --------------------------STRING FUNCTIONS------------------------
  */
@@ -1092,4 +1111,125 @@ const char *do_error (char *error_string)
   /* NOTREACHED */
   return(NULL);
 }
+
+const char *do_print_array(const array *my_array_data)
+{
+  if (my_array_data != NULL) {
+    std::ostringstream lines;
+
+    int rows = my_array_data->rows;
+    int cols = my_array_data->cols;
+
+    int idx=0;
+
+    for (int ir=0; ir < rows; ir++) {
+      if (ir > 0)
+	lines << "\n";
+      lines << "\t";
+      for (int ic=0; ic < cols; ic++) {
+	lines << my_array_data->data[idx++];
+	if (ic < cols-1)
+	  lines << "\t";
+      }
+    }
+    char *ret_string;
+    new_string(lines.str().c_str(), &ret_string);
+    return ret_string;
+  }
+  else {
+    return "";
+  }
+}
+
+array *do_make_array(double rows, double cols)
+{
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = rows;
+  array_data->cols = cols;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(rows*cols,sizeof(double));
+  return array_data;
+}
+
+array *do_identity(double size)
+{
+  int i;
+  int isize = size;
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = isize;
+  array_data->cols = isize;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(size*size,sizeof(double));
+
+  for (i=0; i < isize; i++) {
+    array_data->data[i*isize+i] = 1.0;
+  }
+  return array_data;
+}
+
+array *do_transpose(const array *a)
+{
+  int i,j;
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = a->cols;
+  array_data->cols = a->rows;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(a->rows*a->cols,sizeof(double));
+  for (i=0; i < a->rows; i++) {
+    for (j=0; j < a->cols; j++) {
+      array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
+    }
+  }
+  return array_data;
+}
+
+array *do_csv_array(const char *filename)
+{
+  const char *delim = ",";
+  std::fstream *file = aprepro->open_file(filename, "r");
+  
+  size_t rows = 0;
+  size_t cols = 0;
+
+  std::string line;
+  while (std::getline(*file, line)) {
+    rows++;
+    std::vector<std::string> tokens;
+    tokenize(line, delim, tokens);
+    cols = tokens.size() > cols ? tokens.size() : cols;
+  }
+
+  array *array_data = new array;
+  array_data->rows = rows;
+  array_data->cols = cols;
+
+  /* Allocate space to store data... */
+  array_data->data = new double[rows*cols];
+
+  /* Read file again storing entries in array_data->data */
+  file->clear();
+  file->seekg(0);
+    
+  int idx = 0;
+  rows = 0;
+  while (std::getline(*file, line)) {
+    std::vector<std::string> tokens;
+    tokenize(line, delim, tokens);
+    for (size_t i=0; i < (size_t)array_data->cols; i++) {
+      if (i < tokens.size()) {
+	array_data->data[idx++] = atof(tokens[i].c_str());
+      }
+      else {
+	array_data->data[idx++] = 0.0;
+      }
+    }
+    rows++;
+  }
+  assert((int)rows == array_data->rows);
+  return array_data;
+}
+
 } // namespace SEAMS

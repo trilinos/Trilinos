@@ -515,7 +515,6 @@ namespace TSQR {
         typedef MatView<LocalOrdinal, Scalar> view_type;
         typedef CacheBlockRange<const_view_type> const_range_type;
         typedef CacheBlockRange<view_type> range_type;
-        typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
 
         if (cbIndices.first >= cbIndices.second)
           return; // My range of cache blocks is empty; nothing to do
@@ -1697,7 +1696,6 @@ namespace TSQR {
     {
       using details::cacheBlockIndexRange;
       typedef details::ApplyFirstPass<LocalOrdinal, Scalar> first_pass_type;
-      typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
 
       Teuchos::RCP<node_type> node = getNode ();
@@ -1865,7 +1863,6 @@ namespace TSQR {
       work_.resize (static_cast<size_t> (numCols));
 
       typedef MatView<LocalOrdinal, Scalar> view_type;
-      typedef typename std::vector<view_type>::size_type size_type;
 
       // Top blocks of C are the whole cache blocks.  We only want to
       // affect the top ncols x ncols part of each of those blocks in

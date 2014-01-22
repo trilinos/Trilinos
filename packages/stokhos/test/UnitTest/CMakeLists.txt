@@ -1,4 +1,5 @@
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
@@ -495,6 +496,10 @@ IF(Stokhos_ENABLE_Sacado)
             DEPLIBS stokhos kokkoscore kokkoslinalg
             )
         ENDIF()
+
+        TRIBITS_COPY_FILES_TO_BINARY_DIR(copyMueLuFiles
+          DEST_FILES muelu_cheby.xml
+          )
 
       ENDIF()
 

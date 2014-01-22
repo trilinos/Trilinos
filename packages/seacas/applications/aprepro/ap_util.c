@@ -121,7 +121,7 @@ int check_valid_var(char *var)
   if (length == 0)
     return 0;
 
-  if (!isalpha(var[0])) {
+  if (!isalpha(var[0]) && var[0] != '_') {
     return 0;
   }
 

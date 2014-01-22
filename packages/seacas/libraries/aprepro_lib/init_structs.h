@@ -1,5 +1,7 @@
 #ifndef INIT_STRUCTS_H
 #define INIT_STRUCTS_H
+#include "apr_array.h"
+
 struct init_d
   {
     const char *fname;
@@ -40,6 +42,14 @@ struct init_c
     const char *description;
   };
 
+struct init_a
+  {
+    const char *fname;
+    double (*fnct)(const array*);
+    const char *syntax;
+    const char *description;
+  };
+
 struct str_init
   {
     const char *fname;
@@ -64,6 +74,14 @@ struct str_d_init
     const char *description;
   };
 
+struct str_a_init
+  {
+    const char *fname;
+    const char *(*fnct)(const array*);
+    const char *syntax;
+    const char *description;
+  };
+
 struct str_dcc_init
   {
     const char *fname;
@@ -76,6 +94,38 @@ struct str_ccc_init
   {
     const char *fname;
     const char *(*fnct)(char*, char*, char*);
+    const char *syntax;
+    const char *description;
+  };
+
+struct array_c_init
+  {
+    const char *fname;
+    array *(*fnct)(const char*);
+    const char *syntax;
+    const char *description;
+  };
+
+struct array_dd_init
+  {
+    const char *fname;
+    array *(*fnct)(double, double);
+    const char *syntax;
+    const char *description;
+  };
+
+struct array_d_init
+  {
+    const char *fname;
+    array *(*fnct)(double);
+    const char *syntax;
+    const char *description;
+  };
+
+struct array_a_init
+  {
+    const char *fname;
+    array *(*fnct)(const array*);
     const char *syntax;
     const char *description;
   };

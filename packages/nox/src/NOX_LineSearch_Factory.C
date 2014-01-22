@@ -48,11 +48,11 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Common.H"
 #include "NOX_LineSearch_Factory.H" // class definition
 
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_GlobalData.H"
-#include "NOX_Common.H"
 
 // All the different line searches
 #include "NOX_LineSearch_FullStep.H"
@@ -62,6 +62,9 @@
 #include "NOX_LineSearch_NonlinearCG.H"
 #include "NOX_LineSearch_UserLimiting.H"
 #include "NOX_LineSearch_UserDefinedFactory.H"
+#ifdef HAVE_NOX_THYRA
+#include "NOX_LineSearch_UserDirectionChange.hpp"
+#endif
 
 // ************************************************************************
 // ************************************************************************
@@ -100,6 +103,10 @@ buildLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd,
     line_search = Teuchos::rcp(new NonlinearCG(gd, params));
   else if (method == "User Limiting")
     line_search = Teuchos::rcp(new UserLimiting(gd, params));
+#ifdef HAVE_NOX_THYRA
+  else if (method == "User Direction Change")
+    line_search = Teuchos::rcp(new UserDirectionChange(gd, params));
+#endif
   else if (method == "User Defined") {
     using namespace Teuchos;
     if (isParameterType< RCP<NOX::LineSearch::UserDefinedFactory> >

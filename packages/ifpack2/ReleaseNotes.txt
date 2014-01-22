@@ -2,6 +2,40 @@
 Release Notes for Trilinos Package Ifpack2
 ------------------------------------------
 
+Trilinos 11.6:
+--------------
+
+* AdditiveSchwarz interface changes
+
+AdditiveSchwarz implements additive Schwarz domain decomposition.
+The class also manages and invokes the solver for each subdomain.
+That solver must implement Ifpack2::Preconditioner.
+
+We made two changes to AdditiveSchwarz:
+
+  1. Subdomain solver type is now determined entirely at run time
+  2. Second template parameter (LocalInverseType) is deprecated
+
+These changes are related to each other.  It used to be that users
+would specify the type of the subdomain solver as the second template
+parameter of AdditiveSchwarz, LocalInverseType.  The value of
+LocalInverseType had to be a concrete subclass of Preconditioner.
+This is no longer the case.  Users now may and should omit
+AdditiveSchwarz's second template parameter.  More importantly, they
+may now specify the subdomain solver's type at run time.  They may do
+so either as a run-time parameter in the input ParameterList of
+AdditiveSchwarz, or by calling AdditiveSchwarz's
+setInnerPreconditioner() method.  See AdditiveSchwarz's public class
+documentation for details.
+
+AdditiveSchwarz's second template parameter has a default value of
+Ifpack2::Preconditioner.  For backwards compatibility, if users
+specify a known concrete subclass of Ifpack2::Preconditioner for
+LocalInverseType, AdditiveSchwarz will implement the previous behavior
+of creating a subdomain solver of that specific type.  In the next
+major Trilinos release, we plan to remove AdditiveSchwarz's second
+template parameter entirely.
+
 Trilinos 11.4:
 --------------
 

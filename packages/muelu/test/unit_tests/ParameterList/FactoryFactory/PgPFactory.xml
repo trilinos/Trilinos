@@ -1,0 +1,14 @@
+<ParameterList name="Factories">
+
+  <Parameter name="P0" type="string" value="PgPFactory"/>
+
+  <ParameterList name="P1">
+    <Parameter name="factory" type="string" value="PgPFactory"/>
+  </ParameterList>
+
+  <ParameterList name="P2">
+    <Parameter name="factory"       type="string" value="PgPFactory"/>
+    <Parameter name="ReUseRowBasedOmegas" type="bool" value="false"/>
+  </ParameterList>
+
+</ParameterList>

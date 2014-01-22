@@ -49,7 +49,7 @@
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#if defined(HAVE_IFPACK2_AMESOS2)
 
 namespace Ifpack2 {
 namespace Details {
@@ -71,5 +71,5 @@ namespace Details {
 } // namespace Details
 } // namespace Ifpack2
 
-#endif // HAVE_IFPACK2_EXPERIMENTAL && HAVE_IFPACK2_AMESOS2
+#endif // HAVE_IFPACK2_AMESOS2
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

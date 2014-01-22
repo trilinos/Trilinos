@@ -100,6 +100,7 @@ namespace MueLu {
                                   "If a new aggregate has some neighbours that are already aggregated, "
                                   "this node probably can be added to one of these aggregates. We don't need a new one.");
     validParamList->set<LO>      ("MinNodesPerAggregate",       2, "Minimum number of nodes for aggregate");
+    validParamList->set<LO>      ("MaxNodesPerAggregate",       100, "Maximum number of nodes for aggregate");
 
     validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
     validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm",   false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");

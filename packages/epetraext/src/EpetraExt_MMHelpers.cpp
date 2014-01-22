@@ -1602,7 +1602,6 @@ template<typename ImportType, typename int_type>
 void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter)
 {  
   // Do we need to use long long for GCIDs?
-  int SizeofIntType=-1;
 
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
@@ -1618,7 +1617,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if(use_lw) N = RowMapLW_->NumMyElements();
   else N = RowMapEP_->NumMyElements();
 
-  //  int MyPID = SourceMatrix.Comm().MyPID();
+  int MyPID = SourceMatrix.Comm().MyPID();
 
 #ifdef HAVE_MPI
   std::vector<int> ReverseSendSizes;
@@ -1777,14 +1776,14 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(sizeof(int_type) == sizeof(int)) {
     int * mycolind  = colind_.size() ? & colind_[0] : 0;
-    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,myrowptr,mycolind,myvals,SourcePids,TargetPids);
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,MyPID,myrowptr,mycolind,myvals,SourcePids,TargetPids);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(sizeof(int_type) == sizeof(long long)) {
     long long * mycolind  = colind_LL_.size() ? & colind_LL_[0] : 0;
-    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,myrowptr,mycolind,myvals,SourcePids,TargetPids);
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,MyPID,myrowptr,mycolind,myvals,SourcePids,TargetPids);
   }
   else
 #endif

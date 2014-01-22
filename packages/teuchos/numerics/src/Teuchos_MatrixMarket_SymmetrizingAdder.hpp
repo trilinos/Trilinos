@@ -117,7 +117,7 @@ namespace Teuchos {
         if (symmetrize_ && i != j) {
           typedef Teuchos::ScalarTraits<value_type> STS;
           const value_type Aji = skew_ ?
-            -(conjugate_ ? STS::conjugate(Aij) : Aij) :
+            value_type(-(conjugate_ ? STS::conjugate(Aij) : Aij)) :
             (conjugate_ ? STS::conjugate(Aij) : Aij);
           // The optional fourth argument (which defaults to true)
           // specifies whether or not to count the entry against the

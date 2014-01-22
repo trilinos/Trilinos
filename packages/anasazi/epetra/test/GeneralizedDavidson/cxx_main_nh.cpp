@@ -48,7 +48,9 @@
 #endif
 #include "Epetra_Map.h"
 
-int main(int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
+  using std::cout;
+  using std::endl;
 
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -91,8 +93,15 @@ int main(int argc, char *argv[]) {
 
   // Construct a Map that puts approximately the same number of
   // equations on each processor.
+  if (MyPID == 0) {
+    cout << "Building Map" << endl;
+  }
 
   Epetra_Map Map(NumGlobalElements, 0, Comm);
+
+  if (MyPID == 0) {
+    cout << "Setting up info for filling matrix" << endl;
+  }
 
   // Get update list and number of local equations from newly created Map.
 
@@ -132,9 +141,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (MyPID == 0) {
+    cout << "Creating matrix" << endl;
+  }
+
   // Create an Epetra_Matrix
 
   Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
+
+  if (MyPID == 0) {
+    cout << "Filling matrix" << endl;
+  }
 
   // Diffusion coefficient, can be set by user.
   // When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
@@ -244,10 +261,21 @@ int main(int argc, char *argv[]) {
     assert( info==0 );
   }
 
+  if (MyPID == 0) {
+    cout << "Calling FillComplete on matrix" << endl;
+  }
+
   // Finish up
-  info = A->FillComplete();
-  assert( info==0 );
+  info = A->FillComplete ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0, std::runtime_error,
+    "A->FillComplete () failed with error code " << info << ".");
+
   A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+
+  if (MyPID == 0) {
+    cout << "Setting Anasazi parameters" << endl;
+  }
 
   //************************************
   // Start the block Davidson iteration
@@ -284,10 +312,18 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Relative Convergence Tolerance", true );
   MyPL.set( "Initial Guess", "User" );
 
+  if (MyPID == 0) {
+    cout << "Creating initial vector for solver" << endl;
+  }
+
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
   ivec->Random();
+
+  if (MyPID == 0) {
+    cout << "Creating eigenproblem" << endl;
+  }
 
   // Create the eigenproblem.
   Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem = Teuchos::rcp(
@@ -305,7 +341,7 @@ int main(int argc, char *argv[]) {
   boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
+      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -313,15 +349,43 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  if (MyPID == 0) {
+    cout << "Creating eigensolver (GeneralizedDavidsonSolMgr)" << endl;
+  }
+
   // Initialize the Block Arnoldi solver
   Anasazi::GeneralizedDavidsonSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
 
-  // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMgr.solve();
-  testFailed = false;
-  if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
-    testFailed = true;
+  if (MyPID == 0) {
+    cout << "Solving eigenproblem" << endl;
   }
+
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = Anasazi::Unconverged;
+  try {
+    returnCode = MySolverMgr.solve();
+    testFailed = false;
+    if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
+      testFailed = true;
+    }
+  } catch (std::exception& e) {
+    cout << "Anasazi's solver threw an exception, which inherits from "
+         << "std::exception.  The exception's message is: " << endl
+         << e.what () << endl;
+#ifdef HAVE_MPI
+    MPI_Finalize () ;
+#endif
+    return -1;
+  } catch (...) {
+    cout << "Anasazi's solver threw an exception, but it does not inherit "
+      "from std::exception, so we cannot show you its message." << endl;
+#ifdef HAVE_MPI
+    MPI_Finalize () ;
+#endif
+    return -1;
+  }
+
+  cout << "Getting eigenvalues and eigenvectors from eigenproblem" << endl;
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
@@ -333,18 +397,18 @@ int main(int argc, char *argv[]) {
   // Output computed eigenvalues and their direct residuals
   if (verbose && MyPID==0) {
     int numritz = (int)evals.size();
-    std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-    std::cout<<std::endl<< "Computed Ritz Values"<< std::endl;
-    std::cout<< std::setw(16) << "Real Part"
+    cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+    cout<<std::endl<< "Computed Ritz Values"<< std::endl;
+    cout<< std::setw(16) << "Real Part"
         << std::setw(16) << "Imag Part"
         << std::endl;
-    std::cout<<"-----------------------------------------------------------"<<std::endl;
+    cout<<"-----------------------------------------------------------"<<std::endl;
     for (int i=0; i<numritz; i++) {
-      std::cout<< std::setw(16) << evals[i].realpart
+      cout<< std::setw(16) << evals[i].realpart
           << std::setw(16) << evals[i].imagpart
           << std::endl;
     }
-    std::cout<<"-----------------------------------------------------------"<<std::endl;
+    cout<<"-----------------------------------------------------------"<<std::endl;
   }
 
   if (numev > 0) {
@@ -421,21 +485,21 @@ int main(int argc, char *argv[]) {
 
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      std::cout<<std::endl<< "Actual Residuals"<<std::endl;
-      std::cout<< std::setw(16) << "Real Part"
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      cout<<std::endl<< "Actual Residuals"<<std::endl;
+      cout<< std::setw(16) << "Real Part"
           << std::setw(16) << "Imag Part"
           << std::setw(20) << "Direct Residual"<< std::endl;
-      std::cout<<"-----------------------------------------------------------"<<std::endl;
+      cout<<"-----------------------------------------------------------"<<std::endl;
       for (int j=0; j<numev; j++) {
-        std::cout<< std::setw(16) << evals[j].realpart
+        cout<< std::setw(16) << evals[j].realpart
             << std::setw(16) << evals[j].imagpart
             << std::setw(20) << normA[j] << std::endl;
         if ( normA[j] > tol ) {
           testFailed = true;
         }
       }
-      std::cout<<"-----------------------------------------------------------"<<std::endl;
+      cout<<"-----------------------------------------------------------"<<std::endl;
     }
   }
 
@@ -445,7 +509,7 @@ int main(int argc, char *argv[]) {
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      std::cout << "End Result: TEST FAILED" << std::endl;
+      cout << "End Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
@@ -453,7 +517,7 @@ int main(int argc, char *argv[]) {
   // Default return value
   //
   if (verbose && MyPID==0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+    cout << "End Result: TEST PASSED" << std::endl;
   }
 
   return 0;

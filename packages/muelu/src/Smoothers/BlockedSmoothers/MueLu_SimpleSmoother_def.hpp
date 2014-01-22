@@ -58,7 +58,10 @@ namespace MueLu {
     schurFactManager_->SetIgnoreUserData(true);
 
     // define smoother/solver for velocity prediction
-    RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(this->GetFactory("A"), 0, 0));
+    RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(/*this->GetFactory("A"), 0, 0*/));
+    A00Fact->SetFactory("A",this->GetFactory("A"));
+    A00Fact->SetParameter("block row",ParameterEntry(0));
+    A00Fact->SetParameter("block col",ParameterEntry(0));
     Teuchos::ParameterList velpredictParams;
     std::string velpredictType;
     RCP<SmootherPrototype> smoProtoPredict     = rcp( new DirectSolver(velpredictType,velpredictParams) );
