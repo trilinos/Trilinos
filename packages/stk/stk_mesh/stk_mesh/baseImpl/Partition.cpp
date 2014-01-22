@@ -491,7 +491,7 @@ size_t Partition::field_data_footprint(const FieldBase& f) const
     Bucket *b_ptr = m_buckets[i];
     if (b_ptr)
     {
-      retval += b_ptr->capacity() * field_data_size_per_entity(f, *b_ptr);
+      retval += b_ptr->capacity() * field_bytes_per_entity(f, *b_ptr);
     }
   }
 

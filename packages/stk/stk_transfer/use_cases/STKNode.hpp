@@ -151,7 +151,7 @@ public :
     const mesh::FieldBase &field = *m_values_field[i];
     const mesh::Bucket    &bucket= m_bulk_data.bucket(e);
 
-    const unsigned bytes = field_data_size_per_entity(field, bucket);
+    const unsigned bytes = field_bytes_per_entity(field, bucket);
     const unsigned bytes_per_entry = field.data_traits().size_of;
     const unsigned num_entry = bytes/bytes_per_entry;
 

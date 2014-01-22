@@ -139,7 +139,7 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
     if(is_matching_rank(f, bucket)) {
 
       if ( f.data_traits().is_pod ) {
-        const unsigned size = field_data_size_per_entity( f, bucket );
+        const unsigned size = field_bytes_per_entity( f, bucket );
 
 	buf.pack<unsigned>( size );
 
@@ -179,7 +179,7 @@ bool unpack_field_values(const BulkData& mesh,
 
       if ( f.data_traits().is_pod ) {
 
-	const unsigned size = field_data_size_per_entity( f, bucket );
+	const unsigned size = field_bytes_per_entity( f, bucket );
 	unsigned recv_data_size = 0 ;
 	buf.unpack<unsigned>( recv_data_size );
 

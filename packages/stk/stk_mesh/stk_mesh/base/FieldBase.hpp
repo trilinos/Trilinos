@@ -40,7 +40,7 @@ class FieldRepository;
   struct FieldMetaData
   {
     unsigned char* m_data;
-    int m_size;                                           // num bytes per entity, 0 means bucket does not have this field
+    int m_bytes_per_entity;                                           // num bytes per entity, 0 means bucket does not have this field
   };
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...

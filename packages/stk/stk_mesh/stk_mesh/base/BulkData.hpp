@@ -1029,7 +1029,7 @@ public:
 
      //return true if field-data size is not zero
 
-     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_size);
+     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
   }
 
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const
@@ -1068,7 +1068,7 @@ public:
 
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
 
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
   }
 
 
@@ -1969,15 +1969,15 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 //  Field free access methods
 //
 
-  inline unsigned field_data_size_per_entity(const FieldBase& f, const Bucket& b) {
+  inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
     ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(&f.get_mesh() == &b.mesh());
-    return f.get_meta_data_for_field()[b.bucket_id()].m_size;
+    return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity;
   }
-  inline unsigned field_data_size(const FieldBase& f, Entity e) {  
+  inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {  
     BulkData& bulk(f.get_mesh());
     ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
-    return field_data_size_per_entity(f, bulk.bucket(e));
+    return field_bytes_per_entity(f, bulk.bucket(e));
   }
 
 

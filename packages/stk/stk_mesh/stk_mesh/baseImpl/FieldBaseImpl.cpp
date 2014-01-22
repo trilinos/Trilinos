@@ -96,10 +96,12 @@ void FieldBaseImpl::insert_restriction(
     unsigned i = 0 ;
     if ( m_field_rank ) {
       for ( i = 0 ; i < m_field_rank ; ++i ) { tmp.stride(i) = arg_stride[i] ; }
+      tmp.set_num_scalars_per_entity(arg_stride[m_field_rank-1]);
     }
     else { // Scalar field is 0 == m_field_rank
       i = 1 ;
       tmp.stride(0) = 1 ;
+      tmp.set_num_scalars_per_entity(1);
     }
     // Remaining dimensions are 1, no change to stride
     for ( ; i < MaximumFieldDimension ; ++i ) {
@@ -167,7 +169,7 @@ void FieldBaseImpl::insert_restriction(
         const Selector& selectorI = i->selector();
         bool found_subset = is_subset(selectorI, arg_selector);
         if (found_subset) {
-          ThrowErrorMsgIf( i->not_equal_stride(tmp),
+          ThrowErrorMsgIf( i->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
                            arg_method << " FAILED for " << *this << " " <<
                            print_restriction( *i, arg_selector, m_field_rank ) <<
                            " WITH INCOMPATIBLE REDECLARATION " <<
@@ -178,7 +180,7 @@ void FieldBaseImpl::insert_restriction(
 
         bool found_superset = is_subset(arg_selector, selectorI);
         if (found_superset) {
-          ThrowErrorMsgIf( i->not_equal_stride(tmp),
+          ThrowErrorMsgIf( i->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
                            arg_method << " FAILED for " << *this << " " <<
                            print_restriction( *i, arg_selector, m_field_rank ) <<
                            " WITH INCOMPATIBLE REDECLARATION " <<
@@ -200,7 +202,7 @@ void FieldBaseImpl::insert_restriction(
       }
     }
     else {
-      ThrowErrorMsgIf( restr->not_equal_stride(tmp),
+      ThrowErrorMsgIf( restr->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
                        arg_method << " FAILED for " << *this << " " <<
                        print_restriction( *restr, arg_selector, m_field_rank ) <<
                        " WITH INCOMPATIBLE REDECLARATION " <<
@@ -228,7 +230,7 @@ void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Pa
         if (i != r &&
             check_restriction.selector()(subset) &&
             is_subset(curr_restriction.selector(), check_restriction.selector())) {
-          ThrowErrorMsgIf( check_restriction.not_equal_stride(curr_restriction),
+          ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
                            "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
           delete_me = true;
           break;
@@ -279,7 +281,7 @@ unsigned FieldBaseImpl::max_size( unsigned ent_rank ) const
   if(entity_rank() == ent_rank)
   {
       for ( ; i != ie ; ++i ) {
-          const unsigned len = m_field_rank ? i->stride( m_field_rank - 1 ) : 1 ;
+          const unsigned len = m_field_rank ? i->num_scalars_per_entity() : 1 ;
           if ( max < len ) { max = len ; }
       }
   }

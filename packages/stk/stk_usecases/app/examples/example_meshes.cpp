@@ -75,9 +75,9 @@ void use_case_5_generate_mesh_meta_data(
   const mesh::FieldBase::Restriction & res =
     stk::mesh::find_restriction(node_coord, mesh::MetaData::NODE_RANK , universal );
 
-  if ( res.stride(0) != 3 ) {
+  if ( res.num_scalars_per_entity() != 3 ) {
     std::ostringstream msg ;
-    msg << "stk_examples::use_case_5_generate_mesh_meta_data FAILED, coordinate dimension must be 3 != " << res.stride(0) ;
+    msg << "stk_examples::use_case_5_generate_mesh_meta_data FAILED, coordinate dimension must be 3 != " << res.num_scalars_per_entity() ;
     throw std::runtime_error( msg.str() );
   }
 }

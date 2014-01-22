@@ -22,9 +22,7 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, defaultConstruct )
 {
   stk::mesh::FieldRestriction fr;
   STKUNIT_EXPECT_EQ( fr.selector(), stk::mesh::Selector() );
-  for (stk::mesh::Ordinal i = 0 ; i < stk::mesh::MaximumFieldDimension ; ++i) {
-    STKUNIT_EXPECT_EQ( fr.stride(i), 0 );
-  }
+  STKUNIT_EXPECT_EQ( 0, fr.num_scalars_per_entity() );
   STKUNIT_EXPECT_EQ( fr.dimension(), 0 );
 }
 
@@ -35,15 +33,11 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, construct )
   stk::mesh::Part& part_a = meta.declare_part("a");
 
   stk::mesh::FieldRestriction fr(part_a);
-  for (stk::mesh::Ordinal i = 0 ; i < stk::mesh::MaximumFieldDimension ; ++i) {
-    fr.stride(i) = i+1;
-  }
+  const int numScalarsPerEntity = 2;
+  fr.set_num_scalars_per_entity(numScalarsPerEntity);
+  STKUNIT_EXPECT_EQ( numScalarsPerEntity, fr.num_scalars_per_entity() );
 
   STKUNIT_EXPECT_EQ( fr.selector(), stk::mesh::Selector(part_a) );
-  const int max_field_dimension = stk::mesh::MaximumFieldDimension;
-  for (int i = 0 ; i < max_field_dimension ; ++i) {
-    STKUNIT_EXPECT_EQ( fr.stride(i), i+1 );
-  }
   STKUNIT_EXPECT_EQ( fr.dimension(), 1 );
 }
 
@@ -54,16 +48,12 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, copyConstruct )
   stk::mesh::Part& part_a = meta.declare_part("a");
 
   stk::mesh::FieldRestriction fr(part_a);
-  for (stk::mesh::Ordinal i = 0 ; i < stk::mesh::MaximumFieldDimension ; ++i) {
-    fr.stride(i) = i+1;
-  }
+  const int numScalarsPerEntity = 2;
+  fr.set_num_scalars_per_entity(numScalarsPerEntity);
 
   stk::mesh::FieldRestriction tmpfr(fr);
+  STKUNIT_EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
   STKUNIT_EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
-  const int max_field_dimension = stk::mesh::MaximumFieldDimension;
-  for (int i = 0 ; i < max_field_dimension ; ++i) {
-    STKUNIT_EXPECT_EQ( tmpfr.stride(i), i+1 );
-  }
   STKUNIT_EXPECT_EQ( tmpfr.dimension(), 1 );
 }
 
@@ -75,20 +65,15 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqual )
   stk::mesh::Part& part_b = meta.declare_part("b");
 
   stk::mesh::FieldRestriction fr(part_a);
-  for (stk::mesh::Ordinal i = 0 ; i < stk::mesh::MaximumFieldDimension ; ++i) {
-    fr.stride(i) = i+1;
-  }
   stk::mesh::FieldRestriction tmpfr(part_b);
-  for (stk::mesh::Ordinal i = 0 ; i < stk::mesh::MaximumFieldDimension ; ++i) {
-    tmpfr.stride(i) = i+10;
-  }
+
+  const int numScalarsPerEntity = 2;
+  fr.set_num_scalars_per_entity(numScalarsPerEntity);
+  tmpfr.set_num_scalars_per_entity(numScalarsPerEntity+10);
 
   tmpfr = fr;
+  STKUNIT_EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
   STKUNIT_EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
-  const int max_field_dimension = stk::mesh::MaximumFieldDimension;
-  for (int i = 0 ; i < max_field_dimension ; ++i) {
-    STKUNIT_EXPECT_EQ( tmpfr.stride(i), i+1 );
-  }
   STKUNIT_EXPECT_EQ( tmpfr.dimension(), 1 );
 }
 
@@ -131,17 +116,17 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqualEqual_and_NotEqual )
 
   {
     stk::mesh::FieldRestriction frA(part_a);
-    frA.stride(0) = 25;
+    frA.set_num_scalars_per_entity(25);
     stk::mesh::FieldRestriction frB(part_a);
-    frB.stride(0) = 10;
+    frB.set_num_scalars_per_entity(10);
     STKUNIT_EXPECT_EQ( frA == frB, true );
     STKUNIT_EXPECT_EQ( frA != frB, false );
   }
   {
     stk::mesh::FieldRestriction frA(part_a);
-    frA.stride(0) = 3;
+    frA.set_num_scalars_per_entity(3);
     stk::mesh::FieldRestriction frB(part_b);
-    frB.stride(0) = 3;
+    frB.set_num_scalars_per_entity(3);
     STKUNIT_EXPECT_EQ( frA == frB, false );
     STKUNIT_EXPECT_EQ( frA != frB, true );
   }
@@ -158,38 +143,6 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqualEqual_and_NotEqual )
     STKUNIT_EXPECT_EQ( frA != frB, false );
   }
 }
-
-
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, not_equal_stride )
-{
-  stk::mesh::MetaData meta(3);
-  stk::mesh::Part& part_a = meta.declare_part("a");
-
-  {
-    stk::mesh::FieldRestriction frA(part_a);
-    frA.stride(0) = 25;
-    stk::mesh::FieldRestriction frB(part_a);
-    frB.stride(0) = 10;
-    STKUNIT_EXPECT_EQ( frA.not_equal_stride(frB), true );
-    STKUNIT_EXPECT_EQ( frB.not_equal_stride(frA), true );
-  }
-  {
-    stk::mesh::FieldRestriction frA(part_a);
-    for (stk::mesh::Ordinal i=0 ; i < stk::mesh::MaximumFieldDimension ; ++i ) {
-      frA.stride(i) = i+1;
-    }
-    stk::mesh::FieldRestriction frB(part_a);
-    for (stk::mesh::Ordinal i=0 ; i < stk::mesh::MaximumFieldDimension ; ++i ) {
-      frB.stride(i) = i+1;
-    }
-    STKUNIT_EXPECT_EQ( frA.not_equal_stride(frB), false );
-    STKUNIT_EXPECT_EQ( frB.not_equal_stride(frA), false );
-    frB.stride(stk::mesh::MaximumFieldDimension-1) = 1;
-    STKUNIT_EXPECT_EQ( frA.not_equal_stride(frB), true );
-    STKUNIT_EXPECT_EQ( frB.not_equal_stride(frA), true );
-  }
-}
-
 
 } //namespace <anonymous>
 

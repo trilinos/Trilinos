@@ -1621,7 +1621,7 @@ STKUNIT_UNIT_TEST( UnitTestingOfBulkData, test_total_field_data_footprint )
   for (size_t i = 0; i < node_buckets.size(); ++i)
   {
     node_fields_footprint +=
-        node_buckets[i]->capacity() * field_data_size_per_entity(hf.m_coord_field, *node_buckets[i]);
+        node_buckets[i]->capacity() * field_bytes_per_entity(hf.m_coord_field, *node_buckets[i]);
   }
 
   STKUNIT_EXPECT_EQUAL(node_fields_footprint, field_data_footprint);

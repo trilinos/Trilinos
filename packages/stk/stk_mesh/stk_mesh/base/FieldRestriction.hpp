@@ -34,13 +34,15 @@ class FieldRestriction {
   typedef shards::array_traits::int_t size_type ;
 
   FieldRestriction()
-    : m_selector()
+    : m_selector(),
+      m_num_scalars_per_entity(0)
   {
     Copy<MaximumFieldDimension>( m_stride , size_type(0) );
   }
 
   FieldRestriction( const FieldRestriction & rhs )
-    : m_selector( rhs.m_selector )
+    : m_selector( rhs.m_selector ),
+      m_num_scalars_per_entity( rhs.m_num_scalars_per_entity )
   {
     Copy< MaximumFieldDimension >( m_stride , rhs.m_stride );
   }
@@ -48,19 +50,22 @@ class FieldRestriction {
   FieldRestriction & operator = ( const FieldRestriction & rhs )
   {
     m_selector = rhs.m_selector;
+    m_num_scalars_per_entity = rhs.m_num_scalars_per_entity;
     Copy< MaximumFieldDimension >( m_stride , rhs.m_stride );
     return *this ;
   }
 
   explicit FieldRestriction( const Selector& input_selector)
-   : m_selector(input_selector)
+   : m_selector(input_selector),
+     m_num_scalars_per_entity(0)
   {
   }
 
   const Selector& selector() const { return m_selector; }
 
   size_type & stride( Ordinal index ) { return m_stride[index]; }
-  const size_type & stride( Ordinal index ) const { return m_stride[index]; }
+  void set_num_scalars_per_entity(size_type value) { m_num_scalars_per_entity = value; }
+  const size_type num_scalars_per_entity() const { return m_num_scalars_per_entity; }
 
   size_type dimension() const { return m_stride[0]; }
 
@@ -77,11 +82,6 @@ class FieldRestriction {
     return this->m_selector != rhs.m_selector;
   }
 
-  bool not_equal_stride( const FieldRestriction & rhs ) const
-  {
-    return Compare< MaximumFieldDimension >::not_equal( this->m_stride , rhs.m_stride );
-  }
-
   void print(
       std::ostream & os,
       const Selector & selector,
@@ -91,6 +91,7 @@ class FieldRestriction {
   private:
   Selector m_selector;
   size_type m_stride[ MaximumFieldDimension ];
+  size_type m_num_scalars_per_entity;
 };
 
 typedef std::vector<FieldRestriction> FieldRestrictionVector;

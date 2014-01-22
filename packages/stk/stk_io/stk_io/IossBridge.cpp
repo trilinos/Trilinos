@@ -408,7 +408,7 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
 	result->first = scalar ;
   }
   else if ( 1 == rank ) {
-    size_t num_comp = res.stride(0);
+    size_t num_comp = res.num_scalars_per_entity();
     if ( tags[0] == & stk::mesh::Cartesian::tag() ) {
       if (1 == num_comp ) {
 	result->first = scalar ;
@@ -456,7 +456,7 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
   }
 
   if ( result->first.empty() ) {
-	size_t num_comp = res.stride(rank-1);
+	size_t num_comp = res.num_scalars_per_entity();
 	std::ostringstream tmp ;
 	tmp << "Real[" << num_comp << "]" ;
 	result->first = tmp.str();

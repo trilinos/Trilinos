@@ -99,7 +99,7 @@ const FieldBase::Restriction& find_and_check_restriction(const FieldBase& field,
           if (restriction == &empty) {
             restriction = &*it;
           }
-          else if (it->not_equal_stride(*restriction)) {
+          else if (it->num_scalars_per_entity() != restriction->num_scalars_per_entity()) {
             throw_conflicting_restrictions(field, parts, *restriction, *it);
           }
         }

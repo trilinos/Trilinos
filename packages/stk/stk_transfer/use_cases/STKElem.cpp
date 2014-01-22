@@ -118,7 +118,7 @@ void parametric(std::vector<std::vector<double> > &val,
 
       const mesh::FieldBase &field = *values_field[ival];
       const mesh::Bucket & node_bucket = bulkData.bucket(elem_node_rels[0]);
-      const unsigned bytes = field_data_size_per_entity(field, node_bucket);
+      const unsigned bytes = field_bytes_per_entity(field, node_bucket);
       const unsigned bytes_per_entry = field.data_traits().size_of;
       const unsigned num_entry = bytes/bytes_per_entry;
 
@@ -177,7 +177,7 @@ unsigned  STKElem::value_size(const EntityKey k, const unsigned i) const
 
   const mesh::Bucket    &bucket= m_bulk_data.bucket(node);
 
-  const unsigned bytes = field_data_size_per_entity(field, bucket);
+  const unsigned bytes = field_bytes_per_entity(field, bucket);
   const unsigned bytes_per_entry = field.data_traits().size_of;
   const unsigned num_entry = bytes/bytes_per_entry;
 
