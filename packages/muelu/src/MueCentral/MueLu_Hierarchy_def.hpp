@@ -488,6 +488,7 @@ namespace MueLu {
 
         RCP<MultiVector> residual;
         {
+          RCP<TimeMonitor> ATime      = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
           residual = Utils::Residual(*A, X, B);
         }
