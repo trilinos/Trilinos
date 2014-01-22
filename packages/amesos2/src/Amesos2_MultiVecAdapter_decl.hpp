@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -78,7 +78,7 @@ namespace Amesos2 {
    * <li>Wrapper constructor
    * \code MultiVecAdapter<MultiVecType>(const Teuchos::RCP<MultiVecType>& mat); \endcode
    * </li>
-   * 
+   *
    * <li> Method to get locality of multivec, either globally or locally indexed.
    *
    * \code
@@ -152,7 +152,7 @@ namespace Amesos2 {
    * void globalize( const Teuchos::ArrayView<Value_t>& newVals )
    * \endcode
    * </li>
-   * 
+   *
    * <li> Get a description of this adapter.
    *
    * \code
@@ -169,7 +169,7 @@ namespace Amesos2 {
    * \endcode
    * </li>
    *
-   * \ingroup amesos2_multivec_adapters 
+   * \ingroup amesos2_multivec_adapters
    */
   template <class MV>
   struct MultiVecAdapter {};
@@ -185,7 +185,7 @@ namespace Amesos2 {
   Teuchos::RCP<MultiVecAdapter<MV> >
   createMultiVecAdapter(Teuchos::RCP<MV> mv){
     using Teuchos::rcp;
-    
+
     if(mv.is_null()) return Teuchos::null;
     return( rcp(new MultiVecAdapter<MV>(mv)) );
   }
@@ -195,7 +195,7 @@ namespace Amesos2 {
   createConstMultiVecAdapter(Teuchos::RCP<const MV> mv){
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
-    
+
     if(mv.is_null()) return Teuchos::null;
     return( rcp(new MultiVecAdapter<MV>(Teuchos::rcp_const_cast<MV,const MV>(mv))).getConst() );
   }
@@ -204,9 +204,9 @@ namespace Amesos2 {
   ///////////////////////////////////////////////////////////
   // Utilities for getting and putting data from MultiVecs //
   ///////////////////////////////////////////////////////////
-  
+
   namespace Util {
-    
+
     /*
      * If the multivector scalar type and the desired scalar tpye are
      * the same, then we can do a simple straight copy.
@@ -214,9 +214,9 @@ namespace Amesos2 {
     template <typename MV>
     struct same_type_get_copy {
       static void apply(const Teuchos::Ptr<const MV>& mv,
-			const Teuchos::ArrayView<typename MV::scalar_t>& v,
-			const size_t ldx,
-			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        const Teuchos::ArrayView<typename MV::scalar_t>& v,
+                        const size_t ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
     };
 
     /*
@@ -228,32 +228,36 @@ namespace Amesos2 {
     template <typename MV, typename S>
     struct diff_type_get_copy {
       static void apply(const Teuchos::Ptr<const MV>& mv,
-			const Teuchos::ArrayView<S>& v,
-			const size_t& ldx,
-			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        const Teuchos::ArrayView<S>& v,
+                        const size_t& ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
     };
 
     /** \internal
-     * 
+     *
      * \brief Helper class for getting 1-D copies of multivectors
      *
      * Handles datatype conversion when appropriate.
      */
     template <class MV, typename S>
     struct get_1d_copy_helper {
-      static void do_get(const Teuchos::Ptr<const MV>& mv,
-			 const Teuchos::ArrayView<S>& vals,
-			 const size_t ldx,
-			 Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
-      
-      static void do_get(const Teuchos::Ptr<const MV>& mv,
-			 const Teuchos::ArrayView<S>& vals,
-			 const size_t ldx,
-			 EDistribution distribution, typename MV::global_ordinal_t indexBase = 0);
+      static void
+      do_get (const Teuchos::Ptr<const MV>& mv,
+              const Teuchos::ArrayView<S>& vals,
+              const size_t ldx,
+              Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
 
-      static void do_get(const Teuchos::Ptr<const MV>& mv,
-			 const Teuchos::ArrayView<S>& vals,
-			 const size_t ldx);
+      static void
+      do_get (const Teuchos::Ptr<const MV>& mv,
+              const Teuchos::ArrayView<S>& vals,
+              const size_t ldx,
+              EDistribution distribution,
+              typename MV::global_ordinal_t indexBase = 0);
+
+      static void
+      do_get (const Teuchos::Ptr<const MV>& mv,
+              const Teuchos::ArrayView<S>& vals,
+              const size_t ldx);
     };
 
     /*
@@ -263,9 +267,9 @@ namespace Amesos2 {
     template <typename MV>
     struct same_type_data_put {
       static void apply(const Teuchos::Ptr<MV>& mv,
-			const Teuchos::ArrayView<typename MV::scalar_t>& data,
-			const size_t ldx,
-			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        const Teuchos::ArrayView<typename MV::scalar_t>& data,
+                        const size_t ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
     };
 
     /*
@@ -277,13 +281,13 @@ namespace Amesos2 {
     template <typename MV, typename S>
     struct diff_type_data_put {
       static void apply(const Teuchos::Ptr<MV>& mv,
-			const Teuchos::ArrayView<S>& data,
-			const size_t& ldx,
-			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+                        const Teuchos::ArrayView<S>& data,
+                        const size_t& ldx,
+                        Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
     };
-  
+
     /** \internal
-     * 
+     *
      * \brief Helper class for putting 1-D data arrays into multivectors
      *
      * Handles dataype conversion when necessary before putting the data.
@@ -291,18 +295,18 @@ namespace Amesos2 {
     template <class MV, typename S>
     struct put_1d_data_helper {
       static void do_put(const Teuchos::Ptr<MV>& mv,
-			 const Teuchos::ArrayView<S>& data,
-			 const size_t ldx,
-			 Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
-      
-      static void do_put(const Teuchos::Ptr<MV>& mv,
-			 const Teuchos::ArrayView<S>& data,
-			 const size_t ldx,
-			 EDistribution distribution, typename MV::global_ordinal_t indexBase = 0);
+                         const Teuchos::ArrayView<S>& data,
+                         const size_t ldx,
+                         Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
 
       static void do_put(const Teuchos::Ptr<MV>& mv,
-			 const Teuchos::ArrayView<S>& data,
-			 const size_t ldx);
+                         const Teuchos::ArrayView<S>& data,
+                         const size_t ldx,
+                         EDistribution distribution, typename MV::global_ordinal_t indexBase = 0);
+
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+                         const Teuchos::ArrayView<S>& data,
+                         const size_t ldx);
     };
   }
 } // end namespace Amesos2

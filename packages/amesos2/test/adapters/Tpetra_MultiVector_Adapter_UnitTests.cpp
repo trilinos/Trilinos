@@ -83,7 +83,7 @@ namespace {
   using Amesos2::createMultiVecAdapter;
 
   using Amesos2::Meta::is_same;
-  
+
   using Amesos2::Util::get_1d_copy_helper;
   using Amesos2::Util::put_1d_data_helper;
   using Amesos2::ROOTED;
@@ -100,8 +100,8 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption("test-mpi", "test-serial", &testMpi,
-		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
-		  " this option is ignored and a serial comm is always used." );
+                  "Test Serial by default (for now) or force MPI test.  In a serial build,"
+                  " this option is ignored and a serial comm is always used." );
   }
 
   RCP<const Comm<int> > getDefaultComm()
@@ -192,19 +192,21 @@ namespace {
     TEST_EQUALITY( mv->getNumVectors(),   adapter->getGlobalNumVectors() );
     TEST_EQUALITY( mv->getGlobalLength(), adapter->getGlobalLength()     );
     TEST_EQUALITY( mv->getStride(),       adapter->getStride()           );
-  
+
   }
 
+  // Test the get1dCopy() method of MultiVecAdapter.  Check against a
+  // known multivector, and also check against what is returned by the
+  // Tpetra::MultiVector.
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Copy, SCALAR, LO, GO )
   {
-    /* Test the get1dCopy() method of MultiVecAdapter.  We can check against a
-     * known multivector and also check against what is returned by the
-     * Tpetra::MultiVector.
-     */
+    using std::endl;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef MultiVecAdapter<MV> ADAPT;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+    out << "Getting communicator" << endl;
 
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t numprocs = comm->getSize();
@@ -213,34 +215,40 @@ namespace {
     // create a Map
     const size_t numVectors = 7;
     const size_t numLocal = 13;
-    out << "Creating Map" << std::endl;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    out << "Creating Map" << endl;
+    RCP<Map<LO,GO,Node> > map = rcp (new Map<LO,GO,Node> (INVALID,numLocal,0,comm));
 
-    out << "Creating MultiVector" << std::endl;
-    RCP<MV> mv = rcp(new MV(map,numVectors));
-    mv->randomize();
+    out << "Creating MultiVector" << endl;
+    RCP<MV> mv = rcp (new MV (map, numVectors));
+    mv->randomize ();
 
-    out << "Creating adapter" << std::endl;
-    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
-    Array<SCALAR> original(numVectors*numLocal*numprocs);
-    Array<SCALAR> copy(numVectors*numLocal*numprocs);
+    out << "Creating adapter" << endl;
+    RCP<ADAPT> adapter = createMultiVecAdapter (mv);
+    TEST_EQUALITY_CONST( adapter.is_null (), false );
+
+    Array<SCALAR> original (numVectors * numLocal * numprocs);
+    Array<SCALAR> copy (numVectors * numLocal * numprocs);
 
     ///////////////////////////////////
     // Check a global copy at rank=0 //
     ///////////////////////////////////
 
-    out << "Checking global copy" << std::endl;
-    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal*numprocs, ROOTED);
+    out << "Checking global copy" << endl;
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get (ptrInArg (*adapter), copy (),
+                                              numLocal*numprocs, ROOTED);
 
     // Only rank=0 process has global copy of the mv data, check against an import
     size_t my_num_elems = OrdinalTraits<size_t>::zero();
-    if( rank == 0 ) my_num_elems = numLocal*numprocs;
-    Map<LO,GO,Node> root_map(numLocal*numprocs, my_num_elems, 0, comm);
-    MV root_mv(rcpFromRef(root_map), numVectors);
-    Tpetra::Import<LO,GO,Node> importer(map,rcpFromRef(root_map));
-    root_mv.doImport(*mv, importer, Tpetra::REPLACE);
+    if (rank == 0) {
+      my_num_elems = numLocal*numprocs;
+    }
+    RCP<const Map<LO,GO,Node> > root_map =
+      rcp (new Map<LO,GO,Node> (numLocal*numprocs, my_num_elems, 0, comm));
+    MV root_mv (root_map, numVectors);
+    Tpetra::Import<LO,GO,Node> importer (map, root_map);
+    root_mv.doImport (*mv, importer, Tpetra::REPLACE);
 
-    root_mv.get1dCopy(original(),numLocal*numprocs);
+    root_mv.get1dCopy (original (), numLocal * numprocs);
 
     TEST_COMPARE_ARRAYS( original, copy );
 
@@ -248,19 +256,29 @@ namespace {
     // Check a local copy at all ranks //
     /////////////////////////////////////
 
-    out << "Checking local copy" << std::endl;
+    out << "Checking local copy" << endl;
+
+    TEST_EQUALITY_CONST( mv.is_null (), false );
+    TEST_EQUALITY_CONST( adapter.is_null (), false );
+
     original.clear();
     original.resize(numVectors*numLocal);
     copy.clear();
     copy.resize(numVectors*numLocal);
     mv->randomize();
-    
-    mv->get1dCopy(original(),mv->getLocalLength());
+
+    out << "About to call get1dCopy" << endl;
+    // FIXME (mfh 22 Jan 2014) Should use local stride, not local length.
+    mv->get1dCopy (original (), mv->getLocalLength ());
+    out << "Successfully called get1dCopy" << endl;
+
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal, DISTRIBUTED);
-    
+
+    out << "Successfully called get_1d_copy_helper" << endl;
+
     // Check that the values remain the same
     TEST_COMPARE_ARRAYS( original, copy );
-    out << "Done!" << std::endl;
+    out << "Done!" << endl;
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Copy_Map, SCALAR, LO, GO )
@@ -303,7 +321,7 @@ namespace {
     size_t my_num_rows = OrdinalTraits<size_t>::zero();
     if ( numprocs > 1 ){
       if ( rank < 2 ){
-	my_num_rows = total_rows / 2;
+        my_num_rows = total_rows / 2;
       }
       // If we have an odd number of rows, rank=0 gets the remainder
       if ( rank == 0 ) my_num_rows += total_rows % 2;
@@ -314,43 +332,43 @@ namespace {
 
     // Get first the global data copy
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter),
-					     global_copy(),
-					     total_rows,
-					     GLOBALLY_REPLICATED);
+                                             global_copy(),
+                                             total_rows,
+                                             GLOBALLY_REPLICATED);
 
     // Now get a copy using the map
     Array<SCALAR> my_copy(numVectors * my_num_rows);
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter),
-					     my_copy(),
-					     my_num_rows,
-					     ptrInArg(redist_map));
-    
+                                             my_copy(),
+                                             my_num_rows,
+                                             ptrInArg(redist_map));
+
     // Check that you have the data you wanted.  Data is stored in
     // column-major order.
     if ( numprocs > 1 ){
       if ( rank == 0 ){
-	// Should get the first ceil(total_rows/2) rows
-	size_t vec_num = 0;
-	size_t vec_ind = 0;
-	for( ; vec_ind < numVectors; ++vec_ind ){
-	  for( size_t i = 0; i < my_num_rows; ++i ){
-	    SCALAR mv_value = global_copy[total_rows*vec_num + i];
-	    SCALAR my_value = my_copy[my_num_rows*vec_num + i];
-	    TEST_EQUALITY( mv_value, my_value );
-	  }
-	}
+        // Should get the first ceil(total_rows/2) rows
+        size_t vec_num = 0;
+        size_t vec_ind = 0;
+        for( ; vec_ind < numVectors; ++vec_ind ){
+          for( size_t i = 0; i < my_num_rows; ++i ){
+            SCALAR mv_value = global_copy[total_rows*vec_num + i];
+            SCALAR my_value = my_copy[my_num_rows*vec_num + i];
+            TEST_EQUALITY( mv_value, my_value );
+          }
+        }
       } else if ( rank == 1 ){
-	// Should get the last floor(total_rows/2) rows
-	size_t vec_num = 0;
-	size_t vec_ind = 0;
-	for( ; vec_ind < numVectors; ++vec_ind ){
-	  // Iterate backwards through rows
-	  for( size_t i = total_rows-1; i >= total_rows - my_num_rows; --i ){
-	    SCALAR mv_value = global_copy[total_rows*vec_num + i];
-	    SCALAR my_value = my_copy[my_num_rows*vec_num + i];
-	    TEST_EQUALITY( mv_value, my_value );
-	  }
-	}
+        // Should get the last floor(total_rows/2) rows
+        size_t vec_num = 0;
+        size_t vec_ind = 0;
+        for( ; vec_ind < numVectors; ++vec_ind ){
+          // Iterate backwards through rows
+          for( size_t i = total_rows-1; i >= total_rows - my_num_rows; --i ){
+            SCALAR mv_value = global_copy[total_rows*vec_num + i];
+            SCALAR my_value = my_copy[my_num_rows*vec_num + i];
+            TEST_EQUALITY( mv_value, my_value );
+          }
+        }
       }
     } else {
       // Otherwise, rank=0 should have gotten the whole thing
@@ -386,16 +404,16 @@ namespace {
 
     // distribute rank 0's data
     put_1d_data_helper<ADAPT,SCALAR>::do_put(outArg(*adapter), original(),
-					     numLocal*numprocs,
-					     ROOTED);
+                                             numLocal*numprocs,
+                                             ROOTED);
 
     // Send rank 0's array to everyone else
     Teuchos::broadcast(*comm, 0, original());
 
     // Now have everyone get a copy from the multivector adapter
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal*numprocs,
-					     GLOBALLY_REPLICATED);
+                                             numLocal*numprocs,
+                                             GLOBALLY_REPLICATED);
 
     TEST_EQUALITY( original, copy );
   }
@@ -407,15 +425,15 @@ namespace {
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 #  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)	\
-  typedef std::complex<float> ComplexFloat;		\
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
+  typedef std::complex<float> ComplexFloat;             \
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
 #  else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  endif
 #  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)	\
-  typedef std::complex<double> ComplexDouble;			\
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)        \
+  typedef std::complex<double> ComplexDouble;                   \
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
 #  else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
@@ -426,13 +444,13 @@ namespace {
 #endif
 
 #ifdef HAVE_TPETRA_INST_FLOAT
-#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )	\
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )       \
   UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, float )
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )	\
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )      \
   UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double )
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )
@@ -442,29 +460,29 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )		\
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Dimensions, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Copy, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Copy_Map, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Globalize, SCALAR, LO, GO ) \
-  
-#  define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\
+
+#  define UNIT_TEST_GROUP_ORDINAL( ORDINAL )            \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
-  UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO)		\
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO)               \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT( LO, GO )
 
   UNIT_TEST_GROUP_ORDINAL(int)
 
 #else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
-  UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)			\
-  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)		\
-  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)		\
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
+  UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)                 \
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)         \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
   UNIT_TEST_GROUP_ORDINAL(int)
