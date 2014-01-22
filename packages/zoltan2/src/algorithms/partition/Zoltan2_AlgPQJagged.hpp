@@ -534,8 +534,6 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
  * \param pqJagged_partSizes is the two dimensional float-like array output that represents the ratio of each part.
  *
  */
-
-
 template <typename Adapter, typename pq_scalar_t, typename pq_gno_t>
 void pqJagged_getInputValues(
     const RCP<const Environment> &env, const RCP<const CoordinateModel<
@@ -575,7 +573,6 @@ void pqJagged_getInputValues(
     }
 
     if (weightDim == 0 || ignoreWeights){
-
         pqJagged_uniformWeights[0] = true;
         pqJagged_weights[0] = NULL;
     }
@@ -6979,9 +6976,7 @@ void AlgPQJagged(
             numLocalCoords = incoming;
             is_data_ever_migrated = false;
 
-
-            ArrayView<const pq_gno_t> avpqgnos(pq_gnos, numLocalCoords);
-            gnoList = arcpFromArrayView(avpqgnos);
+            gnoList = arcp(pq_gnos, 0, numLocalCoords, true);
             //cout << " me:" << problemComm->getRank() << " gnoList:" <<
             //gnoList() << endl;
         }
@@ -7027,7 +7022,11 @@ void AlgPQJagged(
             freeArray<pq_scalar_t>(pqJagged_weights[i]);
         }
 
-        freeArray<pq_gno_t>(pq_gnos);
+        if(!is_data_ever_migrated || migration_actualMigration_option == 0 ){
+            // Otherwise we created an ArrayRCP that will free when
+            // solution is freed.
+            freeArray<pq_gno_t>(pq_gnos);
+        }
         freeArray<int>(actual_owner_of_coordinate);
     }
 #endif
