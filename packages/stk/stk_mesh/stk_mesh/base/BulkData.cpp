@@ -1066,7 +1066,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
         const FieldBase::Restriction & restriction =
           find_and_check_restriction(field, rank, superset_parts);
 
-        if ( restriction.dimension() > 0 ) { // Exists
+        if ( restriction.num_scalars_per_entity() > 0 ) { // Exists
 
           const unsigned type_stride = field.data_traits().stride_of ;
           const unsigned field_rank  = field.field_array_rank();

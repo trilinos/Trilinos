@@ -22,9 +22,9 @@ void throw_conflicting_restrictions(const FieldBase& field, const PartVector& pa
     oss << parts[i]->name() << ", ";
   }
   ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.  Field name = "
-                << field.name() << "on bucket with parts = " << oss.str() << "with one selector = " << first.selector() << ", dimension = "
-                << first.dimension()
-                << " and another selector = " << second.selector() << ", dimension = " << second.dimension() << "!");
+                << field.name() << "on bucket with parts = " << oss.str() << "with one selector = " << first.selector() << ", num_scalars = "
+                << first.num_scalars_per_entity()
+                << " and another selector = " << second.selector() << ", dimension = " << second.num_scalars_per_entity() << "!");
 
 }
 

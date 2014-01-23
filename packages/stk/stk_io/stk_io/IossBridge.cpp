@@ -315,7 +315,7 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
 {
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(part);
   const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*field, part_type, part);
-  if (res.dimension() > 0) {
+  if (res.num_scalars_per_entity() > 0) {
     // The field exists on the current 'part'.  Now check (for
     // node types only) whether the 'part' is *either* the
     // universal_part() *or* the field *doesn't* exist on the
@@ -335,7 +335,7 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
     }
 
     const stk::mesh::FieldBase::Restriction &res_universe = stk::mesh::find_restriction(*field, part_type, meta.universal_part());
-    if (res_universe.dimension() <= 0) {
+    if (res_universe.num_scalars_per_entity() <= 0) {
       // Field exists on current part, but not on the universal
       // set (and this part is not the universal part)
       return true;
@@ -1549,7 +1549,7 @@ void output_element_block(Ioss::ElementBlock *block,
     const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
       const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, elem_rank, *part);
-      if (res.dimension() > 0) {
+      if (res.num_scalars_per_entity() > 0) {
         stk::io::field_data_to_ioss(bulk, f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
       }
     }
@@ -1603,7 +1603,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
   stk::mesh::Field<double> *df_field = meta_data.get_field<stk::mesh::Field<double> >("distribution_factors");
   if (df_field != NULL) {
     const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*df_field, stk::mesh::MetaData::NODE_RANK, *part);
-    if (res.dimension() > 0) {
+    if (res.num_scalars_per_entity() > 0) {
       stk::io::field_data_to_ioss(bulk, df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
     }
   }
@@ -1615,7 +1615,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
     const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
       const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, 0, *part);
-      if (res.dimension() > 0) {
+      if (res.num_scalars_per_entity() > 0) {
         stk::io::field_data_to_ioss(bulk, f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
       }
     }
