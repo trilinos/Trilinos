@@ -153,29 +153,31 @@ public:
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim} const {
-    if (dim < 0 || dim >= dimension_) {
+    if (dim != dimension_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ";" <<__LINE__
 	   << "  Invalid dimension " << dim << std::endl;
       throw std::runtime_error(emsg.str());
     }
 
-    size_t length;
-    
     if (MESH_REGION == etype) {
-      Rcoords_[dim].getStridedList(length, coords, stride);
+      coords = Rcoords_;
+      stride = RnumIds_;
     }
 
     if (MESH_FACE == etype) {
-      Fcoords_[dim].getStridedList(length, coords, stride);
+      coords = Fcoords_;
+      stride = FnumIds_;
     }
 
     if (MESH_EDGE == etype) {
-      Ecoords_[dim].getStridedList(length, coords, stride);
+      coords = Ecoords_;
+      stride = EnumIds_;
     }
 
     if (MESH_VERTEX == etype) {
-      Vcoords_[dim].getStridedList(length, coords, stride);
+      coords = Vcoords_;
+      stride = VnumIds_;
     }
   }
 
@@ -184,8 +186,7 @@ private:
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 
   int dimension_;
-  ArrayRCP<&StridedData<lno_t, scalar_t> > Rcoords_, Fcoords_, Ecoords_,
-					Vcoords_;
+  double * Rcoords_, Fcoords_, Ecoords_, Vcoords_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -205,11 +206,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 			    &num_elem, &num_elem_blk, &num_node_sets,
 			    &num_side_sets);
 
-  double * Vcoord = (double *)malloc(num_nodes * num_dim * sizeof(double));
+  Vcoords_ = (double *)malloc(num_nodes * num_dim * sizeof(double));
   double * Acoord = (double *)malloc(num_elem * num_dim * sizeof(double));
 
-  error += im_ex_get_coord(exoid, Vcoord, Vcoord + num_nodes,
-			   Vcoord + 2 * num_nodes);
+  error += im_ex_get_coord(exoid, Vcoords_, Vcoords_ + num_nodes,
+			   Vcoords_ + 2 * num_nodes);
 
   if (3 == num_dim && num_elem) {
     int * element_num_map = (int *)malloc(num_elem * sizeof(int));
@@ -283,14 +284,14 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
       for(int j = 0; j < num_nodes_per_elem[b]; j++){
 	Acoord[a] +=
-	  Vcoord[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
+	  Vcoords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
 	Acoord[num_nodes + a] +=
-	  Vcoord[connect[b]
+	  Vcoords_[connect[b]
 		 [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
 
 	if(3 == num_dim) {
 	  Acoord[2 * num_nodes + a] +=
-	    Vcoord[connect[b]
+	    Vcoords_[connect[b]
 		   [2*num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] -
 		   1];
 	}
@@ -302,11 +303,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       a++;
     }
   }
-
-  Rcoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
-  Fcoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
-  Ecoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
-  Vcoords_ = arcp(new input_t [dimension_], 0, dimension_, true);
 }
 
   
