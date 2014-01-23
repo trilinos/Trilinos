@@ -162,22 +162,22 @@ public:
 
     if (MESH_REGION == etype) {
       coords = Rcoords_;
-      stride = RnumIds_;
+      stride = 1;
     }
 
     if (MESH_FACE == etype) {
       coords = Fcoords_;
-      stride = FnumIds_;
+      stride = 1;
     }
 
     if (MESH_EDGE == etype) {
       coords = Ecoords_;
-      stride = EnumIds_;
+      stride = 1;
     }
 
     if (MESH_VERTEX == etype) {
       coords = Vcoords_;
-      stride = VnumIds_;
+      stride = 1;
     }
   }
 
