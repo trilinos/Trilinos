@@ -69,7 +69,6 @@
 
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Utility.hpp>
 
 //----------------------------------------------------------------------------
 
