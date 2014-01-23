@@ -6922,6 +6922,11 @@ void AlgPQJagged(
     env->timerStop(MACRO_TIMERS, "PQJagged - Part_Assignment");
     ArrayRCP<const pq_gno_t> gnoList;
     if(!is_data_ever_migrated){
+#ifdef enable_migration2
+        if(migration_actualMigration_option != 0){
+            freeArray<pq_gno_t>(pq_gnos);
+        }
+#endif
         if(numLocalCoords > 0){
             gnoList = arcpFromArrayView(pqJagged_gnos);
         }
