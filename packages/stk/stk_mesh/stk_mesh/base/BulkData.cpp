@@ -1158,48 +1158,6 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
   }
 }
 
-// More specific version, of copy_entity_fields, here assume know entities are of the same rank
-
-void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank,
-                                                     unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                                     unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
-{
-  if (!m_keep_fields_updated || m_num_fields == 0) {
-    return;
-  }
-
-
-  const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
-
-  for (int i = 0; i < m_num_fields; ++i) {
-    if (field_set[i]->entity_rank() == rank)
-    {
-        const FieldMetaDataVector& metaVec = field_set[i]->get_meta_data_for_field();
-
-        const FieldMetaData& srcMeta = metaVec[src_bucket_id];
-
-        const int src_size        = srcMeta.m_bytes_per_entity;
-        if (src_size == 0) {
-          continue;
-        }
-
-
-
-        const FieldMetaData& dstMeta = metaVec[dst_bucket_id];
-
-        const int dst_size = dstMeta.m_bytes_per_entity;
-
-        ThrowAssertMsg( dst_size == src_size || dst_size == 0, "Incompatible field sizes: " << dst_size << " != " << src_size );
-
-
-
-        std::memcpy( dstMeta.m_data + dst_size * dst_bucket_ord,
-                     srcMeta.m_data + src_size * src_bucket_ord,
-                     dst_size );
-    }
-  }
-}
-
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {
   if (!m_keep_fields_updated) {

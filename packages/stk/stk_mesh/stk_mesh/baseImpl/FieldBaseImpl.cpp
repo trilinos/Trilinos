@@ -92,29 +92,13 @@ void FieldBaseImpl::insert_restriction(
 
   FieldRestriction tmp( arg_selector );
 
-  {
-    unsigned i = 0 ;
-    if ( m_field_rank ) {
-      for ( i = 0 ; i < m_field_rank ; ++i ) { tmp.stride(i) = arg_stride[i] ; }
-      tmp.set_num_scalars_per_entity(arg_stride[m_field_rank-1]);
-    }
-    else { // Scalar field is 0 == m_field_rank
-      i = 1 ;
-      tmp.stride(0) = 1 ;
-      tmp.set_num_scalars_per_entity(1);
-    }
-    // Remaining dimensions are 1, no change to stride
-    for ( ; i < MaximumFieldDimension ; ++i ) {
-      tmp.stride(i) = tmp.stride(i-1) ;
-    }
-
-    for ( i = 1 ; i < m_field_rank ; ++i ) {
-      const bool bad_stride = 0 == tmp.stride(i) ||
-                              0 != tmp.stride(i) % tmp.stride(i-1);
-      ThrowErrorMsgIf( bad_stride,
-          arg_method << " FAILED for " << *this <<
-          " WITH BAD STRIDE!");
-    }
+  if ( m_field_rank ) {
+    tmp.set_num_scalars_per_entity(arg_stride[m_field_rank-1]);
+    tmp.set_dimension(arg_stride[0]);
+  }
+  else { // Scalar field is 0 == m_field_rank
+    tmp.set_num_scalars_per_entity(1);
+    tmp.set_dimension(1);
   }
 
   if (arg_init_value != NULL) {
@@ -135,7 +119,7 @@ void FieldBaseImpl::insert_restriction(
     size_t num_scalars = 1;
     //if rank > 0, then field is not a scalar field, so num-scalars is
     //obtained from the stride array:
-    if (m_field_rank > 0) num_scalars = tmp.stride(m_field_rank-1);
+    if (m_field_rank > 0) num_scalars = tmp.num_scalars_per_entity();
 
     size_t sizeof_scalar = m_data_traits.size_of;
     size_t nbytes = sizeof_scalar * num_scalars;

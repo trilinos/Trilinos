@@ -1027,7 +1027,7 @@ bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expecte
 {
   const stk::mesh::FieldBase::RestrictionVector& restrictions = field->restrictions();
   for(size_t i=0; i<restrictions.size(); ++i) {
-    unsigned field_size = restrictions[i].stride(field->field_array_rank());
+    unsigned field_size = restrictions[i].num_scalars_per_entity();
     if (field_size != expected_size) {
       return false;
     }

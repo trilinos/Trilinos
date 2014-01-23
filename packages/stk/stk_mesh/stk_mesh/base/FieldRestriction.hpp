@@ -35,39 +35,40 @@ class FieldRestriction {
 
   FieldRestriction()
     : m_selector(),
-      m_num_scalars_per_entity(0)
+      m_num_scalars_per_entity(0),
+      m_dimension(0)
   {
-    Copy<MaximumFieldDimension>( m_stride , size_type(0) );
   }
 
   FieldRestriction( const FieldRestriction & rhs )
     : m_selector( rhs.m_selector ),
-      m_num_scalars_per_entity( rhs.m_num_scalars_per_entity )
+      m_num_scalars_per_entity( rhs.m_num_scalars_per_entity ),
+      m_dimension(rhs.m_dimension)
   {
-    Copy< MaximumFieldDimension >( m_stride , rhs.m_stride );
   }
 
   FieldRestriction & operator = ( const FieldRestriction & rhs )
   {
     m_selector = rhs.m_selector;
     m_num_scalars_per_entity = rhs.m_num_scalars_per_entity;
-    Copy< MaximumFieldDimension >( m_stride , rhs.m_stride );
+    m_dimension = rhs.m_dimension;
     return *this ;
   }
 
   explicit FieldRestriction( const Selector& input_selector)
    : m_selector(input_selector),
-     m_num_scalars_per_entity(0)
+     m_num_scalars_per_entity(0),
+     m_dimension(0)
   {
   }
 
   const Selector& selector() const { return m_selector; }
 
-  size_type & stride( Ordinal index ) { return m_stride[index]; }
   void set_num_scalars_per_entity(size_type value) { m_num_scalars_per_entity = value; }
   const size_type num_scalars_per_entity() const { return m_num_scalars_per_entity; }
 
-  size_type dimension() const { return m_stride[0]; }
+  void set_dimension(size_type dim) { m_dimension = dim; }
+  size_type dimension() const { return m_dimension; }
 
   bool operator < ( const FieldRestriction & rhs ) const
   {
@@ -90,8 +91,8 @@ class FieldRestriction {
 
   private:
   Selector m_selector;
-  size_type m_stride[ MaximumFieldDimension ];
   size_type m_num_scalars_per_entity;
+  size_type m_dimension;
 };
 
 typedef std::vector<FieldRestriction> FieldRestrictionVector;

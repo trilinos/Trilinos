@@ -37,8 +37,10 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, construct )
   fr.set_num_scalars_per_entity(numScalarsPerEntity);
   STKUNIT_EXPECT_EQ( numScalarsPerEntity, fr.num_scalars_per_entity() );
 
+  const int dim = 1;
+  fr.set_dimension(dim);
   STKUNIT_EXPECT_EQ( fr.selector(), stk::mesh::Selector(part_a) );
-  STKUNIT_EXPECT_EQ( fr.dimension(), 1 );
+  STKUNIT_EXPECT_EQ(dim, fr.dimension());
 }
 
 
@@ -50,11 +52,13 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, copyConstruct )
   stk::mesh::FieldRestriction fr(part_a);
   const int numScalarsPerEntity = 2;
   fr.set_num_scalars_per_entity(numScalarsPerEntity);
+  const int dim = 1;
+  fr.set_dimension(dim);
 
   stk::mesh::FieldRestriction tmpfr(fr);
   STKUNIT_EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
   STKUNIT_EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
-  STKUNIT_EXPECT_EQ( tmpfr.dimension(), 1 );
+  STKUNIT_EXPECT_EQ( dim, tmpfr.dimension() );
 }
 
 
@@ -70,11 +74,13 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqual )
   const int numScalarsPerEntity = 2;
   fr.set_num_scalars_per_entity(numScalarsPerEntity);
   tmpfr.set_num_scalars_per_entity(numScalarsPerEntity+10);
+  const int dim = 1;
+  fr.set_dimension(dim);
 
   tmpfr = fr;
   STKUNIT_EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
   STKUNIT_EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
-  STKUNIT_EXPECT_EQ( tmpfr.dimension(), 1 );
+  STKUNIT_EXPECT_EQ( dim, tmpfr.dimension() );
 }
 
 

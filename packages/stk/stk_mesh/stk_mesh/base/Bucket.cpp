@@ -596,9 +596,8 @@ void Bucket::reset_entity_location(Entity entity, size_type to_ordinal)
 
   mesh().set_mesh_index(entity, this, to_ordinal);
 
-  m_mesh.copy_entity_fields_callback_same_rank(m_entity_rank, 
-                                               m_bucket_id, to_ordinal,
-                                              from_bucket.m_bucket_id, from_ordinal);
+  m_mesh.copy_entity_fields_callback(m_entity_rank, m_bucket_id, to_ordinal,
+                                     m_entity_rank, from_bucket.m_bucket_id, from_ordinal);
 }
 
 void Bucket::add_entity(Entity entity)

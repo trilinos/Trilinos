@@ -13,20 +13,7 @@ void FieldRestriction::print(
   FieldArrayRank field_rank
   ) const
 {
-  os << "FieldRestriction[ selector: \"" << selector << "\", dimensions: " ;
-  os << m_stride[0] ;
-  for ( FieldArrayRank i = 1 ; i < field_rank ; ++i ) {
-    if ( ! m_stride[i] ) {
-      os << " , 0 " ;
-    }
-    else if ( m_stride[i] % m_stride[i-1] ) {
-      os << " , " << m_stride[i] << " / " << m_stride[i-1] ;
-    }
-    else {
-      os << " , " << m_stride[i] / m_stride[i-1] ;
-    }
-  }
-  os << " ]" ;
+  os << "FieldRestriction[ selector: \"" << selector << "\", dimension: " << m_dimension << ", scalars per entity: " << m_num_scalars_per_entity << " ]" ;
 }
 
 std::string print_restriction(
