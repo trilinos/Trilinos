@@ -98,6 +98,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Partitioning1_OneProc
+  SOURCES partitioning1.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --no-distribute"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
   SOURCE_FILES
