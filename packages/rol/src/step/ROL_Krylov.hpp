@@ -64,7 +64,7 @@ class Krylov {
   bool useInexact_;
 
 public:
-  Krylov( EKrylov &ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
+  Krylov( EKrylov ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
           int maxit = 100, bool useInexact = false ) 
     : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), useInexact_(useInexact) {}
 
