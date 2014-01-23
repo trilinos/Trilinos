@@ -101,8 +101,8 @@
 // Read a parameter value from a paraeter list and copy it into a new parameter list (with another parameter name)
 #define MUELU_COPY_PARAM(paramList, paramStr, varType, defaultValue, outParamList, outParamStr) \
   if (paramList.isParameter(paramStr))                                  \
-    outParamList.set<varType>(outParamStr, paramList.get<varType>(paramStr)); \
-  else outParamList.set<varType>(outParamStr, defaultValue);            \
+    outParamList.set(outParamStr, paramList.get<varType>(paramStr)); \
+  else outParamList.set(outParamStr, static_cast<varType>(defaultValue));            \
 
 namespace MueLu {
 

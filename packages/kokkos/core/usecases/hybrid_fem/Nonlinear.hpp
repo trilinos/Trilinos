@@ -305,7 +305,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
       // Import off-processor nodal solution values
       // for residual and jacobian computations
 
-      Kokkos::AsyncExchange< typename vector_type::scalar_type , device_type ,
+      Kokkos::AsyncExchange< typename vector_type::value_type , device_type ,
                                   Kokkos::ParallelDataMap >
         exchange( mesh.parallel_data_map , 1 );
 

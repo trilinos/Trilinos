@@ -265,8 +265,8 @@ Relaxation<MatrixType>::getValidParameters () const
     const bool checkDiagEntries = false;
     pl->set ("relaxation: check diagonal entries", checkDiagEntries);
 
-    Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices=Teuchos::null;
-    pl->set<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices",localSmoothingIndices);
+    Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = Teuchos::null;
+    pl->set("relaxation: local smoothing indices", localSmoothingIndices);
 
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }

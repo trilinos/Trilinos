@@ -55,30 +55,34 @@ template <typename Storage1, typename Storage2>
 KOKKOS_INLINE_FUNCTION
 void
 atomic_assign(Sacado::MP::Vector<Storage1>* const dest,
-              const Sacado::MP::Vector<Storage2>& src) {
+              const Sacado::MP::Vector<Storage2>& src )
+{
   typedef typename Storage1::ordinal_type ordinal_type;
   typedef typename Storage1::pointer pointer1;
   typedef typename Storage2::const_pointer pointer2;
   pointer1 dest_c = dest->coeff();
   pointer2 src_c = src.coeff();
   const ordinal_type sz = dest->size();
-  for (ordinal_type i=0; i<sz; ++i)
+  for (ordinal_type i=0; i<sz; ++i) {
     atomic_exchange(dest_c+i, src_c[i]);
+  }
 }
 
 template <typename Storage1, typename Storage2>
 KOKKOS_INLINE_FUNCTION
 void
 atomic_add(Sacado::MP::Vector<Storage1>* const dest,
-           const Sacado::MP::Vector<Storage2>& src) {
+           const Sacado::MP::Vector<Storage2>& src)
+{
   typedef typename Storage1::ordinal_type ordinal_type;
   typedef typename Storage1::pointer pointer1;
   typedef typename Storage2::const_pointer pointer2;
   pointer1 dest_c = dest->coeff();
   pointer2 src_c = src.coeff();
   const ordinal_type sz = dest->size();
-  for (ordinal_type i=0; i<sz; ++i)
+  for (ordinal_type i=0; i<sz; ++i) {
     atomic_add(dest_c+i, src_c[i]);
+  }
 }
 
 } // namespace Kokkos

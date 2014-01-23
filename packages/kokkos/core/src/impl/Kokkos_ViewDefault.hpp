@@ -51,9 +51,9 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
-struct ViewAssignment< LayoutDefault , LayoutDefault , void >
+struct ViewAssignment< ViewDefault , ViewDefault , void >
 {
-  typedef LayoutDefault Specialize ;
+  typedef ViewDefault Specialize ;
 
   //------------------------------------
   /** \brief  Compatible value and shape */
@@ -814,8 +814,8 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
   void deep_copy( const View<DT,DL,DD,DM,Specialize> & dst ,
                   const View<ST,SL,SD,SM,Specialize> & src ,
                   const typename Impl::enable_if<(
-                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::scalar_type ,
-                                   typename ViewTraits<ST,SL,SD,SM>::non_const_scalar_type >::value
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::value_type ,
+                                   typename ViewTraits<ST,SL,SD,SM>::non_const_value_type >::value
                     &&
                     Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
                                    typename ViewTraits<ST,SL,SD,SM>::array_layout >::value

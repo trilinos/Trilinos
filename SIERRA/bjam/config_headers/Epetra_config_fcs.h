@@ -142,4 +142,11 @@
 /* Define if you want to have int (32 bit) global indices only. */
 /* #undef EPETRA_NO_64BIT_GLOBAL_INDICES */
 
-#define EPETRA_DEPRECATED
+#ifndef EPETRA_DEPRECATED
+#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#    define EPETRA_DEPRECATED  __attribute__((__deprecated__))
+#  else
+#    define EPETRA_DEPRECATED
+#  endif
+#endif
+

@@ -68,7 +68,7 @@
 #define KOKKOS_ATOMIC_HPP
 
 #include <Kokkos_Macros.hpp>
-#include <impl/Kokkos_Utility.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
 

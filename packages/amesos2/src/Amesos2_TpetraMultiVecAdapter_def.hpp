@@ -47,7 +47,7 @@
   \date   Wed May 26 19:48:32 CDT 2010
 
   \brief  Amesos2::MultiVecAdapter specialization for the
-	  Tpetra::MultiVector class.
+          Tpetra::MultiVector class.
 */
 
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
@@ -63,49 +63,87 @@ namespace Amesos2 {
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::MultiVecAdapter( const Teuchos::RCP<multivec_t>& m )
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::MultiVecAdapter( const Teuchos::RCP<multivec_t>& m )
   : mv_(m)
   {}
 
-  
+
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   void
   MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::get1dCopy(const Teuchos::ArrayView<scalar_t>& av,
-				   size_t lda,
-				   Teuchos::Ptr<
-				     const Tpetra::Map<LocalOrdinal,
-				                       GlobalOrdinal,
-				                       Node> > distribution_map ) const
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::get1dCopy(const Teuchos::ArrayView<scalar_t>& av,
+                                   size_t lda,
+                                   Teuchos::Ptr<
+                                     const Tpetra::Map<LocalOrdinal,
+                                                       GlobalOrdinal,
+                                                       Node> > distribution_map ) const
   {
-    using Teuchos::rcpFromPtr;
     using Teuchos::as;
-    
-    size_t num_vecs = getGlobalNumVectors();
+    using Teuchos::RCP;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    const size_t num_vecs = getGlobalNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      distribution_map.getRawPtr () == NULL, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::get1dCopy: distribution_map argument is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mv_.is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::get1dCopy: mv_ is null.");
+    // Check mv_ before getMap(), because the latter calls mv_->getMap().
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::get1dCopy: this->getMap() returns null.");
 
 #ifdef HAVE_AMESOS2_DEBUG
-    size_t requested_vector_length = distribution_map->getNodeNumElements();
-    TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
-			std::invalid_argument,
-			"Given stride is not large enough for local vector length" );
-    TEUCHOS_TEST_FOR_EXCEPTION( as<size_t>(av.size()) < as<size_t>((num_vecs-1) * lda + requested_vector_length),
-			std::invalid_argument,
-			"MultiVector storage not large enough given leading dimension "
-			"and number of vectors" );
-#endif
+    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lda < requested_vector_length, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::get1dCopy: On process " <<
+      distribution_map->getComm ()->getRank () << " of the distribution Map's "
+      "communicator, the given stride lda = " << lda << " is not large enough "
+      "for the local vector length " << requested_vector_length << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      as<size_t> (av.size ()) < as<size_t> ((num_vecs - 1) * lda + requested_vector_length),
+      std::invalid_argument, "Amesos2::MultiVector::get1dCopy: MultiVector "
+      "storage not large enough given leading dimension and number of vectors." );
+#endif // HAVE_AMESOS2_DEBUG
 
-    multivec_t redist_mv(rcpFromPtr(distribution_map), num_vecs);
+    // (Re)compute the Export object if necessary.  If not, then we
+    // don't need to clone distribution_map; we can instead just get
+    // the previously cloned target Map from the Export object.
+    RCP<const map_type> distMap;
+    if (exporter_.is_null () ||
+        ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
+        ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
 
-    typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-    import_type importer (this->getMap (), rcpFromPtr (distribution_map));
-    redist_mv.doImport (*mv_, importer, Tpetra::REPLACE);
+      // Since we're caching the Export object, and since the Export
+      // needs to keep the distribution Map, we have to make a copy of
+      // the latter in order to ensure that it will stick around past
+      // the scope of this function call.  (Ptr is not reference
+      // counted.)  Map's clone() method suffices, even though it only
+      // makes a shallow copy of some of Map's data, because Map is
+      // immutable and those data are reference-counted (e.g.,
+      // ArrayRCP or RCP).
+      distMap = distribution_map->template clone<Node> (distribution_map->getNode ());
 
-    // do copy
+      // (Re)create the Export object.
+      exporter_ = rcp (new export_type (this->getMap (), distMap));
+    }
+    else {
+      distMap = exporter_->getTargetMap ();
+    }
+
+    multivec_t redist_mv (distMap, num_vecs);
+
+    // Redistribute the input (multi)vector.
+    redist_mv.doExport (*mv_, *exporter_, Tpetra::REPLACE);
+
+    // Copy the imported (multi)vector's data into the ArrayView.
     redist_mv.get1dCopy (av, lda);
   }
 
@@ -113,10 +151,18 @@ namespace Amesos2 {
   Teuchos::ArrayRCP<Scalar>
   MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::get1dViewNonConst(bool local)
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::get1dViewNonConst (bool local)
   {
+    // FIXME (mfh 22 Jan 2014) When I first found this routine, all of
+    // its code was commented out, and it didn't return anything.  The
+    // latter is ESPECIALLY dangerous, given that the return value is
+    // an ArrayRCP.  Thus, I added the exception throw below.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Amesos2::MultiVecAdapter::get1dViewNonConst: "
+      "Not implemented.");
+
     // if( local ){
     //   this->localize();
     //   /* Use the global element list returned by
@@ -172,24 +218,57 @@ namespace Amesos2 {
   void
   MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::put1dData(const Teuchos::ArrayView<const scalar_t>& new_data,
-				   size_t lda,
-				   Teuchos::Ptr<
-				     const Tpetra::Map<LocalOrdinal,
-				                       GlobalOrdinal,
-				                       Node> > source_map)
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::put1dData(const Teuchos::ArrayView<const scalar_t>& new_data,
+                                   size_t lda,
+                                   Teuchos::Ptr<
+                                     const Tpetra::Map<LocalOrdinal,
+                                                       GlobalOrdinal,
+                                                       Node> > source_map)
   {
-    using Teuchos::rcpFromPtr;
+    using Teuchos::RCP;
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      source_map.getRawPtr () == NULL, std::invalid_argument,
+      "Amesos2::MultiVecAdapter::put1dData: source_map argument is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mv_.is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::put1dData: the internal MultiVector mv_ is null.");
+    // getMap() calls mv_->getMap(), so test first whether mv_ is null.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null (), std::logic_error,
+      "Amesos2::MultiVecAdapter::put1dData: this->getMap() returns null.");
 
     const size_t num_vecs = getGlobalNumVectors ();
-    const multivec_t source_mv (rcpFromPtr (source_map), new_data, lda, num_vecs);
 
-    typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-    import_type importer (rcpFromPtr (source_map), this->getMap ());
+    // (Re)compute the Import object if necessary.  If not, then we
+    // don't need to clone source_map; we can instead just get the
+    // previously cloned source Map from the Import object.
+    RCP<const map_type> srcMap;
+    if (importer_.is_null () ||
+        ! importer_->getSourceMap ()->isSameAs (* source_map) ||
+        ! importer_->getTargetMap ()->isSameAs (* (this->getMap ()))) {
 
-    mv_->doImport (source_mv, importer, Tpetra::REPLACE);
+      // Since we're caching the Import object, and since the Import
+      // needs to keep the source Map, we have to make a copy of the
+      // latter in order to ensure that it will stick around past the
+      // scope of this function call.  (Ptr is not reference counted.)
+      // Map's clone() method suffices, even though it only makes a
+      // shallow copy of some of Map's data, because Map is immutable
+      // and those data are reference-counted (e.g., ArrayRCP or RCP).
+      srcMap = source_map->template clone<Node> (source_map->getNode ());
+      importer_ = rcp (new import_type (srcMap, this->getMap ()));
+    }
+    else {
+      srcMap = importer_->getSourceMap ();
+    }
+
+    const multivec_t source_mv (srcMap, new_data, lda, num_vecs);
+
+    // Redistribute the output (multi)vector.
+    mv_->doImport (source_mv, *importer_, Tpetra::REPLACE);
   }
 
 
@@ -197,9 +276,9 @@ namespace Amesos2 {
   std::string
   MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::description() const
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::description() const
   {
     std::ostringstream oss;
     oss << "Amesos2 adapter wrapping: ";
@@ -208,29 +287,25 @@ namespace Amesos2 {
   }
 
 
-  /// Print a description of this adapter to the Fancy Output Stream.
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   void
   MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::describe(Teuchos::FancyOStream& os,
-				  const Teuchos::EVerbosityLevel verbLevel) const
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::describe (Teuchos::FancyOStream& os,
+                                   const Teuchos::EVerbosityLevel verbLevel) const
   {
-      mv_->describe(os, verbLevel);
-
+    mv_->describe (os, verbLevel);
   }
 
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   const char* MultiVecAdapter<
     MultiVector<Scalar,
-		LocalOrdinal,
-		GlobalOrdinal,
-		Node> >::name
-  = "Amesos2 adapter for Tpetra::MultiVector";
-
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::name = "Amesos2 adapter for Tpetra::MultiVector";
 
 } // end namespace Amesos2
 

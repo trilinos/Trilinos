@@ -52,32 +52,38 @@ namespace Kokkos {
 
 #if defined( KOKKOS_ATOMICS_USE_CUDA )
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 int atomic_compare_exchange( volatile int * const dest, const int compare, const int val)
 { return atomicCAS((int*)dest,compare,val); }
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 unsigned int atomic_compare_exchange( volatile unsigned int * const dest, const unsigned int compare, const unsigned int val)
 { return atomicCAS((unsigned int*)dest,compare,val); }
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 unsigned long long int atomic_compare_exchange( volatile unsigned long long int * const dest ,
                                                 const unsigned long long int compare ,
                                                 const unsigned long long int val )
 { return atomicCAS((unsigned long long int*)dest,compare,val); }
 
 template < typename T >
-KOKKOS_INLINE_FUNCTION
-typename Kokkos::Impl::UnionPair<T,int,unsigned long long int>::first_type
-atomic_compare_exchange( volatile T * const dest , const T compare , const T val )
+__inline__ __device__
+T atomic_compare_exchange( volatile T * const dest , const T & compare ,
+  typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T & >::type val )
 {
-  typedef Kokkos::Impl::UnionPair<T,int,unsigned long long int> union_type ;
-  typedef typename union_type::second_type int_type ;
+  const int tmp = atomicCAS( (int*) dest , *((int*)&compare) , *((int*)&val) );
+  return *((T*)&tmp);
+}
 
-  return union_type( atomicCAS( (int_type *) union_type::cast( dest ) ,
-                                union_type::cast( compare ) ,
-                                union_type::cast( val ) )
-                   ).first ;
+template < typename T >
+__inline__ __device__
+T atomic_compare_exchange( volatile T * const dest , const T & compare ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) == sizeof(unsigned long long int) , const T & >::type val )
+{
+  typedef unsigned long long int type ;
+  const type tmp = atomicCAS( (type*) dest , *((type*)&compare) , *((type*)&val) );
+  return *((T*)&tmp);
 }
 
 //----------------------------------------------------------------------------
@@ -112,16 +118,23 @@ unsigned long atomic_compare_exchange( volatile unsigned long * const dest ,
 
 template < typename T >
 KOKKOS_INLINE_FUNCTION
-typename Kokkos::Impl::UnionPair<T,int,long>::first_type
-atomic_compare_exchange( volatile T * const dest, const T compare, const T val )
+T atomic_compare_exchange( volatile T * const dest, const T & compare,
+  typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T & >::type val )
 {
-  typedef Kokkos::Impl::UnionPair<T,int,long> union_type ;
+  union { int i ; T t ; } tmp ;
+  tmp.i = __sync_val_compare_and_swap( (int*) dest , *((int*)&compare) , *((int*)&val) );
+  return tmp.t ;
+}
 
-  return union_type(
-    __sync_val_compare_and_swap( union_type::cast( dest ) ,
-                                 union_type::cast( compare ) ,
-                                 union_type::cast( val ) )
-  ).first ;
+template < typename T >
+KOKKOS_INLINE_FUNCTION
+T atomic_compare_exchange( volatile T * const dest, const T & compare,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) == sizeof(long) , const T & >::type val )
+{
+  union { long i ; T t ; } tmp ;
+  tmp.i = __sync_val_compare_and_swap( (long*) dest , *((long*)&compare) , *((long*)&val) );
+  return tmp.t ;
 }
 
 //----------------------------------------------------------------------------
