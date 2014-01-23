@@ -305,6 +305,21 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       a++;
     }
   }
+
+  if (3 == dimension_) {
+    Rcoords_ = Acoords_;
+  } else {
+    Rcoords_ = NULL;
+  }
+
+  if (2 == dimension_) {
+    Fcoords_ = Acoords_;
+  } else {
+    Fcoords_ = NULL;
+  }
+
+  Ecoords_ = NULL;
+
 }
 
   
