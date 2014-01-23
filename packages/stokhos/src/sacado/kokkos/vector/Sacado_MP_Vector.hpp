@@ -126,6 +126,7 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+#if 0
       // A temporary hack to allow taking the address of a temporary
       // Vector with ViewStorage.  A better approach would be to return
       // a VectorViewStoragePtr with overloaded * to return a new
@@ -134,6 +135,7 @@ namespace Sacado {
       Vector* operator&() { return this; }
       KOKKOS_INLINE_FUNCTION
       const Vector* operator&() const { return this; }
+#endif
 
       //! Default constructor
       /*!

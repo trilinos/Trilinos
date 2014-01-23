@@ -61,6 +61,7 @@
 #include <TestTile.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestAggregate.hpp>
 
 namespace Test {
 
@@ -146,6 +147,13 @@ TEST_F( serial , view_remap )
     ++value ;
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
   }}}}
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( serial , view_aggregate )
+{
+  TestViewAggregate< Kokkos::Serial >();
 }
 
 //----------------------------------------------------------------------------

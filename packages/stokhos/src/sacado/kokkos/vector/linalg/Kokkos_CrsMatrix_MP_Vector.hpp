@@ -103,7 +103,7 @@ public:
   const int length;
 
   KOKKOS_INLINE_FUNCTION
-  scalar_type value (const int& i) const {
+  scalar_type & value (const int& i) const {
     return values_(offset_+i*stride_);
   }
 
@@ -287,10 +287,6 @@ private:
     typedef typename Kokkos::LocalMPVectorView<output_vector_type,
                                                NumPerThread>::type output_local_view_type;
 
-    typedef typename matrix_local_view_type::Partition matrix_partition_type;
-    typedef typename input_local_view_type::Partition input_partition_type;
-    typedef typename output_local_view_type::Partition output_partition_type;
-
     typedef typename output_local_view_type::value_type scalar_type;
 
     const matrix_type  m_A;
@@ -311,19 +307,20 @@ private:
       // 2-D distribution of threads: num_vector_threads x num_row_threads
       // where the x-dimension are vector threads and the y dimension are
       // row threads
-      const size_type num_vector_threads = m_A.dev_config.block_dim.x;
-      const size_type num_row_threads = m_A.dev_config.block_dim.y;
-      const size_type vector_rank = dev.team_rank() % num_vector_threads;
-      const size_type row_rank = dev.team_rank() / num_vector_threads;
+      const size_type num_vector_threads = m_A.dev_config.block_dim.x ;
+      const size_type num_row_threads    = m_A.dev_config.block_dim.y ;
+      const size_type row_rank = dev.team_rank() / num_vector_threads ;
 
       // Create local views with corresponding offset into the vector
       // dimension based on vector_rank and reduced number of vector entries
-      matrix_partition_type matrix_partition(vector_rank, num_vector_threads);
-      input_partition_type input_partition(vector_rank, num_vector_threads);
-      output_partition_type output_partition(vector_rank, num_vector_threads);
-      const matrix_local_view_type A(m_A.values, matrix_partition);
-      const input_local_view_type x(m_x, input_partition);
-      const output_local_view_type y(m_y, output_partition);
+
+      // Partition Sacado::MP::Vector as [ NumPerThread * rank .. NumPerThread * ( rank + 1 ) )
+      const Sacado::MP::VectorPartition part( NumPerThread * dev.team_rank() ,
+                                              NumPerThread * ( dev.team_rank() + 1 ) );
+
+      const matrix_local_view_type A = Kokkos::subview<matrix_local_view_type>( m_A.values, part );
+      const input_local_view_type  x = Kokkos::subview<input_local_view_type>(  m_x , part );
+      const output_local_view_type y = Kokkos::subview<output_local_view_type>( m_y , part );
 
       // const matrix_values_type A(m_A.values);
       // const input_vector_type x(m_x);

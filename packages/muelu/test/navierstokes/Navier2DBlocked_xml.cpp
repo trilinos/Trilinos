@@ -429,7 +429,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LO maxLevels = 2;   // TODO: singular system if MaxLevels > 2?
+  // LO maxLevels = 2;   // TODO: singular system if MaxLevels > 2?
 
   GO maxCoarseSize=1; //FIXME clp doesn't like long long int
 

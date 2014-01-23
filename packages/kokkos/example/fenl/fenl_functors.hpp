@@ -441,7 +441,7 @@ public:
       Kokkos::parallel_scan( residual.dimension_0() , *this );
 
       // Zero the row count for the fill:
-      Kokkos::deep_copy( row_count , typename RowMapType::scalar_type(0) );
+      Kokkos::deep_copy( row_count , typename RowMapType::value_type(0) );
 
       unsigned graph_entry_count = 0 ;
 
@@ -984,7 +984,7 @@ public:
 
   typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
   typedef typename mesh_type::node_coord_type                                  node_coord_type ;
-  typedef typename node_coord_type::scalar_type                                scalar_coord_type ;
+  typedef typename node_coord_type::value_type                                 scalar_coord_type ;
 
   typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;

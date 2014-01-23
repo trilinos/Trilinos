@@ -409,10 +409,6 @@ struct MPVectorMultiplyKernel<MatrixType,
   typedef typename Kokkos::LocalMPVectorView<output_vector_type,
                                              NumPerThread>::type output_local_view_type;
 
-  typedef typename matrix_local_view_type::Partition matrix_partition_type;
-  typedef typename input_local_view_type::Partition input_partition_type;
-  typedef typename output_local_view_type::Partition output_partition_type;
-
   typedef typename output_local_view_type::value_type scalar_type;
 
   const matrix_type  m_A;
@@ -452,14 +448,12 @@ struct MPVectorMultiplyKernel<MatrixType,
     const size_type iRow = block_row + threadIdx.y;
     if (iRow < m_row_count) {
 
-      // Create local views with corresponding offset into the vector
-      // dimension based on vector_rank
-      matrix_partition_type matrix_partition(threadIdx.x, blockDim.x);
-      input_partition_type input_partition(threadIdx.x, blockDim.x);
-      output_partition_type output_partition(threadIdx.x, blockDim.x);
-      const matrix_local_view_type A(m_A.values, matrix_partition);
-      const input_local_view_type x(m_x, input_partition);
-      const output_local_view_type y(m_y, output_partition);
+      const Sacado::MP::VectorPartition part( NumPerThread * threadIdx.x ,
+                                              NumPerThread * ( threadIdx.x + 1 ) );
+
+      const matrix_local_view_type A = Kokkos::subview<matrix_local_view_type>( m_A.values, part );
+      const input_local_view_type  x = Kokkos::subview<input_local_view_type>(  m_x, part );
+      const output_local_view_type y = Kokkos::subview<output_local_view_type>( m_y, part );
 
       const size_type iEntryBegin = sh_row[threadIdx.y];
       const size_type iEntryEnd =   sh_row[threadIdx.y+1];
@@ -520,10 +514,6 @@ struct MPVectorMultiplyKernel<MatrixType,
   typedef typename Kokkos::LocalMPVectorView<output_vector_type,
                                              NumPerThread>::type output_local_view_type;
 
-  typedef typename matrix_local_view_type::Partition matrix_partition_type;
-  typedef typename input_local_view_type::Partition input_partition_type;
-  typedef typename output_local_view_type::Partition output_partition_type;
-
   typedef typename output_local_view_type::value_type scalar_type;
 
   const matrix_type  m_A;
@@ -546,14 +536,12 @@ struct MPVectorMultiplyKernel<MatrixType,
     const size_type iRow = blockDim.y*blockIdx.x + threadIdx.y;
     if (iRow < m_row_count) {
 
-      // Create local views with corresponding offset into the vector
-      // dimension based on vector_rank
-      matrix_partition_type matrix_partition(threadIdx.x, blockDim.x);
-      input_partition_type input_partition(threadIdx.x, blockDim.x);
-      output_partition_type output_partition(threadIdx.x, blockDim.x);
-      const matrix_local_view_type A(m_A.values, matrix_partition);
-      const input_local_view_type x(m_x, input_partition);
-      const output_local_view_type y(m_y, output_partition);
+      const Sacado::MP::VectorPartition part( NumPerThread * threadIdx.x ,
+                                              NumPerThread * ( threadIdx.x + 1 ) );
+
+      const matrix_local_view_type A = Kokkos::subview<matrix_local_view_type>( m_A.values, part );
+      const input_local_view_type  x = Kokkos::subview<input_local_view_type>(  m_x, part );
+      const output_local_view_type y = Kokkos::subview<output_local_view_type>( m_y, part );
 
       const size_type iEntryBegin = m_A.graph.row_map[iRow];
       const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
@@ -651,9 +639,13 @@ public:
     // block.  Due to register usage, this gives 64 or 48 warps per SM
     // and thus 8 or 6 blocks per SM.  We use these values by default if
     // the user-specified block dimensions are zero
+
+    const typename input_vector_type::array_type xa( x );
+    const size_type value_dimension = xa.dimension_1();
+
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0)
-      threads_per_vector = x.dimension_1();
+      threads_per_vector = value_dimension ;
     size_type rows_per_block = A.dev_config.block_dim.y;
     if (rows_per_block == 0)
       rows_per_block = 256 / threads_per_vector;
@@ -663,9 +655,9 @@ public:
     const dim3 grid( num_blocks, 1 );
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = value_dimension / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != value_dimension, std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // The shared memory kernel is slightly faster
@@ -806,9 +798,13 @@ public:
     // block.  Due to register usage, this gives 64 or 48 warps per SM
     // and thus 8 or 6 blocks per SM.  We use these values by default if
     // the user-specified block dimensions are zero
+
+    const typename input_vector_type::array_type xa( x );
+    const size_type value_dimension = xa.dimension_1();
+
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0)
-      threads_per_vector = x.dimension_1();
+      threads_per_vector = value_dimension ;
     size_type rows_per_block = A.dev_config.block_dim.y;
     if (rows_per_block == 0)
       rows_per_block = 256 / threads_per_vector;
@@ -818,9 +814,9 @@ public:
     const dim3 grid( num_blocks, 1 );
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = value_dimension / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != value_dimension, std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // The shared memory kernel is slightly faster

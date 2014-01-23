@@ -23,7 +23,8 @@ export TDD_CTEST_TEST_TYPE=Nightly
 
 # Machine specific environment:
 #
-
+export DYLD_LIBRARY_PATH=/Users/jmwille/install/lapack/lib:$DYLD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/Users/jmwille/install/lapack/lib:$LD_LIBRARY_PATH
 export PYTHONPATH=/Users/jmwille/install/lib/python2.5/site-packages
 
 # Machine independent cron_driver:

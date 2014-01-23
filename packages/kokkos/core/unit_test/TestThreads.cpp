@@ -64,6 +64,7 @@
 #include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
+#include <TestAggregate.hpp>
 
 namespace Test {
 
