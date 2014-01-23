@@ -210,6 +210,15 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 #endif
 
     double startTime = stk::wall_time();
+
+
+    std::vector<std::pair<int, int> > interaction_list;
+    std::vector<int> first_interaction;
+    std::vector<int> last_interaction;
+
+    ACME::BoxA_BoxB_Par_Search(domainBoxes, rangeBoxes, comm, interaction_list, first_interaction, last_interaction);
+
+    /*
     std::vector<int> ghost_indices;
     std::vector<int> ghost_procs;
     ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
@@ -238,8 +247,13 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     std::vector<int> last_interaction;
 
     geometry::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
+    */
+
+
 
     double elapsedTime = stk::wall_time() - startTime;
+
+
 
 #if __VALGRIND_MAJOR__
     CALLGRIND_TOGGLE_COLLECT;
@@ -260,7 +274,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
         Ident box1(i, procThatOwnsBox[i]);
         for (int j=first_interaction[i];j<last_interaction[i];j++)
         {
-            Ident box2(interaction_list[j], procThatOwnsBox[interaction_list[j]]);
+	  Ident box2(interaction_list[j].first, interaction_list[j].second);
             localResults.insert(std::make_pair(box1, box2));
         }
     }
