@@ -267,7 +267,6 @@ UserInputForTests::UserInputForTests(string path, string testData,
   string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
   if (loc != string::npos)
     zoltan1 = true;
-cout << "HOWDY " << path << " " << zoltan1 << endl;
 
   if (zoltan1)
     readZoltanTestData(path, testData, distributeInput);
