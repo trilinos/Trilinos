@@ -382,17 +382,26 @@ public:
 
   /*! \brief Returns the user's global ID list.
    */
-  const gid_t *getIdList() const { return gids_.getRawPtr(); }
+  const gid_t *getIdList() const {
+    if (gids_.size() > 0) return gids_.getRawPtr();
+    else                  return NULL;
+  }
 
   /*! \brief Returns the part list corresponding to the global ID list.
    */
-  const zoltan2_partId_t *getPartList() const { return parts_.getRawPtr();}
+  const zoltan2_partId_t *getPartList() const {
+    if (parts_.size() > 0) return parts_.getRawPtr();
+    else                   return NULL;
+  }
 
   /*! \brief Returns the process list corresponding to the global ID list.
       \return The return value is a NULL pointer if part IDs are
                 synonomous with process IDs.
    */
-  const int *getProcList() const { return procs_.getRawPtr();}
+  const int *getProcList() const {
+    if (procs_.size() > 0) return procs_.getRawPtr();
+    else                   return NULL;
+  }
 
 
   /*! \brief set the Part Box boundaries as a result of geometric partitioning algorithm.
