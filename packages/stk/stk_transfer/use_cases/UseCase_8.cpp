@@ -61,8 +61,8 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
     }
   }
 
-  const stk::mesh::EntityRank node_rank = stk::mesh::MetaData::NODE_RANK;
-  const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
+  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
   const std::string data_field_name = "Sum_Of_Coordinates";
 

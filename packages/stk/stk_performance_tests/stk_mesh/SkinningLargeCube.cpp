@@ -29,7 +29,7 @@ namespace {
 
 using stk::mesh::EntityRank;
 
-static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+static const size_t NODE_RANK = stk::topology::NODE_RANK;
 
 size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
@@ -350,7 +350,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
 
     start_time = stk::wall_time();
     stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
-    const EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+    const EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const EntityRank side_rank = fixture.m_meta.side_rank();
 
     stk::mesh::MetaData & fem_meta = fixture.m_meta;

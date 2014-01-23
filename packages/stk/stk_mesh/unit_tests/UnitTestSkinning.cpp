@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <algorithm>
 
-static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+static const size_t NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
 
@@ -196,7 +196,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // Grab the skin entities
   stk::mesh::Selector skin_selector(skin_part);
-  const std::vector<stk::mesh::Bucket*>& edge_buckets = bulk_data.buckets(stk::mesh::MetaData::EDGE_RANK);
+  const std::vector<stk::mesh::Bucket*>& edge_buckets = bulk_data.buckets(stk::topology::EDGE_RANK);
   std::vector<stk::mesh::Entity> skin_entities;
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 

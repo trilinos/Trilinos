@@ -27,7 +27,7 @@ using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 {

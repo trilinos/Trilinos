@@ -25,7 +25,7 @@
 
 namespace {
 
-static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+static const size_t NODE_RANK = stk::topology::NODE_RANK;
 
 unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank )
 {
@@ -49,7 +49,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & fem_meta = fixture.m_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
 
     stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
@@ -115,7 +115,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & fem_meta = fixture.m_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
 
     stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");

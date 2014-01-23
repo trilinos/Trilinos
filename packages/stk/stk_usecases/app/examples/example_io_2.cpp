@@ -48,7 +48,7 @@ namespace app {
     /// \todo IMPLEMENT truly handle fields... For this case we
     /// are just defining a field for each transient field that is
     /// present in the mesh...
-    stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::MetaData::NODE_RANK);
+    stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::topology::NODE_RANK);
   }
 
   // ========================================================================
@@ -211,7 +211,7 @@ namespace app {
     Ioss::NodeBlock *nb = node_blocks[0];
 
     std::vector<stk::mesh::Entity> nodes;
-    stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, bulk, nodes);
+    stk::io::get_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
 
     /// \todo REFACTOR Application would probably store this field
     /// (and others) somewhere after the declaration instead of
@@ -301,9 +301,9 @@ namespace app {
 
 	std::vector<stk::mesh::Entity> nodes(node_count);
 	for(int i=0; i<node_count; ++i) {
-	  nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
+	  nodes[i] = bulk.get_entity( stk::topology::NODE_RANK, node_ids[i] );
 	  if (bulk.is_valid(nodes[i]))
-	    bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
+	    bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
 	}
 
 
@@ -326,7 +326,7 @@ namespace app {
     assert(io->type() == Ioss::SIDESET);
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
-    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
     int block_count = io->block_count();
     for (int i=0; i < block_count; i++) {
@@ -421,7 +421,7 @@ namespace app {
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
     // ??? Get field data from nodeblock...
-    app::get_field_data(bulk, meta.universal_part(), stk::mesh::MetaData::NODE_RANK,
+    app::get_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 			region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -489,7 +489,7 @@ namespace app {
     // Special processing for nodeblock (all nodes in model)...
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
-    app::put_field_data(bulk, meta.universal_part(), stk::mesh::MetaData::NODE_RANK,
+    app::put_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 			region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -656,7 +656,7 @@ namespace app {
     out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
     // Special processing for nodeblock (all nodes in model)...
-    stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK,
+    stk::io::ioss_add_fields(meta_data.universal_part(), stk::topology::NODE_RANK,
 			     out_region.get_node_blocks()[0],
 			     Ioss::Field::TRANSIENT);
 

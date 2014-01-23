@@ -19,7 +19,7 @@ void activate_entities(stk::io::StkMeshIoBroker &fixture,
   stk::mesh::MetaData & meta = fixture.meta_data();
   stk::mesh::BulkData &bulk = fixture.bulk_data();
 
-  stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
   stk::mesh::PartVector add_parts(1, &active_part);
 
@@ -104,7 +104,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
-  stk::mesh::Part &active = meta_data.declare_part("active", stk::mesh::MetaData::ELEMENT_RANK);
+  stk::mesh::Part &active = meta_data.declare_part("active", stk::topology::ELEMENT_RANK);
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
@@ -149,7 +149,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
-  stk::mesh::Part &active = meta_data.declare_part("active", stk::mesh::MetaData::ELEMENT_RANK);
+  stk::mesh::Part &active = meta_data.declare_part("active", stk::topology::ELEMENT_RANK);
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
@@ -215,7 +215,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
   stk::mesh::BulkData &bulk_data = fixture.bulk_data();
 
   const std::vector< stk::mesh::Bucket * > & element_buckets
-    = bulk_data.buckets( stk::mesh::MetaData::ELEMENT_RANK);
+    = bulk_data.buckets( stk::topology::ELEMENT_RANK);
 
   // iterate elements and check num nodal relations
   for ( std::vector<stk::mesh::Bucket*>::const_iterator ib = element_buckets.begin() ;

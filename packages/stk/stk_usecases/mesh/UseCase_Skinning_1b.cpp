@@ -31,7 +31,7 @@ void destroy_entity_and_create_particles(
     stk::mesh::Entity elem
     )
 {
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   const int p_rank = fixture.m_bulk_data.parallel_rank();
 
@@ -122,7 +122,7 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
       stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-//      const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+//      const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
 //      const stk::mesh::EntityRank particle_rank = element_rank;
 

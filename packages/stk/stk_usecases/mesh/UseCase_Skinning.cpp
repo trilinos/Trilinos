@@ -25,7 +25,7 @@
 
 namespace {
 
-static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+static const size_t NODE_RANK = stk::topology::NODE_RANK;
 
 void find_owned_nodes_with_relations_outside_closure(
     const stk::mesh::BulkData &mesh,

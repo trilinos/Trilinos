@@ -61,7 +61,7 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
     }
   }
 
-  const stk::mesh::EntityRank node_rank = stk::mesh::MetaData::NODE_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   const std::string data_field_name = "Sum_Of_Coordinates";
 
   stk::io::StkMeshIoBroker domain_mesh_data(comm);
@@ -102,7 +102,7 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
 
   std::vector<stk::mesh::Entity> domain_entities;
   {
-    stk::mesh::get_selected_entities(domain_nodes, domain_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), domain_entities);
+    stk::mesh::get_selected_entities(domain_nodes, domain_bulk_data.buckets(stk::topology::NODE_RANK), domain_entities);
     const size_t num_entities = domain_entities.size();
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = domain_entities[i];

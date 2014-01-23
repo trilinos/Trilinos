@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <algorithm>
 
-static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+static const size_t NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
 

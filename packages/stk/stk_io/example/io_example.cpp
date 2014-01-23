@@ -317,7 +317,7 @@ namespace stk_example_io {
     out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
     // Special processing for nodeblock (all nodes in model)...
-    stk::io::ioss_add_fields(fem_meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK,
+    stk::io::ioss_add_fields(fem_meta_data.universal_part(), stk::topology::NODE_RANK,
 			     out_region.get_node_blocks()[0],
 			     Ioss::Field::TRANSIENT);
 
@@ -396,13 +396,13 @@ namespace stk_example_io {
      * just defining a field for each transient field that is present
      * in the mesh...
      */
-    stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::MetaData::NODE_RANK);
+    stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::topology::NODE_RANK);
   }
 
   // ========================================================================
   void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
-    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
     stk::io::default_part_processing(elem_blocks, meta, element_rank);
@@ -448,7 +448,7 @@ namespace stk_example_io {
   void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    stk::io::default_part_processing(node_sets, meta, stk::mesh::MetaData::NODE_RANK);
+    stk::io::default_part_processing(node_sets, meta, stk::topology::NODE_RANK);
 
     /** \todo REFACTOR should "distribution_factor" be a default field
      * that is automatically declared on all objects that it exists
@@ -570,7 +570,7 @@ namespace stk_example_io {
     Ioss::NodeBlock *nb = node_blocks[0];
 
     std::vector<stk::mesh::Entity> nodes;
-    stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, bulk, nodes);
+    stk::io::get_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
 
     /** \todo REFACTOR Application would probably store this field
      * (and others) somewhere after the declaration instead of
@@ -663,9 +663,9 @@ namespace stk_example_io {
 
         std::vector<stk::mesh::Entity> nodes(node_count);
         for(int i=0; i<node_count; ++i) {
-          nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
+          nodes[i] = bulk.get_entity( stk::topology::NODE_RANK, node_ids[i] );
           if (bulk.is_valid(nodes[i])) {
-            bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
+            bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
           }
         }
 
@@ -690,7 +690,7 @@ namespace stk_example_io {
     assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
-    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
     int block_count = sset->block_count();
     for (int i=0; i < block_count; i++) {
@@ -792,7 +792,7 @@ namespace stk_example_io {
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
     // ??? Get field data from nodeblock...
-    get_field_data(bulk, meta.universal_part(), stk::mesh::MetaData::NODE_RANK,
+    get_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 		   region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -862,7 +862,7 @@ namespace stk_example_io {
     // Special processing for nodeblock (all nodes in model)...
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
-    put_field_data(bulk, meta.universal_part(), stk::mesh::MetaData::NODE_RANK,
+    put_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 		   region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();

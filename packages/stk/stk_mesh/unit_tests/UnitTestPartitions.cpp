@@ -64,7 +64,7 @@ addEntitiesToFixture(SelectorFixture& fixture, stk::mesh::EntityId start_id, siz
   for (size_t i = 0; i < num_to_add; ++i)
   {
     stk::mesh::Entity ent =
-      fixture.m_bulk_data.declare_entity(stk::mesh::MetaData::NODE_RANK,
+      fixture.m_bulk_data.declare_entity(stk::topology::NODE_RANK,
                                          ent_id, partMembership);
     collector.push_back(ent);
     ++ent_id;
@@ -148,7 +148,7 @@ void initialize_unsorted(SelectorFixture& fixture)
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -168,7 +168,7 @@ void setFieldDataUsingEntityIDs(SelectorFixture& fix)
 
   stk::mesh::BulkData &mesh = fix.m_bulk_data;
 
-  std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+  std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
 
   for (size_t i = 0; i < num_partitions; ++i)
@@ -354,7 +354,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -399,7 +399,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
   stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
   bucket_repository.sync_from_partitions();
 
-  std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+  std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   size_t expectedNumPartitions = 5u;
   STKUNIT_EXPECT_EQ(expectedNumPartitions, num_partitions);
@@ -437,7 +437,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -469,7 +469,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -504,7 +504,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
   // Now's a good time to exercise BucketRepository::sync_from_partitions().
   //
   bucket_repository.sync_from_partitions();
-  partitions = bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+  partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
   num_partitions = partitions.size();
   STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -534,7 +534,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -603,7 +603,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> all_partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   const size_t num_all_partitions = all_partitions.size();
   STKUNIT_EXPECT_EQ(num_all_partitions, 5u);
 
@@ -667,7 +667,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
   parts.push_back(fix.m_meta_data.locally_owned_part().mesh_meta_data_ordinal());
   parts.push_back(fix.m_partA.mesh_meta_data_ordinal() );
   stk::mesh::impl::Partition *partitionA =
-    bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(0 != partitionA);
   size_t numEntitiesPerPartition = 3000;
   size_t bucketCapacity = bucket_repository.default_bucket_capacity;
@@ -676,12 +676,12 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 
   parts.push_back(fix.m_partC.mesh_meta_data_ordinal());
   stk::mesh::impl::Partition *partitionAC =
-    bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(0 != partitionAC);
   STKUNIT_EXPECT_EQ(0u, partitionAC->num_buckets());
 
   stk::mesh::impl::Partition *partitionAC_again =
-    bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(partitionAC == partitionAC_again);
 
   check_bucket_ids_testset_A(bucket_repository);
@@ -708,7 +708,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreatePV)
   parts.push_back(&fix.m_meta_data.locally_owned_part());
   parts.push_back(&fix.m_partA);
   stk::mesh::impl::Partition *partitionA =
-    bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(0 != partitionA);
   size_t numEntitiesPerPartition = 3000;
   size_t bucketCapacity = bucket_repository.default_bucket_capacity;
@@ -717,12 +717,12 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreatePV)
 
   parts.push_back(&fix.m_partC);
   stk::mesh::impl::Partition *partitionAC =
-    bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(0 != partitionAC);
   STKUNIT_EXPECT_EQ(0u, partitionAC->num_buckets());
 
   stk::mesh::impl::Partition *partitionAC_again =
-    bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(partitionAC == partitionAC_again);
 
   check_bucket_ids_testset_A(bucket_repository);
@@ -749,7 +749,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
   bucket_repository.sync_from_partitions();
 
   std::vector<stk::mesh::impl::Partition *> all_partitions =
-    bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_all_partitions = all_partitions.size();
   STKUNIT_EXPECT_EQ(num_all_partitions, 5u);
 

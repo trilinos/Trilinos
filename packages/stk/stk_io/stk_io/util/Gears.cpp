@@ -72,7 +72,7 @@ Gear::Gear( stk::mesh::MetaData & S ,
             const int      turn_direction )
   : m_mesh_meta_data( S ),
     m_mesh( NULL ),
-    m_gear( S.declare_part(std::string("Gear_").append(name), stk::mesh::MetaData::ELEMENT_RANK) ),
+    m_gear( S.declare_part(std::string("Gear_").append(name), stk::topology::ELEMENT_RANK) ),
     m_surf( S.declare_part(std::string("Surf_").append(name), m_mesh_meta_data.side_rank()) ),
     m_gear_coord( gear_fields.gear_coord ),
     m_model_coord(gear_fields.model_coord )
@@ -132,7 +132,7 @@ stk::mesh::Entity Gear::create_node(const std::vector<stk::mesh::Part*> & parts 
   stk::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
   stk::mesh::EntityId id = node_id_base + id_gear ;
 
-  stk::mesh::Entity node = m_mesh->declare_entity( stk::mesh::MetaData::NODE_RANK, id , parts );
+  stk::mesh::Entity node = m_mesh->declare_entity( stk::topology::NODE_RANK, id , parts );
 
   double * const gear_data    = m_mesh->field_data( m_gear_coord , node );
   double * const model_data   = m_mesh->field_data( m_model_coord , node );
@@ -152,7 +152,7 @@ stk::mesh::Entity Gear::create_node(const std::vector<stk::mesh::Part*> & parts 
 
 void Gear::mesh( stk::mesh::BulkData & M )
 {
-  stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
   stk::mesh::EntityRank side_rank = m_mesh_meta_data.side_rank();
 
   M.modification_begin();
@@ -168,7 +168,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
   // max_id is no longer available from comm_mesh_stats.
   // If we assume uniform numbering from 1.., then max_id
   // should be equal to counts...
-  const stk::mesh::EntityId node_id_base = counts[ stk::mesh::MetaData::NODE_RANK ] + 1 ;
+  const stk::mesh::EntityId node_id_base = counts[ stk::topology::NODE_RANK ] + 1 ;
   const stk::mesh::EntityId elem_id_base = counts[ element_rank ] + 1 ;
 
   const unsigned long elem_id_gear_max =

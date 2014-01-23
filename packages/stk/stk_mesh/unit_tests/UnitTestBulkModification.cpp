@@ -75,7 +75,7 @@ class UnitTestStkMeshBulkModification {
 
 namespace {
 
-const EntityRank NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBulkDataNotSyrncronized , testUnit )
 {

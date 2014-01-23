@@ -61,7 +61,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   range_mesh_data.create_input_mesh();
 
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
-  const stk::mesh::EntityRank node_rank = stk::mesh::MetaData::NODE_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
   stk::mesh::Part & range_block         = range_meta_data.declare_part("nodes", node_rank);
   stk::mesh::CellTopology node_top (shards::getCellTopologyData<shards::Node>());
   stk::mesh::set_cell_topology( range_block,  node_top );
@@ -115,7 +115,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
 
   std::vector<stk::mesh::Entity> domain_entities;
   {
-    stk::mesh::get_selected_entities(domain_nodes, domain_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), domain_entities);
+    stk::mesh::get_selected_entities(domain_nodes, domain_bulk_data.buckets(stk::topology::NODE_RANK), domain_entities);
     const size_t num_entities = domain_entities.size();
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = domain_entities[i];
@@ -126,7 +126,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   }
   std::vector<stk::mesh::Entity> range_entities;
   {
-    stk::mesh::get_selected_entities(range_nodes, range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), range_entities);
+    stk::mesh::get_selected_entities(range_nodes, range_bulk_data.buckets(stk::topology::NODE_RANK), range_entities);
     const size_t num_entities = range_entities.size();
     const double rand_max = RAND_MAX;
     for (size_t i = 0; i < num_entities; ++i) {
@@ -177,7 +177,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   if (status) {
     std::vector<stk::mesh::Entity> range_points;
     stk::mesh::get_selected_entities(range_nodes,
-                                     range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK),
+                                     range_bulk_data.buckets(stk::topology::NODE_RANK),
                                      range_points);
 
     const unsigned TONUMPOINTS = range_points.size();

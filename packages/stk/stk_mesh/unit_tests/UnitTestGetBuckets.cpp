@@ -32,7 +32,7 @@ using stk::mesh::Selector;
 using stk::mesh::BulkData;
 using stk::mesh::Entity;
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 // Just make copies so we don't have to worry about constness
 template <class T>

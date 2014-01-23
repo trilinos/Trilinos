@@ -525,7 +525,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
   stk::mesh::Part & dead_part = *fixture.dead_part();
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
 
   // Select live or dead from owned, shared, and ghosted

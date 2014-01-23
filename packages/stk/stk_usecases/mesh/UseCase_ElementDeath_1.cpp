@@ -159,7 +159,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
   stk::mesh::MetaData& fem_meta = fixture.fem_meta();
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
 
   fem_meta.commit();
@@ -368,7 +368,7 @@ void find_lower_rank_entities_to_kill(
       bool found_live = false;
 
       for(unsigned rank = entity_rank + 1; rank<=mesh_rank && !found_live; ++rank) {
-        if (spatial_dim == 2 && rank == stk::mesh::MetaData::FACE_RANK) {
+        if (spatial_dim == 2 && rank == stk::topology::FACE_RANK) {
           continue;
         }
 

@@ -1639,7 +1639,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
   unsigned p_size = eMesh.parallel_size();
   static_cast<void>(p_size);
 
-  const std::vector<stk::mesh::Bucket*> & buckets = eMesh.buckets( stk::mesh::MetaData::NODE_RANK );
+  const std::vector<stk::mesh::Bucket*> & buckets = eMesh.buckets( stk::topology::NODE_RANK );
 
   enum Type{ Owned, Shared, Ghost };
 

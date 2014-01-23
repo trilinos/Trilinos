@@ -48,7 +48,7 @@ void use_case_5_generate_mesh_meta_data(
   stk::mesh::MetaData & meta_data ,
   VectorFieldType & node_coord )
 {
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   mesh::Part & universal        = meta_data.universal_part();
   mesh::Part & block_hex        = meta_data.declare_part("hexes",element_rank);
@@ -73,7 +73,7 @@ void use_case_5_generate_mesh_meta_data(
   stk::mesh::set_cell_topology(block_tri_shell      , stk::mesh::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
 
   const mesh::FieldBase::Restriction & res =
-    stk::mesh::find_restriction(node_coord, mesh::MetaData::NODE_RANK , universal );
+    stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
 
   if ( res.num_scalars_per_entity() != 3 ) {
     std::ostringstream msg ;
@@ -223,7 +223,7 @@ void use_case_5_generate_mesh_bulk_data(
 
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
-    mesh::Entity const node = bulk_data.get_entity( mesh::MetaData::NODE_RANK , i + 1 );
+    mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );
 
     double * const coord = bulk_data.field_data( node_coord , node );
 

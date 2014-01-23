@@ -34,8 +34,8 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::MetaData::NODE_RANK;
-const stk::mesh::EntityRank ELEMENT_RANK = stk::mesh::MetaData::ELEMENT_RANK;
+const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
+const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
 
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;

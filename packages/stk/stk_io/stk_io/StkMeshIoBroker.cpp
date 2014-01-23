@@ -483,7 +483,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       std::vector<INT> elem_side ;
 
       stk::mesh::Part * const sb_part = meta.get_part(block->name());
-      stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
+      stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
       block->get_field_data("ids", side_ids);
       block->get_field_data("element_side", elem_side);
@@ -540,7 +540,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       std::vector<INT> elem_side ;
 
       stk::mesh::Part * const sb_part = meta.get_part(block->name());
-      stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
+      stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
       block->get_field_data("ids", side_ids);
       block->get_field_data("element_side", elem_side);
@@ -665,7 +665,7 @@ void process_nodeblocks(stk::io::StkMeshIoBroker &mesh, INT /*dummy*/)
   nb->get_field_data("ids", ids);
 
   for (size_t i=0; i < ids.size(); i++) {
-    stk::mesh::Entity node = bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, ids[i]);
+    stk::mesh::Entity node = bulk.declare_entity(stk::topology::NODE_RANK, ids[i]);
     bulk.set_local_id(node, i);
   }
 }
@@ -698,7 +698,7 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   std::vector<stk::mesh::Entity> nodes;
   nodes.reserve(node_count);
   for (size_t i=0; i < ids.size(); i++) {
-    stk::mesh::Entity node = bulk.get_entity(stk::mesh::MetaData::NODE_RANK, ids[i]);
+    stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, ids[i]);
     nodes.push_back(node);
   }
 
@@ -955,7 +955,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
       std::vector<INT> node_ids ;
       size_t node_count = entity->get_field_data("ids", node_ids);
 
-      stk::mesh::EntityRank n_rank = stk::mesh::MetaData::NODE_RANK;
+      stk::mesh::EntityRank n_rank = stk::topology::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
         stk::mesh::Entity node = bulk.get_entity(n_rank, node_ids[i] );
         if (!bulk.is_valid(node)) {
@@ -992,7 +992,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*
       size_t node_count = entity->get_field_data("ids", node_ids);
 
       std::vector<stk::mesh::Entity> nodes(node_count);
-      stk::mesh::EntityRank n_rank = stk::mesh::MetaData::NODE_RANK;
+      stk::mesh::EntityRank n_rank = stk::topology::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
         nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
         if (!bulk.is_valid(nodes[i])) {
@@ -1637,7 +1637,7 @@ namespace stk {
 
       // Special processing for nodeblock (all nodes in model)...
       ioss_restore_input_fields(m_input_fields, bulk_data(), meta_data().universal_part(),
-                                stk::mesh::MetaData::NODE_RANK,
+                                stk::topology::NODE_RANK,
                                 region->get_node_blocks()[0], m_db_purpose);
 
       // Now handle all non-nodeblock parts...
@@ -1660,7 +1660,7 @@ namespace stk {
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
           // (should probably do edges and faces also...)
           // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::mesh::MetaData::NODE_RANK) {
+          if (rank != stk::topology::NODE_RANK) {
             Ioss::GroupingEntity *node_entity = NULL;
             std::string nodes_name = part->name() + "_nodes";
             node_entity = region->get_entity(nodes_name);
@@ -1669,7 +1669,7 @@ namespace stk {
             }
             if (node_entity != NULL) {
               ioss_restore_input_fields(m_input_fields, bulk_data(), *part,
-                                        stk::mesh::MetaData::NODE_RANK, node_entity,
+                                        stk::topology::NODE_RANK, node_entity,
                                         m_db_purpose);
             }
           }
@@ -2019,7 +2019,7 @@ namespace stk {
 
         const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
         // Special processing for nodeblock (all nodes in model)...
-        stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK,
+        stk::io::ioss_add_fields(meta_data.universal_part(), stk::topology::NODE_RANK,
                                  region->get_node_blocks()[0], m_named_fields);
 
         const stk::mesh::PartVector &all_parts = meta_data.get_parts();
@@ -2038,7 +2038,7 @@ namespace stk {
                 // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
                 // (should probably do edges and faces also...)
                 // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-                if(rank != stk::mesh::MetaData::NODE_RANK) {
+                if(rank != stk::topology::NODE_RANK) {
                     Ioss::GroupingEntity *node_entity = NULL;
                     if (m_use_nodeset_for_part_nodes_fields) {
                         std::string nodes_name = part->name() + "_nodes";
@@ -2047,7 +2047,7 @@ namespace stk {
                         node_entity = region->get_entity("nodeblock_1");
                     }
                     if(node_entity != NULL) {
-                        stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK, node_entity, m_named_fields);
+                        stk::io::ioss_add_fields(*part, stk::topology::NODE_RANK, node_entity, m_named_fields);
                     }
                 }
             }
@@ -2077,7 +2077,7 @@ namespace stk {
 
       const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
       // Special processing for nodeblock (all nodes in model)...
-      put_field_data(bulk_data, meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK,
+      put_field_data(bulk_data, meta_data.universal_part(), stk::topology::NODE_RANK,
                      region->get_node_blocks()[0], m_named_fields, m_subset_selector.get());
 
       // Now handle all non-nodeblock parts...
@@ -2097,11 +2097,11 @@ namespace stk {
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
           // (should probably do edges and faces also...)
           // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::mesh::MetaData::NODE_RANK && m_use_nodeset_for_part_nodes_fields) {
+          if (rank != stk::topology::NODE_RANK && m_use_nodeset_for_part_nodes_fields) {
             std::string nodes_name = part->name() + "_nodes";
             Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
             if (node_entity != NULL) {
-              put_field_data(bulk_data, *part, stk::mesh::MetaData::NODE_RANK, node_entity, m_named_fields,
+              put_field_data(bulk_data, *part, stk::topology::NODE_RANK, node_entity, m_named_fields,
                              m_subset_selector.get());
             }
           }
