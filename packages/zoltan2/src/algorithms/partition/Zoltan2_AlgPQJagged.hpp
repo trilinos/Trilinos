@@ -6922,7 +6922,6 @@ void AlgPQJagged(
     env->timerStop(MACRO_TIMERS, "PQJagged - Part_Assignment");
     ArrayRCP<const pq_gno_t> gnoList;
     if(!is_data_ever_migrated){
-
         if(numLocalCoords > 0){
             gnoList = arcpFromArrayView(pqJagged_gnos);
         }
@@ -6940,14 +6939,12 @@ void AlgPQJagged(
             pq_lno_t incoming = 0;
             int message_tag = 7856;
 
-
             env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating");
             int ierr = Zoltan_Comm_Create( &plan, numLocalCoords,
                     actual_owner_of_coordinate, mpi_comm, message_tag,
                     &incoming);
             Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating" );
-
 
             pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(incoming);
 
@@ -6988,6 +6985,11 @@ void AlgPQJagged(
     env->timerStart(MACRO_TIMERS, "PQJagged - Solution_Part_Assignment");
     partId = arcp(partIds, 0, numLocalCoords, true);
 
+    // SR TODO: migrate_gid never seem to be defined why is this needed ?
+    // Looks like old code when we did not do migration within pqjagged but
+    // let setParts take care of it. Now as we do migration above
+    // we will never pass true to setParts. The next three lines should be
+    // removed in that case.
 #ifdef migrate_gid
     solution->setParts(gnoList, partId,true);
 #endif
@@ -7022,11 +7024,6 @@ void AlgPQJagged(
             freeArray<pq_scalar_t>(pqJagged_weights[i]);
         }
 
-        if(!is_data_ever_migrated || migration_actualMigration_option == 0 ){
-            // Otherwise we created an ArrayRCP that will free when
-            // solution is freed.
-            freeArray<pq_gno_t>(pq_gnos);
-        }
         freeArray<int>(actual_owner_of_coordinate);
     }
 #endif
