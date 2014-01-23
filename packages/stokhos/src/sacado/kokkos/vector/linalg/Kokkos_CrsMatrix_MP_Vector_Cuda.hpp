@@ -639,9 +639,13 @@ public:
     // block.  Due to register usage, this gives 64 or 48 warps per SM
     // and thus 8 or 6 blocks per SM.  We use these values by default if
     // the user-specified block dimensions are zero
+
+    const typename input_vector_type::array_type xa( x );
+    const size_type value_dimension = xa.dimension_1();
+
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0)
-      threads_per_vector = x.dimension_1();
+      threads_per_vector = value_dimension ;
     size_type rows_per_block = A.dev_config.block_dim.y;
     if (rows_per_block == 0)
       rows_per_block = 256 / threads_per_vector;
@@ -651,9 +655,9 @@ public:
     const dim3 grid( num_blocks, 1 );
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = value_dimension / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != value_dimension, std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // The shared memory kernel is slightly faster
@@ -794,9 +798,13 @@ public:
     // block.  Due to register usage, this gives 64 or 48 warps per SM
     // and thus 8 or 6 blocks per SM.  We use these values by default if
     // the user-specified block dimensions are zero
+
+    const typename input_vector_type::array_type xa( x );
+    const size_type value_dimension = xa.dimension_1();
+
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0)
-      threads_per_vector = x.dimension_1();
+      threads_per_vector = value_dimension ;
     size_type rows_per_block = A.dev_config.block_dim.y;
     if (rows_per_block == 0)
       rows_per_block = 256 / threads_per_vector;
@@ -806,9 +814,9 @@ public:
     const dim3 grid( num_blocks, 1 );
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = value_dimension / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != value_dimension, std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // The shared memory kernel is slightly faster

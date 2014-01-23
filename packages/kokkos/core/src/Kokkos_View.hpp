@@ -140,13 +140,6 @@ public:
   typedef typename analysis::non_const_type   non_const_data_type ;
 
   //------------------------------------
-  // Intrinsic scalar type traits:
-
-  typedef typename analysis::scalar_type            scalar_type ;
-  typedef typename analysis::const_scalar_type      const_scalar_type ;
-  typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
-
-  //------------------------------------
   // Array of intrinsic scalar type traits:
 
   typedef typename analysis::array_type            array_type ;

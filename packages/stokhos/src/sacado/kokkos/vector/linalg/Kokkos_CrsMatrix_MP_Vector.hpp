@@ -103,7 +103,7 @@ public:
   const int length;
 
   KOKKOS_INLINE_FUNCTION
-  scalar_type value (const int& i) const {
+  scalar_type & value (const int& i) const {
     return values_(offset_+i*stride_);
   }
 

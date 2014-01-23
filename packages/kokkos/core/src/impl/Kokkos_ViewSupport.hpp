@@ -61,11 +61,11 @@ struct ViewAssignable
   // Compatible 'const' qualifier
   // Cannot assign managed = unmannaged
   enum { assignable_value =
-    ( is_same< typename ViewLHS::scalar_type ,
-               typename ViewRHS::scalar_type >::value
+    ( is_same< typename ViewLHS::value_type ,
+               typename ViewRHS::value_type >::value
       ||
-      is_same< typename ViewLHS::scalar_type ,
-               typename ViewRHS::const_scalar_type >::value )
+      is_same< typename ViewLHS::value_type ,
+               typename ViewRHS::const_value_type >::value )
     &&
     is_same< typename ViewLHS::memory_space ,
              typename ViewRHS::memory_space >::value

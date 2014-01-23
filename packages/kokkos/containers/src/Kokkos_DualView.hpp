@@ -105,9 +105,7 @@ public:
 
   typedef typename t_dev::value_type value_type;
   typedef typename t_dev::const_value_type const_value_type;
-  typedef typename t_dev::scalar_type scalar_type;
-  typedef typename t_dev::const_scalar_type const_scalar_type;
-  typedef typename t_dev::non_const_scalar_type non_const_scalar_type;
+  typedef typename t_dev::non_const_value_type non_const_value_type;
 
   /* Instances of base types */
 

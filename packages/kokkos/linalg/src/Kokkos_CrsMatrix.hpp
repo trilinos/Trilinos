@@ -381,10 +381,10 @@ public:
   //! Kokkos Array type of the entries (values) in the sparse matrix.
   typedef Kokkos::View<scalar_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
   //! Const version of the type of the entries in the sparse matrix.
-  typedef typename values_type::const_scalar_type  const_scalar_type;
+  typedef typename values_type::const_value_type  const_scalar_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  typedef typename values_type::non_const_scalar_type  non_const_scalar_type;
-  typedef typename index_type::non_const_scalar_type  non_const_ordinal_type;
+  typedef typename values_type::non_const_value_type  non_const_scalar_type;
+  typedef typename index_type ::non_const_value_type  non_const_ordinal_type;
 
 #ifdef KOKKOS_USE_CUSPARSE
   cusparseHandle_t cusparse_handle;
@@ -2216,7 +2216,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return;
     }
 #endif // KOKKOS_USE_MKL
-    typedef Kokkos::View<typename DomainVector::scalar_type*, typename DomainVector::device_type> aVector;
+    typedef Kokkos::View<typename DomainVector::value_type*, typename DomainVector::device_type> aVector;
     aVector a;
 
     return MV_Multiply (a, y, a, A, x, 0, 1);
@@ -2225,7 +2225,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
   template<class RangeVector, class CrsMatrix, class DomainVector>
   void
   MV_Multiply (const RangeVector& y,
-               typename DomainVector::const_scalar_type s_a,
+               typename DomainVector::const_value_type s_a,
                const CrsMatrix& A,
                const DomainVector& x)
   {
@@ -2239,7 +2239,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return;
     }
 #endif // KOKKOS_USE_MKL
-    typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+    typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
     aVector a;
     const int numVecs = x.dimension_1();
 
@@ -2262,9 +2262,9 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
 
   template<class RangeVector, class CrsMatrix, class DomainVector>
   void
-  MV_Multiply (typename RangeVector::const_scalar_type s_b,
+  MV_Multiply (typename RangeVector::const_value_type s_b,
                const RangeVector& y,
-               typename DomainVector::const_scalar_type s_a,
+               typename DomainVector::const_value_type s_a,
                const CrsMatrix& A,
                const DomainVector& x)
   {
@@ -2278,7 +2278,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return;
     }
 #endif // KOKKOS_USE_MKL
-    typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+    typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
     aVector a;
     aVector b;
     int numVecs = x.dimension_1();

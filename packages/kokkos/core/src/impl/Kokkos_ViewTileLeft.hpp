@@ -181,8 +181,8 @@ struct ViewAssignment< ViewTileLeftFast , ViewTileLeftFast, void >
 
       Impl::assert_shapes_are_equal( dst.m_shape , src.m_shape );
 
-      const size_t n_dst = sizeof(typename dst_traits::scalar_type) * dst.capacity();
-      const size_t n_src = sizeof(typename src_traits::scalar_type) * src.capacity();
+      const size_t n_dst = sizeof(typename dst_traits::value_type) * dst.capacity();
+      const size_t n_src = sizeof(typename src_traits::value_type) * src.capacity();
 
       Impl::assert_counts_are_equal( n_dst , n_src );
 

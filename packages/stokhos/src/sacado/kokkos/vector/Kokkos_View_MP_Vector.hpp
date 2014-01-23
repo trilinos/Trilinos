@@ -145,9 +145,7 @@ struct sacado_mp_vector_partition_constructor_requires_unmanaged_view {};
 
 namespace Kokkos {
 
-/**\brief  View::value_type  == Sacado::MP::Vector< Stokhos::StorageType<...> >
- *         View::scalar_type == StorageType<...>::value_type
- */
+/**\brief  View::value_type  == Sacado::MP::Vector< Stokhos::StorageType<...> > */
 template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,
@@ -175,14 +173,14 @@ private:
   typedef Impl::LayoutStride< typename traits::shape_type ,
                               typename traits::array_layout > stride_type ;
 
-  typename traits::scalar_type  * m_ptr_on_device ;
-  typename traits::shape_type     m_shape ;
-  stride_type                     m_stride ;
-  typename traits::device_type::size_type m_storage_size ;
+  typename stokhos_storage_type::value_type  * m_ptr_on_device ;
+  typename traits::shape_type                  m_shape ;
+  stride_type                                  m_stride ;
+  typename traits::device_type::size_type      m_storage_size ;
 
   typedef Stokhos::ViewStorage<
     typename stokhos_storage_type::ordinal_type ,
-    typename traits::scalar_type ,
+    typename stokhos_storage_type::value_type ,
     StokhosStorageStaticDimension ,
       /* LayoutRight has stride-one stokhos storage */
     ( Impl::is_same< typename traits::array_layout , LayoutRight >::value ? 1 : 0 ) ,
@@ -369,9 +367,9 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::scalar_type   scalar_type ;
+      typedef typename traits::memory_space              memory_space ;
+      typedef typename traits::shape_type                shape_type ;
+      typedef typename stokhos_storage_type::value_type  scalar_type ;
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_with_padding( m_stride , m_shape );
@@ -385,7 +383,7 @@ public:
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
 
-      (void) Impl::ViewFill< array_type >( *this , typename traits::scalar_type() );
+      (void) Impl::ViewFill< array_type >( *this , typename array_type::value_type() );
     }
 
   explicit inline
@@ -401,9 +399,9 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::scalar_type   scalar_type ;
+      typedef typename traits::memory_space              memory_space ;
+      typedef typename traits::shape_type                shape_type ;
+      typedef typename stokhos_storage_type::value_type  scalar_type ;
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_with_padding( m_stride , m_shape );
@@ -432,14 +430,13 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::scalar_type>::value ||
-            Impl::is_same<T,typename traits::const_scalar_type>::value ) &&
+          ( Impl::is_same<T,typename traits::value_type>::value ||
+            Impl::is_same<T,typename traits::const_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
-      typedef typename traits::shape_type   shape_type ;
-      typedef typename traits::scalar_type  scalar_type ;
+      typedef typename traits::shape_type  shape_type ;
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
@@ -841,7 +838,8 @@ public:
   // These methods are specific to specialization of a view.
 
   KOKKOS_FORCEINLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
+  typename traits::value_type::storage_type::value_type *
+    ptr_on_device() const { return m_ptr_on_device ; }
 
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
@@ -902,9 +900,7 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVector> & dst
 
 namespace Kokkos {
 
-/**\brief  View::value_type  == Sacado::MP::Vector< Stokhos::FixedStaticStorage<...> >
- *         View::scalar_type == Sacado::MP::Vector< Stokhos::FixedStaticStorage<...> >
- */
+/**\brief  View::value_type  == Sacado::MP::Vector< Stokhos::FixedStaticStorage<...> > */
 template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,
@@ -1212,7 +1208,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
       // May have partitioned
       return m_ptr_on_device[ m_stride * i0 ];
     }
@@ -1476,39 +1471,6 @@ namespace Impl {
  *
  *  The dimension associated with the MP::Vector is always dynamic.
  */
-#if 1
-
-template< class StorageType >
-struct AnalyzeShape< Sacado::MP::Vector< StorageType > >
-  : public ShapeInsert< typename AnalyzeShape< typename StorageType::value_type >::shape , 0 >::type
-{
-private:
-  typedef AnalyzeShape< typename StorageType::value_type > nested ;
-public:
-
-  typedef ViewSpecializeSacadoMPVector specialize ;
-
-  typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
-
-  typedef typename nested::scalar_type            scalar_type ;
-  typedef typename nested::const_scalar_type      const_scalar_type ;
-  typedef typename nested::non_const_scalar_type  non_const_scalar_type ;
-
-  typedef typename nested::array_type           * array_type ;
-  typedef typename nested::const_array_type     * const_array_type ;
-  typedef typename nested::non_const_array_type * non_const_array_type ;
-
-  typedef       Sacado::MP::Vector< StorageType >  type ;
-  typedef const Sacado::MP::Vector< StorageType >  const_type ;
-  typedef       Sacado::MP::Vector< StorageType >  non_const_type ;
-
-  typedef       Sacado::MP::Vector< StorageType >  value_type ;
-  typedef const Sacado::MP::Vector< StorageType >  const_value_type ;
-  typedef       Sacado::MP::Vector< StorageType >  non_const_value_type ;
-};
-
-#else
-
 template< class StorageType >
 struct AnalyzeShape< Sacado::MP::Vector< StorageType > >
   : if_c< StorageType::is_static
@@ -1534,10 +1496,8 @@ public:
         , typename ShapeInsert< typename nested::shape , 0 >::type 
         >::type shape ;
 
-  typedef typename nested::scalar_type        scalar_type ;
-  typedef typename nested::const_scalar_type  const_scalar_type ;
-  typedef scalar_type                         non_const_scalar_type ;
-
+  // If ( ! StorageType::is_static ) then 0 == StorageType::static_size and the first array declaration is not used.
+  // However, the compiler will still generate this type declaration and it must not have a zero length.
   typedef typename
     if_c< StorageType::is_static
         , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
@@ -1560,8 +1520,6 @@ public:
   typedef const Sacado::MP::Vector< StorageType >  const_value_type ;
   typedef       Sacado::MP::Vector< StorageType >  non_const_value_type ;
 };
-
-#endif
 
 //----------------------------------------------------------------------------
 
@@ -1762,7 +1720,8 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
     dst.m_stride = src.m_stride * src_stokhos_storage_type::static_size
                                 / dst_stokhos_storage_type::static_size ;
 
-    dst.m_ptr_on_device = reinterpret_cast<typename dst_type::value_type*>( src.m_ptr_on_device ) + part.begin ;
+    dst.m_ptr_on_device = reinterpret_cast<typename dst_type::value_type*>( src.m_ptr_on_device )
+                        + part.begin / dst_stokhos_storage_type::static_size ;
   }
 };
 
