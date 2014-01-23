@@ -134,9 +134,31 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP) {
+ 
+  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+    = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
+  P_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
+  PreconditioningMatrixSet_=true;
+  GridTransfersExist_=false;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setstiff(RCP<Matrix>& K) {
 
   K_=K;
+  StiffMatrixSet_=true;
+  GridTransfersExist_=false;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK) {
+
+  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+    = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraK) );
+  K_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   StiffMatrixSet_=true;
   GridTransfersExist_=false;
 
@@ -152,9 +174,31 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setma
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM) {
+
+  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+    = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraM) );
+  M_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
+  MassMatrixSet_=true;
+  GridTransfersExist_=false;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP<Matrix>& C) {
 
   C_=C;
+  DampMatrixSet_=true;
+  GridTransfersExist_=false;
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC) {
+  
+  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+    = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraC) );
+  C_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   DampMatrixSet_=true;
   GridTransfersExist_=false;
 
@@ -629,6 +673,21 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multi
 
   // Set left and right hand sides for Belos
   Hierarchy_ -> Iterate(*B, 1, *X, true, 0);
+
+}
+
+// Solve phase
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
+{
+
+  Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraX
+    = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(X) );
+  Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraB
+    = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(B) );
+
+  // Set left and right hand sides for Belos
+  Hierarchy_ -> Iterate(*XpetraB, 1, *XpetraX, true, 0);
 
 }
 
