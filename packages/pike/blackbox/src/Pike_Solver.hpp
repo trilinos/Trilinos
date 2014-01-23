@@ -15,7 +15,7 @@ namespace pike {
   class Observer;
 
 
-  /** \brief Pure virtual base class for iterative solvers */
+  /** \brief Pure virtual base class (strategy design pattern) for iterative solvers */
   class Solver : public Teuchos::ParameterListAcceptorDefaultBase,
 		 public Teuchos::Describable,
 		 public Teuchos::VerboseObject<pike::Solver> {

@@ -8,7 +8,7 @@
 
 namespace pike {
 
-  /** \brief A BlackBoxModelEvaluator adapter that logs certain method calls.
+  /** \brief A BlackBoxModelEvaluator decorator that logs certain method calls.
 
       Currently, this only logs the solve() and getResponse() methods.
    */
@@ -28,7 +28,7 @@ namespace pike {
 
     bool solve();
 
-    bool isConverged() const;
+    bool isLocallyConverged() const;
 
     bool isGloballyConverged() const;
 

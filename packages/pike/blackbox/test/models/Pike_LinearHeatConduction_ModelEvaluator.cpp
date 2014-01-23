@@ -53,7 +53,7 @@ namespace pike_test {
     return true;
   }
   
-  bool LinearHeatConductionModelEvaluator::isConverged() const
+  bool LinearHeatConductionModelEvaluator::isLocallyConverged() const
   { return true; }
 
   bool LinearHeatConductionModelEvaluator::isGloballyConverged() const

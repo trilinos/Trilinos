@@ -8,6 +8,7 @@ namespace pike {
 
   class any;
 
+  /** \brief Pure virtual interface to a user implemented physics model. */
   class BlackBoxModelEvaluator {
 
   public:
@@ -28,7 +29,7 @@ namespace pike {
      *  global coupled system but only convergence of the local
      *  application solve.
      */
-    virtual bool isConverged() const = 0;
+    virtual bool isLocallyConverged() const = 0;
 
     /** \brief Optional function for assessing convergence of the
      *	globally coupled problem.  Returns true if the metrics local

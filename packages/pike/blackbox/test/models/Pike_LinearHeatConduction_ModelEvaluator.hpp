@@ -51,7 +51,7 @@ namespace pike_test {
 
     bool solve();
 
-    bool isConverged() const;
+    bool isLocallyConverged() const;
 
     bool isGloballyConverged() const;
 

@@ -28,7 +28,7 @@ namespace pike {
     // Derived from base
     std::string name() const;
     bool solve();
-    bool isConverged() const;
+    bool isLocallyConverged() const;
     bool isGloballyConverged() const;
     Teuchos::RCP<const pike::any> getResponse(const int i) const;
     int getResponseIndex(const std::string& name) const;

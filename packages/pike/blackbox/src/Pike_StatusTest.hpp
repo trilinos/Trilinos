@@ -34,7 +34,7 @@ namespace pike {
     NONE
   };
 
-  /** Pure virtual interface for a specifying a stopping criteria for the coupled system */
+  /** Pure virtual interface for a specifying a stopping criteria for the coupled system (strategy design pattern). */
   class StatusTest : public Teuchos::Describable,
 		     public Teuchos::VerboseObject<pike::StatusTest> {
 

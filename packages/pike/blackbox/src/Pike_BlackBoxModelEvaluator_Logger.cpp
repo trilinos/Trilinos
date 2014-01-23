@@ -35,9 +35,9 @@ namespace pike {
     return model_->solve();
   }
 
-  bool ModelEvaluatorLogger::isConverged() const
+  bool ModelEvaluatorLogger::isLocallyConverged() const
   { 
-    return model_->isConverged();
+    return model_->isLocallyConverged();
   }
   
   bool ModelEvaluatorLogger::isGloballyConverged() const

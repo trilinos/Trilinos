@@ -30,7 +30,7 @@ namespace pike {
     }
 
     // Triggers a failure if the local model fails to converge.
-    isLocallyConverged_ = application_->isConverged();
+    isLocallyConverged_ = application_->isLocallyConverged();
     status_ = isLocallyConverged_ ? pike::UNCONVERGED : pike::FAILED;
 
     return status_;

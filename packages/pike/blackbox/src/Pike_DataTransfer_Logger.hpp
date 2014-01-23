@@ -8,7 +8,7 @@
 
 namespace pike {
   
-  /** \brief A DataTransfer adapter that logs certain method calls.
+  /** \brief A DataTransfer decorator that logs certain method calls.
 
       Currently, this only logs the doTransfer() method.
    */

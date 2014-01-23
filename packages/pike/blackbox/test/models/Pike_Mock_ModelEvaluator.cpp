@@ -44,7 +44,7 @@ namespace pike_test {
     return true;
   }
   
-  bool MockModelEvaluator::isConverged() const
+  bool MockModelEvaluator::isLocallyConverged() const
   { 
     TEUCHOS_ASSERT(nonnull(solver_));
     

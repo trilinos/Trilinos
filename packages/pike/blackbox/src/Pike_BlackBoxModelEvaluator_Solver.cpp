@@ -37,7 +37,7 @@ namespace pike {
   bool SolverModelEvaluator::solve()
   { return (solver_->solve() == pike::CONVERGED); }
 
-  bool SolverModelEvaluator::isConverged() const
+  bool SolverModelEvaluator::isLocallyConverged() const
   {
     return (solver_->getStatus() == pike::CONVERGED);
   }
