@@ -93,6 +93,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_ParMETIS:BOOL=ON"
   "-DTPL_ParMETIS_LIBRARIES:STRING=-L/projects/sems/tpls/gcc_4.8.2/arch_x86/parmetis_4.0.3/lib -lparmetis -L/projects/sems/tpls/gcc_4.8.2/arch_x86/metis_5.1.0/lib -lmetis"
   "-DTPL_ParMETIS_INCLUDE_DIRS=/projects/sems/tpls/gcc_4.8.2/arch_x86/parmetis_4.0.3/include"
+  "-DZoltan_ENABLE_ParMETIS=OFF"
   "-DTPL_ENABLE_METIS:BOOL=ON"
   "-DMETIS_LIBRARY_DIRS:PATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/metis_5.1.0/lib"
   "-DMETIS_INCLUDE_DIRS:PATH=/projects/sems/tpls/gcc_4.8.2/arch_x86/metis_5.1.0/include"
