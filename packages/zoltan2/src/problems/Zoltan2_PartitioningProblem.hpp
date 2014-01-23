@@ -546,7 +546,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
         this->coordinateModel_, solution_);
     }
     else if (algorithm_ == string("multijagged")){
-    	AlgPQJagged<Adapter>(this->envConst_, problemComm_,
+      AlgPQJagged<Adapter>(this->envConst_, problemComm_,
     	        this->coordinateModel_, solution_);
     }
     else{
@@ -556,19 +556,17 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   Z2_FORWARD_EXCEPTIONS;
 
   //if mapping is requested
-  {
+  const Teuchos::ParameterEntry *pe = this->envConst_->getParameters().getEntryPtr("mapping_type");
+  int mapping_type = -1;
+  if (pe){
+    mapping_type = pe->getValue(&mapping_type);
+  }
+  //if mapping is 0 -- coordinate mapping
 
-      const Teuchos::ParameterEntry *pe = this->envConst_->getParameters().getEntryPtr("mapping_type");
-      int mapping_type = -1;
-      if (pe){
-          mapping_type = pe->getValue(&mapping_type);
-      }
-      //if mapping is 0 -- coordinate mapping
+  if (mapping_type == 0){
 
-      if (mapping_type == 0){
-
-          //partId_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
-          Zoltan2::CoordinateTaskMapper <Adapter, zoltan2_partId_t> *ctm=
+    //partId_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
+    Zoltan2::CoordinateTaskMapper <Adapter, zoltan2_partId_t> *ctm=
                   new Zoltan2::CoordinateTaskMapper<Adapter,zoltan2_partId_t>(
                           problemComm_.getRawPtr(),
                           machine_.getRawPtr(),
@@ -578,12 +576,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                           //,task_communication_xadj,
                           //task_communication_adj
                           );
-          //for now just delete the object.
-          delete ctm;
-      }
-      else if (mapping_type == 1){
-          //if mapping is 1 -- graph mapping
-      }
+    //for now just delete the object.
+    delete ctm;
+  }
+  else if (mapping_type == 1){
+    //if mapping is 1 -- graph mapping
   }
 
 #ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
