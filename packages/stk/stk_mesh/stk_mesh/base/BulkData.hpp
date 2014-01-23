@@ -1983,11 +1983,43 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     return(b.entity_rank() == f.entity_rank());    
   }
 
-
-  // NKC OPT, move this to a field function
   inline bool is_matching_rank(const FieldBase& f, Entity e) {
     return is_matching_rank(f, f.get_mesh().bucket(e));
   }
+
+
+  
+//
+//  Optimized field data access, here the size of the field data is passed in rather than looked up. 
+//  This accessor can be used if the field is known to exist everywhere and known to have the same
+//  size everywhere.
+//
+
+  template<class FieldType>
+  inline
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[bucket_id];
+
+    ThrowAssert(field_meta_data.m_size() == knownSize);
+
+    return ((reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data)) + knownSize * bucket_ord);
+  }
+  
+/*
+  template<class FieldType>
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, Entity e, const int tc) const
+  {
+    const MeshIndex& mi           = mesh_index(e);
+
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
+
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + tc * mi.bucket_ordinal);
+
+    //return <FieldType>field_data(f, *mi.bucket, mi.bucket_ordinal, tc);
+  }
+*/
 
 
 
