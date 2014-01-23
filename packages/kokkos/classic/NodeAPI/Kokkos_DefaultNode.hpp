@@ -68,7 +68,7 @@ namespace KokkosClassic {
 
 namespace Details {
   /// \fn getNode
-  /// \brief Create a Kokkos Node instance with default parameters.
+  /// \brief Create and return a Kokkos Node instance.
   /// \tparam NodeType The Kokkos Node type.
   ///
   /// \warning This function is <i>not</i> safe to be called by
@@ -76,18 +76,26 @@ namespace Details {
   ///   function must be serialized.  Also, RCP is not currently
   ///   thread safe.
   ///
-  //
+  /// \param params [in/out] On input: Any parameters that the Kokkos
+  ///   Node accepts.  On output, the list may be modified to include
+  ///   missing parameters and their default values.  If params is
+  ///   null, default parameters will be used.
+  ///
   /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
   /// We presume that for every Kokkos Node, if that list of
   /// parameters is empty, then the Node will use default parameters.
   /// This is true for all the Node types implemented in Kokkos.
   template<class NodeType>
   Teuchos::RCP<NodeType>
-  getNode() {
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
     static Teuchos::RCP<NodeType> theNode;
     if (theNode.is_null ()) {
-      Teuchos::ParameterList defaultParams;
-      theNode = Teuchos::rcp (new NodeType (defaultParams));
+      if (params.is_null ()) {
+        Teuchos::ParameterList defaultParams;
+        theNode = Teuchos::rcp (new NodeType (defaultParams));
+      } else {
+        theNode = Teuchos::rcp (new NodeType (*params));
+      }
     }
     return theNode;
   }
