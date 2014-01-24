@@ -60,7 +60,7 @@ namespace Teuchos {
 namespace Ifpack2 {
 
 /** \class RILUK
-\brief ILU(k) (incomplete LU with fill level k) factorization of a given Tpetra::RowMatrix.
+\brief ILU(k) factorization of a given Tpetra::RowMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
 This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.
@@ -70,57 +70,85 @@ This class implements a "relaxed" incomplete ILU (ILU) factorization with level 
 For a complete list of valid parameters, see the documentation of setParameters().
 
 The computed factorization is a function of several parameters:
-<ol>
-  <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
-       is defined as the original matrix pattern (nonzero structure), even if the matrix value at an entry is stored
-       as a zero. (Thus it is possible to add entries to the ILU factors by adding zero entries to the original matrix.)
+<ul>
+<li>
+The graph structure (sparsity pattern) of the matrix: All fill is
+derived from the original matrix nonzero structure.  Level zero fill
+is defined as the original matrix pattern (nonzero structure), even if
+the matrix value at an entry is stored as a zero. (Thus it is possible
+to add entries to the ILU factors by adding zero entries to the
+original matrix.)
+</li>
 
-  <li> Level of fill - Starting with the original matrix pattern as level fill of zero, the next level of fill is
-       determined by analyzing the graph of the previous level and determining nonzero fill that is a result of combining
-       entries that were from previous level only (not the current level).  This rule limits fill to entries that
-       are direct decendents from the previous level graph.  Fill for level k is determined by applying this rule
-       recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact LU
-       factorization would be computed.
+<li>
+Level of fill: Starting with the original matrix pattern as level
+fill of zero, the next level of fill is determined by analyzing the
+graph of the previous level and determining nonzero fill that is a
+result of combining entries that were from previous level only (not
+the current level).  This rule limits fill to entries that are direct
+decendents from the previous level graph.  Fill for level k is
+determined by applying this rule recursively.  For sufficiently large
+values of k, the fill would eventually be complete and an exact LU
+factorization would be computed.
+</li>
 
-  <li> Level of overlap - All Ifpack2 preconditioners work on parallel distributed-memory computers by using
-       the row partitioning the user input matrix to determine the partitioning for local ILU factors.  If the level of
-       overlap is set to zero,
-       the rows of the user matrix that are stored on a given processor are treated as a self-contained local matrix
-       and all column entries that reach to off-processor entries are ignored.  Setting the level of overlap to one
-       tells Ifpack to increase the size of the local matrix by adding rows that are reached to by rows owned by this
-       processor.  Increasing levels of overlap are defined recursively in the same way.  For sufficiently large levels
-       of overlap, the entire matrix would be part of each processor's local ILU factorization process.
-       Level of overlap is defined during the construction of the Ifpack2_IlukGraph object.
+<li>
+Level of overlap: All Ifpack2 preconditioners work on parallel
+distributed-memory computers by using the row partitioning of the user
+input matrix to determine the partitioning for local ILU factors.  If
+the level of overlap is set to zero, the rows of the user matrix that
+are stored on a given processor are treated as a self-contained local
+matrix and all column entries that reach to off-processor entries are
+ignored.  Setting the level of overlap to one tells Ifpack to increase
+the size of the local matrix by adding rows that are reached to by
+rows owned by this processor.  Increasing levels of overlap are
+defined recursively in the same way.  For sufficiently large levels of
+overlap, the entire matrix would be part of each processor's local ILU
+factorization process.  Level of overlap is defined during the
+construction of the Ifpack2::IlukGraph object.
 
-       Once the factorization is computed, applying the factorization \(LUy = x\)
-       results in redundant approximations for any elements of y that correspond to
-       rows that are part of more than one local ILU factor.  The OverlapMode (changed by calling SetOverlapMode())
-       defines how these redundancies are
-       handled using the Tpetra::CombineMode enum.  The default is to zero out all values of y for rows that
-       were not part of the original matrix row distribution.
+Once the factorization is computed, applying the factorization \f$LUy
+= x\f$ results in redundant approximations for any elements of y that
+correspond to rows that are part of more than one local ILU factor.
+The overlap mode defines how these redundancies are handled using the
+Tpetra::CombineMode enum.  The default is to zero out all values of y
+for rows that were not part of the original matrix row distribution.
+</li>
 
-  <li> Fraction of relaxation - Ifpack2_RILUK computes the ILU factorization row-by-row.  As entries at a given
-       row are computed, some number of them will be dropped because they do match the prescribed sparsity pattern.
-       The relaxation factor determines how these dropped values will be handled.  If the RelaxValue (changed by calling
-       setRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
-       If the RelaxValue is 1, then the sum
-       of the extra entries will be added to the diagonal.  This is a classical Modified ILU (MILU) approach.  If
-       RelaxValue is between 0 and 1, then RelaxValue times the sum of extra entries will be added to the diagonal.
+<li>
+Fraction of relaxation: Ifpack2::RILUK computes the ILU factorization
+row-by-row.  As entries at a given row are computed, some number of
+them will be dropped because they do match the prescribed sparsity
+pattern.  The relaxation factor determines how these dropped values
+will be handled.  If the factor is zero, then these extra entries will
+by dropped.  This is a classical ILU approach.  If the RelaxValue is
+1, then the sum of the extra entries will be added to the diagonal.
+This is a classical Modified ILU (MILU) approach.  If RelaxValue is
+between 0 and 1, then the factor times the sum of extra entries will
+be added to the diagonal.
 
-       For most situations, RelaxValue should be set to zero.  For certain kinds of problems, e.g., reservoir modeling,
-       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MILU
-       was designed for these cases and you should set the RelaxValue to 1.  For other situations, setting RelaxValue to
-       some nonzero value may improve the stability of factorization, and can be used if the computed ILU factors
-       are poorly conditioned.
+For most situations, the relaxation factor should be set to zero.  For
+certain kinds of problems, e.g., reservoir modeling, there is a
+conservation principle involved such that any operator should obey a
+zero row-sum property.  MILU was designed for these cases and you
+should set the relaxation factor to 1.  For other situations, setting
+RelaxValue to some nonzero value may improve the stability of
+factorization, and can be used if the computed ILU factors are poorly
+conditioned.
+</li>
 
-  <li> Diagonal perturbation - Prior to computing the factorization, it is possible to modify the diagonal entries of the matrix
-       for which the factorization will be computing.  If the absolute and relative perturbation values are zero and one,
-       respectively, the
-       factorization will be compute for the original user matrix A.  Otherwise, the factorization
-       will computed for a matrix that differs from the original user matrix in the diagonal values only.  Below we discuss
-       the details of diagonal perturbations.
-       The absolute and relative threshold values are set by calling SetAbsoluteThreshold() and SetRelativeThreshold(), respectively.
-</ol>
+<li>
+Diagonal perturbation: Prior to computing the factorization, it is
+possible to modify the diagonal entries of the matrix for which the
+factorization will be computing.  If the absolute and relative
+perturbation values are zero and one, respectively, the factorization
+will be compute for the original user matrix A.  Otherwise, the
+factorization will computed for a matrix that differs from the
+original user matrix in the diagonal values only.  Below we discuss
+the details of diagonal perturbations.
+</li>
+
+</ul>
 
 \section Ifpack2_RILUK_CondEst Estimating preconditioner condition numbers
 
@@ -142,23 +170,22 @@ the accuracy of a given floating point number system, about 15 decimal
 digits in IEEE double precision, means that any results involving
 \f$B\f$ or \f$B^{-1}\f$ may be meaningless.
 
-The \f$\infty\f$-norm of a vector \f$y\f$ is defined as the maximum of the
-absolute values of the vector entries, and the \f$\infty\f$-norm of a
-matrix C is defined as
-\f$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty\f$.
-A crude lower bound for the \f$cond_\infty(C)\f$ is
+The \f$\infty\f$-norm of a vector \f$y\f$ is defined as the maximum of
+the absolute values of the vector entries, and the \f$\infty\f$-norm
+of a matrix C is defined as \f$\|C\|_\infty = \max_{\|y\|_\infty = 1}
+\|Cy\|_\infty\f$.  A crude lower bound for the \f$cond_\infty(C)\f$ is
 \f$\|C^{-1}e\|_\infty\f$ where \f$e = (1, 1, \ldots, 1)^T\f$.  It is a
 lower bound because \f$cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
 \ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty\f$.
 
-For our purposes, we want to estimate \f$cond_\infty(LU)\f$, where \f$L\f$ and
-\f$U\f$ are our incomplete factors.  Edmond in his Ph.D. thesis demonstrates that
-\f$\|(LU)^{-1}e\|_\infty\f$ provides an effective estimate for
-\f$cond_\infty(LU)\f$.  Furthermore, since finding \f$z\f$ such that \f$LUz = y\f$
-is a basic kernel for applying the preconditioner, computing this
-estimate of \f$cond_\infty(LU)\f$ is performed by setting \f$y = e\f$, calling
-the solve kernel to compute \f$z\f$ and then
-computing \f$\|z\|_\infty\f$.
+For our purposes, we want to estimate \f$cond_\infty(LU)\f$, where
+\f$L\f$ and \f$U\f$ are our incomplete factors.  Edmond in his
+Ph.D. thesis demonstrates that \f$\|(LU)^{-1}e\|_\infty\f$ provides an
+effective estimate for \f$cond_\infty(LU)\f$.  Furthermore, since
+finding \f$z\f$ such that \f$LUz = y\f$ is a basic kernel for applying
+the preconditioner, computing this estimate of \f$cond_\infty(LU)\f$
+is performed by setting \f$y = e\f$, calling the solve kernel to
+compute \f$z\f$ and then computing \f$\|z\|_\infty\f$.
 
 \section Ifpack2_RILUK_DiagPerturb A priori diagonal perturbations
 
@@ -173,20 +200,22 @@ first step in computing the incomplete factors is to copy the matrix
 \f$A\f$ into the memory space for the incomplete factors.  We simply
 compute the perturbed diagonal at this point.
 
-The actual perturbation values we use are the diagonal values \f$(d_1, d_2, \ldots, d_n)\f$
-with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$, \f$i=1, 2, \ldots, n\f$, where
-\f$n\f$ is the matrix dimension and \f$sgn(d_i)\f$ returns
-the sign of the diagonal entry.  This has the effect of
-forcing the diagonal values to have minimal magnitude of \f$\alpha\f$ and
-to increase each by an amount proportional to \f$\rho\f$, and still keep
-the sign of the original diagonal entry.
+The actual perturbation values we use are the diagonal values \f$(d_1,
+d_2, \ldots, d_n)\f$ with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$,
+\f$i=1, 2, \ldots, n\f$, where \f$n\f$ is the matrix dimension and
+\f$sgn(d_i)\f$ returns the sign of the diagonal entry.  This has the
+effect of forcing the diagonal values to have minimal magnitude of
+\f$\alpha\f$ and to increase each by an amount proportional to
+\f$\rho\f$, and still keep the sign of the original diagonal entry.
 
 \section Ifpack2_RILUK_Phases Phases of computation
 
 Every Ifpack2 preconditioner has the following phases of computation:
-1. initialize()
-2. compute()
-3. apply()
+<ol>
+  <li> initialize() </li>
+  <li> compute() </li>
+  <li> apply() </li>
+</ol>
 
 RILUK constructs the symbolic incomplete factorization (that is, the
 structure of the incomplete factors) in the initialize() phase.  It
@@ -200,12 +229,12 @@ given multivector using two triangular solves.
 Each RILUK object keeps track of both the time required for various
 operations, and the number of times those operations have been applied
 for that object.  The operations tracked include:
-- initialize() (via getNumInitialize() and getInitializeTime())
-- compute() (via getNumCompute() and getComputeTime())
-- apply() (via getNumApply() and getApplyTime())
+  - initialize() (via getNumInitialize() and getInitializeTime())
+  - compute() (via getNumCompute() and getComputeTime())
+  - apply() (via getNumApply() and getApplyTime())
 
 The <tt>getNum*</tt> methods return the number of times that operation
-was called.  The <tt>get*Time</tt> methods return the number of
+was called.  The <tt>get*Time</tt> methods return the total number of
 seconds spent in <i>all</i> invocations of that operation.  For
 example, getApplyTime() returns the number of seconds spent in all
 apply() calls.  For an average time per apply() call, divide by
@@ -283,37 +312,59 @@ class RILUK:
 
  private:
 
-  //! Copy constructor.
+  /// \brief Copy constructor: declared private but not defined, so
+  ///   that calling it is syntactically forbidden.
   RILUK (const RILUK<MatrixType> & src);
 
  public:
-  //! Clone preconditioner to a new node type
+  /// \brief Clone preconditioner to a new node type.
+  ///
+  /// This method makes a deep copy of the original preconditioner
+  /// (and matrix), into objects with the Node type
+  /// <tt>NewMatrixType::node_type</tt>.
   template <typename NewMatrixType>
   Teuchos::RCP< RILUK< NewMatrixType > >
   clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const;
 
-  //! Destructor
+  //! Destructor (declared virtual for memory safety).
   virtual ~RILUK();
 
-  //! Set RILU(k) relaxation parameter
-  void SetRelaxValue( magnitude_type RelaxValue) {RelaxValue_ = RelaxValue;}
-
-  //! Set absolute threshold value
-  void SetAbsoluteThreshold( magnitude_type Athresh) {Athresh_ = Athresh;}
-
-  //! Set relative threshold value
-  void SetRelativeThreshold( magnitude_type Rthresh) {Rthresh_ = Rthresh;}
-
-  //! Set overlap mode type
-  void SetOverlapMode( Tpetra::CombineMode OverlapMode) {OverlapMode_ = OverlapMode;}
+  /// \brief Set RILU(k) relaxation parameter
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetRelaxValue (const magnitude_type RelaxValue) {
+    RelaxValue_ = RelaxValue;
+  }
+  /// \brief Set absolute threshold value
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetAbsoluteThreshold (const magnitude_type Athresh) {
+    Athresh_ = Athresh;
+  }
+  /// \brief Set relative threshold value
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetRelativeThreshold (const magnitude_type Rthresh) {
+    Rthresh_ = Rthresh;
+  }
+  /// \brief Set overlap mode type
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetOverlapMode (const Tpetra::CombineMode OverlapMode) {
+    OverlapMode_ = OverlapMode;
+  }
 
   /// Set parameters for the incomplete factorization.
   ///
   /// This preconditioner supports the following parameters:
-  /// - "fact: iluk level-of-fill" (int)
-  /// - "fact: absolute threshold" (magnitude_type)
-  /// - "fact: relative threshold" (magnitude_type)
-  /// - "fact: relax value" (magnitude_type)
+  ///   - "fact: iluk level-of-fill" (int)
+  ///   - "fact: absolute threshold" (magnitude_type)
+  ///   - "fact: relative threshold" (magnitude_type)
+  ///   - "fact: relax value" (magnitude_type)
   ///
   /// It will eventually also support the following parameter,
   /// although it currently does not:
