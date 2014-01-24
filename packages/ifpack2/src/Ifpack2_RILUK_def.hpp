@@ -409,9 +409,10 @@ initAllValues (const row_matrix_type& A)
     for (size_t j = 0; j < NumIn; ++j) {
       const global_ordinal_type k = InI[j];
 
-      if (k==i) {
+      if (k == i) {
         DiagFound = true;
-        DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Tpetra::Vector D_
+        // Store perturbed diagonal in Tpetra::Vector D_
+        DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_;
       }
       else if (k < 0) { // Out of range
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -510,8 +511,6 @@ void RILUK<MatrixType>::compute ()
 
     Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
-    size_t current_madds = 0; // We will count multiply-add as they happen
-
     // Now start the factorization.
 
     // Need some integer workspace and pointers
@@ -561,7 +560,6 @@ void RILUK<MatrixType>::compute ()
             // but now we're querying it using int (which is signed).
             if (kk > -1) {
               InV[kk] -= multiplier * UUV[k];
-              current_madds++;
             }
           }
         }
@@ -577,7 +575,6 @@ void RILUK<MatrixType>::compute ()
             else {
               diagmod -= multiplier*UUV[k];
             }
-            current_madds++;
           }
         }
       }
@@ -590,7 +587,6 @@ void RILUK<MatrixType>::compute ()
 
       if (RelaxValue_ != STM::zero ()) {
         DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
-        // current_madds++;
       }
 
       if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
@@ -652,7 +648,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 {
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,
@@ -671,25 +668,44 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      if (mode == Teuchos::NO_TRANS) {
-        L_->localSolve (X, Y, mode);
-        Y.elementWiseMultiply (one, *D_, Y, zero);
+      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
+        // Start by solving L C = X for C.  C must have the same Map
+        // as D.  We have to use a temp multivector, since
+        // localSolve() does not allow its input and output to alias
+        // one another.
+        //
+        // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
+        MV C (D_->getMap (), X.getNumVectors ());
+        L_->localSolve (X, C, mode);
 
-        // FIXME (mfh 24 Jan 2014) I'm not sure if localSolve() allows
-        // aliasing input and output multivectors.
-        U_->localSolve (Y, Y, mode); // Solve Uy = y
+        // Solve D Y_tmp = C.  Y_tmp must have the same Map as C, and
+        // the operation lets us do this in place in C, so we can
+        // write "solve D C = C for C."
+        C.elementWiseMultiply (one, *D_, C, zero);
+
+        U_->localSolve (C, Y, mode); // Solve U Y = C.
       }
-      else {
-        U_->localSolve (X, Y, mode); // Solve Uy = y
+      else { // Solve U^P (D^P (U^P Y)) = X for Y (where P is * or T).
 
+        // Start by solving U^P C = X for C.  C must have the same Map
+        // as D.  We have to use a temp multivector, since
+        // localSolve() does not allow its input and output to alias
+        // one another.
+        //
+        // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
+        MV C (D_->getMap (), X.getNumVectors ());
+        U_->localSolve (X, C, mode);
+
+        // Solve D^P Y_tmp = C.  Y_tmp must have the same Map as C,
+        // and the operation lets us do this in place in C, so we can
+        // write "solve D^P C = C for C."
+        //
         // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
         // need to do an elementwise multiply with the conjugate of
         // D_, not just with D_ itself.
-        Y.elementWiseMultiply (one, *D_, Y, zero);
+        C.elementWiseMultiply (one, *D_, C, zero);
 
-        // FIXME (mfh 24 Jan 2014) I'm not sure if localSolve() allows
-        // aliasing input and output multivectors.
-        L_->localSolve (Y, Y, mode);
+        L_->localSolve (C, Y, mode); // Solve L^P Y = C.
       }
     }
     else { // alpha != 1 or beta != 0
@@ -718,33 +734,29 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
           const Teuchos::ETransp mode) const
 {
-  // First generate X and Y as needed for this function
-  Teuchos::RCP<const MV> X1 = Teuchos::rcpFromRef (X);
-  Teuchos::RCP<MV> Y1 = Teuchos::rcpFromRef (Y);
-
-  const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero ();
-  const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one ();
+  const scalar_type zero = STS::zero ();
+  const scalar_type one = STS::one ();
 
   if (mode != Teuchos::NO_TRANS) {
-    U_->apply (*X1, *Y1,mode); //
-    Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    U_->apply (X, Y, mode); //
+    Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
 
     // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we need
     // to do an elementwise multiply with the conjugate of D_, not
     // just with D_ itself.
-    Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
 
-    MV Y1temp (*Y1); // Need a temp copy of Y1
-    L_->apply (Y1temp, *Y1,mode);
-    Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
+    MV Y_tmp (Y); // Need a temp copy of Y
+    L_->apply (Y_tmp, Y, mode);
+    Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
   }
   else {
-    L_->apply (*X1, *Y1,mode);
-    Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    MV Y1temp (*Y1); // Need a temp copy of Y1
-    U_->apply (Y1temp, *Y1,mode);
-    Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
+    L_->apply (X, Y, mode);
+    Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
+    Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
+    MV Y_tmp (Y); // Need a temp copy of Y1
+    U_->apply (Y_tmp, Y, mode);
+    Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
   }
 }
 
