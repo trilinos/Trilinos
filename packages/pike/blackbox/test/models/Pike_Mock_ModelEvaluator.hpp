@@ -2,7 +2,6 @@
 #define PIKE_MOCK_MODEL_EVALUATOR_HPP
 
 #include "Pike_BlackBoxModelEvaluator.hpp"
-#include "Pike_Any.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 #include <string>
