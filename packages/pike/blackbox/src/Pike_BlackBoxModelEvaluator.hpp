@@ -24,20 +24,20 @@ namespace pike {
 
     /** \brief Returns true if the last call to solve() was
      *  successful.  Note that this does NOT imply convergence of the
-     *  global coupled system but only convergence of the local
-     *  application solve.
+     *  global coupled system but only convergence of the individual
+     *  (local) application solve.
      */
     virtual bool isLocallyConverged() const = 0;
 
     /** \brief Optional function for assessing convergence of the
      *	globally coupled problem.  Returns true if the metrics local
      *	to this application are converged.  This allows for users to
-     *	track responses internally and determine convergence based on
-     *	relative error of local responses without having to expose the
-     *	responses through a pike::Response.  This is primarily for
-     *	backwards compatibility, new codes should use the StatusTest
-     *	objects for global convergence (and for checking the local
-     *	convergence).
+     *	track responses internally and determine convergence of the
+     *	global coupled system based on relative error of local
+     *	responses without having to expose the responses through a
+     *	pike::Response.  This is primarily for backwards
+     *	compatibility, new codes should use the StatusTest objects for
+     *	global convergence (and for checking the local convergence).
      */
     virtual bool isGloballyConverged() const = 0;
 
