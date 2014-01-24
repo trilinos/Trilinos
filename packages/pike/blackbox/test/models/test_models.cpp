@@ -25,7 +25,7 @@ namespace pike_test {
 
     RCP<pike::BlackBoxModelEvaluator> bbme = leftWall;
 
-    std::cout << *leftWall << std::endl;
+    std::cout << "\n" << *leftWall << std::endl;
     std::cout << *bbme << std::endl;
   }
 
