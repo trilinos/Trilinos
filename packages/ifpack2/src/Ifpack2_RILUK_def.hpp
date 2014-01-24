@@ -740,20 +740,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      //
-      // This function finds Y such that
-      // LDU Y = X, or
-      // U(trans) D L(trans) Y = X
-      // for multiple RHS
-      //
-      // First generate X and Y as needed for this function
       RCP<const MV> X1;
       RCP<MV> Y1;
       generateXY (mode, X, Y, X1, Y1);
 
       if (mode == Teuchos::NO_TRANS) {
         L_->localSolve (*X1, *Y1,mode);
-        Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+        Y1->elementWiseMultiply (one, *D_, *Y1, zero);
         U_->localSolve (*Y1, *Y1, mode); // Solve Uy = y
         if (isOverlapped_) {
           // Export computed Y values if needed
@@ -766,7 +759,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
         // need to do an elementwise multiply with the conjugate of
         // D_, not just with D_ itself.
-        Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+        Y1->elementWiseMultiply (one, *D_, *Y1, zero);
 
         L_->localSolve (*Y1, *Y1,mode);
         if (isOverlapped_) {
@@ -776,9 +769,17 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
     }
     else { // alpha != 1 or beta != 0
-      MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-      apply (X, Y_tmp, mode);
-      Y.update (alpha, Y_tmp, beta);
+      if (alpha == zero) {
+        if (beta == zero) {
+          Y.putScalar (zero);
+        } else {
+          Y.scale (beta);
+        }
+      } else { // alpha != zero
+        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+        apply (X, Y_tmp, mode);
+        Y.update (alpha, Y_tmp, beta);
+      }
     }
   } // Stop timing
 
