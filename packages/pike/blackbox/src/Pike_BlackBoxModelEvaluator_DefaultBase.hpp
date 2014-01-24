@@ -5,9 +5,8 @@
 
 namespace pike {
 
-  /** \brief BlackBoxModelEvaluator for application to derive from.
-
-      This object hides parameter and response mix-in classes so that
+  /** \brief Main Interface for applications to derive from.  This
+      object hides parameter and response mix-in classes so that
       application codes do not have to implement the corresponding
       methods unless desired.
    */
