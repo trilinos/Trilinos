@@ -16,12 +16,12 @@ namespace pike_test {
       iterationTrigger_(iterationTrigger),
       responseFreezeIteration_(responseFreezeIteration),
       responseNames_(1), // only one response
-      responseValue_(1)
+      responseValues_(1)
   {
     responseMap_["Mock Response"] = 0;
     responseNames_[0] = "Mock Response";
-    responseValue_[0] = Teuchos::rcp(new pike::any);
-    *responseValue_[0] = 0.0;
+    responseValues_[0].resize(1);
+    responseValues_[0][0] = 0.0;
   }
 
   std::string MockModelEvaluator::name() const
@@ -35,7 +35,7 @@ namespace pike_test {
       // do nothing - freeze the response
     }
     else
-      *responseValue_[0] = responseValue_[0]->as<double>() + 1.0;
+      responseValues_[0][0] += 1.0;
 
     if (iterationTrigger_ == (solver_->getNumberOfIterations()+1) )
       if (mode_ == LOCAL_FAILURE)
@@ -66,9 +66,9 @@ namespace pike_test {
     return false;
   }
   
-  Teuchos::RCP<const pike::any> MockModelEvaluator::getResponse(const int i) const
+  Teuchos::ArrayView<const double> MockModelEvaluator::getResponse(const int i) const
   {
-    return responseValue_[i];
+    return Teuchos::ArrayView<const double>(responseValues_[i]);
   }
   
   int MockModelEvaluator::getResponseIndex(const std::string& name) const

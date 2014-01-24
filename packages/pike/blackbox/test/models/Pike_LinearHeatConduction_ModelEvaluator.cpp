@@ -15,20 +15,20 @@ namespace pike_test {
       T_left_(1.0),
       T_right_(1.0),
       responseNames_(1), // only one response
-      responseValue_(1)
+      responseValues_(1)
   {
 
     if (mode_ == T_RIGHT_IS_RESPONSE) {
       responseMap_["T_right"] = 0;
       responseNames_[0] = "T_right";
-      responseValue_[0] = Teuchos::rcp(new pike::any);
-      *responseValue_[0] = T_right_;
+      responseValues_[0].resize(1);
+      responseValues_[0][0] = T_right_;
     }
     else if (mode_ == Q_IS_RESPONSE) {
       responseMap_["q"] = 0;
       responseNames_[0] = "q";
-      responseValue_[0] = Teuchos::rcp(new pike::any);
-      *responseValue_[0] = q_;
+      responseValues_[0].resize(1);
+      responseValues_[0][0] = q_;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error the mode is not valid!");
@@ -44,11 +44,11 @@ namespace pike_test {
     
     if (mode_ == T_RIGHT_IS_RESPONSE) {
       T_right_ = T_left_ - q_ / k_;
-      (*responseValue_[0]) = T_right_;
+      responseValues_[0][0] = T_right_;
     }
     else if (mode_ == Q_IS_RESPONSE) {
       q_ = (T_left_ - T_right_) * k_;
-      (*responseValue_[0]) = q_;
+      responseValues_[0][0] = q_;
     }
     return true;
   }
@@ -59,9 +59,9 @@ namespace pike_test {
   bool LinearHeatConductionModelEvaluator::isGloballyConverged() const
   { return true; }
   
-  Teuchos::RCP<const pike::any> LinearHeatConductionModelEvaluator::getResponse(const int i) const
+  Teuchos::ArrayView<const double> LinearHeatConductionModelEvaluator::getResponse(const int i) const
   {
-    return responseValue_[i];
+    return Teuchos::ArrayView<const double>(responseValues_[i]);
   }
   
   int LinearHeatConductionModelEvaluator::getResponseIndex(const std::string& name) const

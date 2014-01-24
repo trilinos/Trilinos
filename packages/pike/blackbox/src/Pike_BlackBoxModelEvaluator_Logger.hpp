@@ -32,7 +32,7 @@ namespace pike {
 
     bool isGloballyConverged() const;
 
-    Teuchos::RCP<const pike::any> getResponse(const int i) const;
+    Teuchos::ArrayView<const double> getResponse(const int i) const;
 
     int getResponseIndex(const std::string& name) const;
 

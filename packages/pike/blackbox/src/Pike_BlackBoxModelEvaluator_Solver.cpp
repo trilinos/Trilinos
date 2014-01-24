@@ -45,7 +45,7 @@ namespace pike {
   bool SolverModelEvaluator::isGloballyConverged() const
   { return true; }
 
-  Teuchos::RCP<const pike::any> SolverModelEvaluator::getResponse(const int i) const
+  Teuchos::ArrayView<const double> SolverModelEvaluator::getResponse(const int i) const
   {
     return solver_->getModelEvaluators()[responseIndexToModelIndices_[i].first]->getResponse(responseIndexToModelIndices_[i].second);
   }

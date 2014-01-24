@@ -45,7 +45,7 @@ namespace pike {
     return model_->isGloballyConverged();
   }
   
-  Teuchos::RCP<const pike::any> ModelEvaluatorLogger::getResponse(const int i) const
+  Teuchos::ArrayView<const double> ModelEvaluatorLogger::getResponse(const int i) const
   {
     log_->push_back(this->name()+": getResponse()");
     return model_->getResponse(i);

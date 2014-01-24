@@ -55,7 +55,7 @@ namespace pike_test {
 
     bool isGloballyConverged() const;
 
-    Teuchos::RCP<const pike::any> getResponse(const int i) const;
+    Teuchos::ArrayView<const double> getResponse(const int i) const;
 
     int getResponseIndex(const std::string& name) const;
 
@@ -91,7 +91,7 @@ namespace pike_test {
     
     std::map<std::string,int> responseMap_;
     std::vector<std::string> responseNames_;
-    std::vector<Teuchos::RCP<pike::any> > responseValue_;
+    std::vector<std::vector<double> > responseValues_;
     
   };
 
