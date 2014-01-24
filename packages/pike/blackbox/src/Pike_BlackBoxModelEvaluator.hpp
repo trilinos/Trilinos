@@ -1,13 +1,16 @@
 #ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
 #define PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
 
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include <string>
 
 namespace pike {
 
   /** \brief Pure virtual interface to a user implemented physics model. */
-  class BlackBoxModelEvaluator {
+  class BlackBoxModelEvaluator : public Teuchos::Describable,
+				 public Teuchos::VerboseObject<pike::BlackBoxModelEvaluator> {
 
   public:
 

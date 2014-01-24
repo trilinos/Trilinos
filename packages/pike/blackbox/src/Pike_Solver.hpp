@@ -103,7 +103,6 @@ namespace pike {
     virtual std::string name() const = 0;
   };
 
-  std::ostream& operator<<(std::ostream& os, const pike::Solver& solver);
 }
 
 #endif

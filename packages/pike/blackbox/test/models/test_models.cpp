@@ -5,8 +5,29 @@
 #include "Pike_LinearHeatConduction_DataTransfer.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
+#include <iostream>
 
 namespace pike_test {
+
+  TEUCHOS_UNIT_TEST(app, ostream_overloads)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    RCP<Teuchos::MpiComm<int> > globalComm = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+    RCP<LinearHeatConductionModelEvaluator> leftWall;
+    {
+      leftWall = linearHeatConductionModelEvaluator(globalComm,"left wall",pike_test::LinearHeatConductionModelEvaluator::T_RIGHT_IS_RESPONSE);
+      leftWall->set_T_left(7.0);
+      leftWall->set_T_right(5.0);  // final solution is 6.0
+      leftWall->set_k(1.0);
+      leftWall->set_q(1.0);
+    }
+
+    RCP<pike::BlackBoxModelEvaluator> bbme = leftWall;
+
+    std::cout << *leftWall << std::endl;
+    std::cout << *bbme << std::endl;
+  }
 
   TEUCHOS_UNIT_TEST(app, LinearHeatConduction_BlockJacobi)
   {
