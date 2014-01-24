@@ -1158,15 +1158,15 @@ struct V_AddVectorFunctor
 {
   typedef typename RVector::device_type        device_type;
   typedef typename RVector::size_type            size_type;
-  typedef typename XVector::value_type 	   scalar_type;
+  typedef typename XVector::value_type 	   value_type;
   RVector   m_r ;
   typename XVector::const_type  m_x ;
   typename YVector::const_type   m_y ;
-  const scalar_type m_a;
-  const scalar_type m_b;
+  const value_type m_a;
+  const value_type m_b;
 
   //--------------------------------------------------------------------------
-  V_AddVectorFunctor(const RVector& r, const scalar_type& a,const XVector& x,const scalar_type& b,const YVector& y):
+  V_AddVectorFunctor(const RVector& r, const value_type& a,const XVector& x,const value_type& b,const YVector& y):
 	  m_r(r),m_x(x),m_y(y),m_a(a),m_b(b)
   { }
 
@@ -1199,12 +1199,12 @@ struct V_AddVectorSelfFunctor
 {
   typedef typename RVector::device_type        device_type;
   typedef typename RVector::size_type            size_type;
-  typedef typename XVector::value_type      scalar_type;
+  typedef typename XVector::value_type      value_type;
   RVector   m_r ;
   typename XVector::const_type  m_x ;
-  const scalar_type m_a;
+  const value_type m_a;
 
-  V_AddVectorSelfFunctor(const RVector& r, const scalar_type& a,const XVector& x):
+  V_AddVectorSelfFunctor(const RVector& r, const value_type& a,const XVector& x):
     m_r(r),m_x(x),m_a(a)
   { }
 
