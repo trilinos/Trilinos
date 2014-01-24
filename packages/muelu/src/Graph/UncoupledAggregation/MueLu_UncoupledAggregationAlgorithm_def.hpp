@@ -163,9 +163,9 @@ namespace MueLu {
               //       to count all aggregated neighbour nodes for the aggregation criteria
               // NOTE: We check here for the maximum aggregation size. If we would do it below
               //       with all the other check too big aggregates would not be accepted at all.
-              if (aggSize < as<size_t>(MaxNodesPerAggregate)) {
+              if (aggSize < as<size_t>(MaxNodesPerAggregate))
                 aggList[aggSize++] = neigh;
-              }
+
             } else {
               numAggregatedNeighbours++;
             }
