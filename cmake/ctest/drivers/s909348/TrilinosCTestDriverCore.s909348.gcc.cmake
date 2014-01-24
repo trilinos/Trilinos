@@ -87,7 +87,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.3.3")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.7.2")
   
   IF (COMM_TYPE STREQUAL MPI)
     SET(TPL_ENABLE_MPI ON)
@@ -95,16 +95,16 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/bmpersc/bin/openmpi-1.3.2"
+      "-DMPI_BASE_DIR:PATH=/Users/bmpersc/bin/openmpi-1.6.5"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.3.3/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.3.3/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.3.3/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.7.2/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.7.2/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.7.2/bin/gfortran"
       )
   
   ENDIF()
