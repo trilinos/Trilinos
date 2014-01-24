@@ -18,7 +18,7 @@ namespace pike {
 
   MultiphysicsDistributor::ApplicationIndex
   MultiphysicsDistributor::addApplication(const std::string& name,
-					  const std::vector<int> processes)
+					  const std::vector<int>& processes)
   {
     TEUCHOS_TEST_FOR_EXCEPTION( (applicationNameToIndex_.find(name) != applicationNameToIndex_.end()),
 				std::logic_error,
@@ -84,6 +84,8 @@ namespace pike {
     transfers_.push_back(apps);
     transferNames_.push_back(name);
     transferNameToIndex_[name] = index;
+    std::vector<int> dummy;
+    transferRanks_.push_back(dummy); // Actual ranks determined during setup
     return index;
   }
 
@@ -100,6 +102,26 @@ namespace pike {
     transfers_.push_back(appIndices);
     transferNames_.push_back(name);
     transferNameToIndex_[name] = index;
+    std::vector<int> dummy;
+    transferRanks_.push_back(dummy); // Actual ranks determined during setup
+    return index;
+  }
+  
+  MultiphysicsDistributor::TransferIndex 
+  MultiphysicsDistributor::addTransferByRanks(const std::string& name, const std::vector<int>& mpiRanks)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION( (transferNameToIndex_.find(name) != transferNameToIndex_.end()),
+				std::logic_error,
+				"Duplicate Name Error: The application name \"" << name 
+				<< "\" has already been used! Each application must have a unique name.");
+    
+
+    const TransferIndex index = transfers_.size();
+    std::vector<ApplicationIndex> dummy;
+    transfers_.push_back(dummy);  // don't need application indices - ranks explicitly set
+    transferNames_.push_back(name);
+    transferNameToIndex_[name] = index;
+    transferRanks_.push_back(mpiRanks);
     return index;
   }
 
@@ -162,7 +184,9 @@ namespace pike {
     }
 
     // Build transfer comms
-    transferRanks_.resize(transfers_.size());
+    TEUCHOS_ASSERT(transfers_.size() == transferRanks_.size());
+    TEUCHOS_ASSERT(transfers_.size() == transferNames_.size());
+    TEUCHOS_ASSERT(transfers_.size() == transferNameToIndex_.size());
     for (std::size_t t = 0; t < transfers_.size(); ++t) {
       for (std::vector<ApplicationIndex>::const_iterator a = transfers_[t].begin(); a != transfers_[t].end(); ++a) {
 	transferRanks_[t].insert(transferRanks_[t].end(), applications_[*a].processes.begin(), applications_[*a].processes.end());

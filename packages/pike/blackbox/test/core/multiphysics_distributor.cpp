@@ -278,4 +278,66 @@ namespace pike {
 
   }
 
+  TEUCHOS_UNIT_TEST(MultiphysicsDistributor, transfer_by_MPI_rank)
+  {
+    // This tests two parallel coupled codes where the data transfer
+    // comm is not the union of the application comms, but is
+    // specified by a list of mPI ranks.  This use case occurs if one
+    // or more of the codes serializes the data transfer - i.e. it
+    // only communicates to other codes via a single process or subset
+    // of processes.
+
+    Teuchos::RCP<Teuchos::MpiComm<int> > globalComm = 
+      Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+
+    // Run this on 6 processes only
+    TEST_EQUALITY(globalComm->getSize(), 6);
+
+    typedef pike::MultiphysicsDistributor::ApplicationIndex AppIndex;
+    typedef pike::MultiphysicsDistributor::TransferIndex TransIndex;
+    AppIndex CTF;
+    AppIndex Insilico;
+    TransIndex CTF_Insilico;
+
+    pike::MultiphysicsDistributor dist;
+    {
+      CTF = dist.addApplication("CTF",0,2); // rank range
+      Insilico = dist.addApplication("Insilico",3,5); // rank range
+      
+      // ctf serializes transfers - only occur from process 1.
+      std::vector<int> mpiRanks;
+      mpiRanks.push_back(1);
+      mpiRanks.push_back(3);
+      mpiRanks.push_back(4);
+      mpiRanks.push_back(5);
+      CTF_Insilico = dist.addTransferByRanks("C_TO_I: ",mpiRanks);
+      
+      dist.setup(globalComm,true);
+    }
+
+    if (globalComm->getRank() == 0) {
+      TEST_EQUALITY(dist.appExistsOnProcess(CTF),true);
+      TEST_EQUALITY(dist.appExistsOnProcess(Insilico),false);
+      TEST_EQUALITY(dist.transferExistsOnProcess(CTF_Insilico),false);
+    }
+    if (globalComm->getRank() == 1) {
+      TEST_EQUALITY(dist.appExistsOnProcess(CTF),true);
+      TEST_EQUALITY(dist.appExistsOnProcess(Insilico),false);
+      TEST_EQUALITY(dist.transferExistsOnProcess(CTF_Insilico),true);
+    }
+    if (globalComm->getRank() == 2) {
+      TEST_EQUALITY(dist.appExistsOnProcess(CTF),true);
+      TEST_EQUALITY(dist.appExistsOnProcess(Insilico),false);
+      TEST_EQUALITY(dist.transferExistsOnProcess(CTF_Insilico),false);
+    }
+    if ( (globalComm->getRank() == 3) || 
+	 (globalComm->getRank() == 4) ||
+	 (globalComm->getRank() == 5) ) {
+      TEST_EQUALITY(dist.appExistsOnProcess(CTF),false);
+      TEST_EQUALITY(dist.appExistsOnProcess(Insilico),true);
+      TEST_EQUALITY(dist.transferExistsOnProcess(CTF_Insilico),true);
+    }
+
+  }
+  
 }

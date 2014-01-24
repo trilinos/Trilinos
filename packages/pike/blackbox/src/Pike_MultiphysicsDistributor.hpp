@@ -36,7 +36,7 @@ namespace pike {
 	\param[in] processes A vector containing mpi processes that this application will be run on.  The process ranks are associated with the global comm used in the setup() method.
 	\returns Index of the application
      */
-    ApplicationIndex addApplication(const std::string& name, const std::vector<int> processes);
+    ApplicationIndex addApplication(const std::string& name, const std::vector<int>& processes);
 
     /** \brief Register a new application  with this driver given a range of ranks to exist on.
 	
@@ -67,6 +67,14 @@ namespace pike {
        \returns The transfer index.
     */
     TransferIndex addTransfer(const std::string& name, const std::vector<ApplicationIndex>& appIndices);
+
+    /** \brief Tells this object that an active coupling between multiple physics exisits and that a subcommunicator should be built using the specified ranks.
+ 
+       \param[in] name Name of the transfer.  Must be unique.
+       \param[in] mpiRanks MPI Ranks corresponding to the global comm that are involved in the transfer.
+       \returns The transfer index.
+    */
+    TransferIndex addTransferByRanks(const std::string& name, const std::vector<int>& mpiRanks);
 
     /** \brief Builds the application subcommunicators and any coupling subcommunicators. 
   
