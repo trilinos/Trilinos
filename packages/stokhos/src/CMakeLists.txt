@@ -473,6 +473,14 @@ IF (Stokhos_ENABLE_Sacado)
         APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
         APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
       ENDIF()
+
+      IF (Stokhos_ENABLE_Amesos2)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/amesos2)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/amesos2/Amesos2_Solver_MP_Vector.hpp
+          sacado/kokkos/vector/amesos2/Stokhos_Amesos2_MP_Vector.hpp
+          )
+      ENDIF()
     ENDIF()
   ENDIF()
 

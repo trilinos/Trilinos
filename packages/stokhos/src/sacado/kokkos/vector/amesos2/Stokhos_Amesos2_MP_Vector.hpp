@@ -39,25 +39,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#ifndef STOKHOS_AMESOS2_MP_VECTOR_HPP
+#define STOKHOS_AMESOS2_MP_VECTOR_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Details_Amesos2Wrapper_decl.hpp"
+// MP includes and specializations
+#include "Amesos2_Solver_MP_Vector.hpp"
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+// Amesos2 includes
+#include "Amesos2_Factory.hpp"
 
-#include "Tpetra_CrsMatrix.hpp"
-#include "Ifpack2_Details_Amesos2Wrapper_def.hpp"
-
-#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_STOKHOS_AMESOS2)
-
-#include "Stokhos_Amesos2_MP_Vector.hpp"
-
-#define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
-  template class Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
-
-#include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
-
-#endif
-
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#endif // STOKHOS_AMESOS2_MP_VECTOR_HPP
