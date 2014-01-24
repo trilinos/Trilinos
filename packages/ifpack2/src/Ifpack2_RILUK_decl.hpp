@@ -374,12 +374,6 @@ class RILUK:
   //! Initialize by computing the symbolic incomplete factorization.
   void initialize();
 
-  //! Whether initialize() has been called.
-  bool isInitialized() const {return isInitialized_;}
-
-  //! How many times initialize() has been called for this object.
-  int getNumInitialize() const {return numInitialize_;}
-
   /// \brief Compute the (numeric) incomplete factorization.
   ///
   /// This function computes the RILU(k) factors L and U using the current:
@@ -390,27 +384,73 @@ class RILUK:
   /// initialize() must be called first, before this method may be called.
   void compute();
 
-  //! Whether compute() has been called.
-  bool isComputed() const { return isComputed_; }
+  //! Whether initialize() has been called on this object.
+  bool isInitialized() const {
+    return isInitialized_;
+  }
+  //! Whether compute() has been called on this object.
+  bool isComputed () const {
+    return isComputed_;
+  }
 
-  //! How many times compute() has been called for this object.
-  int getNumCompute() const { return numCompute_; }
+  //! Number of successful initialize() calls for this object.
+  int getNumInitialize() const {
+    return numInitialize_;
+  }
+  //! Number of successful compute() calls for this object.
+  int getNumCompute () const {
+    return numCompute_;
+  }
+  //! Number of successful apply() calls for this object.
+  int getNumApply() const {
+    return numApply_;
+  }
 
-  //! How many times apply() has been called for this object.
-  int getNumApply() const {return numApply_;}
+  //! Total time in seconds taken by all successful initialize() calls for this object.
+  double getInitializeTime () const {
+    return initializeTime_;
+  }
+  //! Total time in seconds taken by all successful compute() calls for this object.
+  double getComputeTime () const {
+    return computeTime_;
+  }
+  //! Total time in seconds taken by all successful apply() calls for this object.
+  double getApplyTime () const {
+    return applyTime_;
+  }
 
-  double getInitializeTime() const {return -1.0;}
-  double getComputeTime() const {return -1.0;}
-  double getApplyTime() const {return -1.0;}
+  //@{
+  //! \name Implementation of Tpetra::Operator
 
-  // Mathematical functions.
+  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getDomainMap () const {
+    return Graph_->getL_Graph ()->getDomainMap ();
+  }
+
+  //! Returns the Tpetra::Map object associated with the range of this operator.
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getRangeMap () const {
+    return Graph_->getU_Graph ()->getRangeMap ();
+  }
 
   /// \brief Apply the (inverse of the) incomplete factorization to X, resulting in Y.
   ///
-  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$,
-  /// this method computes <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> if mode=Teuchos::NO_TRANS, or
-  /// <tt>Y = beta*Y + alpha*(L^T \ (D^T \ (U^T \ X)))</tt> if mode=Teuchos::TRANS, or
-  /// <tt>Y = beta*Y + alpha*(L^* \ (D^* \ (U^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
+  /// For an incomplete factorization \f$A \approx LDU\f$, this method
+  /// computes the following, depending on the value of \c mode:
+  /// <ul>
+  /// <li> If mode = Teuchos::NO_TRANS, it computes
+  ///      <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> </li>
+  /// <li> If mode = Teuchos::TRANS, it computes
+  ///      <tt>Y = beta*Y + alpha*(L^T \ (D^T \ (U^T \ X)))</tt> </li>
+  /// <li> If mode = Teuchos::CONJ_TRANS, it computes
+  ///      <tt>Y = beta*Y + alpha*(L^* \ (D^* \ (U^* \ X)))</tt>,
+  ///      where the asterisk indicates the conjugate transpose. </li>
+  /// </ul>
+  /// If alpha is zero, then the result of applying the operator to a
+  /// vector is ignored.  This matters because zero times NaN (not a
+  /// number) is NaN, not zero.  Analogously, if beta is zero, then
+  /// any values in Y on input are ignored.
   ///
   /// \param X [in] The input multivector.
   ///
@@ -423,31 +463,42 @@ class RILUK:
   /// \param alpha [in] Scaling factor for the result of applying the preconditioner.
   ///
   /// \param beta [in] Scaling factor for the initial value of Y.
-  void apply(
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-               scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+  //@}
 
 
+private:
   /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
   ///
-  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$,
-  /// this method computes <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt> mode=Teuchos::NO_TRANS, or
-  /// <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt> if mode=Teuchos::TRANS, or
-  /// <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
+  /// Given an incomplete factorization is \f$A \approx LDU\f$, this
+  /// method computes the following, depending on the value of \c mode:
+  ///
+  ///   - If mode = Teuchos::NO_TRANS, it computes
+  ///     <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt>
+  ///   - If mode = Teuchos::TRANS, it computes
+  ///     <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt>
+  ///   - If mode = Teuchos::CONJ_TRANS, it computes
+  ///     <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt>,
+  ///     where the asterisk indicates the conjugate transpose.
   ///
   /// \param X [in] The input multivector.
   ///
   /// \param Y [in/out] The output multivector.
   ///
   /// \param mode [in] If Teuchos::TRANS resp. Teuchos::CONJ_TRANS,
-  ///   apply the transpose resp. conjugate transpose of the incomplete
-  ///   factorization.  Otherwise, don't apply the tranpose.
-  int Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  ///   apply the transpose resp. conjugate transpose of the
+  ///   incomplete factorization.  Otherwise, don't apply the
+  ///   transpose.
+  void
+  multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+public:
 
   /// \brief Compute the condition number estimate and return its value.
   ///
@@ -500,44 +551,29 @@ class RILUK:
     return getL ().getGlobalNumEntries () + getU ().getGlobalNumEntries ();
   }
 
-  //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
-  // const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > >& getGraph() const {return(Graph_);}
-  const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > >& getGraph() const {return(Graph_);}
+  //! Return the Ifpack2::IlukGraph associated with this factored matrix.
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > getGraph () const {
+    return Graph_;
+  }
 
-  //! Returns the L factor associated with this factored matrix.
+  //! Return the L factor of the ILU factorization.
   const crs_matrix_type& getL () const {
     return *L_;
   }
 
-  //! Returns the D factor associated with this factored matrix.
+  //! Return the diagonal entries of the ILU factorization.
   const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&
   getD () const {
     return *D_;
   }
 
-  //! Returns the U factor associated with this factored matrix.
+  //! Return the U factor of the ILU factorization.
   const crs_matrix_type& getU () const {
     return *U_;
   }
 
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
   Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
-
-  //@{ \name Additional methods required to support the Tpetra::Operator interface.
-
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getDomainMap () const {
-    return Graph_->getL_Graph ()->getDomainMap ();
-  }
-
-  //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap () const {
-    return Graph_->getU_Graph ()->getRangeMap ();
-  }
-
-  //@}
 
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
@@ -585,9 +621,13 @@ private:
   bool isInitialized_;
   bool isComputed_;
 
-  mutable int numInitialize_;
-  mutable int numCompute_;
+  int numInitialize_;
+  int numCompute_;
   mutable int numApply_;
+
+  double initializeTime_;
+  double computeTime_;
+  mutable double applyTime_;
 
   magnitude_type RelaxValue_;
   magnitude_type Athresh_;

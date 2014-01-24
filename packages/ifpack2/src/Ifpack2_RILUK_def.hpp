@@ -57,6 +57,9 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
+    initializeTime_ (0.0),
+    computeTime_ (0.0),
+    applyTime_ (0.0),
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
@@ -77,6 +80,9 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
+    initializeTime_ (0.0),
+    computeTime_ (0.0),
+    applyTime_ (0.0),
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
@@ -346,78 +352,81 @@ void RILUK<MatrixType>::initialize ()
                            global_ordinal_type,
                            node_type> crs_graph_type;
 
-  // Calling initialize() means that the user asserts that the graph
-  // of the sparse matrix may have changed.  We must not just reuse
-  // the previous graph in that case.
-  //
-  // Regarding setting isAllocated_ to false: Eventually, we may want
-  // some kind of clever memory reuse strategy, but it's always
-  // correct just to blow everything away and start over.
-  isInitialized_ = false;
-  isAllocated_ = false;
-  isComputed_ = false;
-  Graph_ = Teuchos::null;
+  Teuchos::Time timer ("RILUK::initialize");
+  { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
 
-  // mfh 13 Dec 2013: If it's a Tpetra::CrsMatrix, just give Graph_
-  // its Tpetra::CrsGraph.  Otherwise, we might need to rewrite
-  // IlukGraph to handle a Tpetra::RowGraph.  Just throw an exception
-  // for now.
-  {
-    RCP<const crs_matrix_type> A_crs =
-      rcp_dynamic_cast<const crs_matrix_type> (A_);
-    if (A_crs.is_null ()) {
-      // FIXME (mfh 24 Jan 2014) It would be more efficient to rewrite
-      // RILUK so that it works with any RowMatrix input, not just
-      // CrsMatrix.  However, to make it work for now, we can copy the
-      // input matrix and hope for the best.
+    // Calling initialize() means that the user asserts that the graph
+    // of the sparse matrix may have changed.  We must not just reuse
+    // the previous graph in that case.
+    //
+    // Regarding setting isAllocated_ to false: Eventually, we may want
+    // some kind of clever memory reuse strategy, but it's always
+    // correct just to blow everything away and start over.
+    isInitialized_ = false;
+    isAllocated_ = false;
+    isComputed_ = false;
+    Graph_ = Teuchos::null;
 
-      // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
-      // number of elements in each row of A_, so that we can create
-      // A_crs_nc using static profile.  The code below is correct but
-      // potentially slow.
-      RCP<crs_matrix_type> A_crs_nc =
-        rcp (new crs_matrix_type (A_->getRowMap (), A_->getColMap (), 0));
+    // mfh 13 Dec 2013: If it's a Tpetra::CrsMatrix, just give Graph_
+    // its Tpetra::CrsGraph.  Otherwise, we might need to rewrite
+    // IlukGraph to handle a Tpetra::RowGraph.  Just throw an exception
+    // for now.
+    {
+      RCP<const crs_matrix_type> A_crs =
+        rcp_dynamic_cast<const crs_matrix_type> (A_);
+      if (A_crs.is_null ()) {
+        // FIXME (mfh 24 Jan 2014) It would be more efficient to rewrite
+        // RILUK so that it works with any RowMatrix input, not just
+        // CrsMatrix.  However, to make it work for now, we can copy the
+        // input matrix and hope for the best.
 
-      // FIXME (mfh 24 Jan 2014) This Import approach will only work
-      // if A_ has a one-to-one row Map.  This is generally the case
-      // with matrices given to Ifpack2.
-      typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
-        node_type> import_type;
+        // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
+        // number of elements in each row of A_, so that we can create
+        // A_crs_nc using static profile.  The code below is correct but
+        // potentially slow.
+        RCP<crs_matrix_type> A_crs_nc =
+          rcp (new crs_matrix_type (A_->getRowMap (), A_->getColMap (), 0));
 
-      // Source and destination Maps are the same in this case.
-      // That way, the Import just implements a copy.
-      import_type import (A_->getRowMap (), A_->getRowMap ());
-      A_crs_nc->doImport (*A_, import, Tpetra::REPLACE);
-      A_crs_nc->fillComplete (A_->getDomainMap (), A_->getRangeMap ());
-      A_crs = rcp_const_cast<const crs_matrix_type> (A_crs_nc);
+        // FIXME (mfh 24 Jan 2014) This Import approach will only work
+        // if A_ has a one-to-one row Map.  This is generally the case
+        // with matrices given to Ifpack2.
+        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
+          node_type> import_type;
+
+        // Source and destination Maps are the same in this case.
+        // That way, the Import just implements a copy.
+        import_type import (A_->getRowMap (), A_->getRowMap ());
+        A_crs_nc->doImport (*A_, import, Tpetra::REPLACE);
+        A_crs_nc->fillComplete (A_->getDomainMap (), A_->getRangeMap ());
+        A_crs = rcp_const_cast<const crs_matrix_type> (A_crs_nc);
+      }
+      A_crs_ = A_crs;
+      Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_crs->getCrsGraph (),
+                                                            LevelOfFill_,
+                                                            LevelOfOverlap_));
     }
-    A_crs_ = A_crs;
-    Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_crs->getCrsGraph (),
-                                                          LevelOfFill_,
-                                                          LevelOfOverlap_));
-  }
 
-  Graph_->initialize ();
-  allocate_L_and_U ();
+    Graph_->initialize ();
+    allocate_L_and_U ();
 
-  // FIXME (mfh 24 Jan 2014) RILUK should not be responsible for
-  // overlap; AdditiveSchwarz should be.
-  if (isOverlapped_) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Ifpack2::RILUK::initialize: This class does not implement overlapping.  "
-      "You should use AdditiveSchwarz as the outer preconditioner if you want "
-      "overlapping.");
-//    OverlapA = Teuchos::rcp( new MatrixType(Graph_->OverlapGraph()) );
-//    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_->OverlapImporter(), Insert));
-//    EPETRA_CHK_ERR(OverlapA->FillComplete());
-  }
-  else {
-    initAllValues (*A_crs_);
-  }
+    // FIXME (mfh 24 Jan 2014) RILUK should not be responsible for
+    // overlap; AdditiveSchwarz should be.
+    if (isOverlapped_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error,
+        "Ifpack2::RILUK::initialize: This class does not implement overlapping.  "
+        "You should use AdditiveSchwarz as the outer preconditioner if you want "
+        "overlapping.");
+    }
+    else {
+      initAllValues (*A_crs_);
+    }
+  } // Stop timing
 
   isInitialized_ = true;
   ++numInitialize_;
+  initializeTime_ += timer.totalElapsedTime ();
 }
 
 
@@ -547,176 +556,163 @@ template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
   if (! isInitialized ()) {
-    initialize ();
-  }
-  isComputed_ = false;
-
-  L_->resumeFill ();
-  U_->resumeFill ();
-
-  // MinMachNum should be officially defined, for now pick something a little
-  // bigger than IEEE underflow value
-
-  const scalar_type MinDiagonalValue = STS::rmin ();
-  const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
-
-  size_t NumIn, NumL, NumU;
-
-  // Get Maximum Row length
-  const size_t MaxNumEntries =
-    L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
-
-  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
-  Teuchos::Array<scalar_type> InV(MaxNumEntries);
-  size_t num_cols = U_->getColMap()->getNodeNumElements();
-  Teuchos::Array<int> colflag(num_cols);
-
-  Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
-
-  size_t current_madds = 0; // We will count multiply-add as they happen
-
-  // Now start the factorization.
-
-  // Need some integer workspace and pointers
-  size_t NumUU;
-  Teuchos::ArrayView<const local_ordinal_type> UUI;
-  Teuchos::ArrayView<const scalar_type> UUV;
-  for (size_t j = 0; j < num_cols; ++j) {
-    colflag[j] = -1;
+    initialize (); // Don't count this in the compute() time
   }
 
-  for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
-    local_ordinal_type local_row = i;
+  Teuchos::Time timer ("RILUK::compute");
+  { // Start timing
+    isComputed_ = false;
 
- // Fill InV, InI with current row of L, D and U combined
+    L_->resumeFill ();
+    U_->resumeFill ();
 
-    NumIn = MaxNumEntries;
-    L_->getLocalRowCopy (local_row, InI (), InV (), NumL);
+    // MinMachNum should be officially defined, for now pick something a little
+    // bigger than IEEE underflow value
 
-    InV[NumL] = DV[i]; // Put in diagonal
-    InI[NumL] = local_row;
+    const scalar_type MinDiagonalValue = STS::rmin ();
+    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
 
-    U_->getLocalRowCopy (local_row, InI (NumL+1, MaxNumEntries-NumL-1),
-                         InV (NumL+1, MaxNumEntries-NumL-1), NumU);
-    NumIn = NumL+NumU+1;
+    size_t NumIn, NumL, NumU;
 
-    // Set column flags
-    for (size_t j = 0; j < NumIn; ++j) {
-      colflag[InI[j]] = j;
+    // Get Maximum Row length
+    const size_t MaxNumEntries =
+      L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
+
+    Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+    Teuchos::Array<scalar_type> InV(MaxNumEntries);
+    size_t num_cols = U_->getColMap()->getNodeNumElements();
+    Teuchos::Array<int> colflag(num_cols);
+
+    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
+
+    size_t current_madds = 0; // We will count multiply-add as they happen
+
+    // Now start the factorization.
+
+    // Need some integer workspace and pointers
+    size_t NumUU;
+    Teuchos::ArrayView<const local_ordinal_type> UUI;
+    Teuchos::ArrayView<const scalar_type> UUV;
+    for (size_t j = 0; j < num_cols; ++j) {
+      colflag[j] = -1;
     }
 
-    scalar_type diagmod = STS::zero (); // Off-diagonal accumulator
+    for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
+      local_ordinal_type local_row = i;
 
-    for (size_t jj = 0; jj < NumL; ++jj) {
-      local_ordinal_type j = InI[jj];
-      scalar_type multiplier = InV[jj]; // current_mults++;
+      // Fill InV, InI with current row of L, D and U combined
 
-      InV[jj] *= DV[j];
+      NumIn = MaxNumEntries;
+      L_->getLocalRowCopy (local_row, InI (), InV (), NumL);
 
-      U_->getLocalRowView(j, UUI, UUV); // View of row above
-      NumUU = UUI.size();
+      InV[NumL] = DV[i]; // Put in diagonal
+      InI[NumL] = local_row;
 
-      if (RelaxValue_ == STM::zero ()) {
-        for (size_t k = 0; k < NumUU; ++k) {
-          const int kk = colflag[UUI[k]];
-          // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-          // colflag above using size_t (which is generally unsigned),
-          // but now we're querying it using int (which is signed).
-          if (kk > -1) {
-            InV[kk] -= multiplier * UUV[k];
+      U_->getLocalRowCopy (local_row, InI (NumL+1, MaxNumEntries-NumL-1),
+                           InV (NumL+1, MaxNumEntries-NumL-1), NumU);
+      NumIn = NumL+NumU+1;
+
+      // Set column flags
+      for (size_t j = 0; j < NumIn; ++j) {
+        colflag[InI[j]] = j;
+      }
+
+      scalar_type diagmod = STS::zero (); // Off-diagonal accumulator
+
+      for (size_t jj = 0; jj < NumL; ++jj) {
+        local_ordinal_type j = InI[jj];
+        scalar_type multiplier = InV[jj]; // current_mults++;
+
+        InV[jj] *= DV[j];
+
+        U_->getLocalRowView(j, UUI, UUV); // View of row above
+        NumUU = UUI.size();
+
+        if (RelaxValue_ == STM::zero ()) {
+          for (size_t k = 0; k < NumUU; ++k) {
+            const int kk = colflag[UUI[k]];
+            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+            // colflag above using size_t (which is generally unsigned),
+            // but now we're querying it using int (which is signed).
+            if (kk > -1) {
+              InV[kk] -= multiplier * UUV[k];
+              current_madds++;
+            }
+          }
+        }
+        else {
+          for (size_t k = 0; k < NumUU; ++k) {
+            // FIXME (mfh 23 Dec 2013) Wait a second, we just set
+            // colflag above using size_t (which is generally unsigned),
+            // but now we're querying it using int (which is signed).
+            const int kk = colflag[UUI[k]];
+            if (kk > -1) {
+              InV[kk] -= multiplier*UUV[k];
+            }
+            else {
+              diagmod -= multiplier*UUV[k];
+            }
             current_madds++;
           }
         }
       }
-      else {
-        for (size_t k = 0; k < NumUU; ++k) {
-          // FIXME (mfh 23 Dec 2013) Wait a second, we just set
-          // colflag above using size_t (which is generally unsigned),
-          // but now we're querying it using int (which is signed).
-          const int kk = colflag[UUI[k]];
-          if (kk > -1) {
-            InV[kk] -= multiplier*UUV[k];
-          }
-          else {
-            diagmod -= multiplier*UUV[k];
-          }
-          current_madds++;
+      if (NumL) {
+        // Replace current row of L
+        L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
+      }
+
+      DV[i] = InV[NumL]; // Extract Diagonal value
+
+      if (RelaxValue_ != STM::zero ()) {
+        DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
+        // current_madds++;
+      }
+
+      if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
+        if (STS::real (DV[i]) < STM::zero ()) {
+          DV[i] = -MinDiagonalValue;
+        }
+        else {
+          DV[i] = MinDiagonalValue;
         }
       }
-    }
-    if (NumL) {
-      // Replace current row of L
-      L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
-    }
-
-    DV[i] = InV[NumL]; // Extract Diagonal value
-
-    if (RelaxValue_ != STM::zero ()) {
-      DV[i] += RelaxValue_*diagmod; // Add off diagonal modifications
-      // current_madds++;
-    }
-
-    if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
-      if (STS::real (DV[i]) < STM::zero ()) {
-        DV[i] = -MinDiagonalValue;
-      }
       else {
-        DV[i] = MinDiagonalValue;
+        DV[i] = STS::one () / DV[i]; // Invert diagonal value
+      }
+
+      for (size_t j = 0; j < NumU; ++j) {
+        InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
+      }
+
+      if (NumU) {
+        // Replace current row of L and U
+        U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
+      }
+
+      // Reset column flags
+      for (size_t j = 0; j < NumIn; ++j) {
+        colflag[InI[j]] = -1;
       }
     }
-    else {
-      DV[i] = STS::one () / DV[i]; // Invert diagonal value
-    }
 
-    for (size_t j = 0; j < NumU; ++j) {
-      InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
-    }
+    // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
+    // always one-to-one?
+    L_->fillComplete (L_->getColMap (), A_->getRangeMap ());
+    U_->fillComplete (A_->getDomainMap (), U_->getRowMap ());
 
-    if (NumU) {
-      // Replace current row of L and U
-      U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
-    }
+    // Validate that the L and U factors are actually lower and upper triangular
 
-    // Reset column flags
-    for (size_t j = 0; j < NumIn; ++j) {
-      colflag[InI[j]] = -1;
-    }
-  }
-
-  // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
-  // always one-to-one?
-  L_->fillComplete (L_->getColMap (), A_->getRangeMap ());
-  U_->fillComplete (A_->getDomainMap (), U_->getRowMap ());
-
-  // Validate that the L and U factors are actually lower and upper triangular
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! L_->isLowerTriangular (), std::runtime_error,
-    "Ifpack2::RILUK::compute: L isn't lower triangular.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! U_->isUpperTriangular (), std::runtime_error,
-    "Ifpack2::RILUK::compute: U isn't lower triangular.");
-
-  // Add up flops
-
-  double current_flops = 2.0 * current_madds;
-  double total_flops = 0.0;
-
-  // Get total madds across all PEs
-  Teuchos::reduceAll (* (L_->getRowMap ()->getComm ()), Teuchos::REDUCE_SUM,
-                      1, &current_flops, &total_flops);
-
-  // Now count the rest
-  total_flops += static_cast<double> (L_->getGlobalNumEntries ()); // multiplier above
-  total_flops += static_cast<double> (D_->getGlobalLength ()); // reciprocal of diagonal
-  if (RelaxValue_ != STM::zero ()) {
-    total_flops += 2 * static_cast<double> (D_->getGlobalLength ()); // relax update of diag
-  }
-
-  //UpdateFlops(total_flops); // Update flop count
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! L_->isLowerTriangular (), std::runtime_error,
+      "Ifpack2::RILUK::compute: L isn't lower triangular.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! U_->isUpperTriangular (), std::runtime_error,
+      "Ifpack2::RILUK::compute: U isn't lower triangular.");
+  } // Stop timing
 
   isComputed_ = true;
   ++numCompute_;
+  computeTime_ += timer.totalElapsedTime ();
 }
 
 
@@ -729,81 +725,91 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
+  using Teuchos::RCP;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,
     "Ifpack2::RILUK::apply: If you have not yet called compute(), "
     "you must call compute() before calling this method.");
 
-  if (alpha == STS::one () && beta == STS::zero ()) {
-    //
-    // This function finds Y such that
-    // LDU Y = X, or
-    // U(trans) D L(trans) Y = X
-    // for multiple RHS
-    //
-    // First generate X and Y as needed for this function
-    Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
-    Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
-    generateXY (mode, X, Y, X1, Y1);
+  const scalar_type one = STS::one ();
+  const scalar_type zero = STS::zero ();
 
-    const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
-    const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
-    if (mode == Teuchos::NO_TRANS) {
-      L_->localSolve (*X1, *Y1,mode);
-      Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-      U_->localSolve (*Y1, *Y1, mode); // Solve Uy = y
-      if (isOverlapped_) {
-        // Export computed Y values if needed
-        Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+  Teuchos::Time timer ("RILUK::apply");
+  { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
+    if (alpha == one && beta == zero) {
+      //
+      // This function finds Y such that
+      // LDU Y = X, or
+      // U(trans) D L(trans) Y = X
+      // for multiple RHS
+      //
+      // First generate X and Y as needed for this function
+      RCP<const MV> X1;
+      RCP<MV> Y1;
+      generateXY (mode, X, Y, X1, Y1);
+
+      if (mode == Teuchos::NO_TRANS) {
+        L_->localSolve (*X1, *Y1,mode);
+        Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+        U_->localSolve (*Y1, *Y1, mode); // Solve Uy = y
+        if (isOverlapped_) {
+          // Export computed Y values if needed
+          Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+        }
+      }
+      else {
+        U_->localSolve (*X1, *Y1, mode); // Solve Uy = y
+
+        // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+        // need to do an elementwise multiply with the conjugate of
+        // D_, not just with D_ itself.
+        Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+
+        L_->localSolve (*Y1, *Y1,mode);
+        if (isOverlapped_) {
+          // Export computed Y values if needed
+          Y.doExport (*Y1, *U_->getGraph ()->getImporter (), OverlapMode_);
+        }
       }
     }
-    else {
-      U_->localSolve (*X1, *Y1, mode); // Solve Uy = y
-      Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-      L_->localSolve (*Y1, *Y1,mode);
-      if (isOverlapped_) {
-        // Export computed Y values if needed
-        Y.doExport (*Y1, *U_->getGraph ()->getImporter (), OverlapMode_);
-      }
+    else { // alpha != 1 or beta != 0
+      MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+      apply (X, Y_tmp, mode);
+      Y.update (alpha, Y_tmp, beta);
     }
-    ++numApply_; // inside the 'if', so it's not called twice
-  }
-  else { // alpha != 1 or beta != 0
-    MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-    apply (X, Y_tmp, mode);
-    Y.update (alpha, Y_tmp, beta);
-  }
+  } // Stop timing
+
+  ++numApply_;
+  applyTime_ = timer.totalElapsedTime ();
 }
 
-//=============================================================================
-template<class MatrixType>
-int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode) const
-{
-//
-// This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-//
 
+template<class MatrixType>
+void RILUK<MatrixType>::
+multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+          const Teuchos::ETransp mode) const
+{
   // First generate X and Y as needed for this function
   Teuchos::RCP<const MV> X1;
   Teuchos::RCP<MV> Y1;
   generateXY (mode, X, Y, X1, Y1);
 
-//  Epetra_Flops * counter = this->GetFlopCounter();
-//  if (counter!=0) {
-//    L_->SetFlopCounter(*counter);
-//    Y1->SetFlopCounter(*counter);
-//    U_->SetFlopCounter(*counter);
-//  }
-
   const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero ();
   const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one ();
 
-  if (!mode == Teuchos::NO_TRANS) {
+  if (mode != Teuchos::NO_TRANS) {
     U_->apply (*X1, *Y1,mode); //
     Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+
+    // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we need
+    // to do an elementwise multiply with the conjugate of D_, not
+    // just with D_ itself.
     Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+
     MV Y1temp (*Y1); // Need a temp copy of Y1
     L_->apply (Y1temp, *Y1,mode);
     Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
@@ -822,7 +828,6 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordi
       Y.doExport(*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
     }
   }
-  return 0;
 }
 
 
