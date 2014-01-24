@@ -656,7 +656,6 @@ namespace Tpetra {
       // values2D_ (for values).  We allocate 1-D storage and then
       // copy from 2-D storage in lclInds2D_ resp. values2D_ into 1-D
       // storage in inds resp. vals.
-      std::cout << "NumRowEntries_.size(): "<< numRowEntries_.size() << std::endl;
       typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
       ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
                                          Kokkos::Compat::deallocator(tmpk_ptrs), false);
@@ -668,7 +667,6 @@ namespace Tpetra {
         // hack until we get parallel_scan in kokkos
       for(int i = 0; i < numRowEntries_.size(); i++) {
         h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
-        std::cout << h_tmpk_ptrs(i+1) << " ";
       }
       Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
       std::cout << std::endl;
