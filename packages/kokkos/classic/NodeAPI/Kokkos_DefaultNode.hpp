@@ -100,29 +100,6 @@ namespace Details {
     return theNode;
   }
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-  // Full specializations for the new Kokkos wrapper Node types.
-
-#ifdef KOKKOS_HAVE_CUDA
-  template<>
-  Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode>
-  getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> ();
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_OPENMP
-  template<>
-  Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode>
-  getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> ();
-#endif // KOKKOS_HAVE_OPENMP
-
-#ifdef KOKKOS_HAVE_PTHREAD
-  template<>
-  Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode>
-  getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> ();
-#endif // KOKKOS_HAVE_PTHREAD
-
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-
 } // namespace Details
 
   /** \brief Class to specify %Kokkos default node type and instantiate the default node.
