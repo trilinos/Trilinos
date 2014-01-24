@@ -13,6 +13,7 @@ APPEND_SET(NOINSTALLHEADERS
   Pike_LinearHeatConduction_ModelEvaluator.hpp
   Pike_LinearHeatConduction_DataTransfer.hpp
   Pike_Mock_UserSolverFactory.hpp
+  Pike_Mock_UserStatusTestFactory.hpp
   )
 
 APPEND_SET(SOURCES
@@ -21,6 +22,7 @@ APPEND_SET(SOURCES
   Pike_LinearHeatConduction_ModelEvaluator.cpp
   Pike_LinearHeatConduction_DataTransfer.cpp
   Pike_Mock_UserSolverFactory.cpp
+  Pike_Mock_UserStatusTestFactory.cpp
   )
 
 TRIBITS_ADD_LIBRARY(

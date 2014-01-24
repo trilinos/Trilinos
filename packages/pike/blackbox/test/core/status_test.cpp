@@ -14,6 +14,7 @@
 #include "Pike_StatusTest_LocalModelFailure.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 #include "Pike_StatusTest_Factory.hpp"
+#include "Pike_Mock_UserStatusTestFactory.hpp"
 
 namespace pike {
 
@@ -66,7 +67,8 @@ namespace pike {
       app2GlobalConv.set("Model Name","app2");
     }
 
-    Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
+    pike::StatusTestFactory stFactory;
+    Teuchos::RCP<pike::StatusTest> tests = stFactory.buildStatusTests(statusTestParams);
 
     Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
       pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,7,-1);
@@ -105,7 +107,8 @@ namespace pike {
       app2GlobalConv.set("Model Name","app2");
     }
 
-    Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
+    pike::StatusTestFactory stFactory;
+    Teuchos::RCP<pike::StatusTest> tests = stFactory.buildStatusTests(statusTestParams);
 
     Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
       pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,11,-1);
@@ -352,7 +355,77 @@ namespace pike {
       app2GlobalConv.set("Model Name","app2");
     }
 
-    Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
+    pike::StatusTestFactory stFactory;
+    Teuchos::RCP<pike::StatusTest> tests = stFactory.buildStatusTests(statusTestParams);
+    TEST_ASSERT(nonnull(tests));
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
+      pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,5);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app2 = 
+      pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,7);
+
+    Teuchos::RCP<pike::BlockGaussSeidel> solver = Teuchos::rcp(new pike::BlockGaussSeidel);
+    app1->setSolver(solver);
+    app2->setSolver(solver);
+    solver->registerModelEvaluator(app1);
+    solver->registerModelEvaluator(app2);
+    solver->completeRegistration();
+    solver->setStatusTests(tests);
+    solver->solve();
+
+    TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    TEST_EQUALITY(solver->getNumberOfIterations(),6);
+  }
+
+  TEUCHOS_UNIT_TEST(status_test, UserFactory)
+  {
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    Teuchos::RCP<Teuchos::ParameterList> statusTestParams = Teuchos::parameterList("My Status Tests");
+    {
+      statusTestParams->set("Type","Composite OR");
+      Teuchos::ParameterList& failure = statusTestParams->sublist("Failure");
+      failure.set("Type","My Super Special MaxIterations");
+      failure.set("Maximum Iterations",6);
+      Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
+      app1LocalConv.set("Type","Local Model Failure");
+      app1LocalConv.set("Model Name","app1");
+      Teuchos::ParameterList& app2LocalConv = statusTestParams->sublist("Failure 3");      
+      app2LocalConv.set("Type","Local Model Failure");
+      app2LocalConv.set("Model Name","app2");
+      Teuchos::ParameterList& failure2 = statusTestParams->sublist("Failure 4");
+      failure2.set("Type","My Other Super Special MaxIterations");
+      failure2.set("Maximum Iterations",6);
+      Teuchos::ParameterList& converged = statusTestParams->sublist("Converged");
+      converged.set("Type","Composite AND");
+      Teuchos::ParameterList& relTolApp1 = converged.sublist("App 1");
+      relTolApp1.set("Type","Scalar Response Relative Tolerance");
+      relTolApp1.set("Application Name","app1");
+      relTolApp1.set("Response Name","Mock Response");
+      relTolApp1.set("Tolerance",1.0e-3);
+      Teuchos::ParameterList& relTolApp2 = converged.sublist("App 2"); 
+      relTolApp2.set("Type","Scalar Response Relative Tolerance");
+      relTolApp2.set("Application Name","app2");
+      relTolApp2.set("Response Name","Mock Response");
+      relTolApp2.set("Tolerance",1.0e-3);
+      Teuchos::ParameterList& app1GlobalConv = converged.sublist("Global App 1");
+      app1GlobalConv.set("Type","Global Model Convergence");
+      app1GlobalConv.set("Model Name","app1");
+      Teuchos::ParameterList& app2GlobalConv = converged.sublist("Global App 2");
+      app2GlobalConv.set("Type","Global Model Convergence");
+      app2GlobalConv.set("Model Name","app2");
+    }
+
+    pike::StatusTestFactory stFactory;
+    Teuchos::RCP<pike_test::UserStatusTestFactory> user1 = 
+      Teuchos::rcp(new pike_test::UserStatusTestFactory("My Super Special MaxIterations"));
+    Teuchos::RCP<pike_test::UserStatusTestFactory> user2 = 
+      Teuchos::rcp(new pike_test::UserStatusTestFactory("My Other Super Special MaxIterations"));
+    stFactory.addFactory(user1);
+    stFactory.addFactory(user2);
+    Teuchos::RCP<pike::StatusTest> tests = stFactory.buildStatusTests(statusTestParams);
     TEST_ASSERT(nonnull(tests));
 
     Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 

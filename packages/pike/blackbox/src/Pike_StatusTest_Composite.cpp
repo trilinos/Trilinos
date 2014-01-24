@@ -1,6 +1,6 @@
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_Solver.hpp"
-#include "Pike_StatusTest_Factory.hpp"
+#include "Pike_StatusTest_AbstractFactory.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -118,10 +118,12 @@ namespace pike {
     out.popTab();
   }
 
-  void Composite::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
+  void Composite::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p,
+				   const pike::StatusTestAbstractFactory& factory)
   {
     // Don't call validation.  Sublist names can be arbitrary (or nonexistent)
     //paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
+    myParameters_ = p;
 
     // Loop over sublists for different tests
     for (Teuchos::ParameterList::ConstIterator sublistEntry = p->begin();
@@ -142,7 +144,7 @@ namespace pike {
       }
       else if (sublistEntry->second.isList()) {
 	Teuchos::RCP<Teuchos::ParameterList> sublist = Teuchos::sublist(p,sublistEntry->first,true);
-	Teuchos::RCP<StatusTest> subtest = pike::buildStatusTests(sublist);
+	Teuchos::RCP<StatusTest> subtest = factory.buildStatusTests(sublist);
 	this->addTest(subtest);
       }
       else {
@@ -151,8 +153,6 @@ namespace pike {
 				   "The parameter sublist key \"" << sublistEntry->first << "\" must be a sublist or a string that determines the type of Composite test!"); 
       }
     }
-
-    this->setMyParamList(p);
   }
   
   Teuchos::RCP<const Teuchos::ParameterList> Composite::getValidParameters() const

@@ -3,14 +3,16 @@
 #define PIKE_STATUS_TESTS_COMPOSITE_HPP
 
 #include "Pike_StatusTest.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include <vector>
+
+namespace Teuchos { class ParameterList; }
 
 namespace pike {
 
+  class StatusTestAbstractFactory;
+
   class Composite : 
-    public pike::StatusTest,
-    public Teuchos::ParameterListAcceptorDefaultBase {
+    public pike::StatusTest {
 
   public:
 
@@ -32,7 +34,8 @@ namespace pike {
 
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=verbLevel_default) const;
 
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList,
+			  const pike::StatusTestAbstractFactory& factory);
 
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
@@ -44,8 +47,10 @@ namespace pike {
     CompositeType type_;
     std::vector<Teuchos::RCP<pike::StatusTest> > tests_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;
+    Teuchos::RCP<Teuchos::ParameterList> myParameters_;
     pike::SolveStatus status_;
-
+    
+    
     typedef std::vector<Teuchos::RCP<pike::StatusTest> >::iterator TestIterator;
     typedef std::vector<Teuchos::RCP<pike::StatusTest> >::const_iterator TestConstIterator;
   };
