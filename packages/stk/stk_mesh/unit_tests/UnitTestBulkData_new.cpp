@@ -208,8 +208,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   bulk.modification_begin();
 
-  stk::mesh::Entity new_cell = bulk.declare_entity ( MetaData::ELEMENT_RANK , fixture.comm_rank()+1 , empty_vector );
-  stk::mesh::Entity new_node = bulk.declare_entity ( MetaData::NODE_RANK , fixture.comm_rank()+1 , empty_vector );
+  stk::mesh::Entity new_cell = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , empty_vector );
+  stk::mesh::Entity new_node = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , empty_vector );
 
   bulk.declare_relation ( new_cell , new_node , 1 );
 
@@ -388,7 +388,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
 
   bulk.modification_begin();
 
-  stk::mesh::Entity e = bulk.declare_entity ( MetaData::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
+  stk::mesh::Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
   bulk.modification_end();
 
   bulk.modification_begin();
@@ -624,14 +624,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 
    bulk.modification_begin();
 
-   stk::mesh::Entity node = bulk.declare_entity ( MetaData::NODE_RANK , fixture.comm_rank()+1 ,create_vector );
+   stk::mesh::Entity node = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 ,create_vector );
    bulk.modification_end();
 
    STKUNIT_ASSERT ( bulk.bucket(node).member ( part_a ) );
 
    bulk.modification_begin();
    create_vector.push_back ( &part_b );
-   stk::mesh::Entity node2 = bulk.declare_entity ( MetaData::NODE_RANK , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
+   stk::mesh::Entity node2 = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
    bulk.modification_end();
 
    STKUNIT_ASSERT ( bulk.bucket(node2).member ( part_a ) );
@@ -741,7 +741,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   int rank_count2 = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int new_id2 = size2 + rank_count2;
 
-  stk::mesh::Entity elem2 = bulk.declare_entity ( MetaData::ELEMENT_RANK , new_id2+1 ,create_vector );
+  stk::mesh::Entity elem2 = bulk.declare_entity ( stk::topology::ELEMENT_RANK , new_id2+1 ,create_vector );
   STKUNIT_ASSERT_EQUAL( bulk.bucket(elem2).member ( part_a ), true );
 
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -751,7 +751,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   for ( id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank_count;
-    stk::mesh::Entity new_node = bulk.declare_entity( MetaData::NODE_RANK , new_id+1 , empty_vector );
+    stk::mesh::Entity new_node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , empty_vector );
     STKUNIT_ASSERT_EQUAL( bulk.bucket(new_node).member ( part_a_0 ), false );
   }
 
@@ -924,7 +924,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
 
   bulk.modification_begin();
 
-  STKUNIT_ASSERT_THROW( bulk.declare_entity(MetaData::NODE_RANK,
+  STKUNIT_ASSERT_THROW( bulk.declare_entity(stk::topology::NODE_RANK,
                                             1, /*id*/
                                             stk::mesh::PartVector() ),
                         std::logic_error);

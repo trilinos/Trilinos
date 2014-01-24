@@ -118,7 +118,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
       stk::mesh::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
       for (unsigned i = 0; i<4; ++i) {
-        stk::mesh::Entity const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_nodes[i] );
+        stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_nodes[i] );
 
         ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");

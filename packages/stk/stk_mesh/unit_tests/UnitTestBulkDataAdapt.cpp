@@ -42,7 +42,7 @@ using stk::mesh::EntityRank;
 using stk::mesh::fixtures::BoxFixture;
 
 namespace {
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 } // empty namespace
 
 
@@ -125,7 +125,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   stk::mesh::PartVector empty_parts;
 
   // Create elements
-  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   Entity elem = Entity();
 
   mesh.modification_begin();
@@ -159,7 +159,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   for (unsigned inode=0; inode < nnodes; inode++)
     {
-      node1 = mesh.get_entity(MetaData::NODE_RANK, nodes_0[inode][0]);
+      node1 = mesh.get_entity(stk::topology::NODE_RANK, nodes_0[inode][0]);
       if (mesh.is_valid(node1) && mesh.parallel_owner_rank(node1) == p_rank)
         {
           int dest = nodes_0[inode][1];
@@ -182,9 +182,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   if (p_rank == 2)
     {
-      node1 = mesh.get_entity(MetaData::NODE_RANK, 21);
-      Entity elem1 = mesh.get_entity(MetaData::ELEMENT_RANK, 201);
-      Entity elem2 = mesh.get_entity(MetaData::ELEMENT_RANK, 100);
+      node1 = mesh.get_entity(stk::topology::NODE_RANK, 21);
+      Entity elem1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 201);
+      Entity elem2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 100);
 
       bool did_it_elem = mesh.destroy_entity(elem1);
       did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
@@ -198,7 +198,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   checkBuckets(mesh);
 
   // this node should no longer exist anywhere
-  node1 = mesh.get_entity(MetaData::NODE_RANK, 21);
+  node1 = mesh.get_entity(stk::topology::NODE_RANK, 21);
 
   // uncomment to force failure of test
   // STKUNIT_ASSERT(node1 == 0);

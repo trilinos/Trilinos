@@ -84,9 +84,9 @@ bool is_degenerate( const CellTopology & topo)
 void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & entities_to_request)
 {
   MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
+  const EntityRank edge_rank = stk::topology::EDGE_RANK;
 
   Selector select_owned = MetaData::get(mesh).locally_owned_part();
 
@@ -201,9 +201,9 @@ void request_entities(
 void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_add_parts, std::vector<size_t> & entities_to_request)
 {
   MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
+  const EntityRank edge_rank = stk::topology::EDGE_RANK;
 
   const size_t num_ranks = fem_meta.entity_rank_count();
 
@@ -320,9 +320,9 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 void complete_connectivity( BulkData & mesh )
 {
   MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
+  const EntityRank edge_rank = stk::topology::EDGE_RANK;
 
   Selector select_owned_or_shared = fem_meta.locally_owned_part() | fem_meta.globally_shared_part();
 

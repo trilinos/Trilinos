@@ -50,7 +50,7 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
-  const stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
   int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );

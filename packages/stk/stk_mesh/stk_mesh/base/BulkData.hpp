@@ -522,7 +522,7 @@ public:
       const Entity side , unsigned local_side_id ) const
   {
     // 09/14/10:  TODO:  tscoffe:  Will this work in 1D??
-    const bool is_side = entity_rank(side) != MetaData::EDGE_RANK;
+    const bool is_side = entity_rank(side) != stk::topology::EDGE_RANK;
     const CellTopologyData * const elem_top = get_cell_topology( bucket(elem) ).getCellTopologyData();
 
     const unsigned side_count = ! elem_top ? 0 : (

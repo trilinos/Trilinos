@@ -70,8 +70,8 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >(stk::topology::ELEMENT_RANK, "volume" ))
   , m_elem_rank( stk::topology::ELEMENT_RANK )
   , m_side_rank( m_fem_metaData.side_rank() )
-  , m_edge_rank( MetaData::EDGE_RANK )
-  , m_node_rank( MetaData::NODE_RANK )
+  , m_edge_rank( topology::EDGE_RANK )
+  , m_node_rank( topology::NODE_RANK )
 {
   // Put the coordinates and temperature field on all nodes
 

@@ -32,7 +32,7 @@ using stk::mesh::MetaData;
 
 namespace {
 
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 {

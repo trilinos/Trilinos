@@ -168,7 +168,7 @@ void Gear::populate_fields(FieldState state) {
 
 void Gear::generate_gear()
 {
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
   requests[NODE_RANK]     = num_nodes;

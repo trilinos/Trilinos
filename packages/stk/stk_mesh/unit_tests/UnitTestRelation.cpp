@@ -47,7 +47,7 @@ using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationCoverage)
 {
@@ -65,12 +65,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationCoverage)
 
   fixture.generate_mesh();
 
-  Entity node0 = (*bulk.buckets(MetaData::NODE_RANK)[0])[0];
+  Entity node0 = (*bulk.buckets(stk::topology::NODE_RANK)[0])[0];
 
   bulk.modification_begin();
   std::vector<Part*> empty_parts;
   stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
-  Entity edge = bulk.declare_entity( MetaData::EDGE_RANK , new_id , empty_parts );
+  Entity edge = bulk.declare_entity( stk::topology::EDGE_RANK , new_id , empty_parts );
 
   // Cannot declare a back relation
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
@@ -105,7 +105,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
   // This process' first element in the loop
   // if a parallel mesh has a shared node
 
-  Entity elementnew = ring_bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
+  Entity elementnew = ring_bulk.get_entity( stk::topology::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
 
   ring_bulk.modification_begin();
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
@@ -115,10 +115,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
     }
   }
 
-  elementnew = ring_bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
+  elementnew = ring_bulk.get_entity( stk::topology::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
   STKUNIT_ASSERT_EQUAL( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p_rank+100 ), false );
 
-  Entity node = ring_bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
+  Entity node = ring_bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
   STKUNIT_ASSERT_EQUAL( ring_bulk.in_shared( ring_bulk.entity_key(node) , p_rank+100 ), false );
 }
 
@@ -147,7 +147,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity node = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
+    Entity node = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
     bulk.modification_begin();
 
@@ -158,7 +158,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
     }
 
     //not owned and not shared
-    Entity node2 = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
+    Entity node2 = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
     STKUNIT_ASSERT_EQUAL( bulk.in_shared( bulk.entity_key(node2) , p_rank+100 ), false );
     STKUNIT_ASSERT_EQUAL( bulk.in_send_ghost( bulk.entity_key(node) , p_rank+100 ), false );
@@ -192,7 +192,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = MetaData::ELEMENT_RANK;
+  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
   Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
@@ -237,7 +237,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = MetaData::ELEMENT_RANK;
+  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
   Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
@@ -428,7 +428,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     stk::mesh::PartVector empty_parts;
 
     // Create element
-    const EntityRank entity_rank = MetaData::ELEMENT_RANK;
+    const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
     Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
     // Create nodes

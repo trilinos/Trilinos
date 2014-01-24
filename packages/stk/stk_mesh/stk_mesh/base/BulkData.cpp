@@ -373,7 +373,7 @@ void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) co
 {
   const size_t rank_count = m_mesh_meta_data.entity_rank_count();
   const bool ok_id   = EntityKey::is_valid_id(ent_id);
-  const bool ok_rank = ent_rank < rank_count && !(ent_rank == MetaData::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
+  const bool ok_rank = ent_rank < rank_count && !(ent_rank == stk::topology::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
 
   ThrowRequireMsg( ok_rank,
                    "Bad key rank: " << ent_rank << " for id " << ent_id );
@@ -385,7 +385,7 @@ bool BulkData::is_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const
 {
   const size_t rank_count = m_mesh_meta_data.entity_rank_count();
   const bool ok_id   = EntityKey::is_valid_id(ent_id);
-  const bool ok_rank = ent_rank < rank_count && !(ent_rank == MetaData::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
+  const bool ok_rank = ent_rank < rank_count && !(ent_rank == stk::topology::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
 
   return ok_id && ok_rank;
 }

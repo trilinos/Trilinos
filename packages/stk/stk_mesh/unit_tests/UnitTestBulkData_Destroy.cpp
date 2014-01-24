@@ -63,14 +63,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
 
   STKUNIT_ASSERT( bulk.modification_begin() );
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    bulk.declare_entity( MetaData::NODE_RANK , ids[i] , no_parts );
+    bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
   }
   STKUNIT_ASSERT( bulk.modification_end() );
 
   // Verify that I only have entities in my range:
 
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
-    Entity e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
+    Entity e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
     if ( id_begin <= i && i < id_end ) {
       STKUNIT_ASSERT( bulk.is_valid(e) );
       STKUNIT_ASSERT( p_rank == bulk.parallel_owner_rank(e) );
@@ -83,7 +83,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
   // Delete one entity at a time.
 
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    Entity e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
+    Entity e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
 
     STKUNIT_ASSERT( bulk.is_valid(e) );
 
@@ -92,10 +92,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
     bulk.modification_end();
 
     if ( id_begin < i ) {
-      STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[ i - 1 ] )) );
+      STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[ i - 1 ] )) );
     }
 
-    e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
+    e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
     STKUNIT_ASSERT( !bulk.is_valid(e) );
   }
 }
@@ -151,7 +151,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
-    Entity element = bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nLocalElement * p_rank ] );
+    Entity element = bulk.get_entity( stk::topology::ELEMENT_RANK , mesh.m_element_ids[ nLocalElement * p_rank ] );
     Entity const *element_nodes = bulk.begin_nodes(element);
     Entity node0 = element_nodes[0];
     Entity node1 = element_nodes[1];
@@ -210,7 +210,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity node = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
+    Entity node = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
     STKUNIT_ASSERT( bulk.is_valid(node) );
     STKUNIT_ASSERT_NE( p_rank , bulk.parallel_owner_rank(node) );
@@ -247,9 +247,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
 
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    assert_is_destroyed(bulk, bulk.get_entity(MetaData::NODE_RANK, mesh.m_node_ids[nNotOwned] ) );
-    assert_is_destroyed(bulk, bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[0] ) );
-    assert_is_destroyed(bulk, bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[1] ) );
+    assert_is_destroyed(bulk, bulk.get_entity(stk::topology::NODE_RANK, mesh.m_node_ids[nNotOwned] ) );
+    assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[0] ) );
+    assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
     STKUNIT_ASSERT( bulk.comm_list().empty() );
@@ -272,8 +272,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();
     const unsigned nNotOwned = nPerProc * p_rank ;
 
-    Entity node_owned = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nOwned ] );
-    Entity node_not_owned = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
+    Entity node_owned = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nOwned ] );
+    Entity node_not_owned = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
     STKUNIT_ASSERT( bulk.is_valid(node_owned) );
     STKUNIT_ASSERT( bulk.is_valid(node_not_owned));
@@ -316,9 +316,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     // has been transferred to this process.
 
     STKUNIT_ASSERT_EQUAL( p_rank , bulk.parallel_owner_rank(node_not_owned) );
-    assert_is_destroyed(bulk, bulk.get_entity(MetaData::NODE_RANK, mesh.m_node_ids[ nOwned ] ) );
-    assert_is_destroyed(bulk, bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[0] ) );
-    assert_is_destroyed(bulk, bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[1] ) );
+    assert_is_destroyed(bulk, bulk.get_entity(stk::topology::NODE_RANK, mesh.m_node_ids[ nOwned ] ) );
+    assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[0] ) );
+    assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
     STKUNIT_ASSERT( bulk.comm_list().empty() );

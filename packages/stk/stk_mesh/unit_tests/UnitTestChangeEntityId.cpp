@@ -43,11 +43,11 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
 
   mesh.modification_begin();
 
-  Entity elem                 = mesh.declare_entity(MetaData::ELEMENT_RANK, p_rank + 1 /*id*/);
+  Entity elem                 = mesh.declare_entity(stk::topology::ELEMENT_RANK, p_rank + 1 /*id*/);
 
-  Entity node1_local_chg_id   = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 1 /*id*/);
-  Entity node2_shared_chg_id  = mesh.declare_entity(MetaData::NODE_RANK,            2 /*id*/);
-  Entity node3                = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 3 /*id*/);
+  Entity node1_local_chg_id   = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 1 /*id*/);
+  Entity node2_shared_chg_id  = mesh.declare_entity(stk::topology::NODE_RANK,            2 /*id*/);
+  Entity node3                = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 3 /*id*/);
 
   mesh.declare_relation(elem, node1_local_chg_id , 1 /*relation ordinal*/);
   mesh.declare_relation(elem, node2_shared_chg_id, 2 /*relation ordinal*/);
@@ -101,7 +101,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
 
   mesh.modification_begin();
 
-  const BucketVector & node_buckets = mesh.buckets(MetaData::NODE_RANK);
+  const BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
 
   BOOST_FOREACH(Bucket * b, node_buckets) {
     int* nodal_field = mesh.field_data( simple_nodal_field, *b );
@@ -110,7 +110,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
     }
   }
 
-  const BucketVector & elem_buckets = mesh.buckets(MetaData::ELEMENT_RANK);
+  const BucketVector & elem_buckets = mesh.buckets(stk::topology::ELEMENT_RANK);
 
   std::vector<EntityId> old_ids;
   old_ids.reserve(num_elems);

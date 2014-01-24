@@ -58,7 +58,7 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   std::vector<Entity> all_entities;
 
   // assign ids, quads, nodes, then shells
@@ -101,7 +101,7 @@ void GridFixture::generate_grid()
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity node = m_bulk_data.declare_entity(MetaData::NODE_RANK, node_id, no_parts);
+        Entity node = m_bulk_data.declare_entity(stk::topology::NODE_RANK, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

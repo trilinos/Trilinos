@@ -32,7 +32,7 @@ int element_node_stencil( EntityRank from_type , EntityRank to_type , unsigned i
   int ordinal = -1 ;
 
   if ( element_rank == from_type &&
-       MetaData::NODE_RANK == to_type &&
+       stk::topology::NODE_RANK == to_type &&
        identifier < number_node ) {
     ordinal = static_cast<int>(identifier);
   }

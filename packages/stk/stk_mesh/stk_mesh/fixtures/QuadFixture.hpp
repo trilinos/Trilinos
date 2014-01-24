@@ -75,7 +75,7 @@ class QuadFixture
    * this node.
    */
   Entity node( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( MetaData::NODE_RANK , node_id(x, y) ); }
+  { return m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id(x, y) ); }
 
   /**
    * Thinking in terms of rows and columns of elements, get the element in
@@ -83,7 +83,7 @@ class QuadFixture
    * this element.
    */
   Entity elem( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( MetaData::ELEMENT_RANK, elem_id(x, y)); }
+  { return m_bulk_data.get_entity( stk::topology::ELEMENT_RANK, elem_id(x, y)); }
 
   /**
    * Thinking in terms of a 2D grid of nodes, compute the (x, y) position

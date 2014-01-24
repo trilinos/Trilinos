@@ -179,7 +179,7 @@ void MetaData::require_valid_entity_rank( EntityRank rank ) const
 {
   ThrowRequireMsg(check_rank(rank),
       "entity_rank " << rank << " >= " << m_entity_rank_names.size() );
-  ThrowRequireMsg( !(rank == MetaData::FACE_RANK && spatial_dimension() == 2),
+  ThrowRequireMsg( !(rank == stk::topology::FACE_RANK && spatial_dimension() == 2),
                    "Should not use FACE_RANK in 2d");
 }
 
@@ -243,9 +243,9 @@ void MetaData::initialize(size_t spatial_dimension, const std::vector<std::strin
     m_entity_rank_names = stk::mesh::entity_rank_names();
   }
   else {
-    ThrowErrorMsgIf(rank_names.size() < ELEMENT_RANK+1,
+    ThrowErrorMsgIf(rank_names.size() < stk::topology::ELEMENT_RANK+1,
                     "Entity rank name vector must name every rank, rank_names.size() = " <<
-                    rank_names.size() << ", need " << ELEMENT_RANK+1 << " names");
+                    rank_names.size() << ", need " << stk::topology::ELEMENT_RANK+1 << " names");
     m_entity_rank_names = rank_names;
   }
 
@@ -479,14 +479,14 @@ MetaData::~MetaData()
 void MetaData::internal_declare_known_cell_topology_parts()
 {
   // Load up appropriate standard cell topologies.
-  register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Node >()), NODE_RANK);
+  register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Node >()), stk::topology::NODE_RANK);
 
   if (m_spatial_dimension == 1) {
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), ELEMENT_RANK); // ???
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), ELEMENT_RANK); // ???
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), stk::topology::ELEMENT_RANK); // ???
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), stk::topology::ELEMENT_RANK); // ???
 
   }
 
@@ -495,27 +495,27 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), side_rank());
     register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), side_rank());
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<4> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellLine<2> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellLine<2> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()), stk::topology::ELEMENT_RANK);
   }
 
   else if (m_spatial_dimension == 3) {
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), EDGE_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), EDGE_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<2> >()), stk::topology::EDGE_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Line<3> >()), stk::topology::EDGE_RANK);
 
     register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()), side_rank());
     register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Triangle<6> >()), side_rank());
@@ -525,34 +525,34 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<8> >()), side_rank());
     register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Quadrilateral<9> >()), side_rank());
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Particle >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<2> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Beam<3> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<10> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<11> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Tetrahedron<8> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<13> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<14> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<5> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<13> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Pyramid<14> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<6> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<15> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Wedge<18> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::Hexahedron<27> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()), stk::topology::ELEMENT_RANK);
 
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()), ELEMENT_RANK);
-    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()), ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<4> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<8> >()), stk::topology::ELEMENT_RANK);
+    register_cell_topology(CellTopology(shards::getCellTopologyData< shards::ShellQuadrilateral<9> >()), stk::topology::ELEMENT_RANK);
   }
 }
 
@@ -965,7 +965,7 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
   if (t.defined_on_spatial_dimension(spatial_dimension))
     return t;
 
-  return topology::INVALID_TOPOLOGY;
+  return stk::topology::INVALID_TOPOLOGY;
 }
 
 CellTopology get_cell_topology(stk::topology t)

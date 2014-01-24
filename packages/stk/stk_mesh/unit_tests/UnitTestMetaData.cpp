@@ -116,14 +116,14 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    bulk.declare_entity( MetaData::NODE_RANK , new_id+1 , add_part );
+    bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity elem  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
+  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part );
 
   //new_id = size * (++id_base) + rank;
-  // stk::mesh::Entity elem2  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
+  // stk::mesh::Entity elem2  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part );
 
   stk::mesh::impl::EntityRepository &e = bulk.get_entity_repository();
 

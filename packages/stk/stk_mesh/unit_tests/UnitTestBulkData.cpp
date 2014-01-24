@@ -48,7 +48,7 @@ using stk::mesh::fixtures::BoxFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 void donate_one_element( BulkData & mesh , bool aura )
 {
@@ -223,7 +223,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
   STKUNIT_ASSERT( bulk.modification_end() );
 
   // Catch not-ok-to-modify
-  STKUNIT_ASSERT_THROW( bulk.declare_entity( MetaData::NODE_RANK , id + 1 , no_parts ),
+  STKUNIT_ASSERT_THROW( bulk.declare_entity( stk::topology::NODE_RANK , id + 1 , no_parts ),
                         std::logic_error );
 }
 
@@ -262,7 +262,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   // Declare just those entities in my range of ids:
 
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    bulk.declare_entity( MetaData::NODE_RANK , ids[i] , no_parts );
+    bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
   }
 
   STKUNIT_ASSERT( bulk.modification_end() );
@@ -270,7 +270,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   // Verify that I only have entities in my range:
 
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
-    Entity e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
+    Entity e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
     if ( id_begin <= i && i < id_end ) {
       STKUNIT_ASSERT( bulk.is_valid(e) );
     }
@@ -288,7 +288,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   STKUNIT_ASSERT( bulk.modification_end() );
 
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
-    Entity e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
+    Entity e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
     if ( id_begin <= i && i < id_end ) {
       STKUNIT_ASSERT( bulk.is_valid(e) );
     }
@@ -307,28 +307,28 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
     const unsigned id_give = id_end - 2 ;
     const unsigned id_get  = ( id_begin + id_total - 2 ) % id_total ;
 
-    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give] )) );
-    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] )) );
-    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get] )) );
-    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] )) );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_give] )) );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_give+1] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] )) );
 
     change.resize(2);
-    change[0].first = bulk.get_entity( MetaData::NODE_RANK , ids[id_give] );
+    change[0].first = bulk.get_entity( stk::topology::NODE_RANK , ids[id_give] );
     change[0].second = p_give ;
-    change[1].first = bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] );
+    change[1].first = bulk.get_entity( stk::topology::NODE_RANK , ids[id_give+1] );
     change[1].second = p_give ;
 
     STKUNIT_ASSERT( bulk.modification_begin() );
     bulk.change_entity_owner( change );
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get] )) );
-    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] )) );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] )) );
+    STKUNIT_ASSERT( bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] )) );
 
     // Entities given away are destroyed until the next modification cycle
     {
-      Entity const e0 = bulk.get_entity( MetaData::NODE_RANK , ids[id_give] );
-      Entity const e1 = bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] );
+      Entity const e0 = bulk.get_entity( stk::topology::NODE_RANK , ids[id_give] );
+      Entity const e1 = bulk.get_entity( stk::topology::NODE_RANK , ids[id_give+1] );
       STKUNIT_ASSERT( !bulk.is_valid(e0) );
       STKUNIT_ASSERT( !bulk.is_valid(e1) );
     }
@@ -336,8 +336,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
     STKUNIT_ASSERT( bulk.modification_begin() );
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give] )) );
-    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_give] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_give+1] )) );
   }
 }
 
@@ -380,7 +380,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
     // Declare just those entities in my range of ids:
 
     for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-      bulk.declare_entity( MetaData::NODE_RANK , ids[i] , no_parts );
+      bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
     }
 
     STKUNIT_ASSERT( bulk.modification_end() );
@@ -389,8 +389,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 
     const unsigned id_get  = ( id_begin + id_total - 2 ) % id_total ;
 
-    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get] )) );
-    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] )) );
+    STKUNIT_ASSERT( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] )) );
 
     STKUNIT_ASSERT( bulk.modification_begin() );
 
@@ -399,10 +399,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
       // which will be an error.  Must create an owned entity
       // to use them, thus they become shared.
 
-      Entity e0 = bulk.declare_entity( MetaData::NODE_RANK , ids[ id_get ] , no_parts );
-      Entity e1 = bulk.declare_entity( MetaData::NODE_RANK , ids[ id_get + 1 ] , no_parts );
+      Entity e0 = bulk.declare_entity( stk::topology::NODE_RANK , ids[ id_get ] , no_parts );
+      Entity e1 = bulk.declare_entity( stk::topology::NODE_RANK , ids[ id_get + 1 ] , no_parts );
 
-      Entity eU = bulk.declare_entity( MetaData::EDGE_RANK , 1 , no_parts );
+      Entity eU = bulk.declare_entity( stk::topology::EDGE_RANK , 1 , no_parts );
 
       bulk.declare_relation( eU , e0 , 0 );
       bulk.declare_relation( eU , e1 , 1 );
@@ -411,8 +411,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
     bulk.modification_end();
 
     if ( 1 == p_rank ) {
-      Entity e0 = bulk.get_entity( MetaData::NODE_RANK , ids[id_get] );
-      Entity e1 = bulk.get_entity( MetaData::NODE_RANK , ids[id_get+1] );
+      Entity e0 = bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] );
+      Entity e1 = bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] );
       STKUNIT_ASSERT( bulk.is_valid(e0) );
       STKUNIT_ASSERT( bulk.is_valid(e1) );
       STKUNIT_ASSERT( 0 == bulk.parallel_owner_rank(e0) );
@@ -424,8 +424,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
     bulk.modification_begin();
 
     if ( 0 == p_rank ) {
-      bulk.declare_entity( MetaData::NODE_RANK , ids[ id_get ] , no_parts );
-      bulk.declare_entity( MetaData::NODE_RANK , ids[ id_get + 1 ] , no_parts );
+      bulk.declare_entity( stk::topology::NODE_RANK , ids[ id_get ] , no_parts );
+      bulk.declare_entity( stk::topology::NODE_RANK , ids[ id_get + 1 ] , no_parts );
     }
 
     STKUNIT_ASSERT_THROW( bulk.modification_end() , std::runtime_error );
@@ -447,16 +447,16 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkDataRankBeginEnd)
   MetaData meta(spatial_dim, stk::mesh::entity_rank_names());
   BulkData bulk(meta, pm);
   bulk.modification_begin();
-  BulkData::const_entity_iterator iter = bulk.begin_entities(MetaData::NODE_RANK);
-  BulkData::const_entity_iterator end = bulk.end_entities(MetaData::NODE_RANK);
+  BulkData::const_entity_iterator iter = bulk.begin_entities(stk::topology::NODE_RANK);
+  BulkData::const_entity_iterator end = bulk.end_entities(stk::topology::NODE_RANK);
 
   STKUNIT_ASSERT(iter == end);
 
   EntityId node_id = 1;
-  bulk.declare_entity(MetaData::NODE_RANK, node_id);
+  bulk.declare_entity(stk::topology::NODE_RANK, node_id);
 
-  iter = bulk.begin_entities(MetaData::NODE_RANK);
-  end = bulk.end_entities(MetaData::NODE_RANK);
+  iter = bulk.begin_entities(stk::topology::NODE_RANK);
+  end = bulk.end_entities(stk::topology::NODE_RANK);
 
   //insist that there is 1 node:
   STKUNIT_ASSERT(iter != end);
@@ -464,41 +464,41 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkDataRankBeginEnd)
 
   //now declare an edge...
   EntityId edge_id = 1;
-  bulk.declare_entity(MetaData::EDGE_RANK, edge_id);
+  bulk.declare_entity(stk::topology::EDGE_RANK, edge_id);
 
-  iter = bulk.begin_entities(MetaData::NODE_RANK);
-  end = bulk.end_entities(MetaData::NODE_RANK);
+  iter = bulk.begin_entities(stk::topology::NODE_RANK);
+  end = bulk.end_entities(stk::topology::NODE_RANK);
 
   //insist that there is still 1 node:
   STKUNIT_ASSERT(iter != end);
   STKUNIT_ASSERT(std::distance(iter,end) == 1u);
 
-  iter = bulk.begin_entities(MetaData::EDGE_RANK);
-  end = bulk.end_entities(MetaData::EDGE_RANK);
+  iter = bulk.begin_entities(stk::topology::EDGE_RANK);
+  end = bulk.end_entities(stk::topology::EDGE_RANK);
 
   //insist that there is 1 edge:
   STKUNIT_ASSERT(iter != end);
   STKUNIT_ASSERT(std::distance(iter,end) == 1u);
 
   node_id = 2;
-  bulk.declare_entity(MetaData::NODE_RANK, node_id);
+  bulk.declare_entity(stk::topology::NODE_RANK, node_id);
 
-  iter = bulk.begin_entities(MetaData::NODE_RANK);
-  end = bulk.end_entities(MetaData::NODE_RANK);
+  iter = bulk.begin_entities(stk::topology::NODE_RANK);
+  end = bulk.end_entities(stk::topology::NODE_RANK);
 
   //insist that there are 2 nodes:
   STKUNIT_ASSERT(iter != end);
   STKUNIT_ASSERT(std::distance(iter,end) == 2u);
 
-  iter = bulk.begin_entities(MetaData::EDGE_RANK);
-  end = bulk.end_entities(MetaData::EDGE_RANK);
+  iter = bulk.begin_entities(stk::topology::EDGE_RANK);
+  end = bulk.end_entities(stk::topology::EDGE_RANK);
 
   //insist that there is still 1 edge:
   STKUNIT_ASSERT(iter != end);
   STKUNIT_ASSERT(std::distance(iter,end) == 1u);
 
-  iter = bulk.begin_entities(MetaData::FACE_RANK);
-  end = bulk.end_entities(MetaData::FACE_RANK);
+  iter = bulk.begin_entities(stk::topology::FACE_RANK);
+  end = bulk.end_entities(stk::topology::FACE_RANK);
 
   //insist that there are no faces:
   STKUNIT_ASSERT(iter == end);
@@ -540,12 +540,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     const Selector select_all = ring_mesh.m_meta_data.universal_part() ;
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-    STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
-    STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
+    STKUNIT_ASSERT_EQUAL( local_count[stk::topology::NODE_RANK] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[stk::topology::ELEMENT_RANK] , nLocalElement );
 
     count_entities( select_all , ring_mesh.m_bulk_data , local_count );
-    STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
-    STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
+    STKUNIT_ASSERT_EQUAL( local_count[stk::topology::NODE_RANK] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[stk::topology::ELEMENT_RANK] , nLocalElement );
 
     if ( 1 < p_size ) {
       // Shift ring by two nodes and elements.
@@ -553,12 +553,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       stk::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
 
       count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement );
 
       count_entities( select_all , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement );
     }
   }
 
@@ -583,29 +583,29 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-    STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
-    STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
+    STKUNIT_ASSERT_EQUAL( local_count[stk::topology::NODE_RANK] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[stk::topology::ELEMENT_RANK] , nLocalElement );
 
     count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     const unsigned n_extra = 1 < p_size ? 2 : 0 ;
-    STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode + n_extra );
-    STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement + n_extra );
+    STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode + n_extra );
+    STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement + n_extra );
 
     if ( 1 < p_size ) {
       stk::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
 
       count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nPerProc );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nPerProc );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nPerProc );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nPerProc );
 
       count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement );
 
       // All of my ghosts were disrupted and therefore deleted:
       count_entities( select_all , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT_EQUAL( nLocalElement , local_count[MetaData::ELEMENT_RANK] );
-      STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[MetaData::NODE_RANK] );
+      STKUNIT_ASSERT_EQUAL( nLocalElement , local_count[stk::topology::ELEMENT_RANK] );
+      STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[stk::topology::NODE_RANK] );
     }
   }
   //------------------------------
@@ -629,29 +629,29 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-    STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode );
-    STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement );
+    STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode );
+    STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement );
 
     count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     const unsigned n_extra = 1 < p_size ? 2 : 0 ;
-    STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode + n_extra );
-    STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement + n_extra );
+    STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode + n_extra );
+    STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement + n_extra );
 
     if ( 1 < p_size ) {
       stk::unit_test::test_shift_ring( ring_mesh, true /* with aura */ );
 
       count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nPerProc );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nPerProc );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nPerProc );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nPerProc );
 
       count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement );
 
       // All of my ghosts were regenerated:
       count_entities( select_all , ring_mesh.m_bulk_data , local_count );
-      STKUNIT_ASSERT( local_count[MetaData::NODE_RANK] == nLocalNode + n_extra );
-      STKUNIT_ASSERT( local_count[MetaData::ELEMENT_RANK] == nLocalElement + n_extra );
+      STKUNIT_ASSERT( local_count[stk::topology::NODE_RANK] == nLocalNode + n_extra );
+      STKUNIT_ASSERT( local_count[stk::topology::ELEMENT_RANK] == nLocalElement + n_extra );
     }
   }
   //------------------------------
@@ -674,7 +674,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     if ( 0 == p_rank ) {
       change.resize(4);
       // Error to change to bad owner:
-      change[0].first = ring_mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[1] );
+      change[0].first = ring_mesh.m_bulk_data.get_entity( stk::topology::NODE_RANK , ring_mesh.m_node_ids[1] );
       change[0].second = p_size ;
       // Error to change a ghost:
       for ( stk::mesh::EntityCommListInfoVector::const_iterator
@@ -687,7 +687,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       }
       change[1].second = p_rank ;
       // Error to change to multiple owners:
-      change[2].first = ring_mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[1] );
+      change[2].first = ring_mesh.m_bulk_data.get_entity( stk::topology::NODE_RANK , ring_mesh.m_node_ids[1] );
       change[2].second = ( p_rank + 1 ) % p_size ;
       change[3].first = change[2].first ;
       change[3].second = ( p_rank + 2 ) % p_size ;
@@ -723,7 +723,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 
     if ( p_rank + 1 == p_size ) {
       EntityProc entry ;
-      entry.first = ring_mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[0] );
+      entry.first = ring_mesh.m_bulk_data.get_entity( stk::topology::NODE_RANK , ring_mesh.m_node_ids[0] );
       entry.second = 0 ;
       STKUNIT_ASSERT_EQUAL( p_rank , bulk.parallel_owner_rank(entry.first) );
       change.push_back( entry );
@@ -738,18 +738,18 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
                             p_rank + 1 == p_size ? nPerProc - 1 :
                                                    nPerProc );
 
-    STKUNIT_ASSERT_EQUAL( n_node , local_count[MetaData::NODE_RANK] );
-    STKUNIT_ASSERT_EQUAL( static_cast<unsigned>(nPerProc) , local_count[MetaData::ELEMENT_RANK] );
+    STKUNIT_ASSERT_EQUAL( n_node , local_count[stk::topology::NODE_RANK] );
+    STKUNIT_ASSERT_EQUAL( static_cast<unsigned>(nPerProc) , local_count[stk::topology::ELEMENT_RANK] );
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
-    STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[MetaData::NODE_RANK] );
-    STKUNIT_ASSERT_EQUAL( nLocalElement , local_count[MetaData::ELEMENT_RANK] );
+    STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[stk::topology::NODE_RANK] );
+    STKUNIT_ASSERT_EQUAL( nLocalElement , local_count[stk::topology::ELEMENT_RANK] );
 
     // Moving the node disrupted ghosting on first and last process
     count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     const unsigned n_extra = p_rank + 1 == p_size || p_rank == 0 ? 1 : 2 ;
-    STKUNIT_ASSERT_EQUAL( nLocalNode + n_extra , local_count[MetaData::NODE_RANK] );
-    STKUNIT_ASSERT_EQUAL( nLocalElement + n_extra , local_count[MetaData::ELEMENT_RANK] );
+    STKUNIT_ASSERT_EQUAL( nLocalNode + n_extra , local_count[stk::topology::NODE_RANK] );
+    STKUNIT_ASSERT_EQUAL( nLocalElement + n_extra , local_count[stk::topology::ELEMENT_RANK] );
   }
 }
 
@@ -886,7 +886,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 
   // grab the first element
   EntityVector elements;
-  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
   stk::mesh::get_entities( ring_mesh.m_bulk_data, element_rank, elements );
   stk::mesh::Entity element = elements.front();
 
@@ -947,7 +947,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
     stk::mesh::PartVector empty_parts;
 
     // Create element
-    const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+    const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
     Entity elem = mesh.declare_entity(elem_rank,
                                         p_rank+1, //elem_id
                                         empty_parts);
@@ -1024,8 +1024,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
-  const EntityRank edge_rank = MetaData::EDGE_RANK;
-  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const EntityRank edge_rank = stk::topology::EDGE_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
   // Bail if we have fewer than 3 procs
   if (p_size < 3) {
@@ -1203,14 +1203,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
-  const EntityRank family_tree_rank = MetaData::ELEMENT_RANK + 1;
+  const EntityRank family_tree_rank = stk::topology::ELEMENT_RANK + 1;
   const EntityId my_family_tree_id = p_rank+1;
 
   // We're just going to add everything to the universal part
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   Entity elem = mesh.declare_entity(elem_rank,
                                     p_rank+1, //elem_id
                                     empty_parts);
@@ -1311,7 +1311,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   Entity elem = mesh.declare_entity(elem_rank,
                                       p_rank+1, //elem_id
                                       empty_parts);
@@ -1344,12 +1344,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
   mesh.modification_begin();
   if (p_rank == 1)
     {
-      Entity this_elem = mesh.get_entity(MetaData::ELEMENT_RANK, 2);
+      Entity this_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
       if (!mesh.destroy_entity(this_elem)) exit(2);
     }
   if (p_rank == 2)
     {
-      Entity this_elem = mesh.get_entity(MetaData::ELEMENT_RANK, 3);
+      Entity this_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 3);
       if (!mesh.destroy_entity(this_elem)) exit(2);
     }
   mesh.modification_end();
@@ -1375,8 +1375,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  const EntityRank node_rank = MetaData::NODE_RANK;
-  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const EntityRank node_rank = stk::topology::NODE_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
   stk::mesh::Part& extra_node_part = meta_data.declare_part("extra_node_part", node_rank);
   meta_data.commit();
@@ -1476,9 +1476,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testParallelSideCreation)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  const EntityRank node_rank = MetaData::NODE_RANK;
-  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
-  const EntityRank side_rank = MetaData::EDGE_RANK;
+  const EntityRank node_rank = stk::topology::NODE_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+  const EntityRank side_rank = stk::topology::EDGE_RANK;
 
   meta_data.commit();
 
@@ -1879,14 +1879,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
 
     if (p_rank == 0)
       {
-        stk::mesh::Entity node_5 = bulk.get_entity(MetaData::NODE_RANK, 5);
+        stk::mesh::Entity node_5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
         STKUNIT_EXPECT_TRUE(bulk.is_valid(node_5));
         nodes_to_ghost.push_back( stk::mesh::EntityProc(node_5, 3) );
       }
 
     if (p_rank == 3)
       {
-        stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
+        stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 9);
         STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
         nodes_to_ghost.push_back( stk::mesh::EntityProc(node, 0) );
       }
@@ -1899,11 +1899,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
 
     if (p_rank == 0)
       {
-        stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
+        stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 9);
         STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
-        stk::mesh::Entity node1 = bulk.get_entity(MetaData::NODE_RANK, 1);
+        stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
         STKUNIT_EXPECT_TRUE(bulk.is_valid(node1));
-        stk::mesh::Entity elem = bulk.get_entity(MetaData::ELEMENT_RANK, 1);
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEMENT_RANK, 1);
         STKUNIT_EXPECT_TRUE(bulk.is_valid(elem));
         bulk.destroy_relation( elem, node1, 0);
         bulk.declare_relation( elem , node , 0 );

@@ -381,14 +381,14 @@ struct topology
 //increment and decrement rank_t
 //***************************************************************************
 BOOST_GPU_ENABLED inline
-topology::rank_t operator++(topology::rank_t &r)
+topology::rank_t operator++(stk::topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r+1);
   return r;
 }
 
 BOOST_GPU_ENABLED inline
-topology::rank_t operator++(topology::rank_t &r,int)
+topology::rank_t operator++(stk::topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
   r = static_cast<topology::rank_t>(r+1);
@@ -396,14 +396,14 @@ topology::rank_t operator++(topology::rank_t &r,int)
 }
 
 BOOST_GPU_ENABLED inline
-topology::rank_t operator--(topology::rank_t &r)
+topology::rank_t operator--(stk::topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r-1);
   return r;
 }
 
 BOOST_GPU_ENABLED inline
-topology::rank_t operator--(topology::rank_t &r,int)
+topology::rank_t operator--(stk::topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
   r = static_cast<topology::rank_t>(r-1);
@@ -414,14 +414,14 @@ topology::rank_t operator--(topology::rank_t &r,int)
 //increment and decrement topology_t
 //***************************************************************************
 BOOST_GPU_ENABLED inline
-topology::topology_t operator++(topology::topology_t &t)
+topology::topology_t operator++(stk::topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t+1);
   return t;
 }
 
 BOOST_GPU_ENABLED inline
-topology::topology_t operator++(topology::topology_t &t,int)
+topology::topology_t operator++(stk::topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
   t = static_cast<topology::topology_t>(t+1);
@@ -429,14 +429,14 @@ topology::topology_t operator++(topology::topology_t &t,int)
 }
 
 BOOST_GPU_ENABLED inline
-topology::topology_t operator--(topology::topology_t &t)
+topology::topology_t operator--(stk::topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t-1);
   return t;
 }
 
 BOOST_GPU_ENABLED inline
-topology::topology_t operator--(topology::topology_t &t,int)
+topology::topology_t operator--(stk::topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
   t = static_cast<topology::topology_t>(t-1);

@@ -83,7 +83,7 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
   : spatial_dimension( 3 )
   , meta( spatial_dimension )
   , bulk( meta, pm, 100 )
-  , element_rank( MetaData::ELEMENT_RANK )
+  , element_rank( stk::topology::ELEMENT_RANK )
   , side_rank( meta.side_rank())
   , generic_element_part( meta.declare_part("another part", element_rank ) )
   , element_tet_part( stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" ) )
@@ -101,7 +101,7 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
 
 namespace {
 
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
 {

@@ -16,10 +16,10 @@ using stk::mesh::MetaData;
 
 namespace {
 
-static const stk::mesh::EntityRank NODE_RANK =   MetaData::NODE_RANK;
-static const stk::mesh::EntityRank EDGE_RANK =   MetaData::EDGE_RANK;
-static const stk::mesh::EntityRank FACE_RANK =   MetaData::FACE_RANK;
-static const stk::mesh::EntityRank ELEMENT_RANK =   MetaData::ELEMENT_RANK;
+static const stk::mesh::EntityRank NODE_RANK =   stk::topology::NODE_RANK;
+static const stk::mesh::EntityRank EDGE_RANK =   stk::topology::EDGE_RANK;
+static const stk::mesh::EntityRank FACE_RANK =   stk::topology::FACE_RANK;
+static const stk::mesh::EntityRank ELEMENT_RANK =   stk::topology::ELEMENT_RANK;
 static const stk::mesh::EntityRank INVALID_RANK =   MetaData::INVALID_RANK;
 
 }
@@ -105,7 +105,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, get_cell_topology_simple )
   fem_meta.initialize(spatial_dimension);
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.get_cell_topology_root_part(hex_top);
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   STKUNIT_EXPECT_TRUE( stk::mesh::is_auto_declared_part(hex_part) );
   STKUNIT_EXPECT_TRUE( !stk::mesh::is_auto_declared_part(A) );
   fem_meta.declare_part_subset( hex_part, A );
@@ -207,7 +207,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_1 )
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
 
   fem_meta.declare_part_subset(A, HR);
   const stk::mesh::PartVector & HR_supersets = HR.supersets();
@@ -238,8 +238,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_2b )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
@@ -260,7 +260,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_3a )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
@@ -281,7 +281,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_3b )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & D = fem_meta.declare_part("Part D", fem_meta.side_rank() );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
@@ -308,8 +308,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_3c )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & C = fem_meta.declare_part("Part C", fem_meta.side_rank() );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
@@ -337,8 +337,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_4a )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
@@ -361,8 +361,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_4b )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
   stk::mesh::Part & C = fem_meta.declare_part("Part C", fem_meta.side_rank() );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
@@ -387,8 +387,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_5a )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
@@ -409,9 +409,9 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_5b )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & E = fem_meta.declare_part("Part E", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & E = fem_meta.declare_part("Part E", stk::topology::ELEMENT_RANK );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
@@ -435,10 +435,10 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_test_5c )
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
 
-  stk::mesh::Part & A = fem_meta.declare_part("Part A", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & B = fem_meta.declare_part("Part B", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & F = fem_meta.declare_part("Part F", MetaData::ELEMENT_RANK );
-  stk::mesh::Part & E = fem_meta.declare_part("Part E", MetaData::ELEMENT_RANK );
+  stk::mesh::Part & A = fem_meta.declare_part("Part A", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & B = fem_meta.declare_part("Part B", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & F = fem_meta.declare_part("Part F", stk::topology::ELEMENT_RANK );
+  stk::mesh::Part & E = fem_meta.declare_part("Part E", stk::topology::ELEMENT_RANK );
 
   stk::mesh::CellTopology HR_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & HR = fem_meta.get_cell_topology_root_part(HR_top);
@@ -459,7 +459,7 @@ STKUNIT_UNIT_TEST( MetaData, register_cell_topology_duplicate )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 2;
   fem_meta.initialize(spatial_dimension);
-  const stk::mesh::EntityRank hex_rank = MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank hex_rank = stk::topology::ELEMENT_RANK;
 
   fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), hex_rank );
   STKUNIT_ASSERT_NO_THROW( fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), hex_rank ) );
@@ -470,8 +470,8 @@ STKUNIT_UNIT_TEST( MetaData, register_cell_topology_duplicate_with_different_ran
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 2;
   fem_meta.initialize(spatial_dimension);
-  const stk::mesh::EntityRank hex_rank = MetaData::ELEMENT_RANK;
-  const stk::mesh::EntityRank bad_rank = MetaData::EDGE_RANK;
+  const stk::mesh::EntityRank hex_rank = stk::topology::ELEMENT_RANK;
+  const stk::mesh::EntityRank bad_rank = stk::topology::EDGE_RANK;
 
   fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), hex_rank );
   STKUNIT_ASSERT_THROW( fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), bad_rank ), std::runtime_error );

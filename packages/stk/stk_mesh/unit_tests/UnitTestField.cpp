@@ -167,25 +167,25 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   meta_data.commit();
 
   // SCALAR FIELDS:
-  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::NODE_RANK), 1u );
-  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f0.max_size(MetaData::ELEMENT_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::NODE_RANK), 1u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::NODE_RANK), 10u );
-  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f1.max_size(MetaData::ELEMENT_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::NODE_RANK), 10u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::NODE_RANK), 200u );
-  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f2.max_size(MetaData::ELEMENT_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::NODE_RANK), 200u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::NODE_RANK), 6000u );
-  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f3.max_size(MetaData::ELEMENT_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::NODE_RANK), 6000u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::EDGE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::FACE_RANK), 0u );
+  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::ELEMENT_RANK), 0u );
 
   STKUNIT_EXPECT_EQUAL( f0.field_array_rank(), 0u ); // Field Rank NOT entity rank
   STKUNIT_EXPECT_EQUAL( f1.field_array_rank(), 1u );
@@ -276,7 +276,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
 
   rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( stk::topology::ELEMENT_RANK, name0 );
 
-  stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   stk::mesh::Part & elements = meta_data.declare_part("Elements", elem_rank);
   stk::mesh::Part & hex8s = meta_data.declare_part("Hex8", elem_rank );
   stk::mesh::Part & tet4s = meta_data.declare_part("Tet4", elem_rank );
@@ -349,7 +349,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
 
   rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( stk::topology::ELEMENT_RANK, name0 );
 
-  stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   stk::mesh::Part & hex8s = meta_data.declare_part("Hex8", elem_rank );
 
   stk::mesh::Part & universal_part = meta_data.universal_part();

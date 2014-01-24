@@ -114,6 +114,7 @@ public:
     INVALID_RANK = stk::topology::INVALID_RANK
   };
 
+
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
   inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
   inline static MetaData & get( const PropertyBase & property ) { return property.meta_data(); }

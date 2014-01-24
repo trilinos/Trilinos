@@ -157,7 +157,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
 
   // Verify element_id 1 is owned by proc 0
   // Verify element_id 2 is owned by proc 1
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   Entity entity_1 = mesh.get_entity(element_rank, 1);
   Entity entity_2 = mesh.get_entity(element_rank ,2);
   if (p_rank <= 1) {
@@ -197,7 +197,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
   hf.m_meta.commit();
   hf.generate_mesh(parallel_distribution[p_rank]);
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   // We should always know about, and own, the element assigned to us
   Entity my_entity    = mesh.get_entity(element_rank, p_rank + 1);
@@ -274,7 +274,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
 
   // Verify that the entities and known and owned by the appropriate procs
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   Entity entity_1 = mesh.get_entity(element_rank, 1);
   Entity entity_2 = mesh.get_entity(element_rank, 2);
   Entity entity_3 = mesh.get_entity(element_rank, 3);
@@ -376,7 +376,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
 
   // Verify that the entities and known and owned by the appropriate procs
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   Entity entity_1 = mesh.get_entity(element_rank, 1);
   Entity entity_2 = mesh.get_entity(element_rank, 2);
   Entity entity_3 = mesh.get_entity(element_rank, 3);

@@ -38,7 +38,7 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
     m_meta_data( m_spatial_dimension ),
     m_bulk_data( m_meta_data, pm, 100 ),
     m_element_parts(),
-    m_element_part_extra( m_meta_data.declare_part("element_extra" , MetaData::ELEMENT_RANK ) ),
+    m_element_part_extra( m_meta_data.declare_part("element_extra" , stk::topology::ELEMENT_RANK ) ),
     m_num_element_per_proc( num_element_per_proc ),
     m_node_ids(),
     m_element_ids()
@@ -48,7 +48,7 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
     for ( unsigned i = 0 ; i < num_element_per_proc ; ++i ) {
       std::ostringstream name ;
       name << "ElementPart_" << i ;
-      m_element_parts[i] = & m_meta_data.declare_part( name.str() , MetaData::ELEMENT_RANK );
+      m_element_parts[i] = & m_meta_data.declare_part( name.str() , stk::topology::ELEMENT_RANK );
     }
   }
 }
@@ -84,9 +84,9 @@ void RingFixture::generate_mesh( )
       if ( ! m_element_parts.empty() ) {
         add_parts[0] = m_element_parts[ i % m_element_parts.size() ];
       }
-      Entity e_node_0 = m_bulk_data.declare_entity( MetaData::NODE_RANK , m_node_ids[n0] , no_parts );
-      Entity e_node_1 = m_bulk_data.declare_entity( MetaData::NODE_RANK , m_node_ids[n1] , no_parts );
-      Entity e_element   = m_bulk_data.declare_entity( MetaData::ELEMENT_RANK , m_element_ids[i] , add_parts );
+      Entity e_node_0 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , m_node_ids[n0] , no_parts );
+      Entity e_node_1 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , m_node_ids[n1] , no_parts );
+      Entity e_element   = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , m_element_ids[i] , add_parts );
       m_bulk_data.declare_relation( e_element , e_node_0 , 0 );
       m_bulk_data.declare_relation( e_element , e_node_1 , 1 );
     }

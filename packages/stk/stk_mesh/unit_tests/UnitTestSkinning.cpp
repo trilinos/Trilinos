@@ -64,7 +64,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(spatial_dimension);
   stk::mesh::BulkData bulk_data( fem_meta, MPI_COMM_WORLD );
-  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   const unsigned p_rank = bulk_data.parallel_rank();
 
@@ -129,7 +129,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
-  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   // Create a part for the skin and the shells
   stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");

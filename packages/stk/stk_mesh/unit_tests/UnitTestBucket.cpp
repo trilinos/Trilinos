@@ -54,7 +54,7 @@ typedef Field<double> ScalarFieldType;
 
 namespace {
 
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
 {
@@ -145,8 +145,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   const int spatial_dimension = 3;
 
   MetaData meta( spatial_dimension );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  const EntityRank edge_rank    = MetaData::EDGE_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
+  const EntityRank edge_rank    = stk::topology::EDGE_RANK;
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
@@ -173,7 +173,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank + 1;
-    bulk.declare_entity( MetaData::ELEMENT_RANK , new_id , add_part4 );
+    bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id , add_part4 );
     bulk.declare_entity( NODE_RANK , new_id , no_part );
   }
 
@@ -231,7 +231,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   const int spatial_dimension = 3;
   MetaData meta( spatial_dimension );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
@@ -254,7 +254,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part4 );
+    bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part4 );
   }
 
   bulk.modification_end();

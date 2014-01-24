@@ -149,7 +149,7 @@ class HexFixture
    * position. Return NULL if this process doesn't know about this node.
    */
   Entity node( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( MetaData::NODE_RANK , node_id(x, y, z) );
+    return m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id(x, y, z) );
   }
 
   /**
@@ -158,7 +158,7 @@ class HexFixture
    * element.
    */
   Entity elem( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( MetaData::ELEMENT_RANK, elem_id(x, y, z) );
+    return m_bulk_data.get_entity( stk::topology::ELEMENT_RANK, elem_id(x, y, z) );
   }
 
   /**

@@ -65,10 +65,10 @@ std::string Entity::TypeToString (Entity::ObjectTypeEnum type)
 
 #endif // SIERRA_MIGRATION
 
-BOOST_STATIC_ASSERT(( static_cast<int>(MetaData::NODE_RANK) == static_cast<int>(Entity::NODE) ));
-BOOST_STATIC_ASSERT(( static_cast<int>(MetaData::EDGE_RANK) == static_cast<int>(Entity::EDGE) ));
-BOOST_STATIC_ASSERT(( static_cast<int>(MetaData::FACE_RANK) == static_cast<int>(Entity::FACE) ));
-BOOST_STATIC_ASSERT(( static_cast<int>(MetaData::ELEMENT_RANK) == static_cast<int>(Entity::ELEMENT) ));
+BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::NODE_RANK) == static_cast<int>(Entity::NODE) ));
+BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::EDGE_RANK) == static_cast<int>(Entity::EDGE) ));
+BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::FACE_RANK) == static_cast<int>(Entity::FACE) ));
+BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::ELEMENT_RANK) == static_cast<int>(Entity::ELEMENT) ));
 
 } // namespace mesh
 } // namespace stk

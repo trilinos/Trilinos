@@ -52,7 +52,7 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   , m_block_quad_shell( declare_part<ShellQuad4>( m_fem_metaData, "block_5"))
   , m_block_tri_shell(  declare_part<ShellTriangle3>( m_fem_metaData, "block_6"))
   , m_elem_rank( stk::topology::ELEMENT_RANK )
-  , m_node_rank( MetaData::NODE_RANK )
+  , m_node_rank( topology::NODE_RANK )
   , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "coordinates" ))
   , m_centroid_field(    m_fem_metaData.declare_field< VectorFieldType >(stk::topology::ELEMENT_RANK, "centroid" ))
   , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >(stk::topology::NODE_RANK, "temperature" ))

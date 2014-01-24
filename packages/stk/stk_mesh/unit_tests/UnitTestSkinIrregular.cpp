@@ -52,7 +52,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a 2 hex-element mesh with a pocket
@@ -191,7 +191,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   fem_meta.commit();
@@ -350,7 +350,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a hex element mesh with a shell on the first side of the hex
@@ -449,7 +449,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a hex element mesh with an inverted shell
@@ -548,7 +548,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a hex element mesh with 3 shells on the first side of the hex

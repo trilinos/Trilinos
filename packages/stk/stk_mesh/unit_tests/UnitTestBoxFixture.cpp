@@ -27,7 +27,7 @@ using stk::mesh::fixtures::BoxFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = MetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 class ExposePartition : public BoxFixture
 {
@@ -59,7 +59,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   MetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
 
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   const int p_rank = bulk.parallel_rank();
   const int p_size = bulk.parallel_size();

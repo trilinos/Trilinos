@@ -95,7 +95,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
 
-  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   // make shell part
   stk::mesh::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());

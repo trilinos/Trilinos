@@ -37,8 +37,8 @@ namespace {
                                                                         \
   MetaData meta_data(spatial_dim);                                      \
   Part& unranked_part = meta_data.declare_part("unranked_part");        \
-  Part& element_rank_part = meta_data.declare_part("element_rank_part", MetaData::ELEMENT_RANK); \
-  Part& element_rank_superset_part = meta_data.declare_part("element_rank_superset_part", MetaData::ELEMENT_RANK); \
+  Part& element_rank_part = meta_data.declare_part("element_rank_part", stk::topology::ELEMENT_RANK); \
+  Part& element_rank_superset_part = meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
   Part& side_rank_part = meta_data.declare_part("side_rank_part", meta_data.side_rank()); \
   Part& unranked_superset_part = meta_data.declare_part("unranked_superset_part"); \
   meta_data.declare_part_subset(unranked_superset_part, element_rank_part); \
@@ -52,7 +52,7 @@ namespace {
   stk::mesh::PartVector parts;                                          \
   parts.push_back(&unranked_part);                                       \
   parts.push_back(&element_rank_part);                                   \
-  Entity elem = mesh.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, parts); \
+  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
   parts.push_back(&side_rank_part);                                      \
@@ -60,7 +60,7 @@ namespace {
   Entity side2 = mesh.declare_entity(meta_data.side_rank(), 2 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
-  Entity node = mesh.declare_entity(MetaData::NODE_RANK, 1 /*id*/, parts);      \
+  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
                                                                         \
   mesh.declare_relation(elem, side1,  0 /*rel id*/);                    \
   mesh.declare_relation(elem, side2,  1 /*rel id*/);                    \

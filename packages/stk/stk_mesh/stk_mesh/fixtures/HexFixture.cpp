@@ -43,7 +43,7 @@ namespace fixtures {
                 , connectivity_map
                ),
     m_elem_parts( 1, &declare_part<shards::Hexahedron<8> >(m_meta, "hex_part") ),
-    m_node_parts( 1, &m_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
+    m_node_parts( 1, &m_meta.declare_part("node_part", stk::topology::NODE_RANK ) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
 {
   typedef shards::Hexahedron<8> Hex8 ;
@@ -138,7 +138,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_node[i] );
+        stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_node[i] );
         m_bulk_data.change_entity_parts(node, m_node_parts);
 
         ThrowRequireMsg( m_bulk_data.is_valid(node),

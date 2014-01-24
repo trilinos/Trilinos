@@ -72,11 +72,11 @@ Entity declare_element( BulkData & mesh ,
 
   PartVector empty ;
 
-  const EntityRank entity_rank = MetaData::ELEMENT_RANK;
+  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
 
   Entity elem = mesh.declare_entity( entity_rank, elem_id, parts );
 
-  const EntityRank node_rank = MetaData::NODE_RANK;
+  const EntityRank node_rank = stk::topology::NODE_RANK;
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     //declare node if it doesn't already exist
