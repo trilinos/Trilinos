@@ -14,7 +14,7 @@ namespace pike {
     Scalar current;
   }
 
-  /** A decorator design pattern for transient problems that derives from the pike::BlackBoxModelEvaluator.
+  /** A pure virtual base class that extends the pike::BlackBoxModelEvaluator for transient problems.
 
       This interface allows pike to query physics models for a
       possible next time step, then coordinate with the coupled codes
