@@ -19,9 +19,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/ParameterList.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/ConnectivityMap.hpp>
+#include <stk_mesh/base/Selector.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/DatabasePurpose.hpp>
@@ -33,9 +31,10 @@ namespace Ioss {
 
 namespace stk {
   namespace mesh {
-    class Part;
     class BulkData;
-    class Selector;
+    class MetaData;
+    class FieldBase;
+    struct ConnectivityMap;
   }
   namespace io {
     static std::string CoordinateFieldName("coordinates");

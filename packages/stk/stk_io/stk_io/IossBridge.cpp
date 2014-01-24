@@ -10,14 +10,11 @@
 #include <iostream>
 #include <complex>
 
-#include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_NullEntity.h>
 
 #include <stk_util/util/tokenize.hpp>
 #include <stk_io/IossBridge.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -26,7 +23,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>
 #include <Shards_Array.hpp>
 
