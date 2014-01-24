@@ -26,7 +26,7 @@ typedef stk::search::Box<double> StkBox;
 typedef std::pair<StkBox,Ident> StkBoxWithId;
 typedef std::vector< StkBoxWithId > StkBoxVector;
 
-typedef geometry::AxisAlignedBB GtkBox;
+typedef gtk::AxisAlignedBB GtkBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 typedef std::pair<GtkBox,Ident> BoxWithId;
 typedef std::vector< BoxWithId > GtkBoxVector;

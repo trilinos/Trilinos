@@ -381,8 +381,8 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
     MPI_Comm_rank(comm, &proc_id);
     MPI_Comm_size(comm, &num_procs);
 
-    std::vector<geometry::AxisAlignedBB> rangeBoxes(local_range.size());
-    std::vector<geometry::AxisAlignedBB> domainBoxes(local_domain.size());
+    std::vector<gtk::AxisAlignedBB> rangeBoxes(local_range.size());
+    std::vector<gtk::AxisAlignedBB> domainBoxes(local_domain.size());
 
     for (size_t i=0;i<local_domain.size();i++)
     {
@@ -398,8 +398,8 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
     std::vector<int> ghost_procs;
     ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
 
-    std::vector< std::vector<geometry::AxisAlignedBB> > send_list(num_procs);
-    std::vector< std::vector<geometry::AxisAlignedBB> > recv_list(num_procs);
+    std::vector< std::vector<gtk::AxisAlignedBB> > send_list(num_procs);
+    std::vector< std::vector<gtk::AxisAlignedBB> > recv_list(num_procs);
 
     // i am sending proc 'ghost proc[i]' my range box 'ghost_indices[i]'
     // ghost_indices.size() is total number of communications that need to occur with all procs
@@ -430,7 +430,7 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
     std::vector<int> first_interaction;
     std::vector<int> last_interaction;
 
-    geometry::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
+    gtk::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
 
     typedef std::vector <std::pair<Ident,Ident> > localJunk;
     typedef std::set <std::pair<Ident,Ident> > localJunkSet;

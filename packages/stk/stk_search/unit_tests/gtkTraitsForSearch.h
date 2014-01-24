@@ -14,47 +14,47 @@ namespace boost {
 namespace geometry {
 namespace traits {
 
-// traits for ::geometry::AxisAlignedBB
-template <> struct tag< ::geometry::AxisAlignedBB > { typedef box_tag type; };
-template <> struct point_type< ::geometry::AxisAlignedBB > { typedef stk::search::Point<Real> type; };
+// traits for ::gtk::AxisAlignedBB
+template <> struct tag< ::gtk::AxisAlignedBB > { typedef box_tag type; };
+template <> struct point_type< ::gtk::AxisAlignedBB > { typedef stk::search::Point<Real> type; };
 
 template <>
-struct indexed_access< ::geometry::AxisAlignedBB, min_corner, 0 >
-{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_x_min(); } };
+struct indexed_access< ::gtk::AxisAlignedBB, min_corner, 0 >
+{  static inline Real get( ::gtk::AxisAlignedBB const& s) { return s.get_x_min(); } };
 
 template <>
-struct indexed_access< ::geometry::AxisAlignedBB, min_corner, 1 >
-{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_y_min(); } };
+struct indexed_access< ::gtk::AxisAlignedBB, min_corner, 1 >
+{  static inline Real get( ::gtk::AxisAlignedBB const& s) { return s.get_y_min(); } };
 
 template <>
-struct indexed_access< ::geometry::AxisAlignedBB, min_corner, 2 >
-{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_z_min(); } };
+struct indexed_access< ::gtk::AxisAlignedBB, min_corner, 2 >
+{  static inline Real get( ::gtk::AxisAlignedBB const& s) { return s.get_z_min(); } };
 
 template <>
-struct indexed_access< ::geometry::AxisAlignedBB, max_corner, 0 >
-{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_x_max(); } };
+struct indexed_access< ::gtk::AxisAlignedBB, max_corner, 0 >
+{  static inline Real get( ::gtk::AxisAlignedBB const& s) { return s.get_x_max(); } };
 
 template <>
-struct indexed_access< ::geometry::AxisAlignedBB, max_corner, 1 >
-{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_y_max(); } };
+struct indexed_access< ::gtk::AxisAlignedBB, max_corner, 1 >
+{  static inline Real get( ::gtk::AxisAlignedBB const& s) { return s.get_y_max(); } };
 
 template <>
-struct indexed_access< ::geometry::AxisAlignedBB, max_corner, 2 >
-{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_z_max(); } };
+struct indexed_access< ::gtk::AxisAlignedBB, max_corner, 2 >
+{  static inline Real get( ::gtk::AxisAlignedBB const& s) { return s.get_z_max(); } };
 
 }}} // namespace boost::geometry::traits
 
 namespace stk {
 namespace search {
 
-inline bool intersects(const geometry::AxisAlignedBB& a, const geometry::AxisAlignedBB& b)
+inline bool intersects(const gtk::AxisAlignedBB& a, const gtk::AxisAlignedBB& b)
 {
   return a.overlap(b);
 }
 
 // intersects: Sphere,Box
 template <typename T>
-inline bool intersects(Sphere<T> const& a, geometry::AxisAlignedBB const& b)
+inline bool intersects(Sphere<T> const& a, gtk::AxisAlignedBB const& b)
 {
   Point<T> const& ac = a.center();
   Point<T> const& bmin = Point<T>(b.get_x_min(), b.get_y_min(), b.get_z_min());
@@ -73,7 +73,7 @@ inline bool intersects(Sphere<T> const& a, geometry::AxisAlignedBB const& b)
 
 // intersects: Box,Sphere
 template <typename T>
-inline bool intersects(geometry::AxisAlignedBB const& a, Sphere<T> const& b)
+inline bool intersects(gtk::AxisAlignedBB const& a, Sphere<T> const& b)
 { return intersects(b,a); }
 
 }} // namespace stk::search
