@@ -10,9 +10,13 @@ namespace pike {
     
   public:
     
+    SolverFactory();
+
     //! Regsiter a user defined solver factory.
     void addFactory(const Teuchos::RCP<pike::SolverAbstractFactory>& f);
     
+    bool supportsType(const std::string& type) const;
+
     virtual
     Teuchos::RCP<pike::Solver> 
     buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const;
@@ -22,6 +26,8 @@ namespace pike {
     void validateParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     std::vector<Teuchos::RCP<pike::SolverAbstractFactory> > userFactories_;
+
+    std::vector<std::string> supportedTypes_;
   };
 
 }

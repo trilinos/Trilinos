@@ -4,15 +4,26 @@
 // Pike solvers
 #include "Pike_Solver_BlockGaussSeidel.hpp"
 #include "Pike_Solver_BlockJacobi.hpp"
+#include <algorithm>
 
 namespace pike {
 
-  //! Regsiter a user defined solver factory.
+  SolverFactory::SolverFactory()
+  {
+    supportedTypes_.push_back("Block Gauss Seidel");
+    supportedTypes_.push_back("Block Jacobi");
+  }
+
   void SolverFactory::addFactory(const Teuchos::RCP<pike::SolverAbstractFactory>& f)
   {
     userFactories_.push_back(f);
   }
   
+  bool SolverFactory::supportsType(const std::string& type) const
+  {
+    return (std::find(supportedTypes_.begin(),supportedTypes_.end(),type) != supportedTypes_.end());
+  }
+
   Teuchos::RCP<pike::Solver> 
   SolverFactory::buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const
   {
@@ -46,7 +57,8 @@ namespace pike {
     else {
       for (std::vector<Teuchos::RCP<pike::SolverAbstractFactory> >::const_iterator i=userFactories_.begin();
 	   i != userFactories_.end(); ++i) {
-	solver = (*i)->buildSolver(p);
+	if ( (*i)->supportsType(type) )
+	  solver = (*i)->buildSolver(p);
       }
     }
 

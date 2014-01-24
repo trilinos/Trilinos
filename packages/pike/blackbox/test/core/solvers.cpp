@@ -337,9 +337,12 @@ namespace pike_test {
 
 
     pike::SolverFactory factory;
-    Teuchos::RCP<pike_test::UserSolverFactory> userFactory = 
+    Teuchos::RCP<pike_test::UserSolverFactory> userFactory1 = 
       Teuchos::rcp(new pike_test::UserSolverFactory("My Super-Special Solver"));
-    factory.addFactory(userFactory);
+    factory.addFactory(userFactory1);
+    Teuchos::RCP<pike_test::UserSolverFactory> userFactory2 = 
+      Teuchos::rcp(new pike_test::UserSolverFactory("My Other Super-Special Solver"));
+    factory.addFactory(userFactory2);
     
     Teuchos::RCP<pike::Solver> solver = factory.buildSolver(solverParams);
     solver->registerModelEvaluator(leftWall);

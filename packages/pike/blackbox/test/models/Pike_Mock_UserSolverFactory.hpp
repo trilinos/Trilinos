@@ -12,6 +12,8 @@ namespace pike_test {
 
     UserSolverFactory(const std::string& mySolverType);
 
+    bool supportsType(const std::string& type) const;
+
     Teuchos::RCP<pike::Solver> 
     buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const;
 
