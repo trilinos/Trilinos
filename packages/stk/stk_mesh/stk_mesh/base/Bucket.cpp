@@ -418,7 +418,7 @@ bool Bucket::assert_correct() const {
 
 bool Bucket::field_data_is_allocated(const FieldBase& field) const
 {
-    return mesh().field_is_allocated_for_bucket(field, *this);
+    return field_is_allocated_for_bucket(field, *this);
 }
 
 //----------------------------------------------------------------------

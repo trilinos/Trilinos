@@ -1020,24 +1020,13 @@ public:
 
   void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
 
-  // NKC OPT, move this to a field function
-  bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) const
-  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
-
-     //return true if field-data size is not zero
-
-     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
-  }
-
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const
   {
     return m_bucket_repository.total_field_data_footprint(f, rank);
   }
 
   size_t total_field_data_footprint(EntityRank rank) const;
+
 
 
   // NKC OPT, move this to a field function
@@ -1072,7 +1061,7 @@ public:
   }
 
 
-
+  // NKC OPT, move this to a field function
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, Entity e) const
@@ -2005,8 +1994,11 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   }
   
 
-
-
+  inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
+    ThrowAssert(&b.mesh() == &f.get_mesh());
+     //return true if field and bucket have the same rank and the field is associated with the bucket
+     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
+  }
 
 
 
