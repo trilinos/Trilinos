@@ -30,8 +30,9 @@ namespace pike_test {
       // reuse a block Jacobi solver.  Need to change the "Type" to
       // "Block Jacobi" so that the parmeter list validation passes.
       p->set("Type","Block Jacobi");
-      solver = Teuchos::rcp(new pike::BlockJacobi);
-      solver->setParameterList(Teuchos::sublist(p,solverSublistName));
+      Teuchos::RCP<pike::BlockJacobi> jacobi = Teuchos::rcp(new pike::BlockJacobi);
+      jacobi->setParameterList(Teuchos::sublist(p,solverSublistName));
+      solver = jacobi;
     }
     
     return solver;

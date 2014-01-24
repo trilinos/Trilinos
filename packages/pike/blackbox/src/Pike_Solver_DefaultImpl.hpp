@@ -3,6 +3,7 @@
 
 #include "Pike_Solver.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -10,7 +11,8 @@ namespace Teuchos {
 
 namespace pike {
 
-  class SolverDefaultImpl : public pike::Solver {
+  class SolverDefaultImpl : public pike::Solver,
+			    public Teuchos::ParameterListAcceptorDefaultBase {
 
   public:
 

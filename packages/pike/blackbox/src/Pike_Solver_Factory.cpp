@@ -47,12 +47,14 @@ namespace pike {
     Teuchos::RCP<pike::Solver> solver;
 
     if (type == "Block Gauss Seidel") {
-      solver = Teuchos::rcp(new pike::BlockGaussSeidel);
-      solver->setParameterList(solverSublist);
+      Teuchos::RCP<pike::BlockGaussSeidel> gs = Teuchos::rcp(new pike::BlockGaussSeidel);
+      gs->setParameterList(solverSublist);
+      solver = gs;
     }
     else if (type == "Block Jacobi") {
-      solver = Teuchos::rcp(new pike::BlockJacobi);
-      solver->setParameterList(solverSublist);
+      Teuchos::RCP<pike::BlockJacobi> jacobi = Teuchos::rcp(new pike::BlockJacobi);
+      jacobi->setParameterList(solverSublist);
+      solver = jacobi;
     }
     else {
       for (std::vector<Teuchos::RCP<pike::SolverAbstractFactory> >::const_iterator i=userFactories_.begin();

@@ -2,7 +2,6 @@
 #define PIKE_SOLVER_HPP
 
 #include "Pike_BlackBox_config.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Pike_StatusTest.hpp"
@@ -16,8 +15,7 @@ namespace pike {
 
 
   /** \brief Pure virtual base class (strategy design pattern) for iterative solvers */
-  class Solver : public Teuchos::ParameterListAcceptorDefaultBase,
-		 public Teuchos::Describable,
+  class Solver : public Teuchos::Describable,
 		 public Teuchos::VerboseObject<pike::Solver> {
 
   public:
@@ -72,10 +70,6 @@ namespace pike {
 
     //! Returns the current number of iterations.
     virtual int getNumberOfIterations() const = 0;
-
-    virtual void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList) = 0;
-
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
     //! Register an observer with the solver.
     virtual void addObserver(const Teuchos::RCP<pike::Observer>& observer) = 0;
