@@ -1,23 +1,22 @@
-#ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
-#define PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
+#ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_DEFAULT_BASE_HPP
+#define PIKE_BLACK_BOX_MODEL_EVALUATOR_DEFAULT_BASE_HPP
 
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Pike_BlackBoxModelEvaluator_ParameterMixIn.hpp"
-#include "Pike_BlackBoxModelEvaluator_ResponseMixIn.hpp"
-#include <string>
+#include "Pike_BlackBoxModelEvaluator.hpp"
 
 namespace pike {
 
-  /** \brief Pure virtual interface to a user implemented physics model. */
-  class BlackBoxModelEvaluator : public Teuchos::Describable,
-				 public Teuchos::VerboseObject<pike::BlackBoxModelEvaluator>,
-				 public pike::ParameterMixIn,
-				 public pike::ResponseMixIn {
+  /** \brief BlackBoxModelEvaluator for application to derive from.
 
+      This object hides parameter and response mix-in classes so that
+      application codes do not have to implement the corresponding
+      methods unless desired.
+   */
+  class BlackBoxModelEvaluatorDefaultBase :
+    public pike::BlackBoxModelEvaluator {
+    
   public:
 
-    virtual ~BlackBoxModelEvaluator() {}
+    virtual ~BlackBoxModelEvaluatorDefaultBase();
 
     //! Unique name for this model evaluator.
     virtual std::string name() const = 0;
@@ -58,6 +57,20 @@ namespace pike {
      *	determining global convergence!
      */
     virtual bool isGloballyConverged() const = 0;
+
+    // Default Parameter support
+    virtual bool supportsParameter(const std::string& name) const;
+    virtual int getNumberOfParameters() const;
+    virtual std::string getParameterName(const int l) const;
+    virtual int getParameterIndex(const std::string& name) const;
+    virtual void setParameter(const int l, const Teuchos::ArrayView<const double>& p) const;
+
+    // Response support
+    virtual bool supportsResponse(const std::string& name) const;
+    virtual int getNumberOfResponses() const;
+    virtual std::string getResponseName(const int j) const;
+    virtual int getResponseIndex(const std::string& name) const;
+    virtual Teuchos::ArrayView<const double> getResponse(const int j) const;
 
   };
 

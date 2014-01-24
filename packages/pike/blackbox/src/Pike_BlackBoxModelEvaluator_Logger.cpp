@@ -71,6 +71,31 @@ namespace pike {
     return model_->getNumberOfResponses();
   }
 
+  bool ModelEvaluatorLogger::supportsParameter(const std::string& name) const
+  {
+    return model_->supportsParameter(name);
+  }
+
+  int ModelEvaluatorLogger::getNumberOfParameters() const
+  {
+    return model_->getNumberOfParameters();
+  }
+
+  std::string ModelEvaluatorLogger::getParameterName(const int l) const
+  {
+    return model_->getParameterName(l);
+  }
+
+  int ModelEvaluatorLogger::getParameterIndex(const std::string& name) const
+  {
+    return model_->getParameterIndex(name);
+  }
+
+  void ModelEvaluatorLogger::setParameter(const int l, const Teuchos::ArrayView<const double>& p) const
+  {
+    return model_->setParameter(l,p);
+  }
+
   //! Non-member ctor
   Teuchos::RCP<ModelEvaluatorLogger>
   modelEvaluatorLogger(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model)
