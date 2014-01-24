@@ -88,6 +88,8 @@ namespace MueLu {
     const unsigned   magicConstAsDefaultSize = 100;
     std::vector<int> aggList(magicConstAsDefaultSize);
 
+    bool recomputeAggregateSizes=false;
+
     for (LO iNode = 0; iNode < nRows; iNode++) {
       if (aggStat[iNode] == NodeStats::AGGREGATED)
         continue;
@@ -127,6 +129,7 @@ namespace MueLu {
               aggSizes[aggList[i]] < MaxNodesPerAggregate) {   // and if it is not too big (i.e. can have one more node)
             maxNumConnections = curNumConnections;
             selectedAggregate = aggList[i];
+            recomputeAggregateSizes=true;
           }
           curNumConnections = 0;
         }
