@@ -199,62 +199,6 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ const *fromZZ)
   return ZOLTAN_OK;
 }
 
-/*
-** For debugging purposes, print out the RCB structure
-**   Indicate how many objects you want printed out, -1 for all.
-*/
-void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
-{
-  int num_obj, i, len;
-  RCB_STRUCT *rcb;
-  struct rcb_tree r;
-  struct rcb_box *b;
-  int printed = 0;
-
-  rcb = (RCB_STRUCT *)zz->LB.Data_Structure;
-  num_obj = Zoltan_Print_Obj_List(zz, rcb->Global_IDs, rcb->Local_IDs, 
-    0, NULL, NULL, howMany);
-
-#if 0               /* TODO64 fix this */
-  struct Dot_Struct dot;
-  for (i=0; rcb->Dots && (i<num_obj); i++){
-    dot = rcb->Dots[i];
-    printf("(Dots %d) (%6.4f %6.4f %6.4f) (%6.4f %6.4f %6.4f %6.4f) proc %d, part %d, new part %dn",
-     i, dot.X[0], dot.X[1], dot.X[2], 
-     dot.Weight[0], dot.Weight[1], dot.Weight[2], dot.Weight[3],
-     dot.Proc, dot.Input_Part, dot.Part);
-    printed = 1;
-  }
-  if (!printed){
-    printf("Dots: NULL\n");
-  }
-#endif
-  len = zz->LB.Num_Global_Parts;
-  printed = 0;
-
-  for (i=0; rcb->Tree_Ptr && (i<len); i++){
-    r = rcb->Tree_Ptr[i];
-    printf("(Tree %d) cut: %6.4f, dim %d, up %d, left %d, right %d\n",
-      i, r.cut, r.dim, r.parent, r.left_leaf, r.right_leaf);
-    printed=1;
-  }
-  if (!printed){
-    printf("Tree: NULL\n");
-  }
-
-  b = rcb->Box;
-  if (b){
-     printf("Box: (%6.4f, %6.4f) (%6.4f, %6.4f) (%6.4f, %6.4f)\n",
-       b->lo[0], b->hi[0],
-       b->lo[1], b->hi[1],
-       b->lo[2], b->hi[2]);
-  }
-  else{
-    printf("Box: NULL\n");
-  }
-
-  Zoltan_Print_Transformation(&(rcb->Tran));
-}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

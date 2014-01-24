@@ -429,31 +429,7 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
-/*
- * For debugging purposes, print out the coordinate transformation.
- */
-void Zoltan_Print_Transformation(ZZ_Transform *tr)
-{
-  int i;
-  printf("Target_Dim: %d\n", tr->Target_Dim);
-  printf("Degenerate geometry:\n");
-  printf("  Transformation:\n");
-  for (i=0; i<3; i++){
-    printf("    %f %f %f\n", tr->Transformation[i][0],
-           tr->Transformation[i][1], tr->Transformation[i][2]);
-  }
-  printf("  Eigenvectors of inertial matrix:\n");
-  for (i=0; i<3; i++){
-    printf("    %f %f %f\n", tr->Evecs[i][0], 
-      tr->Evecs[i][1], tr->Evecs[i][2]);
-  }
-  printf("  Simple coordinate permutation (if axis-aligned):\n");
-  printf("    %d %d %d\n",
-    tr->Permutation[0], tr->Permutation[1], tr->Permutation[2]);
-  printf("  Center of mass, axis order: (%f %f %f), %d %d %d\n",
-    tr->CM[0], tr->CM[1], tr->CM[2],
-    tr->Axis_Order[0], tr->Axis_Order[1], tr->Axis_Order[2]);
-}
+
 /*
  * Initialize a coordinate transformation structure.
  */
@@ -472,6 +448,7 @@ void Zoltan_Initialize_Transformation(ZZ_Transform *tr)
     tr->Axis_Order[i] = 0;
   } 
 }
+
 /*
  * Decide whether the relative lengths of the edges of the oriented
  * bounding box indicate the geometry is very flat in one or two directions.
