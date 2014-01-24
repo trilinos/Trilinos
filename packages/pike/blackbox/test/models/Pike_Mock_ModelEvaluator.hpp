@@ -35,7 +35,7 @@ namespace pike_test {
     
     //@{ BlackBoxModelEvaluator derived methods
     
-    virtual std::string name() const;
+    std::string name() const;
 
     bool solve();
 
