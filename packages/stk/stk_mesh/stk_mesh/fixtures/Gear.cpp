@@ -98,10 +98,10 @@ void Gear::populate_fields(FieldState state) {
 
         Entity node = get_node(iz,ir,ia);
 
-        double * const cylindrical_data = bulk_data.field_data( cylindrical_coord_field , node );
-        double * const translation_data = bulk_data.field_data( translation_field , node );
-        double * const cartesian_data = bulk_data.field_data( cartesian_coord_field , node );
-        double * const displacement_data = bulk_data.field_data( displacement_field.field_of_state(state) , node );
+        double * const cylindrical_data = stk::mesh::field_data( cylindrical_coord_field , node );
+        double * const translation_data = stk::mesh::field_data( translation_field , node );
+        double * const cartesian_data = stk::mesh::field_data( cartesian_coord_field , node );
+        double * const displacement_data = stk::mesh::field_data( displacement_field.field_of_state(state) , node );
 
         cylindrical_data[0] = rad ;
         cylindrical_data[1] = angle ;
@@ -136,10 +136,10 @@ void Gear::populate_fields(FieldState state) {
 
         Entity node = get_node(iz,ir,ia);
 
-        double * const cylindrical_data = bulk_data.field_data( cylindrical_coord_field , node );
-        double * const translation_data = bulk_data.field_data( translation_field , node );
-        double * const cartesian_data = bulk_data.field_data( cartesian_coord_field , node );
-        double * const displacement_data = bulk_data.field_data( displacement_field.field_of_state(state) , node );
+        double * const cylindrical_data = stk::mesh::field_data( cylindrical_coord_field , node );
+        double * const translation_data = stk::mesh::field_data( translation_field , node );
+        double * const cartesian_data = stk::mesh::field_data( cartesian_coord_field , node );
+        double * const displacement_data = stk::mesh::field_data( displacement_field.field_of_state(state) , node );
 
         cylindrical_data[0] = rad ;
         cylindrical_data[1] = angle ;
@@ -273,10 +273,10 @@ void Gear::move( const GearMovement & data) {
       ++b_itr)
   {
     Bucket & b = **b_itr;
-    double* cylindrical_data = bulk_data.field_data( cylindrical_coord_field, b);  // ONE STATE
-    double*   translation_data = bulk_data.field_data( translation_field, b); // ONE STATE
-    const double*   old_coordinate_data = bulk_data.field_data( cartesian_coord_field, b); // ONE STATE
-    double*   new_displacement_data = bulk_data.field_data( displacement_field.field_of_state(StateNew), b); // TWO STATE
+    double* cylindrical_data = stk::mesh::field_data( cylindrical_coord_field, b);  // ONE STATE
+    double*   translation_data = stk::mesh::field_data( translation_field, b); // ONE STATE
+    const double*   old_coordinate_data = stk::mesh::field_data( cartesian_coord_field, b); // ONE STATE
+    double*   new_displacement_data = stk::mesh::field_data( displacement_field.field_of_state(StateNew), b); // TWO STATE
 
     double new_coordinate_data[3] = {0,0,0};
     for (size_t i = 0; i < b.size(); ++i) {

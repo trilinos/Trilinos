@@ -61,6 +61,10 @@ class EntityRepository;
 
 }
 
+
+
+
+
 struct EntityCommListInfo
 {
   EntityKey key;
@@ -1028,6 +1032,16 @@ public:
   size_t total_field_data_footprint(EntityRank rank) const;
 
 
+  // NKC move to bottom shortly
+  template<class FieldType>
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
+    ThrowAssert(&f.get_mesh() = &b.mesh());
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
+  }
+
 
   // NKC OPT, move this to a field function
   template<class FieldType>
@@ -1044,21 +1058,7 @@ public:
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
-  // NKC OPT, move this to a field function
-  template<class FieldType>
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
-  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(this == &f.get_mesh());
-    ThrowAssert(this == &b.mesh());
 
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
-  }
 
 
   // NKC OPT, move this to a field function
@@ -1067,7 +1067,11 @@ public:
   field_data(const FieldType & f, Entity e) const
   {
     const MeshIndex& mi           = mesh_index(e);
-    return field_data(f, *mi.bucket, mi.bucket_ordinal);
+
+    ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
+    ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
   }
 
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
@@ -1994,13 +1998,55 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   }
   
 
+
+
   inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
     ThrowAssert(&b.mesh() == &f.get_mesh());
      //return true if field and bucket have the same rank and the field is associated with the bucket
      return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
   }
 
+  // NKC move to bottom shortly
+  template<class FieldType>
+  inline
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
+    ThrowAssert(&f.get_mesh() = &b.mesh());
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
+  }
 
+  // NKC OPT, move this to a field function
+  template<class FieldType>
+  inline
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, const Bucket& b) 
+  {
+    ThrowAssert(f.entity_rank() == b.entity_rank());
+    ThrowAssert(&b.mesh() == &f.get_mesh());
+
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
+
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
+  }
+
+
+
+
+  // NKC OPT, move this to a field function
+  template<class FieldType>
+  inline
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, Entity e) 
+  {
+    const MeshIndex& mi           = f.get_mesh().mesh_index(e);
+
+    ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
+    ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
+    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
+  }
 
 
 } // namespace mesh

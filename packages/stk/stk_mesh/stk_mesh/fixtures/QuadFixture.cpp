@@ -127,7 +127,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
         unsigned nx = 0, ny = 0;
         node_x_y(elem_nodes[i], nx, ny);
 
-        Scalar * data = m_bulk_data.field_data( m_coord_field , node );
+        Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
         data[0] = nx ;
         data[1] = ny ;

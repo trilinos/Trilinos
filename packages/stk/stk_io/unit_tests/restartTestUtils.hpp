@@ -52,7 +52,7 @@ inline void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, const doubl
     stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
     for(size_t i=0; i<nodes.size(); i++)
     {
-        double *fieldDataForNode = reinterpret_cast<double*>(stkMeshBulkData.field_data(field, nodes[i]));
+        double *fieldDataForNode = reinterpret_cast<double*>(stk::mesh::field_data(field, nodes[i]));
         *fieldDataForNode = value;
     }
 }
@@ -82,7 +82,7 @@ inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double g
     stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
     for(size_t i=0; i<nodes.size(); i++)
     {
-        double *fieldDataForNode = reinterpret_cast<double*>(stkMeshBulkData.field_data(field, nodes[i]));
+        double *fieldDataForNode = reinterpret_cast<double*>(stk::mesh::field_data(field, nodes[i]));
         EXPECT_DOUBLE_EQ(goldValue, *fieldDataForNode);
     }
 }

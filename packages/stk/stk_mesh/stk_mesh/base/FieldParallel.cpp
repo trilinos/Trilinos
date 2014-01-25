@@ -98,7 +98,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+            reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key); !ec.empty(); ++ec ) {
 
@@ -132,7 +132,7 @@ void copy_owned_to_shared( const BulkData& mesh, const std::vector< const FieldB
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+            reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
 
@@ -229,7 +229,7 @@ void communicate_field_data(
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+            reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key); !ec.empty(); ++ec ) {
 
@@ -264,7 +264,7 @@ void communicate_field_data(
 
         if ( size ) {
           unsigned char * ptr =
-            reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+            reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
 
@@ -365,7 +365,7 @@ void communicate_field_data(
 
         const unsigned size = field_bytes_per_entity( f , e );
         if ( size ) {
-          unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+          unsigned char * ptr = reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
           b.pack<unsigned char>( ptr , size );
         }
       }
@@ -393,7 +393,7 @@ void communicate_field_data(
 
 
         if ( size ) {
-          unsigned char * ptr = reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+          unsigned char * ptr = reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
           b.unpack<unsigned char>( ptr , size );
         }
       }
@@ -458,7 +458,7 @@ void communicate_field_data(
       const unsigned size = field_bytes_per_entity( f , e );
       if ( size ) {
         unsigned char * ptr =
-          reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
+          reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
         PairIterEntityComm ec = mesh.entity_comm(i->key);
         for (; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
           CommBuffer & b = sparse.send_buffer( ec->proc );

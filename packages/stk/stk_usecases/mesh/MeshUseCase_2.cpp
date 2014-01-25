@@ -157,7 +157,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // and indexed by ( 0..2 , 0..NumberNodes-1 )
 
       double*
-        coordinates_array = m_bulkData.field_data( m_coordinates_field, bucket );
+        coordinates_array = stk::mesh::field_data( m_coordinates_field, bucket );
 
       const int num_nodes_in_bucket = bucket.size();
 
@@ -174,7 +174,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // and indexed by ( 0..NumberNodes-1 )
 
       double*
-        temperature_array = m_bulkData.field_data( m_temperature_field, bucket );
+        temperature_array = stk::mesh::field_data( m_temperature_field, bucket );
 
       const int num_temps = bucket.size();
 
@@ -212,7 +212,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // and indexed by ( 0..NumberElements-1 )
 
       double*
-        volume_array = m_bulkData.field_data( m_volume_field, element_bucket );
+        volume_array = stk::mesh::field_data( m_volume_field, element_bucket );
 
       const unsigned num_elements = element_bucket.size();
 
@@ -408,7 +408,7 @@ bool gather_field_data( const stk::mesh::BulkData &mesh,
     // into src for one entity at a time
     T * const dst_end = dst + SpatialDim * expected_num_rel ;
     for ( ; dst < dst_end ; ++rel , dst += SpatialDim ) {
-      const T* src = mesh.field_data( field , *rel );
+      const T* src = stk::mesh::field_data( field , *rel );
       if (!src) {
         break;
       }
@@ -509,7 +509,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
     // Verify volume_field
 
-    double* volume_array = bulkData.field_data( volume_field, **element_bucket_it );
+    double* volume_array = stk::mesh::field_data( volume_field, **element_bucket_it );
 
     // For all elements volume field should be VOLUME_VAL
     for ( unsigned volume_index=0 ; volume_index < num_elements_in_bucket ; ++volume_index) {
@@ -536,7 +536,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
           node_bucket_it = node_buckets.begin();
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
       const stk::mesh::Bucket & bucket = **node_bucket_it;
-      double* temperature_array = bulkData.field_data( temperature_field, bucket );
+      double* temperature_array = stk::mesh::field_data( temperature_field, bucket );
 
       // For all nodes in bucket temperature field should be
       // TEMPERATURE_VALUE_GOLD

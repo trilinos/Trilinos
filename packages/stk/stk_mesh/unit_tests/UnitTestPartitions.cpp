@@ -177,7 +177,7 @@ void setFieldDataUsingEntityIDs(SelectorFixture& fix)
     for (std::vector<stk::mesh::Bucket *>::iterator bkt_i= partition.begin(); bkt_i != partition.end(); ++bkt_i)
     {
       stk::mesh::Bucket &bkt = **bkt_i;
-      double *field_data = mesh.field_data(fix.m_fieldABC, bkt, 0);
+      double *field_data = stk::mesh::field_data(fix.m_fieldABC, bkt, 0);
       if (!field_data)
       {
         continue;
@@ -244,7 +244,6 @@ bool check_nonempty_strictly_ordered(Data_T data[], size_t sz, bool reject_0_lt_
 void check_test_partition_invariant(const SelectorFixture& fix,
                                     const stk::mesh::impl::Partition &partition)
 {
-  const stk::mesh::BulkData& bulkData = fix.get_BulkData();
   const std::vector<unsigned> &partition_key = partition.get_legacy_partition_id();
   for (std::vector<stk::mesh::Bucket *>::const_iterator bkt_i= partition.begin();
        bkt_i != partition.end(); ++bkt_i)
@@ -253,7 +252,7 @@ void check_test_partition_invariant(const SelectorFixture& fix,
     STKUNIT_EXPECT_EQ(&partition, bkt.getPartition() );
     STKUNIT_EXPECT_TRUE(check_bucket_ptrs(bkt));
 
-    double *field_data = bulkData.field_data(fix.m_fieldABC, bkt, 0);
+    double *field_data = stk::mesh::field_data(fix.m_fieldABC, bkt, 0);
     if (field_data)
     {
       STKUNIT_EXPECT_TRUE(check_nonempty_strictly_ordered(field_data, bkt.size()));
@@ -566,7 +565,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
     stk::mesh::Entity entity = first_entities[i];;
     dst_partition.add(entity);
     stk::mesh::Bucket &bkt = mesh.bucket(entity);
-    double *field_data = mesh.field_data(fix.m_fieldABC, bkt, 0);
+    double *field_data = stk::mesh::field_data(fix.m_fieldABC, bkt, 0);
     if (field_data)
     {
       field_data[mesh.bucket_ordinal(entity)] = mesh.identifier(entity);

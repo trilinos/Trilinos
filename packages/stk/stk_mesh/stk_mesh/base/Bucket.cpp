@@ -349,7 +349,7 @@ bool Bucket::member_any( const OrdinalVector & parts ) const
 
 unsigned char* Bucket::field_data_location(const FieldBase& field) const
 {
-  return reinterpret_cast<unsigned char*>(mesh().field_data(field, *this, 0));
+  return reinterpret_cast<unsigned char*>(stk::mesh::field_data(field, *this, 0));
 }
 
 //----------------------------------------------------------------------

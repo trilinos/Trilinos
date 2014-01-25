@@ -37,7 +37,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
     for (size_t bucketIndex = 0; bucketIndex < boundaryNodeBuckets.size(); ++bucketIndex)
     {
         stk::mesh::Bucket &nodeBucket = *boundaryNodeBuckets[bucketIndex];
-        double *temperatureValues = stkMeshBulkData.field_data(temperatureField, nodeBucket);
+        double *temperatureValues = stk::mesh::field_data(temperatureField, nodeBucket);
         for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex)
         {
             stk::mesh::Entity node = nodeBucket[nodeIndex];
@@ -78,7 +78,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
     {
         boundaryNodeIds.insert(stkMeshBulkData.identifier(nodes[nodeIndex]));
-        double *temperatureValues = stkMeshBulkData.field_data(temperatureField, nodes[nodeIndex]);
+        double *temperatureValues = stk::mesh::field_data(temperatureField, nodes[nodeIndex]);
         *temperatureValues = prescribedTemperatureValue;
     }
 

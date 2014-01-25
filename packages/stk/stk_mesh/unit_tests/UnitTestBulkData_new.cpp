@@ -658,7 +658,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
 
         STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == mesh.identifier(node) );
         stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-            mesh.field_data( fixture.m_coord_field , node );
+            stk::mesh::field_data( fixture.m_coord_field , node );
         STKUNIT_ASSERT( node_coord != NULL );
       }
     }
@@ -688,7 +688,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     // for ( size_t j = 0 ; j < num_elem_nodes ; ++j )
     // {
     //   stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-    //     mesh.field_data( fixture.m_coord_field , eph_elem_nodes[j]);
+    //     stk::mesh::field_data( fixture.m_coord_field , eph_elem_nodes[j]);
     //   STKUNIT_EXPECT_EQ( node_coord, elem_node_coord[ elem_node_ords[j] ] );
     // }
 

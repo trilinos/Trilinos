@@ -128,21 +128,21 @@ public :
   const double *coord(const EntityKey k) const
   {
     const mesh::Entity e = entity(k);
-    return static_cast<const double*>(m_bulk_data.field_data(m_coordinates_field, e));
+    return static_cast<const double*>(stk::mesh::field_data(m_coordinates_field, e));
   }
 
   const double *value(const EntityKey k, const unsigned i=0) const
   {
     const mesh::Entity  e = entity(k);
     mesh::FieldBase *val=m_values_field[i];
-    return static_cast<const double*>(m_bulk_data.field_data(*val, e));
+    return static_cast<const double*>(stk::mesh::field_data(*val, e));
   }
 
   double *value(const EntityKey k, const unsigned i=0)
   {
     const mesh::Entity  e = entity(k);
     mesh::FieldBase *val=m_values_field[i];
-    return static_cast<double*>(m_bulk_data.field_data(*val, e));
+    return static_cast<double*>(stk::mesh::field_data(*val, e));
   }
 
   unsigned  value_size(const EntityKey k, const unsigned i=0) const

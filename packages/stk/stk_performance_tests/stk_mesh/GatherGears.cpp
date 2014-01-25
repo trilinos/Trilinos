@@ -65,7 +65,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
       unsigned offset = 0;
       for(size_t n=0; n<num_nodes; ++n) {
         Entity node = node_rels[n];
-        double* node_coords = bulk.field_data(coord_field, node);
+        double* node_coords = stk::mesh::field_data(coord_field, node);
         elem_node_coords[offset++] = node_coords[0];
         elem_node_coords[offset++] = node_coords[1];
         elem_node_coords[offset++] = node_coords[2];

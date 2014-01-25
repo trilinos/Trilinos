@@ -219,7 +219,7 @@ void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 
   for (size_t i=0; i < entity_count; ++i) {
     if (mesh.is_valid(entities[i])) {
-      T *fld_data = static_cast<T*>(mesh.field_data(*field, entities[i]));
+      T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
       if (fld_data !=NULL) {
         for(size_t j=0; j<field_component_count; ++j) {
           fld_data[j] = io_field_data[i*field_component_count+j];
@@ -244,7 +244,7 @@ void internal_field_data_to_ioss(const stk::mesh::BulkData& mesh,
 
   for (size_t i=0; i < entity_count; ++i) {
     if (mesh.is_valid(entities[i])) {
-      T *fld_data = static_cast<T*>(mesh.field_data(*field, entities[i]));
+      T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
       if (fld_data != NULL) {
         for(size_t j=0; j<field_component_count; ++j) {
           io_field_data[i*field_component_count+j] = fld_data[j];

@@ -257,7 +257,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
         stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = bulk_data.field_data( *coordinates_field , n );
+        double * const coord = stk::mesh::field_data( *coordinates_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -391,7 +391,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
         stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = bulk_data.field_data( *coordinates_field , n );
+        double * const coord = stk::mesh::field_data( *coordinates_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -515,7 +515,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
         stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = bulk_data.field_data( *coordinates_field , n );
+        double * const coord = stk::mesh::field_data( *coordinates_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;

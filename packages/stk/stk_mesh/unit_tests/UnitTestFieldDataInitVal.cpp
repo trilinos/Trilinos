@@ -73,7 +73,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   //now insist that data for dfield on node is equal to the initial-value specified above:
 
-  double* data_ptr = mesh.field_data( dfield, node);
+  double* data_ptr = stk::mesh::field_data( dfield, node);
 
   STKUNIT_ASSERT_EQUAL( *data_ptr, initial_value );
 }
@@ -119,7 +119,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
-  double* data_ptr = mesh.field_data( vfield, node);
+  double* data_ptr = stk::mesh::field_data( vfield, node);
 
   STKUNIT_ASSERT_EQUAL( data_ptr[0], initial_value[0] );
   STKUNIT_ASSERT_EQUAL( data_ptr[1], initial_value[1] );
@@ -184,7 +184,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
-  double* data_ptr = mesh.field_data( vfield, node);
+  double* data_ptr = stk::mesh::field_data( vfield, node);
 
   STKUNIT_ASSERT_EQUAL( data_ptr[0], initial_value[0] );
   STKUNIT_ASSERT_EQUAL( data_ptr[1], initial_value[1] );
@@ -237,8 +237,8 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   VectorField& vfield_old = vfield.field_of_state(stk::mesh::StateOld);
 
   {
-    double* data_ptr_new = mesh.field_data( vfield_new, node);
-    double* data_ptr_old = mesh.field_data( vfield_old, node);
+    double* data_ptr_new = stk::mesh::field_data( vfield_new, node);
+    double* data_ptr_old = stk::mesh::field_data( vfield_old, node);
 
     STKUNIT_ASSERT_EQUAL( data_ptr_new[0], initial_value[0] );
     STKUNIT_ASSERT_EQUAL( data_ptr_new[1], initial_value[1] );

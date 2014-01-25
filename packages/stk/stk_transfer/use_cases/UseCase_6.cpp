@@ -119,8 +119,8 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
     const size_t num_entities = domain_entities.size();
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = domain_entities[i];
-      double *entity_coordinates = domain_bulk_data.field_data(domain_coord_field, entity);
-      double *entity_coord_sum   = domain_bulk_data.field_data(domain_coord_sum_field, entity);
+      double *entity_coordinates = stk::mesh::field_data(domain_coord_field, entity);
+      double *entity_coord_sum   = stk::mesh::field_data(domain_coord_sum_field, entity);
       *entity_coord_sum = entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2];
     }
   }
@@ -131,7 +131,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
     const double rand_max = RAND_MAX;
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = range_entities[i];
-      double *entity_coord_sum   = range_bulk_data.field_data(range_coord_sum_field, entity);
+      double *entity_coord_sum   = stk::mesh::field_data(range_coord_sum_field, entity);
       *entity_coord_sum = rand()/rand_max;
     }
   }
@@ -186,8 +186,8 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
     for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
       const  stk::mesh::Entity  entity = range_points[i];
 
-      const double *ToValues = static_cast<double*>(range_bulk_data.field_data(range_coord_sum_field, entity));
-      const double *ToPoints = static_cast<double*>(range_bulk_data.field_data(range_coord_field, entity));
+      const double *ToValues = static_cast<double*>(stk::mesh::field_data(range_coord_sum_field, entity));
+      const double *ToPoints = static_cast<double*>(stk::mesh::field_data(range_coord_field, entity));
 
       double check_l = 0;
       for (unsigned j=0 ; j<DIM; ++j) check_l += ToPoints[j];

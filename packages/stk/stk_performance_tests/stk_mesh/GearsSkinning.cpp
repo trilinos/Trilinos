@@ -113,10 +113,10 @@ void separate_wedge(
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
       stk::mesh::Entity new_node = new_nodes[i];
       const double * const new_displacement_data =
-        fixture.bulk_data.field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
+        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
 
       const double * const old_displacement_data =
-        fixture.bulk_data.field_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), new_node);
+        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), new_node);
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         avg_velocity_data[k] += new_displacement_data[k] - old_displacement_data[k];
@@ -132,7 +132,7 @@ void separate_wedge(
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
       stk::mesh::Entity new_node = new_nodes[i];
       double * const velocity_data =
-        fixture.bulk_data.field_data( velocity_field , new_node );
+        stk::mesh::field_data( velocity_field , new_node );
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         velocity_data[k] = detached_wedge_speedup_multiplier*avg_velocity_data[k];
@@ -212,9 +212,9 @@ void move_detached_wedges(
   {
     stk::mesh::Bucket & b = **b_itr;
 
-    const typename stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = fixture.bulk_data.field_data(velocity_field, b);
-    typename stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = fixture.bulk_data.field_data(fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
-    typename stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = fixture.bulk_data.field_data(fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
+    const typename stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
+    typename stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
+    typename stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
     int ndim = fixture.meta_data.spatial_dimension();
 
     for (size_t i = 0; i < b.size(); ++i) {
@@ -244,7 +244,7 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
       ++b_itr)
   {
     stk::mesh::Bucket & b = **b_itr;
-    int* processor_data = fixture.bulk_data.field_data(processor_field, b);
+    int* processor_data = stk::mesh::field_data(processor_field, b);
     for (size_t index = 0; index < b.size(); ++index) {
       processor_data[index] = p_rank;
     }
@@ -411,7 +411,7 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
       stk::mesh::Bucket & b = **b_itr;
       for (size_t i = 0; i < b.size(); ++i) {
         stk::mesh::Entity face = b[i];
-        double *elem_node_disp = fixture.bulk_data.field_data(displacement, face);
+        double *elem_node_disp = stk::mesh::field_data(displacement, face);
         if (elem_node_disp) {
           const size_t num_nodes = b.num_nodes(i);
 
@@ -420,7 +420,7 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
           for ( ; node_rels_itr != node_rels_end; ++node_rels_itr)
           {
             const stk::mesh::Entity node = *node_rels_itr;
-            double* node_disp = fixture.bulk_data.field_data(fixture.displacement_field, node);
+            double* node_disp = stk::mesh::field_data(fixture.displacement_field, node);
             elem_node_disp[0] = node_disp[0];
             elem_node_disp[1] = node_disp[1];
             elem_node_disp[2] = node_disp[2];

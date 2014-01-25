@@ -61,7 +61,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
       if(!is_matching_rank(field, *mi.bucket)) continue;
 
       size_t bytes_per_scalar = field.data_traits().size_of;
-      typename FieldTraits<field_type>::data_type *array = mesh.field_data(field , *mi.bucket, mi.bucket_ordinal);
+      typename FieldTraits<field_type>::data_type *array = stk::mesh::field_data(field , *mi.bucket, mi.bucket_ordinal);
       Type * const ptr_beg = array;
       Type * const ptr_end = ptr_beg + field_bytes_per_entity(field, *mi.bucket)/bytes_per_scalar;
 
@@ -110,7 +110,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
     if(!is_matching_rank(field, bucket)) continue;
 
     if (mesh.is_valid(entity) && (0 == selector || (*selector)(bucket) ) ) {
-      Type * const ptr_beg = reinterpret_cast<Type*>(mesh.field_data(field, entity));
+      Type * const ptr_beg = reinterpret_cast<Type*>(stk::mesh::field_data(field, entity));
       const unsigned num_scalars_per_entity = field_bytes_per_entity(field, bucket)/sizeof(Type);
       Type * const ptr_end = ptr_beg + num_scalars_per_entity;
 

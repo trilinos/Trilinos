@@ -13,7 +13,7 @@ void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatur
     stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
     for(size_t i=0; i<nodes.size(); ++i)
     {
-        double *temperature = stkMeshBulkData.field_data(temperatureField, nodes[i]);
+        double *temperature = stk::mesh::field_data(temperatureField, nodes[i]);
         if(boundaryNodeIds.find(stkMeshBulkData.identifier(nodes[i])) != boundaryNodeIds.end())
         {
             EXPECT_EQ(prescribedTemperatureValue, *temperature);

@@ -127,7 +127,7 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
   for(size_t i=0; i<entity_comm_list.size(); ++i) {
     stk::mesh::Entity node = entity_comm_list[i].entity;
 
-    const double* field_1_ptr = field_1.entity_rank()==bulk_data.entity_rank(node) ? bulk_data.field_data(field_1, node) : NULL;
+    const double* field_1_ptr = field_1.entity_rank()==bulk_data.entity_rank(node) ? stk::mesh::field_data(field_1, node) : NULL;
 
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
     if (field_1_ptr != NULL && entity_comm.size() > 0) {
@@ -205,9 +205,9 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
 
     if(!is_matching_rank(field_1, node)) continue;
 
-    const double* field_1_ptr = bulk_data.field_data(field_1, node);
-    const double* field_2_ptr = bulk_data.field_data(field_2, node);
-    const double* field_3_ptr = bulk_data.field_data(field_3, node);
+    const double* field_1_ptr = stk::mesh::field_data(field_1, node);
+    const double* field_2_ptr = stk::mesh::field_data(field_2, node);
+    const double* field_3_ptr = stk::mesh::field_data(field_3, node);
 
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
     if (field_1_ptr != NULL && field_2_ptr != NULL && field_3_ptr != NULL && entity_comm.size() > 0) {
@@ -288,9 +288,9 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
 
     if(!is_matching_rank(field_1, node)) continue;
 
-    const double* field_1_ptr = bulk_data.field_data(field_1, node);
-    const double* field_2_ptr = bulk_data.field_data(field_2, node);
-    const double* field_3_ptr = bulk_data.field_data(field_3, node);
+    const double* field_1_ptr = stk::mesh::field_data(field_1, node);
+    const double* field_2_ptr = stk::mesh::field_data(field_2, node);
+    const double* field_3_ptr = stk::mesh::field_data(field_3, node);
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
     if (entity_comm.size() > 0) {
       const double num_sharing_procs = entity_comm.size() + 1;

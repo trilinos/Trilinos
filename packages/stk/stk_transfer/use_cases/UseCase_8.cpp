@@ -108,8 +108,8 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
     const size_t num_entities = node_entities.size();
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = node_entities[i];
-      double *entity_coordinates = domain_bulk_data.field_data(domain_coord_field, entity);
-      double *entity_coord_sum   = domain_bulk_data.field_data(domain_coord_sum_field, entity);
+      double *entity_coordinates = stk::mesh::field_data(domain_coord_field, entity);
+      double *entity_coord_sum   = stk::mesh::field_data(domain_coord_sum_field, entity);
       *entity_coord_sum = entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2];
     }
   }

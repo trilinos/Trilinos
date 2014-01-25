@@ -145,7 +145,7 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 
 	if ( size ) {
 	  unsigned char * const ptr =
-	    reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
+	    reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
 	  buf.pack<unsigned char>( ptr , size );
 	}
       }
@@ -195,7 +195,7 @@ bool unpack_field_values(const BulkData& mesh,
 	}
 	else if ( size ) { // Non-zero and equal
 	  unsigned char * ptr =
-	    reinterpret_cast<unsigned char *>( mesh.field_data( f , entity ) );
+	    reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
 	  buf.unpack<unsigned char>( ptr , size );
 	}
 

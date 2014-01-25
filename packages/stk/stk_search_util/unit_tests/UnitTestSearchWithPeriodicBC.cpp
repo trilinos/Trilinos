@@ -18,7 +18,7 @@ void expect_eq_for_shared_or_owned_node(const stk::mesh::BulkData & bulk_data, s
 {
   if (bulk_data.is_valid(node) && (bulk_data.bucket(node).owned() || bulk_data.bucket(node).shared() ) )
   {
-    const double * const vol = bulk_data.field_data(theField, node);
+    const double * const vol = stk::mesh::field_data(theField, node);
     EXPECT_EQ(*vol, expected_value);
   }
 }
@@ -31,8 +31,8 @@ void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_
     std::pair<stk::mesh::Entity, stk::mesh::Entity> entityPair = pbc_search.get_node_pair(i);
     ThrowRequire(bulk_data.is_valid(entityPair.first));
     ThrowRequire(bulk_data.is_valid(entityPair.second));
-    double * domainField = bulk_data.field_data(volField, entityPair.first);
-    double * rangeField = bulk_data.field_data(volField, entityPair.second);
+    double * domainField = stk::mesh::field_data(volField, entityPair.first);
+    double * rangeField = stk::mesh::field_data(volField, entityPair.second);
     *domainField += *rangeField;
   }
 
@@ -46,8 +46,8 @@ void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_
     std::pair<stk::mesh::Entity, stk::mesh::Entity> entityPair = pbc_search.get_node_pair(i);
     ThrowRequire(bulk_data.is_valid(entityPair.first));
     ThrowRequire(bulk_data.is_valid(entityPair.second));
-    double * domainField = bulk_data.field_data(volField, entityPair.first);
-    double * rangeField = bulk_data.field_data(volField, entityPair.second);
+    double * domainField = stk::mesh::field_data(volField, entityPair.first);
+    double * rangeField = stk::mesh::field_data(volField, entityPair.second);
     *rangeField = *domainField;
   }
 }
@@ -66,7 +66,7 @@ void do_volume_assembly(stk::mesh::BulkData & bulk_data, stk::mesh::Field<double
       const size_t numNodes = bulk_data.num_nodes(elem);
       for (size_t in = 0; in < numNodes; ++in)
       {
-        double * vol = bulk_data.field_data(volField, aNode[in]);
+        double * vol = stk::mesh::field_data(volField, aNode[in]);
         *vol += 0.125;
       }
     }

@@ -575,9 +575,9 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
 
               stk::mesh::MeshIndex mi = bulk.mesh_index(node);
               for (int f = 0; f < num_fields_per_chunk; ++f) {
-                const double* x_field_data = bulk.field_data(*x_fields[f], *mi.bucket, mi.bucket_ordinal);
-                const double* y_field_data = bulk.field_data(*y_fields[f], *mi.bucket, mi.bucket_ordinal);
-                const double* z_field_data = bulk.field_data(*z_fields[f], *mi.bucket, mi.bucket_ordinal);
+                const double* x_field_data = stk::mesh::field_data(*x_fields[f], *mi.bucket, mi.bucket_ordinal);
+                const double* y_field_data = stk::mesh::field_data(*y_fields[f], *mi.bucket, mi.bucket_ordinal);
+                const double* z_field_data = stk::mesh::field_data(*z_fields[f], *mi.bucket, mi.bucket_ordinal);
 
                 if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
                   ++dummy;

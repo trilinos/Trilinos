@@ -114,12 +114,12 @@ void centroid_algorithm(
       // in the bucket.
       //   double * node_ptr[ nodes_per_element * number_of_elements ]
 
-      double ** node_ptr = bulkData.field_data( elem_node_coord , bucket, 0);
+      double ** node_ptr = stk::mesh::field_data( elem_node_coord , bucket, 0);
 
       // Element centroid field data
       //   double elem_ptr[ SpatialDim * number_of_elements ]
 
-      double *  elem_ptr = bulkData.field_data( elem_centroid , bucket, 0 );
+      double *  elem_ptr = stk::mesh::field_data( elem_centroid , bucket, 0 );
 
       // Call an element function to calculate centroid for
       // contiguous arrays of element field data.

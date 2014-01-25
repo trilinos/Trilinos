@@ -39,7 +39,7 @@ unsigned parametric(std::vector<double> &para_coords,
   for (unsigned iCell = 0; iCell < numCells; iCell++) {
     for (unsigned iNode = 0; iNode < numNodes; iNode++) {
       const mesh::Entity node = elem_node_rels[iNode];
-      const double * coords = static_cast<const double*>(bulkData.field_data(coords_field, node));
+      const double * coords = static_cast<const double*>(stk::mesh::field_data(coords_field, node));
       for (unsigned iDim=0; iDim < spatial_dimension; iDim++) cellWorkset(iCell, iNode, iDim) = coords[iDim];
     }
   }
@@ -136,7 +136,7 @@ void parametric(std::vector<std::vector<double> > &val,
       Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(basis, refVals);
       for (unsigned iNode = 0; iNode < num_nodes; iNode++) {
         const mesh::Entity node = elem_node_rels[iNode];
-        const double * values = static_cast<const double*>(bulkData.field_data(field, node));
+        const double * values = static_cast<const double*>(stk::mesh::field_data(field, node));
         for (unsigned e = 0; e < num_entry; ++e) dataVals(e, iNode) = values[e];
       }
       // evaluate function at specified points
@@ -299,7 +299,7 @@ void STKElem::elem_coord_limits(Point &min_corner, Point &max_corner, const Enti
 
     // pointers to real data
     const double * coords =
-      static_cast<const double*>(m_bulk_data.field_data(m_coordinates_field, node));
+      static_cast<const double*>(stk::mesh::field_data(m_coordinates_field, node));
     // check max/min
     for ( unsigned j = 0; j < m_spatial_dimension; ++j ) {
       const float c  = coords[j];

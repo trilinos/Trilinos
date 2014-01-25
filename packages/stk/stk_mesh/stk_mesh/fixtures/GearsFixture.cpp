@@ -205,7 +205,7 @@ void select_nodal_data(
     Entity node = elem_nodes[i];
     const MeshIndex& mi = mesh.mesh_index(node);
     const Bucket& bucket = *mi.bucket;
-    double *cylindrical_data = mesh.field_data(cylindrical_coord_field, bucket, mi.bucket_ordinal);
+    double *cylindrical_data = stk::mesh::field_data(cylindrical_coord_field, bucket, mi.bucket_ordinal);
     radius += cylindrical_data[0];
     angle  = std::min(angle,cylindrical_data[1]);
     height += cylindrical_data[2];

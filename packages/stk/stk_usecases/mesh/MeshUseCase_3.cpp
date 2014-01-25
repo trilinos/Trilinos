@@ -176,7 +176,7 @@ void UseCase_3_Mesh::populate()
   // For all nodes assign nodal coordinates
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
     Entity const node = m_bulkData.get_entity( m_node_rank , i + 1 );
-    double * const coord = m_bulkData.field_data( m_coordinates_field , node );
+    double * const coord = stk::mesh::field_data( m_coordinates_field , node );
     coord[0] = node_coord_data[i][0] ;
     coord[1] = node_coord_data[i][1] ;
     coord[2] = node_coord_data[i][2] ;

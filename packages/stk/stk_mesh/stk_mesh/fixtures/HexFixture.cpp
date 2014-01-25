@@ -148,7 +148,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
         unsigned nx = 0, ny = 0, nz = 0;
         node_x_y_z(elem_node[i], nx, ny, nz);
 
-        Scalar * data = m_bulk_data.field_data( m_coord_field , node );
+        Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
         coordMap.getNodeCoordinates(data, nx, ny, nz);
       }
