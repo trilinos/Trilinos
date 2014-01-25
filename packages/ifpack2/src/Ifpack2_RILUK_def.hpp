@@ -90,6 +90,30 @@ RILUK<MatrixType>::~RILUK() {}
 
 
 template<class MatrixType>
+void
+RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  // It's legal for A to be null; in that case, you may not call
+  // initialize() until calling setMatrix() with a nonnull input.
+  // Regardless, setting the matrix invalidates any previous
+  // factorization.
+  if (A.getRawPtr () != A_.getRawPtr ()) {
+    isAllocated_ = false;
+    isInitialized_ = false;
+    isComputed_ = false;
+    A_crs_ = Teuchos::null;
+    Graph_ = Teuchos::null;
+    L_ = Teuchos::null;
+    U_ = Teuchos::null;
+    D_ = Teuchos::null;
+    Condest_ = -STS::one ();
+    A_ = A;
+  }
+}
+
+
+
+template<class MatrixType>
 const typename RILUK<MatrixType>::crs_matrix_type&
 RILUK<MatrixType>::getL () const
 {
