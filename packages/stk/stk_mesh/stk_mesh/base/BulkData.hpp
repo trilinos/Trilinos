@@ -1990,7 +1990,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
     ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_size == knownSize);
     ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
-    return ((reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data)) + knownSize * bucket_ord);
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
   }
   
 
