@@ -34,9 +34,6 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
-const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
-
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;
 
@@ -53,7 +50,7 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gea
   : NUM_GEARS(num_gears)
   , meta_data( SpatialDimension )
   , bulk_data( meta_data , pm )
-  , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", ELEMENT_RANK))
+  , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", stk::topology::ELEMENT_RANK))
   , hex_part( declare_part<Hex8>(meta_data, "hex8_part"))
   , wedge_part( declare_part<Wedge6>(meta_data, "wedge6_part"))
   , cartesian_coord_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "coordinates", ONE_STATE))
@@ -226,7 +223,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
 
   Selector locally_owned = gear.meta_data.locally_owned_part();
   if (p_rank == 0) {
-    BucketVector const& all_elements = bulk_data.get_buckets(ELEMENT_RANK, locally_owned);
+    BucketVector const& all_elements = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, locally_owned);
     std::set<Entity> node_set; // First come first serve nodal movement.
     for (BucketVector::const_iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
       Bucket & b = **it;

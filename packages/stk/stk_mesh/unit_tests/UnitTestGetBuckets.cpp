@@ -32,8 +32,6 @@ using stk::mesh::Selector;
 using stk::mesh::BulkData;
 using stk::mesh::Entity;
 
-const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 // Just make copies so we don't have to worry about constness
 template <class T>
 void sort_and_compare_eq(std::vector<T*> results,

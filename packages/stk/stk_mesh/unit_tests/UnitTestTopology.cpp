@@ -101,8 +101,6 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);

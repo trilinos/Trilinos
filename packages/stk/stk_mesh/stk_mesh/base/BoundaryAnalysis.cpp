@@ -22,8 +22,6 @@ namespace mesh {
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 void filter_superimposed_entities(const BulkData& mesh, const Entity entity, EntityVector & entities)
 {
   // Get the node entities for the nodes that make up the entity, we'll
