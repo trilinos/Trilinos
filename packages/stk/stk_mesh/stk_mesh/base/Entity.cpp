@@ -57,7 +57,7 @@ std::string Entity::TypeToString (Entity::ObjectTypeEnum type)
   if(type == FACE      ) return "FACE";
   if(type == ELEMENT   ) return "ELEMENT";
   if(type == CONSTRAINT) return "CONSTRANT";
-  if(type == BASE_CLASS) return "BASE_CLASS";
+  if(type == INVALID_RANK) return "BASE_CLASS";
   return "UNKNOWN";
 }
 
