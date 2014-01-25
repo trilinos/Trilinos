@@ -22,8 +22,8 @@ struct topology
     , CONSTRAINT_RANK
     , END_RANK
     , NUM_RANKS = END_RANK
-    , INVALID_RANK = ~0U
-    , FORCE_RANK_TO_UNSIGNED = ~0U
+    , INVALID_RANK = 256
+    , FORCE_RANK_TO_UNSIGNED = 256
   };
 
   //To add new topologies consult the toolkit team

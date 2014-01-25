@@ -99,8 +99,8 @@ union Entity
     FACE       = 2,
     ELEMENT    = 3,
     CONSTRAINT = 4,
-    NUM_TYPES  = 5,
-    INVALID_RANK = 0x00ff
+    NUM_RANKS  = 5,
+    INVALID_RANK = 256
   };
 
   static std::string TypeToString (ObjectTypeEnum type);
