@@ -93,29 +93,6 @@ factorization would be computed.
 </li>
 
 <li>
-Level of overlap: All Ifpack2 preconditioners work on parallel
-distributed-memory computers by using the row partitioning of the user
-input matrix to determine the partitioning for local ILU factors.  If
-the level of overlap is set to zero, the rows of the user matrix that
-are stored on a given processor are treated as a self-contained local
-matrix and all column entries that reach to off-processor entries are
-ignored.  Setting the level of overlap to one tells Ifpack to increase
-the size of the local matrix by adding rows that are reached to by
-rows owned by this processor.  Increasing levels of overlap are
-defined recursively in the same way.  For sufficiently large levels of
-overlap, the entire matrix would be part of each processor's local ILU
-factorization process.  Level of overlap is defined during the
-construction of the Ifpack2::IlukGraph object.
-
-Once the factorization is computed, applying the factorization \f$LUy
-= x\f$ results in redundant approximations for any elements of y that
-correspond to rows that are part of more than one local ILU factor.
-The overlap mode defines how these redundancies are handled using the
-Tpetra::CombineMode enum.  The default is to zero out all values of y
-for rows that were not part of the original matrix row distribution.
-</li>
-
-<li>
 Fraction of relaxation: Ifpack2::RILUK computes the ILU factorization
 row-by-row.  As entries at a given row are computed, some number of
 them will be dropped because they do match the prescribed sparsity
@@ -355,7 +332,10 @@ class RILUK:
   /// This method is DEPRECATED.  If you want to change the value of
   /// this parameter, you should instead call setParameters().
   void TEUCHOS_DEPRECATED SetOverlapMode (const Tpetra::CombineMode OverlapMode) {
-    OverlapMode_ = OverlapMode;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Ifpack2::RILUK::SetOverlapMode: "
+      "RILUK no longer implements overlap on its own.  "
+      "Use RILUK with AdditiveSchwarz if you want overlap.");
   }
 
   /// Set parameters for the incomplete factorization.
@@ -365,10 +345,6 @@ class RILUK:
   ///   - "fact: absolute threshold" (magnitude_type)
   ///   - "fact: relative threshold" (magnitude_type)
   ///   - "fact: relax value" (magnitude_type)
-  ///
-  /// It will eventually also support the following parameter,
-  /// although it currently does not:
-  /// - "fact: iluk level-of-overlap" (int)
   void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize by computing the symbolic incomplete factorization.
@@ -526,28 +502,35 @@ public:
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null);
 
-  magnitude_type getCondEst() const { return Condest_; }
+  magnitude_type getCondEst () const { return Condest_; }
 
+  //! Get the input matrix.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   // Attribute access functions
 
   //! Get RILU(k) relaxation parameter
-  magnitude_type getRelaxValue() const { return RelaxValue_; }
+  magnitude_type getRelaxValue () const { return RelaxValue_; }
 
   //! Get absolute threshold value
-  magnitude_type getAbsoluteThreshold() const { return Athresh_; }
+  magnitude_type getAbsoluteThreshold () const { return Athresh_; }
 
   //! Get relative threshold value
-  magnitude_type getRelativeThreshold() const {return Rthresh_;}
+  magnitude_type getRelativeThreshold () const {return Rthresh_;}
 
-  int getLevelOfFill() const { return LevelOfFill_; }
+  //! Get level of fill (the "k" in ILU(k)).
+  int getLevelOfFill () const { return LevelOfFill_; }
 
   //! Get overlap mode type
-  Tpetra::CombineMode getOverlapMode() {return OverlapMode_;}
+  Tpetra::CombineMode getOverlapMode () {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Ifpack2::RILUK::SetOverlapMode: "
+      "RILUK no longer implements overlap on its own.  "
+      "Use RILUK with AdditiveSchwarz if you want overlap.");
+  }
 
   //! Returns the number of nonzero entries in the global graph.
-  int getGlobalNumEntries() const {
+  Tpetra::global_size_t getGlobalNumEntries () const {
     return getL ().getGlobalNumEntries () + getU ().getGlobalNumEntries ();
   }
 
@@ -582,14 +565,7 @@ private:
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   void allocate_L_and_U();
-  void initAllValues (const row_matrix_type& overlapA);
-
-  void
-  generateXY (Teuchos::ETransp mode,
-              const MV& Xin,
-              const MV& Yin,
-              Teuchos::RCP<const MV>& Xout,
-              Teuchos::RCP<MV>& Yout) const;
+  void initAllValues (const row_matrix_type& A);
 
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
 
@@ -612,10 +588,7 @@ private:
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
 
-  bool isOverlapped_;
-
   int LevelOfFill_;
-  int LevelOfOverlap_;
 
   bool isAllocated_;
   bool isInitialized_;
@@ -634,10 +607,6 @@ private:
   magnitude_type Rthresh_;
 
   mutable magnitude_type Condest_;
-
-  mutable Teuchos::RCP<MV> OverlapX_;
-  mutable Teuchos::RCP<MV> OverlapY_;
-  Tpetra::CombineMode OverlapMode_;
 };
 
 //Set necessary local solve parameters when using ThrustGPU node
@@ -688,9 +657,7 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->U_ = U_->clone (new_node, plClone);
   new_riluk->D_ = D_->clone (new_node);
 
-  new_riluk->isOverlapped_ = isOverlapped_;
   new_riluk->LevelOfFill_ = LevelOfFill_;
-  new_riluk->LevelOfOverlap_ = LevelOfOverlap_;
 
   new_riluk->isAllocated_ = isAllocated_;
   new_riluk->isInitialized_ = isInitialized_;
@@ -704,7 +671,6 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;
   new_riluk->Condest_ = Condest_;
-  new_riluk->OverlapMode_ = OverlapMode_;
 
   return new_riluk;
 }

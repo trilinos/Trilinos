@@ -48,9 +48,7 @@ namespace Ifpack2 {
 template<class MatrixType>
 RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
-    isOverlapped_ (false),
     LevelOfFill_ (0),
-    LevelOfOverlap_ (0),
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
@@ -63,17 +61,14 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-    OverlapMode_ (Tpetra::REPLACE)
+    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
 {}
 
 
 template<class MatrixType>
 RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
-    isOverlapped_ (false),
     LevelOfFill_ (0),
-    LevelOfOverlap_ (0),
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
@@ -86,8 +81,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-    OverlapMode_ (Tpetra::REPLACE)
+    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
 {}
 
 
@@ -136,7 +130,6 @@ setParameters (const Teuchos::ParameterList& params)
 
   // Default values of the various parameters.
   int fillLevel = 0;
-  int overlapLevel = 0;
   magnitude_type absThresh = STM::zero ();
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
@@ -202,66 +195,6 @@ setParameters (const Teuchos::ParameterList& params)
     "Please let the Ifpack2 developers know about this bug.");
 
   //
-  // overlapLevel was always int.  ILUT doesn't have this parameter.
-  // However, some tests (as of 28 Nov 2012:
-  // Ifpack2_RILUK_small_belos_MPI_1) depend on being able to set this
-  // as a double instead of an int.  Thus, we go through the same
-  // procedure as above with fill level.
-  //
-
-  bool gotOverlapLevel = false;
-  try {
-    overlapLevel = params.get<int> ("fact: iluk level-of-overlap");
-    gotOverlapLevel = true;
-  }
-  catch (InvalidParameterType&) {
-    // Throwing again in the catch block would just unwind the stack.
-    // Instead, we do nothing here, and check the Boolean outside to
-    // see if we got the value.
-  }
-  catch (InvalidParameterName&) {
-    gotOverlapLevel = true; // Accept the default value.
-  }
-
-  if (! gotOverlapLevel) {
-    try {
-      // Try magnitude_type, for compatibility with ILUT.
-      // The cast from magnitude_type to int must succeed.
-      overlapLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-overlap"));
-      gotOverlapLevel = true;
-    }
-    catch (InvalidParameterType&) {
-      // Try double next.
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  if (! gotOverlapLevel) {
-    try {
-      // Try double, for compatibility with ILUT.
-      // The cast from double to int must succeed.
-      overlapLevel = as<int> (params.get<double> ("fact: iluk level-of-overlap"));
-      gotOverlapLevel = true;
-    }
-    catch (InvalidParameterType& e) {
-      // We're out of options.  The user gave us the parameter, but it
-      // doesn't have the right type.  The best thing for us to do in
-      // that case is to throw, telling the user to use the right
-      // type.
-      throw e;
-    }
-    // Don't catch InvalidParameterName here; we've already done that above.
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! gotOverlapLevel,
-    std::logic_error,
-    "Ifpack2::RILUK::setParameters: We should never get here!  "
-    "The method should either have read the \"fact: iluk level-of-overlap\"  "
-    "parameter by this point, or have thrown an exception.  "
-    "Please let the Ifpack2 developers know about this bug.");
-
-  //
   // For the other parameters, we prefer magnitude_type, but allow
   // double for backwards compatibility.
   //
@@ -307,7 +240,6 @@ setParameters (const Teuchos::ParameterList& params)
   // exception.
 
   LevelOfFill_ = fillLevel;
-  LevelOfOverlap_ = overlapLevel;
 
   // mfh 28 Nov 2012: The previous code would not assign Athresh_,
   // Rthresh_, or RelaxValue_, if the read-in value was -1.  I don't
@@ -403,25 +335,12 @@ void RILUK<MatrixType>::initialize ()
       }
       A_crs_ = A_crs;
       Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_crs->getCrsGraph (),
-                                                            LevelOfFill_,
-                                                            LevelOfOverlap_));
+                                                            LevelOfFill_, 0));
     }
 
     Graph_->initialize ();
     allocate_L_and_U ();
-
-    // FIXME (mfh 24 Jan 2014) RILUK should not be responsible for
-    // overlap; AdditiveSchwarz should be.
-    if (isOverlapped_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error,
-        "Ifpack2::RILUK::initialize: This class does not implement overlapping.  "
-        "You should use AdditiveSchwarz as the outer preconditioner if you want "
-        "overlapping.");
-    }
-    else {
-      initAllValues (*A_crs_);
-    }
+    initAllValues (*A_crs_);
   } // Stop timing
 
   isInitialized_ = true;
@@ -433,7 +352,7 @@ void RILUK<MatrixType>::initialize ()
 template<class MatrixType>
 void
 RILUK<MatrixType>::
-initAllValues (const row_matrix_type& OverlapA)
+initAllValues (const row_matrix_type& A)
 {
   using Teuchos::ArrayRCP;
   using Teuchos::Comm;
@@ -446,7 +365,7 @@ initAllValues (const row_matrix_type& OverlapA)
   size_t NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
-  size_t MaxNumEntries = OverlapA.getGlobalMaxNumRowEntries();
+  size_t MaxNumEntries = A.getGlobalMaxNumRowEntries();
 
   Teuchos::Array<global_ordinal_type> InI(MaxNumEntries); // Allocate temp space
   Teuchos::Array<global_ordinal_type> LI(MaxNumEntries);
@@ -479,7 +398,7 @@ initAllValues (const row_matrix_type& OverlapA)
     global_ordinal_type global_row = i;
     local_ordinal_type local_row = rowMap->getLocalElement (global_row);
 
-    OverlapA.getGlobalRowCopy (global_row, InI(), InV(), NumIn); // Get Values and Indices
+    A.getGlobalRowCopy (global_row, InI(), InV(), NumIn); // Get Values and Indices
 
     // Split into L and U (we don't assume that indices are ordered).
 
@@ -495,7 +414,13 @@ initAllValues (const row_matrix_type& OverlapA)
         DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Tpetra::Vector D_
       }
       else if (k < 0) { // Out of range
-        throw std::runtime_error("out of range (k<0) in Ifpack2::RILUK::initAllValues");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::runtime_error, "Ifpack2::RILUK::initAllValues: current "
+          "GID k = " << k << " < 0.  I'm not sure why this is an error; it is "
+          "probably an artifact of the undocumented assumptions of the "
+          "original implementation (likely copied and pasted from Ifpack).  "
+          "Nevertheless, the code I found here insisted on this being an error "
+          "state, so I will throw an exception here.");
       }
       else if (k < i) {
         LI[NumL] = k;
@@ -726,12 +651,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type beta) const
 {
   using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,
     "Ifpack2::RILUK::apply: If you have not yet called compute(), "
     "you must call compute() before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X.getNumVectors () != Y.getNumVectors (), std::invalid_argument,
+    "Ifpack2::RILUK::apply: X and Y do not have the same number of columns.  "
+    "X.getNumVectors() = " << X.getNumVectors ()
+    << " != Y.getNumVectors() = " << Y.getNumVectors () << ".");
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();
@@ -740,32 +671,25 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      RCP<const MV> X1;
-      RCP<MV> Y1;
-      generateXY (mode, X, Y, X1, Y1);
-
       if (mode == Teuchos::NO_TRANS) {
-        L_->localSolve (*X1, *Y1,mode);
-        Y1->elementWiseMultiply (one, *D_, *Y1, zero);
-        U_->localSolve (*Y1, *Y1, mode); // Solve Uy = y
-        if (isOverlapped_) {
-          // Export computed Y values if needed
-          Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
-        }
+        L_->localSolve (X, Y, mode);
+        Y.elementWiseMultiply (one, *D_, Y, zero);
+
+        // FIXME (mfh 24 Jan 2014) I'm not sure if localSolve() allows
+        // aliasing input and output multivectors.
+        U_->localSolve (Y, Y, mode); // Solve Uy = y
       }
       else {
-        U_->localSolve (*X1, *Y1, mode); // Solve Uy = y
+        U_->localSolve (X, Y, mode); // Solve Uy = y
 
         // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
         // need to do an elementwise multiply with the conjugate of
         // D_, not just with D_ itself.
-        Y1->elementWiseMultiply (one, *D_, *Y1, zero);
+        Y.elementWiseMultiply (one, *D_, Y, zero);
 
-        L_->localSolve (*Y1, *Y1,mode);
-        if (isOverlapped_) {
-          // Export computed Y values if needed
-          Y.doExport (*Y1, *U_->getGraph ()->getImporter (), OverlapMode_);
-        }
+        // FIXME (mfh 24 Jan 2014) I'm not sure if localSolve() allows
+        // aliasing input and output multivectors.
+        L_->localSolve (Y, Y, mode);
       }
     }
     else { // alpha != 1 or beta != 0
@@ -795,9 +719,8 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
           const Teuchos::ETransp mode) const
 {
   // First generate X and Y as needed for this function
-  Teuchos::RCP<const MV> X1;
-  Teuchos::RCP<MV> Y1;
-  generateXY (mode, X, Y, X1, Y1);
+  Teuchos::RCP<const MV> X1 = Teuchos::rcpFromRef (X);
+  Teuchos::RCP<MV> Y1 = Teuchos::rcpFromRef (Y);
 
   const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero ();
   const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one ();
@@ -814,9 +737,6 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
     MV Y1temp (*Y1); // Need a temp copy of Y1
     L_->apply (Y1temp, *Y1,mode);
     Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
-    if (isOverlapped_) {
-      Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
-    } // Export computed Y values if needed
   }
   else {
     L_->apply (*X1, *Y1,mode);
@@ -825,9 +745,6 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
     MV Y1temp (*Y1); // Need a temp copy of Y1
     U_->apply (Y1temp, *Y1,mode);
     Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
-    if (isOverlapped_) {
-      Y.doExport(*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
-    }
   }
 }
 
@@ -884,61 +801,7 @@ computeCondEst (CondestType CT,
   return Condest_;
 }
 
-
-template<class MatrixType>
-void
-RILUK<MatrixType>::
-generateXY (Teuchos::ETransp mode,
-            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Xin,
-            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Yin,
-            Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
-            Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const
-{
-  // mfh 05 Dec 2013: I just cleaned up the implementation of this
-  // method to make it more legible; I didn't otherwise try to improve
-  // it.  I don't know if it works or not.
-
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-  // Generate an X and Y suitable for solve() and multiply()
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Xin.getNumVectors () != Yin.getNumVectors (), std::runtime_error,
-    "Ifpack2::RILUK::generateXY: X and Y do not have the same number of "
-    "columns.  X has " << Xin.getNumVectors () << " columns, but Y has "
-    << Yin.getNumVectors () << " columns.");
-
-  Xout = rcpFromRef (Xin);
-  Yout = rcpFromRef (const_cast<MV&> (Yin));
-  if (! isOverlapped_) {
-    return; // Nothing more to do
-  }
-
-  if (isOverlapped_) {
-    // Make sure the number of vectors in the multivector is the same as before.
-    if (! OverlapX_.is_null ()) {
-      if (OverlapX_->getNumVectors () != Xin.getNumVectors ()) {
-        OverlapX_ = Teuchos::null;
-        OverlapY_ = Teuchos::null;
-      }
-    }
-    if (OverlapX_.is_null ()) { // Need to allocate space for overlap X and Y
-      OverlapX_ = rcp (new MV (U_->getColMap (), Xout->getNumVectors ()));
-      OverlapY_ = rcp (new MV (L_->getRowMap (), Yout->getNumVectors ()));
-    }
-
-    // Import X values for solve
-    if (mode == Teuchos::NO_TRANS) {
-      OverlapX_->doImport (*Xout, *U_->getGraph ()->getImporter (), Tpetra::INSERT);
-    } else {
-      OverlapX_->doImport (*Xout, *L_->getGraph ()->getExporter (), Tpetra::INSERT);
-    }
-    Xout = OverlapX_;
-    Yout = OverlapY_; // Set pointers for Xout and Yout to point to overlap space
-  }
-}
-
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif
 
