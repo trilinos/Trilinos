@@ -1131,6 +1131,8 @@ int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans)
 
   temp = ML_Operator_Create(A->comm);
   ML_Operator_Transpose(A, temp);
+  if (Atrans->label != NULL)
+    ML_Operator_Set_Label(temp,Atrans->label);
   ML_Operator_ColPartition2RowPartition(temp, Atrans);
   ML_Operator_Destroy(&temp);
   return 1;
