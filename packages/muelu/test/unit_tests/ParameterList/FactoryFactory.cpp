@@ -69,9 +69,10 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-#define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn)
+#define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagersIn)
 
   typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap;
+  typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
   // This is not a real unit test, because output of BuildFactory is not verified. But anyway, it still useful.
   TEUCHOS_UNIT_TEST(FactoryFactory, BuildFactory)
@@ -93,6 +94,7 @@ namespace MueLuTests {
         const Teuchos::ParameterEntry& paramValue = paramList->entry(param);
 
         const FactoryMap factoryMapIn;
+        FactoryManagerMap factoryManagersIn;
 
         // Test when it is not a sublist
         try {

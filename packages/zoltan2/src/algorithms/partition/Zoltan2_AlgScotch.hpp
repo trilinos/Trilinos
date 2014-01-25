@@ -162,21 +162,25 @@ struct SCOTCH_Num_Traits {
   {
     // Allocate array a; copy b values into a.
     size_t size = b.size();
-    *a = new SCOTCH_Num[size];
-    for (size_t i = 0; i < size; i++) ASSIGN_TO_SCOTCH_NUM((*a)[i], b[i], env);
+    if (size > 0) {
+      *a = new SCOTCH_Num[size];
+      for (size_t i = 0; i < size; i++) ASSIGN_TO_SCOTCH_NUM((*a)[i], b[i], env);
+    }
+    else {
+      *a = NULL;
+      // Note:  the Scotch manual says that if any rank has a non-NULL array,
+      //        every process must have a non-NULL array.  In practice, 
+      //        however, this condition is not needed for the arrays we use.
+      //        For now, we'll set these arrays to NULL.  We could allocate
+      //        a dummy value here if needed.  KDD 1/23/14
+    }
   }
 
-  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num *a)
+  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num **a)
   {
     // Delete the copy made in ASSIGN_SCOTCH_NUM_ARRAY.
-    delete [] a;
+    delete [] *a;
   }
-
-  //TODO static inline ASSIGN_FROM_SCOTCH_NUM(zno_t b, SCOTCH_Num a)
-  //TODO {
-  //TODO   Make sure zno_t is large enough to accept SCOTCH_Num.
-  //TODO   NOT NEEDED AS LONG AS PARTS ARE size_t.
-  //TODO }
 };
 
 
@@ -196,11 +200,20 @@ struct SCOTCH_Num_Traits<SCOTCH_Num> {
     ArrayView<const SCOTCH_Num> &b,
     const RCP<const Environment> &env)
   {
-    *a = const_cast<SCOTCH_Num *> (b.getRawPtr());
+    if (b.size() > 0)
+      *a = const_cast<SCOTCH_Num *> (b.getRawPtr());
+    else {
+      *a = NULL;
+      // Note:  the Scotch manual says that if any rank has a non-NULL array,
+      //        every process must have a non-NULL array.  In practice, 
+      //        however, this condition is not needed for the arrays we use.
+      //        For now, we'll set these arrays to NULL, because if we
+      //        allocated a dummy value here, we'll have to track whether or
+      //        not we can free it.  KDD 1/23/14
+    }
   }
-  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num *a) { }
+  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num **a) { }
 };
-
 
 ///////////////////////////////////////////////////////////////////////
 // Now, the actual Scotch algorithm.
@@ -251,8 +264,7 @@ void AlgPTScotch(
   SCOTCH_stratInit(&stratstr);
 
   // Allocate & initialize PTScotch data structure.
-  //SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
-  SCOTCH_Dgraph *gr = new SCOTCH_Dgraph;  // Scotch distributed graph
+  SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
 
   env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphInit", 
@@ -311,24 +323,29 @@ void AlgPTScotch(
 
   // Create array for Scotch to return results in.
   ArrayRCP<partId_t> partList(new partId_t [nVtx], 0, nVtx,true);
-  SCOTCH_Num *partloctab;
-  if (sizeof(SCOTCH_Num) == sizeof(partId_t)) {
+  SCOTCH_Num *partloctab = NULL;
+  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(partId_t))) {
     // Can write directly into the solution's memory
     partloctab = (SCOTCH_Num *) partList.getRawPtr();
   }
   else {
     // Can't use solution memory directly; will have to copy later.
-    partloctab = new SCOTCH_Num[nVtx];
+    // Note:  Scotch does not like NULL arrays, so add 1 to always have non-null.
+    //        ParMETIS has this same "feature."  See Zoltan bug 4299.
+    partloctab = new SCOTCH_Num[nVtx+1];
   }
+
 
   // Call partitioning; result returned in partloctab.
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
+
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
 
   env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphPart", 
     !ierr, BASIC_ASSERTION, problemComm);
 
   // TODO - metrics
+
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
   int me = env->comm_->getRank();
 #endif
@@ -348,8 +365,9 @@ void AlgPTScotch(
 
   // Load answer into the solution.
 
-  if (sizeof(SCOTCH_Num) != sizeof(partId_t)) {
+  if ((sizeof(SCOTCH_Num) != sizeof(partId_t)) || (nVtx == 0)) {
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
+    delete [] partloctab;
   }
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
@@ -364,8 +382,8 @@ void AlgPTScotch(
   //TODO if (ewtdim) delete [] edlotab;
 
   // Clean up copies made due to differing data sizes.
-  if (sizeof(lno_t) != sizeof(SCOTCH_Num)) delete [] vertloctab;
-  if (sizeof(gno_t) != sizeof(SCOTCH_Num)) delete [] edgeloctab;
+  SCOTCH_Num_Traits<lno_t>::DELETE_SCOTCH_NUM_ARRAY(&vertloctab);
+  SCOTCH_Num_Traits<gno_t>::DELETE_SCOTCH_NUM_ARRAY(&edgeloctab);
 
 #else // DO NOT HAVE_MPI
 

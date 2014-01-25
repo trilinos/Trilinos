@@ -24,6 +24,9 @@
 /* Define if Fortran UQTK is enabled */
 /* #undef HAVE_STOKHOS_FORUQTK */
 
+/* Define if EpetraExt is enabled */
+#define HAVE_STOKHOS_EPETRAEXT
+
 /* Define if Ifpack is enabled */
 /* #undef HAVE_STOKHOS_IFPACK */
 

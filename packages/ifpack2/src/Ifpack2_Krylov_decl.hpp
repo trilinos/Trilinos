@@ -392,12 +392,12 @@ namespace Ifpack2 {
     mutable double ApplyTime_;
 
     //! Belos' encapsulation of the linear problem to solve.
-    Teuchos::RCP<Belos::LinearProblem<scalar_type,
+    Teuchos::RCP<Belos::LinearProblem<belos_scalar_type,
                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
                                       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
 
     //! The Belos solver (implementation of the Krylov method).
-    Teuchos::RCP<Belos::SolverManager<scalar_type,
+    Teuchos::RCP<Belos::SolverManager<belos_scalar_type,
                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
                                       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
 

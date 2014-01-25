@@ -47,7 +47,7 @@
   \date   Wed May 26 19:49:10 CDT 2010
 
   \brief  Amesos2::MultiVecAdapter specialization for the
-	  Tpetra::MultiVector class.
+          Tpetra::MultiVector class.
 */
 
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
@@ -68,37 +68,35 @@ namespace Amesos2 {
    * \ingroup amesos2_multivec_adapters
    */
   template< typename Scalar,
-	    typename LocalOrdinal,
-	    typename GlobalOrdinal,
-	    class    Node >
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            class    Node >
   class MultiVecAdapter<Tpetra::MultiVector<Scalar,
-					    LocalOrdinal,
-					    GlobalOrdinal,
-					    Node> >
+                                            LocalOrdinal,
+                                            GlobalOrdinal,
+                                            Node> >
   {
   public:
-
     // public type definitions
     typedef Tpetra::MultiVector<Scalar,
-				LocalOrdinal,
-				GlobalOrdinal,
-				Node>       multivec_t;
+                                LocalOrdinal,
+                                GlobalOrdinal,
+                                Node>       multivec_t;
     typedef Scalar                          scalar_t;
     typedef LocalOrdinal                    local_ordinal_t;
     typedef GlobalOrdinal                   global_ordinal_t;
     typedef Node                            node_t;
     typedef Tpetra::global_size_t           global_size_t;
 
-    friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<>(Teuchos::RCP<multivec_t>);
-    friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<>(Teuchos::RCP<const multivec_t>);
+    friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<> (Teuchos::RCP<multivec_t>);
+    friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<> (Teuchos::RCP<const multivec_t>);
 
     static const char* name;
-
 
   protected:
     // Do not allow direct construction of MultiVecAdapter's.  Only
     // allow construction throw the non-member friend functions.
-    
+
     /// Copy constructor
     MultiVecAdapter( const MultiVecAdapter<multivec_t>& adapter );
 
@@ -111,7 +109,7 @@ namespace Amesos2 {
 
 
   public:
-    
+
     ~MultiVecAdapter()
     { }
 
@@ -120,7 +118,7 @@ namespace Amesos2 {
     bool isLocallyIndexed() const
     {
       if(getComm()->getSize() == 1){
-	return true;
+        return true;
       } // There may be other conditions to check
     }
 
@@ -129,9 +127,9 @@ namespace Amesos2 {
 
 
     Teuchos::RCP<const Tpetra::Map<
-			 local_ordinal_t,
-			 global_ordinal_t,
-			 node_t > >
+                         local_ordinal_t,
+                         global_ordinal_t,
+                         node_t > >
     getMap() const
     {
       return mv_->getMap();
@@ -228,12 +226,12 @@ namespace Amesos2 {
      *  is not large enough given \c lda , the value of \c global_copy ,
      *  and the number of vectors in \c this.
      */
-    void get1dCopy( const Teuchos::ArrayView<scalar_t>& A,
-		    size_t lda,
-		    Teuchos::Ptr<
-		      const Tpetra::Map<local_ordinal_t,
-		                        global_ordinal_t,
-		                        node_t> > distribution_map ) const;
+    void
+    get1dCopy (const Teuchos::ArrayView<scalar_t>& A,
+               size_t lda,
+               Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
+                                              global_ordinal_t,
+                                              node_t> > distribution_map) const;
 
     /**
      * \brief Extracts a 1 dimensional view of this MultiVector's data
@@ -248,7 +246,7 @@ namespace Amesos2 {
      * in possession of.  The default, \c false , will give each calling node a
      * view of the global multivector.
      */
-    Teuchos::ArrayRCP<scalar_t> get1dViewNonConst( bool local = false );
+    Teuchos::ArrayRCP<scalar_t> get1dViewNonConst (bool local = false);
 
     /**
      * \brief Export data into the global MultiVector space.
@@ -258,33 +256,47 @@ namespace Amesos2 {
      *                 accross processors.  This data will be redistributed
      *                 to match the map of the adapted multivector.
      */
-    void put1dData( const Teuchos::ArrayView<const scalar_t>& new_data,
-		    size_t lda,
-		    Teuchos::Ptr<
-		      const Tpetra::Map<local_ordinal_t,
-		                        global_ordinal_t,
-		                        node_t> > source_map );
+    void
+    put1dData (const Teuchos::ArrayView<const scalar_t>& new_data,
+               size_t lda,
+               Teuchos::Ptr< const Tpetra::Map<local_ordinal_t,
+                                        global_ordinal_t,
+                                        node_t> > source_map );
 
     //! Get a short description of this adapter class
-    std::string description() const;
+    std::string description () const;
 
     //! Print a description of this adapter to the given output stream
-    void describe( Teuchos::FancyOStream& os,
-		   const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default ) const;
-
+    void
+    describe (Teuchos::FancyOStream& os,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
 
   private:
     //! The multivector which this adapter wraps
     Teuchos::RCP<multivec_t> mv_;
 
-    //! Used for transferring between local and global multivectors
-    mutable Teuchos::RCP<Tpetra::Import<local_ordinal_t,
-					global_ordinal_t,
-					node_t> > importer_;
-    //! Used for transferring between local and global multivectors
-    mutable Teuchos::RCP<Tpetra::Export<local_ordinal_t,
-					global_ordinal_t,
-					node_t> > exporter_;
+    //! The Tpetra::Export specialization used by this class.
+    typedef Tpetra::Export<local_ordinal_t, global_ordinal_t, node_t> export_type;
+
+    //! The Tpetra::Import specialization used by this class.
+    typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_type;
+
+    /// \brief Used for data redistribution from the user's input
+    ///   MultiVector to the solver's input MultiVector.
+    ///
+    /// This is an Export, because the user's input data need not
+    /// necessarily be one-to-one, but the solver's input data must
+    /// (presumably) always be one-to-one.
+    mutable Teuchos::RCP<export_type> exporter_;
+
+    /// \brief Used for data redistribution from the solver's output
+    ///   MultiVector to the user's output MultiVector.
+    ///
+    /// This is an Import, because the user's output data need not
+    /// necessarily be one-to-one, but the solver's output data must
+    /// (presumably) always be one-to-one.
+    mutable Teuchos::RCP<import_type> importer_;
   }; // end class MultiVecAdapter<Tpetra::MultiVector>
 
 } // end namespace Amesos2

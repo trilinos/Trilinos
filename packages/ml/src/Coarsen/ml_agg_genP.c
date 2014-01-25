@@ -617,6 +617,7 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
 
      /* Create the prolongator smoother operator, I-omega*inv(D)*A. */
      AGGsmoother = ML_Operator_Create(ml->comm);
+     ML_Operator_Set_Label(AGGsmoother,"Prolongator smoother");
      widget.drop_tol = ag->drop_tol_for_smoothing;
      if (ml->symmetrize_matrix == ML_TRUE) widget.Amat   = t3;
      else widget.Amat   = &(ml->Amat[level]);

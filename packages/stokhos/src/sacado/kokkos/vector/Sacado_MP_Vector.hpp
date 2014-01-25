@@ -126,6 +126,7 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+#if 0
       // A temporary hack to allow taking the address of a temporary
       // Vector with ViewStorage.  A better approach would be to return
       // a VectorViewStoragePtr with overloaded * to return a new
@@ -134,6 +135,7 @@ namespace Sacado {
       Vector* operator&() { return this; }
       KOKKOS_INLINE_FUNCTION
       const Vector* operator&() const { return this; }
+#endif
 
       //! Default constructor
       /*!
@@ -449,6 +451,38 @@ namespace Sacado {
         return *this;
       }
 
+      //! Prefix ++
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator++() {
+        for (ordinal_type i=0; i<s.size(); i++)
+          ++(s[i]);
+        return *this;
+      }
+
+      //! Postfix ++
+      KOKKOS_INLINE_FUNCTION
+      Vector operator++(int) {
+        Vector tmp(*this);
+        ++(*this);
+        return tmp;
+      }
+
+      //! Prefix --
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator--() {
+        for (ordinal_type i=0; i<s.size(); i++)
+          --(s[i]);
+        return *this;
+      }
+
+      //! Postfix --
+      KOKKOS_INLINE_FUNCTION
+      Vector operator--(int) {
+        Vector tmp(*this);
+        --(*this);
+        return tmp;
+      }
+
       //@}
 
       KOKKOS_INLINE_FUNCTION
@@ -497,8 +531,7 @@ namespace Sacado {
 
     template <typename Storage>
     std::ostream&
-    operator << (std::ostream& os,
-                 const Vector<Storage>& a)
+    operator << (std::ostream& os, const Vector<Storage>& a)
     {
       typedef typename Vector<Storage>::ordinal_type ordinal_type;
 
@@ -510,6 +543,43 @@ namespace Sacado {
 
       os << "]\n";
       return os;
+    }
+
+    template <typename Storage>
+    std::istream&
+    operator >> (std::istream& is, Vector<Storage>& a)
+    {
+      typedef typename Vector<Storage>::ordinal_type ordinal_type;
+      typedef typename Vector<Storage>::value_type value_type;
+
+      //
+      // Need to check all of this for errors, end-of-line, etc...
+      //
+
+      char b = 0;
+      if (Storage::is_static) {
+        is >> b; // "["
+        for (ordinal_type i=0; i<a.size(); i++) {
+          is >> a.fastAccessCoeff(i);
+        }
+        is >> b; // "]";
+      }
+      else {
+        std::vector<value_type> c;
+        value_type v;
+        is >> b; // "["
+        while (is >> b && b != ']') {
+          is.putback(b);
+          is >> v;
+          c.push_back(v);
+        }
+        ordinal_type n = c.size();
+        a.reset(n);
+        for (ordinal_type i=0; i<n; ++i)
+          a.fastAccessCoeff(i) = c[i];
+      }
+
+      return is;
     }
 
   } // namespace MP

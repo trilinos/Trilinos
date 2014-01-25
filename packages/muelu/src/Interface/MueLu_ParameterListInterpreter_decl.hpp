@@ -99,9 +99,12 @@ namespace MueLu {
     //@}
 
   private:
-    typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap; //TODO: remove this line
+    typedef std::map<std::string, RCP<const FactoryBase>  > FactoryMap; //TODO: remove this line
+    typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
-    void BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut) const;
+    void BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut, FactoryManagerMap & factoryManagers) const;
+
+    //mutable std::map<std::string, RCP<FactoryManagerBase> > factoryManagers_;
 
     //! @name Matrix configuration
     //@{

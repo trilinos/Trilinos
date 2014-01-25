@@ -50,35 +50,27 @@
 namespace Kokkos {
 namespace Impl {
 
-struct LayoutTileLeftFast ;
-struct LayoutTileLeftSlow ;
+struct ViewTileLeftFast ;
+struct ViewTileLeftSlow ;
 
-template< typename ScalarType , unsigned N0 , unsigned N1 ,
-          class RankDynamic , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType , ScalarType ,
-                       LayoutTileLeft<N0,N1,true> , unsigned_<2> , RankDynamic ,
+template< class ValueType , unsigned N0 , unsigned N1 , bool B , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType , void ,
+                       LayoutTileLeft<N0,N1,B> ,
                        MemorySpace , MemoryTraits >
-{ typedef LayoutTileLeftFast type ; };
-
-template< typename ScalarType , unsigned N0 , unsigned N1 ,
-          class RankDynamic , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ScalarType , ScalarType ,
-                       LayoutTileLeft<N0,N1,false> , unsigned_<2> , RankDynamic ,
-                       MemorySpace , MemoryTraits >
-{ typedef LayoutTileLeftSlow type ; };
+{ typedef typename if_c< B , ViewTileLeftFast , ViewTileLeftSlow >::type type ; };
 
 //----------------------------------------------------------------------------
 
 template<>
-struct ViewAssignment< LayoutTileLeftFast , void , void >
+struct ViewAssignment< ViewTileLeftFast , void , void >
 {
 private:
 
   template< class DT , class DL , class DD , class DM >
   inline
-  void allocate( View<DT,DL,DD,DM,LayoutTileLeftFast> & dst , const std::string label )
+  void allocate( View<DT,DL,DD,DM,ViewTileLeftFast> & dst , const std::string label )
   {
-    typedef View<DT,DL,DD,DM,LayoutTileLeftFast>  DstViewType ;
+    typedef View<DT,DL,DD,DM,ViewTileLeftFast>  DstViewType ;
     typedef typename DstViewType::memory_space  memory_space ;
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
@@ -96,7 +88,7 @@ public:
 
   template< class DT , class DL , class DD , class DM >
   inline
-  ViewAssignment( View<DT,DL,DD,DM,LayoutTileLeftFast> & dst ,
+  ViewAssignment( View<DT,DL,DD,DM,ViewTileLeftFast> & dst ,
                   const typename enable_if< ViewTraits<DT,DL,DD,DM>::is_managed , std::string >::type & label ,
                   const size_t n0 ,
                   const size_t n1 ,
@@ -107,7 +99,7 @@ public:
                   const size_t = 0 ,
                   const size_t = 0 )
   {
-    typedef View<DT,DL,DD,DM,LayoutTileLeftFast>  DstViewType ;
+    typedef View<DT,DL,DD,DM,ViewTileLeftFast>  DstViewType ;
 
     dst.m_shape.N0 = n0 ;
     dst.m_shape.N1 = n1 ;
@@ -119,11 +111,11 @@ public:
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutTileLeftFast> & dst ,
-                  const View<ST,SL,SD,SM,LayoutTileLeftFast> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewTileLeftFast> & dst ,
+                  const View<ST,SL,SD,SM,ViewTileLeftFast> & src ,
                   typename enable_if<
-                    is_same< View<DT,DL,DD,DM,LayoutTileLeftFast> ,
-                             typename View<ST,SL,SD,SM,LayoutTileLeftFast>::HostMirror >::value
+                    is_same< View<DT,DL,DD,DM,ViewTileLeftFast> ,
+                             typename View<ST,SL,SD,SM,ViewTileLeftFast>::HostMirror >::value
                   >::type * = 0 )
   {
     dst.m_shape   = src.m_shape ;
@@ -135,20 +127,20 @@ public:
 //----------------------------------------------------------------------------
 
 template<>
-struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
+struct ViewAssignment< ViewTileLeftFast , ViewTileLeftFast, void >
 {
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutTileLeftFast> & dst ,
-                  const View<ST,SL,SD,SM,LayoutTileLeftFast> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewTileLeftFast> & dst ,
+                  const View<ST,SL,SD,SM,ViewTileLeftFast> & src ,
                   const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef View<DT,DL,DD,DM,LayoutTileLeftFast> DstViewType ;
+    typedef View<DT,DL,DD,DM,ViewTileLeftFast> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
@@ -170,8 +162,8 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   inline static
-  void deep_copy( const View<DT,DL,DD,DM,Impl::LayoutTileLeftFast> & dst ,
-                  const View<ST,SL,SD,SM,Impl::LayoutTileLeftFast> & src ,
+  void deep_copy( const View<DT,DL,DD,DM,Impl::ViewTileLeftFast> & dst ,
+                  const View<ST,SL,SD,SM,Impl::ViewTileLeftFast> & src ,
                   const typename Impl::enable_if<(
                     Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::value_type ,
                                    typename ViewTraits<ST,SL,SD,SM>::non_const_value_type >::value
@@ -189,8 +181,8 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
 
       Impl::assert_shapes_are_equal( dst.m_shape , src.m_shape );
 
-      const size_t n_dst = sizeof(typename dst_traits::scalar_type) * dst.capacity();
-      const size_t n_src = sizeof(typename src_traits::scalar_type) * src.capacity();
+      const size_t n_dst = sizeof(typename dst_traits::value_type) * dst.capacity();
+      const size_t n_src = sizeof(typename src_traits::value_type) * src.capacity();
 
       Impl::assert_counts_are_equal( n_dst , n_src );
 
@@ -203,22 +195,22 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
 //----------------------------------------------------------------------------
 
 template<>
-struct ViewAssignment< LayoutDefault , LayoutTileLeftFast, void >
+struct ViewAssignment< ViewDefault , ViewTileLeftFast, void >
 {
   /** \brief Extracting a single tile from a tiled view */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
-                  const View<ST,SL,SD,SM,LayoutTileLeftFast> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewDefault> & dst ,
+                  const View<ST,SL,SD,SM,ViewTileLeftFast> & src ,
                   const unsigned i0 ,
                   const typename enable_if<(
-                    is_same< View<DT,DL,DD,DM,LayoutDefault> ,
-                             typename View<ST,SL,SD,SM,LayoutTileLeftFast>::tile_type >::value
+                    is_same< View<DT,DL,DD,DM,ViewDefault> ,
+                             typename View<ST,SL,SD,SM,ViewTileLeftFast>::tile_type >::value
                   ), unsigned >::type i1 )
   {
-    typedef View<DT,DL,DD,DM,LayoutDefault> DstViewType ;
+    typedef View<DT,DL,DD,DM,ViewDefault> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
@@ -248,7 +240,7 @@ struct ViewAssignment< LayoutDefault , LayoutTileLeftFast, void >
 namespace Kokkos {
 
 template< class DataType , class Arg1Type , class Arg2Type , class Arg3Type >
-class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::LayoutTileLeftFast >
+class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewTileLeftFast >
   : public ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type >
 {
 private:
@@ -256,10 +248,10 @@ private:
 
   typedef ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type > traits ;
 
-  typedef Impl::ViewAssignment<Impl::LayoutTileLeftFast> alloc ;
+  typedef Impl::ViewAssignment<Impl::ViewTileLeftFast> alloc ;
 
-  typedef Impl::ViewAssignment<Impl::LayoutTileLeftFast,
-                               Impl::LayoutTileLeftFast> assign ;
+  typedef Impl::ViewAssignment<Impl::ViewTileLeftFast,
+                               Impl::ViewTileLeftFast> assign ;
 
   typename traits::value_type * m_ptr_on_device ;
   typename traits::shape_type   m_shape ;
@@ -274,7 +266,7 @@ private:
 
 public:
 
-  typedef Impl::LayoutTileLeftFast specialize ;
+  typedef Impl::ViewTileLeftFast specialize ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,

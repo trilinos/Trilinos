@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -259,11 +259,12 @@ class MultiFunctorParallelReduce ;
 namespace Kokkos {
 namespace Impl {
 
-/// \class ParallelReduce
-/// \brief Implementation detail of parallel_reduce.
+/// \class ParallelScan
+/// \brief Implementation detail of parallel_scan.
 ///
-/// This is an implementation detail of parallel_reduce.  Users should
-/// skip this and go directly to the nonmember function parallel_reduce.
+/// This is an implementation detail of parallel_scan.  Users should
+/// skip this and go directly to the documentation of the nonmember
+/// template function Kokkos::parallel_scan.
 template< class FunctorType ,
           class WorkSpec ,
           class DeviceType = typename FunctorType::device_type >
@@ -274,6 +275,156 @@ class ParallelScan ;
 
 namespace Kokkos {
 
+/// \fn parallel_scan
+/// \tparam FunctorType Type of the scan functor.
+///
+/// \param work_count [in] Number of work items.
+/// \param functor [in] The scan functor.
+///
+/// This function implements a parallel scan operation.  The scan can
+/// be either inclusive or exclusive, depending on how you implement
+/// the scan functor.
+///
+/// A scan functor looks almost exactly like a reduce functor, except
+/// that its operator() takes a third \c bool argument, \c final_pass,
+/// which indicates whether this is the last pass of the scan
+/// operation.  We will show below how to use the \c final_pass
+/// argument to control whether the scan is inclusive or exclusive.
+///
+/// Here is the minimum required interface of a scan functor for a POD
+/// (plain old data) value type \c PodType.  That is, the result is a
+/// View of zero or more PodType.  It is also possible for the result
+/// to be an array of (same-sized) arrays of PodType, but we do not
+/// show the required interface for that here.
+/// \code
+/// class ScanFunctor {
+/// public:
+///   // The Kokkos device type
+///   typedef ... device_type;
+///   // Type of an entry of the array containing the result;
+///   // also the type of each of the entries combined using
+///   // operator() or join().
+///   typedef PodType value_type;
+///   typedef typename DeviceType::size_type size_type;
+///
+///   void operator () (const size_type i, value_type& update, const bool final_pass) const;
+///   void init (value_type& update) const;
+///   void join (volatile value_type& update, volatile const value_type& input) const
+/// };
+/// \endcode
+///
+/// Here is an example of a functor which computes an inclusive plus-scan
+/// of an array of \c int, in place.  If given an array [1, 2, 3, 4], this
+/// scan will overwrite that array with [1, 3, 6, 10].
+///
+/// \code
+/// template<class DeviceType>
+/// class InclScanFunctor {
+/// public:
+///   typedef DeviceType device_type;
+///   typedef int value_type;
+///   typedef typename DeviceType::size_type size_type;
+///
+///   InclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
+///
+///   void operator () (const size_type i, value_type& update, const bool final_pass) const {
+///     update += x_(i);
+///     if (final_pass) {
+///       x_(i) = update;
+///     }
+///   }
+///   void init (value_type& update) const {
+///     update = 0;
+///   }
+///   void join (volatile value_type& update, volatile const value_type& input) const {
+///     update += input;
+///   }
+///
+/// private:
+///   Kokkos::View<value_type*, device_type> x_;
+/// };
+/// \endcode
+///
+/// Here is an example of a functor which computes an <i>exclusive</i>
+/// scan of an array of \c int, in place.  In operator(), note both
+/// that the final_pass test and the update have switched places, and
+/// the use of a temporary.  If given an array [1, 2, 3, 4], this scan
+/// will overwrite that array with [0, 1, 3, 6].
+///
+/// \code
+/// template<class DeviceType>
+/// class ExclScanFunctor {
+/// public:
+///   typedef DeviceType device_type;
+///   typedef int value_type;
+///   typedef typename DeviceType::size_type size_type;
+///
+///   ExclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
+///
+///   void operator () (const size_type i, value_type& update, const bool final_pass) const {
+///     const value_type x_i = x_(i);
+///     if (final_pass) {
+///       x_(i) = update;
+///     }
+///     update += x_i;
+///   }
+///   void init (value_type& update) const {
+///     update = 0;
+///   }
+///   void join (volatile value_type& update, volatile const value_type& input) const {
+///     update += input;
+///   }
+///
+/// private:
+///   Kokkos::View<value_type*, device_type> x_;
+/// };
+/// \endcode
+///
+/// Here is an example of a functor which builds on the above
+/// exclusive scan example, to compute an offsets array from a
+/// population count array, in place.  We assume that the pop count
+/// array has an extra entry at the end to store the final count.  If
+/// given an array [1, 2, 3, 4, 0], this scan will overwrite that
+/// array with [0, 1, 3, 6, 10].
+///
+/// \code
+/// template<class DeviceType>
+/// class OffsetScanFunctor {
+/// public:
+///   typedef DeviceType device_type;
+///   typedef int value_type;
+///   typedef typename DeviceType::size_type size_type;
+///
+///   // lastIndex_ is the last valid index (zero-based) of x.
+///   // If x has length zero, then lastIndex_ won't be used anyway.
+///   ExclScanFunctor (Kokkos::View<value_type*, device_type> x) :
+///     x_ (x), last_index_ (x.dimension_0 () == 0 ? 0 : x.dimension_0 () - 1)
+///   {}
+///
+///   void operator () (const size_type i, int& update, const bool final_pass) const {
+///     const value_type x_i = x_(i);
+///     if (final_pass) {
+///       x_(i) = update;
+///     }
+///     update += x_i;
+///     // The last entry of x_ gets the final sum.
+///     if (final_pass && i == last_index_) {
+///       x_(i) = update;
+///     }
+///   }
+///   void init (value_type& update) const {
+///     update = 0;
+///   }
+///   void join (volatile value_type& update, volatile const value_type& input) const {
+///     update += input;
+///   }
+///
+/// private:
+///   Kokkos::View<value_type*, device_type> x_;
+///   const size_type last_index_;
+/// };
+/// \endcode
+///
 template< class FunctorType >
 inline
 void parallel_scan( const size_t        work_count ,

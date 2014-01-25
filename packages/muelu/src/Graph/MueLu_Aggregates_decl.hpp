@@ -165,11 +165,19 @@ namespace MueLu {
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
     /*! @brief Compute sizes of aggregates
-     *
-     * returns the number of nodes in each aggregate in an array.
-     *
+      
+      Returns the number of nodes in each aggregate in an array.
+      If the aggregate sizes are not stored internally (which is the default), they are computed and returned.
+      If the aggregate sizes have been stored internally, then they are *not* recomputed, but instead the
+      stored sizes are returned.
+
+      @param[in] forceRecompute if true, force recomputation of the aggregate sizes.
+
+      @param[in] cacheSizes if true and either forceRecompute==true or sizes haven't yet been calculated, compute and store the sizes.
+      If forceRecompute==false and sizes have been calculated previously, then this parameter has no effect.
+      Sizes should only be cached when the aggregation phases are complete, i.e, aggregate sizes are no longer changing!
      */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const;
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizes(bool forceRecompute=true, bool cacheSizes=false) const;
 
     //! @name Overridden from Teuchos::Describable
     //@{

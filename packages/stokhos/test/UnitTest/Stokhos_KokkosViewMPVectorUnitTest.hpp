@@ -75,9 +75,9 @@ checkVectorView(const ViewType& v,
                 Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::scalar_type scalar_type;
   typedef typename view_type::HostMirror host_view_type;
   typedef typename host_view_type::array_type host_array_type;
+  typedef typename host_array_type::value_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
@@ -103,13 +103,13 @@ checkVectorView(const ViewType& v,
 template <typename ViewType>
 bool
 checkConstantVectorView(const ViewType& v,
-                        const typename ViewType::scalar_type& val_expected,
+                        const typename ViewType::array_type::value_type& val_expected,
                         Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::scalar_type scalar_type;
   typedef typename view_type::HostMirror host_view_type;
   typedef typename host_view_type::array_type host_array_type;
+  typedef typename host_array_type::value_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
@@ -258,6 +258,55 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_DeviceArray, Storage
 
   success = checkVectorView(v, out);
 }
+
+namespace Test {
+
+template< class ViewType >
+struct MPVectorAtomicFunctor {
+  typedef typename ViewType::device_type device_type ;
+
+  typedef typename ViewType::value_type vector_type ;
+  typedef typename vector_type::storage_type::value_type scalar_type ;
+
+  scalar_type m_s ;
+  ViewType m_v ;
+
+  MPVectorAtomicFunctor( const ViewType & v , const scalar_type & s ) : m_v( v ), m_s( s )
+  {
+    Kokkos::parallel_for( m_v.dimension_0() , *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( int i ) const
+  {
+    vector_type v( m_s );
+    atomic_assign( & m_v(i) , v );
+  }
+};
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename host_view_type::array_type host_array_type;
+  typedef typename ViewType::array_type array_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v("view", num_rows, num_cols);
+  Scalar val = 1.2345;
+
+  (void) Test::MPVectorAtomicFunctor<ViewType>( v , val );
+
+  success = checkConstantVectorView(v, val, out);
+}
+
 
 #define VIEW_MP_VECTOR_TESTS_STORAGE_LAYOUT( STORAGE, LAYOUT )          \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \

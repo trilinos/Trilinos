@@ -177,7 +177,7 @@ createTranspose()
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_ROWMATRIXTRANSPOSE_INSTANT(SCALAR,LO,GO,NODE) \
+#define TPETRA_ROWMATRIXTRANSPOSER_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class RowMatrixTransposer< SCALAR, LO , GO , NODE >;
 

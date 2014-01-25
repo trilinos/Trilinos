@@ -58,6 +58,8 @@
 #pragma clang system_header
 #endif
 
+#include <Teuchos_Array.hpp>
+
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
@@ -72,7 +74,7 @@ namespace MueLu {
   CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarseMapFactory()
   : domainGidOffset_(0)
   {
-    stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
+    //stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -84,6 +86,9 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",  Teuchos::null, "Generating factory for null space.");
+
+    validParamList->set< std::string  >("Striding info", "{}", "Striding information");
+    validParamList->set< LocalOrdinal >("Strided block id", -1, "Strided block id");
 
     return validParamList;
   }
@@ -105,6 +110,17 @@ namespace MueLu {
     return domainGidOffset_;
   }
 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setStridingData(std::vector<size_t> stridingInfo) {
+    // store striding map in internal variable
+    stridingInfo_ = stridingInfo;
+
+    // try to remove string "Striding info" from parameter list to make sure,
+    // that stridingInfo_ is not replaced in the Build call.
+    std::string strStridingInfo; strStridingInfo.clear();
+    SetParameter("Striding info", ParameterEntry(strStridingInfo));
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
@@ -116,8 +132,21 @@ namespace MueLu {
     const size_t                   NSDim   = nullspace->getNumVectors();
     RCP<const Teuchos::Comm<int> > comm    = aggregates->GetMap()->getComm();
 
+    // read in stridingInfo from parameter list and fill the internal member variable
+    // read the data only if the parameter "Striding info" exists and is non-empty
+    const ParameterList & pL = GetParameterList();
+    if(pL.isParameter("Striding info")) {
+      std::string strStridingInfo = pL.get<std::string>("Striding info");
+      if(strStridingInfo.empty() == false) {
+        Teuchos::Array<size_t> arrayVal = Teuchos::fromStringToArray<size_t>(strStridingInfo);
+        stridingInfo_ = Teuchos::createVector(arrayVal);
+      }
+    }
+
+    LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
+
     // check for consistency of striding information with NSDim and nCoarseDofs
-    if (stridedBlockId_== -1) {
+    if (stridedBlockId== -1) {
       // this means we have no real strided map but only a block map with constant blockSize "NSDim"
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
       stridingInfo_.clear();
@@ -125,13 +154,13 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
 
     } else {
-      // stridedBlockId_ > -1, set by user
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId_ > Teuchos::as<LO>(stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_. error.");
-      size_t stridedBlockSize = stridingInfo_[stridedBlockId_];
+      // stridedBlockId > -1, set by user
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId > Teuchos::as<LO>(stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_. error.");
+      size_t stridedBlockSize = stridingInfo_[stridedBlockId];
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim. error.");
     }
 
-    GetOStream(Statistics2, 0) << "domainGIDOffset: " << domainGidOffset_ << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId_ << std::endl;
+    GetOStream(Statistics2, 0) << "domainGIDOffset: " << domainGidOffset_ << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
 
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
@@ -143,7 +172,7 @@ namespace MueLu {
         indexBase,
         stridingInfo_,
         comm,
-        stridedBlockId_,
+        stridedBlockId,
         domainGidOffset_);
 
     Set(currentLevel, "CoarseMap", coarseMap);

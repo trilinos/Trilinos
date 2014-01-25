@@ -93,13 +93,16 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
+    typedef Teuchos::OrdinalTraits<LO> OTS;
+
     // Aggregation parameters (used in aggregation algorithms)
     // TODO introduce local member function for each aggregation algorithm such that each aggregation algorithm can define its own parameters
     validParamList->set<Ordering>("Ordering", AggOptions::NATURAL, "Ordering strategy (NATURAL|GRAPH|RANDOM)");
-    validParamList->set<LO>      ("MaxNeighAlreadySelected",    0, "Number of maximum neighbour nodes that are already aggregated already. "
+    validParamList->set<LO>      ("MaxNeighAlreadySelected",                   0, "Number of maximum neighbour nodes that are already aggregated already. "
                                   "If a new aggregate has some neighbours that are already aggregated, "
                                   "this node probably can be added to one of these aggregates. We don't need a new one.");
-    validParamList->set<LO>      ("MinNodesPerAggregate",       2, "Minimum number of nodes for aggregate");
+    validParamList->set<LO>      ("MinNodesPerAggregate",                      2, "Minimum number of nodes for aggregate");
+    validParamList->set<LO>      ("MaxNodesPerAggregate",             OTS::max(), "Maximum number of nodes for aggregate");
 
     validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
     validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm",   false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");

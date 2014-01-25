@@ -91,7 +91,10 @@ inline void debugAssertStrength(ERCPStrength strength)
   case RCP_WEAK:
     return; // Fine
   default:
-    TEUCHOS_TEST_FOR_EXCEPT(true);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Teuchos::RCPNode: ERCPStrength enum value "
+      << strength << " is invalid (neither RCP_STRONG = " << RCP_STRONG
+      << " nor RCP_WEAK = " << RCP_WEAK << ").");
   }
 #else
   (void) strength; // Silence "unused variable" compiler warning.

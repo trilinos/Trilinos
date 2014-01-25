@@ -102,13 +102,16 @@ namespace Belos {
       return Teuchos::rcp (new MV (mv.getMap (), numvecs, false));
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV)")
       return Teuchos::rcp (new MV (mv));
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const std::vector<int>& index)
     {
       using Teuchos::as;
       using Teuchos::Array;
@@ -178,7 +181,8 @@ namespace Belos {
       using Teuchos::Range1D;
 
 #ifdef HAVE_TPETRA_DEBUG
-      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneViewNonConst(mv,index)";
+      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>"
+        "::CloneViewNonConst(mv,index)";
       TEUCHOS_TEST_FOR_EXCEPTION(
         *std::min_element (index.begin (), index.end ()) < 0, std::invalid_argument,
         fnName << ": All indices must be nonnegative.");
@@ -191,7 +195,7 @@ namespace Belos {
 
       // Detect whether the index range is contiguous.
       // If it is, use the more efficient Range1D version of CloneViewNonConst.
-      for (typename std::vector<int>::size_type j = 1; j<index.size (); ++j) {
+      for (typename std::vector<int>::size_type j = 1; j < index.size (); ++j) {
         if (index[j] != index[j-1] + 1) {
           // not contiguous; short circuit
           Array<size_t> stinds (index.begin (), index.end ());
@@ -213,24 +217,26 @@ namespace Belos {
       const int numCols = static_cast<int> (mv.getNumVectors());
       const bool validRange = index.size() > 0 &&
         index.lbound() >= 0 && index.ubound() < numCols;
-      if (! validRange)
-        {
-          std::ostringstream os;
-          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
-            "CloneViewNonConst(mv,index=[" << index.lbound() << ", "
-             << index.ubound() << "]): ";
-          TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-                             os.str() << "Empty index range is not allowed.");
-          TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-                             os.str() << "Index range includes negative "
-                             "index/ices, which is not allowed.");
-          TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument,
-                             os.str() << "Index range exceeds number of "
-                             "vectors " << numCols << " in the input "
-                             "multivector.");
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                             os.str() << "Should never get here!");
-        }
+      if (! validRange) {
+        std::ostringstream os;
+        os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+          "CloneViewNonConst(mv,index=[" << index.lbound() << ", "
+           << index.ubound() << "]): ";
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          index.size() == 0, std::invalid_argument,
+          os.str() << "Empty index range is not allowed.");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          index.lbound() < 0, std::invalid_argument,
+          os.str() << "Index range includes negative inde{x,ices}, which is "
+          "not allowed.");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          index.ubound() >= numCols, std::invalid_argument,
+          os.str() << "Index range exceeds number of vectors " << numCols
+          << " in the input multivector.");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          os.str() << "Should never get here!");
+      }
       return mv.subViewNonConst (index);
     }
 
@@ -244,7 +250,8 @@ namespace Belos {
       using Teuchos::Range1D;
 
 #ifdef HAVE_TPETRA_DEBUG
-      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index)";
+      const char fnName[] = "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>"
+        "::CloneView(mv,index)";
       TEUCHOS_TEST_FOR_EXCEPTION(
         *std::min_element (index.begin (), index.end ()) < 0,
         std::invalid_argument,
@@ -299,14 +306,20 @@ namespace Belos {
       return mv.subView (index);
     }
 
-    static int GetVecLength( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { return mv.getGlobalLength(); }
+    static int
+    GetVecLength (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
+      return mv.getGlobalLength ();
+    }
 
-    static int GetNumberVecs( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { return mv.getNumVectors(); }
+    static int
+    GetNumberVecs (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
+      return mv.getNumVectors ();
+    }
 
-    static bool HasConstantStride( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { return mv.isConstantStride(); }
+    static bool
+    HasConstantStride (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
+      return mv.isConstantStride ();
+    }
 
     static void
     MvTimesMatAddMv (const Scalar& alpha,
@@ -336,7 +349,7 @@ namespace Belos {
 
       // This starts the timer.  It will be stopped on scope exit.
       Teuchos::TimeMonitor timeMon (*timer);
-#endif
+#endif // HAVE_BELOS_TPETRA_TIMERS
 
       // Check if B is 1-by-1, in which case we can just call update()
       if (B.numRows () == 1 && B.numCols () == 1) {
@@ -393,12 +406,22 @@ namespace Belos {
                const Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
                Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
+      using Tpetra::LocallyReplicated;
+      using Teuchos::Comm;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcpFromRef;
+      using Teuchos::REDUCE_SUM;
+      using Teuchos::reduceAll;
+      using Teuchos::SerialComm;
+      typedef Tpetra::Map<LO,GO,Node> map_type;
+      typedef Tpetra::MultiVector<Scalar,LO,GO,Node> mv_type;
+
       KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
 
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTransMv");
-      Teuchos::RCP<Teuchos::Time> timer =
-        Teuchos::TimeMonitor::lookupCounter (timerName);
+      RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = Teuchos::TimeMonitor::getNewCounter (timerName);
       }
@@ -411,51 +434,61 @@ namespace Belos {
       Teuchos::TimeMonitor timeMon (*timer);
 #endif
 
-      // form alpha * A^H * B, then copy into SDM
-      // we will create a multivector C_mv from a a local map
-      // this map has a serial comm, the purpose being to short-circuit the MultiVector::reduce() call at the end of MultiVector::multiply()
-      // otherwise, the reduced multivector data would be copied back to the GPU, only to turn around and have to get it back here.
-      // this saves us a round trip for this data.
-      const int numRowsC = C.numRows(),
-                numColsC = C.numCols(),
-                strideC  = C.stride();
+      // Form alpha * A^H * B, then copy into the SerialDenseMatrix.
+      // We will create a multivector C_mv from a a local map.  This
+      // map has a serial comm, the purpose being to short-circuit the
+      // MultiVector::reduce() call at the end of
+      // MultiVector::multiply().  Otherwise, the reduced multivector
+      // data would be copied back to the GPU, only to turn around and
+      // have to get it back here.  This saves us a round trip for
+      // this data.
+      const int numRowsC = C.numRows ();
+      const int numColsC = C.numCols ();
+      const int strideC  = C.stride ();
 
       // Check if numRowsC == numColsC == 1, in which case we can call dot()
       if (numRowsC == 1 && numColsC == 1) {
-        A.dot(B, Teuchos::ArrayView<Scalar>(C.values(),1));
+        A.dot (B, Teuchos::ArrayView<Scalar> (C.values (), 1));
         return;
       }
 
-      Teuchos::SerialComm<int> scomm;
+      RCP<const Comm<int> > serialComm (new SerialComm<int> ());
       // create local map with serial comm
-      Tpetra::Map<LO,GO,Node> LocalMap(numRowsC, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Tpetra::LocallyReplicated, A.getMap()->getNode());
+      RCP<const map_type> LocalMap =
+        rcp (new map_type (numRowsC, 0, serialComm, LocallyReplicated,
+                           A.getMap ()->getNode ()));
       // create local multivector to hold the result
       const bool INIT_TO_ZERO = true;
-      Tpetra::MultiVector<Scalar,LO,GO,Node> C_mv(Teuchos::rcpFromRef(LocalMap),numColsC, INIT_TO_ZERO);
+      mv_type C_mv (LocalMap, numColsC, INIT_TO_ZERO);
+
       // multiply result into local multivector
-      C_mv.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,B,Teuchos::ScalarTraits<Scalar>::zero());
+      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B,
+                     Teuchos::ScalarTraits<Scalar>::zero ());
       // get comm
-      Teuchos::RCP< const Teuchos::Comm<int> > pcomm = A.getMap()->getComm();
+      RCP<const Comm<int> > pcomm = A.getMap ()->getComm ();
       // create arrayview encapsulating the Teuchos::SerialDenseMatrix
-      Teuchos::ArrayView<Scalar> C_view(C.values(),strideC*numColsC);
-      if (pcomm->getSize() == 1) {
-        // no accumulation to do; simply extract the multivector data into C
-        // extract a copy of the result into the array view (and therefore, the SerialDenseMatrix)
-        C_mv.get1dCopy(C_view,strideC);
+      Teuchos::ArrayView<Scalar> C_view (C.values (), strideC*numColsC);
+      if (pcomm->getSize () == 1) {
+        // No accumulation to do; simply extract the multivector data
+        // into C.  Extract a copy of the result into the array view
+        // (and therefore, the SerialDenseMatrix).
+        C_mv.get1dCopy (C_view, strideC);
       }
       else {
         // get a const host view of the data in C_mv
-        Teuchos::ArrayRCP<const Scalar> C_mv_view = C_mv.get1dView();
+        Teuchos::ArrayRCP<const Scalar> C_mv_view = C_mv.get1dView ();
         if (strideC == numRowsC) {
-          // sumall into C
-          Teuchos::reduceAll<int,Scalar>(*pcomm,Teuchos::REDUCE_SUM,numColsC*numRowsC,C_mv_view.getRawPtr(),C_view.getRawPtr());
+          // sum all into C
+          reduceAll<int,Scalar> (*pcomm, REDUCE_SUM, numColsC*numRowsC,
+                                 C_mv_view.getRawPtr (), C_view.getRawPtr ());
         }
         else {
           // sumall into temp, copy into C
-          Teuchos::Array<Scalar> destBuff(numColsC*numRowsC);
-          Teuchos::reduceAll<int,Scalar>(*pcomm,Teuchos::REDUCE_SUM,numColsC*numRowsC,C_mv_view.getRawPtr(),destBuff.getRawPtr());
-          for (int j=0; j < numColsC; ++j) {
-            for (int i=0; i < numRowsC; ++i) {
+          Teuchos::Array<Scalar> destBuff (numColsC * numRowsC);
+          reduceAll<int,Scalar> (*pcomm, REDUCE_SUM, numColsC*numRowsC,
+                                 C_mv_view.getRawPtr (), destBuff.getRawPtr ());
+          for (int j = 0; j < numColsC; ++j) {
+            for (int i = 0; i < numRowsC; ++i) {
               C_view[strideC*j+i] = destBuff[numRowsC*j+i];
             }
           }

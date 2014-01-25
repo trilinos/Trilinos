@@ -123,7 +123,7 @@ namespace Teuchos {
           const magnitude_type two = one + one;
           // Cast from magnitude_type to int, since std::ostream's
           // precision() method expects an int input.
-          const int prec = 1 + Teuchos::as<int> ((two*numDecDigits + one) / two);
+          const int prec = 1 + Teuchos::as<int> (magnitude_type((two*numDecDigits + one) / two));
 
           // Set the number of (decimal) digits after the decimal
           // point to print.

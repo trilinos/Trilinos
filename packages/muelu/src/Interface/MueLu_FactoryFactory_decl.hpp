@@ -69,6 +69,9 @@
 
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_BlockedGaussSeidelSmoother.hpp"
+#include "MueLu_BlockedPFactory.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
@@ -80,6 +83,7 @@
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -87,6 +91,7 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -115,7 +120,8 @@ namespace MueLu {
 #undef MUELU_FACTORYFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-    typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap; // TODO: remove
+    typedef std::map<std::string, RCP<const FactoryBase>  > FactoryMap; // TODO: remove
+    typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
   public:
 
@@ -130,7 +136,7 @@ namespace MueLu {
     //       ...
     //     </ParameterList>
     //
-    RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry& param, const FactoryMap& factoryMapIn) const {
+    RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry& param, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       // Find factory
       std::string            factoryName;
       Teuchos::ParameterList paramList;
@@ -142,55 +148,58 @@ namespace MueLu {
       }
 
       // TODO: see how Teko handles this (=> register factories).
-      if (factoryName == "AggregationExportFactory")        return Build2<AggregationExportFactory>     (paramList, factoryMapIn);
-      if (factoryName == "AmalgamationFactory")             return Build2<AmalgamationFactory>          (paramList, factoryMapIn);
-      if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn);
-      if (factoryName == "CoarseMapFactory")                return Build2<CoarseMapFactory>             (paramList, factoryMapIn);
-      if (factoryName == "CoalesceDropFactory")             return Build2<CoalesceDropFactory>          (paramList, factoryMapIn);
-      if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory       (paramList, factoryMapIn);
-      if (factoryName == "CoordinatesTransferFactory")      return Build2<CoordinatesTransferFactory>   (paramList, factoryMapIn);
-      if (factoryName == "DirectSolver")                    return BuildDirectSolver                    (paramList, factoryMapIn);
-      if (factoryName == "FilteredAFactory")                return Build2<FilteredAFactory>             (paramList, factoryMapIn);
-      if (factoryName == "GenericRFactory")                 return Build2<GenericRFactory>              (paramList, factoryMapIn);
-      if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>   (paramList, factoryMapIn);
+      if (factoryName == "AggregationExportFactory")        return Build2<AggregationExportFactory>     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "AmalgamationFactory")             return Build2<AmalgamationFactory>          (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedRAPFactory")               return BuildRAPFactory<BlockedRAPFactory>   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoarseMapFactory")                return Build2<CoarseMapFactory>             (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoalesceDropFactory")             return Build2<CoalesceDropFactory>          (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory       (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoordinatesTransferFactory")      return Build2<CoordinatesTransferFactory>   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "DirectSolver")                    return BuildDirectSolver                    (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "FilteredAFactory")                return Build2<FilteredAFactory>             (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "GenericRFactory")                 return Build2<GenericRFactory>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoSmoother")                      return Teuchos::null;
       if (factoryName == "NoDirectSolver")                  return Teuchos::null;
-      if (factoryName == "PgPFactory")                      return Build2<PgPFactory>                   (paramList, factoryMapIn);
-      if (factoryName == "SaPFactory")                      return Build2<SaPFactory>                   (paramList, factoryMapIn);
-      if (factoryName == "RAPFactory")                      return BuildRAPFactory                      (paramList, factoryMapIn);
-      if (factoryName == "RebalanceAcFactory")              return Build2<RebalanceAcFactory>           (paramList, factoryMapIn);
-      if (factoryName == "RebalanceTransferFactory")        return Build2<RebalanceTransferFactory>     (paramList, factoryMapIn);
-      if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>            (paramList, factoryMapIn);
-      if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                (paramList, factoryMapIn);
-      if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn);
-      if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn);
-      if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn);
-      if (factoryName == "UserPFactory")                    return Build2<UserPFactory>                 (paramList, factoryMapIn);
-      if (factoryName == "RepartitionInterface")            return Build2<RepartitionInterface>         (paramList, factoryMapIn);
+      if (factoryName == "NullspaceFactory")                return Build2<NullspaceFactory>             (paramList, factoryMapIn, factoryManagersIn); // TODO fix Nullspace parameters
+      if (factoryName == "PgPFactory")                      return Build2<PgPFactory>                   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SaPFactory")                      return Build2<SaPFactory>                   (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RAPFactory")                      return BuildRAPFactory<RAPFactory>          (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RebalanceAcFactory")              return Build2<RebalanceAcFactory>           (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RebalanceTransferFactory")        return Build2<RebalanceTransferFactory>     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>             (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UserPFactory")                    return Build2<UserPFactory>                 (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RepartitionInterface")            return Build2<RepartitionInterface>         (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_EXPERIMENTAL
-      if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                 (paramList, factoryMapIn);
-      if (factoryName == "PatternFactory")                  return Build2<PatternFactory>               (paramList, factoryMapIn);
-      if (factoryName == "ConstraintFactory")               return Build2<ConstraintFactory>            (paramList, factoryMapIn);
-      if (factoryName == "NullspacePresmoothFactory")       return Build2<NullspacePresmoothFactory>    (paramList, factoryMapIn);
+      if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                 (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "PatternFactory")                  return Build2<PatternFactory>               (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ConstraintFactory")               return Build2<ConstraintFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "NullspacePresmoothFactory")       return Build2<NullspacePresmoothFactory>    (paramList, factoryMapIn, factoryManagersIn);
 #endif
 
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-        return Build2<ZoltanInterface>(paramList, factoryMapIn);
+        return Build2<ZoltanInterface>(paramList, factoryMapIn, factoryManagersIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a ZoltanInterface object: Zoltan is disabled: HAVE_MUELU_ZOLTAN && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
       }
       if (factoryName == "Zoltan2Interface") {
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
-        return Build2<Zoltan2Interface>(paramList, factoryMapIn);
+        return Build2<Zoltan2Interface>(paramList, factoryMapIn, factoryManagersIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
       if (factoryName == "IsorropiaInterface") {
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-        return Build2<IsorropiaInterface>(paramList, factoryMapIn);
+        return Build2<IsorropiaInterface>(paramList, factoryMapIn, factoryManagersIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
@@ -198,11 +207,27 @@ namespace MueLu {
 
       if (factoryName == "RepartitionFactory") {
 #ifdef HAVE_MPI
-        return Build2<RepartitionFactory>(paramList, factoryMapIn);
+        return Build2<RepartitionFactory>(paramList, factoryMapIn, factoryManagersIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
+
+      /*if (factoryName == "FactoryGroup") {
+        // group of factories to build a factory manager?
+        return BuildFactoryGroup(paramList, factoryMapIn);
+      }*/
+
+      if (factoryName == "BlockedPFactory") {
+
+        return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
+      }
+
+      if (factoryName == "BlockedGaussSeidelSmoother") {
+
+        return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
+      }
+
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
         TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError,
@@ -236,20 +261,20 @@ namespace MueLu {
 #define arraysize(ar)  (sizeof(ar) / sizeof(ar[0]))
 
     template <class T> // T must implement the Factory interface
-    RCP<T> Build(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn) const {
+    RCP<T> Build(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       RCP<T> factory = rcp(new T());
 
       const char* strarray[] = {"A", "P", "R", "Graph", "UnAmalgamationInfo", "Aggregates", "Nullspace", "TransferFactory", "DofsPerNode"};
       std::vector<std::string> v(strarray, strarray + arraysize(strarray));
       for (std::vector<std::string>::iterator it = v.begin() ; it != v.end(); ++it)
         if (paramList.isParameter(*it))
-          factory->SetFactory(*it, BuildFactory(paramList.getEntry(*it), factoryMapIn));
+          factory->SetFactory(*it, BuildFactory(paramList.getEntry(*it), factoryMapIn, factoryManagersIn));
 
       return factory;
     }
 
     template <class T> // T must implement the Factory interface
-    RCP<T> Build2(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn) const {
+    RCP<T> Build2(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       RCP<T> factory = rcp(new T());
 
       ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
@@ -262,7 +287,7 @@ namespace MueLu {
 
         if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
           // Generate or get factory described by param
-          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
 
           // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
           paramListWithFactories.remove(pName);
@@ -285,11 +310,11 @@ namespace MueLu {
       return factory;
     }
 
-    //! RAPFactory
-    RCP<FactoryBase> BuildRAPFactory(const Teuchos::ParameterList & paramList, const FactoryMap& factoryMapIn) const {
-      RCP<RAPFactory> factory;
+    template <class T> // T must implement the Factory interface
+    RCP<T> BuildRAPFactory(const Teuchos::ParameterList & paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<T> factory;
       if (paramList.isSublist("TransferFactories") == false) {
-        factory = Build2<RAPFactory>(paramList, factoryMapIn);
+        factory = Build2<T>(paramList, factoryMapIn, factoryManagersIn);
 
       } else {
         RCP<Teuchos::ParameterList>       paramListNonConst = rcp(new Teuchos::ParameterList(paramList));
@@ -297,10 +322,10 @@ namespace MueLu {
 
         paramListNonConst->remove("TransferFactories");
 
-        factory = Build2<RAPFactory>(*paramListNonConst, factoryMapIn);
+        factory = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
         for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
-          RCP<const FactoryBase> p = BuildFactory(transferFactories->entry(param), factoryMapIn);
+          RCP<const FactoryBase> p = BuildFactory(transferFactories->entry(param), factoryMapIn, factoryManagersIn);
           factory->AddTransferFactory(p);
         }
       }
@@ -309,8 +334,8 @@ namespace MueLu {
     }
 
     //! CoupledAggregationFactory
-    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn);
+    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
 
       if(paramList.isParameter("Ordering")) {
         std::string orderingStr = paramList.get<std::string>("Ordering");
@@ -339,8 +364,8 @@ namespace MueLu {
     }
 
     //! UncoupledAggregationFactory
-    RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<UncoupledAggregationFactory> factory = Build<UncoupledAggregationFactory>(paramList, factoryMapIn);
+    RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<UncoupledAggregationFactory> factory = Build<UncoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
 
       /*if(paramList.isParameter("Ordering")) {
         std::string orderingStr = paramList.get<std::string>("Ordering");
@@ -389,7 +414,7 @@ namespace MueLu {
 
         if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
           // Generate or get factory described by param
-          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
 
           // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
           paramListWithFactories.remove(pName);
@@ -422,7 +447,7 @@ namespace MueLu {
     //       ...
     //       </ParameterList>
     //     </ParameterList>
-    RCP<FactoryBase> BuildTrilinosSmoother(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+    RCP<FactoryBase> BuildTrilinosSmoother(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new TrilinosSmoother())));
 
@@ -439,7 +464,7 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
     }
 
-    RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn) const {
+    RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new DirectSolver())));
 
@@ -452,6 +477,126 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
     }
 
+    RCP<FactoryBase> BuildBlockedGaussSeidelSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedGaussSeidelSmoother", Exceptions::RuntimeError, "");
+      int bgs_sweeps=1;          if(paramList.isParameter("sweeps"))       bgs_sweeps = paramList.get<int>        ("sweeps");
+      double bgs_omega=1.0;      if(paramList.isParameter("omega"))        bgs_omega  = paramList.get<double>     ("omega");
+
+      // read in sub lists
+      RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
+
+      // internal vector of factory managers
+      std::vector<RCP<FactoryManager> > facManagers;
+
+      // loop over all "block%i" sublists in parameter list
+      int blockid = 1;
+      bool blockExists = true;
+      while (blockExists == true) {
+        std::stringstream ss;
+        ss << "block" << blockid;
+
+        if(paramList.isSublist(ss.str()) == true) {
+          // we either have a parameter group or we have a list of factories in here
+          RCP<const ParameterList> b = rcp(new ParameterList(*sublist(paramListNonConst, ss.str())));
+
+          RCP<FactoryManager> M = Teuchos::null;
+
+          if (b->isParameter("group")) {
+            // use a factory manager
+            std::string facManagerName = b->get< std::string >("group");
+            TEUCHOS_TEST_FOR_EXCEPTION(factoryManagersIn.count(facManagerName) != 1, Exceptions::RuntimeError, "Factory manager has not been found. Please check the spelling of the factory managers in your xml file.");
+            RCP<FactoryManagerBase> Mb = factoryManagersIn.find(facManagerName)->second;
+            M = Teuchos::rcp_dynamic_cast<FactoryManager>(Mb);
+            TEUCHOS_TEST_FOR_EXCEPTION(M==Teuchos::null, Exceptions::RuntimeError, "Failed to cast FactoryManagerBase object to FactoryManager.");
+          } else {
+            // read in the list of factories
+            M = rcp(new FactoryManager());
+            for (ParameterList::ConstIterator param = b->begin(); param != b->end(); ++param) {
+              RCP<const FactoryBase> p = BuildFactory(b->entry(param), factoryMapIn, factoryManagersIn);
+              M->SetFactory(b->name(param),p);
+            }
+          }
+
+          // add factory manager to internal vector of factory managers
+          M->SetIgnoreUserData(true);
+          facManagers.push_back(M);
+          paramListNonConst->remove(ss.str());
+          blockid++;
+        } else {
+          blockExists = false;
+          break;
+        }
+
+      }
+
+      RCP<BlockedGaussSeidelSmoother> bgs = rcp(new BlockedGaussSeidelSmoother(bgs_sweeps,bgs_omega));
+
+      bgs->AddFactoryManager(facManagers[0]);
+      bgs->AddFactoryManager(facManagers[1]);
+
+      return rcp(new SmootherFactory(bgs));
+    }
+
+    RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<BlockedPFactory> pfac = rcp(new BlockedPFactory());
+
+      // read in sub lists
+      RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
+
+      // internal vector of factory managers
+      std::vector<RCP<FactoryManager> > facManagers;
+
+      // loop over all "block%i" sublists in parameter list
+      int blockid = 1;
+      bool blockExists = true;
+      while (blockExists == true) {
+        std::stringstream ss;
+        ss << "block" << blockid;
+
+        if(paramList.isSublist(ss.str()) == true) {
+          // we either have a parameter group or we have a list of factories in here
+          RCP<const ParameterList> b = rcp(new ParameterList(*sublist(paramListNonConst, ss.str())));
+
+          RCP<FactoryManager> M = Teuchos::null;
+
+          if (b->isParameter("group")) {
+            // use a factory manager
+            std::string facManagerName = b->get< std::string >("group");
+            TEUCHOS_TEST_FOR_EXCEPTION(factoryManagersIn.count(facManagerName) != 1, Exceptions::RuntimeError, "Factory manager has not been found. Please check the spelling of the factory managers in your xml file.");
+            RCP<FactoryManagerBase> Mb = factoryManagersIn.find(facManagerName)->second;
+            M = Teuchos::rcp_dynamic_cast<FactoryManager>(Mb);
+            TEUCHOS_TEST_FOR_EXCEPTION(M==Teuchos::null, Exceptions::RuntimeError, "Failed to cast FactoryManagerBase object to FactoryManager.");
+          } else {
+            // read in the list of factories
+            M = rcp(new FactoryManager());
+            for (ParameterList::ConstIterator param = b->begin(); param != b->end(); ++param) {
+              RCP<const FactoryBase> p = BuildFactory(b->entry(param), factoryMapIn, factoryManagersIn);
+              M->SetFactory(b->name(param),p);
+            }
+          }
+
+          // add factory manager to internal vector of factory managers
+          M->SetIgnoreUserData(true);
+          facManagers.push_back(M);
+          paramListNonConst->remove(ss.str());
+          blockid++;
+        } else {
+          blockExists = false;
+          break;
+        }
+
+      }
+
+      // build BlockedPFactory (without sub block information)
+      pfac = Build2<BlockedPFactory>(*paramListNonConst, factoryMapIn, factoryManagersIn);
+
+      // add FactoryManager objects
+      for(size_t i = 0; i<facManagers.size(); i++) {
+        pfac->AddFactoryManager(facManagers[i]); // add factory manager
+      }
+
+      return pfac;
+    }
   }; // class
 
 } // namespace MueLu

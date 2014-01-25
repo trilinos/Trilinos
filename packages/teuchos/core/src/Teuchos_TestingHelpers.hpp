@@ -473,7 +473,7 @@ bool compareFloatingArrays(
       l_out << "failed (code did not throw an exception at all)\n"; \
     } \
     catch (const ExceptType& except) { \
-      l_out << "passes\n";                                        \
+      l_out << "passed\n";                                        \
       l_out << "\nException message for expected exception:\n\n";   \
       { \
         Teuchos::OSTab l_tab (out); \
@@ -515,7 +515,7 @@ bool compareFloatingArrays(
     try { \
       l_out << "Test that code {"#code";} does not throw : "; \
       code; \
-      l_out << "passes\n"; \
+      l_out << "passed\n"; \
     } \
     catch (std::exception& except) { \
       (success) = false; \

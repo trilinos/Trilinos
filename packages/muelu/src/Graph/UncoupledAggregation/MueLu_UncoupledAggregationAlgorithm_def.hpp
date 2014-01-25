@@ -78,6 +78,9 @@ namespace MueLu {
     AggOptions::Ordering ordering    = params.get<AggOptions::Ordering>("Ordering");
     LO MaxNeighAlreadySelected       = params.get<LO>                  ("MaxNeighAlreadySelected");
     LO MinNodesPerAggregate          = params.get<LO>                  ("MinNodesPerAggregate");
+    LO MaxNodesPerAggregate          = params.get<LO>                  ("MaxNodesPerAggregate");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(MaxNodesPerAggregate < MinNodesPerAggregate, Exceptions::RuntimeError, "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: MinNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
 
     if (ordering != NATURAL && ordering != RANDOM && ordering != GRAPH)
       throw Exceptions::RuntimeError("UncoupledAggregation::BuildAggregates : bad aggregation ordering option");
@@ -155,7 +158,13 @@ namespace MueLu {
 
             if (aggStat[neigh] == NodeStats::READY || aggStat[neigh] == NodeStats::NOTSEL) {
               // Add neighbor node to tentative aggregate
-              aggList[aggSize++] = neigh;
+              // but only if aggregate size is not exceeding maximum size
+              // NOTE: We do not exit the loop over all neighbours since we have still
+              //       to count all aggregated neighbour nodes for the aggregation criteria
+              // NOTE: We check here for the maximum aggregation size. If we would do it below
+              //       with all the other check too big aggregates would not be accepted at all.
+              if (aggSize < as<size_t>(MaxNodesPerAggregate))
+                aggList[aggSize++] = neigh;
 
             } else {
               numAggregatedNeighbours++;

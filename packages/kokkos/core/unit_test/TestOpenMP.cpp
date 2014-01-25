@@ -68,6 +68,7 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestMultiReduce.hpp>
+#include <TestAggregate.hpp>
 
 namespace Test {
 
@@ -215,6 +216,14 @@ TEST_F( openmp , view_remap )
     ++value ;
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
   }}}}
+}
+
+//----------------------------------------------------------------------------
+
+
+TEST_F( openmp , view_aggregate )
+{
+  TestViewAggregate< Kokkos::OpenMP >();
 }
 
 //----------------------------------------------------------------------------

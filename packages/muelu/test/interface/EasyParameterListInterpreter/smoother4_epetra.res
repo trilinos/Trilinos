@@ -22,6 +22,7 @@ Level 1
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -36,10 +37,11 @@ Level 1
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -67,6 +69,7 @@ Level 2
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -81,10 +84,11 @@ Level 2
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   

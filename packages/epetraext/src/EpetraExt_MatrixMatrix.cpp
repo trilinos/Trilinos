@@ -680,11 +680,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   // a C = A * B multiply.  
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor MM(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=MM.getNewTimer("All I&X Alloc");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Alloc")));
 #endif
   Mview.deleteContents();
 
@@ -711,9 +708,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("All I&X Extract");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Extract")));
 #endif
 
   int i;
@@ -730,9 +725,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       Mview.values[i]           = vals + rowptr[i];
       Mview.remote[i]           = false;
     }
-#ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-#endif
     return 0;
   }
   else if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)){
@@ -777,11 +769,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
- mtime=MM.getNewTimer("All I&X Collective-0");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Collective-0")));
 #endif
-
 
   if (numProcs < 2) {
     if (Mview.numRemote > 0) {
@@ -802,14 +791,9 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   int globalMaxNumRemote = 0;
   Mrowmap.Comm().MaxAll(&Mview.numRemote, &globalMaxNumRemote, 1);
 
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
-
   if (globalMaxNumRemote > 0) {
 #ifdef ENABLE_MMM_TIMINGS
-    mtime=MM.getNewTimer("All I&X Import-1");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Import-1")));
 #endif
     //Create a map that describes the remote rows of M that we need.
 
@@ -824,9 +808,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   LightweightMap MremoteRowMap((int_type) -1, Mview.numRemote, MremoteRows, (int_type) Mrowmap.IndexBase64());
 
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-    mtime=MM.getNewTimer("All I&X Import-2");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Import-2")));
 #endif
     //Create an importer with target-map MremoteRowMap and 
     //source-map Mrowmap.
@@ -844,9 +826,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
 
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-    mtime=MM.getNewTimer("All I&X Import-3");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Import-3")));
 #endif
 
     if(Mview.importMatrix) delete Mview.importMatrix;
@@ -854,9 +834,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     else Mview.importMatrix = new LightweightCrsMatrix(M,*importer);
 
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-    mtime=MM.getNewTimer("All I&X Import-4");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Import-4")));
 #endif
 
     //Finally, use the freshly imported data to fill in the gaps in our views
@@ -887,7 +865,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     Mview.importColMap = new Epetra_Map((int_type) -1,Mview.importMatrix->ColMap_.NumMyElements(),MyColGIDs,(int_type) Mview.importMatrix->ColMap_.IndexBase64(),M.Comm());
     delete [] MremoteRows;
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
+    MM=Teuchos::null;
 #endif   
 
     // Cleanup
@@ -918,11 +896,8 @@ int import_only(const Epetra_CrsMatrix& M,
   // a C = A * B multiply.  
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor MM(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=MM.getNewTimer("Ionly Setup");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Setup")));
 #endif
 
   Mview.deleteContents();
@@ -946,10 +921,6 @@ int import_only(const Epetra_CrsMatrix& M,
     numRemote = 0;
     Mview.targetMapToOrigRow.resize(N); 
     for(i=0;i<N; i++) Mview.targetMapToOrigRow[i]=i;
-
-#ifdef ENABLE_MMM_TIMINGS      
-  mtime->stop();   
-#endif
     return 0;
   }
   else if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)){
@@ -982,18 +953,13 @@ int import_only(const Epetra_CrsMatrix& M,
 	   << "attempting to import remote matrix rows."<<std::endl;
       return(-1);
     }
-#ifdef ENABLE_MMM_TIMINGS      
-    mtime->stop();  
-#endif
 
     //If only one processor we don't need to import any remote rows, so return.
     return(0);
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("Ionly Import-1");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-1")));
 #endif
   const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
   
@@ -1005,9 +971,7 @@ int import_only(const Epetra_CrsMatrix& M,
   LightweightMap MremoteRowMap((int_type) -1, numRemote, MremoteRows, (int_type)Mrowmap.IndexBase64());
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("Ionly Import-2");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-2")));
 #endif
   //Create an importer with target-map MremoteRowMap and 
   //source-map Mrowmap.
@@ -1015,26 +979,18 @@ int import_only(const Epetra_CrsMatrix& M,
   Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
   
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("Ionly Import-3");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-3")));
 #endif
   
   Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
   
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("Ionly Import-4");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-4")));
 #endif
 
   // Cleanup
   delete Rimporter;
   delete [] MremoteRows;
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif      
-  
 
   return(0);
 }
@@ -1228,15 +1184,11 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
 			   Epetra_CrsMatrix& C,
                            bool call_FillComplete_on_result)
 {
-
   // DEBUG
   //  bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;  
-  mtime=M.getNewTimer("All Setup");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM All Setup")));
 #endif
   // end DEBUG
 
@@ -1318,9 +1270,7 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   const Epetra_Map* targetMap_B = rowmap_B;
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("All I&X");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM All I&X")));
 #endif
   if (numProcs > 1) {
     //If op(A) = A^T, find all rows of A that contain column-indices in the
@@ -1378,9 +1328,7 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("All Multiply");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM All Multiply")));
 #endif
 
   // Zero if filled
@@ -1426,11 +1374,6 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   delete mapunion1; mapunion1 = NULL;
   delete workmap1; workmap1 = NULL;
   delete workmap2; workmap2 = NULL;
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
-
 
   return(0);
 }
@@ -1697,13 +1640,9 @@ int MatrixMatrix::TJacobi(double omega,
 			  Epetra_CrsMatrix& C,
 			  bool call_FillComplete_on_result)
 {
-
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;  
-  mtime=M.getNewTimer("Jacobi All Setup");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi All Setup")));
 #endif
 
   //A and B should already be Filled.
@@ -1779,9 +1718,7 @@ int MatrixMatrix::TJacobi(double omega,
   const Epetra_Map* targetMap_B = rowmap_B;
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("All I&X");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi All I&X")));
 #endif
 
   //Now import any needed remote rows and populate the Aview struct.
@@ -1811,9 +1748,7 @@ int MatrixMatrix::TJacobi(double omega,
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("Jacobi All Multiply");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi All Multiply")));
 #endif
 
   // Zero if filled
@@ -1828,10 +1763,6 @@ int MatrixMatrix::TJacobi(double omega,
   delete mapunion1; mapunion1 = NULL;
   delete workmap1; workmap1 = NULL;
   delete workmap2; workmap2 = NULL;
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   return(0);
 }

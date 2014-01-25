@@ -128,7 +128,7 @@ pulled by --checkout-cmnd).
       help="Command used to check out "+self.getProductName()+" and dependent source tarball(s)." )
     clp.add_option(
       "--extra-configure-options", dest="extraConfigureOptions", type="string", default="",
-      help="Extra options to add to the 'configure' cmmand for "+self.getProductName()+"." \
+      help="Extra options to add to the 'configure' command for "+self.getProductName()+"." \
       +"  Note: This does not override the hard-coded configure options." )
     clp.add_option(
       "--embed-rpath", dest="embedRPath", action="store_true", default=False,

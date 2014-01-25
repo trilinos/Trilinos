@@ -534,8 +534,6 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
  * \param pqJagged_partSizes is the two dimensional float-like array output that represents the ratio of each part.
  *
  */
-
-
 template <typename Adapter, typename pq_scalar_t, typename pq_gno_t>
 void pqJagged_getInputValues(
     const RCP<const Environment> &env, const RCP<const CoordinateModel<
@@ -575,7 +573,6 @@ void pqJagged_getInputValues(
     }
 
     if (weightDim == 0 || ignoreWeights){
-
         pqJagged_uniformWeights[0] = true;
         pqJagged_weights[0] = NULL;
     }
@@ -6925,7 +6922,11 @@ void AlgPQJagged(
     env->timerStop(MACRO_TIMERS, "PQJagged - Part_Assignment");
     ArrayRCP<const pq_gno_t> gnoList;
     if(!is_data_ever_migrated){
-
+#ifdef enable_migration2
+        if(migration_actualMigration_option != 0){
+            freeArray<pq_gno_t>(pq_gnos);
+        }
+#endif
         if(numLocalCoords > 0){
             gnoList = arcpFromArrayView(pqJagged_gnos);
         }
@@ -6943,14 +6944,12 @@ void AlgPQJagged(
             pq_lno_t incoming = 0;
             int message_tag = 7856;
 
-
             env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating");
             int ierr = Zoltan_Comm_Create( &plan, numLocalCoords,
                     actual_owner_of_coordinate, mpi_comm, message_tag,
                     &incoming);
             Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating" );
-
 
             pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(incoming);
 
@@ -6979,9 +6978,7 @@ void AlgPQJagged(
             numLocalCoords = incoming;
             is_data_ever_migrated = false;
 
-
-            ArrayView<const pq_gno_t> avpqgnos(pq_gnos, numLocalCoords);
-            gnoList = arcpFromArrayView(avpqgnos);
+            gnoList = arcp(pq_gnos, 0, numLocalCoords, true);
             //cout << " me:" << problemComm->getRank() << " gnoList:" <<
             //gnoList() << endl;
         }
@@ -6993,6 +6990,11 @@ void AlgPQJagged(
     env->timerStart(MACRO_TIMERS, "PQJagged - Solution_Part_Assignment");
     partId = arcp(partIds, 0, numLocalCoords, true);
 
+    // SR TODO: migrate_gid never seem to be defined why is this needed ?
+    // Looks like old code when we did not do migration within pqjagged but
+    // let setParts take care of it. Now as we do migration above
+    // we will never pass true to setParts. The next three lines should be
+    // removed in that case.
 #ifdef migrate_gid
     solution->setParts(gnoList, partId,true);
 #endif
@@ -7027,7 +7029,6 @@ void AlgPQJagged(
             freeArray<pq_scalar_t>(pqJagged_weights[i]);
         }
 
-        //freeArray<pq_gno_t>(pq_gnos);
         freeArray<int>(actual_owner_of_coordinate);
     }
 #endif

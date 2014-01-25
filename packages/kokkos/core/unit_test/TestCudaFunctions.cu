@@ -65,6 +65,7 @@
 #include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
+#include <TestAggregate.hpp>
 
 namespace Test {
 
@@ -86,6 +87,12 @@ void test_device_cuda_view_impl()
 
 void test_device_cuda_view_api()
 {
+  typedef Kokkos::View< const int * , Kokkos::Cuda , Kokkos::MemoryTraits< Kokkos::RandomAccess > > view_texture_managed ;
+  typedef Kokkos::View< const int * , Kokkos::Cuda , Kokkos::MemoryTraits< Kokkos::RandomAccess | Kokkos::Unmanaged > > view_texture_unmanaged ;
+
+  typedef Kokkos::Impl::StaticAssertSame< typename view_texture_managed::specialize , Kokkos::Impl::ViewCudaTexture >::type spec_m ;
+  typedef Kokkos::Impl::StaticAssertSame< typename view_texture_unmanaged::specialize , Kokkos::Impl::ViewCudaTexture >::type spec_um ;
+
   TestViewAPI< double , Kokkos::Cuda >();
 
 #if 0
@@ -221,6 +228,17 @@ void test_device_cuda_tile()
   Kokkos::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, 0u);
 }
+}
+
+}
+
+//----------------------------------------------------------------------------
+
+namespace Test {
+
+void test_device_cuda_view_aggregate()
+{
+  TestViewAggregate< Kokkos::Cuda >();
 }
 
 }

@@ -144,6 +144,14 @@ function execute_loadbalance {
 	return -1
     fi
 
+    # See if Sierra launch command is in path; if it is, use
+    # otherwise, run nem_slice directly...
+    LAUNCH=`command -v launchx`
+    if [ ! -z "$LAUNCH" ]
+    then
+	LAUNCH="$LAUNCH -n 1"
+    fi
+
     date=`date '+%m/%d/%y'`
     time=`date '+%H:%M:%S'`
     prob_dir=`pwd | sed "s/.*\///g"`
@@ -157,18 +165,18 @@ function execute_loadbalance {
     then
 	echo ${txtblu}
 	echo "Executing:"
-	echo "   $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+	echo "   $LAUNCH 1 $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
 	echo "   ...see $output for nem_slice status"
 	echo ${txtrst}
-	($NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
+	($LAUNCH $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
 	load_rc=$?
     else
 	echo ${txtblu}
 	echo "Executing:"
-	echo "   $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
+	echo "   $LAUNCH $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
 	echo "   ...see $output for nem_slice status"
 	echo ${txtrst}
-	($NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
+	($LAUNCH $NEM_SLICE -e $spheres $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
 	load_rc=$?
     fi
     return $load_rc
@@ -283,9 +291,9 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=`getopt Hhni:o:p:j:r:R:S:sl: $*`
+   TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl: $*`
 else
-   TEMP=`getopt -o Hhni:o:p:j:r:R:S:sl: -a \
+   TEMP=`getopt -o Hhn:i:o:p:j:r:R:S:sl: -a \
        --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear \
        --long multikl,rcb,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
        -n 'decomp' -- "$@"`

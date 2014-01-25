@@ -1358,7 +1358,7 @@ struct pack_state
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
-  typedef typename Fields::geom_state_array_type::scalar_type  value_type ;
+  typedef typename Fields::geom_state_array_type::value_type  value_type ;
   typedef Kokkos::View< value_type* , device_type >     buffer_type ;
 
   static const unsigned value_count = 6 ;
@@ -1415,7 +1415,7 @@ struct unpack_state
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
-  typedef typename Fields::geom_state_array_type::scalar_type  value_type ;
+  typedef typename Fields::geom_state_array_type::value_type  value_type ;
   typedef Kokkos::View< value_type* , device_type >     buffer_type ;
 
   static const unsigned value_count = 6 ;

@@ -340,7 +340,7 @@ class RILUK:
   void compute();
 
   //! Whether compute() has been called.
-  bool isComputed() const { return isFactored_; }
+  bool isComputed() const { return isComputed_; }
 
   //! How many times compute() has been called for this object.
   int getNumCompute() const { return numCompute_; }
@@ -506,21 +506,33 @@ private:
 
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
 
-  const Teuchos::RCP<const row_matrix_type> A_;
+  //! The (original) input matrix for which to compute ILU(k).
+  Teuchos::RCP<const row_matrix_type> A_;
+
+  /// \brief The matrix used to to compute ILU(k).
+  ///
+  /// If A_ (the original input matrix) is a Tpetra::CrsMatrix, then
+  /// this is just A_.  Otherwise, this class reserves the right for
+  /// A_crs_ to be a copy of A_.  This is because the current
+  /// implementation of ILU(k) only knows how to factor a
+  /// Tpetra::CrsMatrix.  That may change in the future.
+  Teuchos::RCP<const crs_matrix_type> A_crs_;
+
+  //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
+  //! The U (upper triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> U_;
+  //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
 
   bool isOverlapped_;
-  bool UseTranspose_;
 
   int LevelOfFill_;
   int LevelOfOverlap_;
 
-  int NumMyDiagonals_;
   bool isAllocated_;
   bool isInitialized_;
-  bool isFactored_;
+  bool isComputed_;
 
   mutable int numInitialize_;
   mutable int numCompute_;
@@ -562,40 +574,50 @@ namespace detail {
 } //end namespace detail
 
 template <class MatrixType>
-template <typename new_matrix_type>
-Teuchos::RCP< RILUK< new_matrix_type > >
-RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
-  typedef typename new_matrix_type::node_type new_node_type;
-  typedef typename new_matrix_type::mat_solve_type mat_solve_type;
-  typedef RILUK< new_matrix_type > new_riluk_type;
-  Teuchos::RCP<new_riluk_type> new_riluk = Teuchos::rcp(new new_riluk_type(A_newnode));
+template <typename NewMatrixType>
+Teuchos::RCP<RILUK<NewMatrixType> >
+RILUK<MatrixType>::
+clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
+{
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef typename NewMatrixType::node_type new_node_type;
+  typedef typename NewMatrixType::mat_solve_type mat_solve_type;
+  typedef RILUK<NewMatrixType> new_riluk_type;
 
-  Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
-  plClone = detail::setLocalSolveParams<new_matrix_type, new_node_type, mat_solve_type>::setParams(plClone);
+  RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
 
-  Teuchos::RCP<new_node_type> new_node = A_newnode->getNode();
-  new_riluk->L_ = L_->clone(new_node, plClone);
-  new_riluk->U_ = U_->clone(new_node, plClone);
-  new_riluk->D_ = D_->clone(new_node);
+  RCP<ParameterList> plClone = Teuchos::parameterList ();
+  plClone = detail::setLocalSolveParams<NewMatrixType,
+    new_node_type, mat_solve_type>::setParams (plClone);
+
+  RCP<new_node_type> new_node = A_newnode->getNode ();
+  new_riluk->L_ = L_->clone (new_node, plClone);
+  new_riluk->U_ = U_->clone (new_node, plClone);
+  new_riluk->D_ = D_->clone (new_node);
+
   new_riluk->isOverlapped_ = isOverlapped_;
-  new_riluk->UseTranspose_ = UseTranspose_;
   new_riluk->LevelOfFill_ = LevelOfFill_;
   new_riluk->LevelOfOverlap_ = LevelOfOverlap_;
-  new_riluk->NumMyDiagonals_ = NumMyDiagonals_;
+
   new_riluk->isAllocated_ = isAllocated_;
   new_riluk->isInitialized_ = isInitialized_;
+  new_riluk->isComputed_ = isComputed_;
+
   new_riluk->numInitialize_ = numInitialize_;
   new_riluk->numCompute_ = numCompute_;
   new_riluk->numApply_ =  numApply_;
-  new_riluk->isFactored_ = isFactored_;
+
   new_riluk->RelaxValue_ = RelaxValue_;
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;
   new_riluk->Condest_ = Condest_;
   new_riluk->OverlapMode_ = OverlapMode_;
+
   return new_riluk;
 }
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif /* IFPACK2_CRSRILUK_DECL_HPP */

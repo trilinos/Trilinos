@@ -253,7 +253,6 @@ int main(int argc, char *argv[]) {
       aztecSolver.SetPrecOperator(&aztecPrec);
 
       int maxIts = 50;
-      double tol = 1e-8;
 
       aztecSolver.Iterate(maxIts, tol);
 

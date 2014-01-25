@@ -1,6 +1,18 @@
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
+FUNCTION(PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
+  SET(SRCS "")
+  FOREACH(CLASS ${ETI_CLASSES})
+    string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS}")
+    string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
+    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
+    SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
+  ENDFOREACH()
+  SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(PROCESS_ETI_TEMPLATE)
+
 #
 # A) Package-specific configuration options
 #
@@ -376,26 +388,102 @@ IF (Stokhos_ENABLE_Sacado)
         NOT Tpetra_ENABLE_Kokkos_DistObject AND
         NOT Tpetra_ENABLE_Kokkos_Refactor)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
+      APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
+      APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
       IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
-        SET(HEADERS ${HEADERS}
-          sacado/kokkos/vector/tpetra/Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp
+        SET(TPETRA_ETI_CLASSES
+          MultiVector
+          Vector
+          RowMatrix
+          RowMatrixTransposer
+          DistObject
           )
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/Tpetra_ETI_Template.cpp.in
+          "Tpetra_CLASS_FILE_NAME.cpp"
+          TPETRA_SRCS)
+        SET(SOURCES ${SOURCES} ${TPETRA_SRCS})
+
+        SET(TPETRAEXT_ETI_CLASSES
+          MatrixMatrix
+          )
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/TpetraExt_ETI_Template.cpp.in
+          "TpetraExt_CLASS_FILE_NAME.cpp"
+          TPETRA_SRCS)
+        SET(SOURCES ${SOURCES} ${TPETRA_SRCS})
+
         SET(SOURCES ${SOURCES}
-          sacado/kokkos/vector/tpetra/Tpetra_MultiVector.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_Vector.cpp
           sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_RowMatrix.cpp
-          sacado/kokkos/vector/tpetra/Tpetra_DistObject.cpp
+          )
+      ENDIF()
+
+      # Belos is a required dependency for Ifpack2, so we need the Belos
+      # adapters if either is enabled.
+      IF (Stokhos_ENABLE_Belos OR Stokhos_ENABLE_Ifpack2)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
+          )
+      ENDIF()
+
+      IF (Stokhos_ENABLE_Ifpack2)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
+        APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
+        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
+        IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
+          SET(IFPACK2_ETI_CRS_ROW_CLASSES
+            Chebyshev
+            Diagonal
+            IdentitySolver
+            ILUT
+            Relaxation
+            RILUK
+            Details::DenseSolver
+            Details::OneLevelFactory
+            )
+          PROCESS_ETI_TEMPLATE(
+            "${IFPACK2_ETI_CRS_ROW_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_Template_Crs_Row.cpp.in
+            "Ifpack2_CLASS_FILE_NAME.cpp"
+            IFPACK2_SRCS)
+          SET(SOURCES ${SOURCES} ${IFPACK2_SRCS})
+          SET(IFPACK2_ETI_CRS_CLASSES
+            DiagonalFilter
+            LocalFilter
+            OverlappingRowMatrix
+            ReorderFilter
+            SingletonFilter
+            SparsityFilter
+            )
+          PROCESS_ETI_TEMPLATE(
+            "${IFPACK2_ETI_CRS_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_Template_Crs.cpp.in
+            "Ifpack2_CLASS_FILE_NAME.cpp"
+            IFPACK2_SRCS)
+          SET(SOURCES ${SOURCES} ${IFPACK2_SRCS})
+        ENDIF()
+
+      ENDIF()
+
+      IF (Stokhos_ENABLE_MueLu)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
+        APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
+        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
+      ENDIF()
+
+      IF (Stokhos_ENABLE_Amesos2)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/amesos2)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/amesos2/Amesos2_Solver_MP_Vector.hpp
+          sacado/kokkos/vector/amesos2/Stokhos_Amesos2_MP_Vector.hpp
           )
       ENDIF()
     ENDIF()
-    IF (Stokhos_ENABLE_Belos)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
-      SET(HEADERS ${HEADERS}
-        sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
-        )
-    ENDIF()
   ENDIF()
+
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/muelu)

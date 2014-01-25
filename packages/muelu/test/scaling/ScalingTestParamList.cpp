@@ -45,6 +45,8 @@
 // @HEADER
 #include <iostream>
 
+#include <Teuchos_XMLParameterListHelpers.hpp>
+
 #include <Xpetra_MultiVectorFactory.hpp>
 
 // Galeri
@@ -108,7 +110,6 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
   std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,      "read parameters from a file [default = 'scalingTest.xml']");
-  bool        useEasy           = false;             clp.setOption("easy",    "noeasy",     &useEasy,          "use new parameter list interpreter [default = false]");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
   std::string solveType         = "cg";              clp.setOption("solver",                &solveType,        "solve type: (none | cg | gmres | standalone)");
@@ -117,6 +118,7 @@ int main(int argc, char *argv[]) {
   std::string mapFile;                               clp.setOption("map",                   &mapFile,          "map data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
+  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds, "#times to rebuild hierarchy");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -238,6 +240,15 @@ int main(int argc, char *argv[]) {
   // Preconditioner construction
   // =========================================================================
   comm->barrier();
+  bool useEasy = true;
+  {
+    // XML files for the original interpreter always contain "Hierarchy" sublist
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+    if (paramList.isSublist("Hierarchy"))
+      useEasy = false;
+  }
+
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
   RCP<HierarchyManager> mueLuFactory;
   if (useEasy == false)
@@ -248,13 +259,18 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-  RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+  RCP<Hierarchy> H;
+  for (int i=0; i< numRebuilds+1; ++i) {
+    H = mueLuFactory->CreateHierarchy();
+    H->GetLevel(0)->Set("A",           A);
+    H->GetLevel(0)->Set("Nullspace",   nullspace);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueLuFactory->SetupHierarchy(*H);
 
-  H->GetLevel(0)->Set("A",           A);
-  H->GetLevel(0)->Set("Nullspace",   nullspace);
-  H->GetLevel(0)->Set("Coordinates", coordinates);
+    if (i<numRebuilds)
+      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-  mueLuFactory->SetupHierarchy(*H);
+  }
 
   comm->barrier();
   tm = Teuchos::null;

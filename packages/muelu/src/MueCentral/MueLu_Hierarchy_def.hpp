@@ -362,8 +362,7 @@ namespace MueLu {
     std::ostringstream ss;
     print(ss, GetVerbLevel());
     GetOStream(Statistics0,0) << ss.str();
-
-  } // Setup()
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
@@ -385,20 +384,29 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
-                                                                                  bool InitialGuessIsZero, LO startLevel)
-  {
+                                                                                  bool InitialGuessIsZero, LO startLevel) {
+    // These timers work as follows. "iterateTime" records total time spent in
+    // iterate. "levelTime" records time on a per level basis. The label is
+    // crafted to mimic the per-level messages used in Monitors. Note that a
+    // given level is timed with a TimeMonitor instead of a Monitor or
+    // SubMonitor. This is mainly because I want to time each level
+    // separately, and Monitors/SubMonitors print "(total) xx yy zz" ,
+    // "(sub,total) xx yy zz", respectively, which is subject to
+    // misinterpretation.  The per-level TimeMonitors are stopped/started
+    // manually before/after a recursive call to Iterate. A side artifact to
+    // this approach is that the counts for intermediate level timers are twice
+    // the counts for the finest and coarsest levels.
+    std::string prefix      = this->ShortClassName() + ": ";
+    std::string levelSuffix = " (level=" + toString(startLevel) + ")";
+    RCP<Monitor>     iterateTime;
+    RCP<TimeMonitor> iterateTime1;
+    if (startLevel == 0)
+      iterateTime  = rcp(new Monitor(*this, "Solve", (nIts == 1) ? None : Runtime0, Timings0));
+    else
+      iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
-    //These timers work as follows.  "h" records total time spent in iterate.  "hl" records time on a per level basis.  The label is crafted to mimic the per-level
-    //messages used in Monitors.  Note that a given level is timed with a TimeMonitor instead of a Monitor or SubMonitor.  This is mainly because I want to time each
-    //level separately, and Monitors/SubMonitors print "(total) xx yy zz" , "(sub,total) xx yy zz", respectively, which is subject to misinterpretation.
-    //The per-level TimeMonitors are stopped/started manually before/after a recursive call to Iterate.  A side artifact to this approach is that the counts for
-    //intermediate level timers are twice the counts for the finest and coarsest levels.
-    RCP<Monitor>     h;
-    RCP<TimeMonitor> hl;
-    std::string thisLevelTimerLabel = this->ShortClassName() + ": " + "Iterate" + " (level=" + Teuchos::Utils::toString(startLevel) + ")";
-    if (startLevel == 0)                                                               // -> Timing and msg only if startLevel == 0
-      h = rcp(new Monitor(*this, "Iterate", (nIts == 1) ? None : Runtime0, Timings0)); // -> Do not issue msg if part of an iterative method (but always start timer)
-    hl = rcp( new TimeMonitor(*this, thisLevelTimerLabel), Timings0);                           // -> "raw" MueLu timer, never prints messages
+    std::string iterateLevelTimeLabel = prefix + "Solve" + levelSuffix;
+    RCP<TimeMonitor> iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel, Timings0));
 
     bool zeroGuess = InitialGuessIsZero;
 
@@ -406,13 +414,14 @@ namespace MueLu {
     RCP<Matrix>   A = Fine->Get< RCP<Matrix> >("A");
 
     if (A == Teuchos::null) {
-      // We don't have any data for this process on coarser levels
+      // This processor does not have any data for this process on coarser
+      // levels. This can only happen when there are multiple processors and
+      // we use repartitioning.
       return;
     }
 
     // Print residual information before iterating
     if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
-
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
       rn = Utils::ResidualNorm(*A, X, B);
       GetOStream(Statistics1, 0) << "iter:    "
@@ -425,7 +434,6 @@ namespace MueLu {
 
     SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
     for (LO i = 1; i <= nIts; i++) {
-
 #ifdef HAVE_MUELU_DEBUG
       if (A->getDomainMap()->isCompatible(*(X.getMap())) == false) {
         std::ostringstream ss;
@@ -441,16 +449,19 @@ namespace MueLu {
 #endif
 
       // on the coarsest level we do either smoothing (if defined) or a direct solve.
-      if (startLevel == ((LO)Levels_.size())-1) { //FIXME is this right?
+      if (startLevel == as<LO>(Levels_.size())-1) {
+        RCP<TimeMonitor> CLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : coarse" + levelSuffix, Timings0));
+
         bool emptySolve = true;
 
-        if (Fine->IsAvailable("PreSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
+        // NOTE: we need to check using IsAvailable before Get here to avoid building default smoother
+        if (Fine->IsAvailable("PreSmoother")) {
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
           zeroGuess  = false;
           emptySolve = false;
         }
-        if (Fine->IsAvailable("PostSmoother")) { // important to use IsAvailable before Get here. It avoids building default smoother
+        if (Fine->IsAvailable("PostSmoother")) {
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
           postSmoo->Apply(X, B, zeroGuess);
           emptySolve = false;
@@ -462,30 +473,47 @@ namespace MueLu {
         // on intermediate levels we do cycles
         RCP<Level> Coarse = Levels_[startLevel+1];
 
-        if (Fine->IsAvailable("PreSmoother")) {
-          RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
-          preSmoo->Apply(X, B, zeroGuess);
-        } else {
-          GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+        {
+          // ============== PRESMOOTHING ==============
+          RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
+          RCP<TimeMonitor> SLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing" + levelSuffix, Timings0));
+
+          if (Fine->IsAvailable("PreSmoother")) {
+            RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+            preSmoo->Apply(X, B, zeroGuess);
+          } else {
+            GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+          }
         }
 
-        RCP<MultiVector> residual = Utils::Residual(*A, X, B);
+        RCP<MultiVector> residual;
+        {
+          RCP<TimeMonitor> ATime      = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
+          RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
+          residual = Utils::Residual(*A, X, B);
+        }
 
-        RCP<Matrix> P = Coarse->Get< RCP<Matrix> >("P");
+        RCP<Matrix>      P = Coarse->Get< RCP<Matrix> >("P");
         RCP<MultiVector> coarseRhs, coarseX;
-        RCP<const Map> origMap;
-        if (implicitTranspose_) {
-          origMap   = P->getDomainMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
-          P->apply(*residual, *coarseRhs, Teuchos::TRANS,    one, zero);
+        RCP<const Map>   origMap;
+        {
+          // ============== RESTRICTION ==============
+          RCP<TimeMonitor> RTime      = rcp(new TimeMonitor(*this, prefix + "Solve : restriction (total)"      , Timings0));
+          RCP<TimeMonitor> RLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : restriction" + levelSuffix, Timings0));
 
-        } else {
-          RCP<Matrix> R = Coarse->Get< RCP<Matrix> >("R");
-          origMap   = R->getRangeMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
-          R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
+          if (implicitTranspose_) {
+            origMap   = P->getDomainMap();
+            coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
+            coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
+            P->apply(*residual, *coarseRhs, Teuchos::TRANS,    one, zero);
+
+          } else {
+            RCP<Matrix> R = Coarse->Get< RCP<Matrix> >("R");
+            origMap   = R->getRangeMap();
+            coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
+            coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
+            R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
+          }
         }
 
         // replace maps with maps with a subcommunicator
@@ -495,13 +523,15 @@ namespace MueLu {
           coarseX  ->replaceMap(Ac->getDomainMap());
 
           {
-            hl = Teuchos::null; // stop timing this level
+            iterateLevelTime = Teuchos::null; // stop timing this level
+
             Iterate(*coarseRhs, 1, *coarseX, true, startLevel+1);
             // ^^ zero initial guess
             if (Cycle_ == WCYCLE)
               Iterate(*coarseRhs, 1, *coarseX, false, startLevel+1);
             // ^^ nonzero initial guess
-            hl = rcp( new TimeMonitor(*this, thisLevelTimerLabel) );  // restart timing this level
+
+            iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel));  // restart timing this level
           }
           coarseX->replaceMap(origMap);
         }
@@ -511,15 +541,26 @@ namespace MueLu {
         //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
         // can in some cases result in slightly higher iteration counts.
         RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(), X.getNumVectors(),false);
-        P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
+        {
+          // ============== PROLONGATION ==============
+          RCP<TimeMonitor> PTime      = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation (total)"      , Timings0));
+          RCP<TimeMonitor> PLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation" + levelSuffix, Timings0));
+          P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
+        }
         X.update(one, *correction, one);
 
-        if (Fine->IsAvailable("PostSmoother")) {
-          RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
-          postSmoo->Apply(X, B, false);
+        {
+          // ============== POSTSMOOTHING ==============
+          RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
+          RCP<TimeMonitor> SLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing" + levelSuffix, Timings0));
 
-        } else {
-          GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+          if (Fine->IsAvailable("PostSmoother")) {
+            RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+            postSmoo->Apply(X, B, false);
+
+          } else {
+            GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+          }
         }
       }
       zeroGuess = false;
@@ -534,10 +575,8 @@ namespace MueLu {
                                    << std::setprecision(10) << rn
                                    << std::endl;
       }
-
-    } // for (LO i=0; i<nIts; i++)
-
-  } // Iterate()
+    }
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const LO &start, const LO &end) {

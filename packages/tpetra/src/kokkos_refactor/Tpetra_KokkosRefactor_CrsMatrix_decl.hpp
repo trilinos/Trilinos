@@ -2266,7 +2266,7 @@ public:
       ViewType dest;
       OffsetViewType src_offset;
       OffsetViewType dest_offset;
-      typedef typename OffsetViewType::non_const_scalar_type ScalarIndx;
+      typedef typename OffsetViewType::non_const_value_type ScalarIndx;
 
       pack_functor(ViewType dest_, ViewType src_, OffsetViewType dest_offset_, OffsetViewType src_offset_):
         src(src_),dest(dest_),src_offset(src_offset_),dest_offset(dest_offset_) {};

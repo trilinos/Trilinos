@@ -94,6 +94,10 @@ public:
 
 /*************** Linear object factory methods *******************/
 
+   virtual void readVector(const std::string & identifier,LinearObjContainer & loc,int id) const;
+
+   virtual void writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const;
+
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
    virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 

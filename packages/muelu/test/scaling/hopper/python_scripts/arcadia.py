@@ -132,7 +132,15 @@ def analyze(petra, analysis_run):
         return "Cannot find any of *.[et]petra files"
 
     # construct header
-    print("Analysis is performed for " + analysis_run + ".[et]petra")
+    analysis_run_string = "Analysis is performed for " + analysis_run
+    if   (petra == 3):
+      analysis_run_string += ".[et]petra"
+    elif (petra == 1):
+      analysis_run_string += ".epetra"
+    elif (petra == 2):
+      analysis_run_string += ".tpetra"
+
+    print(analysis_run_string)
     header = "                    :"
     for name in LABELS:
         if has_epetra:

@@ -59,6 +59,7 @@ namespace MueLuTests {
 #include "MueLu_UseShortNames.hpp"
 
   typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap; // TODO: remove
+  typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
   TEUCHOS_UNIT_TEST(ParameterListInterpreter, SetParameterList)
   {

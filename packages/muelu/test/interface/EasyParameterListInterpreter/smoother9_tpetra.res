@@ -36,6 +36,7 @@ Level 1
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -50,10 +51,11 @@ Level 1
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -93,6 +95,7 @@ Level 2
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -107,10 +110,11 @@ Level 2
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
-   [empty list]
+   Fine level nullspace = Nullspace
    
    Build (MueLu::CoarseMapFactory)
-   [empty list]
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
    
   [empty list]
   
@@ -143,10 +147,10 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) pre  : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.9506, alpha: 20, lambdaMin: 0.0975299}, global rows = 9999, global cols = 9999, global nnz  = 29995}
+ Smoother (level 0) pre  : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 9999, global cols = 9999, global nnz  = 29995}
  Smoother (level 0) post : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 9999, Number of columns: 9999, Level of fill: 1, Absolute threshold: 0, Relative threshold: 1, Relax value: 0, nnz = 29995}
  
- Smoother (level 1) pre  : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94634, alpha: 20, lambdaMin: 0.0973171}, global rows = 3333, global cols = 3333, global nnz  = 9997}
+ Smoother (level 1) pre  : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 3333, global cols = 3333, global nnz  = 9997}
  Smoother (level 1) post : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 3333, Number of columns: 3333, Level of fill: 1, Absolute threshold: 0, Relative threshold: 1, Relax value: 0, nnz = 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface

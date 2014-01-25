@@ -74,9 +74,12 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
+    LO MaxNodesPerAggregate = params.get<LO>("MaxNodesPerAggregate");
+
     // vertex ids for output
     ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    ArrayRCP<LO> aggSizes     = aggregates.ComputeAggregateSizes(); // contains number of nodes in aggregate with given aggId
 
     const LO  nRows  = graph.GetNodeNumVertices();
     const int myRank = graph.GetComm()->getRank();
@@ -84,6 +87,8 @@ namespace MueLu {
     size_t           aggSize = 0;
     const unsigned   magicConstAsDefaultSize = 100;
     std::vector<int> aggList(magicConstAsDefaultSize);
+
+    bool recomputeAggregateSizes=false;
 
     for (LO iNode = 0; iNode < nRows; iNode++) {
       if (aggStat[iNode] == NodeStats::AGGREGATED)
@@ -120,9 +125,11 @@ namespace MueLu {
       for (size_t i = 0; i < aggSize; i++) {
         curNumConnections++;
         if (aggList[i+1] != aggList[i]) {
-          if (curNumConnections > maxNumConnections) {
+          if (curNumConnections > maxNumConnections &&         // only select aggregate if it has more connections
+              aggSizes[aggList[i]] < MaxNodesPerAggregate) {   // and if it is not too big (i.e. can have one more node)
             maxNumConnections = curNumConnections;
             selectedAggregate = aggList[i];
+            recomputeAggregateSizes=true;
           }
           curNumConnections = 0;
         }
