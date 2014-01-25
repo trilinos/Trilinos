@@ -90,7 +90,90 @@ RILUK<MatrixType>::~RILUK() {}
 
 
 template<class MatrixType>
-void RILUK<MatrixType>::allocate_L_and_U()
+const typename RILUK<MatrixType>::crs_matrix_type&
+RILUK<MatrixType>::getL () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    L_.is_null (), std::runtime_error, "Ifpack2::RILUK::getL: The L factor "
+    "is null.  Please call initialize() (and preferably also compute()) "
+    "before calling this method.  If the input matrix has not yet been set, "
+    "you must first call setMatrix() with a nonnull input matrix before you "
+    "may call initialize() or compute().");
+  return *L_;
+}
+
+
+template<class MatrixType>
+const Tpetra::Vector<typename RILUK<MatrixType>::scalar_type,
+                     typename RILUK<MatrixType>::local_ordinal_type,
+                     typename RILUK<MatrixType>::global_ordinal_type,
+                     typename RILUK<MatrixType>::node_type>&
+RILUK<MatrixType>::getD () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_.is_null (), std::runtime_error, "Ifpack2::RILUK::getD: The D factor "
+    "(of diagonal entries) is null.  Please call initialize() (and "
+    "preferably also compute()) before calling this method.  If the input "
+    "matrix has not yet been set, you must first call setMatrix() with a "
+    "nonnull input matrix before you may call initialize() or compute().");
+  return *D_;
+}
+
+
+template<class MatrixType>
+const typename RILUK<MatrixType>::crs_matrix_type&
+RILUK<MatrixType>::getU () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    U_.is_null (), std::runtime_error, "Ifpack2::RILUK::getU: The U factor "
+    "is null.  Please call initialize() (and preferably also compute()) "
+    "before calling this method.  If the input matrix has not yet been set, "
+    "you must first call setMatrix() with a nonnull input matrix before you "
+    "may call initialize() or compute().");
+  return *U_;
+}
+
+
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::Map<typename RILUK<MatrixType>::local_ordinal_type,
+                               typename RILUK<MatrixType>::global_ordinal_type,
+                               typename RILUK<MatrixType>::node_type> >
+RILUK<MatrixType>::getDomainMap () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::getDomainMap: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
+
+  // FIXME (mfh 25 Jan 2014) Shouldn't this just come from A_?
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Graph_.is_null (), std::runtime_error, "Ifpack2::RILUK::getDomainMap: "
+    "The computed graph is null.  Please call initialize() before calling "
+    "this method.");
+  return Graph_->getL_Graph ()->getDomainMap ();
+}
+
+
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::Map<typename RILUK<MatrixType>::local_ordinal_type,
+                               typename RILUK<MatrixType>::global_ordinal_type,
+                               typename RILUK<MatrixType>::node_type> >
+RILUK<MatrixType>::getRangeMap () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::getRangeMap: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
+
+  // FIXME (mfh 25 Jan 2014) Shouldn't this just come from A_?
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Graph_.is_null (), std::runtime_error, "Ifpack2::RILUK::getRangeMap: "
+    "The computed graph is null.  Please call initialize() before calling "
+    "this method.");
+  return Graph_->getL_Graph ()->getRangeMap ();
+}
+
+
+template<class MatrixType>
+void RILUK<MatrixType>::allocate_L_and_U ()
 {
   using Teuchos::null;
   using Teuchos::rcp;
@@ -283,6 +366,10 @@ void RILUK<MatrixType>::initialize ()
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::initialize: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
 
   Teuchos::Time timer ("RILUK::initialize");
   { // Start timing
@@ -481,6 +568,14 @@ initAllValues (const row_matrix_type& A)
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
+  // initialize() checks this too, but it's easier for users if the
+  // error shows them the name of the method that they actually
+  // called, rather than the name of some internally called method.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::compute: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
+
   if (! isInitialized ()) {
     initialize (); // Don't count this in the compute() time
   }
@@ -652,6 +747,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     global_ordinal_type, node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::apply: The matrix is "
+    "null.  Please call setMatrix() with a nonnull input, then initialize() "
+    "and compute(), before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,
     "Ifpack2::RILUK::apply: If you have not yet called compute(), "
     "you must call compute() before calling this method.");
@@ -660,6 +759,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "Ifpack2::RILUK::apply: X and Y do not have the same number of columns.  "
     "X.getNumVectors() = " << X.getNumVectors ()
     << " != Y.getNumVectors() = " << Y.getNumVectors () << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    STS::isComplex && mode == Teuchos::CONJ_TRANS, std::logic_error,
+    "Ifpack2::RILUK::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
+    "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
+    "fixed.  There is a FIXME in this file about this very issue.");
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();

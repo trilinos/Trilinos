@@ -400,15 +400,11 @@ class RILUK:
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getDomainMap () const {
-    return Graph_->getL_Graph ()->getDomainMap ();
-  }
+  getDomainMap () const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap () const {
-    return Graph_->getU_Graph ()->getRangeMap ();
-  }
+  getRangeMap () const;
 
   /// \brief Apply the (inverse of the) incomplete factorization to X, resulting in Y.
   ///
@@ -500,7 +496,7 @@ public:
   computeCondEst (CondestType CT = Ifpack2::Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null);
+                  const Teuchos::Ptr<const row_matrix_type>& Matrix = Teuchos::null);
 
   magnitude_type getCondEst () const { return Condest_; }
 
@@ -540,20 +536,14 @@ public:
   }
 
   //! Return the L factor of the ILU factorization.
-  const crs_matrix_type& getL () const {
-    return *L_;
-  }
+  const crs_matrix_type& getL () const;
 
   //! Return the diagonal entries of the ILU factorization.
   const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&
-  getD () const {
-    return *D_;
-  }
+  getD () const;
 
   //! Return the U factor of the ILU factorization.
-  const crs_matrix_type& getU () const {
-    return *U_;
-  }
+  const crs_matrix_type& getU () const;
 
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
   Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
