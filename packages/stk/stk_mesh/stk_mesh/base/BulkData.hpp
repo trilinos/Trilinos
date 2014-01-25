@@ -1037,7 +1037,7 @@ public:
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
     ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(&f.get_mesh() = &b.mesh());
+    ThrowAssert(&f.get_mesh() == &b.mesh());
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
   }
@@ -1992,7 +1992,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   inline
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
-    ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_size == knownSize);
+    ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity == knownSize);
     ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
   }
@@ -2012,7 +2012,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
     ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(&f.get_mesh() = &b.mesh());
+    ThrowAssert(&f.get_mesh() == &b.mesh());
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
   }
