@@ -49,6 +49,7 @@
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 
 
@@ -495,6 +496,124 @@ void DefaultBlockedLinearOp<Scalar>::applyImpl(
     }
   }
 }
+
+// Overridden from RowStatLinearOpBase
+
+template<class Scalar>
+bool
+DefaultBlockedLinearOp<Scalar>::rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat row_stat) const
+{
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef RowStatLinearOpBase<Scalar> RowStatOp; 
+  typedef RCP<const LinearOpBase<Scalar> > ConstLinearOpPtr;
+
+  // Figure out what needs to be check for each sub block to compute
+  // the require row stat
+  RowStatLinearOpBaseUtils::ERowStat subblk_stat 
+      = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM;
+  switch (row_stat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+    case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
+      subblk_stat = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM;
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+  }
+
+  // check each sub block for compatibility (null means zero,
+  // automatically compatible) 
+  for( int i = 0; i < numRowBlocks_; ++i ) {
+    for( int j = 0; j < numColBlocks_; ++j ) {
+      ConstLinearOpPtr Op_i_j = getBlock(i,j);
+
+      if (nonnull(Op_i_j)) {
+        RCP<const RowStatOp> row_stat_op = rcp_dynamic_cast<const RowStatOp>(Op_i_j);
+
+        // sub block must support a row stat operation
+        if(is_null(row_stat_op))
+          return false;
+
+        // sub block must also support the required row stat operation
+        if(!row_stat_op->rowStatIsSupported(subblk_stat))
+          return false;
+      }
+      // else: sub block is null, "0" is good enough
+    }
+  }
+
+  return true;
+}
+ 	
+template<class Scalar>
+void 
+DefaultBlockedLinearOp<Scalar>::getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat row_stat, 
+    const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const
+{
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcpFromPtr;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef RowStatLinearOpBase<Scalar> RowStatOp; 
+  typedef RCP<const LinearOpBase<Scalar> > ConstLinearOpPtr;
+  typedef RCP<VectorBase<Scalar> > VectorPtr;
+
+  // Figure out what needs to be check for each sub block to compute
+  // the require row stat
+  RowStatLinearOpBaseUtils::ERowStat subblk_stat 
+      = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM;
+  switch (row_stat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+    case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
+      subblk_stat = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM;
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+  }
+
+  const RCP<ProductVectorBase<Scalar> >
+    Y = rcp_dynamic_cast<ProductVectorBase<Scalar> >(rcpFromPtr(rowStatVec));
+
+  // using sub block row stat capability interrogate each for
+  // its constribution
+  for( int i = 0; i < numRowBlocks_; ++i ) {
+    VectorPtr blk_vec = Y->getNonconstVectorBlock(i);
+    put_scalar(0.0,blk_vec.ptr()); // clear vector just in case
+
+    for( int j = 0; j < numColBlocks_; ++j ) {
+      ConstLinearOpPtr Op_i_j = getBlock(i,j);
+      VectorPtr tmp_vec = createMember(Op_i_j->range());
+      put_scalar(0.0,tmp_vec.ptr()); // clear vector just in case
+
+      if (nonnull(Op_i_j)) {
+        RCP<const RowStatOp> row_stat_op = rcp_dynamic_cast<const RowStatOp>(Op_i_j);
+
+        // sub block must support a row stat operation
+        TEUCHOS_ASSERT(nonnull(row_stat_op)); // guranteed by compatibility check
+
+        // sub block must also support the required row stat operation
+        row_stat_op->getRowStat(subblk_stat,tmp_vec.ptr());
+
+        // some the temporary into the block vector
+        Vp_V(blk_vec.ptr(),*tmp_vec);
+      }
+    }
+  }
+
+  // do post processing as needed (take the inverse currently
+  switch (row_stat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+      reciprocal(*rowStatVec,rowStatVec.ptr());
+    case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+  }
+}
+
 
 
 // private
