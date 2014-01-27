@@ -44,7 +44,8 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Thyra_ModelEvaluatorBase.hpp"
-#include "Thyra_Simple2DModelEvaluator.hpp"
+//#include "Thyra_Simple2DModelEvaluator.hpp"
+#include "Thyra_DummyTestModelEvaluator.hpp"
 
 
 namespace Thyra {
@@ -98,7 +99,7 @@ TEUCHOS_UNIT_TEST( Evaluation, nullAssign)
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_rcp_get_rcp, Scalar )
 {
   out << "Test that 'f' can be set and gotten as an RCP<VB>!\n";
-  const RCP<const ModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   ModelEvaluatorBase::OutArgs<Scalar> outArgs = model->createOutArgs();
   RCP<VectorBase<Scalar> > f = createMember(model->get_f_space());
   outArgs.set_f(f);
@@ -113,7 +114,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_eval_get_eval, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
   out << "Test that 'f' can be set and gotten as an Evaluation<VB>!\n";
-  const RCP<const ModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
   MEB::Evaluation<VectorBase<Scalar> > f(
     createMember(model->get_f_space()), MEB::EVAL_TYPE_APPROX_DERIV);
@@ -130,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_rcp_get_eval, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
   out << "Test that 'f' can be set as an RCP<VB> and gotten as an Evaluation<VB>!\n";
-  const RCP<const ModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
   MEB::Evaluation<VectorBase<Scalar> > f(createMember(model->get_f_space()));
   outArgs.set_f(f);
@@ -147,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_eval_get_rcp, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
   out << "Test that 'f' can be set as an Evaluation <VB> and gotten as an RCP<VB> !\n";
-  const RCP<const ModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
   MEB::Evaluation<VectorBase<Scalar> > f(
     createMember(model->get_f_space()), MEB::EVAL_TYPE_APPROX_DERIV);
@@ -163,7 +164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_eval_get_rc
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, setArgs, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
-  const RCP<const ModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
 
   MEB::Evaluation<VectorBase<Scalar> > f(
