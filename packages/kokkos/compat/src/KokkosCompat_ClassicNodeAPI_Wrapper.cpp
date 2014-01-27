@@ -59,46 +59,8 @@ namespace Kokkos {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
-    template<>
-    KokkosDeviceWrapperNode<Kokkos::Cuda>::~KokkosDeviceWrapperNode<Kokkos::Cuda>() {
-      count--;
-      if(count==0) {
-        if(Cuda::host_mirror_device_type::is_initialized()) {
-          // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
-          if(KokkosDeviceWrapperNode<Cuda::host_mirror_device_type>::count==0)
-            Cuda::host_mirror_device_type::finalize();
-        }
-        if(Cuda::is_initialized())
-          Cuda::finalize();
-      }
-    }
-    template<>
-    void KokkosDeviceWrapperNode<Kokkos::Cuda>::init(int NumTeams, int NumThreads, int Device) {
-      if(!Kokkos::Cuda::host_mirror_device_type::is_initialized())
-        Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
-      Kokkos::Cuda::SelectDevice select_device(Device);
-      if(!Kokkos::Cuda::is_initialized())
-        Kokkos::Cuda::initialize(select_device);
-    }
-#endif
   }
 }
 
-//  Make sure HostSpace is always intialized before Devices.
-//  Some TPetra Unit tests and possibly some codes have static Nodes
-//  Create a static node here in order to make sure that HostSpace is initialized first
 
-/*
-#ifdef KOKKOS_HAVE_CUDA
-  static Kokkos::Compat::KokkosCudaWrapperNode KOKKOSCUDANODE_;
-#endif
 
-#ifdef KOKKOS_HAVE_OPENMP
-  static Kokkos::Compat::KokkosOpenMPWrapperNode KOKKOSOPENMPNODE_;
-#endif
-
-#ifdef KOKKOS_HAVE_PTHREAD
-  static Kokkos::Compat::KokkosThreadsWrapperNode KOKKOSTHREADSNODE_;
-#endif
-*/
