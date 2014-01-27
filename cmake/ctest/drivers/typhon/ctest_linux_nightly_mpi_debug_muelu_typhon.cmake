@@ -67,6 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind)
+SET(CTEST_DO_MEMORY_TESTING TRUE)
 
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
