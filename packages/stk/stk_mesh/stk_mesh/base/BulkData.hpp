@@ -1996,9 +1996,14 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
   }
+
+  template<class FieldType>
+  inline
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, const unsigned bucket_id) {
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data);
+  }
   
-
-
 
   inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
     ThrowAssert(&b.mesh() == &f.get_mesh());
@@ -2006,7 +2011,6 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
      return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
   }
 
-  // NKC move to bottom shortly
   template<class FieldType>
   inline
   typename FieldTraits<FieldType>::data_type*
@@ -2017,7 +2021,6 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
   }
 
-  // NKC OPT, move this to a field function
   template<class FieldType>
   inline
   typename FieldTraits<FieldType>::data_type*
@@ -2025,16 +2028,10 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   {
     ThrowAssert(f.entity_rank() == b.entity_rank());
     ThrowAssert(&b.mesh() == &f.get_mesh());
-
     const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
-
-
-
-  // NKC OPT, move this to a field function
   template<class FieldType>
   inline
   typename FieldTraits<FieldType>::data_type*
