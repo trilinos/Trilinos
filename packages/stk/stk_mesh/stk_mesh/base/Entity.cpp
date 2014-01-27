@@ -48,27 +48,6 @@ std::ostream & operator << ( std::ostream &os , const Entity &entity )
 
 //----------------------------------------------------------------------
 
-#ifdef SIERRA_MIGRATION
-
-std::string Entity::TypeToString (Entity::ObjectTypeEnum type)
-{
-  if(type == NODE      ) return "NODE";
-  if(type == EDGE      ) return "EDGE";
-  if(type == FACE      ) return "FACE";
-  if(type == ELEMENT   ) return "ELEMENT";
-  if(type == CONSTRAINT) return "CONSTRANT";
-  if(type == INVALID_RANK) return "BASE_CLASS";
-  return "UNKNOWN";
-}
-
-// ---------------------------------------------------------------------
-
-#endif // SIERRA_MIGRATION
-
-BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::NODE_RANK) == static_cast<int>(Entity::NODE) ));
-BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::EDGE_RANK) == static_cast<int>(Entity::EDGE) ));
-BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::FACE_RANK) == static_cast<int>(Entity::FACE) ));
-BOOST_STATIC_ASSERT(( static_cast<int>(stk::topology::ELEMENT_RANK) == static_cast<int>(Entity::ELEMENT) ));
 
 } // namespace mesh
 } // namespace stk

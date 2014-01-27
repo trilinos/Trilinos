@@ -91,22 +91,6 @@ union Entity
 
   bool operator<(Entity entity) const { return m_value < entity.m_value; }
 
-#ifdef SIERRA_MIGRATION
-
-  enum ObjectTypeEnum {
-    NODE       = 0,
-    EDGE       = 1,
-    FACE       = 2,
-    ELEMENT    = 3,
-    CONSTRAINT = 4,
-    NUM_RANKS  = 5,
-    INVALID_RANK = 256
-  };
-
-  static std::string TypeToString (ObjectTypeEnum type);
-
-#endif
-
   //
   // NEED TO REFACTOR CALLERS TO ELIMINATE THE FOLLOWING
   //
