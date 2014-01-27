@@ -47,6 +47,7 @@
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 
@@ -86,7 +87,7 @@ template<class Scalar>
 class DefaultBlockedLinearOp
   : virtual public PhysicallyBlockedLinearOpBase<Scalar>
   , virtual public RowStatLinearOpBase<Scalar>
-
+  , virtual public ScaledLinearOpBase<Scalar>
 {
 public:
 
@@ -221,6 +222,27 @@ protected:
   virtual void getRowStatImpl(
     const RowStatLinearOpBaseUtils::ERowStat rowStat, 
     const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const;
+
+  //@}
+
+  /** @name Overridden from ScaledLinearOpBase */
+  //@{
+
+  /** \brief . */
+  virtual bool supportsScaleLeftImpl() const;
+
+  /** \brief . */
+  virtual bool supportsScaleRightImpl() const;
+ 
+  /** \brief . */
+  virtual void scaleLeftImpl(
+    const VectorBase< Scalar > &row_scaling
+    );
+
+  /** \brief . */
+  virtual void scaleRightImpl(
+    const VectorBase< Scalar > &col_scaling
+    );
 
   //@}
 
