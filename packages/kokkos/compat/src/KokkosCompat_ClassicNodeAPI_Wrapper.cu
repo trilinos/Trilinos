@@ -2,8 +2,6 @@
 #include <Kokkos_HostSpace.hpp>
 #include <cstdio>
 
-//static size_t KokkosHostWrapperNodeDUMMYINT = Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size();
-
 namespace Kokkos {
   namespace Compat {
 
@@ -35,6 +33,8 @@ namespace Kokkos {
         sprintf(str,"CUDA_VISIBLE_DEVICES=%i",Device);
         putenv(str);
         putenv("CUDA_LAUNCH_BLOCKING=1");
+      #else
+        throw std::runtime_error("Using CudaWrapperNode without UVM is not allowed.");
       #endif
 
       if(!Kokkos::Cuda::host_mirror_device_type::is_initialized())
