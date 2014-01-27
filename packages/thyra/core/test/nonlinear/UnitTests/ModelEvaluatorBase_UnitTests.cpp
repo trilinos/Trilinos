@@ -160,4 +160,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_eval_get_rcp, Scalar )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_eval_get_rcp )
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, setArgs, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const RCP<const ModelEvaluator<Scalar> > model = simple2DModelEvaluator<Scalar>();
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  MEB::Evaluation<VectorBase<Scalar> > f(
+    createMember(model->get_f_space()), MEB::EVAL_TYPE_APPROX_DERIV);
+  outArgs.set_f(f);
+
+  MEB::OutArgs<Scalar> outArgs2 = model->createOutArgs();
+  outArgs2.setArgs(outArgs);
+
+  // Make sure that the Evaluation type gets copied correctly!
+  MEB::Evaluation<VectorBase<Scalar> > f_out = outArgs2.get_f();
+  TEST_EQUALITY(f_out, f);
+  TEST_EQUALITY(f_out.getType(), MEB::EVAL_TYPE_APPROX_DERIV);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )
+
+
 } // namespace Thyra
