@@ -91,7 +91,7 @@ namespace pike {
     return model_->getParameterIndex(name);
   }
 
-  void ModelEvaluatorLogger::setParameter(const int l, const Teuchos::ArrayView<const double>& p) const
+  void ModelEvaluatorLogger::setParameter(const int l, const Teuchos::ArrayView<const double>& p)
   {
     return model_->setParameter(l,p);
   }

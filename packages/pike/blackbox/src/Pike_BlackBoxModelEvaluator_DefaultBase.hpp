@@ -62,7 +62,7 @@ namespace pike {
     virtual int getNumberOfParameters() const;
     virtual std::string getParameterName(const int l) const;
     virtual int getParameterIndex(const std::string& name) const;
-    virtual void setParameter(const int l, const Teuchos::ArrayView<const double>& p) const;
+    virtual void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
 
     // Response support
     virtual bool supportsResponse(const std::string& name) const;

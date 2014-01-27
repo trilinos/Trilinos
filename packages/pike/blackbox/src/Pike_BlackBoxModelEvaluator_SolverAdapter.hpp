@@ -1,5 +1,5 @@
-#ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_SOLVER_HPP
-#define PIKE_BLACK_BOX_MODEL_EVALUATOR_SOLVER_HPP
+#ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_SOLVER_ADAPTER_HPP
+#define PIKE_BLACK_BOX_MODEL_EVALUATOR_SOLVER_ADAPTER_HPP
 
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Teuchos_RCP.hpp"
@@ -13,11 +13,11 @@ namespace pike {
   class Response;
 
   //! Decorator to represent a pike::Solver as a BlackBoxModelEvaluator for hierarchical solves.
-  class SolverModelEvaluator : pike::BlackBoxModelEvaluator {
+  class SolverAdapterModelEvaluator : pike::BlackBoxModelEvaluator {
 
   public:
 
-    SolverModelEvaluator(const std::string& name);
+    SolverAdapterModelEvaluator(const std::string& name);
 
     void setSolver(const Teuchos::RCP<pike::Solver>& solver);
 
@@ -30,15 +30,26 @@ namespace pike {
     bool solve();
     bool isLocallyConverged() const;
     bool isGloballyConverged() const;
-    Teuchos::ArrayView<const double> getResponse(const int i) const;
-    int getResponseIndex(const std::string& name) const;
-    std::string getResponseName(const int i) const;
+    bool supportsParameter(const std::string& name) const;
+    int getNumberOfParameters() const;
+    std::string getParameterName(const int l) const;
+    int getParameterIndex(const std::string& name) const;
+    void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
     bool supportsResponse(const std::string& name) const;
     int getNumberOfResponses() const;
+    std::string getResponseName(const int i) const;
+    int getResponseIndex(const std::string& name) const;
+    Teuchos::ArrayView<const double> getResponse(const int i) const;
 
   private:
     std::string name_;
     Teuchos::RCP<pike::Solver> solver_;
+
+    std::map<std::string,int> parameterNameToIndex_;
+    std::vector<std::string> parameterNames_;
+    //! Stores the model index and the response index in that model for the response. 
+    std::vector<std::pair<int,int> > parameterIndexToModelIndices_;
+
     std::map<std::string,int> responseNameToIndex_;
     std::vector<std::string> responseNames_;
     //! Stores the model index and the response index in that model for the response. 

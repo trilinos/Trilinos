@@ -25,8 +25,8 @@ namespace pike {
     //! Returns the parameter index for the string name.
     virtual int getParameterIndex(const std::string& name) const = 0;
 
-    //! Returns the parameter for index l where 0 <= l < Np. 
-    virtual void setParameter(const int l, const Teuchos::ArrayView<const double>& p) const = 0;
+    //! Sets the parameter, p, for index l where 0 <= l < Np. 
+    virtual void setParameter(const int l, const Teuchos::ArrayView<const double>& p) = 0;
 
   };
 

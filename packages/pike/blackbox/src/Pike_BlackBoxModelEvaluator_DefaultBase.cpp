@@ -31,7 +31,7 @@ namespace pike {
   }
   
   
-  void BlackBoxModelEvaluatorDefaultBase::setParameter(const int l, const Teuchos::ArrayView<const double>& p) const
+  void BlackBoxModelEvaluatorDefaultBase::setParameter(const int l, const Teuchos::ArrayView<const double>& p)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error: BlackBoxModelEvaluatorDefaultBase::getParameter(j) "
 			       << "The BlackBoxModelEvaluator named \"" << this->name() 

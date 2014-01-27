@@ -44,7 +44,7 @@ namespace pike {
     int getNumberOfParameters() const;
     std::string getParameterName(const int l) const;
     int getParameterIndex(const std::string& name) const;
-    void setParameter(const int l, const Teuchos::ArrayView<const double>& p) const;
+    void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
 
   private:
     
