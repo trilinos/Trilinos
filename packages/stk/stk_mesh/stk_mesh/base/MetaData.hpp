@@ -426,14 +426,16 @@ public:
    */
   void declare_field_restriction( FieldBase      & arg_field ,
                                   const Part     & arg_part ,
-                                  const unsigned * arg_stride ,
+                                  const unsigned   arg_num_scalars_per_entity ,
+                                  const unsigned   arg_first_dimension ,
                                   const void*      arg_init_value = NULL );
 
   /** \brief  Declare a field restriction via runtime type information.
    */
   void declare_field_restriction( FieldBase      & arg_field ,
                                   const Selector & arg_selector ,
-                                  const unsigned * arg_stride ,
+                                  const unsigned   arg_num_scalars_per_entity ,
+                                  const unsigned   arg_first_dimension ,
                                   const void*      arg_init_value = NULL );
 
   /** \brief This function is used to register new cell topologies and their associated ranks with MetaData.
@@ -830,12 +832,16 @@ field_type & put_field(
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
+  unsigned stride[8] = {0,0,0,0,0,0,0,0};
+  Helper::assign(stride);
 
-  unsigned stride[8] ;
-
-  Helper::assign( stride );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = 1;
+  if(field.field_array_rank() > 0)
+  {
+      numScalarsPerEntity = stride[0];
+  }
+  unsigned firstDimension = numScalarsPerEntity;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -849,12 +855,16 @@ field_type & put_field(
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
+  unsigned stride[8] = {0,0,0,0,0,0,0,0};
+  Helper::assign(stride);
 
-  unsigned stride[8] ;
-
-  Helper::assign( stride );
-
-  MetaData::get(field).declare_field_restriction( field, selector, stride, init_value);
+  unsigned numScalarsPerEntity = 1;
+  if(field.field_array_rank() > 0)
+  {
+      numScalarsPerEntity = stride[0];
+  }
+  unsigned firstDimension = numScalarsPerEntity;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -866,14 +876,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n1 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -885,14 +890,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n1 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 );
-
-  MetaData::get(field).declare_field_restriction( field, selector, stride, init_value);
+  unsigned numScalarsPerEntity = n1;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
 
 return field ;
 }
@@ -905,14 +905,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n2 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -925,14 +920,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n2 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 );
-
-  MetaData::get(field).declare_field_restriction( field, selector, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -946,14 +936,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n3 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 , n3 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2*n3;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -967,14 +952,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n3 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 , n3 );
-
-  MetaData::get(field).declare_field_restriction( field, selector, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2*n3;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -989,14 +969,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n4 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 , n3 , n4 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2*n3*n4;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -1012,14 +987,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n5 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2*n3*n4*n5;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -1036,14 +1006,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n6 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2*n3*n4*n5*n6;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }
@@ -1061,14 +1026,9 @@ field_type & put_field( field_type &field ,
                         unsigned    n7 ,
                         const void* init_value )
 {
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6, n7 );
-
-  MetaData::get(field).declare_field_restriction( field, part, stride, init_value);
+  unsigned numScalarsPerEntity = n1*n2*n3*n4*n5*n6*n7;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
 }

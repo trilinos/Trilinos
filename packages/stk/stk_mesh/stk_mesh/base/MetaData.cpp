@@ -400,7 +400,8 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
   const Part     & arg_part ,
-  const unsigned * arg_stride ,
+  const unsigned   arg_num_scalars_per_entity ,
+  const unsigned   arg_first_dimension ,
   const void     * arg_init_value )
 {
   static const char method[] =
@@ -415,7 +416,8 @@ void MetaData::declare_field_restriction(
       arg_field,
       arg_part,
       m_part_repo.get_all_parts(),
-      arg_stride,
+      arg_num_scalars_per_entity,
+      arg_first_dimension,
       arg_init_value
       );
 }
@@ -423,7 +425,8 @@ void MetaData::declare_field_restriction(
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
   const Selector & arg_selector ,
-  const unsigned * arg_stride ,
+  const unsigned   arg_num_scalars_per_entity ,
+  const unsigned   arg_first_dimension ,
   const void     * arg_init_value )
 {
   static const char method[] =
@@ -437,7 +440,8 @@ void MetaData::declare_field_restriction(
       arg_field,
       arg_selector,
       m_part_repo.get_all_parts(),
-      arg_stride,
+      arg_num_scalars_per_entity,
+      arg_first_dimension,
       arg_init_value
       );
 }

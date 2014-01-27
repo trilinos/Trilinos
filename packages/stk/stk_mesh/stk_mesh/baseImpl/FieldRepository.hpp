@@ -86,10 +86,11 @@ class FieldRepository {
         FieldBase      & arg_field ,
         const Part     & arg_part ,
         const PartVector & arg_all_parts,
-        const unsigned * arg_stride ,
+        const unsigned   arg_num_scalars_per_entity ,
+        const unsigned   arg_first_dimension ,
         const void     * arg_init_value = NULL)
     {
-      arg_field.m_impl.insert_restriction( arg_method, arg_part, arg_stride, arg_init_value);
+      arg_field.m_impl.insert_restriction( arg_method, arg_part, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
     }
 
     void declare_field_restriction(
@@ -97,10 +98,11 @@ class FieldRepository {
         FieldBase      & arg_field ,
         const Selector & arg_selector ,
         const PartVector & arg_all_parts,
-        const unsigned * arg_stride ,
+        const unsigned   arg_num_scalars_per_entity ,
+        const unsigned   arg_first_dimension ,
         const void     * arg_init_value = NULL)
     {
-      arg_field.m_impl.insert_restriction( arg_method, arg_selector, arg_stride, arg_init_value);
+      arg_field.m_impl.insert_restriction( arg_method, arg_selector, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
     }
 
   private:

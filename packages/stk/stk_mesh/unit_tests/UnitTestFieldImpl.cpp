@@ -131,9 +131,9 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Declare three restrictions:
 
-  meta_data.declare_field_restriction(*nodeField, pA , stride );
-  meta_data.declare_field_restriction(*edgeField, pB , stride + 1 );
-  meta_data.declare_field_restriction(*faceField, pC , stride + 2 );
+  meta_data.declare_field_restriction(*nodeField, pA , stride[nodeField->field_array_rank()-1], stride[0] );
+  meta_data.declare_field_restriction(*edgeField, pB , stride[edgeField->field_array_rank()], stride[1] );
+  meta_data.declare_field_restriction(*faceField, pC , stride[faceField->field_array_rank()+1], stride[2] );
 
   // Check for correctness of restrictions:
 
@@ -145,7 +145,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   STKUNIT_ASSERT( faceField->restrictions()[0] ==
                   FieldRestriction( pC ) );
 
-  meta_data.declare_field_restriction(*nodeField , pB , stride + 1 );
+  meta_data.declare_field_restriction(*nodeField , pB , stride[nodeField->field_array_rank()], stride[1] );
 
   STKUNIT_ASSERT_EQUAL( nodeField->max_size( 0 ) , 20u );
 
@@ -154,7 +154,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*nodeField , pA , bad_stride ),
+      meta_data.declare_field_restriction(*nodeField , pA, 5*4*6 , bad_stride[0] ),
       std::runtime_error
     );
     STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
@@ -164,7 +164,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // field restriction.
   {
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*nodeField , pA , stride + 1 ),
+      meta_data.declare_field_restriction(*nodeField , pA , stride[nodeField->field_array_rank()], stride[1] ),
       std::runtime_error
     );
     STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
@@ -180,8 +180,8 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
   meta_data.declare_part_subset( pD, pA );
-  meta_data.declare_field_restriction(*f2 , pA , stride );
-  meta_data.declare_field_restriction(*f2 , pD , stride );
+  meta_data.declare_field_restriction(*f2 , pA , stride[f2->field_array_rank()-1], stride[0] );
+  meta_data.declare_field_restriction(*f2 , pD , stride[f2->field_array_rank()-1], stride[0] );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
@@ -199,7 +199,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check that the verify_and_clean_restrictions method detects
   // this error condition.
   {
-    meta_data.declare_field_restriction(*f2 , pB , stride + 1 );
+    meta_data.declare_field_restriction(*f2 , pB , stride[f2->field_array_rank()], stride[1] );
     STKUNIT_ASSERT_THROW(
       meta_data.declare_part_subset( pD, pB ),
       std::runtime_error
@@ -215,7 +215,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[1] = 0;
 
     STKUNIT_ASSERT_THROW(
-      meta_data.declare_field_restriction(*f2, pA, arg_no_stride),
+      meta_data.declare_field_restriction(*f2, pA, 0, arg_no_stride[0]),
       std::runtime_error
     );
   }

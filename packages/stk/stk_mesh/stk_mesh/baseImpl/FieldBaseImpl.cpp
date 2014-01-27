@@ -85,7 +85,8 @@ FieldRestrictionVector & FieldBaseImpl::restrictions()
 void FieldBaseImpl::insert_restriction(
   const char     * arg_method ,
   const Selector & arg_selector ,
-  const unsigned * arg_stride,
+  const unsigned   arg_num_scalars_per_entity ,
+  const unsigned   arg_first_dimension ,
   const void*      arg_init_value )
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
@@ -93,8 +94,8 @@ void FieldBaseImpl::insert_restriction(
   FieldRestriction tmp( arg_selector );
 
   if ( m_field_rank ) {
-    tmp.set_num_scalars_per_entity(arg_stride[m_field_rank-1]);
-    tmp.set_dimension(arg_stride[0]);
+    tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
+    tmp.set_dimension(arg_first_dimension);
   }
   else { // Scalar field is 0 == m_field_rank
     tmp.set_num_scalars_per_entity(1);

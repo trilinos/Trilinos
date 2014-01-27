@@ -100,7 +100,8 @@ public:
 
   void insert_restriction( const char       * arg_method ,
                            const Selector   & arg_selector ,
-                           const unsigned   * arg_stride ,
+                           const unsigned     arg_num_scalars_per_entity ,
+                           const unsigned     arg_first_dimension ,
                            const void*        arg_init_value = NULL);
 
   void verify_and_clean_restrictions( const Part& superset, const Part& subset );
