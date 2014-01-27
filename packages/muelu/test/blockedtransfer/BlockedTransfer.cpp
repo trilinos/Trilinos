@@ -341,14 +341,14 @@ int main(int argc, char *argv[]) {
 
   // Smoothers
   RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(2,1.0) );
-  smootherPrototype->AddFactoryManager(M11);
-  smootherPrototype->AddFactoryManager(M22);
+  smootherPrototype->AddFactoryManager(M11,0);
+  smootherPrototype->AddFactoryManager(M22,1);
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction
   RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother() );
-  coarseSolverPrototype->AddFactoryManager(M11);
-  coarseSolverPrototype->AddFactoryManager(M22);
+  coarseSolverPrototype->AddFactoryManager(M11,0);
+  coarseSolverPrototype->AddFactoryManager(M22,1);
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
   // main factory manager
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
   X->putScalar((SC) 0.0);
 
   LO nIts = 9;
-  H.Iterate(*B, nIts, *X); // we have no working smoother for blocked operators
+  H.Iterate(*B, nIts, *X);
 
 
   return EXIT_SUCCESS;

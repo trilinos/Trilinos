@@ -547,8 +547,8 @@ namespace MueLu {
 
       RCP<T> bs = rcp(new T(bs_sweeps,bs_omega));
 
-      bs->AddFactoryManager(facManagers[0]);
-      bs->AddFactoryManager(facManagers[1]);
+      bs->AddFactoryManager(facManagers[0],0);
+      bs->AddFactoryManager(facManagers[1],1);
 
       return rcp(new SmootherFactory(bs));
     }
@@ -607,8 +607,8 @@ namespace MueLu {
 
       RCP<BlockedGaussSeidelSmoother> bgs = rcp(new BlockedGaussSeidelSmoother(bgs_sweeps,bgs_omega));
 
-      bgs->AddFactoryManager(facManagers[0]);
-      bgs->AddFactoryManager(facManagers[1]);
+      bgs->AddFactoryManager(facManagers[0],0);
+      bgs->AddFactoryManager(facManagers[1],1);
 
       return rcp(new SmootherFactory(bgs));
     }

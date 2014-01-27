@@ -75,14 +75,36 @@ namespace MueLu {
   BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedGaussSeidelSmoother(LocalOrdinal sweeps, Scalar omega)
     : type_("blocked GaussSeidel"), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
   {
+    FactManager_.reserve(10);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BlockedGaussSeidelSmoother() {}
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  /*template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager) {
     FactManager_.push_back(FactManager);
+  }*/
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pos < 0, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::AddFactoryManager: parameter \'pos\' must not be negative! error.");
+
+    size_t myPos = Teuchos::as<size_t>(pos);
+
+    if (myPos < FactManager_.size()) {
+      // replace existing entris in FactManager_ vector
+      FactManager_.at(myPos) = FactManager;
+    } else if( myPos == FactManager_.size()) {
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    } else { // if(myPos > FactManager_.size())
+      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      *out << "Warning: cannot add new FactoryManager at proper position " << pos << ". The FactoryManager is just appended to the end. Check this!" << std::endl;
+
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

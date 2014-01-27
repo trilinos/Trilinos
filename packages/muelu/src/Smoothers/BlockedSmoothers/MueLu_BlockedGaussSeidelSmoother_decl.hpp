@@ -138,7 +138,11 @@ namespace MueLu {
 
 
     //! Add a factory manager
-    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+    //void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+
+    //! Add a factory manager at a specific position
+    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos);
+
 
     //@}
 

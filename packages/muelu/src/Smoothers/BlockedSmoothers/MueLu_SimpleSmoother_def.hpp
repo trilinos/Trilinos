@@ -52,10 +52,10 @@ namespace MueLu {
 
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    schurFactManager_ = rcp(new FactoryManager());
-    schurFactManager_->SetFactory("A", SchurFact);
-    schurFactManager_->SetFactory("Smoother", SmooSCFact);
-    schurFactManager_->SetIgnoreUserData(true);
+    RCP<FactoryManager> schurFactManager = rcp(new FactoryManager());
+    schurFactManager->SetFactory("A", SchurFact);
+    schurFactManager->SetFactory("Smoother", SmooSCFact);
+    schurFactManager->SetIgnoreUserData(true);
 
     // define smoother/solver for velocity prediction
     RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(/*this->GetFactory("A"), 0, 0*/));
@@ -68,24 +68,52 @@ namespace MueLu {
     smoProtoPredict->SetFactory("A", A00Fact);
     RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
 
-    velpredictFactManager_ = rcp(new FactoryManager());
-    velpredictFactManager_->SetFactory("A", A00Fact);
-    velpredictFactManager_->SetFactory("Smoother", SmooPredictFact);
-    velpredictFactManager_->SetIgnoreUserData(true);
+    RCP<FactoryManager> velpredictFactManager = rcp(new FactoryManager());
+    velpredictFactManager->SetFactory("A", A00Fact);
+    velpredictFactManager->SetFactory("Smoother", SmooPredictFact);
+    velpredictFactManager->SetIgnoreUserData(true);
 
+    AddFactoryManager(velpredictFactManager, 0);
+    AddFactoryManager(schurFactManager, 1);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SimpleSmoother() {}
 
+  //! Add a factory manager at a specific position
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pos < 0, Exceptions::RuntimeError, "MueLu::SimpleSmoother::AddFactoryManager: parameter \'pos\' must not be negative! error.");
+
+    size_t myPos = Teuchos::as<size_t>(pos);
+
+    if (myPos < FactManager_.size()) {
+      // replace existing entris in FactManager_ vector
+      FactManager_.at(myPos) = FactManager;
+    } else if( myPos == FactManager_.size()) {
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    } else { // if(myPos > FactManager_.size())
+      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      *out << "Warning: cannot add new FactoryManager at proper position " << pos << ". The FactoryManager is just appended to the end. Check this!" << std::endl;
+
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    }
+
+  }
+
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetVelocityPredictionFactoryManager(RCP<FactoryManager> FactManager) {
-    velpredictFactManager_ = FactManager;
+    //velpredictFactManager_ = FactManager;
+    AddFactoryManager(FactManager, 0); // overwrite factory manager for predicting the primary variable
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetSchurCompFactoryManager(RCP<FactoryManager> FactManager) {
-    schurFactManager_ = FactManager;
+    //schurFactManager_ = FactManager;
+    AddFactoryManager(FactManager, 1); // overwrite factory manager for SchurComplement
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -93,11 +121,13 @@ namespace MueLu {
     //this->Input(currentLevel, "A");
     currentLevel.DeclareInput("A",this->GetFactory("A").get());
 
-    TEUCHOS_TEST_FOR_EXCEPTION(velpredictFactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: velpredictFactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",velpredictFactManager_->GetFactory("PreSmoother").get());
+    Teuchos::RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);
+    TEUCHOS_TEST_FOR_EXCEPTION(velpredictFactManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: velpredictFactManager_ must not be Teuchos::null! error.");
+    currentLevel.DeclareInput("PreSmoother",velpredictFactManager->GetFactory("PreSmoother").get());
 
-    TEUCHOS_TEST_FOR_EXCEPTION(schurFactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: schurFactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",schurFactManager_->GetFactory("PreSmoother").get());
+    Teuchos::RCP<const FactoryManagerBase> schurFactManager = FactManager_.at(1);
+    TEUCHOS_TEST_FOR_EXCEPTION(schurFactManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: schurFactManager_ must not be Teuchos::null! error.");
+    currentLevel.DeclareInput("PreSmoother",schurFactManager->GetFactory("PreSmoother").get());
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -170,8 +200,10 @@ namespace MueLu {
     diagFinv_ = diagFVector;
 
     // Set the Smoother
-    velPredictSmoo_ = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", velpredictFactManager_->GetFactory("PreSmoother").get());
-    schurCompSmoo_  = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", schurFactManager_->GetFactory("PreSmoother").get());
+    RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);
+    RCP<const FactoryManagerBase> schurFactManager      = FactManager_.at(1);
+    velPredictSmoo_ = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", velpredictFactManager->GetFactory("PreSmoother").get());
+    schurCompSmoo_  = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", schurFactManager->GetFactory("PreSmoother").get());
 
     SmootherPrototype::IsSetup(true);
   }
