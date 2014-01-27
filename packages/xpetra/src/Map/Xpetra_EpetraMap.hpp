@@ -173,7 +173,11 @@ namespace Xpetra {
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const {
       const Epetra_BlockMap * NewMap = map_->RemoveEmptyProcesses();
       if(!NewMap) return Teuchos::null;
-      else return toXpetra(*NewMap);
+      else {
+	const RCP< const Map<int, int> >  NewMapX = toXpetra(*NewMap);
+	delete NewMap;   // NOTE: toXpetra *copys* the epetra map rather than wrapping it, so we have to delete NewMap to avoid a memory leak.
+	return NewMapX;
+      }
     }
 
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const{ 
