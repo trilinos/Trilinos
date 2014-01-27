@@ -30,7 +30,8 @@ def controller():
     # env arguments
     p.add_option('-e', '--exec',       dest="binary",       default="MueLu_ScalingTestParamList.exe")   # executable
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
-    p.add_option('-p', '--petra',      dest="petra",        default='both')
+    p.add_option('-p', '--petra',      dest="petra",        default="both")
+    p.add_option('-N', '--nnodes',     dest="nnodes",       default="")
     p.add_option('-s',                 dest="nscale",       default="8", type='int')                    # number of weak scaling runs
     p.add_option('-t', '--template',   dest="template",     default="petra.pbs.template")               # template pbs file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # [optional] labels and timelines module
@@ -68,6 +69,8 @@ def controller():
                 print("Please provide at least one of:\n"
                       " - xmlfile           ['-x'/'--xml']\n"
                       " - command arguments ['--cmds']")
+                return
+
             else:
                 datafiles.append(options.xmlfile)
                 cmds.append("--xml=" + options.xmlfile)
@@ -97,13 +100,24 @@ def controller():
 
             datafiles.append(xmlfile)
 
-        # main loop [weak scaling study]
-        # start with a problem on one node and problem size NxN (or NxNxN), then increase nodes quadratically (cubically)
-        # and each dimension linearly (so that the problem also increases quadratically (cubically))
-        for i in range(1, options.nscale+1):
-            nnodes = i**dim                                 # number of nodes
-            nx     = i * options.nx                         # single dimension of the problem
-            build(nnodes=nnodes, nx=nx, binary=options.binary, petra=petra, matrix=options.matrix,
+        nnodes = []         # number of nodes
+        nx     = []         # single dimension of the problem
+        if options.nnodes == "":
+            # main loop [weak scaling study]
+            # start with a problem on one node and problem size NxN (or NxNxN), then increase nodes quadratically (cubically)
+            # and each dimension linearly (so that the problem also increases quadratically (cubically))
+            for i in range(1, options.nscale+1):
+              nnodes.append(i**dim)
+              nx.append(i * options.nx)
+
+        else:
+            # custom number of nodes
+            for i in re.split(',', options.nnodes):
+                nnodes.append(int(i))
+                nx.append(int(options.nx * pow(int(i), 1./dim)))
+
+        for i in range(0, len(nnodes)):
+            build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
                 datafiles=datafiles, cmds=cmds, template=options.template, output=options.output)
 
     elif options.action == 'run':
