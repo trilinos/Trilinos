@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_LineSearch_UserDirectionChange.hpp"
+#include "NOX_LineSearch_SafeguardedDirection.hpp"
 
 #include "NOX_LineSearch_Utils_Printing.H"
 #include "NOX_LineSearch_Utils_Slope.H"
@@ -65,9 +65,9 @@
 #include "Thyra_VectorBase.hpp"
 #include <cmath>
 
-NOX::LineSearch::UserDirectionChange::
-UserDirectionChange(const Teuchos::RCP<NOX::GlobalData>& gd,
-	   Teuchos::ParameterList& params) :
+NOX::LineSearch::SafeguardedDirection::
+SafeguardedDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
+		     Teuchos::ParameterList& params) :
   paramsPtr_(NULL),
   globalDataPtr_(gd),
   print_(gd->getUtils())
@@ -75,7 +75,7 @@ UserDirectionChange(const Teuchos::RCP<NOX::GlobalData>& gd,
   reset(gd, params);
 }
 
-bool NOX::LineSearch::UserDirectionChange::
+bool NOX::LineSearch::SafeguardedDirection::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
@@ -83,14 +83,14 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   print_.reset(gd->getUtils());
   paramsPtr_ = &params;
 
-  Teuchos::ParameterList& p = params.sublist("User Direction Change");
+  Teuchos::ParameterList& p = params.sublist("Safeguarded Direction");
   p.validateParametersAndSetDefaults(*getValidParameters());
   
   userLimits_ = p.get<Teuchos::RCP<NOX::Abstract::Vector> >("Update Limit Vector");
   useCounter_ = p.get<bool>("Use Counters");
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(userLimits_), std::runtime_error,
-			     "Error: The line search NOX::LineSearch::UserDirectionChange requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
+			     "Error: The line search NOX::LineSearch::SafeguardedDirection requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
 
   if (is_null(limitDifference_))
     limitDifference_ = userLimits_->clone(NOX::ShapeCopy);
@@ -105,13 +105,13 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::LineSearch::UserDirectionChange::compute(Abstract::Group& newGrp, 
-					    double& step, 
-					    const Abstract::Vector& dir,
-					    const Solver::Generic& s) 
+bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp, 
+						    double& step, 
+						    const Abstract::Vector& dir,
+						    const Solver::Generic& s) 
 {
   printOpeningRemarks();
-
+  
   if (useCounter_) {
     counter_.incrementNumLineSearches();
     counter_.incrementNumNonTrivialLineSearches();
@@ -163,7 +163,7 @@ bool NOX::LineSearch::UserDirectionChange::compute(Abstract::Group& newGrp,
 }
 
 Teuchos::RCP<const Teuchos::ParameterList> 
-NOX::LineSearch::UserDirectionChange::getValidParameters()
+NOX::LineSearch::SafeguardedDirection::getValidParameters()
 {
   if (is_null(validParams_)) {
     validParams_ = Teuchos::parameterList();
@@ -174,11 +174,11 @@ NOX::LineSearch::UserDirectionChange::getValidParameters()
   return validParams_;
 }
   
-void NOX::LineSearch::UserDirectionChange::printOpeningRemarks() const
+void NOX::LineSearch::SafeguardedDirection::printOpeningRemarks() const
 {
   if (print_.isPrintType(NOX::Utils::InnerIteration)) 
   {
     print_.out() << "\n" << NOX::Utils::fill(72) << "\n"
-		 << "-- UserDirectionChange Line Search -- \n";
+		 << "-- SafeguardedDirection Line Search -- \n";
   }
 }

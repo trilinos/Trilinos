@@ -84,37 +84,7 @@
 
 using namespace std;
 
-TEUCHOS_UNIT_TEST(rosenbrock, rtop_ele_wise_min_swap)
-{   
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  TEST_ASSERT(Comm.NumProc() == 1);
-
-  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel = 
-    Teuchos::rcp(new RosenbrockModelEvaluator(Teuchos::rcp(&Comm,false)));
-
-  Teuchos::RCP< ::Thyra::VectorBase<double> > updateLimits = ::Thyra::createMember<double>(thyraModel->get_x_space());
-  ::Thyra::put_scalar(Teuchos::ScalarTraits<double>::rmax(),updateLimits.ptr());
-  ::Thyra::set_ele(1,0.5,updateLimits.ptr());
-  Teuchos::RCP< ::Thyra::VectorBase<double> > dir = ::Thyra::createMember<double>(thyraModel->get_x_space());
-  ::Thyra::set_ele(0,10.0,dir.ptr());
-  ::Thyra::set_ele(1,-8.0,dir.ptr());
-
-  ::Thyra::ele_wise_min_swap(*updateLimits,dir.ptr());
-
-  double i0 = ::Thyra::get_ele(*dir,0);
-  double i1 = ::Thyra::get_ele(*dir,1);
-  double tol = Teuchos::ScalarTraits<double>::eps() * 100.0;
-  TEST_FLOATING_EQUALITY(i0,10.0,tol);
-  TEST_FLOATING_EQUALITY(i1,-0.5,tol);
-}
-
-TEUCHOS_UNIT_TEST(rosenbrock, user_direction_change_ls)
+TEUCHOS_UNIT_TEST(rosenbrock, user_limiting_ls)
 {
   int status = 0;
    
@@ -156,12 +126,12 @@ TEUCHOS_UNIT_TEST(rosenbrock, user_direction_change_ls)
   Teuchos::RCP<Teuchos::ParameterList> nl_params =
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Line Search Based");
-  nl_params->sublist("Line Search").set("Method", "User Direction Change");
+  nl_params->sublist("Line Search").set("Method", "Safeguarded Step");
   Teuchos::RCP< ::Thyra::VectorBase<double> > updateLimits = ::Thyra::createMember<double>(thyraModel->get_x_space());
   ::Thyra::put_scalar(Teuchos::ScalarTraits<double>::rmax(),updateLimits.ptr());
-  ::Thyra::set_ele(1,0.25,updateLimits.ptr());
+  ::Thyra::set_ele(1,0.5,updateLimits.ptr());
   Teuchos::RCP<NOX::Abstract::Vector> noxUpdateLimits = Teuchos::rcp(new NOX::Thyra::Vector(updateLimits));
-  nl_params->sublist("Line Search").sublist("User Direction Change").set("Update Limit Vector",noxUpdateLimits);
+  nl_params->sublist("Line Search").sublist("Safeguarded Step").set("Update Limit Vector",noxUpdateLimits);
 
   Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
   printParams.set("Output Information", 
@@ -233,7 +203,6 @@ TEUCHOS_UNIT_TEST(rosenbrock, user_direction_change_ls)
 
   Teuchos::RCP< ::Thyra::VectorBase<double> >
     initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
-  ::Thyra::set_ele(1,0.0,initial_guess.ptr());  // forces more nonlinear steps than undamped case
 
   ::Thyra::SolveCriteria<double> solve_criteria;
   ::Thyra::SolveStatus<double> solve_status;
@@ -243,7 +212,7 @@ TEUCHOS_UNIT_TEST(rosenbrock, user_direction_change_ls)
   
   Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
     Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
-  TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 7);
+  TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 8);
 
   Teuchos::RCP<const Epetra_Vector> x_analytic = thyraModel->get_analytic_solution();
 

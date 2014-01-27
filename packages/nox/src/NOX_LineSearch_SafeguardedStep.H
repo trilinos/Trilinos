@@ -48,8 +48,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_LINESEARCH_USERDIRECTIONCHANGE_HPP
-#define NOX_LINESEARCH_USERDIRECTIONCHANGE_HPP
+#ifndef NOX_LINESEARCH_SAFEGUARDED_STEP_H
+#define NOX_LINESEARCH_SAFEGUARDED_STEP_H
 
 #include "NOX_LineSearch_Generic.H" // base class
 
@@ -67,16 +67,17 @@ namespace NOX {
 namespace NOX {
 namespace LineSearch {
 
-/* \brief A line search that limits individual entries (based on user defined vector) in the solution update.  NOTE: This is dangerous (and not a true line search) since the update direction will be changed and may no longer be a descent direction.  Use at your own risk!
+/*!
+  \brief A line search that determines the step size by capping the magnitue of specific entries of the direction vector.  The limits are specified by a user defined vector.
 */
 
-class UserDirectionChange : public Generic {
+class SafeguardedStep : public Generic {
 
 public:
   
   //! Constructor
-  UserDirectionChange(const Teuchos::RCP<NOX::GlobalData>& gd,
-		      Teuchos::ParameterList& params);
+  SafeguardedStep(const Teuchos::RCP<NOX::GlobalData>& gd,
+		  Teuchos::ParameterList& params);
 
   // derived
   bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
@@ -96,8 +97,10 @@ private:
 private:
 
   Teuchos::RCP<NOX::Abstract::Vector> userLimits_;
-  Teuchos::RCP<NOX::Abstract::Vector> limitDifference_;
+  Teuchos::RCP<NOX::Abstract::Vector> invLimits_;
   Teuchos::RCP<NOX::Abstract::Vector> scaledUpdate_;
+  double lowerStepBound_;
+  double upperStepBound_;
 
   Teuchos::ParameterList* paramsPtr_;
   Teuchos::RCP<Teuchos::ParameterList> validParams_;

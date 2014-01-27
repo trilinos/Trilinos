@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_LineSearch_UserLimiting.H"
+#include "NOX_LineSearch_SafeguardedStep.H"
 
 #include "NOX_LineSearch_Utils_Printing.H"
 #include "NOX_LineSearch_Utils_Slope.H"
@@ -62,9 +62,9 @@
 #include "NOX_GlobalData.H"
 #include <cmath>
 
-NOX::LineSearch::UserLimiting::
-UserLimiting(const Teuchos::RCP<NOX::GlobalData>& gd,
-	   Teuchos::ParameterList& params) :
+NOX::LineSearch::SafeguardedStep::
+SafeguardedStep(const Teuchos::RCP<NOX::GlobalData>& gd,
+		Teuchos::ParameterList& params) :
   paramsPtr_(NULL),
   globalDataPtr_(gd),
   print_(gd->getUtils())
@@ -72,7 +72,7 @@ UserLimiting(const Teuchos::RCP<NOX::GlobalData>& gd,
   reset(gd, params);
 }
 
-bool NOX::LineSearch::UserLimiting::
+bool NOX::LineSearch::SafeguardedStep::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 { 
@@ -80,7 +80,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   print_.reset(gd->getUtils());
   paramsPtr_ = &params;
 
-  Teuchos::ParameterList& p = params.sublist("User Limiting");
+  Teuchos::ParameterList& p = params.sublist("Safeguarded Step");
   p.validateParametersAndSetDefaults(*getValidParameters());
   
   userLimits_ = p.get<Teuchos::RCP<NOX::Abstract::Vector> >("Update Limit Vector");
@@ -89,7 +89,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   useCounter_ = p.get<bool>("Use Counters");
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(userLimits_), std::runtime_error,
-			     "Error: The line search NOX::LineSearch::UserLimiting requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
+			     "Error: The line search NOX::LineSearch::SafeguardedStep requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
 
   if (is_null(invLimits_))
     invLimits_ = userLimits_->clone(NOX::ShapeCopy);
@@ -105,10 +105,10 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::LineSearch::UserLimiting::compute(Abstract::Group& newGrp, 
-					    double& step, 
-					    const Abstract::Vector& dir,
-					    const Solver::Generic& s) 
+bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp, 
+					       double& step, 
+					       const Abstract::Vector& dir,
+					       const Solver::Generic& s) 
 {
   printOpeningRemarks();
 
@@ -166,7 +166,7 @@ bool NOX::LineSearch::UserLimiting::compute(Abstract::Group& newGrp,
 }
 
 Teuchos::RCP<const Teuchos::ParameterList> 
-NOX::LineSearch::UserLimiting::getValidParameters()
+NOX::LineSearch::SafeguardedStep::getValidParameters()
 {
   if (is_null(validParams_)) {
     validParams_ = Teuchos::parameterList();
@@ -179,11 +179,11 @@ NOX::LineSearch::UserLimiting::getValidParameters()
   return validParams_;
 }
   
-void NOX::LineSearch::UserLimiting::printOpeningRemarks() const
+void NOX::LineSearch::SafeguardedStep::printOpeningRemarks() const
 {
   if (print_.isPrintType(NOX::Utils::InnerIteration)) 
   {
     print_.out() << "\n" << NOX::Utils::fill(72) << "\n"
-		 << "-- UserLimiting Line Search -- \n";
+		 << "-- SafeguardedStep Line Search -- \n";
   }
 }
