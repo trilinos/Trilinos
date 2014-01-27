@@ -294,6 +294,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, RowStatLinearOpBase )
     );
 }
 
+/*
 TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_RowStatLinearOpBase )
 {
   using Teuchos::null;
@@ -308,60 +309,48 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_RowStatLinearOpBase )
   const int numLocalRows = g_localDim;
   const int numRows = numLocalRows * comm->NumProc();
   const int numCols = numLocalRows / 2;
- 
-  out << "numRows = " << numRows << ", numCols = " << numCols << std::endl;
-
   const RCP<Epetra_CrsMatrix> epetraCrsM00 = getEpetraMatrix(numRows, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM11 = getEpetraMatrix(numCols, numCols);
   const RCP<Epetra_CrsMatrix> epetraCrsM01 = getEpetraMatrix(numRows, numCols);
   const RCP<Epetra_CrsMatrix> epetraCrsM10 = getEpetraMatrix(numCols, numRows);
-  const RCP<Epetra_CrsMatrix> epetraCrsM11 = getEpetraMatrix(numCols, numCols);
   epetraCrsM00->PutScalar(2.0);
+  epetraCrsM11->PutScalar(3.0);
   epetraCrsM01->PutScalar(-8.0);
   epetraCrsM10->PutScalar(-9.0);
-  epetraCrsM11->PutScalar(3.0);
 
-  const RCP<const LinearOpBase<double> > op00 = epetraLinearOp(epetraCrsM00);
-  const RCP<const LinearOpBase<double> > op01 = epetraLinearOp(epetraCrsM01);
-  const RCP<const LinearOpBase<double> > op10 = epetraLinearOp(epetraCrsM10);
-  const RCP<const LinearOpBase<double> > op11 = epetraLinearOp(epetraCrsM11);
+  const RCP<LinearOpBase<double> > op00 = nonconstEpetraLinearOp(epetraCrsM00);
+  const RCP<LinearOpBase<double> > op11 = nonconstEpetraLinearOp(epetraCrsM11);
+  const RCP<LinearOpBase<double> > op01 = nonconstEpetraLinearOp(epetraCrsM01);
+  const RCP<LinearOpBase<double> > op10 = nonconstEpetraLinearOp(epetraCrsM10);
 
-  const RCP<const LinearOpBase<double> > blocked = block2x2(op00,op01,op10,op11);
+  const RCP<LinearOpBase<double> > blocked = block2x2(op00,op01,op10,op11);
 
-  const RCP<const RowStatLinearOpBase<double> > rowStatOp =
-    rcp_dynamic_cast<const RowStatLinearOpBase<double> >(blocked, true);
+  const RCP<RowStatLinearOpBase<double> > rowStatOp =
+    rcp_dynamic_cast<RowStatLinearOpBase<double> >(blocked, true);
 
   if (g_dumpAll) {
-    out << "epetraOp = " << *blocked;
+    out << "epetraOp = " << *epetraOp;
   }
 
   // Get the inverse row sums
 
   const RCP<VectorBase<double> > inv_row_sums =
-    createMember<double>(blocked->range());
-  const RCP<VectorBase<double> > row_sums =
-    createMember<double>(blocked->range());
+    createMember<double>(epetraOp->range());
 
   rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
     inv_row_sums.ptr());
-  rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
-    row_sums.ptr());
 
   if (g_dumpAll) {
     out << "inv_row_sums = " << *inv_row_sums;
-    out << "row_sums = " << *row_sums;
   }
 
   TEST_FLOATING_EQUALITY(
     sum<double>(*inv_row_sums),
-    as<double>((1.0/(numRows*2.0+numCols*8.0))*numRows + (1.0/(numRows*9.0+numCols*3.0))*numCols),
-    as<double>(10.0 * ST::eps())
-    );
-  TEST_FLOATING_EQUALITY(
-    sum<double>(*row_sums),
-    as<double>((numRows*2.0+numCols*8.0)*numRows + (numRows*9.0+numCols*3.0)*numCols),
+    as<double>((1.0 / (two * numCols)) * numRows),
     as<double>(10.0 * ST::eps())
     );
 }
+*/
 
 
 TEUCHOS_UNIT_TEST( EpetraLinearOp, rectangular )
