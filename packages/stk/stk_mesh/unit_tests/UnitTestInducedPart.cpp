@@ -127,4 +127,36 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifySupersetsOfInducedPart )
   STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( unranked_superset_part));
 }
 
+STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
+{
+  stk::ParallelMachine pm = MPI_COMM_SELF;
+
+  const unsigned spatial_dim = 2;
+
+  MetaData meta_data(spatial_dim);
+  Part& unranked_part = meta_data.declare_part("unranked_part");
+  Part& element_rank_part = meta_data.declare_part("element_rank_part", stk::topology::ELEMENT_RANK);
+  Part& element_rank_part_no_induce = meta_data.declare_part("element_rank_part_no_induce", stk::topology::ELEMENT_RANK, true /*force no induce*/);
+
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+
+  mesh.modification_begin();
+
+  stk::mesh::PartVector parts;
+  parts.push_back(&unranked_part);
+  parts.push_back(&element_rank_part);
+  parts.push_back(&element_rank_part_no_induce);
+  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts);
+
+  parts.clear();
+  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);
+
+  mesh.declare_relation(elem, node,  0 /*rel id*/);
+  mesh.declare_relation(elem, node,  1 /*rel id*/);
+
+  STKUNIT_EXPECT_TRUE( mesh.bucket(node).member(element_rank_part) );
+  STKUNIT_EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_no_induce) );
+}
+
 }

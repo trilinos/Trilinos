@@ -171,37 +171,15 @@ void get_entities_through_relations(
 
 //----------------------------------------------------------------------
 
-/** \brief  Query if a member entity of the given entity type
- *          has an induced membership.
- */
-bool membership_is_induced( const Part & part , unsigned entity_rank )
-{
-  const MetaData & meta = MetaData::get(part);
-
-  const bool induced_by_type =
-     entity_rank < part.primary_entity_rank() &&
-                   part.primary_entity_rank() < meta.entity_rank_count() ;
-
-  const bool induced_by_stencil = false;
-
-  return induced_by_type || induced_by_stencil ;
-}
-
-//----------------------------------------------------------------------
-
 void induced_part_membership( const Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               OrdinalVector & induced_parts,
                               bool include_supersets)
 {
-  if ( entity_rank_to < entity_rank_from &&
-       part.primary_entity_rank() == entity_rank_from ) {
-
+  if ( entity_rank_to < entity_rank_from && part.should_induce(entity_rank_from) ) {
     // Direct relationship:
-
     insert_part_and_supersets( induced_parts , part, include_supersets );
-
   }
 }
 
@@ -240,7 +218,7 @@ void induced_part_membership(const BulkData& mesh,
       ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
-      if ( part.primary_entity_rank() == entity_rank_from && ! contains_ordinal( omit_begin, omit_end , *i )) {
+      if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit_begin, omit_end , *i )) {
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,

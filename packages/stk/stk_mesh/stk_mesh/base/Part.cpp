@@ -18,8 +18,6 @@
 namespace stk {
 namespace mesh {
 
-//----------------------------------------------------------------------
-
 Part * find( const PartVector & parts , const std::string & name )
 {
   PartVector::const_iterator i = parts.begin();
@@ -217,10 +215,5 @@ bool Part::contains(const Part& part) const
   return false;
 }
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-
 } // namespace mesh
 } // namespace stk
-

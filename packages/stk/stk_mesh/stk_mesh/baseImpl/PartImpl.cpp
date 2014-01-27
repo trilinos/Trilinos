@@ -46,10 +46,11 @@ void PartImpl::add_part_to_superset( Part & part )
 }
 
 // Subset part constructor:
-PartImpl::PartImpl( MetaData          * arg_meta_data ,
-                    const std::string & arg_name ,
-                    EntityRank          arg_rank ,
-                    size_t              arg_ordinal )
+PartImpl::PartImpl( MetaData          * arg_meta_data,
+                    const std::string & arg_name,
+                    EntityRank          arg_rank,
+                    size_t              arg_ordinal,
+                    bool                arg_force_no_induce)
   : m_name( arg_name ),
     m_id( -1 ),
     m_attribute(),
@@ -58,7 +59,8 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
     m_mesh_meta_data( arg_meta_data ),
     m_ordinal( arg_ordinal ),
     m_entity_rank( arg_rank ),
-    m_topology(stk::topology::INVALID_TOPOLOGY)
+    m_topology(stk::topology::INVALID_TOPOLOGY),
+    m_force_no_induce(arg_force_no_induce)
 {
   TraceIfWatching("stk::mesh::impl::PartImpl::PartImpl", LOG_PART, arg_ordinal);
   DiagIfWatching(LOG_PART, static_cast<size_t>(m_ordinal), "Name is: " << arg_name << ", rank is : " << arg_rank );

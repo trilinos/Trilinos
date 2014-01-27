@@ -332,16 +332,17 @@ void BulkData::internal_change_entity_parts(
   //(Only propagate part changes for parts which have a primary-entity-rank that matches
   // the entity's rank. Other parts don't get induced...)
 
-  std::vector<PartT> rank_parts_removed;
+  std::vector<PartT> inducable_parts_removed;
   for(typename std::vector<PartT>::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
-    if (impl::get_part(*pr, m_mesh_meta_data).primary_entity_rank() == e_rank) {
-      rank_parts_removed.push_back(*pr);
+    Part const& check_part = impl::get_part(*pr, m_mesh_meta_data);
+    if (check_part.should_induce(e_rank)) {
+      inducable_parts_removed.push_back(*pr);
     }
   }
 
   if (always_propagate_internal_changes ||
-      !rank_parts_removed.empty() ) {
-    internal_propagate_part_changes( entity , rank_parts_removed );
+      !inducable_parts_removed.empty() ) {
+    internal_propagate_part_changes( entity , inducable_parts_removed );
   }
 }
 

@@ -1235,8 +1235,8 @@ void BulkData::internal_resolve_shared_membership()
 
         for ( OrdinalVector::iterator
               p = current_parts.begin() ; p != current_parts.end() ; ++p ) {
-          if ( membership_is_induced( *meta.get_parts()[*p] , i->key.rank() ) &&
-               ! contains_ordinal( induced_parts_begin, induced_parts_end , *p ) ) {
+          if ( meta.get_parts()[*p]->was_induced(i->key.rank()) &&
+               !contains_ordinal( induced_parts_begin, induced_parts_end , *p ) ) {
             remove_parts.push_back( *p );
           }
         }

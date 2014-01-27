@@ -318,12 +318,12 @@ Part & MetaData::declare_internal_part( const std::string & p_name )
   return declare_part(internal_name);
 }
 
-Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
+Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, bool force_no_induce )
 {
   require_not_committed();
   require_valid_entity_rank(rank);
 
-  return *m_part_repo.declare_part( p_name , rank );
+  return *m_part_repo.declare_part( p_name , rank, force_no_induce );
 }
 
 Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank rank )

@@ -26,7 +26,7 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
-  class PartRepository;
+class PartRepository;
 } // namespace impl
 
 /** \addtogroup stk_mesh_module
@@ -66,6 +66,26 @@ public:
 
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_partImpl.name(); }
+
+  bool force_no_induce() const { return m_partImpl.force_no_induce(); }
+
+  /** \brief Should we induce this part
+   *
+   * We need the from_rank argument because part induction does not chain.
+   * IE, induced parts are not transitive. from_rank represents the rank
+   * of the entity that is the src entity of the connectivity.
+   */
+  bool should_induce(EntityRank from_rank) const
+  { return primary_entity_rank() == from_rank && !force_no_induce(); }
+
+  /** \brief Could an entity of a certain rank be induced into part
+   */
+  bool was_induced(EntityRank rank) const
+  {
+    return primary_entity_rank() != InvalidEntityRank &&
+           rank < primary_entity_rank() &&
+           !force_no_induce();
+  }
 
   void set_id(int64_t lid) { m_partImpl.set_id(lid); }
   int64_t id() const { return m_partImpl.id(); }
@@ -118,8 +138,8 @@ private:
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods on PartRepository.
    */
-  Part( MetaData * arg_meta_data , const std::string & arg_name, EntityRank arg_rank, size_t arg_ordinal)
-    : m_partImpl(arg_meta_data,arg_name,arg_rank,arg_ordinal)
+  Part( MetaData * arg_meta_data , const std::string & arg_name, EntityRank arg_rank, size_t arg_ordinal, bool arg_force_no_induce = false)
+    : m_partImpl(arg_meta_data, arg_name, arg_rank, arg_ordinal, arg_force_no_induce)
   { }
 
   ~Part() {}
@@ -128,7 +148,6 @@ private:
   Part & operator = ( const Part & );
 
 #endif /* DOXYGEN_COMPILE */
-
 };
 
 static const char INTERNAL_PART_PREFIX  = '{';

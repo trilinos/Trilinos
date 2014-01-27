@@ -262,12 +262,6 @@ void get_entities_through_relations(
         EntityRank             entities_related_rank ,
         std::vector<Entity> & entities_related );
 
-//----------------------------------------------------------------------
-/** \brief  Query if a member entity of the given entity type
- *          has an induced membership.
- */
-bool membership_is_induced( const Part & part , unsigned entity_rank );
-
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities. Insert the result into 'induced_parts'.
  */

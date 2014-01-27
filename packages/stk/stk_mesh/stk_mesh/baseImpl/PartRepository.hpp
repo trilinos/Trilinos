@@ -30,7 +30,7 @@ public:
   const PartVector & get_all_parts()  const;  // returns all parts
   const PartVector   get_mesh_parts() const; // returns the non-internal parts
 
-  Part * declare_part( const std::string & arg_name , EntityRank arg_rank );
+  Part * declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce=false );
   void declare_subset( Part & superset, Part & subset );
 
   template<class T>
@@ -45,7 +45,7 @@ private:
   PartRepository(const PartRepository & );
   PartRepository & operator = ( const PartRepository & );
 
-  Part * declare_part_impl( const std::string & name, EntityRank rank);
+  Part * declare_part_impl( const std::string & name, EntityRank rank, bool force_no_induce );
   void declare_subset_impl( Part & superset, Part & subset );
 
   MetaData * m_meta_data;

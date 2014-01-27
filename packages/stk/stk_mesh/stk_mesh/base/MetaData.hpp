@@ -177,8 +177,14 @@ public:
    *  This part will have member entities that are of equal or lesser rank.
    *  When an entity of equal rank becomes a member
    *  then all related entities of lesser rank also become members.
+   *
+   *  Normally, specifying a valid rank for a part will turn on inducability, but
+   *  we want to allow the client to decide whether they want induction or not.
+   *  For now, provide a flag to allow turn inducability off since it can be
+   *  expensive (bucket fragmentation). Eventually, we should decouple induction
+   *  from part rank.
    */
-  Part & declare_part( const std::string & p_name, EntityRank rank );
+  Part & declare_part( const std::string & p_name, EntityRank rank, bool force_no_induce = false );
 
   /** \brief  Declare a part of the given name
    *          Redeclaration returns the previously declared part.
@@ -190,12 +196,12 @@ public:
 
   /** \brief  Declare a part with a given cell topology
    */
-  Part &declare_part( const std::string &name, CellTopology cell_topology)
+  Part &declare_part( const std::string &name, CellTopology cell_topology, bool force_no_induce = false )
   {
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
     Part &root_part = get_cell_topology_root_part(cell_topology);
     EntityRank primary_entity_rank = root_part.primary_entity_rank();
-    Part & part = declare_part(name, primary_entity_rank);
+    Part & part = declare_part(name, primary_entity_rank, force_no_induce);
     declare_part_subset(root_part, part);
     return part;
   }
@@ -203,8 +209,8 @@ public:
   /** \brief  Declare a part with a given cell topology
    */
   template< class Top >
-  Part &declare_part(const std::string &name) {
-    return declare_part(name, shards::getCellTopologyData<Top>());
+  Part &declare_part(const std::string &name, bool force_no_induce = false) {
+    return declare_part(name, shards::getCellTopologyData<Top>(), force_no_induce);
   }
 
   /** \brief  Declare a superset-subset relationship between parts */

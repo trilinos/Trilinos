@@ -105,7 +105,7 @@ const PartVector PartRepository::get_mesh_parts() const
   return non_internal_parts;
 }
 
-Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank )
+Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce )
 {
   TraceIf("stk::mesh::impl::PartRepository::declare_part", LOG_PART);
 
@@ -113,19 +113,20 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
   Part * p = find( all_parts, arg_name );
 
   if ( p == NULL ) {
-    p = declare_part_impl( arg_name, arg_rank );
+    p = declare_part_impl( arg_name, arg_rank, force_no_induce );
   }
   else {
     p->m_partImpl.set_primary_entity_rank(arg_rank);
+    p->m_partImpl.set_force_no_induce(force_no_induce);
   }
 
   return p;
 }
 
-Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank)
+Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank, bool force_no_induce )
 {
   size_t ordinal = get_all_parts().size();
-  Part * part = new Part(m_meta_data,name,rank,ordinal);
+  Part * part = new Part(m_meta_data, name, rank, ordinal, force_no_induce);
   declare_subset_impl(*m_universal_part, *part);
   m_all_parts.push_back(part);
   return part;
@@ -176,7 +177,7 @@ PartRepository::PartRepository(MetaData * meta)
     m_universal_part(NULL),
     m_all_parts()
 {
-  m_universal_part = new Part( m_meta_data, universal_part_name(), stk::topology::INVALID_RANK, 0 );
+  m_universal_part = new Part( m_meta_data, universal_part_name(), stk::topology::INVALID_RANK, 0 /*ordinal*/);
   m_all_parts.push_back(m_universal_part);
 }
 
