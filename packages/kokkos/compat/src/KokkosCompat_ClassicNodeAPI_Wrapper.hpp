@@ -101,11 +101,13 @@ namespace Kokkos {
         const WDP _c;
         const int _beg;
 
-        FunctorParallelFor(int beg, WDP wd):_beg(beg),_c(wd) {};
+        FunctorParallelFor (const int beg, const WDP wd) :
+          _c (wd), _beg (beg)
+        {}
 
         KOKKOS_INLINE_FUNCTION
         void operator() (const int & i) const {
-          _c.execute(i+_beg);
+          _c.execute (i + _beg);
         }
       };
 
@@ -123,7 +125,8 @@ namespace Kokkos {
 
         WDP _c;
         const int _beg;
-        FunctorParallelReduce(int beg, WDP wd):_beg(beg),_c(wd) {};
+        FunctorParallelReduce (const int beg, WDP wd) :
+          _c (wd), _beg (beg) {}
 
         KOKKOS_INLINE_FUNCTION
         void operator() (const int & i, volatile value_type& value) const {
