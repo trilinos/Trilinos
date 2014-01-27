@@ -402,7 +402,7 @@ void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     A_local_ = Teuchos::null;
     L_ = Teuchos::null;
     U_ = Teuchos::null;
-    Condest_ = -STS::one ();
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
     A_ = A;
   }
 }

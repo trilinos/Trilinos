@@ -106,7 +106,7 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     D_ = Teuchos::null;
-    Condest_ = -STS::one ();
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
     A_ = A;
   }
 }
