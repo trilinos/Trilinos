@@ -185,7 +185,7 @@ namespace Xpetra {
                                      "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
 
         } else {
-          int nDofsInStridedBlock = stridingInfo[stridedBlockId];
+          size_t nDofsInStridedBlock = stridingInfo[stridedBlockId];
           TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError,
                                      "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
           TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError,
