@@ -45,37 +45,25 @@
 #include "Kokkos_DefaultNode.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless KokkosOpenMPWrapperNode is enabled.
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
-#include "Tpetra_CrsMatrix.hpp"
+// unless TBBNode is enabled.
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+#  include "Tpetra_MultiVector.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#  ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_CrsMatrix_def.hpp"
-#include "Tpetra_CrsGraph_def.hpp"
+#    include "Tpetra_ETIHelperMacros.h"
+#    include "Tpetra_MultiVector_def.hpp"
 
-#define TPETRA_CRSMATRIX_OPENMPWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
-
-#define TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_OPENMPWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
-
-#define TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_OPENMPWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
+#    define TPETRA_MULTIVECTOR_TBBNODE_INSTANT( SCALAR, LO, GO ) \
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::TBBNode )
 
 namespace Tpetra {
 
- TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_OPENMPWRAPPERNODE_INSTANT)
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_OPENMPWRAPPERNODE_INSTANT)
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_OPENMPWRAPPERNODE_INSTANT)
-
- // convert() gets instantiated in a separate file, Tpetra_CrsMatrix_convert.cpp
+  TPETRA_INSTANTIATE_SLG(TPETRA_MULTIVECTOR_TBBNODE_INSTANT)
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-
+#  endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_KOKKOSCLASSIC_TBB
