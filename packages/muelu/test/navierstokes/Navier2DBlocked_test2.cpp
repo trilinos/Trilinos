@@ -528,8 +528,8 @@ int main(int argc, char *argv[]) {
   MB->SetFactory("A",     SFact);
   MB->SetFactory("Smoother",    SmooSCFact);
   MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-  smootherPrototype->SetFactoryManager(MB);
-  coarseSolverPrototype->SetFactoryManager(MB);
+  smootherPrototype->AddFactoryManager(MB,0);
+  coarseSolverPrototype->AddFactoryManager(MB,0);
 
 
   ////////////////////////////////////////// define main factory manager

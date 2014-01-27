@@ -106,19 +106,16 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetVelocityPredictionFactoryManager(RCP<FactoryManager> FactManager) {
-    //velpredictFactManager_ = FactManager;
     AddFactoryManager(FactManager, 0); // overwrite factory manager for predicting the primary variable
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetSchurCompFactoryManager(RCP<FactoryManager> FactManager) {
-    //schurFactManager_ = FactManager;
     AddFactoryManager(FactManager, 1); // overwrite factory manager for SchurComplement
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    //this->Input(currentLevel, "A");
     currentLevel.DeclareInput("A",this->GetFactory("A").get());
 
     Teuchos::RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);

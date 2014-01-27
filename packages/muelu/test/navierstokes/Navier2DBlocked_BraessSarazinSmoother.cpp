@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
   MB->SetFactory("PreSmoother",               SmooSCFact);
   MB->SetFactory("PostSmoother",              SmooSCFact);
   MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-  BraessSarazinSm->SetFactoryManager(MB);    // set temporary factory manager in BraessSarazin smoother
+  BraessSarazinSm->AddFactoryManager(MB,0);  // set temporary factory manager in BraessSarazin smoother
 
   // setup main factory manager
   RCP<FactoryManager> M = rcp(new FactoryManager());

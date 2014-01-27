@@ -95,17 +95,21 @@ namespace MueLu {
 
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    FactManager_ = rcp(new FactoryManager());
-    FactManager_->SetFactory("A", SchurFact);
-    FactManager_->SetFactory("Smoother", SmooSCFact);
-    FactManager_->SetIgnoreUserData(true);
+    RCP<FactoryManager> FactManager = rcp(new FactoryManager());
+    FactManager->SetFactory("A", SchurFact);
+    FactManager->SetFactory("Smoother", SmooSCFact);
+    FactManager->SetIgnoreUserData(true);
+
+    AddFactoryManager(FactManager,0);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BraessSarazinSmoother() {}
 
+  //! Add a factory manager at a specific position
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactoryManager(RCP<FactoryManager> FactManager) {
+  void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pos != 0, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::AddFactoryManager: parameter \'pos\' must be zero! error.");
     FactManager_ = FactManager;
   }
 
