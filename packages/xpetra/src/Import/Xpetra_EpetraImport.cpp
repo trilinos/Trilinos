@@ -80,17 +80,9 @@ namespace Xpetra {
     XPETRA_MONITOR("EpetraImport::getPermuteToLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getPermuteToLIDs not implemented"); }
 
-  size_t EpetraImport::getNumRemoteIDs() const {
-    XPETRA_MONITOR("EpetraImport::getNumRemoteIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getNumRemoteIDs not implemented"); }
-
   ArrayView< const int > EpetraImport::getRemoteLIDs() const {
     XPETRA_MONITOR("EpetraImport::getRemoteLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getRemoteLIDs not implemented"); }
-
-  size_t EpetraImport::getNumExportIDs() const {
-    XPETRA_MONITOR("EpetraImport::getNumExportIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getNumExportIDs not implemented"); }
 
   ArrayView< const int > EpetraImport::getExportLIDs() const {
     XPETRA_MONITOR("EpetraImport::getExportLIDs");
