@@ -134,8 +134,8 @@ stk::mesh::Entity Gear::create_node(const std::vector<stk::mesh::Part*> & parts 
 
   stk::mesh::Entity node = m_mesh->declare_entity( stk::topology::NODE_RANK, id , parts );
 
-  double * const gear_data    = m_mesh->field_data( m_gear_coord , node );
-  double * const model_data   = m_mesh->field_data( m_model_coord , node );
+  double * const gear_data    = stk::mesh::field_data( m_gear_coord , node );
+  double * const model_data   = stk::mesh::field_data( m_model_coord , node );
 
   gear_data[0] = radius ;
   gear_data[1] = angle ;
