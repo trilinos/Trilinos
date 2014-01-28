@@ -91,6 +91,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_SimpleSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
@@ -234,13 +235,16 @@ namespace MueLu {
       if (factoryName == "SimpleSmoother") {
 
         //return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
-        //return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
+        return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
       }
 
       if (factoryName == "BraessSarazinSmoother") {
 
         //return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
-        //return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
+        return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      }
+      if (factoryName == "SchurComplementFactory") {
+        return Build2<SchurComplementFactory>            (paramList, factoryMapIn, factoryManagersIn);
       }
 
       // Use a user defined factories (in <Factories> node)
@@ -501,6 +505,12 @@ namespace MueLu {
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
 
+      // create a new block smoother
+      RCP<T> bs = rcp(new T(bs_sweeps,bs_omega));
+
+      // important: set block factory for A here! TODO think about this in more detail
+      bs->SetFactory("A", MueLu::NoFactory::getRCP());
+
       // internal vector of factory managers
       std::vector<RCP<FactoryManager> > facManagers;
 
@@ -545,10 +555,13 @@ namespace MueLu {
 
       }
 
-      RCP<T> bs = rcp(new T(bs_sweeps,bs_omega));
 
-      bs->AddFactoryManager(facManagers[0],0);
-      bs->AddFactoryManager(facManagers[1],1);
+
+      for (int i = 0; i<Teuchos::as<int>(facManagers.size()); i++) {
+        bs->AddFactoryManager(facManagers[i],i);
+      }
+
+
 
       return rcp(new SmootherFactory(bs));
     }
