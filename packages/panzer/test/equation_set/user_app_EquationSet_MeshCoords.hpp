@@ -40,52 +40,40 @@
 // ***********************************************************************
 // @HEADER
 
+#ifndef USER_APP_EQUATIONSET_MESHCOORDS_HPP
+#define USER_APP_EQUATIONSET_MESHCOORDS_HPP
 
-#include "Panzer_EquationSet_Factory.hpp"
-#include "Panzer_EquationSet_Factory_Defines.hpp"
-#include "Panzer_CellData.hpp"
+#include <vector>
+#include <string>
 
-// Add my equation sets here
-#include "user_app_EquationSet_Energy.hpp"
-#include "user_app_EquationSet_MeshCoords.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Panzer_EquationSet_DefaultImpl.hpp"
+#include "Panzer_Traits.hpp"
+#include "Phalanx_FieldManager.hpp"
 
 namespace user_app {
 
-  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("Energy", user_app::EquationSet_Energy,
-					EquationSet_Energy)
-  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("MeshCoords", user_app::EquationSet_MeshCoords,
-					EquationSet_MeshCoords)
+  template <typename EvalT>
+    class EquationSet_MeshCoords : public panzer::EquationSet_DefaultImpl<EvalT> {
 
-  class MyFactory : public panzer::EquationSetFactory {
+  public:    
 
-  public:
-
-    Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
-    buildEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
-		     const int& default_integration_order,
-		     const panzer::CellData& cell_data,
-		     const Teuchos::RCP<panzer::GlobalData>& global_data,
-		     const bool build_transient_support) const
-    {
-      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
-	Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
-      
-      bool found = false;
-      
-      PANZER_BUILD_EQSET_OBJECTS("Energy", my_app::EquationSet_Energy,
-				 EquationSet_Energy)
-      PANZER_BUILD_EQSET_OBJECTS("MeshCoords", my_app::EquationSet_MeshCoords,
-				 EquationSet_MeshCoords)
-      
-      if (!found) {
-	std::string msg = "Error - the \"Equation Set\" with \"Type\" = \"" + params->get<std::string>("Type") +
-	  "\" is not a valid equation set identifier. Please supply the correct factory.\n";
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-      }
-      
-      return eq_set;
-    }
+    EquationSet_MeshCoords(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		       const int& default_integration_order,
+		       const panzer::CellData& cell_data,
+		       const Teuchos::RCP<panzer::GlobalData>& gd,
+		       const bool build_transient_support);
     
+      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						 const panzer::FieldLibrary& field_library,
+						 const Teuchos::ParameterList& user_data) const;
+  private:
+    int dimension_; 
+
   };
 
 }
+
+#include "user_app_EquationSet_MeshCoords_impl.hpp"
+
+#endif
