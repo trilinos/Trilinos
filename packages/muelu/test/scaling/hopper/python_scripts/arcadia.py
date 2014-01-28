@@ -33,6 +33,7 @@ def controller():
     p.add_option('-p', '--petra',      dest="petra",        default='both')
     p.add_option('-s',                 dest="nscale",       default="8", type='int')                    # number of weak scaling runs
     p.add_option('-t', '--template',   dest="template",     default="petra.pbs.template")               # template pbs file for all runs
+    p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # [optional] labels and timelines module
 
     # run arguments
     p.add_option(      "--cmds",       dest="cmds",         default="")
@@ -114,7 +115,15 @@ def controller():
             clean()
 
     elif options.action == 'analyze':
-        r = analyze(petra, analysis_run=options.output)
+        if (options.ltmodule != ""):
+          #print "importing from module ",options.ltmodule
+          labels = import_from(options.ltmodule, "LABELS")
+          timelines = import_from(options.ltmodule, "TIMELINES")
+        else:
+          labels = LABELS
+          timelines = TIMELINES
+        analysis_run = options.output
+        r = analyze(petra, analysis_run, labels, timelines)
         if r : print(r)
 
     else:
@@ -123,7 +132,7 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze(petra, analysis_run):
+def analyze(petra, analysis_run, labels, timelines):
     # test which of [et]petra is being run
     has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
     has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
@@ -142,7 +151,7 @@ def analyze(petra, analysis_run):
 
     print(analysis_run_string)
     header = "                    :"
-    for name in LABELS:
+    for name in labels:
         if has_epetra:
             header = header + "  " + name + "-etime      eff"
         if has_tpetra:
@@ -150,12 +159,12 @@ def analyze(petra, analysis_run):
     print(header)
 
     # initialize lists
-    time_epetra     = list2dict(TIMELINES)
-    eff_epetra      = list2dict(TIMELINES)
-    time_tpetra     = list2dict(TIMELINES)
-    eff_tpetra      = list2dict(TIMELINES)
-    basetime_epetra = list2dict(TIMELINES)
-    basetime_tpetra = list2dict(TIMELINES)
+    time_epetra     = list2dict(timelines)
+    eff_epetra      = list2dict(timelines)
+    time_tpetra     = list2dict(timelines)
+    eff_tpetra      = list2dict(timelines)
+    basetime_epetra = list2dict(timelines)
+    basetime_tpetra = list2dict(timelines)
 
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         os.chdir(dir)
@@ -174,12 +183,15 @@ def analyze(petra, analysis_run):
             os.chdir("..")
             continue
 
-        for s in TIMELINES:
+        for s in timelines:
             if has_epetra:
-                r = commands.getstatusoutput("grep \"" + s + "\" " + analysis_run + ".epetra | cut -f3 -d')' | cut -f1 -d'('")
+                r = commands.getstatusoutput("grep -i \"" + s + "\" " + analysis_run + ".epetra | cut -f3 -d')' | cut -f1 -d'('")
                 if r[0] != 0:
                     return "Error reading \"" + analysis_run + ".epetra"
-                time_epetra[s] = float(r[1])
+                try:
+                  time_epetra[s] = float(r[1])
+                except (RuntimeError,ValueError):
+                  print "problem converting \"",r[1],"\" to float for timeline \"",s,"\""
                 if nnodes == BASECASE:
                     basetime_epetra[s] = time_epetra[s]
                 eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
@@ -249,6 +261,9 @@ def ensure_dir(d):
         os.makedirs(d)
 def list2dict(l):
     return dict(zip(l, [0]*len(l)))
+def import_from(module, name):
+    module = __import__(module, fromlist=[name])
+    return getattr(module, name)
 # ========================= main =========================
 def main():
     controller()
