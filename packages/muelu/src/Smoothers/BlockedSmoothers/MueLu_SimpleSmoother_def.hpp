@@ -39,6 +39,10 @@ namespace MueLu {
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother(LocalOrdinal sweeps, Scalar omega, bool SIMPLEC)
     : type_("SIMPLE"), bSIMPLEC_(SIMPLEC), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
   {
+#if 0
+    // when declaring default factories without overwriting them leads to a multipleCallCheck exception
+    // TODO: debug into this
+    // workaround: always define your factory managers outside either using the C++ API or the XML files
     RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory());
     SchurFact->SetParameter("omega",Teuchos::ParameterEntry(omega));
     SchurFact->SetParameter("lumping",Teuchos::ParameterEntry(SIMPLEC));
@@ -75,6 +79,7 @@ namespace MueLu {
 
     AddFactoryManager(velpredictFactManager, 0);
     AddFactoryManager(schurFactManager, 1);
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -118,13 +123,16 @@ namespace MueLu {
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     currentLevel.DeclareInput("A",this->GetFactory("A").get());
 
-    Teuchos::RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);
-    TEUCHOS_TEST_FOR_EXCEPTION(velpredictFactManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: velpredictFactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",velpredictFactManager->GetFactory("PreSmoother").get());
+    TEUCHOS_TEST_FOR_EXCEPTION(FactManager_.size() != 2, Exceptions::RuntimeError,"MueLu::SimpleSmoother::DeclareInput: You have to declare two FactoryManagers with a \"Smoother\" object: One for predicting the primary variable and one for the SchurComplement system. The smoother for the SchurComplement system needs a SchurComplementFactory as input for variable \"A\". make sure that you use the same proper damping factors for omega both in the SchurComplementFactory and in the SIMPLE smoother!");
 
-    Teuchos::RCP<const FactoryManagerBase> schurFactManager = FactManager_.at(1);
-    TEUCHOS_TEST_FOR_EXCEPTION(schurFactManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: schurFactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",schurFactManager->GetFactory("PreSmoother").get());
+    // loop over all factory managers for the subblocks of blocked operator A
+    std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
+    for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
+
+      // request "Smoother" for current subblock row.
+      currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get());
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -139,7 +147,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup blocked SIMPLE Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::SimpleSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::SimpleSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");
@@ -197,10 +205,17 @@ namespace MueLu {
     diagFinv_ = diagFVector;
 
     // Set the Smoother
-    RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);
-    RCP<const FactoryManagerBase> schurFactManager      = FactManager_.at(1);
-    velPredictSmoo_ = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", velpredictFactManager->GetFactory("PreSmoother").get());
-    schurCompSmoo_  = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", schurFactManager->GetFactory("PreSmoother").get());
+    // carefully switch to the SubFactoryManagers (defined by the users)
+    {
+      RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), velpredictFactManager);
+      velPredictSmoo_ = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",velpredictFactManager->GetFactory("Smoother").get());
+    }
+    {
+      RCP<const FactoryManagerBase> schurFactManager = FactManager_.at(1);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), schurFactManager);
+      schurCompSmoo_ = currentLevel.Get< RCP<SmootherBase> >("PreSmoother", schurFactManager->GetFactory("Smoother").get());
+    }
 
     SmootherPrototype::IsSetup(true);
   }
