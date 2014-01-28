@@ -184,7 +184,7 @@ public:
    *  expensive (bucket fragmentation). Eventually, we should decouple induction
    *  from part rank.
    */
-  Part & declare_part( const std::string & p_name, EntityRank rank, bool force_no_induce = false );
+  Part & declare_part( const std::string & p_name, EntityRank rank, bool arg_force_no_induce = false );
 
   /** \brief  Declare a part of the given name
    *          Redeclaration returns the previously declared part.
@@ -196,12 +196,12 @@ public:
 
   /** \brief  Declare a part with a given cell topology
    */
-  Part &declare_part( const std::string &name, CellTopology cell_topology, bool force_no_induce = false )
+  Part &declare_part( const std::string &name, CellTopology cell_topology, bool arg_force_no_induce = false )
   {
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
     Part &root_part = get_cell_topology_root_part(cell_topology);
     EntityRank primary_entity_rank = root_part.primary_entity_rank();
-    Part & part = declare_part(name, primary_entity_rank, force_no_induce);
+    Part & part = declare_part(name, primary_entity_rank, arg_force_no_induce);
     declare_part_subset(root_part, part);
     return part;
   }
@@ -209,9 +209,15 @@ public:
   /** \brief  Declare a part with a given cell topology
    */
   template< class Top >
-  Part &declare_part(const std::string &name, bool force_no_induce = false) {
-    return declare_part(name, shards::getCellTopologyData<Top>(), force_no_induce);
+  Part &declare_part(const std::string &name, bool arg_force_no_induce = false) {
+    return declare_part(name, shards::getCellTopologyData<Top>(), arg_force_no_induce);
   }
+
+  void force_no_induce(Part& part)
+  { declare_part( part.name(), part.primary_entity_rank(), true /*force no induce*/); }
+
+  void set_part_id(Part& part, int64_t lid)
+  { part.m_partImpl.set_id(lid); }
 
   /** \brief  Declare a superset-subset relationship between parts */
   void declare_part_subset( Part & superset , Part & subset );

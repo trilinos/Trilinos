@@ -138,6 +138,9 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
   Part& unranked_part = meta_data.declare_part("unranked_part");
   Part& element_rank_part = meta_data.declare_part("element_rank_part", stk::topology::ELEMENT_RANK);
   Part& element_rank_part_no_induce = meta_data.declare_part("element_rank_part_no_induce", stk::topology::ELEMENT_RANK, force_no_induce);
+  Part& element_rank_part_change_to_no_induce = meta_data.declare_part("element_rank_part_change_to_no_induce", stk::topology::ELEMENT_RANK);
+
+  meta_data.force_no_induce(element_rank_part_change_to_no_induce);
 
   meta_data.commit();
   BulkData mesh(meta_data, pm);
@@ -149,6 +152,7 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
   parts.push_back(&unranked_part);
   parts.push_back(&element_rank_part);
   parts.push_back(&element_rank_part_no_induce);
+  parts.push_back(&element_rank_part_change_to_no_induce);
   Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, element_id, parts);
 
   parts.clear();
@@ -160,6 +164,7 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
 
   STKUNIT_EXPECT_TRUE( mesh.bucket(node).member(element_rank_part) );
   STKUNIT_EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_no_induce) );
+  STKUNIT_EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_change_to_no_induce) );
 }
 
 }

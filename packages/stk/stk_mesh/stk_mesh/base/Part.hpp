@@ -87,7 +87,6 @@ public:
            !force_no_induce();
   }
 
-  void set_id(int64_t lid) { m_partImpl.set_id(lid); }
   int64_t id() const { return m_partImpl.id(); }
 
   /** \brief  Internally generated ordinal of this part that is unique
