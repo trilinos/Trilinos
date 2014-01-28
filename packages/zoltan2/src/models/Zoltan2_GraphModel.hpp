@@ -1031,16 +1031,17 @@ template <typename User, typename UserCoord>
 // Graph model derived from GraphAdapter.
 ////////////////////////////////////////////////////////////////
 
-template <typename User>
-class GraphModel<GraphAdapter<User> > : public Model<GraphAdapter<User> >
+template <typename User, typename UserCoord>
+class GraphModel<GraphAdapter<User,UserCoord> > : 
+                public Model<GraphAdapter<User,UserCoord> >
 {
 public:
 
-  typedef typename GraphAdapter<User>::scalar_t  scalar_t;
-  typedef typename GraphAdapter<User>::gno_t     gno_t;
-  typedef typename GraphAdapter<User>::lno_t     lno_t;
-  typedef typename GraphAdapter<User>::gid_t     gid_t;
-  typedef typename GraphAdapter<User>::node_t    node_t;
+  typedef typename GraphAdapter<User,UserCoord>::scalar_t  scalar_t;
+  typedef typename GraphAdapter<User,UserCoord>::gno_t     gno_t;
+  typedef typename GraphAdapter<User,UserCoord>::lno_t     lno_t;
+  typedef typename GraphAdapter<User,UserCoord>::gid_t     gid_t;
+  typedef typename GraphAdapter<User,UserCoord>::node_t    node_t;
   typedef IdentifierMap<User>     idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -1053,7 +1054,7 @@ public:
    *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
-  GraphModel(const GraphAdapter<User> *ia,
+  GraphModel(const GraphAdapter<User,UserCoord> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
@@ -1165,8 +1166,9 @@ private:
 
 };
 
-template <typename User>
-  GraphModel<GraphAdapter<User> >::GraphModel(const GraphAdapter<User> *ia,
+template <typename User, typename UserCoord>
+  GraphModel<GraphAdapter<User,UserCoord> >::GraphModel(
+    const GraphAdapter<User,UserCoord> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
      env_(env), comm_(comm),
@@ -1462,8 +1464,8 @@ template <typename User>
   env_->memory("After construction of graph model");
 }
 
-template <typename User>
-  size_t GraphModel<GraphAdapter<User> >::getVertexList(
+template <typename User, typename UserCoord>
+  size_t GraphModel<GraphAdapter<User,UserCoord> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
@@ -1480,8 +1482,8 @@ template <typename User>
     return nv;
   }
 
-template <typename User>
-  size_t GraphModel<GraphAdapter<User> >::getEdgeList(
+template <typename User, typename UserCoord>
+  size_t GraphModel<GraphAdapter<User,UserCoord> >::getEdgeList(
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {

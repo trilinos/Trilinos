@@ -81,7 +81,7 @@ namespace Zoltan2 {
 */
 
 template <typename User, typename UserCoord=User>
-  class XpetraCrsGraphAdapter : public GraphAdapter<User> {
+  class XpetraCrsGraphAdapter : public GraphAdapter<User,UserCoord> {
 
 public:
 
@@ -92,7 +92,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef GraphAdapter<User> base_adapter_t;
+  typedef GraphAdapter<User,UserCoord> base_adapter_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
 #endif
