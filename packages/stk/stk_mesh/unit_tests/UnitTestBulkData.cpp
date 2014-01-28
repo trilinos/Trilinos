@@ -1653,7 +1653,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
       for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
       {
         stk::mesh::Entity entity = bucket[iEntity];
-        int * const p = eMesh.field_data( pressure_field , entity );
+        int * const p = stk::mesh::field_data( pressure_field , entity );
         stk::mesh::EntityId id=eMesh.identifier(entity);
 
         int type=Owned;
@@ -1698,7 +1698,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
       {
         stk::mesh::Entity entity = bucket[iEntity];
         stk::mesh::EntityId id = eMesh.identifier(entity);
-        int * const p = eMesh.field_data( pressure_field , entity );
+        int * const p = stk::mesh::field_data( pressure_field , entity );
         int type=Owned;
         double p_e = (p_rank+1)*100+id;
         if (bucket.owned())

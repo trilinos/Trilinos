@@ -45,7 +45,7 @@ namespace {
 	double time = i;
 
 	for(size_t inode=0; inode<nodes.size(); inode++) {
-	  double *fieldDataForNode = stkIo.bulk_data().field_data(temperature, nodes[inode]);
+	  double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[inode]);
 	  *fieldDataForNode = time;
 	}
 
@@ -84,7 +84,7 @@ namespace {
       stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK,
 			      nodes);
       for(size_t i=0; i<nodes.size(); i++) {
-	double *fieldDataForNode = stkIo.bulk_data().field_data(temperature, nodes[i]);
+	double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[i]);
 	EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
       }
       //-END      
