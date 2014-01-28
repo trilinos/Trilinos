@@ -433,7 +433,10 @@ public:
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags)
   {
-    throw std::logic_error("in non-specialized GraphModel");
+    char msg[256];
+    sprintf(msg, "in non-specialized GraphModel; adapterType = %d",
+            ia->adapterType());
+    throw std::logic_error(msg);
   }
 
   /*! \brief Returns the number vertices on this process.
@@ -548,8 +551,9 @@ public:
 // Graph model derived from MatrixAdapter.
 ////////////////////////////////////////////////////////////////
 
-template <typename User>
-class GraphModel<MatrixAdapter<User> > : public Model<MatrixAdapter<User> >
+template <typename User, typename UserCoord>
+class GraphModel<MatrixAdapter<User,UserCoord> > :
+                 public Model<MatrixAdapter<User,UserCoord> >
 {
 public:
 
@@ -569,7 +573,7 @@ public:
    *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
-  GraphModel(const MatrixAdapter<User> *ia,
+  GraphModel(const MatrixAdapter<User,UserCoord> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
@@ -680,8 +684,9 @@ private:
   size_t numLocalGraphEdges_;
 };
 
-template <typename User>
-  GraphModel<MatrixAdapter<User> >::GraphModel(const MatrixAdapter<User> *ia,
+template <typename User, typename UserCoord>
+  GraphModel<MatrixAdapter<User,UserCoord> >::GraphModel(
+    const MatrixAdapter<User,UserCoord> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
      env_(env), comm_(comm),
@@ -960,23 +965,25 @@ template <typename User>
 
   // Vertex coordinates
 
-  vCoordDim_ = ia->getCoordinateDimension();
+  if (ia->coordinatesAvailable()) {
+    vCoordDim_ = ia->getCoordinateInput()->getNumEntriesPerID();
 
-  if (vCoordDim_ > 0){
-    input_t *coordInfo = new input_t [vCoordDim_];
-    env_->localMemoryAssertion(__FILE__, __LINE__, vCoordDim_, coordInfo);
+    if (vCoordDim_ > 0){
+      input_t *coordInfo = new input_t [vCoordDim_];
+      env_->localMemoryAssertion(__FILE__, __LINE__, vCoordDim_, coordInfo);
 
-    for (int dim=0; dim < vCoordDim_; dim++){
-      const scalar_t *coords=NULL;
-      int stride=0;
-      ia->getCoordinatesView(coords, stride, dim);
-      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
-                                                 stride*numLocalVertices_,
-                                                 false);
-      coordInfo[dim] = input_t(coordArray, stride);
+      for (int dim=0; dim < vCoordDim_; dim++){
+        const scalar_t *coords=NULL;
+        int stride=0;
+        ia->getCoordinateInput()->getEntriesView(coords, stride, dim);
+        ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
+                                                   stride*numLocalVertices_,
+                                                   false);
+        coordInfo[dim] = input_t(coordArray, stride);
+      }
+
+      vCoords_ = arcp<input_t>(coordInfo, 0, vCoordDim_, true);
     }
-
-    vCoords_ = arcp<input_t>(coordInfo, 0, vCoordDim_, true);
   }
 
   reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 1,
@@ -985,8 +992,8 @@ template <typename User>
   env_->memory("After construction of graph model");
 }
 
-template <typename User>
-  size_t GraphModel<MatrixAdapter<User> >::getVertexList(
+template <typename User, typename UserCoord>
+  size_t GraphModel<MatrixAdapter<User,UserCoord> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
@@ -1003,8 +1010,8 @@ template <typename User>
     return nv;
   }
 
-template <typename User>
-  size_t GraphModel<MatrixAdapter<User> >::getEdgeList(
+template <typename User, typename UserCoord>
+  size_t GraphModel<MatrixAdapter<User,UserCoord> >::getEdgeList(
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
@@ -1179,7 +1186,7 @@ template <typename User>
   // It is not ready to use vertices == GRAPH_EDGE from GraphAdapter.
   env_->localInputAssertion(__FILE__, __LINE__,
     "GraphModel from GraphAdapter is implemented only for "
-    "Graph Vertices as primary object, not for Graph Edges", 
+    "Graph Vertices as primary object, not for Graph Edges",
     ia->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX, BASIC_ASSERTION);
 
   // Model creation flags
@@ -1412,7 +1419,7 @@ template <typename User>
       ia->getVertexWeightsView(weights, stride, idx);
       // If weights is NULL, user wants to use uniform weights
       if (weights != NULL){
-        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, 
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
                                                  stride*numLocalVertices_,
                                                  false);
         weightInfo[idx] = input_t(wgtArray, stride);

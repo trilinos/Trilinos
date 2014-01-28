@@ -170,8 +170,9 @@ template <typename Adapter>
 
   // Get the number of weights
   // Use max weight dim over all processes as userWeightDim_
-  userWeightDim_ = ia->getNumWeightsPerID();
-  Model<Adapter>::maxCount(*comm, userWeightDim_);
+  int tmp = ia->getNumWeightsPerID();
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1,
+      &tmp, &userWeightDim_);
 
   // Prepare to store views from input adapter
   // TODO:  Do we have to store these views, or can we get them on an 

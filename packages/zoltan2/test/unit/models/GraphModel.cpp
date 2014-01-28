@@ -58,6 +58,8 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
+#include <Zoltan2_InputTraits.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 
 #include <string>
 #include <vector>
@@ -78,6 +80,7 @@ using Teuchos::ArrayView;
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
 typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
+typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> buser_t;
 
 using std::string;
 using std::vector;
@@ -132,7 +135,8 @@ void printGraph(lno_t nrows, const gno_t *v,
   comm->barrier();
 }
 
-void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
+void testMatrixAdapter(
+    RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
     int rowWeightDim, int nnzDim, int coordDim,
@@ -150,8 +154,8 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // Create a matrix input adapter.
 
-  typedef Zoltan2::MatrixAdapter<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> adapter_t;
+  typedef Zoltan2::MatrixAdapter<tcrsMatrix_t,buser_t> base_adapter_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t,buser_t> madapter_t;
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
@@ -186,7 +190,7 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
 
-  adapter_t tmi(M, rowWeightDim, coordDim);
+  madapter_t tmi(M, rowWeightDim);
 
   for (int i=0; i < rowWeightDim; i++){
     if (nnzDim == i)
@@ -195,8 +199,20 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
       tmi.setRowWeights(rowWeights[i], 1, i);
   }
 
-  for (int i=0; i < coordDim; i++){
-    tmi.setRowCoordinates(coords[i], 1, i);
+  gno_t *gids = NULL;
+
+  typedef Zoltan2::BasicVectorAdapter<buser_t> bvadapter_t;
+  bvadapter_t *bvi = NULL;
+
+  if (coordDim > 0) {
+    gids = new gno_t[nLocalRows];
+    for (lno_t i = 0; i < nLocalRows; i++)
+      gids[i] = M->getRowMap()->getGlobalElement(i);
+    bvi = new bvadapter_t(nLocalRows, gids, coords[0],
+                                           (coordDim > 1 ? coords[1] : NULL), 
+                                           (coordDim > 2 ? coords[2] : NULL),
+                                            1,1,1);
+    tmi.setCoordinateInput(bvi);
   }
 
   int numLocalDiags = M->getNodeNumDiags();
@@ -242,7 +258,7 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   if (rank == 0) std::cout << "        Creating GraphModel" << std::endl;
   Zoltan2::GraphModel<base_adapter_t> *model = NULL;
-  const base_adapter_t *baseTmi = &tmi;
+  const base_adapter_t *baseTmi = dynamic_cast<base_adapter_t *>(&tmi);
 
   try{
     model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, env, 
@@ -510,6 +526,8 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
 
     if (coordDim > 0){
+      delete bvi;
+      delete [] gids;
       for (int i=0; i < coordDim; i++){
         if (coords[i])
           delete [] coords[i];

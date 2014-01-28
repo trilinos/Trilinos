@@ -80,7 +80,7 @@ namespace Zoltan2 {
     the second template parameter to \c double.
 */
 
-template <typename User>
+template <typename User, typename UserCoord=User>
   class XpetraCrsGraphAdapter : public GraphAdapter<User> {
 
 public:
@@ -94,6 +94,7 @@ public:
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
   typedef GraphAdapter<User> base_adapter_t;
   typedef User user_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   /*! \brief Destructor
@@ -379,8 +380,8 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
+template <typename User, typename UserCoord>
+  XpetraCrsGraphAdapter<User,UserCoord>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph):
       ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(0), vertexWeights_(),
@@ -395,8 +396,8 @@ template <typename User>
     emptyValues, emptyStrides);
 }
 
-template <typename User>
-  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
+template <typename User, typename UserCoord>
+  XpetraCrsGraphAdapter<User,UserCoord>::XpetraCrsGraphAdapter(
   const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
@@ -413,8 +414,8 @@ template <typename User>
     emptyValues, emptyStrides);
 }
 
-template <typename User>
-  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
+template <typename User, typename UserCoord>
+  XpetraCrsGraphAdapter<User,UserCoord>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
@@ -429,8 +430,8 @@ template <typename User>
     coords, coordStrides);
 }
 
-template <typename User>
-  void XpetraCrsGraphAdapter<User>::initializeData(
+template <typename User, typename UserCoord>
+  void XpetraCrsGraphAdapter<User,UserCoord>::initializeData(
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides)
@@ -509,9 +510,9 @@ template <typename User>
   }
 }
 
-template <typename User>
+template <typename User, typename UserCoord>
   template<typename Adapter>
-    void XpetraCrsGraphAdapter<User>::applyPartitioningSolution(
+    void XpetraCrsGraphAdapter<User,UserCoord>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {

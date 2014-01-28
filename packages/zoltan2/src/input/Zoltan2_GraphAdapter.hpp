@@ -98,7 +98,7 @@ enum GraphEntityType {
 
 */
 
-template <typename User>
+template <typename User, typename UserCoord=User>
   class GraphAdapter : public BaseAdapter<User> {
 private:
   enum GraphEntityType primaryEntityType; // Entity (vertex or edge) to
@@ -118,6 +118,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   enum BaseAdapterType adapterType() const {return GraphAdapterType;}
