@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -194,7 +194,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
     }
   }
 #endif
-  
+
   // Insert the block LOB objects if doing a flexible fill.
   if (Ops_stack_.size()) {
     Ops_.resize(numRowBlocks_*numColBlocks_);
@@ -264,7 +264,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockExists(
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
   return true;
-} 
+}
 
 
 template<class Scalar>
@@ -291,7 +291,7 @@ DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
   return Ops_[numRowBlocks_*j+i].getNonconstObj();
-} 
+}
 
 
 template<class Scalar>
@@ -304,7 +304,7 @@ DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
   return Ops_[numRowBlocks_*j+i];
-} 
+}
 
 
 // Overridden from LinearOpBase
@@ -445,14 +445,14 @@ void DefaultBlockedLinearOp<Scalar>::applyImpl(
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "DefaultBlockedLinearOp<Scalar>::apply(...)", *this, M_trans, X_in, &*Y_inout
     );
-#endif // TEUCHOS_DEBUG 
-  
+#endif // TEUCHOS_DEBUG
+
   const bool
     struct_transp = (real_trans(M_trans)!=NOTRANS); // Structural transpose?
   const int
-    opNumRowBlocks = ( !struct_transp ? numRowBlocks_ : numColBlocks_ ), 
-    opNumColBlocks = ( !struct_transp ? numColBlocks_ : numRowBlocks_ ); 
-  
+    opNumRowBlocks = ( !struct_transp ? numRowBlocks_ : numColBlocks_ ),
+    opNumColBlocks = ( !struct_transp ? numColBlocks_ : numRowBlocks_ );
+
   //
   // Y = alpha * op(M) * X + beta*Y
   //
@@ -507,12 +507,12 @@ DefaultBlockedLinearOp<Scalar>::rowStatIsSupportedImpl(
   using Teuchos::rcpFromRef;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef RowStatLinearOpBase<Scalar> RowStatOp; 
+  typedef RowStatLinearOpBase<Scalar> RowStatOp;
   typedef RCP<const LinearOpBase<Scalar> > ConstLinearOpPtr;
 
   // Figure out what needs to be check for each sub block to compute
   // the require row stat
-  RowStatLinearOpBaseUtils::ERowStat subblk_stat 
+  RowStatLinearOpBaseUtils::ERowStat subblk_stat
       = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM;
   switch (row_stat) {
     case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
@@ -524,7 +524,7 @@ DefaultBlockedLinearOp<Scalar>::rowStatIsSupportedImpl(
   }
 
   // check each sub block for compatibility (null means zero,
-  // automatically compatible) 
+  // automatically compatible)
   for( int i = 0; i < numRowBlocks_; ++i ) {
     for( int j = 0; j < numColBlocks_; ++j ) {
       ConstLinearOpPtr Op_i_j = getBlock(i,j);
@@ -546,24 +546,24 @@ DefaultBlockedLinearOp<Scalar>::rowStatIsSupportedImpl(
 
   return true;
 }
- 	
+
 template<class Scalar>
-void 
+void
 DefaultBlockedLinearOp<Scalar>::getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat row_stat, 
+    const RowStatLinearOpBaseUtils::ERowStat row_stat,
     const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const
 {
   using Teuchos::rcpFromRef;
   using Teuchos::rcpFromPtr;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef RowStatLinearOpBase<Scalar> RowStatOp; 
+  typedef RowStatLinearOpBase<Scalar> RowStatOp;
   typedef RCP<const LinearOpBase<Scalar> > ConstLinearOpPtr;
   typedef RCP<VectorBase<Scalar> > VectorPtr;
 
   // Figure out what needs to be check for each sub block to compute
   // the require row stat
-  RowStatLinearOpBaseUtils::ERowStat subblk_stat 
+  RowStatLinearOpBaseUtils::ERowStat subblk_stat
       = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM;
   switch (row_stat) {
     case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
@@ -581,12 +581,12 @@ DefaultBlockedLinearOp<Scalar>::getRowStatImpl(
   // its constribution
   for( int i = 0; i < numRowBlocks_; ++i ) {
     VectorPtr blk_vec = Y->getNonconstVectorBlock(i);
-    put_scalar(0.0,blk_vec.ptr()); // clear vector just in case
+    put_scalar (ST::zero (), blk_vec.ptr ()); // clear vector just in case
 
     for( int j = 0; j < numColBlocks_; ++j ) {
       ConstLinearOpPtr Op_i_j = getBlock(i,j);
       VectorPtr tmp_vec = createMember(Op_i_j->range());
-      put_scalar(0.0,tmp_vec.ptr()); // clear vector just in case
+      put_scalar (ST::zero (), tmp_vec.ptr ()); // clear vector just in case
 
       if (nonnull(Op_i_j)) {
         RCP<const RowStatOp> row_stat_op = rcp_dynamic_cast<const RowStatOp>(Op_i_j);
@@ -617,12 +617,12 @@ DefaultBlockedLinearOp<Scalar>::getRowStatImpl(
 // Overridden from ScaledLinearOpBase
 
 template<class Scalar>
-bool 
+bool
 DefaultBlockedLinearOp<Scalar>::supportsScaleLeftImpl() const
 {
   using Teuchos::rcp_dynamic_cast;
   typedef RCP<const LinearOpBase<Scalar> > LinearOpPtr;
-  typedef const ScaledLinearOpBase<Scalar> ScaledOp; 
+  typedef const ScaledLinearOpBase<Scalar> ScaledOp;
 
   bool supported = true;
   for( int i = 0; i < numRowBlocks_; ++i ) {
@@ -644,12 +644,12 @@ DefaultBlockedLinearOp<Scalar>::supportsScaleLeftImpl() const
 }
 
 template<class Scalar>
-bool 
+bool
 DefaultBlockedLinearOp<Scalar>::supportsScaleRightImpl() const
 {
   using Teuchos::rcp_dynamic_cast;
   typedef RCP<const LinearOpBase<Scalar> > LinearOpPtr;
-  typedef const ScaledLinearOpBase<Scalar> ScaledOp; 
+  typedef const ScaledLinearOpBase<Scalar> ScaledOp;
 
   bool supported = true;
   for( int i = 0; i < numRowBlocks_; ++i ) {
@@ -671,13 +671,13 @@ DefaultBlockedLinearOp<Scalar>::supportsScaleRightImpl() const
 }
 
 template<class Scalar>
-void 
-DefaultBlockedLinearOp<Scalar>::scaleLeftImpl( 
+void
+DefaultBlockedLinearOp<Scalar>::scaleLeftImpl(
   const VectorBase< Scalar > &row_scaling)
 {
   using Teuchos::dyn_cast;
   using Teuchos::rcp_dynamic_cast;
-  typedef ScaledLinearOpBase<Scalar> ScaledOp; 
+  typedef ScaledLinearOpBase<Scalar> ScaledOp;
   typedef RCP<LinearOpBase<Scalar> > LinearOpPtr;
   typedef RCP<const VectorBase<Scalar> > VectorPtr;
 
@@ -706,13 +706,13 @@ DefaultBlockedLinearOp<Scalar>::scaleLeftImpl(
 }
 
 template<class Scalar>
-void 
+void
 DefaultBlockedLinearOp<Scalar>::scaleRightImpl(
   const VectorBase< Scalar > &col_scaling)
 {
   using Teuchos::dyn_cast;
   using Teuchos::rcp_dynamic_cast;
-  typedef ScaledLinearOpBase<Scalar> ScaledOp; 
+  typedef ScaledLinearOpBase<Scalar> ScaledOp;
   typedef RCP<LinearOpBase<Scalar> > LinearOpPtr;
   typedef RCP<const VectorBase<Scalar> > VectorPtr;
 
@@ -1201,4 +1201,4 @@ Thyra::nonconstBlock2x2(
     );
 
 
-#endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_DEF_HPP
+#endif  // THYRA_DEFAULT_BLOCKED_LINEAR_OP_DEF_HPP
