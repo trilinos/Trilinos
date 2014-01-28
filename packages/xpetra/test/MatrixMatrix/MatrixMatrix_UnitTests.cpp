@@ -160,7 +160,7 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#ifdef HAVE_XPETRA_EPETRA
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     { // Epetra test
       // get a comm and node
       RCP<const Comm<int> > comm = getDefaultComm();
