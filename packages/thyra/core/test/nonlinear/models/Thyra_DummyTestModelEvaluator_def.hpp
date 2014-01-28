@@ -65,9 +65,13 @@ namespace Thyra {
 
 template<class Scalar>
 Teuchos::RCP<DummyTestModelEvaluator<Scalar> >
-dummyTestModelEvaluator()
+dummyTestModelEvaluator(
+  const Ordinal x_size,
+  const ArrayView<const Ordinal> &p_sizes,
+  const ArrayView<const Ordinal> &g_sizes
+  )
 {
-  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>);
+  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes));
 }
 
 
@@ -75,60 +79,51 @@ dummyTestModelEvaluator()
 
 
 template<class Scalar>
-DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator()
-  : x_space_(Thyra::defaultSpmdVectorSpace<Scalar>(2)),
-    f_space_(x_space_),
-    W_factory_(Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>()),
-    p_(x_space_->dim(), Teuchos::ScalarTraits<Scalar>::zero())
+DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
+  const Ordinal x_size,
+  const ArrayView<const Ordinal> &p_sizes,
+  const ArrayView<const Ordinal> &g_sizes
+  )
 {
-
-  using Teuchos::RCP;
-  using Thyra::VectorBase;
-  using Thyra::createMember;
-  typedef Thyra::ModelEvaluatorBase MEB;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   
+  typedef ModelEvaluatorBase MEB;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  x_space_ = defaultSpmdVectorSpace<Scalar>(x_size);
+
+  p_space_.resize(p_sizes.size());
+  for (Ordinal l = 0; l < p_sizes.size(); ++l) {
+    p_space_[l] = defaultSpmdVectorSpace<Scalar>(p_sizes[l]);
+  }
+  
+  f_space_ = x_space_;
+  
+  g_space_.resize(g_sizes.size());
+  for (Ordinal j = 0; j < g_sizes.size(); ++j) {
+    g_space_[j] = defaultSpmdVectorSpace<Scalar>(g_sizes[j]);
+  }
+  
+  W_factory_ = defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
+
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
+  inArgs.set_Np(p_space_.size());
   inArgs.setSupports(MEB::IN_ARG_x);
   prototypeInArgs_ = inArgs;
   
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
+  outArgs.set_Np_Ng(p_space_.size(), g_space_.size());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;
-  x0_ = createMember(x_space_);
-  V_S(x0_.ptr(), ST::zero());
-  nominalValues_.set_x(x0_);
+  const RCP<VectorBase<Scalar> > x0 = createMember(x_space_);
+  V_S(x0.ptr(), ST::zero());
+  nominalValues_.set_x(x0);
 
-  set_p(Teuchos::tuple<Scalar>(2.0, 0.0)());
-  set_x0(Teuchos::tuple<Scalar>(1.0, 1.0)());
-
-}
-
-
-template<class Scalar>
-void DummyTestModelEvaluator<Scalar>::set_p(const Teuchos::ArrayView<const Scalar> &p)
-{
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(p_.size(), p.size());
-#endif
-  p_().assign(p);
-}
-
-
-template<class Scalar>
-void DummyTestModelEvaluator<Scalar>::set_x0(const Teuchos::ArrayView<const Scalar> &x0_in)
-{
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(x_space_->dim(), x0_in.size());
-#endif
-  Thyra::DetachedVectorView<Scalar> x0(x0_);
-  x0.sv().values()().assign(x0_in);
 }
 
 
@@ -136,7 +131,7 @@ void DummyTestModelEvaluator<Scalar>::set_x0(const Teuchos::ArrayView<const Scal
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::get_x_space() const
 {
   return x_space_;
@@ -147,8 +142,7 @@ template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::get_p_space(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  return p_space_[l];
 }
 
 
@@ -156,13 +150,12 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::Array<std::string> >
 DummyTestModelEvaluator<Scalar>::get_p_names(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;
 }
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::get_f_space() const
 {
   return f_space_;
@@ -173,13 +166,12 @@ template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::get_g_space(int j) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  return g_space_[j];
 }
 
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
+ModelEvaluatorBase::InArgs<Scalar>
 DummyTestModelEvaluator<Scalar>::getNominalValues() const
 {
   return nominalValues_;
@@ -190,7 +182,6 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DummyTestModelEvaluator<Scalar>::getLowerBounds() const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
   return ModelEvaluatorBase::InArgs<Scalar>();
 }
 
@@ -199,13 +190,12 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DummyTestModelEvaluator<Scalar>::getUpperBounds() const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
   return ModelEvaluatorBase::InArgs<Scalar>();
 }
 
 
 template<class Scalar>
-Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::create_W_op() const
 {
   return createNonconstSimpleDenseLinearOp<Scalar>(
@@ -215,7 +205,7 @@ DummyTestModelEvaluator<Scalar>::create_W_op() const
 
 
 template<class Scalar>
-Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
+Teuchos::RCP<PreconditionerBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::create_W_prec() const
 {
   return nonconstUnspecifiedPrec<Scalar>(
@@ -227,7 +217,7 @@ DummyTestModelEvaluator<Scalar>::create_W_prec() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+Teuchos::RCP<const LinearOpWithSolveFactoryBase<Scalar> >
 DummyTestModelEvaluator<Scalar>::get_W_factory() const
 {
   return W_factory_;
@@ -235,7 +225,7 @@ DummyTestModelEvaluator<Scalar>::get_W_factory() const
 
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
+ModelEvaluatorBase::InArgs<Scalar>
 DummyTestModelEvaluator<Scalar>::createInArgs() const
 {
   return prototypeInArgs_;
@@ -248,7 +238,7 @@ void DummyTestModelEvaluator<Scalar>::reportFinalPoint(
   const bool wasSolved
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  // ToDo: Capture the final point and then provide in interface.
 }
 
 
@@ -256,7 +246,7 @@ void DummyTestModelEvaluator<Scalar>::reportFinalPoint(
 
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+ModelEvaluatorBase::OutArgs<Scalar>
 DummyTestModelEvaluator<Scalar>::createOutArgsImpl() const
 {
   return prototypeOutArgs_;
@@ -265,12 +255,11 @@ DummyTestModelEvaluator<Scalar>::createOutArgsImpl() const
 
 template<class Scalar>
 void DummyTestModelEvaluator<Scalar>::evalModelImpl(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement to just copy inArgs and outArgs!
-  
 }
 
 
@@ -288,7 +277,11 @@ void DummyTestModelEvaluator<Scalar>::evalModelImpl(
   template class DummyTestModelEvaluator<SCALAR >; \
   \
   template Teuchos::RCP<DummyTestModelEvaluator<SCALAR > > \
-  dummyTestModelEvaluator(); \
+  dummyTestModelEvaluator( \
+    const Ordinal x_size, \
+    const ArrayView<const Ordinal> &p_sizes, \
+    const ArrayView<const Ordinal> &g_sizes \
+    ); \
 
 
 #endif // DUMMY_TEST_MODEL_EVALUATOR_DEF_HPP

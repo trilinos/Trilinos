@@ -538,9 +538,9 @@ public:
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
     Evaluation<VectorBase<Scalar> > get_f() const;
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>.  */
-    void set_g( int j, const RCP<VectorBase<Scalar> > &g_j );
+    void set_g( int j, const Evaluation<VectorBase<Scalar> > &g_j );
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>..  */
-    RCP<VectorBase<Scalar> > get_g(int j) const;
+    Evaluation<VectorBase<Scalar> > get_g(int j) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
     void set_W( const RCP<LinearOpWithSolveBase<Scalar> > &W );
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
@@ -660,7 +660,7 @@ public:
     void _setUnsupportsAndRelated( EOutArgsMembers arg );
   private:
     // types
-    typedef Teuchos::Array<RCP<VectorBase<Scalar> > > g_t;
+    typedef Teuchos::Array<Evaluation<VectorBase<Scalar> > > g_t;
     typedef Teuchos::Array<Derivative<Scalar> > deriv_t;
     typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport> supports_t;

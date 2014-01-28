@@ -60,8 +60,12 @@ template<class Scalar> class DummyTestModelEvaluator;
  * \relates DummyTestModelEvaluator
  */
 template<class Scalar>
-Teuchos::RCP<DummyTestModelEvaluator<Scalar> >
-dummyTestModelEvaluator();
+RCP<DummyTestModelEvaluator<Scalar> >
+dummyTestModelEvaluator(
+  const Ordinal x_size = 2,
+  const ArrayView<const Ordinal> &p_sizes = Teuchos::null,
+  const ArrayView<const Ordinal> &g_sizes = Teuchos::null
+  );
 
 
 /** \brief Test helper ModelEvaluator.
@@ -78,13 +82,11 @@ public:
   //@{
 
   /** \brief . */
-  DummyTestModelEvaluator();
-
-  /** \brief . */
-  void set_p(const Teuchos::ArrayView<const Scalar> &p);
-
-  /** \brief . */
-  void set_x0(const Teuchos::ArrayView<const Scalar> &x0);
+  DummyTestModelEvaluator(
+    const Ordinal x_size,
+    const ArrayView<const Ordinal> &p_sizes,
+    const ArrayView<const Ordinal> &g_sizes
+    );
 
   //@}
 
@@ -92,29 +94,29 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
   RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+  RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > create_W_prec() const;
+  RCP<PreconditionerBase<Scalar> > create_W_prec() const;
   /** \brief . */
-  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -129,25 +131,26 @@ private: // functions
   //@{
 
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
 
   //@}
 
 private: // data members
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
-  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x0_;
-  Teuchos::Array<Scalar> p_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
+  RCP<const VectorSpaceBase<Scalar> > x_space_;
+  Array<RCP<const VectorSpaceBase<Scalar> > > p_space_;
+  RCP<const VectorSpaceBase<Scalar> > f_space_;
+  Array<RCP<const VectorSpaceBase<Scalar> > > g_space_;
+  RCP<const LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
+  ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
+  RCP<VectorBase<Scalar> > x0_;
+  ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
+  ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
 };
 

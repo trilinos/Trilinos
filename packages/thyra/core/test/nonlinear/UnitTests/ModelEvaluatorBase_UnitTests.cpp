@@ -52,6 +52,16 @@ namespace Thyra {
 
 
 using Teuchos::null;
+using Teuchos::tuple;
+
+
+template<typename Scalar>
+RCP<const ModelEvaluator<Scalar> >
+getXGTestModel(const Ordinal x_size, const Ordinal g_size)
+{
+  return dummyTestModelEvaluator<Scalar>(x_size, null, tuple<Ordinal>(g_size));
+}
+
 
 
 //
@@ -98,13 +108,21 @@ TEUCHOS_UNIT_TEST( Evaluation, nullAssign)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_rcp_get_rcp, Scalar )
 {
+  typedef ModelEvaluatorBase MEB;
+  const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
   out << "Test that 'f' can be set and gotten as an RCP<VB>!\n";
-  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
-  ModelEvaluatorBase::OutArgs<Scalar> outArgs = model->createOutArgs();
-  RCP<VectorBase<Scalar> > f = createMember(model->get_f_space());
+  const RCP<VectorBase<Scalar> > f = createMember(model->get_f_space());
   outArgs.set_f(f);
-  RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
   TEST_EQUALITY(f_out, f);
+
+  out << "Test that 'g' can be set and gotten as an RCP<VB>!\n";
+  const RCP<VectorBase<Scalar> > g = createMember(model->get_g_space(0));
+  outArgs.set_g(0, g);
+  const RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+  TEST_EQUALITY(g_out, g);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_rcp_get_rcp )
@@ -113,15 +131,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_rcp_get_rcp
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_eval_get_eval, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
-  out << "Test that 'f' can be set and gotten as an Evaluation<VB>!\n";
-  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'f' can be set and gotten as an Evaluation<VB>!\n";
   MEB::Evaluation<VectorBase<Scalar> > f(
     createMember(model->get_f_space()), MEB::EVAL_TYPE_APPROX_DERIV);
   outArgs.set_f(f);
   MEB::Evaluation<VectorBase<Scalar> > f_out = outArgs.get_f();
   TEST_EQUALITY(f_out, f);
   TEST_EQUALITY(f_out.getType(), MEB::EVAL_TYPE_APPROX_DERIV);
+
+  out << "Test that 'g' can be set and gotten as an Evaluation<VB>!\n";
+  MEB::Evaluation<VectorBase<Scalar> > g(
+    createMember(model->get_g_space(0)), MEB::EVAL_TYPE_APPROX_DERIV);
+  outArgs.set_g(0, g);
+  MEB::Evaluation<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+  TEST_EQUALITY(g_out, g);
+  TEST_EQUALITY(g_out.getType(), MEB::EVAL_TYPE_APPROX_DERIV);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_eval_get_eval )
@@ -130,14 +157,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_eval_get_ev
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_rcp_get_eval, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
-  out << "Test that 'f' can be set as an RCP<VB> and gotten as an Evaluation<VB>!\n";
-  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'f' can be set as an RCP<VB> and gotten as an Evaluation<VB>!\n";
   MEB::Evaluation<VectorBase<Scalar> > f(createMember(model->get_f_space()));
   outArgs.set_f(f);
   MEB::Evaluation<VectorBase<Scalar> > f_out = outArgs.get_f();
   TEST_EQUALITY(f_out, f);
   TEST_EQUALITY(f_out.getType(), MEB::EVAL_TYPE_EXACT);
+
+  out << "Test that 'g' can be set as an RCP<VB> and gotten as an Evaluation<VB>!\n";
+  MEB::Evaluation<VectorBase<Scalar> > g(createMember(model->get_g_space(0)));
+  outArgs.set_g(0,g);
+  MEB::Evaluation<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+  TEST_EQUALITY(g_out, g);
+  TEST_EQUALITY(g_out.getType(), MEB::EVAL_TYPE_EXACT);
+
   out << "NOTE: When set as an RCP<> object, we get the right default eval type of EXACT!\n";
 }
 
@@ -147,14 +183,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_rcp_get_eva
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_eval_get_rcp, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
-  out << "Test that 'f' can be set as an Evaluation <VB> and gotten as an RCP<VB> !\n";
-  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'f' can be set as an Evaluation <VB> and gotten as an RCP<VB> !\n";
   MEB::Evaluation<VectorBase<Scalar> > f(
     createMember(model->get_f_space()), MEB::EVAL_TYPE_APPROX_DERIV);
   outArgs.set_f(f);
   RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
   TEST_EQUALITY(f_out, f);
+
+  out << "Test that 'g' can be set as an Evaluation <VB> and gotten as an RCP<VB> !\n";
+  MEB::Evaluation<VectorBase<Scalar> > g(
+    createMember(model->get_g_space(0)), MEB::EVAL_TYPE_APPROX_DERIV);
+  outArgs.set_g(0, g);
+  RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+  TEST_EQUALITY(g_out, g);
+
   out << "NOTE: We loose the Evaluation type when we get this back as an RCP<> object!\n";
 }
 
@@ -164,20 +209,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_eval_get_rc
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, setArgs, Scalar )
 {
   typedef ModelEvaluatorBase MEB;
-  const RCP<const ModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
+  const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
   MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
 
   MEB::Evaluation<VectorBase<Scalar> > f(
     createMember(model->get_f_space()), MEB::EVAL_TYPE_APPROX_DERIV);
   outArgs.set_f(f);
 
+  MEB::Evaluation<VectorBase<Scalar> > g(
+    createMember(model->get_g_space(0)), MEB::EVAL_TYPE_VERY_APPROX_DERIV);
+  outArgs.set_g(0, g);
+
   MEB::OutArgs<Scalar> outArgs2 = model->createOutArgs();
   outArgs2.setArgs(outArgs);
 
-  // Make sure that the Evaluation type gets copied correctly!
   MEB::Evaluation<VectorBase<Scalar> > f_out = outArgs2.get_f();
   TEST_EQUALITY(f_out, f);
   TEST_EQUALITY(f_out.getType(), MEB::EVAL_TYPE_APPROX_DERIV);
+
+  MEB::Evaluation<VectorBase<Scalar> > g_out = outArgs2.get_g(0);
+  TEST_EQUALITY(g_out, g);
+  TEST_EQUALITY(g_out.getType(), MEB::EVAL_TYPE_VERY_APPROX_DERIV);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )
