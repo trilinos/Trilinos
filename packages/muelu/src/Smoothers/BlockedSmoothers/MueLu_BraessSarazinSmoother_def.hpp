@@ -83,6 +83,10 @@ namespace MueLu {
   BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega)
     : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
   {
+#if 0
+    // when declaring default factories without overwriting them leads to a multipleCallCheck exception
+    // TODO: debug into this
+    // workaround: always define your factory managers outside either using the C++ API or the XML files
     RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory());
     SchurFact->SetParameter("omega",Teuchos::ParameterEntry(omega));
     SchurFact->SetFactory("A", this->GetFactory("A"));
@@ -101,6 +105,7 @@ namespace MueLu {
     FactManager->SetIgnoreUserData(true);
 
     AddFactoryManager(FactManager,0);
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -115,10 +120,17 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    //this->Input(currentLevel, "A");
     currentLevel.DeclareInput("A",this->GetFactory("A").get());
-    TEUCHOS_TEST_FOR_EXCEPTION(FactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::DeclareInput: FactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",FactManager_->GetFactory("PreSmoother").get());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(FactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::DeclareInput: FactManager_ must not be Teuchos::null! Introduce a FactoryManager for the SchurComplement equation. error.");
+
+    // carefully call DeclareInput after switching to internal FactoryManager
+    {
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), FactManager_);
+
+      // request "Smoother" for current subblock row.
+      currentLevel.DeclareInput("PreSmoother",FactManager_->GetFactory("Smoother").get());
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -186,7 +198,11 @@ namespace MueLu {
     diagFinv_ = diagFVector;
 
     // Set the Smoother
-    smoo_ = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", FactManager_->GetFactory("PreSmoother").get());
+    // carefully switch to the SubFactoryManagers (defined by the users)
+    {
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), FactManager_);
+      smoo_ = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",FactManager_->GetFactory("Smoother").get());
+    }
 
     SmootherPrototype::IsSetup(true);
   }
