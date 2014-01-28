@@ -132,11 +132,12 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
   stk::ParallelMachine pm = MPI_COMM_SELF;
 
   const unsigned spatial_dim = 2;
+  const bool force_no_induce = true;
 
   MetaData meta_data(spatial_dim);
   Part& unranked_part = meta_data.declare_part("unranked_part");
   Part& element_rank_part = meta_data.declare_part("element_rank_part", stk::topology::ELEMENT_RANK);
-  Part& element_rank_part_no_induce = meta_data.declare_part("element_rank_part_no_induce", stk::topology::ELEMENT_RANK, true /*force no induce*/);
+  Part& element_rank_part_no_induce = meta_data.declare_part("element_rank_part_no_induce", stk::topology::ELEMENT_RANK, force_no_induce);
 
   meta_data.commit();
   BulkData mesh(meta_data, pm);
@@ -144,16 +145,18 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
   mesh.modification_begin();
 
   stk::mesh::PartVector parts;
+  const stk::mesh::EntityId element_id = 1, node_id = 1;
   parts.push_back(&unranked_part);
   parts.push_back(&element_rank_part);
   parts.push_back(&element_rank_part_no_induce);
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts);
+  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, element_id, parts);
 
   parts.clear();
-  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);
+  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_id, parts);
 
-  mesh.declare_relation(elem, node,  0 /*rel id*/);
-  mesh.declare_relation(elem, node,  1 /*rel id*/);
+  const stk::mesh::RelationIdentifier rel_0_id = 0, rel_1_id = 1;
+  mesh.declare_relation(elem, node,  rel_0_id);
+  mesh.declare_relation(elem, node,  rel_1_id);
 
   STKUNIT_EXPECT_TRUE( mesh.bucket(node).member(element_rank_part) );
   STKUNIT_EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_no_induce) );
