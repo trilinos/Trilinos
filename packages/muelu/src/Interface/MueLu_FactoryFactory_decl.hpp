@@ -215,37 +215,12 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
-
-      /*if (factoryName == "FactoryGroup") {
-        // group of factories to build a factory manager?
-        return BuildFactoryGroup(paramList, factoryMapIn);
-      }*/
-
-      if (factoryName == "BlockedPFactory") {
-
-        return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
-      }
-
-      if (factoryName == "BlockedGaussSeidelSmoother") {
-
-        //return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
-        return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
-      }
-
-      if (factoryName == "SimpleSmoother") {
-
-        //return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
-        return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
-      }
-
-      if (factoryName == "BraessSarazinSmoother") {
-
-        //return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
-        return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
-      }
-      if (factoryName == "SchurComplementFactory") {
-        return Build2<SchurComplementFactory>            (paramList, factoryMapIn, factoryManagersIn);
-      }
+      // Blocked factories
+      if (factoryName == "BlockedPFactory")            return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedGaussSeidelSmoother") return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SimpleSmoother")             return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BraessSarazinSmoother")      return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SchurComplementFactory")     return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
@@ -564,66 +539,6 @@ namespace MueLu {
 
 
       return rcp(new SmootherFactory(bs));
-    }
-
-    RCP<FactoryBase> BuildBlockedGaussSeidelSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedGaussSeidelSmoother", Exceptions::RuntimeError, "");
-      int bgs_sweeps=1;          if(paramList.isParameter("sweeps"))       bgs_sweeps = paramList.get<int>        ("sweeps");
-      double bgs_omega=1.0;      if(paramList.isParameter("omega"))        bgs_omega  = paramList.get<double>     ("omega");
-
-      // read in sub lists
-      RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
-
-      // internal vector of factory managers
-      std::vector<RCP<FactoryManager> > facManagers;
-
-      // loop over all "block%i" sublists in parameter list
-      int blockid = 1;
-      bool blockExists = true;
-      while (blockExists == true) {
-        std::stringstream ss;
-        ss << "block" << blockid;
-
-        if(paramList.isSublist(ss.str()) == true) {
-          // we either have a parameter group or we have a list of factories in here
-          RCP<const ParameterList> b = rcp(new ParameterList(*sublist(paramListNonConst, ss.str())));
-
-          RCP<FactoryManager> M = Teuchos::null;
-
-          if (b->isParameter("group")) {
-            // use a factory manager
-            std::string facManagerName = b->get< std::string >("group");
-            TEUCHOS_TEST_FOR_EXCEPTION(factoryManagersIn.count(facManagerName) != 1, Exceptions::RuntimeError, "Factory manager has not been found. Please check the spelling of the factory managers in your xml file.");
-            RCP<FactoryManagerBase> Mb = factoryManagersIn.find(facManagerName)->second;
-            M = Teuchos::rcp_dynamic_cast<FactoryManager>(Mb);
-            TEUCHOS_TEST_FOR_EXCEPTION(M==Teuchos::null, Exceptions::RuntimeError, "Failed to cast FactoryManagerBase object to FactoryManager.");
-          } else {
-            // read in the list of factories
-            M = rcp(new FactoryManager());
-            for (ParameterList::ConstIterator param = b->begin(); param != b->end(); ++param) {
-              RCP<const FactoryBase> p = BuildFactory(b->entry(param), factoryMapIn, factoryManagersIn);
-              M->SetFactory(b->name(param),p);
-            }
-          }
-
-          // add factory manager to internal vector of factory managers
-          M->SetIgnoreUserData(true);
-          facManagers.push_back(M);
-          paramListNonConst->remove(ss.str());
-          blockid++;
-        } else {
-          blockExists = false;
-          break;
-        }
-
-      }
-
-      RCP<BlockedGaussSeidelSmoother> bgs = rcp(new BlockedGaussSeidelSmoother(bgs_sweeps,bgs_omega));
-
-      bgs->AddFactoryManager(facManagers[0],0);
-      bgs->AddFactoryManager(facManagers[1],1);
-
-      return rcp(new SmootherFactory(bgs));
     }
 
     RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
