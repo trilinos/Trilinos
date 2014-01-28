@@ -134,6 +134,18 @@ public:
      */ 
    void addCellField(const std::string & fieldName,const std::string & blockId);
 
+   /** Add a solution field for coordinates with a particular prefix, force it
+     * to be outputed as a to be mesh displacement field. This
+     * is really only relevant for I/O and how the field is stored internally in the mesh.
+     *
+     * \param[in] blockId Element block to use
+     * \param[in] coordPrefix Prefix for solution coordinate field (assumes using "X","Y","Z" as postfix)
+     * \param[in] dispPrefix Prefix for displacment (output) field
+     */
+   void addMeshCoordFields(const std::string & blockId,
+                           const std::vector<std::string> & coordPrefix,
+                           const std::string & dispPrefix);
+
    //////////////////////////////////////////
 
    /** Initialize the mesh with the current dimension This also calls
@@ -618,6 +630,30 @@ protected:
      */
    void applyElementLoadBalanceWeights();
 
+   /** Determine if a particular field in an element block is a displacement field. Return
+     * the displacement field name in the requested argument if so.
+     */
+   bool isMeshCoordField(const std::string & eBlock,const std::string & fieldName,int & axis) const;
+
+   /** Writes a particular field to an array as a coordinate diplacement. Notice this is setup to work with
+     * the worksets associated with Panzer.
+     *
+     * \param[in] fieldName Name of field to be filled
+     * \param[in] blockId Name of block this set of elements belongs to
+     * \param[in] dimension What coordinate axis to write to
+     * \param[in] localElementIds Local element IDs for this set of solution values
+     * \param[in] solutionValues An two dimensional array object sized by (Cells,Basis Count)
+     *
+     * \note The block ID is not strictly needed in this context. However forcing the
+     *       user to provide it does permit an additional level of safety. The implicit
+     *       assumption is that the elements being "set" are part of the specified block.
+     *       This prevents the need to perform a null pointer check on the field data, because
+     *       the STK_Interface construction of the fields should force it to be nonnull...
+     */
+   template <typename ArrayT>
+   void setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
+                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
    Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
@@ -673,6 +709,14 @@ protected:
 
    boost::unordered_map<stk::mesh::EntityId,std::size_t> localIDHash_;
 
+   // Store mesh displacement fields by element block. This map
+   // goes like this meshCoordFields_[eBlock][solnFieldName] => dispFieldName
+   std::map<std::string,std::map<std::string,std::string> > meshCoordFields_;
+
+   // Store the axis corresponding to each coordinate field This map
+   // goes like this meshCoordFields_[eBlock][solnFieldName] => fieldAxis
+   std::map<std::string,std::map<std::string,int> > meshFieldsAxis_;
+
    // Object describing how to sort a vector of elements using
    // local ID as the key, very short lived object
    class LocalIdCompare {
@@ -694,6 +738,12 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
+   int field_axis = -1;
+   if(isMeshCoordField(blockId,fieldName,field_axis)) {
+     setDispFieldData(fieldName,blockId,field_axis,localElementIds,solutionValues); 
+     return;
+   }
+
    SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
@@ -708,6 +758,34 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
          solnData[0] = scaleValue*solutionValues(cell,i);
+      }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
+                                     const std::vector<std::size_t> & localElementIds,const ArrayT & dispValues)
+{
+   TEUCHOS_ASSERT(axis>=0); // sanity check
+
+   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+
+   SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
+   const VectorFieldType & coord_field = this->getCoordinatesField();
+
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity * element = elements[localId];
+
+      // loop over nodes set solution values
+      stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
+      for(std::size_t i=0;i<relations.size();++i) {
+         stk::mesh::Entity * node = relations[i].entity();
+
+         double * solnData = stk::mesh::field_data(*field,*node);
+         double * coordData = stk::mesh::field_data(coord_field,*node);
+         // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+         solnData[0] = dispValues(cell,i)-coordData[axis];
       }
    }
 }
