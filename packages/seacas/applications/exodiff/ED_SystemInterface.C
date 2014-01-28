@@ -47,7 +47,7 @@ namespace {
 
   double To_Double(const std::string & str_val)
   {
-    SMART_ASSERT(str_val.size() > 0);
+    SMART_ASSERT(!str_val.empty());
 
     char* endptr; errno = 0;
     double val = strtod(str_val.c_str(), &endptr);
@@ -165,10 +165,10 @@ namespace {
     // first pass just counts the number of excluded time steps:
 
     std::string tok = extract_token( exclude_arg, "," );
-    while (tok.size() > 0)
+    while (!tok.empty())
       {
 	std::string subtok = extract_token( tok, "-" );
-	SMART_ASSERT(subtok.size() > 0);
+	SMART_ASSERT(!subtok.empty());
 
 	errno = 0;
 	int ival1 = atoi( subtok.c_str() );  SMART_ASSERT(errno == 0);
@@ -182,7 +182,7 @@ namespace {
 	++num_excluded_steps;
 
 	subtok = extract_token( tok, "-" );
-	if (subtok.size() > 0)
+	if (!subtok.empty())
 	  {
 	    errno = 0;
 	    int ival2 = atoi( subtok.c_str() );  SMART_ASSERT(errno == 0);
@@ -217,10 +217,10 @@ namespace {
 	num_excluded_steps = 0;
 
 	tok = extract_token( exclude_arg, "," );
-	while (tok.size() > 0)
+	while (!tok.empty())
 	  {
 	    std::string subtok = extract_token( tok, "-" );
-	    SMART_ASSERT(subtok.size() > 0);
+	    SMART_ASSERT(!subtok.empty());
 
 	    errno = 0;
 	    int ival1 = atoi( subtok.c_str() );  SMART_ASSERT(errno == 0);
@@ -228,7 +228,7 @@ namespace {
 	    exclude_steps[num_excluded_steps++] = ival1;
 
 	    subtok = extract_token( tok, "-" );
-	    if (subtok.size() > 0)
+	    if (!subtok.empty())
 	      {
 		errno = 0;
 		int ival2 = atoi( subtok.c_str() );  SMART_ASSERT(errno == 0);
@@ -1593,7 +1593,7 @@ namespace {
       cmd_file.getline(line, 256);  xline = line;
     }
 
-  if (names.size() == 0) all_flag = true;
+  if (names.empty()) all_flag = true;
 
   return xline;
 }

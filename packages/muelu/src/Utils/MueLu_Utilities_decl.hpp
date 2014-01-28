@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -83,6 +83,7 @@ namespace Xpetra {
 #ifdef HAVE_MUELU_EPETRAEXT
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
+class Epetra_Vector;
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -90,6 +91,7 @@ class Epetra_MultiVector;
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
 
 namespace Tpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class Vector;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
 }
@@ -186,10 +188,16 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true,
-                                bool allowMLMultiply          = true) {
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
+                                bool doOptimizeStorage        = true){
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage);
     }
+
+    static RCP<Matrix> Jacobi(Scalar omega,
+			      const Vector& D,
+			      const Matrix& A,
+			      const Matrix& B,
+			      RCP<Matrix> C_in,
+			      Teuchos::FancyOStream &fos);
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -207,11 +215,6 @@ namespace MueLu {
            C_in is modified in place and is not valid after the call.
     @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
     @param doOptimizedStorage if true, optimize storage
-    @param allowMLMultiply    if true, allow usage of ML's matrix matrix multiply
-
-           ML MxM multiply does not reuse the pattern of C_in. If a C_in matrix is provided, then it is ignored.
-           This can create a memory penalty if both the useless C_in and the new C are present in memory at the same time
-           => Do not enable ML MxM at the same time as the option "reuse pattern".
     */
     static RCP<Matrix> Multiply(const Matrix& A,
                                 bool transposeA,
@@ -221,8 +224,7 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true,
-                                bool allowMLMultiply          = true
+                                bool doOptimizeStorage        = true
                                 );
 
 #ifdef HAVE_MUELU_EPETRAEXT
@@ -254,6 +256,16 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix& A);
+
+    /*! @brief Extract Matrix Diagonal
+
+    Returns inverse of the Matrix diagonal in ArrayRCP.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100);
+
+
 
     /*! @brief Extract Matrix Diagonal of lumped matrix
 

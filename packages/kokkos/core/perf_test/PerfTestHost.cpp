@@ -63,10 +63,10 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
-    const std::pair<unsigned,unsigned> league_team( core_topo.first , 4 );
+    const unsigned team_count = Kokkos::hwloc::get_available_numa_count();
+    const unsigned threads_per_team = 4 ;
 
-    Kokkos::Threads::initialize( league_team );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
   }
 
   static void TearDownTestCase()

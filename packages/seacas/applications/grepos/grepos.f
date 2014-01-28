@@ -939,7 +939,8 @@ C     --Squeeze the element side sets
          IF (DELEL) THEN
             CALL ZMESS (NUMESS, ia(kiesss), LESSEL, LESSDF, 
      &       IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS),
-     *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC), A(KFACSS))
+     *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC), A(KFACSS),
+     *       C(KNAMSS))
          END IF
 
 C     ... Fix up the truth table if the sideset count changes... 

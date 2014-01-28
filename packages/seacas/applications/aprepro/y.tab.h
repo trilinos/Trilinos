@@ -53,25 +53,27 @@ extern int yydebug;
      SVAR = 262,
      IMMVAR = 263,
      IMMSVAR = 264,
-     FNCT = 265,
-     SFNCT = 266,
-     EQ_MINUS = 267,
-     EQ_PLUS = 268,
-     EQ_DIV = 269,
-     EQ_TIME = 270,
-     EQ_POW = 271,
-     LOR = 272,
-     LAND = 273,
-     NE = 274,
-     EQ = 275,
-     GE = 276,
-     LE = 277,
-     NOT = 278,
-     UNARY = 279,
-     POW = 280,
-     DEC = 281,
-     INC = 282,
-     CONCAT = 283
+     AVAR = 265,
+     FNCT = 266,
+     SFNCT = 267,
+     AFNCT = 268,
+     EQ_MINUS = 269,
+     EQ_PLUS = 270,
+     EQ_DIV = 271,
+     EQ_TIME = 272,
+     EQ_POW = 273,
+     LOR = 274,
+     LAND = 275,
+     NE = 276,
+     EQ = 277,
+     GE = 278,
+     LE = 279,
+     NOT = 280,
+     UNARY = 281,
+     POW = 282,
+     DEC = 283,
+     INC = 284,
+     CONCAT = 285
    };
 #endif
 /* Tokens.  */
@@ -82,25 +84,27 @@ extern int yydebug;
 #define SVAR 262
 #define IMMVAR 263
 #define IMMSVAR 264
-#define FNCT 265
-#define SFNCT 266
-#define EQ_MINUS 267
-#define EQ_PLUS 268
-#define EQ_DIV 269
-#define EQ_TIME 270
-#define EQ_POW 271
-#define LOR 272
-#define LAND 273
-#define NE 274
-#define EQ 275
-#define GE 276
-#define LE 277
-#define NOT 278
-#define UNARY 279
-#define POW 280
-#define DEC 281
-#define INC 282
-#define CONCAT 283
+#define AVAR 265
+#define FNCT 266
+#define SFNCT 267
+#define AFNCT 268
+#define EQ_MINUS 269
+#define EQ_PLUS 270
+#define EQ_DIV 271
+#define EQ_TIME 272
+#define EQ_POW 273
+#define LOR 274
+#define LAND 275
+#define NE 276
+#define EQ 277
+#define GE 278
+#define LE 279
+#define NOT 280
+#define UNARY 281
+#define POW 282
+#define DEC 283
+#define INC 284
+#define CONCAT 285
 
 
 
@@ -108,15 +112,16 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 52 "aprepro.y"
+#line 53 "aprepro.y"
 
-  double  val;		/* For returning numbers.		*/
-  symrec *tptr;		/* For returning symbol-table pointers	*/
-  char   *string;	/* For returning quoted strings		*/
+  double  val;          /* For returning numbers.               */
+  symrec *tptr;         /* For returning symbol-table pointers  */
+  char   *string;       /* For returning quoted strings         */
+  array  *array;
 
 
 /* Line 2053 of yacc.c  */
-#line 120 "y.tab.h"
+#line 125 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

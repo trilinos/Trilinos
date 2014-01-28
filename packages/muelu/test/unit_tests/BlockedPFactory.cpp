@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -66,10 +66,11 @@
 #include "MueLu_FactoryManager.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   /////////////////////////
   // helper function
@@ -196,10 +197,22 @@ namespace MueLuTests {
     levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
     // define sub block factories for blocked operator "A"
-    RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
-    RCP<SubBlockAFactory> A12Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 1));
-    RCP<SubBlockAFactory> A21Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 0));
-    RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
+    RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());
+    A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+    A11Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
+    A11Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
+    RCP<SubBlockAFactory> A12Fact = Teuchos::rcp(new SubBlockAFactory());
+    A12Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+    A12Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
+    A12Fact->SetParameter("block col",Teuchos::ParameterEntry(1));
+    RCP<SubBlockAFactory> A21Fact = Teuchos::rcp(new SubBlockAFactory());
+    A21Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+    A21Fact->SetParameter("block row",Teuchos::ParameterEntry(1));
+    A21Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
+    RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory());
+    A22Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+    A22Fact->SetParameter("block row",Teuchos::ParameterEntry(1));
+    A22Fact->SetParameter("block col",Teuchos::ParameterEntry(1));
 
     // request subblocks of A
     levelOne->Request("A", A11Fact.get(), MueLu::NoFactory::get());

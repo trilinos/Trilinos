@@ -321,7 +321,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
    }
 }
 
-}
+} // end orientation helpers
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::

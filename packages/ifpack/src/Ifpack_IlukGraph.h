@@ -132,25 +132,73 @@ class Ifpack_IlukGraph {
   
   //! Returns the level of overlap used to construct this graph.
   virtual int LevelOverlap() const {return(LevelOverlap_);};
-    
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global matrix rows.
-  int NumGlobalBlockRows() const {return(NumGlobalBlockRows_);};
+  int NumGlobalBlockRows() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int)(NumGlobalBlockRows_);
+    else
+      throw "Ifpack_IlukGraph::NumGlobalBlockRows: GlobalIndices not int.";
+  }
   
   //! Returns the number of global matrix columns.
-  int NumGlobalBlockCols() const {return(NumGlobalBlockCols_);};
-  
+  int NumGlobalBlockCols() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int)(NumGlobalBlockCols_);
+    else
+      throw "Ifpack_IlukGraph::NumGlobalBlockCols: GlobalIndices not int.";
+  }
     
   //! Returns the number of global matrix rows.
-  int NumGlobalRows() const {return(NumGlobalRows_);};
+  int NumGlobalRows() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int)(NumGlobalRows_);
+    else
+      throw "Ifpack_IlukGraph::NumGlobalRows: GlobalIndices not int.";
+  }
   
   //! Returns the number of global matrix columns.
-  int NumGlobalCols() const {return(NumGlobalCols_);};
+  int NumGlobalCols() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int)(NumGlobalCols_);
+    else
+      throw "Ifpack_IlukGraph::NumGlobalCols: GlobalIndices not int.";
+  }
   //! Returns the number of nonzero entries in the global graph.
-  int NumGlobalNonzeros() const {return(NumGlobalNonzeros_);};
+  int NumGlobalNonzeros() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int)(NumGlobalNonzeros_);
+    else
+      throw "Ifpack_IlukGraph::NumGlobalNonzeros: GlobalIndices not int.";
+  }
   
   //! Returns the number of diagonal entries found in the global input graph.
-  virtual int NumGlobalBlockDiagonals() const {return(NumGlobalBlockDiagonals_);};
+  virtual int NumGlobalBlockDiagonals() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int)(NumGlobalBlockDiagonals_);
+    else
+      throw "Ifpack_IlukGraph::NumGlobalBlockDiagonals: GlobalIndices not int.";
+  }
+#endif
+
+  //! Returns the number of global matrix rows.
+  long long NumGlobalBlockRows64() const {return(NumGlobalBlockRows_);};
   
+  //! Returns the number of global matrix columns.
+  long long NumGlobalBlockCols64() const {return(NumGlobalBlockCols_);};
+    
+  //! Returns the number of global matrix rows.
+  long long NumGlobalRows64() const {return(NumGlobalRows_);};
+  
+  //! Returns the number of global matrix columns.
+  long long NumGlobalCols64() const {return(NumGlobalCols_);};
+  //! Returns the number of nonzero entries in the global graph.
+  long long NumGlobalNonzeros64() const {return(NumGlobalNonzeros_);};
+  
+  //! Returns the number of diagonal entries found in the global input graph.
+  virtual long long NumGlobalBlockDiagonals64() const {return(NumGlobalBlockDiagonals_);};
+
   //! Returns the number of local matrix rows.
   int NumMyBlockRows() const {return(NumMyBlockRows_);};
   
@@ -171,7 +219,14 @@ class Ifpack_IlukGraph {
   virtual int NumMyBlockDiagonals() const {return(NumMyBlockDiagonals_);};
   
   //! Returns the index base for row and column indices for this graph.
-  int IndexBase() const {return(IndexBase_);};
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int IndexBase() const {
+    if(Graph_.RowMap().GlobalIndicesInt())
+      return (int) IndexBase64();
+    throw "Ifpack_IlukGraph::IndexBase: GlobalIndices not int.";
+  }
+#endif
+  long long IndexBase64() const {return(IndexBase_);};
   
   //! Returns the graph of lower triangle of the ILU(k) graph as a Epetra_CrsGraph.
   virtual Epetra_CrsGraph & L_Graph() {return(*L_Graph_);};
@@ -214,14 +269,14 @@ class Ifpack_IlukGraph {
   int LevelOverlap_;
   Teuchos::RefCountPtr<Epetra_CrsGraph> L_Graph_;
   Teuchos::RefCountPtr<Epetra_CrsGraph> U_Graph_;
-  int IndexBase_;
-  int NumGlobalRows_;
-  int NumGlobalCols_;
-  int NumGlobalBlockRows_;
-  int NumGlobalBlockCols_;
-  int NumGlobalBlockDiagonals_;
-  int NumGlobalNonzeros_;
-  int NumGlobalEntries_;
+  long long IndexBase_;
+  long long NumGlobalRows_;
+  long long NumGlobalCols_;
+  long long NumGlobalBlockRows_;
+  long long NumGlobalBlockCols_;
+  long long NumGlobalBlockDiagonals_;
+  long long NumGlobalNonzeros_;
+  long long NumGlobalEntries_;
   int NumMyBlockRows_;
   int NumMyBlockCols_;
   int NumMyRows_;

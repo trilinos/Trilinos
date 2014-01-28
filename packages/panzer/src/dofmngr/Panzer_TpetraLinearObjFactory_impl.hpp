@@ -287,7 +287,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraDomainSpace() const
 {
-   if(domainSpace_==Teuchos::null);
+   if(domainSpace_==Teuchos::null)
       domainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
 
    return domainSpace_;
@@ -299,7 +299,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraRangeSpace() const
 {
-   if(rangeSpace_==Teuchos::null);
+   if(rangeSpace_==Teuchos::null)
       rangeSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
 
    return rangeSpace_;
@@ -433,7 +433,10 @@ const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedImport() const
 {
-   return Teuchos::rcp(new ImportType(getMap(),getGhostedMap()));
+   if(ghostedImporter_==Teuchos::null) 
+      ghostedImporter_ = Teuchos::rcp(new ImportType(getMap(),getGhostedMap()));
+
+   return ghostedImporter_;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -441,7 +444,10 @@ const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedExport() const
 {
-   return Teuchos::rcp(new ExportType(getGhostedMap(),getMap()));
+   if(ghostedExporter_==Teuchos::null) 
+      ghostedExporter_ = Teuchos::rcp(new ExportType(getGhostedMap(),getMap()));
+
+   return ghostedExporter_;
 }
 
 // "Build" functions

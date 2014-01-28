@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -114,9 +114,10 @@ typedef int GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
 //
-#include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::TimeMonitor;
   //using Galeri::Xpetra::CreateCartesianCoordinates;
@@ -251,7 +252,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
   nullspace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   nullspace->norm1(norms);
   if (comm->getRank() == 0)

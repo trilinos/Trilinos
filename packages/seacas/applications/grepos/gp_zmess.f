@@ -33,7 +33,7 @@ C
 
 C=======================================================================
       SUBROUTINE ZMESS (NUMESS, ISTAT, LESSEL, LESSDL, IDESS, NEESS, 
-     *     NEDSS, IXEESS, IXEDSS, LTEESS, LTSSS, LTSNC, FAC)
+     *     NEDSS, IXEESS, IXEDSS, LTEESS, LTSSS, LTSNC, FAC, NAMES)
 C=======================================================================
 C     $Id: zmess.f,v 1.3 2007/07/20 04:07:41 gdsjaar Exp $
 
@@ -57,6 +57,8 @@ C     --   LTSSS - IN/OUT - the sides for all sets
 C     --   LTSNC - IN/OUT - the face count for each element/side in the list
 C     --   FACESS - IN/OUT - the distribution factors for all sets????????????
 
+      include 'gp_namlen.blk'
+
       INTEGER ISTAT(*)          ! NUMESS
       INTEGER IDESS(*)          ! NUMESS
       INTEGER NEESS(*)          ! NUMESS
@@ -67,6 +69,7 @@ C     --   FACESS - IN/OUT - the distribution factors for all sets????????????
       INTEGER LTSSS(*)          ! LESSEL
       INTEGER LTSNC(*)          ! LESSEL
       REAL    FAC(*)            ! LESSDL
+      CHARACTER*(maxnam) NAMES(*)
 
       IF (NUMESS .LE. 0) RETURN
 
@@ -106,6 +109,7 @@ C     IDFE = index of last  df for local element N, global element NE
 C     ... There is at least 1 element remaining in the list...
             JESS = JESS + 1     ! increment sideset count
             IDESS(JESS) = IDESS(IESS) ! copy the sideset id
+            NAMES(JESS) = NAMES(IESS)
             NEESS(JESS) = N     ! Set the elements per list count
             IXEESS(JESS) = JNELST + 1 ! set the index 
             NEDSS(JESS) = JDF - JDFLST ! set the df per list count

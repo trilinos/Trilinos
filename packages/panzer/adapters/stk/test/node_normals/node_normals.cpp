@@ -55,20 +55,10 @@
 
 #include "Panzer_STK_SurfaceNodeNormals.hpp"
 
-// #include "Panzer_STK_SetupUtilities.hpp"
-// #include "Panzer_WorksetContainer.hpp"
-// #include "Panzer_Workset_Builder.hpp"
-// #include "Panzer_STK_WorksetFactory.hpp"
-// #include "Panzer_CellData.hpp"
-
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
-
-// #include "Shards_CellTopology.hpp"
-// #include "Intrepid_FunctionSpaceTools.hpp"
-// #include "Intrepid_CellTools.hpp"
 
 namespace panzer {
   
@@ -91,7 +81,6 @@ namespace panzer {
     panzer_stk::CubeHexMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-
 
     // This is testing for learning about stk mesh
       
@@ -116,8 +105,6 @@ namespace panzer {
     //stk::mesh::Selector side = *sidePart;
     
     std::cout << std::endl;
-    
-    //comm->barrier();
     
     for (std::vector<stk::mesh::Entity*>::const_iterator side=sides.begin(); side != sides.end(); ++side) {
       *pout << "side element: rank(" << (*side)->entity_rank() << ")"
@@ -151,8 +138,6 @@ namespace panzer {
     
   }
   
-
-
   TEUCHOS_UNIT_TEST(node_normals, 3D)
   {
     using Teuchos::RCP;
@@ -178,11 +163,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::map<unsigned,std::vector<double> > normals;
+    boost::unordered_map<unsigned,std::vector<double> > normals;
     
     panzer_stk::computeSidesetNodeNormals(normals,mesh,sideName,blockName,&std::cout,pout.get());
 
-    for (std::map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
+    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
 	 node != normals.end(); ++node) {
       double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
       TEST_FLOATING_EQUALITY(normals[node->first][0], 0.0, tol);
@@ -217,11 +202,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::map<unsigned,std::vector<double> > normals;
+    boost::unordered_map<unsigned,std::vector<double> > normals;
     
     panzer_stk::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (std::map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
+    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
 	 node != normals.end(); ++node) {
       double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
       TEST_FLOATING_EQUALITY(normals[node->first][0], 0.0, tol);
@@ -231,5 +216,74 @@ namespace panzer {
 
   }
 
+  TEUCHOS_UNIT_TEST(node_normals, 3D_Elem)
+  {
+    using Teuchos::RCP;
+    
+    std::cout << std::endl;
+
+    //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::RCP<Teuchos::FancyOStream> pout= Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    pout->setShowProcRank(true);
+
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("Z Blocks",1);
+    pl->set("X Elements",2);
+    pl->set("Y Elements",2);
+    pl->set("Z Elements",2);
+    
+    panzer_stk::CubeHexMeshFactory factory;
+    factory.setParameterList(pl);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+    std::string sideName = "top";
+    std::string blockName = "eblock-0_0_0";
+    
+    boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> > normals;
+    
+    panzer_stk::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
+
+    for (boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >::const_iterator element = normals.begin();
+	 element != normals.end(); ++element) {
+
+      const Intrepid::FieldContainer<double>& values = element->second;
+
+      *pout << "local element id = " << element->first << std::endl;
+      TEST_EQUALITY(values.size(),24);
+
+      for (int point = 0; point < values.dimension(0); ++point) {
+	*pout << "  value(" << point << "," << 0 << ") = " << values(point,0) << std::endl;
+	*pout << "  value(" << point << "," << 1 << ") = " << values(point,1) << std::endl;
+	*pout << "  value(" << point << "," << 2 << ") = " << values(point,2) << std::endl;
+
+	double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
+	
+	TEST_FLOATING_EQUALITY(values(point,0), 0.0, tol);
+	TEST_FLOATING_EQUALITY(values(point,2), 0.0, tol);
+	
+	if ( (element->first == 2) ||
+	     (element->first == 6) ||
+	     (element->first == 10) ||
+	     (element->first == 14) ) {
+	  if ( (point == 2) ||
+	       (point == 3) ||
+	       (point == 6) ||
+	       (point == 7) ) {
+	    TEST_FLOATING_EQUALITY(values(point,1), 1.0, tol);
+	  }
+	  else {
+	    TEST_FLOATING_EQUALITY(values(point,1), 0.0, tol);
+	  }
+	}
+	else {
+	  TEST_FLOATING_EQUALITY(values(point,1), 0.0, tol);
+	}
+
+      }
+    }
+
+  }
 
 }

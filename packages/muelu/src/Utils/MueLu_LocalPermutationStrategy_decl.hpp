@@ -31,7 +31,7 @@ namespace MueLu {
      only permutations of columns that correspond to DOFs of the same node.
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class LocalPermutationStrategy : public BaseClass {
 #undef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -61,6 +61,11 @@ namespace MueLu {
 
 
   private:
+
+    void BuildPermutations(size_t nDofsPerNode) const;
+
+    mutable std::vector<std::vector<int> > result_permvecs_;
+    mutable size_t permWidth_;
 
     GlobalOrdinal getGlobalDofId(const Teuchos::RCP<Matrix> & A, LocalOrdinal localNodeId, LocalOrdinal localDof) const;
     GlobalOrdinal globalDofId2globalNodeId( const Teuchos::RCP<Matrix> & A, GlobalOrdinal grid ) const;

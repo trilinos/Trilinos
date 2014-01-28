@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -44,64 +44,74 @@
 
 namespace Stokhos {
 
-class DefaultSparseMatOps {};
+class DefaultMultiply {};
 
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType ,
-	  class SparseMatOps = DefaultSparseMatOps > class Multiply ;
+template <unsigned> class IntegralRank {};
 
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType ,
-	  class SparseMatOps = DefaultSparseMatOps > class MMultiply ;
-
-template < class ValueType, class Device > class MatrixMarketWriter ;
-
-template< typename ValueType, typename VectorValue >
-class Update
-{
-public:
-  typedef VectorValue                               vector_type;
-  typedef ValueType                                 value_type ;
-  typedef typename vector_type::device_type         device_type ;
-  typedef typename device_type::size_type           size_type ;
-  
-
-  const vector_type  m_x ;
-  const vector_type  m_y ;
-  const value_type   m_alpha ;
-  const value_type   m_beta ;
-
-  Update( const value_type&   alpha ,
-	  const vector_type & x ,
-	  const value_type &  beta ,
-	  const vector_type & y )
-  : m_x( x )
-  , m_y( y )
-  , m_alpha( alpha )
-  , m_beta( beta )
-  {}
-
-  //--------------------------------------------------------------------------
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type iRow ) const
-  {
-    m_x(iRow) = m_alpha * m_x(iRow) + m_beta * m_y(iRow) ;
-  }
-
-  static void apply( const value_type&   alpha ,
-		     const vector_type & x ,
-		     const value_type &  beta ,
-                     const vector_type & y )
-  {
-    const size_t row_count = x.dimension_0() ;
-    Kokkos::parallel_for( row_count , Update(alpha,x,beta,y) );
-  }
+template <typename T> struct ViewRank {
+  typedef IntegralRank< T::Rank > type;
 };
+
+template <typename T> struct ViewRank< std::vector<T> > {
+  typedef IntegralRank< T::Rank > type;
+};
+
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType,
+          typename ColumnIndicesType = void,
+          typename VectorRank = typename ViewRank<InputVectorType>::type,
+          typename ImplTag = DefaultMultiply
+          > class Multiply;
+
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType>
+void multiply(const MatrixType& A,
+              const InputVectorType& x,
+              OutputVectorType& y) {
+  typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
+  multiply_type::apply( A, x, y );
+}
+
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType>
+void multiply(const MatrixType& A,
+              const InputVectorType& x,
+              OutputVectorType& y,
+              DefaultMultiply tag) {
+  typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
+  multiply_type::apply( A, x, y );
+}
+
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType,
+          typename ColumnIndicesType>
+void multiply(const MatrixType& A,
+              const InputVectorType& x,
+              OutputVectorType& y,
+              const ColumnIndicesType& col) {
+  typedef Multiply<MatrixType,InputVectorType,OutputVectorType,ColumnIndicesType> multiply_type;
+  multiply_type::apply( A, x, y, col );
+}
+
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType,
+          typename ColumnIndicesType>
+void multiply(const MatrixType& A,
+              const InputVectorType& x,
+              OutputVectorType& y,
+              const ColumnIndicesType& col,
+              DefaultMultiply tag) {
+  typedef Multiply<MatrixType,InputVectorType,OutputVectorType,ColumnIndicesType> multiply_type;
+  multiply_type::apply( A, x, y, col );
+}
+
+template <typename BlockSpec> class BlockMultiply;
 
 } // namespace Stokhos
 
 #endif
-

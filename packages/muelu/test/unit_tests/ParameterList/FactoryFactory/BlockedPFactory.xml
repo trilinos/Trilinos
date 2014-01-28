@@ -1,0 +1,17 @@
+<ParameterList name="Factories">
+
+  <Parameter name="P0" type="string" value="BlockedPFactory"/>
+
+  <ParameterList name="P1">
+    <Parameter name="factory" type="string" value="BlockedPFactory"/>
+  </ParameterList>
+
+  <ParameterList name="P2">
+    <Parameter name="factory" type="string" value="BlockedPFactory"/>
+    <ParameterList name="block1">
+    </ParameterList>
+    <ParameterList name="block2">
+    </ParameterList>
+  </ParameterList>
+  
+</ParameterList>

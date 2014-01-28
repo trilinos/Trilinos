@@ -476,6 +476,47 @@ std::ostream& operator << (
   return os;
 }
 
+template< typename ValueType, typename Device, bool Pack >
+class BlockMultiply< CooProductTensor< ValueType, Device, Pack > >
+{
+public:
+
+  typedef typename Device::size_type size_type;
+  typedef CooProductTensor< ValueType, Device, Pack > tensor_type;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor,
+                     const MatrixValue * const a,
+                     const VectorValue * const x,
+                           VectorValue * const y )
+  {
+    const size_type nEntry = tensor.entry_count();
+    size_type i = 0, j = 0, k = 0, i_prev = -1;
+    VectorValue val = 0.0, carry_val = 0.0;
+    for ( size_type entry = 0 ; entry < nEntry ; ++entry ) {
+      tensor.coord(entry, i, j, k);
+      val = tensor.value(entry) * ( a[j] * x[k] + a[k] * x[j] );
+      if (i == i_prev)
+        carry_val += val;
+      else {
+        y[i_prev] += carry_val;
+        carry_val = val;
+      }
+      i_prev = i;
+    }
+    y[i] += carry_val;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
+
 } /* namespace Stokhos */
 
 //----------------------------------------------------------------------------

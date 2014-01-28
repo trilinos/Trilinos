@@ -135,11 +135,11 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
 
    if(numProcs==1) {
        TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-0_0").size(),0);
-       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-0_0").size(),0);
+       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-1_0").size(),0);
    }
    else {
        TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-0_0").size(),1);
-       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-0_0").size(),1);
+       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-1_0").size(),1);
 
        for(std::size_t blk=0;blk<connMngr.numElementBlocks();++blk) {
          const std::vector<int> & elementBlock = connMngr.getNeighborElementBlock(elementBlockIds[blk]);

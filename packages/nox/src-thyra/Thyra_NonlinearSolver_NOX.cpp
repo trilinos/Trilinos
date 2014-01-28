@@ -194,6 +194,12 @@ solve(VectorBase<double> *x,
   else
     t_status.solveStatus = SOLVE_STATUS_UNCONVERGED;
 
+  if (is_null(t_status.extraParameters))
+    t_status.extraParameters = Teuchos::parameterList("NOX Solver Status");
+
+  t_status.extraParameters->set("Number of Iterations",
+				solver_->getNumIterations());
+
   // Get the solution and update
   const NOX::Abstract::Group& final_group = solver_->getSolutionGroup();
   const NOX::Abstract::Vector& final_solution = final_group.getX();

@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
 #include "EpetraExt_BlockDiagMatrix.h"
 #include "Epetra_MultiVector.h"
@@ -62,7 +63,10 @@ EpetraExt_PointToBlockDiagPermute::EpetraExt_PointToBlockDiagPermute(const Epetr
    ContiguousBlockSize_(0),
    NumBlocks_(0),
    Blockstart_(0),
-   Blockids_(0),
+   Blockids_int_(0),
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+   Blockids_LL_(0),
+#endif
    BDMap_(0),
    CompatibleMap_(0),
    BDMat_(0),
@@ -87,11 +91,10 @@ EpetraExt_PointToBlockDiagPermute::~EpetraExt_PointToBlockDiagPermute()
   if(ExportVector_) delete ExportVector_;
 }
 
-
-
 //=========================================================================  
 // Set list
-int EpetraExt_PointToBlockDiagPermute::SetParameters(Teuchos::ParameterList & List){
+template<typename int_type>
+int EpetraExt_PointToBlockDiagPermute::TSetParameters(Teuchos::ParameterList & List){
   List_=List;
 
   // Check for contiguous blocking first
@@ -104,28 +107,48 @@ int EpetraExt_PointToBlockDiagPermute::SetParameters(Teuchos::ParameterList & Li
   // Local vs. global ids & mode
   NumBlocks_=List_.get("number of local blocks",0);  
   Blockstart_=List_.get("block start index",(int*)0);    
-  Blockids_=List_.get("block entry lids",(int*)0);
-  if(Blockids_)
+  Blockids_ref<int>()=List_.get("block entry lids",(int*)0);
+  if(Blockids_const_ptr<int>())
     PurelyLocalMode_=true;
   else{
-    Blockids_=List_.get("block entry gids",(int*)0);
-    PurelyLocalMode_=false;
+    Blockids_ref<int_type>()=List_.get("block entry gids",(int_type*)0);
+    if(Blockids_const_ptr<int_type>()) {
+      PurelyLocalMode_=false;
+      if(sizeof(int) != sizeof(int_type)) {
+        Blockids_ref<int>() = new int[Matrix_->RowMap().NumMyElements()];
+      }
+    }
   }
   
   // Sanity checks
   if(ContiguousBlockMode_){
     // Can't use contiguous at the same time as the other modes
-    if(NumBlocks_ || Blockstart_ || Blockids_) EPETRA_CHK_ERR(-4);
+    if(NumBlocks_ || Blockstart_ || Blockids_const_ptr<int>() || Blockids_const_ptr<int_type>()) EPETRA_CHK_ERR(-4);
   }
   else {
     if(NumBlocks_ <= 0) EPETRA_CHK_ERR(-1);
     if(!Blockstart_) EPETRA_CHK_ERR(-2);
-    if(!Blockids_) EPETRA_CHK_ERR(-3);
+    if(!Blockids_const_ptr<int>() && !Blockids_const_ptr<int_type>()) EPETRA_CHK_ERR(-3);
   }
   
   return 0;
 }
 
+int EpetraExt_PointToBlockDiagPermute::SetParameters(Teuchos::ParameterList & List){
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesInt()) {
+	return TSetParameters<int>(List);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesLongLong()) {
+	return TSetParameters<long long>(List);
+  }
+  else
+#endif
+    throw "EpetraExt_PointToBlockDiagPermute::SetParameters: ERROR, GlobalIndices type unknown.";
+}
 
 //=========================================================================  
 // Extracts the block-diagonal, builds maps, etc.
@@ -203,13 +226,15 @@ void EpetraExt_PointToBlockDiagPermute::Print(std::ostream& os) const{
 
 //=========================================================================  
 // Pulls the block diagonal of the matrix and then builds the BDMat_
-int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){  
+template<typename int_type>
+int EpetraExt_PointToBlockDiagPermute::TExtractBlockDiagonal(){  
   int i,j;
-  std::vector<int> ExtRows;
+  std::vector<int_type> ExtRows;
   int* LocalColIDS=0;
   int ExtSize=0,ExtCols=0,MainCols=0;
   int Nrows=Matrix_->NumMyRows();
-  int *l2b,*block_offset,*l2blockid;
+  int *l2b,*block_offset;
+  int_type *l2blockid;
   const Epetra_Map &RowMap=Matrix_->RowMap();
   int index,col,row_in_block,col_in_block,length,*colind;
   double *values;
@@ -225,14 +250,15 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     bsize[i]=Blockstart_[i+1]-Blockstart_[i];
   
   // Use the ScanSum function to compute a prefix sum of the number of points
-  int MyMinGID;
-  Matrix_->Comm().ScanSum(&NumBlocks_,&MyMinGID, 1);
+  int_type MyMinGID;
+  int_type NumBlocks_int_type = NumBlocks_;
+  Matrix_->Comm().ScanSum(&NumBlocks_int_type,&MyMinGID, 1);
   MyMinGID-=NumBlocks_;
-  int *MyBlockGIDs=new int[NumBlocks_];
+  int_type *MyBlockGIDs=new int_type[NumBlocks_];
   for(i=0;i<NumBlocks_;i++)
     MyBlockGIDs[i]=MyMinGID+i;
 
-  BDMap_=new Epetra_BlockMap(-1,NumBlocks_,MyBlockGIDs,bsize,0,Matrix_->Comm());
+  BDMap_=new Epetra_BlockMap((int_type) -1,NumBlocks_,MyBlockGIDs,bsize,0,Matrix_->Comm());
   
   // Allocate the Epetra_DistBlockMatrix
   BDMat_=new EpetraExt_BlockDiagMatrix(*BDMap_,true);  
@@ -245,8 +271,8 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     ExtRows.reserve(ExtSize);
     
     for(i=0;i<Blockstart_[NumBlocks_];i++){
-      if(RowMap.LID(Blockids_[i])==-1)
-        ExtRows.push_back(Blockids_[i]);
+      if(RowMap.LID(Blockids_const_ptr<int_type>()[i])==-1)
+        ExtRows.push_back(Blockids_const_ptr<int_type>()[i]);
     }
 
     // Switch to PurelyLocalMode_ if we never need GIDs
@@ -257,7 +283,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
       if(verbose && !Matrix_->Comm().MyPID()) printf("EpetraExt_PointToBlockDiagPermute: Switching to purely local mode\n");
       PurelyLocalMode_=true;
       for(i=0;i<Blockstart_[NumBlocks_];i++){
-        Blockids_[i]=RowMap.LID(Blockids_[i]);
+        Blockids_ref<int>()[i]=RowMap.LID(Blockids_const_ptr<int_type>()[i]);
       }     
     }
   }
@@ -271,8 +297,8 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     // Build the local-id-to-block-id list, block offset list    
     for(i=0;i<NumBlocks_;i++) {
       for(j=Blockstart_[i];j<Blockstart_[i+1];j++){
-        block_offset[Blockids_[j]]=j-Blockstart_[i];
-        l2b[Blockids_[j]]=i;
+        block_offset[Blockids_const_ptr<int>()[j]]=j-Blockstart_[i];
+        l2b[Blockids_const_ptr<int>()[j]]=i;
       }
     }
     
@@ -302,9 +328,9 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     }
 
     // Build the compatible map for import/export
-    l2blockid=new int[Nrows];
+    l2blockid=new int_type[Nrows];
     for(i=0;i<Nrows;i++) 
-      l2blockid[Blockstart_[l2b[i]]+block_offset[i]]=Matrix_->RowMap().GID(i);
+      l2blockid[Blockstart_[l2b[i]]+block_offset[i]]= (int_type) Matrix_->RowMap().GID64(i);
 
     // Build the Compatible Map, Import/Export Objects
     CompatibleMap_=new Epetra_Map(-1,Nrows,l2blockid,0,Matrix_->Comm());
@@ -314,8 +340,8 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     /*******************************************************/      
     // Do the import to grab matrix entries
     // Allocate temporaries for import
-    int* ExtRowsPtr = ExtRows.size()>0 ? &ExtRows[0] : NULL;
-    Epetra_Map TmpMap(-1,ExtSize, ExtRowsPtr,0,Matrix_->Comm());; 
+    int_type* ExtRowsPtr = ExtRows.size()>0 ? &ExtRows[0] : NULL;
+    Epetra_Map TmpMap((int_type) -1,ExtSize, ExtRowsPtr,0,Matrix_->Comm());; 
     Epetra_CrsMatrix TmpMatrix(Copy,TmpMap,0);
     Epetra_Import TmpImporter(TmpMap,RowMap);
 
@@ -329,7 +355,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     // Build the column reidex - main matrix
     LocalColIDS=new int[MainCols+ExtCols];      
     for(i=0;i<MainCols;i++){
-      int GID=Matrix_->GCID(i);
+      int_type GID= (int_type) Matrix_->GCID64(i);
       int MainLID=RowMap.LID(GID);
       if(MainLID!=-1) LocalColIDS[i]=MainLID;
       else{
@@ -341,7 +367,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
 
     // Build the column reidex - ext matrix
     for(i=0;i<ExtCols;i++){
-      int GID=TmpMatrix.GCID(i);
+      int_type GID= (int_type) TmpMatrix.GCID64(i);
       int MainLID=RowMap.LID(GID);
       if(MainLID!=-1) LocalColIDS[MainCols+i]=MainLID;
       else{
@@ -362,7 +388,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     int ext_idx=0;
     for(i=0;i<NumBlocks_;i++) {
       for(j=Blockstart_[i];j<Blockstart_[i+1];j++){
-        int LID=RowMap.LID(Blockids_[j]);
+        int LID=RowMap.LID(Blockids_const_ptr<int_type>()[j]);
         if(LID==-1) {LID=Nrows+ext_idx;ext_idx++;}
         block_offset[LID]=j-Blockstart_[i];
         l2b[LID]=i;          
@@ -420,14 +446,14 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     }
     
     // Build the compatible map for import/export
-    l2blockid=new int[Blockstart_[NumBlocks_]];
+    l2blockid=new int_type[Blockstart_[NumBlocks_]];
     for(i=0;i<Nrows;i++){
       int bkid=l2b[i];
-      if(bkid>-1) l2blockid[Blockstart_[bkid]+block_offset[i]]=RowMap.GID(i);
+      if(bkid>-1) l2blockid[Blockstart_[bkid]+block_offset[i]]= (int_type) RowMap.GID64(i);
     }
     // NTS: This is easier - if we imported it, we know we need it
     for(i=0;i<ExtSize;i++)
-      l2blockid[Blockstart_[l2b[Nrows+i]]+block_offset[Nrows+i]]=TmpMatrix.GRID(i);
+      l2blockid[Blockstart_[l2b[Nrows+i]]+block_offset[Nrows+i]]= (int_type) TmpMatrix.GRID64(i);
     
     // Build the Compatible Map, Import/Export Objects
     CompatibleMap_=new Epetra_Map(-1,Blockstart_[NumBlocks_],l2blockid,0,Matrix_->Comm());
@@ -459,48 +485,89 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
 
   return 0;
 }
+
+int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesInt()) {
+	return TExtractBlockDiagonal<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesLongLong()) {
+	return TExtractBlockDiagonal<long long>();
+  }
+  else
+#endif
+    throw "EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal: ERROR, GlobalIndices type unknown.";
+}
+
 //=======================================================================================================
-int EpetraExt_PointToBlockDiagPermute::SetupContiguousMode(){
+template<typename int_type>
+int EpetraExt_PointToBlockDiagPermute::TSetupContiguousMode(){
   if(!ContiguousBlockMode_) return 0;
   // NTS: In case of processor-crossing blocks, the lowest PID always gets the block;
   const Epetra_Map &RowMap=Matrix_->RowMap();
   
-  int MinMyGID=RowMap.MinMyGID(); 
-  int MaxMyGID=RowMap.MaxMyGID(); 
-  int Base=Matrix_->IndexBase();
+  int_type MinMyGID= (int_type) RowMap.MinMyGID64(); 
+  int_type MaxMyGID= (int_type) RowMap.MaxMyGID64(); 
+  int_type Base= (int_type) Matrix_->IndexBase64();
 
   // Find the GID that begins my first block
-  int MyFirstBlockGID=ContiguousBlockSize_*(int)ceil(((double)(MinMyGID - Base))/ContiguousBlockSize_)+Base;
+  int_type MyFirstBlockGID=ContiguousBlockSize_*(int_type)ceil(((double)(MinMyGID - Base))/ContiguousBlockSize_)+Base;
   NumBlocks_=(int)ceil((double)((MaxMyGID-MyFirstBlockGID+1.0)) / ContiguousBlockSize_);
 
   // Allocate memory
   Blockstart_=new int[NumBlocks_+1];
-  Blockids_=new int[NumBlocks_*ContiguousBlockSize_];
+  Blockids_ref<int_type>()=new int_type[NumBlocks_*ContiguousBlockSize_];
+  if(sizeof(int) != sizeof(int_type))
+    Blockids_ref<int>()=new int[NumBlocks_*ContiguousBlockSize_];
   Blockstart_[NumBlocks_]=NumBlocks_*ContiguousBlockSize_;
 
   // Fill the arrays
   for(int i=0,ct=0;i<NumBlocks_;i++){
     Blockstart_[i]=ct;
     for(int j=0;j<ContiguousBlockSize_;j++,ct++){
-      Blockids_[ct]=MyFirstBlockGID+ct;
+      Blockids_ref<int_type>()[ct]=MyFirstBlockGID+ct;
     }
   }
   
   return 0;
 }
+
+int EpetraExt_PointToBlockDiagPermute::SetupContiguousMode(){
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesInt()) {
+	return TSetupContiguousMode<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesLongLong()) {
+	return TSetupContiguousMode<long long>();
+  }
+  else
+#endif
+    throw "EpetraExt_PointToBlockDiagPermute::SetupContiguousMode: ERROR, GlobalIndices type unknown.";
+}
+
 //=======================================================================================================
 int EpetraExt_PointToBlockDiagPermute::CleanupContiguousMode(){
   if(!ContiguousBlockMode_) return 0;
   NumBlocks_=0;
   if(Blockstart_) {delete [] Blockstart_; Blockstart_=0;}
-  if(Blockids_)   {delete [] Blockids_; Blockids_=0;}
+  if(Blockids_int_)   {delete [] Blockids_int_; Blockids_int_=0;}
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Blockids_LL_)   {delete [] Blockids_LL_; Blockids_LL_=0;}
+#endif
   return 0;
 }
 
 
 //=======================================================================================================
 // Creates an Epetra_CrsMatrix from the BlockDiagMatrix.  This is generally only useful if you want to do a matrix-matrix multiply.
-Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix(){
+template<typename int_type>
+Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::TCreateFECrsMatrix(){
   Epetra_FECrsMatrix * NewMat=new Epetra_FECrsMatrix(Copy,Matrix_->RowMap(),0);
   
   const Epetra_BlockMap &BlockMap=BDMat_->BlockMap();
@@ -512,7 +579,7 @@ Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix(){
   int NumBlocks=BDMat_->NumMyBlocks();
 
   // Maximum size vector for stashing GIDs
-  std::vector<int> GIDs;
+  std::vector<int_type> GIDs;
   GIDs.resize(BlockMap.MaxMyElementSize());
 
 
@@ -522,7 +589,7 @@ Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix(){
     int xidx0=xlist[i];
     // Get global indices
     for(int j=0;j<Nb;j++)
-      GIDs[j]=CompatibleMap_->GID(xidx0+j);
+      GIDs[j]= (int_type) CompatibleMap_->GID64(xidx0+j);
     
     // Remember: We're using column-major storage for LAPACK's benefit    
     int ierr=NewMat->InsertGlobalValues(Nb,&GIDs[0],&values[vidx0],Epetra_FECrsMatrix::COLUMN_MAJOR);
@@ -532,6 +599,21 @@ Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix(){
   return NewMat;
 }
 
+Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix(){
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesInt()) {
+	return TCreateFECrsMatrix<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Matrix_->RowMap().GlobalIndicesLongLong()) {
+	return TCreateFECrsMatrix<long long>();
+  }
+  else
+#endif
+    throw "EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix: ERROR, GlobalIndices type unknown.";
+}
 
 //=======================================================================================================
 void EpetraExt_PointToBlockDiagPermute::UpdateImportVector(int NumVectors) const {    

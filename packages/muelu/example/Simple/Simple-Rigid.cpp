@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -65,7 +65,6 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RigidBodyModeFactory.hpp"
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -73,32 +72,33 @@
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
-// Define default template types
-typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
-typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-
-typedef MueLu::Level                                 Level;
-typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
-typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
-typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
-typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
-typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      GRFactory;
-typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>           RAPFactory;
-typedef MueLu::RigidBodyModeFactory<SC,LO,GO,NO,LMO> RBMFactory;
-typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
-typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
-typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>      SmootherFactory;
-typedef MueLu::DirectSolver<SC,LO,GO,NO,LMO>         DirectSolver;
-
-typedef Belos::OperatorT<MV>                         OP;
-typedef Belos::OperatorTraits<SC,MV,OP>              OPT;
-typedef Belos::MultiVecTraits<SC,MV>                 MVT;
-typedef Belos::LinearProblem<SC,MV,OP>               Problem;
-typedef Belos::SolverManager<SC,MV,OP>               BelosSolver;
-typedef Belos::BlockGmresSolMgr<SC,MV,OP>            BelosGMRES;
-
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
+  // Define default template types
+  typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
+  typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
+
+  typedef MueLu::Level                                 Level;
+  typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
+  typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
+  typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
+  typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
+  typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      GRFactory;
+  typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>           RAPFactory;
+  typedef MueLu::RigidBodyModeFactory<SC,LO,GO,NO,LMO> RBMFactory;
+  typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
+  typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
+  typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>      SmootherFactory;
+  typedef MueLu::DirectSolver<SC,LO,GO,NO,LMO>         DirectSolver;
+
+  typedef Belos::OperatorT<MV>                         OP;
+  typedef Belos::OperatorTraits<SC,MV,OP>              OPT;
+  typedef Belos::MultiVecTraits<SC,MV>                 MVT;
+  typedef Belos::LinearProblem<SC,MV,OP>               Problem;
+  typedef Belos::SolverManager<SC,MV,OP>               BelosSolver;
+  typedef Belos::BlockGmresSolMgr<SC,MV,OP>            BelosGMRES;
 
   // RCPs
   using Teuchos::RCP;

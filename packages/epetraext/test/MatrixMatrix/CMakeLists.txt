@@ -10,9 +10,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
   DEST_FILES
-    infileAB infileATBT infileAB2 infiles infileABT infileAB3 infileATB infileATB2
+    infileAB infileATBT infileAB2 infiles infileABT infileAB3 infileAB4 infileATB infileATB2
     infile6x4TI6 infileI4x6x4T infilePTxI infileIxPT
     C.mtx C4x4.mtx C4x12x12x4.mtx C4x6.mtx C6x4.mtx C6x6.mtx mat6x4.mtx mat6x6.mtx
     C6x4TxI6.mtx CI4x6x4T.mtx I3.mtx I4.mtx I6.mtx I9.mtx P.mtx PT.mtx

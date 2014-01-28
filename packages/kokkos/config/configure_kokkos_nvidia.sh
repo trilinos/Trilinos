@@ -42,6 +42,10 @@ CUDA_ARCH="20"
 # CUDA_ARCH="30"
 # CUDA_ARCH="35"
 
+# Build with OpenMP
+
+OPENMP=ON
+
 # Build host code with Intel compiler:
 
 # INTEL=ON
@@ -81,8 +85,12 @@ CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D TPL_ENABLE_Pthread:BOOL=ON"
 #-----------------------------------------------------------------------------
 # OpenMP configuation:
 
-CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_OpenMP:BOOL=ON"
-# CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_OpenMP:BOOL=OFF"
+if [ "${OPENMP}" = "ON" ] ;
+then
+  CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_OpenMP:BOOL=ON"
+else
+  CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_OpenMP:BOOL=OFF"
+fi
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -115,8 +123,14 @@ then
   # Options to CUDA_NVCC_FLAGS must be semi-colon delimited,
   # this is different than the standard CMAKE_CXX_FLAGS syntax.
 
-  CUDA_NVCC_FLAGS="-DKOKKOS_HAVE_CUDA_ARCH=${CUDA_ARCH}0;-gencode;arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
-  CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
+  CUDA_NVCC_FLAGS="-gencode;arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
+
+  if [ "${OPENMP}" = "ON" ] ;
+  then
+    CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi,-fopenmp"
+  else
+    CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
+  fi
 
   if [ "${CMAKE_BUILD_TYPE}" = "DEBUG" ] ;
   then

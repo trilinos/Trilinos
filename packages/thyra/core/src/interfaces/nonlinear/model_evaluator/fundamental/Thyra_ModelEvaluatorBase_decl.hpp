@@ -203,6 +203,42 @@ public:
     void assert_l(int l) const;
   };
 
+  /** \brief The type of an evaluation. */
+  enum EEvalType {
+    EVAL_TYPE_EXACT = 0, /// Do an exact evaluation (default)
+    EVAL_TYPE_APPROX_DERIV, /// An approx. eval. for a F.D. deriv.
+    EVAL_TYPE_VERY_APPROX_DERIV /// An approx. eval. for a F.D. prec.
+  };
+
+  /** \brief Type to embed evaluation accuracy with an RCP-managed object.
+   *
+   * This type derives from Teuchos::RCP and therefore is a drop in
+   * replacement for an RCP object as it implicitly converts to an from such a
+   * type.
+   */
+  template<class ObjType>
+  class Evaluation : public RCP<ObjType> {
+  public:
+    /** \brief . */
+    Evaluation(Teuchos::ENull)
+      : evalType_(EVAL_TYPE_EXACT)  {}
+    /** \brief . */
+    Evaluation() : evalType_(EVAL_TYPE_EXACT) {}
+    /** \brief Implicit conversion from RCP<ObjType>. */
+    Evaluation( const RCP<ObjType> &obj )
+      : RCP<ObjType>(obj), evalType_(EVAL_TYPE_EXACT) {}
+    /** \brief . */
+    Evaluation( const RCP<ObjType> &obj, EEvalType evalType )
+      : RCP<ObjType>(obj), evalType_(evalType) {}
+    /** \brief . */
+    EEvalType getType() const { return evalType_; }
+    /** \brief . */
+    void reset( const RCP<ObjType> &obj, EEvalType evalType ) 
+    { this->operator=(obj); evalType_ = evalType; }
+   private:
+    EEvalType evalType_;
+  };
+
   /** \brief . */
   enum EDerivativeMultiVectorOrientation {
     DERIV_MV_JACOBIAN_FORM, ///< Jacobian form DhDz (nz columns of h_space vectors)
@@ -498,9 +534,9 @@ public:
      * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
-    void set_f( const RCP<VectorBase<Scalar> > &f );
+    void set_f( const Evaluation<VectorBase<Scalar> > &f );
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
-    RCP<VectorBase<Scalar> > get_f() const;
+    Evaluation<VectorBase<Scalar> > get_f() const;
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>.  */
     void set_g( int j, const RCP<VectorBase<Scalar> > &g_j );
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>..  */
@@ -635,7 +671,7 @@ public:
     supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
-    RCP<VectorBase<Scalar> > f_;
+    Evaluation<VectorBase<Scalar> > f_;
     g_t g_; // Ng
     RCP<LinearOpWithSolveBase<Scalar> > W_;
     RCP<LinearOpBase<Scalar> > W_op_;

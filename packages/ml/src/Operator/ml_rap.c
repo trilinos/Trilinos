@@ -32,8 +32,16 @@ void ML_rap(ML_Operator *Rmat, ML_Operator *Amat,
    ML_Operator *APmat, *RAPmat, *Pcomm, *RAPcomm, *APcomm, *AP2comm, *tptr;
    ML_CommInfoOP *getrow_comm; 
    double      *scales = NULL;
+#  ifdef ML_TIMING
+   double tpre,tmult,tpost,ttotal;
+#  endif
 
    /* Check that N_input_vector is reasonable */
+
+#  ifdef ML_TIMING
+   tpre = GetClock();
+   ttotal = GetClock();
+#  endif
 
    N_input_vector = Pmat->invec_leng;
    getrow_comm = Pmat->getrow->pre_comm;
@@ -72,7 +80,19 @@ fflush(stdout);
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : A * P begins...\n");
 #endif
+
+#  ifdef ML_TIMING
+   tpre = GetClock() - tpre;
+   tmult = GetClock();
+#  endif
+
    ML_matmat_mult(Amat, Pcomm , &APmat);
+
+#  ifdef ML_TIMING
+   tmult = GetClock() - tmult;
+   tpost = GetClock();
+#  endif
+
 #ifdef DEBUG
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : A * P ends.\n");
@@ -105,11 +125,27 @@ fflush(stdout);
       ML_exchange_rows( APcomm, &AP2comm, Rmat->getrow->pre_comm);
    else AP2comm = APcomm;
 
+#  ifdef ML_TIMING
+   tpost = GetClock() - tpost;
+   if ( Pmat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5) {
+     int level=-1;
+     if (Amat->from != NULL)
+       level = Amat->from->levelnum-1;
+     printf("Timing summary (in seconds) for product RAP on level %d\n", level);
+     printf("     (level %d) RAP right: pre-multiply communication time    = %3.2e\n", level, tpre);
+     printf("     (level %d) RAP right: multiply time                      = %3.2e\n", level, tmult);
+     printf("     (level %d) RAP right: post-multiply communication time   = %3.2e\n", level, tpost);
+   }
+#  endif
+
 #ifdef DEBUG
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : R * AP begins...\n");
 #endif
 
+#  ifdef ML_TIMING
+   tmult = GetClock();
+#  endif
    ML_matmat_mult(Rmat,AP2comm, &RAPmat);
 
 #ifdef DEBUG
@@ -119,6 +155,11 @@ fflush(stdout);
 
    ML_RECUR_CSR_MSRdata_Destroy(AP2comm);
    ML_Operator_Destroy(&AP2comm);
+
+#  ifdef ML_TIMING
+   tmult = GetClock()-tmult;
+   tpost = GetClock();
+#  endif
 
    if (Rmat->getrow->post_comm != NULL) 
       ML_exchange_rows( RAPmat, &RAPcomm, Rmat->getrow->post_comm);
@@ -150,4 +191,19 @@ fflush(stdout);
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap ends.\n");
 #endif
+
+#  ifdef ML_TIMING
+   tpost = GetClock() - tpost;
+   ttotal = GetClock() - ttotal;
+   if ( Pmat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5) {
+     int level=-1;
+     if (Amat->from != NULL)
+       level = Amat->from->levelnum-1;
+     printf("     (level %d) RAP left:  multiply time                    = %3.2e\n", level, tmult);
+     printf("     (level %d) RAP left:  post-multiply communication time = %3.2e\n", level, tpost);
+     printf("     -----------------------------------------------------------\n");
+     printf("     (level %d) total time                                  = %3.2e\n\n", level, ttotal);
+   }
+#  endif
+
 }

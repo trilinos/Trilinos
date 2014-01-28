@@ -36,8 +36,8 @@
 // URL: http://math.nist.gov/MatrixMarket/data/NEP/mhd/mhd1280b.html
 // Size: 1280 x 1280
 // NNZ: 22778 entries
-// 
-// NOTE: No preconditioner is used in this case. 
+//
+// NOTE: No preconditioner is used in this case.
 //
 
 #include "AnasaziConfigDefs.hpp"
@@ -56,14 +56,13 @@
 #include <iohb.h>
 
 using namespace Teuchos;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
 using Tpetra::Map;
 using std::vector;
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   using std::cout;
   using std::endl;
@@ -82,8 +81,8 @@ int main(int argc, char *argv[])
   int info = 0;
   int MyPID = 0;
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
   MyPID = rank(*comm);
 
@@ -150,7 +149,7 @@ int main(int argc, char *argv[])
     return -1;
   }
   // create map
-  Map<int> map(dim,0,comm);
+  RCP<const Map<int> > map = rcp (new Map<int> (dim,0,comm));
   RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
   if (MyPID == 0) {
     // Convert interleaved doubles to complex values
@@ -174,7 +173,7 @@ int main(int argc, char *argv[])
 
   // Create initial vectors
   RCP<MV> ivec = rcp( new MV(map,blockSize) );
-  ivec->random();
+  ivec->randomize ();
 
   // Create eigenproblem
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -64,6 +64,9 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class VectorFactory {
+    typedef void LocalMatOps;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
   private:
     //! Private constructor. This is a static class.
@@ -72,12 +75,12 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
+    static RCP<Vector> Build(const Teuchos::RCP<const Map> &map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
-        return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, zeroOut) );
+        return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
@@ -85,14 +88,18 @@ namespace Xpetra {
     }
 
   };
+#define XPETRA_VECTORFACTORY_SHORT
 
   template <>
   class VectorFactory<double, int, int> {
 
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
+    typedef double                                      Scalar;
+    typedef int                                         LocalOrdinal;
+    typedef int                                         GlobalOrdinal;
     typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef void                                        LocalMatOps;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
   private:
     //! Private constructor. This is a static class.
@@ -100,12 +107,12 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
-        return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, zeroOut) );
+        return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -117,14 +124,18 @@ namespace Xpetra {
     }
 
   };
+#define XPETRA_VECTORFACTORY_SHORT
 
   template <>
   class VectorFactory<int, int, int> {
 
-    typedef int Scalar;
-    typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
+    typedef int                                         Scalar;
+    typedef int                                         LocalOrdinal;
+    typedef int                                         GlobalOrdinal;
     typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef void                                        LocalMatOps;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
   private:
     //! Private constructor. This is a static class.
@@ -132,12 +143,12 @@ namespace Xpetra {
 
   public:
 
-    static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
       XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
-        return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, zeroOut) );
+        return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

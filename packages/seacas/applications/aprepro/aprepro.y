@@ -34,6 +34,7 @@
  *
  */
 #include "my_aprepro.h"
+#include "ap_array.h"
 #include <stdlib.h>
 
 void immutable_modify(symrec* var);
@@ -50,26 +51,30 @@ symrec *format;
 %}
 
 %union {
-  double  val;		/* For returning numbers.		*/
-  symrec *tptr;		/* For returning symbol-table pointers	*/
-  char   *string;	/* For returning quoted strings		*/
+  double  val;          /* For returning numbers.               */
+  symrec *tptr;         /* For returning symbol-table pointers  */
+  char   *string;       /* For returning quoted strings         */
+  array  *array;
 }
 
-%token	<val>	NUM		/* Simple double precision number	*/
-%token	<string> QSTRING	/* Quoted string			*/
-%token	<tptr>	UNDVAR 	/* Variable and function		*/
+%token  <val>   NUM             /* Simple double precision number       */
+%token  <string> QSTRING        /* Quoted string                        */
+%token  <tptr>  UNDVAR  /* Variable and function                */
 %token  <tptr>  VAR
-%token	<tptr>	SVAR 	/* String Variable */
+%token  <tptr>  SVAR    /* String Variable */
 %token  <tptr>  IMMVAR  /* Immutable Variable */
-%token	<tptr>	IMMSVAR /* Immutable String Variable */
+%token  <tptr>  IMMSVAR /* Immutable String Variable */
+%token  <tptr>  AVAR   /* array data [i,j] */
 %token  <tptr>  FNCT
 %token  <tptr>  SFNCT
-%type	<val>	exp 
+%token  <tptr>  AFNCT
+%type   <val>   exp 
+%type   <array> aexp 
 %type   <val>   bool
-%type	<string>	sexp
+%type   <string>        sexp
 
 /* Precedence (Lowest to Highest) and associativity */
-%right	'=' 
+%right  '=' 
 %right  EQ_PLUS EQ_MINUS
 %right  EQ_TIME EQ_DIV
 %right  EQ_POW
@@ -77,27 +82,28 @@ symrec *format;
 %left   LOR                /* Logical OR     */
 %left   LAND               /* Logical AND    */
 %left '<' '>' LE GE EQ NE  /* <=, >=, ==, != */
-%left	'-' '+'
-%left	'/' '*' '%'
-%left	UNARY NOT 	/* Negation--unary minus/plus 		*/
-%right	POW	  	/* Exponentiation	      		*/
-%left	INC DEC   	/* increment (++), decrement (--) 	*/
-%left	CONCAT	  	/* Concatenate Strings			*/
+%left   '-' '+'
+%left   '/' '*' '%'
+%left   UNARY NOT       /* Negation--unary minus/plus           */
+%right  POW             /* Exponentiation                       */
+%left   INC DEC         /* increment (++), decrement (--)       */
+%left   CONCAT          /* Concatenate Strings                  */
 /* Grammar Rules: */
 
 %%
-input:	/* empty rule */
-	| input line
+input:  /* empty rule */
+        | input line
 ;
 
-line:	  '\n'			{ if (echo) fprintf(yyout,"\n");	}
-	| '{' exp  '}' 		{ if (echo) {
-	                             format = getsym("_FORMAT");
-	                             fprintf(yyout, format->value.svar, $2);
-				   }                                    }
-	| '{' sexp '}' 		{ if (echo && $2 != NULL)
-				    fprintf(yyout, "%s", $2);	}
-	| error '}'		{ yyerrok;				}
+line:     '\n'                  { if (echo) fprintf(yyout,"\n");        }
+        | '{' exp  '}'          { if (echo) {
+                                     format = getsym("_FORMAT");
+                                     fprintf(yyout, format->value.svar, $2);
+                                   }                                    }
+        | '{' sexp '}'          { if (echo && $2 != NULL)
+                                    fprintf(yyout, "%s", $2);   }
+        | '{' aexp '}'          { ; }
+        | error '}'             { yyerrok;                              }
 ;
 
 bool:     exp '<' exp           { $$ = $1 < $3;                         }
@@ -114,18 +120,61 @@ bool:     exp '<' exp           { $$ = $1 < $3;                         }
         | '(' bool ')'          { $$ = $2;                              }
 ;
 
-bool:     sexp '<' sexp         { $$ = (strcmp($1,$3) <  0 ? 1 : 0);	}
-        | sexp '>' sexp         { $$ = (strcmp($1,$3) >  0 ? 1 : 0);	}
-        | sexp LE  sexp         { $$ = (strcmp($1,$3) <= 0 ? 1 : 0);	}
-        | sexp GE  sexp         { $$ = (strcmp($1,$3) >= 0 ? 1 : 0);	}
-        | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);	}
-        | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);	}
+bool:     sexp '<' sexp         { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
+        | sexp '>' sexp         { $$ = (strcmp($1,$3) >  0 ? 1 : 0);    }
+        | sexp LE  sexp         { $$ = (strcmp($1,$3) <= 0 ? 1 : 0);    }
+        | sexp GE  sexp         { $$ = (strcmp($1,$3) >= 0 ? 1 : 0);    }
+        | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
+        | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
 
-sexp:     QSTRING		{ $$ = $1;				}
-        | SVAR			{ $$ = $1->value.svar;			}
-        | IMMSVAR		{ $$ = $1->value.svar;			}
-    	| UNDVAR '=' sexp	{ $$ = $3; $1->value.svar = $3;
-	                          set_type($1, SVAR);			}
+aexp:   AVAR                   { $$ = $1->value.avar;}
+        | AFNCT '(' sexp ')'    { $$ = (*($1->value.arrfnct))($3);      }
+        | AFNCT '(' exp ',' exp ')'  
+                                { $$ = (*($1->value.arrfnct))($3,$5);   }
+        | AFNCT '(' exp ')'  
+                                { $$ = (*($1->value.arrfnct))($3);      }
+        | AFNCT '(' aexp ')'  
+                                { $$ = (*($1->value.arrfnct))($3);      }
+        | AVAR '=' aexp        { $$ = $3; $1->value.avar = $3; 
+                                  redefined_warning($1);
+                                  set_type($1, AVAR); }
+        | UNDVAR '=' aexp       { $$ = $3; $1->value.avar = $3; 
+                                  set_type($1, AVAR); }
+        | aexp '+' aexp         { if ($1->cols == $3->cols && $1->rows == $3->rows ) {
+                                     $$ = array_add($1, $3); 
+                                  }
+                                  else {
+                                    yyerror("Arrays do not have same row and column count"); 
+                                    yyerrok;
+                                  }
+                                }
+        | '-' aexp %prec UNARY  { $$ = array_scale($2, -1.0);           }
+
+        | aexp '-' aexp         { if ($1->cols == $3->cols && $1->rows == $3->rows ) {
+                                     $$ = array_sub($1, $3); 
+                                  }
+                                  else {
+                                    yyerror("Arrays do not have same row and column count"); 
+                                    yyerrok;
+                                  }
+                                }
+        | aexp '*' exp          { $$ = array_scale($1, $3);             }
+        | aexp '/' exp          { $$ = array_scale($1, 1.0/$3);         }
+        | exp  '*' aexp         { $$ = array_scale($3, $1);             }
+        | aexp '*' aexp         { if ($1->cols == $3->rows) {
+                                    $$ = array_mult($1, $3);
+                                  }
+                                  else {
+                                    yyerror("Column count of first array does not match row count of second array"); 
+                                    yyerrok;
+                                  }
+				}
+
+sexp:     QSTRING               { $$ = $1;                              }
+        | SVAR                  { $$ = $1->value.svar;                  }
+        | IMMSVAR               { $$ = $1->value.svar;                  }
+        | UNDVAR '=' sexp       { $$ = $3; $1->value.svar = $3;
+                                  set_type($1, SVAR);                   }
         | SVAR '=' sexp         { $$ = $3; 
                                   $1->value.svar = $3;
                                   redefined_warning($1);          }
@@ -133,141 +182,172 @@ sexp:     QSTRING		{ $$ = $1;				}
                                   $1->value.svar= $3;
                                   redefined_warning($1);          
                                   $1->type = SVAR;              }
-	| IMMSVAR '=' sexp	{ immutable_modify($1); YYERROR; }
-        | IMMVAR '=' sexp	{ immutable_modify($1); YYERROR; }
-        | SFNCT '(' sexp ')'	{ $$ = (*($1->value.strfnct))($3);	}
-	| SFNCT '(' ')'		{ $$ = (*($1->value.strfnct))();	}
-        | SFNCT '(' exp  ')'	{ $$ = (*($1->value.strfnct))($3);	}
-        | sexp CONCAT sexp	{ int len1 = strlen($1);
-				  int len3 = strlen($3);
-				  ALLOC($$, len1+len3+1, char *);
-				  memcpy($$, $1, len1+1);
-				  strcat($$, $3); }
+        | IMMSVAR '=' sexp      { immutable_modify($1); YYERROR; }
+        | IMMVAR '=' sexp       { immutable_modify($1); YYERROR; }
+        | SFNCT '(' sexp ')'    { $$ = (*($1->value.strfnct))($3);      }
+        | SFNCT '(' ')'         { $$ = (*($1->value.strfnct))();        }
+        | SFNCT '(' aexp ')'    { $$ = (*($1->value.strfnct))($3);      }
+        | SFNCT '(' exp  ')'    { $$ = (*($1->value.strfnct))($3);      }
+        | sexp CONCAT sexp      { int len1 = strlen($1);
+                                  int len3 = strlen($3);
+                                  ALLOC($$, len1+len3+1, char *);
+                                  memcpy($$, $1, len1+1);
+                                  strcat($$, $3); }
         | SFNCT '(' exp ',' sexp ',' sexp ',' sexp ',' sexp ')'
-				{ $$ = (*($1->value.strfnct))($3, $5, $7, $9, $11); }
+                                { $$ = (*($1->value.strfnct))($3, $5, $7, $9, $11); }
         | SFNCT '(' exp ',' sexp ',' sexp  ')'
-				{ $$ = (*($1->value.strfnct))($3, $5, $7); }
+                                { $$ = (*($1->value.strfnct))($3, $5, $7); }
         | SFNCT '(' sexp ',' sexp ',' sexp  ')'
-				{ $$ = (*($1->value.strfnct))($3, $5, $7); }
+                                { $$ = (*($1->value.strfnct))($3, $5, $7); }
+        | SFNCT '(' sexp ',' exp ',' exp  ')'
+                                { $$ = (*($1->value.strfnct))($3, $5, $7); }
         | bool '?' sexp ':' sexp  { $$ = ($1) ? ($3) : ($5);              }
 
-exp:	  NUM			{ $$ = $1; 				}
-        | INC NUM		{ $$ = $2 + 1;				}
-        | DEC NUM		{ $$ = $2 - 1;				}
-        | VAR			{ $$ = $1->value.var;			}
-        | IMMVAR		{ $$ = $1->value.var;			}
-	| INC VAR		{ $$ = ++($2->value.var);		}
-	| DEC VAR		{ $$ = --($2->value.var);		}
-	| VAR INC		{ $$ = ($1->value.var)++;		}
-	| VAR DEC		{ $$ = ($1->value.var)--;		}
-	| VAR '=' exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning($1);          }
-	| SVAR '=' exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning($1);          
-				  $1->type = VAR;			}
-	| VAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; }
-	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }
-	| VAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; }
-	| VAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; }
-	| VAR EQ_POW exp	{ errno = 0;
-				  $1->value.var = pow($1->value.var,$3); 
-				  $$ = $1->value.var; 
-				  MATH_ERROR("Power");
-				}
-        | INC IMMVAR		{ immutable_modify($2); YYERROR; }
-	| DEC IMMVAR		{ immutable_modify($2); YYERROR; }
-	| IMMVAR INC		{ immutable_modify($1); YYERROR; }
-	| IMMVAR DEC		{ immutable_modify($1); YYERROR; }
-        | IMMVAR '=' exp	{ immutable_modify($1); YYERROR; }
-	| IMMSVAR '=' exp	{ immutable_modify($1); YYERROR; }
-	| IMMVAR EQ_PLUS exp	{ immutable_modify($1); YYERROR; }
-	| IMMVAR EQ_MINUS exp	{ immutable_modify($1); YYERROR; }
-	| IMMVAR EQ_TIME exp	{ immutable_modify($1); YYERROR; }
-	| IMMVAR EQ_DIV exp	{ immutable_modify($1); YYERROR; }
-	| IMMVAR EQ_POW exp	{ immutable_modify($1); YYERROR; }
+exp:      NUM                   { $$ = $1;                              }
+        | INC NUM               { $$ = $2 + 1;                          }
+        | DEC NUM               { $$ = $2 - 1;                          }
+        | VAR                   { $$ = $1->value.var;                   }
+        | IMMVAR                { $$ = $1->value.var;                   }
+        | INC VAR               { $$ = ++($2->value.var);               }
+        | DEC VAR               { $$ = --($2->value.var);               }
+        | VAR INC               { $$ = ($1->value.var)++;               }
+        | VAR DEC               { $$ = ($1->value.var)--;               }
+        | VAR '=' exp           { $$ = $3; $1->value.var = $3;
+                                  redefined_warning($1);          }
+        | SVAR '=' exp          { $$ = $3; $1->value.var = $3;
+                                  redefined_warning($1);          
+                                  $1->type = VAR;                       }
+        | VAR EQ_PLUS exp       { $1->value.var += $3; $$ = $1->value.var; }
+        | VAR EQ_MINUS exp      { $1->value.var -= $3; $$ = $1->value.var; }
+        | VAR EQ_TIME exp       { $1->value.var *= $3; $$ = $1->value.var; }
+        | VAR EQ_DIV exp        { $1->value.var /= $3; $$ = $1->value.var; }
+        | VAR EQ_POW exp        { errno = 0;
+                                  $1->value.var = pow($1->value.var,$3); 
+                                  $$ = $1->value.var; 
+                                  MATH_ERROR("Power");
+                                }
+        | INC IMMVAR            { immutable_modify($2); YYERROR; }
+        | DEC IMMVAR            { immutable_modify($2); YYERROR; }
+        | IMMVAR INC            { immutable_modify($1); YYERROR; }
+        | IMMVAR DEC            { immutable_modify($1); YYERROR; }
+        | IMMVAR '=' exp        { immutable_modify($1); YYERROR; }
+        | IMMSVAR '=' exp       { immutable_modify($1); YYERROR; }
+        | IMMVAR EQ_PLUS exp    { immutable_modify($1); YYERROR; }
+        | IMMVAR EQ_MINUS exp   { immutable_modify($1); YYERROR; }
+        | IMMVAR EQ_TIME exp    { immutable_modify($1); YYERROR; }
+        | IMMVAR EQ_DIV exp     { immutable_modify($1); YYERROR; }
+        | IMMVAR EQ_POW exp     { immutable_modify($1); YYERROR; }
 
-	| UNDVAR		{ $$ = $1->value.var;
-				  undefined_warning($1->name);          }
-	| INC UNDVAR		{ $$ = ++($2->value.var);		
-	                          set_type($2, VAR);                       
-				  undefined_warning($2->name);          }
-	| DEC UNDVAR		{ $$ = --($2->value.var);		
-	                          set_type($2, VAR);                       
-				  undefined_warning($2->name);          }
-	| UNDVAR INC		{ $$ = ($1->value.var)++;		
-	                          set_type($1, VAR);                       
-				  undefined_warning($1->name);          }
-	| UNDVAR DEC		{ $$ = ($1->value.var)--;		
-	                          set_type($1, VAR);                       
-				  undefined_warning($1->name);          }
-	| UNDVAR '=' exp	{ $$ = $3; $1->value.var = $3;
-	                          set_type($1, VAR);                    }
-	| UNDVAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; 
-	                          set_type($1, VAR);                       
-				  undefined_warning($1->name);          }
-	| UNDVAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; 
-	                          set_type($1, VAR);                       
-				  undefined_warning($1->name);          }
-	| UNDVAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; 
-	                          set_type($1, VAR);                       
-				  undefined_warning($1->name);          }
-	| UNDVAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; 
-	                          set_type($1, VAR);                       
-				  undefined_warning($1->name);          }
-	| UNDVAR EQ_POW exp	{ errno = 0;
-				  $1->value.var = pow($1->value.var,$3); 
-				  $$ = $1->value.var; 
-	                          set_type($1, VAR);                       
-				  MATH_ERROR("Power");
-				  undefined_warning($1->name);          }
-	| FNCT '(' ')'		{ $$ = (*($1->value.fnctptr))();	}
-	| FNCT '(' exp ')'	{ $$ = (*($1->value.fnctptr))($3); 	}
-	| FNCT '(' sexp ')'	{ $$ = (*($1->value.fnctptr))($3); 	}
-	| FNCT '(' sexp ',' exp ')'
-                                { $$ = (*($1->value.fnctptr))($3, $5); 	}
-	| FNCT '(' sexp ',' sexp ')'
-                                { $$ = (*($1->value.fnctptr))($3, $5); 	}
-   	| FNCT '(' exp ',' exp ')'
-				{ $$ = (*($1->value.fnctptr))($3, $5);	}
-	| FNCT '(' exp ',' exp ',' exp')'
-				{ $$ = (*($1->value.fnctptr))($3, $5, $7); }
-	| FNCT '(' exp ',' exp ';' exp ',' exp ')'
-				{ $$ = (*($1->value.fnctptr))($3, $5, $7, $9); }
-	| FNCT '(' exp ',' exp ',' exp ',' exp ')'
-				{ $$ = (*($1->value.fnctptr))($3, $5, $7, $9); }
-	| FNCT '(' exp ',' exp ',' exp ',' exp ',' exp ',' exp ')'
-  		     { $$ = (*($1->value.fnctptr))($3, $5, $7, $9, $11, $13); }
-	| exp '+' exp		{ $$ = $1 + $3; 			}
-	| exp '-' exp		{ $$ = $1 - $3; 			}
-	| exp '*' exp		{ $$ = $1 * $3; 			}
-	| exp '/' exp		{ if ($3 == 0.)
-				    {
-				      yyerror("Zero divisor"); 
-				      yyerrok;
-				    }
-				  else
-				    $$ = $1 / $3; 			}
-	| exp '%' exp		{ if ($3 == 0.)
-				    {
-				      yyerror("Zero divisor");
-				      yyerrok;
-				    }
-				  else
-				    $$ = (int)$1 % (int)$3;		}  
-	| '-' exp %prec UNARY	{ $$ = -$2;				}
-	| '+' exp %prec UNARY	{ $$ =  $2;				}
-	| exp POW exp 		{ errno = 0;
-				  $$ = pow($1, $3); 
-				  MATH_ERROR("Power");			}
-	| '(' exp ')'		{ $$ = $2;				}
-    | '[' exp ']'           { errno = 0;
-				  $$ = (double)($2 < 0 ? 
-					-floor(-($2)): floor($2) );
-				  MATH_ERROR("floor (int)");		}
+        | UNDVAR                { $$ = $1->value.var;
+                                  undefined_warning($1->name);          }
+        | INC UNDVAR            { $$ = ++($2->value.var);               
+                                  set_type($2, VAR);                       
+                                  undefined_warning($2->name);          }
+        | DEC UNDVAR            { $$ = --($2->value.var);               
+                                  set_type($2, VAR);                       
+                                  undefined_warning($2->name);          }
+        | UNDVAR INC            { $$ = ($1->value.var)++;               
+                                  set_type($1, VAR);                       
+                                  undefined_warning($1->name);          }
+        | UNDVAR DEC            { $$ = ($1->value.var)--;               
+                                  set_type($1, VAR);                       
+                                  undefined_warning($1->name);          }
+        | UNDVAR '=' exp        { $$ = $3; $1->value.var = $3;
+                                  set_type($1, VAR);                    }
+        | UNDVAR EQ_PLUS exp    { $1->value.var += $3; $$ = $1->value.var; 
+                                  set_type($1, VAR);                       
+                                  undefined_warning($1->name);          }
+        | UNDVAR EQ_MINUS exp   { $1->value.var -= $3; $$ = $1->value.var; 
+                                  set_type($1, VAR);                       
+                                  undefined_warning($1->name);          }
+        | UNDVAR EQ_TIME exp    { $1->value.var *= $3; $$ = $1->value.var; 
+                                  set_type($1, VAR);                       
+                                  undefined_warning($1->name);          }
+        | UNDVAR EQ_DIV exp     { $1->value.var /= $3; $$ = $1->value.var; 
+                                  set_type($1, VAR);                       
+                                  undefined_warning($1->name);          }
+        | UNDVAR EQ_POW exp     { errno = 0;
+                                  $1->value.var = pow($1->value.var,$3); 
+                                  $$ = $1->value.var; 
+                                  set_type($1, VAR);                       
+                                  MATH_ERROR("Power");
+                                  undefined_warning($1->name);          }
+        | FNCT '(' ')'          { $$ = (*($1->value.fnctptr))();        }
+        | FNCT '(' exp ')'      { $$ = (*($1->value.fnctptr))($3);      }
+        | FNCT '(' sexp ')'     { $$ = (*($1->value.fnctptr))($3);      }
+        | FNCT '(' aexp ')'     { $$ = (*($1->value.fnctptr))($3);      }
+        | FNCT '(' sexp ',' exp ')'
+                                { $$ = (*($1->value.fnctptr))($3, $5);  }
+        | FNCT '(' sexp ',' sexp ')'
+                                { $$ = (*($1->value.fnctptr))($3, $5);  }
+        | FNCT '(' exp ',' exp ')'
+                                { $$ = (*($1->value.fnctptr))($3, $5);  }
+        | FNCT '(' exp ',' exp ',' exp')'
+                                { $$ = (*($1->value.fnctptr))($3, $5, $7); }
+        | FNCT '(' exp ',' exp ';' exp ',' exp ')'
+                                { $$ = (*($1->value.fnctptr))($3, $5, $7, $9); }
+        | FNCT '(' exp ',' exp ',' exp ',' exp ')'
+                                { $$ = (*($1->value.fnctptr))($3, $5, $7, $9); }
+        | FNCT '(' exp ',' exp ',' exp ',' exp ',' exp ',' exp ')'
+                     { $$ = (*($1->value.fnctptr))($3, $5, $7, $9, $11, $13); }
+        | exp '+' exp           { $$ = $1 + $3;                         }
+        | exp '-' exp           { $$ = $1 - $3;                         }
+        | exp '*' exp           { $$ = $1 * $3;                         }
+        | exp '/' exp           { if ($3 == 0.)
+                                    {
+                                      yyerror("Zero divisor"); 
+                                      yyerrok;
+                                    }
+                                  else
+                                    $$ = $1 / $3;                       }
+        | exp '%' exp           { if ($3 == 0.)
+                                    {
+                                      yyerror("Zero divisor");
+                                      yyerrok;
+                                    }
+                                  else
+                                    $$ = (int)$1 % (int)$3;             }  
+        | '-' exp %prec UNARY   { $$ = -$2;                             }
+        | '+' exp %prec UNARY   { $$ =  $2;                             }
+        | exp POW exp           { errno = 0;
+                                  $$ = pow($1, $3); 
+                                  MATH_ERROR("Power");                  }
+        | '(' exp ')'           { $$ = $2;                              }
+        | '[' exp ']'           { errno = 0;
+                                  $$ = (double)($2 < 0 ? 
+                                        -floor(-($2)): floor($2) );
+                                  MATH_ERROR("floor (int)");            }
 
-    | bool { $$ = ($1) ? 1 : 0; }
-    | bool '?' exp ':' exp  { $$ = ($1) ? ($3) : ($5);              }
-
+        | bool { $$ = ($1) ? 1 : 0; }
+        | bool '?' exp ':' exp  { $$ = ($1) ? ($3) : ($5);              }
+      
+        | AVAR '[' exp ',' exp ']' { array *arr = $1->value.avar;
+                                      int cols = arr->cols;
+                                      int rows = arr->rows;
+                                      if ($3 < rows && $5 < cols) {
+                                        int offset = $3*cols+$5;
+                                        $$ = $1->value.avar->data[offset];
+                                      }
+                                      else {
+                                        yyerror("Row or Column index out of range"); 
+                                        yyerrok;
+                                      }
+                                    }
+        | AVAR '[' exp ',' exp ']' '=' exp 
+                                  { array *arr = $1->value.avar;
+                                    int cols = arr->cols;
+                                    int rows = arr->rows;
+				    $$ = $8;
+				    if ($3 < rows && $5 < cols) {
+                                      int offset = $3*cols+$5;
+                                      $1->value.avar->data[offset] = $8;
+                                    }
+                                    else {
+                                      yyerror("Row or Column index out of range"); 
+                                      yyerrok;
+                                    }
+                                  }
+                                    
 
 /* End of grammar */
 %%

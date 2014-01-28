@@ -55,6 +55,20 @@
 #include <sstream>
 #include <string>
 
+/*!  \brief Throw an error for input adapter functions that have been
+ *   called by the model but not implemented in the adapter.
+ */
+
+#define Z2_THROW_NOT_IMPLEMENTED_ERROR \
+  { \
+    std::ostringstream emsg; \
+    emsg << __FILE__ << "," << __LINE__ \
+         << " error:  " << __func__ << " not implemented in adapter "  \
+         << std::endl; \
+    throw std::runtime_error(emsg.str()); \
+  }
+
+
 /*!  \brief Throw an error returned from outside the Zoltan2 library.
  *
  *   A \c try block that calls another library should be followed
@@ -100,6 +114,24 @@
       << "-D Zoltan2_ENABLE_Experimental:BOOL=ON " \
       << std::endl; \
   throw std::runtime_error(oss.str()); \
+  }
+
+/*! \brief Throw an error when actual value is not equal to expected value.
+ *
+ *  Check if the two arguments passed are equal and throw a runtime error if
+ *  they are not.
+ */
+
+#define Z2_ASSERT_VALUE(actual, expected) \
+  { \
+      if (actual != expected) \
+      { \
+          std::ostringstream oss; \
+          oss << "Expected value " << expected << "does not match actual value"\
+              << actual << "in" << __FILE__<<", "<<__LINE__ \
+              << std::endl; \
+          throw std::runtime_error(oss.str()); \
+      }\
   }
 
 #endif

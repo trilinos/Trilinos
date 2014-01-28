@@ -95,7 +95,7 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
     bool lump=vvPL->get("Lump Mass Matrix", false);
     *out << "\nB) Using InvertMassMatrix Decorator\n";
     model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
-             sublist(vvPL,"Stratimikos", true), origModel, true, lump));
+             sublist(vvPL,"Stratimikos", true), origModel, true, lump, true));
   }
 }
 

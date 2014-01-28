@@ -48,12 +48,14 @@
 #include <Kokkos_Cuda.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
+
 #include <Kokkos_Vector.hpp>
 
 
 //----------------------------------------------------------------------------
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
+#include <TestDualView.hpp>
 
 namespace Test {
 
@@ -74,22 +76,9 @@ void cuda_test_insert_far(  uint32_t num_nodes
   test_insert_far< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
 }
 
-void cuda_test_insert_mark_pending_delete(  uint32_t num_nodes
-                            , uint32_t num_inserts
-                            , uint32_t num_duplicates
-                           )
-{
-  test_insert_mark_pending_delete< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
-}
-
 void cuda_test_failed_insert(  uint32_t num_nodes )
 {
   test_failed_insert< Kokkos::Cuda >( num_nodes );
-}
-
-void cuda_test_assignment_operators(  uint32_t num_nodes )
-{
-  test_assignement_operators< Kokkos::Cuda >( num_nodes );
 }
 
 void cuda_test_deep_copy(  uint32_t num_nodes )
@@ -100,6 +89,11 @@ void cuda_test_deep_copy(  uint32_t num_nodes )
 void cuda_test_vector_combinations(unsigned int size)
 {
   test_vector_combinations<int,Kokkos::Cuda>(size);
+}
+
+void cuda_test_dualview_combinations(unsigned int size)
+{
+  test_dualview_combinations<int,Kokkos::Cuda>(size);
 }
 
 }

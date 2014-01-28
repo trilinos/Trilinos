@@ -227,12 +227,6 @@ void CudaInternal::print_configuration( std::ostream & s ) const
 #if defined( KOKKOS_HAVE_CUDA )
     s << "macro  KOKKOS_HAVE_CUDA      : defined" << std::endl ;
 #endif
-#if defined( KOKKOS_HAVE_CUDA_ARCH )
-    s << "macro  KOKKOS_HAVE_CUDA_ARCH = " << KOKKOS_HAVE_CUDA_ARCH
-      << " = capability " << KOKKOS_HAVE_CUDA_ARCH / 100
-      << "." << ( KOKKOS_HAVE_CUDA_ARCH % 100 ) / 10
-      << std::endl ;
-#endif
 #if defined( CUDA_VERSION )
     s << "macro  CUDA_VERSION          = " << CUDA_VERSION
       << " = version " << CUDA_VERSION / 1000
@@ -286,6 +280,11 @@ CudaInternal & CudaInternal::singleton()
 void CudaInternal::initialize( int cuda_device_id )
 {
   enum { WordSize = sizeof(size_type) };
+
+  if ( ! Cuda::host_mirror_device_type::is_initialized() ) {
+    const std::string msg("Cuda::initialize ERROR : Cuda::host_mirror_device_type is not initialized");
+    throw_runtime_exception( msg );
+  }
 
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
 
@@ -559,7 +558,7 @@ Cuda::size_type Cuda::device_arch()
 void Cuda::finalize()
 { Impl::CudaInternal::raw_singleton().finalize(); }
 
-void Cuda::print_configuration( std::ostream & s )
+void Cuda::print_configuration( std::ostream & s , const bool )
 { Impl::CudaInternal::raw_singleton().print_configuration( s ); }
 
 bool Cuda::sleep() { return false ; }
@@ -569,6 +568,11 @@ bool Cuda::wake() { return true ; }
 void Cuda::fence()
 { 
   CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+}
+
+unsigned Cuda::team_max()
+{
+  return Impl::CudaInternal::singleton().m_maxWarpCount << Impl::CudaTraits::WarpIndexShift ;
 }
 
 } // namespace Kokkos

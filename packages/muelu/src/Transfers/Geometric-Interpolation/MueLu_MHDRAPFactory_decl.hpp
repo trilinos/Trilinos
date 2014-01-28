@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -102,8 +102,8 @@ namespace MueLu {
       implicitTranspose_ = implicit;
     }
 
-    
-    
+
+
 
     //@}
 
@@ -114,11 +114,11 @@ namespace MueLu {
 
   private:
 
-    
+
     //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
     bool implicitTranspose_;
 
-    
+
 
   }; //class MHDRAPFactory
 

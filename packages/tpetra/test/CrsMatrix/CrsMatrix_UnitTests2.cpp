@@ -41,6 +41,24 @@
 // @HEADER
 */
 
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
+
+#ifdef DO_COMPILATION
+
 #include <Tpetra_TestingUtilities.hpp>
 
 #include <Tpetra_MultiVector.hpp>
@@ -520,7 +538,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms,zeros);
     } else {
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+      const Mag tol = TestingTolGuts<Mag, ! MT::isOrdinal>::testingTol ();
+      TEST_COMPARE_FLOATING_ARRAYS( norms, zeros, tol );
     }
   }
 
@@ -575,3 +594,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
+
+#endif  //DO_COMPILATION
+

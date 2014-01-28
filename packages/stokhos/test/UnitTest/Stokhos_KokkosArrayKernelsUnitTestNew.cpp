@@ -39,157 +39,69 @@
 // ***********************************************************************
 // @HEADER
 
+// Utilities
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_KokkosArrayKernelsUnitTestNew.hpp"
+#include "KokkosCore_config.h"
+#include "Stokhos_ConfigDefs.h"
 
-#include "Stokhos_Threads_CrsMatrix.hpp"
-#include "Stokhos_Threads_BlockCrsMatrix.hpp"
-#include "Stokhos_Threads_StochasticProductTensor.hpp"
-#include "Stokhos_Threads_SymmetricDiagonalSpec.hpp"
-#include "Stokhos_Threads_CrsProductTensor.hpp"
-#include "Stokhos_Threads_TiledCrsProductTensor.hpp"
-#include "Stokhos_Threads_CooProductTensor.hpp"
-#include "Stokhos_Threads_FlatSparse3Tensor.hpp"
-#include "Stokhos_Threads_FlatSparse3Tensor_kji.hpp"
-
-#include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
-#include "Stokhos_Threads_LexicographicBlockSparse3Tensor.hpp"
-#include "Stokhos_Threads_LinearSparse3Tensor.hpp"
-
-#include "Kokkos_hwloc.hpp"
+// Devices
+#include "Kokkos_Threads.hpp"
+#include "Kokkos_OpenMP.hpp"
 #include "Kokkos_Cuda.hpp"
+#include "Kokkos_Serial.hpp"
+#include "Kokkos_hwloc.hpp"
 
-#include "cuda_runtime_api.h"
+// Threads kernels
+#ifdef KOKKOS_HAVE_PTHREAD
+#include "Stokhos_Threads_CrsProductTensor.hpp"
+#endif
+
+// OpenMP kernels
+#if defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_STOKHOS_MKL)
+#include "Stokhos_OpenMP_MKL_CrsMatrix.hpp"
+#endif
+
+// Tests
+#include "Stokhos_KokkosArrayKernelsUnitTestNew.hpp"
 
 using namespace KokkosKernelsUnitTest;
 
 UnitTestSetup setup;
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::DefaultSparseMatOps SparseMatOps;
-  bool test_block = false;
+// Test declarations
+#include "Stokhos_KokkosArrayKernelsUnitTestNewDecl.hpp"
 
-  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
-    setup, test_block, out);
-}
+// Host-specific tests
 
-#ifdef HAVE_STOKHOS_MKL
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_ThreadsMKL ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::MKLSparseMatOps SparseMatOps;
-  bool test_block = true;
-
-  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
-    setup, test_block, out);
-}
-
-#endif
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsDenseBlock_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-
-  success = test_crs_dense_block<Scalar,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatCommuted_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-
-  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-
-  success = test_crs_flat_original<Scalar,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::CrsProductTensor<Scalar,Device> Tensor;
-
-  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensor_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::TiledCrsProductTensor<Scalar,Device> Tensor;
-
-  Teuchos::ParameterList params;
-  params.set("Tile Size", 10);
-  params.set("Max Tiles", 10000);
-  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorPacked_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::CooProductTensor<Scalar,Device,true> Tensor;
-
-  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorUnpacked_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::CooProductTensor<Scalar,Device,false> Tensor;
-
-  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparse3Tensor_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::FlatSparse3Tensor<Scalar,Device> Tensor;
-
-  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparse3Tensor_kji_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Stokhos::FlatSparse3Tensor_kji<Scalar,Device> Tensor;
-
-  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensorCijk ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, CrsProductTensorCijk, Scalar, Device ) {
   success = true;
 
-  typedef double value_type;
-  typedef Kokkos::Threads Device;
+  typedef Scalar value_type;
+  typedef int size_type;
   typedef Stokhos::CrsProductTensor< value_type , Device > tensor_type ;
 
   tensor_type tensor =
    Stokhos::create_product_tensor<Device>( *setup.basis, *setup.Cijk );
 
   for (int i=0; i<setup.stoch_length; ++i) {
-    const size_t iEntryBeg = tensor.entry_begin(i);
-    const size_t iEntryEnd = tensor.entry_end(i);
-    for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
-      const size_t kj = tensor.coord( iEntry );
-      const size_t j  = kj & 0x0ffff;
-      const size_t k  = kj >> 16;
-      // const size_t j = tensor.coord(iEntry,0);
-      // const size_t k = tensor.coord(iEntry,1);
-      double c2 = tensor.value(iEntry);
+    const int iEntryBeg = tensor.entry_begin(i);
+    const int iEntryEnd = tensor.entry_end(i);
+    for (int iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+      const int kj = tensor.coord( iEntry );
+      const int j  = kj & 0x0ffff;
+      const int k  = kj >> 16;
+      // const int j = tensor.coord(iEntry,0);
+      // const int k = tensor.coord(iEntry,1);
+      value_type c2 = tensor.value(iEntry);
       if (j == k) c2 *= 2.0;
 
       int ii = setup.inv_perm[i];
       int jj = setup.inv_perm[j];
       int kk = setup.inv_perm[k];
-      double c = setup.Cijk->getValue(ii,jj,kk);
+      value_type c = setup.Cijk->getValue(ii,jj,kk);
 
       if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
         out << "(" << ii << "," << jj << "," << kk << "):  " << c
@@ -200,11 +112,10 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensorCijk ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensorCijk ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, TiledCrsProductTensorCijk, Scalar, Device ) {
   success = true;
 
-  typedef double value_type;
-  typedef Kokkos::Threads Device;
+  typedef Scalar value_type;
   typedef Stokhos::TiledCrsProductTensor< value_type , Device > tensor_type ;
 
   Teuchos::ParameterList params;
@@ -232,13 +143,13 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensorCijk ) {
       for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
         const size_t j = tensor.coord(iEntry,0);
         const size_t k = tensor.coord(iEntry,1);
-        double c2 = tensor.value(iEntry);
+        value_type c2 = tensor.value(iEntry);
         int ii = i + i_offset;
         int jj = j + j_offset;
         int kk = k + k_offset;
         if (jj == kk)
           c2 *= 2.0;
-        double c = setup.Cijk->getValue(ii,jj,kk);
+        value_type c = setup.Cijk->getValue(ii,jj,kk);
 
         if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
           out << "(" << ii << "," << jj << "," << kk << "):  " << c
@@ -250,13 +161,71 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensorCijk ) {
   }
 }
 
-template <bool Pack>
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, SimpleTiledCrsProductTensorCijk, Scalar, Device ) {
+  success = true;
+
+  typedef Scalar value_type;
+  typedef Stokhos::SimpleTiledCrsProductTensor< value_type , Device > tensor_type ;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size",10);
+
+  tensor_type tensor =
+    Stokhos::create_simple_tiled_product_tensor<Device>(
+      *setup.basis, *setup.Cijk, params);
+
+  int num_entry = 0;
+  const size_t n_i_tile = tensor.num_i_tiles();
+  for (size_t i_tile = 0; i_tile<n_i_tile; ++i_tile) {
+    const size_t i_begin = tensor.i_begin(i_tile);
+    const size_t i_size  = tensor.i_size(i_tile);
+
+    const size_t n_j_tile = tensor.num_j_tiles(i_tile);
+    for (size_t j_tile = 0; j_tile<n_j_tile; ++j_tile) {
+      const size_t j_begin = tensor.j_begin(i_tile, j_tile);
+      //const size_t j_size  = tensor.j_size(i_tile, j_tile);
+
+      const size_t n_k_tile = tensor.num_k_tiles(i_tile, j_tile);
+      for (size_t k_tile = 0; k_tile<n_k_tile; ++k_tile) {
+        const size_t k_begin = tensor.k_begin(i_tile, j_tile, k_tile);
+        //const size_t k_size  = tensor.k_size(i_tile, j_tile, k_tile);
+
+        for (size_t i=0; i<i_size; ++i) {
+          const size_t iEntryBeg = tensor.entry_begin(i_tile,j_tile,k_tile,i);
+          const size_t iEntryEnd = tensor.entry_end(i_tile,j_tile,k_tile,i);
+          for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+            const size_t j = tensor.coord(iEntry,0);
+            const size_t k = tensor.coord(iEntry,1);
+            value_type c2 = tensor.value(iEntry);
+            int ii = i + i_begin;
+            int jj = j + j_begin;
+            int kk = k + k_begin;
+            ++num_entry;
+            if (jj == kk)
+              c2 *= 2.0;
+            else
+              ++num_entry;
+            value_type c = setup.Cijk->getValue(ii,jj,kk);
+
+            if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
+              out << "(" << ii << "," << jj << "," << kk << "):  " << c
+                  << " == " << c2 << " failed!" << std::endl;
+              success = false;
+            }
+          }
+        }
+      }
+    }
+  }
+  TEUCHOS_TEST_EQUALITY( num_entry, setup.Cijk->num_entries(), out, success );
+}
+
+template <typename Scalar, typename Device, bool Pack>
 bool test_coo_product_tensor_cijk(const UnitTestSetup& setup,
                                   Teuchos::FancyOStream& out) {
   bool success = true;
 
-  typedef double value_type;
-  typedef Kokkos::Threads Device;
+  typedef Scalar value_type;
   typedef Stokhos::CooProductTensor< value_type , Device , Pack > tensor_type ;
 
   tensor_type tensor =
@@ -267,9 +236,9 @@ bool test_coo_product_tensor_cijk(const UnitTestSetup& setup,
   size_t i, j, k;
   for ( size_t entry = 0 ; entry < nEntry ; ++entry ) {
     tensor.coord(entry, i, j, k);
-    double c2 = tensor.value(entry);
+    value_type c2 = tensor.value(entry);
     if (j == k) c2 *= 2.0;
-    double c = setup.Cijk->getValue(i,j,k);
+    value_type c = setup.Cijk->getValue(i,j,k);
 
     if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
       out << "(" << i << "," << j << "," << k << "):  " << c
@@ -281,19 +250,18 @@ bool test_coo_product_tensor_cijk(const UnitTestSetup& setup,
   return success;
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorCijk_Packed ) {
-  success = test_coo_product_tensor_cijk<true>(setup, out);
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, CooProductTensorCijk_Packed, Scalar, Device ) {
+  success = test_coo_product_tensor_cijk<Scalar,Device,true>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorCijk_Unpacked ) {
-  success = test_coo_product_tensor_cijk<false>(setup, out);
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, CooProductTensorCijk_Unpacked, Scalar, Device ) {
+  success = test_coo_product_tensor_cijk<Scalar,Device,false>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, FlatSparseCijk, Scalar, Device ) {
   success = true;
 
-  typedef double value_type;
-  typedef Kokkos::Threads Device;
+  typedef Scalar value_type;
   typedef Stokhos::FlatSparse3Tensor< value_type , Device > tensor_type ;
   typedef size_t size_type;
 
@@ -311,9 +279,9 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk ) {
       const size_type jEnd = jBeg + nj;
       for (size_type jEntry = jBeg; jEntry < jEnd; ++jEntry) {
         const size_type j = tensor.j_coord(jEntry);
-        double c2 = tensor.value(jEntry);
+        value_type c2 = tensor.value(jEntry);
         if (j == k) c2 *= 2.0;
-        double c = setup.Cijk->getValue(i,j,k);
+        value_type c = setup.Cijk->getValue(i,j,k);
         if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
           out << "(" << i << "," << j << "," << k << "):  " << c
               << " == " << c2 << " failed!" << std::endl;
@@ -324,11 +292,10 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk_kji ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, FlatSparseCijk_kji, Scalar, Device ) {
   success = true;
 
-  typedef double value_type;
-  typedef Kokkos::Threads Device;
+  typedef Scalar value_type;
   typedef Stokhos::FlatSparse3Tensor_kji< value_type , Device > tensor_type ;
   typedef size_t size_type;
 
@@ -347,9 +314,9 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk_kji ) {
       const size_type iEnd = iBeg + ni;
       for (size_type iEntry = iBeg; iEntry < iEnd; ++iEntry) {
         const size_type i = tensor.i_coord(iEntry);
-        double c2 = tensor.value(iEntry);
+        value_type c2 = tensor.value(iEntry);
         if (j == k) c2 *= 2.0;
-        double c = setup.Cijk->getValue(i,j,k);
+        value_type c = setup.Cijk->getValue(i,j,k);
         if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
           out << "(" << i << "," << j << "," << k << "):  " << c
               << " == " << c2 << " failed!" << std::endl;
@@ -360,144 +327,64 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk_kji ) {
   }
 }
 
-namespace KokkosKernelsUnitTest {
+#define UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsProductTensorCijk, SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, TiledCrsProductTensorCijk, SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, SimpleTiledCrsProductTensorCijk, SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorCijk_Packed, SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorCijk_Unpacked, SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, FlatSparseCijk, SCALAR, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, FlatSparseCijk_kji, SCALAR, DEVICE )
 
-  template< typename ScalarType , class Device >
-  bool test_lexo_block_tensor(const UnitTestSetup& setup,
-                              Teuchos::FancyOStream& out) {
-    typedef ScalarType value_type ;
-    typedef int ordinal_type;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft ,
-                               Device > block_vector_type ;
-    typedef Stokhos::LexicographicBlockSparse3Tensor<value_type,Device> TensorType;
-    typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
+#ifdef KOKKOS_HAVE_PTHREAD
+using Kokkos::Threads;
+UNIT_TEST_GROUP_SCALAR_DEVICE( double, Threads )
+UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Threads )
+#endif
 
-    typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
-    typedef typename matrix_type::graph_type graph_type ;
+#ifdef KOKKOS_HAVE_OPENMP
+using Kokkos::OpenMP;
+UNIT_TEST_GROUP_SCALAR_DEVICE( double, OpenMP )
+UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, OpenMP )
 
-    //------------------------------
-    // Generate input multivector:
-
-    block_vector_type x =
-      block_vector_type( "x" , setup.stoch_length , setup.fem_length );
-    block_vector_type y =
-      block_vector_type( "y" , setup.stoch_length , setup.fem_length );
-
-    typename block_vector_type::HostMirror hx =
-      Kokkos::create_mirror( x );
-
-    for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
-      for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
-        hx(iColStoch,iColFEM) =
-          generate_vector_coefficient<ScalarType>(
-            setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
-      }
-    }
-
-    Kokkos::deep_copy( x , hx );
-
-    //------------------------------
-
-    matrix_type matrix ;
-
-    /*
-    typedef UnitTestSetup::abstract_basis_type abstract_basis_type;
-    typedef UnitTestSetup::basis_type basis_type;
-    typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > less_type;
-    typedef Stokhos::TotalOrderBasis<ordinal_type,value_type,less_type> product_basis_type;
-    Teuchos::Array< Teuchos::RCP<const abstract_basis_type> > bases(setup.d);
-    for (int i=0; i<setup.d; i++)
-      bases[i] = rcp(new basis_type(setup.p,true));
-    product_basis_type basis(bases, 1e-12);
-    */
-    const bool symmetric = true;
-    Teuchos::RCP< Stokhos::LTBSparse3Tensor<ordinal_type, value_type> > Cijk =
-      Stokhos::computeTripleProductTensorLTBBlockLeaf(*setup.basis, symmetric);
-
-    matrix.block =
-      Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
-                                                               *Cijk );
-
-    matrix.graph = Kokkos::create_crsarray<graph_type>(
-      std::string("test crs graph") , setup.fem_graph );
-
-    matrix.values = block_vector_type(
-      "matrix" , setup.stoch_length , setup.fem_graph_length );
-
-    typename block_vector_type::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
-
-    for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
-      for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
-        const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM] ;
-
-        for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
-          hM(k,iEntryFEM) =
-            generate_matrix_coefficient<ScalarType>(
-              setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , k );
-          //hM(k,iEntryFEM) = 1.0;
-        }
-      }
-    }
-
-    Kokkos::deep_copy( matrix.values , hM );
-
-    //------------------------------
-
-    Stokhos::multiply( matrix , x , y );
-
-    typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
-    Kokkos::deep_copy( hy , y );
-
-    bool success = setup.test_commuted(hy, out);
-    //bool success = true;
-    return success;
-  }
-
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, LexoBlockTensor_Threads ) {
+#ifdef HAVE_STOKHOS_MKL
+TEUCHOS_UNIT_TEST( Kokkos_SG_SpMv, double_OpenMP_CrsMatrixFree_MKL ) {
   typedef double Scalar;
-  typedef Kokkos::Threads Device;
-
-  success = test_lexo_block_tensor<Scalar,Device>(setup, out);
+  typedef Kokkos::OpenMP Device;
+  typedef Stokhos::MKLMultiply SparseMatOps;
+  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
+    setup, out);
 }
+#endif
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, LinearTensorSymmetric_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const bool symmetric = true;
+#endif
 
-  UnitTestSetup s;
-  s.setup(1, 10);
-  success = test_linear_tensor<Scalar,Device,4>(s, out, symmetric);
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, LinearTensorAsymmetric_Threads ) {
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const bool symmetric = false;
-
-  UnitTestSetup s;
-  s.setup(1, 10);
-  success = test_linear_tensor<Scalar,Device,4>(s, out, symmetric);
-}
+using Kokkos::Serial;
+UNIT_TEST_GROUP_SCALAR_DEVICE( double, Serial )
+UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Serial )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  setup.setup();
 
-  // Initialize threads
-  const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  const size_t gang_count = core_topo.first;
-  const size_t gang_worker_count = core_topo.second * core_capacity;
-  // const size_t gang_count = 1 ;
-  // const size_t gang_worker_count = 1;
-  Kokkos::Threads::initialize( std::make_pair(gang_count , gang_worker_count),
-                               core_topo );
-  Kokkos::Threads::print_configuration( std::cout );
+  const size_t team_count =
+  Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
+  // const size_t team_count       = 1 ;
+  // const size_t threads_per_team = 1 ;
+
+// #ifdef KOKKOS_HAVE_PTHREAD
+//   // Initialize threads
+//   Kokkos::Threads::initialize( team_count * threads_per_team );
+//   Kokkos::Threads::print_configuration( std::cout );
+// #endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+  // Initialize openmp
+  Kokkos::OpenMP::initialize( team_count * threads_per_team );
+  //Kokkos::OpenMP::print_configuration( std::cout );
+#endif
 
 #ifdef KOKKOS_HAVE_CUDA
   // Initialize Cuda
@@ -505,11 +392,19 @@ int main( int argc, char* argv[] ) {
   Kokkos::Cuda::print_configuration( std::cout );
 #endif
 
+  // Setup (has to happen after initialization)
+  setup.setup();
+
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
+#ifdef KOKKOS_HAVE_PTHREAD
   Kokkos::Threads::finalize();
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+  Kokkos::OpenMP::finalize();
+#endif
 #ifdef KOKKOS_HAVE_CUDA
   Kokkos::Cuda::finalize();
 #endif

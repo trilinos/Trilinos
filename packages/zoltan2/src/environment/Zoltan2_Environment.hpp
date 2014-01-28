@@ -359,13 +359,30 @@ public:
    */
 
 #ifdef Z2_OMIT_ALL_STATUS_MESSAGES
-  void debug(MessageOutputLevel level, const char *msg) const{ return;}
-  void debug(MessageOutputLevel level, const std::string msg) const{ return;}
+  inline void debug(MessageOutputLevel level, const char *msg) const{ return;}
+  inline void debug(MessageOutputLevel level, const std::string& msg) const{
+      return;
+  }
+  inline void debug(int level, const char *msg) const{ return;}
+  inline void debug(int level, const std::string& msg) const{ return;}
 #else
-  void debug(MessageOutputLevel level, const char *msg) const{ 
-    debugOut_->print(level, msg);}
-  void debug(MessageOutputLevel level, const std::string &msg) const{ 
-    debugOut_->print(level, msg);}
+  inline void debug(MessageOutputLevel level, const char *msg) const{
+      debugOut_->print(level, msg);
+  }
+
+  inline void debug(MessageOutputLevel level, const std::string& msg) const{
+      debugOut_->print(level, msg);
+  }
+
+  inline void debug(int level, const char *msg) const{
+      MessageOutputLevel msg_enum = static_cast<MessageOutputLevel>(level);
+      debugOut_->print(msg_enum, msg);
+  }
+
+  inline void debug(int level, const std::string& msg) const{
+      MessageOutputLevel msg_enum = static_cast<MessageOutputLevel>(level);
+      debugOut_->print(msg_enum, msg);
+  }
 #endif
 
 #ifdef Z2_OMIT_ALL_PROFILING

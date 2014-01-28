@@ -54,9 +54,10 @@ namespace Galeri {
 
 namespace Maps {
 
+template<typename int_type>
 inline
 Epetra_Map* 
-NodeCartesian2D(const Epetra_Comm& Comm, const Epetra_Comm & NodeComm, const int MyNodeID,
+TNodeCartesian2D(const Epetra_Comm& Comm, const Epetra_Comm & NodeComm, const int MyNodeID,
                 const int nx, const int ny,
                 const int ndx, const int ndy, const int px, const int py )
 {
@@ -107,18 +108,40 @@ NodeCartesian2D(const Epetra_Comm& Comm, const Epetra_Comm & NodeComm, const int
   if ( ypid < NBigYDir) endy++;
 
   int NumMyElements = (endx - startx) * (endy - starty);
-  vector<int> MyGlobalElements(NumMyElements);
+  vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
 
   for (int i = startx ; i < endx ; ++i) 
     for (int j = starty ; j < endy ; ++j) 
       MyGlobalElements[count++] = i + j * nx;
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   return(new Epetra_Map(nx * ny,  NumMyElements, &MyGlobalElements[0],
                         0, Comm));
+#else
+  return(new Epetra_Map);
+#endif
 
   
-} // NodeCartesian2D()
+} // TNodeCartesian2D()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map* 
+NodeCartesian2D(const Epetra_Comm& Comm, const Epetra_Comm & NodeComm, const int MyNodeID,
+                const int nx, const int ny,
+                const int ndx, const int ndy, const int px, const int py ) {
+  return TNodeCartesian2D<int>(Comm, NodeComm, MyNodeID, nx, ny, ndx, ndy, px, py);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map* 
+NodeCartesian2D64(const Epetra_Comm& Comm, const Epetra_Comm & NodeComm, const int MyNodeID,
+                const int nx, const int ny,
+                const int ndx, const int ndy, const int px, const int py ) {
+  return TNodeCartesian2D<long long>(Comm, NodeComm, MyNodeID, nx, ny, ndx, ndy, px, py);
+}
+#endif
 
 } // namespace BlockMaps
 } // namespace Galeri

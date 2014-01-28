@@ -1,5 +1,152 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.6 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.6 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
+
+Framework Release Notes:
+
+  - Changed behavior of Trilinos_ENABLE_<PACKAGE>=ON to enable all
+    subpackages for that package including in propogating forward dependencies.
+    See updated <Project>BuildQuickRef.* document.
+
+
+Amesos2
+
+  - Added experimental support for Cholmod, a sparse Cholesky solver.
+
+Epetra
+
+  - Removed a few "using std::" statements from Epetra headers. These were for
+    std::{string, istream, ostream, cerr, cout, endl, flush}. User code that
+    inadvertently relied on such names being available in global namespace could
+    see errors.  They should explicitly use std::name or place the appropriate
+    "using std::name;" statement in their code.
+
+Ifpack2
+
+  - AdditiveSchwarz interface changes
+
+    AdditiveSchwarz implements additive Schwarz domain decomposition.
+    The class also manages and invokes the solver for each subdomain.
+    That solver must implement Ifpack2::Preconditioner.
+
+    We made two changes to AdditiveSchwarz:
+
+      1. Subdomain solver type is now determined entirely at run time
+      2. Second template parameter (LocalInverseType) is deprecated
+
+    These changes are related to each other.  It used to be that users
+    would specify the type of the subdomain solver as the second
+    template parameter of AdditiveSchwarz, LocalInverseType.  The
+    value of LocalInverseType had to be a concrete subclass of
+    Preconditioner.  This is no longer the case.  Users now may and
+    should omit AdditiveSchwarz's second template parameter.  More
+    importantly, they may now specify the subdomain solver's type at
+    run time.  They may do so either as a run-time parameter in the
+    input ParameterList of AdditiveSchwarz, or by calling
+    AdditiveSchwarz's setInnerPreconditioner() method.  See
+    AdditiveSchwarz's public class documentation for details.
+
+    AdditiveSchwarz's second template parameter has a default value of
+    Ifpack2::Preconditioner.  For backwards compatibility, if users
+    specify a known concrete subclass of Ifpack2::Preconditioner for
+    LocalInverseType, AdditiveSchwarz will implement the previous
+    behavior of creating a subdomain solver of that specific type.  In
+    the next major Trilinos release, we plan to remove
+    AdditiveSchwarz's second template parameter entirely.
+
+Kokkos
+
+  - Non-backwards compatible change: In the "Kokkos Classic" subpackage
+    (everything in kokkos/classic), the "Kokkos" namespace has been
+    changed to "KokkosClassic".  
+
+    This will facilitate coexistence of Kokkos Classic with both the
+    new Kokkos programming model and the new Kokkos subpackages that
+    depend on it.  Coexistence will be necessary for our planned port
+    of Tpetra to use new Kokkos instead of Kokkos Classic.  Kokkos
+    Classic will eventually be deprecated, and Tpetra (and downstream
+    packages) will use new Kokkos instead.
+
+NOX
+
+  - Added a Fixed-point Anderson Acceleration solver.  Unit tests exist for
+    Epetra and Thyra adapters.
+
+RTOp
+
+  - Added better runtime support (not dependent on debug-mode builds) for
+    printing the application of RTOps in parallel with the
+    RTOpPack::SPMD_apply_op() functions.  This makes parallel debugging much
+    easier (for example, involving Thyra).
+
+Thyra
+
+  - Refactored Thyra support software and Thyra/Epetra adapters to support
+    zero-element processes for vector spaces and maps.  Now
+    Thyra::SpmdVectorSpaceBase subclass object can have zero elements on a
+    process and have everything work as it should.  The Thyra/Epetra and
+    Thyra/Tpetra adapters should also be able to take Eptra and Tpetra Map
+    objects that have zero elements on a process as well.  For most clients and
+    subclasses, these refactorings should maintain 100% perfect backward
+    compatibility except now more use cases are supported than before.  See the
+    unit tests and updated class documentation for details.
+
+Tpetra
+
+  - Gradual port to use (new) Kokkos
+
+    Tpetra will migrate to use the new Kokkos programming model.  The
+    tpetra/src/kokkos_refactor directory contains a preview of this
+    migration under development.  This will include
+    backwards-incompatible changes.  For example, MultiVector and
+    Vector will have view semantics, instead of their current
+    container semantics.  This means that their copy constructor and
+    assignment operator (operator=) will make shallow copies, instead
+    of deep copies.  This will make Tpetra's semantics more consistent
+    with those of Kokkos.  In order to provide deep copies, all Tpetra
+    objects will get the following:
+
+      - createCopy() method: returns a deep copy of its *this argument
+      - deep_copy() nonmember function: copies the contents of one
+        MultiVector into the contents of another existing MultiVector.
+        This works like deep_copy() for Kokkos::View objects.
+
+    MultiVector already has both of these functions.  Thus, in order
+    to prepare for the backwards incompatible changes to Tpetra, users
+    must find all uses of the copy constructor and assignment
+    operator, and replace them with createCopy() resp. deep_copy().
+    This will affect at least the following packages which have
+    generic adapters for Tpetra::MultiVector:
+
+      - Amesos2 (MultiVecAdapter)
+      - Anasazi (MultiVecTraits)
+      - Belos (MultiVecTraits)
+      - Xpetra (Xpetra::TpetraMultiVector)
+
+  - Accepted non-backwards compatible change to KokkosClassic, in which
+    that subpackage changed its namespace from Kokkos to KokkosClassic.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.4 Release Notes                                         #
 #                                                                             #
 ###############################################################################
@@ -87,15 +234,18 @@ Ifpack2
 Kokkos
 
   - Non-backwards compatible change: Default Kokkos/Tpetra Node type is now
-    Kokkos::SerialNode User expectation seems to be that the default behavior of
-    Tpetra is MPI-only. These users are therefore experiencing unexpected
-    performance when the default node is threaded, as is currently the case if
-    any of the threading libraries (pthreads, TBB, OpenMP) are enabled.
-    Therefore, after some discussion among Kokkos/Tpetra developers, it was
-    decided to change the  default Kokkos node (and therefore, the default node
-    used by Tpetra objects) to Kokkos::SerialNode. This can be over-ridden at
-    configure time by specifying the following option to CMake when configuring
-    Trilinos: 
+    Kokkos::SerialNode 
+
+    User expectation seems to be that the default behavior of Tpetra
+    is MPI-only. These users are therefore experiencing unexpected
+    performance when the default node is threaded, as is currently the
+    case if any of the threading libraries (pthreads, TBB, OpenMP) are
+    enabled.  Therefore, after some discussion among Kokkos/Tpetra
+    developers, it was decided to change the default Kokkos node (and
+    therefore, the default node used by Tpetra objects) to
+    Kokkos::SerialNode. This can be overridden at configure time by
+    specifying the following option to CMake when configuring
+    Trilinos:
 
       -D KokkosClassic_DefaultNode:STRING="node_type"
 

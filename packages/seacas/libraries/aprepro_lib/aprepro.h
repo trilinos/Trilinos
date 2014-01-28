@@ -19,6 +19,13 @@
  * SEAMS::Parser, SEAMS::Scanner and SEAMS::Aprepro */
 namespace SEAMS {
 
+  /* Array structure */
+  struct array {
+    double *data;
+    int rows;
+    int cols;
+  };
+
   struct symrec
   {
     std::string name;
@@ -38,13 +45,20 @@ namespace SEAMS {
       double (*fnctptr_ddd)(double,double,double);
       double (*fnctptr_dddd)(double,double,double,double);
       double (*fnctptr_dddddd)(double,double,double,double,double,double);
+      double (*fnctptr_a)(const array*);
       const char *svar;
       const char *(*strfnct)();
       const char *(*strfnct_c)(char*);
       const char *(*strfnct_d)(double);
+      const char *(*strfnct_a)(const array*);
       const char *(*strfnct_ccc)(char*,char*,char*);
       const char *(*strfnct_dcc)(double,char*,char*);
       const char *(*strfnct_dcccc)(double, char*, char*, char*, char*);
+      array *avar; /* Array Variable */
+      array *(*arrfnct_c)(const char*);
+      array *(*arrfnct_dd)(double,double);
+      array *(*arrfnct_d)(double);
+      array *(*arrfnct_a)(const array*);
     } value;
     symrec *next;
 
@@ -119,6 +133,8 @@ namespace SEAMS {
       UNDEFINED_VARIABLE = 5,
       FUNCTION = 3,
       STRING_FUNCTION = 4,
+      ARRAY_FUNCTION = 6,
+      ARRAY_VARIABLE = 7,
       IMMUTABLE_VARIABLE = 11,
       IMMUTABLE_STRING_VARIABLE = 12
     };
@@ -185,7 +201,7 @@ namespace SEAMS {
     void dumpsym (int type, bool doInternal) const;
   private:
     
-    void init_table(char comment);
+    void init_table(const char *comment);
     std::vector<symrec*> sym_table;
     std::ostringstream parsingResults;
   public:

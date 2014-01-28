@@ -50,6 +50,8 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
 
+#include <Kokkos_Threads.hpp>
+
 //
 // Currently this doesn't test:
 //   * the device
@@ -356,50 +358,50 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
 
 namespace DynamicVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::DynamicStorage<int,double,node_type> storage_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::DynamicStorage<int,double,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, DynamicVector)
 }
 
 namespace DynamicStridedVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::DynamicStridedStorage<int,double,node_type> storage_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::DynamicStridedStorage<int,double,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, DynamicStridedVector)
 }
 
 namespace StaticVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::StaticStorage<int,double,8,node_type> storage_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::StaticStorage<int,double,8,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticVector)
 }
 
 namespace StaticFixedVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::StaticFixedStorage<int,double,8,node_type> storage_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::StaticFixedStorage<int,double,8,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticFixedVector)
 }
 
 namespace LocalVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::LocalStorage<int,double,8,node_type> storage_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, LocalVector)
 }

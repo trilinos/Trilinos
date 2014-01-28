@@ -99,20 +99,34 @@ public:
    ResponseLibrary();
 
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
-                   const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
-                   const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
+                   const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
 
    ResponseLibrary(const ResponseLibrary & rl);
 
    /** Initialize the response library with the appropriate objects.
      */
    void initialize(const Teuchos::RCP<WorksetContainer> & wc,
-                   const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
-                   const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
+                   const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
 
    /** Initialize the response library from a previously construct response library.
      */
    void initialize(const ResponseLibrary & rl);
+
+   /** Get the internally stored workset container, note this is non-const because
+     * the workset container is mostly a non-const object (uses lots of lazy evaluation).
+     */
+   Teuchos::RCP<WorksetContainer> getWorksetContainer() const
+   { return wkstContainer_; }
+
+   //! Get the internally stored global indexer
+   Teuchos::RCP<const UniqueGlobalIndexerBase> getGlobalIndexer() const 
+   { return globalIndexer_; }
+
+   //! Get the internally stored linear object factory
+   Teuchos::RCP<const LinearObjFactory<TraitsT> > getLinearObjFactory() const 
+   { return linObjFactory_; }
 
    /** Asks, does this string correspond to a response type
      * in this library?
@@ -373,8 +387,8 @@ private:
    //! Maps from a "label"->(ResponseId,List of Element Blocks)
    std::map<std::string,ResponseDescriptor> labeledResponses_;
 
-   Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
-   Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
+   Teuchos::RCP<const UniqueGlobalIndexerBase> globalIndexer_;
+   Teuchos::RCP<const LinearObjFactory<TraitsT> > linObjFactory_;
    Teuchos::RCP<FieldManagerBuilder> fmb_;
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;
 

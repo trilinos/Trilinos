@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-    
+
 #include <cusp/array1d.h>
 #include <cusp/detail/device/MVmultiply.h>
 
@@ -39,6 +39,19 @@ void MVmultiply(const LinearOperator&  A,
     cusp::detail::device::MVmultiply(A, B, C);
 }
 
+template <typename LinearOperator,
+          typename MatrixOrVector1,
+          typename MatrixOrVector2>
+void OVmultiply(const LinearOperator&  A,
+              const MatrixOrVector1& B,
+                    MatrixOrVector2& C,
+              cusp::device_memory,
+              cusp::device_memory,
+              cusp::device_memory)
+{
+    cusp::detail::device::OVmultiply(A, B, C);
+}
+
 template <typename MatrixOrVector,
           typename MatrixOrVector1,
           typename MatrixOrVector2>
@@ -58,8 +71,8 @@ template <typename ValueType,
 void axpby_array(const ValueType&  A,
             const  MatrixOrVector1& X,
             const ValueType&  B,
-            const  MatrixOrVector1& Y,  
-	          MatrixOrVector2& Z,
+            const  MatrixOrVector1& Y,
+                  MatrixOrVector2& Z,
               cusp::device_memory,
               cusp::device_memory)
 {
@@ -70,4 +83,3 @@ void axpby_array(const ValueType&  A,
 } // end namespace dispatch
 } // end namespace detail
 } // end namespace cusp
-

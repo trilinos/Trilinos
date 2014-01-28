@@ -262,7 +262,7 @@ struct DefaultBlockSparseMultiplyOp1 {
   RangeScalar         *y;
   size_t xstride, ystride;
 
-  inline KERNEL_PREFIX void execute(size_t myIter) {
+  inline KERNEL_PREFIX void execute (size_t myIter) const {
     RangeScalar zero = Teuchos::ScalarTraits<RangeScalar>::zero();
     const size_t myBlockRow = myIter % numBlockRows;
     const size_t myRHS = (myIter - myBlockRow) / numBlockRows;
@@ -314,7 +314,7 @@ struct DefaultBlockSparseMultiplyOp1Transpose {
   RangeScalar         *y;
   size_t xstride, ystride;
 
-  inline KERNEL_PREFIX void execute(const size_t myRHS) {
+  inline KERNEL_PREFIX void execute (const size_t myRHS) const {
     // get pointers into X and Y for my assigned RHS
     const DomainScalar* xvec = x+myRHS*xstride;
     RangeScalar*        yvec = y+myRHS*ystride;
@@ -364,7 +364,7 @@ struct DefaultBlockSparseSolveOp1 {
 
   //find x such that A*x = y
 
-  inline KERNEL_PREFIX void execute(size_t i) {
+  inline KERNEL_PREFIX void execute (size_t i) const {
     //solve for i-th vector of multivector
     const RangeScalar* yvec = y+i*ystride;
     DomainScalar*      xvec = x+i*xstride;
@@ -439,7 +439,7 @@ struct DefaultBlockSparseTransposeSolveOp1 {
 
   //find x such that A^T*x = y
 
-  inline KERNEL_PREFIX void execute(size_t i) {
+  inline KERNEL_PREFIX void execute (size_t i) const {
     //solve for i-th vector of multivector
     const RangeScalar* yvec = y+i*ystride;
     DomainScalar*      xvec = x+i*xstride;

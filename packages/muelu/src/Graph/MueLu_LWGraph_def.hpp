@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -49,25 +49,6 @@
 #include "MueLu_LWGraph_decl.hpp"
 
 namespace MueLu {
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayView<const LocalOrdinal> LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getNeighborVertices(LocalOrdinal v) const {
-    //FIXME fix this
-    Teuchos::ArrayView<const LocalOrdinal> neighborVertices;
-    neighborVertices = columns_.view(rows_[v],rows_[v+1]-rows_[v]);
-    return neighborVertices;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
-    return domainMapRef_.isNodeLocalElement(v);
-  }
-
-  /// Return a simple one-line description of this object.
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
-    return "MueLu.description()"; //FIXME use object's label
-  }
 
   //! Print the object with some verbosity level to an FancyOStream object.
   //using MueLu::Describable::describe; // overloading, not hiding

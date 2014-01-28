@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -78,7 +78,7 @@
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
-#include <Xpetra_StridedEpetraMap.hpp>
+#include <Xpetra_StridedMap.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -111,10 +111,13 @@
 
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
+
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 // helper routines
 bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
@@ -370,6 +373,8 @@ bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
   return true;
 }
 
+}
+
 /*!
  *  2d Navier Stokes example (for Epetra)
  *
@@ -378,20 +383,27 @@ bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
 
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using namespace MueLuTests;
+  using namespace Teuchos;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  typedef Xpetra::StridedMap<int,int>        StridedMap;
+  typedef Xpetra::StridedMapFactory<int,int> StridedMapFactory;
+
+  oblackholestream blackhole;
+  GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   //
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
   // Timing
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor MM(myTime);
+  Time myTime("global");
+  TimeMonitor MM(myTime);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
@@ -407,7 +419,7 @@ int main(int argc, char *argv[]) {
   int SC_bUseDirectSolver = 0;
 
   // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor clp(false);
+  CommandLineProcessor clp(false);
   clp.setOption("BraessSarazin_sweeps",&BS_nSweeps,"number of sweeps with BraessSarazin smoother");
   clp.setOption("BraessSarazin_omega", &BS_omega,  "scaling factor for BraessSarazin smoother");
   clp.setOption("SchurComp_sweeps",    &SC_nSweeps,"number of sweeps for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
@@ -415,10 +427,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
 
   switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case CommandLineProcessor::PARSE_ERROR:
+  case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   int globalNumDofs = 8898;  // used for the maps
@@ -435,15 +447,16 @@ int main(int argc, char *argv[]) {
   // xstridedfullmap: full map (velocity and pressure dof gids), continous
   // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
   // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedfullmap = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,globalNumDofs,0,stridingInfo,comm,-1));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedvelmap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,globalNumDofs,0,stridingInfo,comm,0));
-  Teuchos::RCP<Xpetra::StridedEpetraMap> xstridedpremap  = Teuchos::rcp_dynamic_cast<Xpetra::StridedEpetraMap>(StridedMapFactory::Build(Xpetra::UseEpetra,globalNumDofs,0,stridingInfo,comm,1));
+  Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+  RCP<StridedMap> xstridedfullmap = StridedMapFactory::Build(lib,globalNumDofs,0,stridingInfo,comm,-1);
+  RCP<StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap,0);
+  RCP<StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap,1);
 
   /////////////////////////////////////// transform Xpetra::Map objects to Epetra
   // this is needed for our splitting routine
-  const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcpFromRef(xstridedfullmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcpFromRef(xstridedvelmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map());
+  const RCP<const Epetra_Map> fullmap = rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
+  RCP<const Epetra_Map>       velmap  = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
+  RCP<const Epetra_Map>       premap  = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
@@ -457,9 +470,9 @@ int main(int argc, char *argv[]) {
   EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
   EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
 
-  RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
-  RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
-  RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
+  RCP<Epetra_CrsMatrix> epA = rcp(ptrA);
+  RCP<Epetra_Vector> epv = rcp(ptrf);
+  RCP<Epetra_MultiVector> epNS = rcp(ptrNS);
 
 
   /////////////////////////////////////// split system into 2x2 block system
@@ -467,10 +480,10 @@ int main(int argc, char *argv[]) {
   *out << "Split matrix into 2x2 block matrix" << std::endl;
 
   // split fullA into A11,..., A22
-  Teuchos::RCP<Epetra_CrsMatrix> A11;
-  Teuchos::RCP<Epetra_CrsMatrix> A12;
-  Teuchos::RCP<Epetra_CrsMatrix> A21;
-  Teuchos::RCP<Epetra_CrsMatrix> A22;
+  RCP<Epetra_CrsMatrix> A11;
+  RCP<Epetra_CrsMatrix> A12;
+  RCP<Epetra_CrsMatrix> A21;
+  RCP<Epetra_CrsMatrix> A22;
 
   if(SplitMatrix2x2(epA,*velmap,*premap,A11,A12,A21,A22)==false)
     *out << "Problem with splitting matrix"<< std::endl;
@@ -478,23 +491,23 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
   // build Xpetra objects from Epetra_CrsMatrix objects
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
+  RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrix(A11));
+  RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrix(A12));
+  RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrix(A21));
+  RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrix(A22));
 
   /////////////////////////////////////// generate MapExtractor object
 
-  std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
+  std::vector<RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
 
   xmaps.push_back(xstridedvelmap);
   xmaps.push_back(xstridedpremap);
 
-  Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xstridedfullmap,xmaps);
+  RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xstridedfullmap,xmaps);
 
   /////////////////////////////////////// build blocked transfer operator
   // using the map extractor
-  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
+  RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
   bOp->setMatrix(0,0,xA11);
   bOp->setMatrix(0,1,xA12);
   bOp->setMatrix(1,0,xA21);
@@ -503,8 +516,9 @@ int main(int argc, char *argv[]) {
   bOp->fillComplete();
   //////////////////////////////////////////////////////// finest Level
   RCP<MueLu::Level> Finest = rcp(new Level());
-  Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
-  Finest->Set("A",Teuchos::rcp_dynamic_cast<Matrix>(bOp));
+  Finest->setDefaultVerbLevel(VERB_NONE);
+  Finest->Set("A",rcp_dynamic_cast<Matrix>(bOp));
+  Finest->setlib(Xpetra::UseEpetra);
 
 
   ///////////////////////////////////
@@ -518,7 +532,7 @@ int main(int argc, char *argv[]) {
   *out << "Test: Setting up Braess Sarazin Smoother" << std::endl;
 
   // define BraessSarazin Smoother with BS_nSweeps and BS_omega as scaling factor
-  // AFact_ = Teuchos::null (= default) for the 2x2 blocked operator
+  // AFact_ = null (= default) for the 2x2 blocked operator
   RCP<BraessSarazinSmoother> BraessSarazinSm = rcp( new BraessSarazinSmoother(BS_nSweeps,BS_omega) );
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(BraessSarazinSm) );
@@ -529,16 +543,16 @@ int main(int argc, char *argv[]) {
   // and the scaling/damping factor omega that is used for BraessSarazin
   // It stores the resulting SchurComplement operator as "A" generated by the SchurComplementFactory
   // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
-  RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
-  SFact->SetParameter("omega", Teuchos::ParameterEntry(BS_omega));
+  RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
+  SFact->SetParameter("omega", ParameterEntry(BS_omega));
   SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
   // define smoother/solver for BraessSarazin
-  RCP<SmootherPrototype> smoProtoSC = Teuchos::null;
+  RCP<SmootherPrototype> smoProtoSC = null;
   if(SC_bUseDirectSolver != 1) {
     //Smoother Factory, using SFact as a factory for A
     std::string ifpackSCType;
-    Teuchos::ParameterList ifpackSCList;
+    ParameterList ifpackSCList;
     ifpackSCList.set("relaxation: sweeps", SC_nSweeps );
     ifpackSCList.set("relaxation: damping factor", SC_omega );
     ifpackSCType = "RELAXATION";
@@ -547,7 +561,7 @@ int main(int argc, char *argv[]) {
     smoProtoSC->SetFactory("A", SFact);
   }
   else {
-    Teuchos::ParameterList ifpackDSList;
+    ParameterList ifpackDSList;
     std::string ifpackDSType;
     smoProtoSC     = rcp( new DirectSolver(ifpackDSType,ifpackDSList) ); smoProtoSC->SetFactory("A", SFact);
   }
@@ -579,9 +593,9 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> xtest = MultiVectorFactory::Build(xstridedfullmap,1);
   xtest->putScalar( (SC) 0.0);
 
-  RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+  RCP<Vector> xR = rcp(new Xpetra::EpetraVector(epv));
   // calculate initial (absolute) residual
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Array<ScalarTraits<SC>::magnitudeType> norms(1);
 
   xR->norm2(norms);
   *out << "Test: ||x_0|| = " << norms[0] << std::endl;
@@ -592,7 +606,7 @@ int main(int argc, char *argv[]) {
   xtest->norm2(norms);
   *out << "Test: ||x_1|| = " << norms[0] << std::endl;
 
-  Teuchos::Array<Teuchos::ScalarTraits<double>::magnitudeType> test = MueLu::Utils<double, int, int>::ResidualNorm(*bOp, *xtest, *xR);
+  Array<ScalarTraits<double>::magnitudeType> test = MueLu::Utils<double, int, int>::ResidualNorm(*bOp, *xtest, *xR);
   *out << "residual norm: " << test[0] << std::endl;
 
   return EXIT_SUCCESS;

@@ -48,6 +48,9 @@
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Stokhos_BlockCrsMatrix.hpp"
+#include "Stokhos_StochasticProductTensor.hpp"
+#include "Stokhos_TinyVec.hpp"
 
 #include "Kokkos_Cuda.hpp"
 
@@ -77,15 +80,35 @@ template< typename ValueType, class DeviceType >
 class CrsProductTensor {
 public:
 
-  typedef DeviceType                       device_type;
-  typedef typename device_type::size_type  size_type;
-  typedef ValueType                        value_type;
+  typedef DeviceType  device_type;
+  typedef int size_type;
+  typedef ValueType   value_type;
+
+// Vectorsize used in multiply algorithm
+#if defined(__AVX__)
+  static const size_type host_vectorsize = 32/sizeof(value_type);
+  static const bool use_intrinsics = true;
+#elif defined(__MIC__)
+  static const size_type host_vectorsize = 16;
+  static const bool use_intrinsics = true;
+#else
+  static const size_type host_vectorsize = 2;
+  static const bool use_intrinsics = false;
+#endif
+  static const size_type cuda_vectorsize = 32;
+  static const bool is_cuda =
+    Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+  static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
+
+  // Alignment in terms of number of entries of CRS rows
+  static const size_type tensor_align = vectorsize;
 
 private:
 
   typedef Kokkos::View< value_type[], device_type >  vec_type;
   typedef Kokkos::View< size_type[], device_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], device_type > coord2_array_type;
+  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type > coord2_array_type;
+  //typedef Kokkos::View< size_type[][2], device_type > coord2_array_type;
   typedef Kokkos::View< value_type[], device_type > value_array_type;
   typedef Kokkos::View< size_type[], device_type > entry_array_type;
   typedef Kokkos::View< size_type[], device_type > row_map_array_type;
@@ -98,6 +121,7 @@ private:
   size_type          m_entry_max;
   size_type          m_nnz;
   size_type          m_flops;
+  size_type          m_avg_entries_per_row;
 
   struct CijkRowCount {
     unsigned count;
@@ -129,7 +153,8 @@ public:
     m_row_map(),
     m_entry_max(0),
     m_nnz(0),
-    m_flops(0) {}
+    m_flops(0),
+    m_avg_entries_per_row(0) {}
 
   inline
   CrsProductTensor( const CrsProductTensor & rhs ) :
@@ -140,7 +165,8 @@ public:
     m_row_map( rhs.m_row_map ),
     m_entry_max( rhs.m_entry_max ),
     m_nnz( rhs.m_nnz ),
-    m_flops( rhs.m_flops ) {}
+    m_flops( rhs.m_flops ),
+    m_avg_entries_per_row( rhs.m_avg_entries_per_row ) {}
 
   inline
   CrsProductTensor & operator = ( const CrsProductTensor & rhs )
@@ -153,6 +179,7 @@ public:
     m_entry_max = rhs.m_entry_max;
     m_nnz = rhs.m_nnz;
     m_flops = rhs.m_flops;
+    m_avg_entries_per_row = rhs.m_avg_entries_per_row;
     return *this;
   }
 
@@ -210,6 +237,11 @@ public:
   size_type num_flops() const
   { return m_flops; }
 
+  /** \brief Number average number of entries per row */
+  KOKKOS_INLINE_FUNCTION
+  size_type avg_entries_per_row() const
+  { return m_avg_entries_per_row; }
+
   template <typename OrdinalType>
   static CrsProductTensor
   create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
@@ -242,12 +274,14 @@ public:
       }
     }
 
+    // Compute average nonzeros per row (must be before padding)
+    size_type avg_entries_per_row = entry_count / dimension;
+
     // Pad each row to have size divisible by alignment size
-    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 2 };
     for ( size_type i = 0; i < dimension; ++i ) {
-      const size_t rem = coord_work[i] % Align;
+      const size_t rem = coord_work[i] % tensor_align;
       if (rem > 0) {
-        const size_t pad = Align - rem;
+        const size_t pad = tensor_align - rem;
         coord_work[i] += pad;
         entry_count += pad;
       }
@@ -268,13 +302,19 @@ public:
     }
 
     // Allocate tensor data
+    // coord and coord2 are initialized to zero because otherwise we get
+    // seg faults in the MIC algorithm when processing the tail of each
+    // tensor row.  Not quite sure why as the coord loads are padded to
+    // length 16 and are masked for the remainder (unless it does load x[j]
+    // anyway and masks off the result, so j needs to be valid).
     CrsProductTensor tensor;
-    tensor.m_coord = coord_array_type( "tensor_coord", entry_count );
+    tensor.m_coord = coord_array_type("tensor_coord", entry_count );
     tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
-    tensor.m_value = value_array_type( "tensor_value", entry_count );
-    tensor.m_num_entry = entry_array_type( "tensor_num_entry", dimension );
-    tensor.m_row_map = row_map_array_type( "tensor_row_map", dimension+1 );
+    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
     tensor.m_entry_max = 0;
+    tensor.m_avg_entries_per_row = avg_entries_per_row;
 
     // Create mirror, is a view if is host memory
     typename coord_array_type::HostMirror
@@ -351,6 +391,569 @@ create_product_tensor(
 {
   return CrsProductTensor<ValueType, Device>::create( basis, Cijk, params );
 }
+
+template < typename ValueType, typename Device >
+class BlockMultiply< CrsProductTensor< ValueType , Device > >
+{
+public:
+
+  typedef Device device_type;
+  typedef CrsProductTensor< ValueType , device_type > tensor_type ;
+  typedef typename tensor_type::size_type size_type ;
+
+// Whether to use manual or auto-vectorization
+#ifdef __MIC__
+#define USE_AUTO_VECTORIZATION 1
+#else
+#define USE_AUTO_VECTORIZATION 0
+#endif
+
+#if defined(__INTEL_COMPILER) && USE_AUTO_VECTORIZATION
+
+  // Version leveraging intel vectorization
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    // The intel compiler doesn't seem to be able to vectorize through
+    // the coord() calls, so extract pointers
+    const size_type * cj = &tensor.coord(0,0);
+    const size_type * ck = &tensor.coord(0,1);
+    const size_type nDim = tensor.dimension();
+
+    for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
+      const size_type nEntry = tensor.num_entry(iy);
+      const size_type iEntryBeg = tensor.entry_begin(iy);
+      const size_type iEntryEnd = iEntryBeg + nEntry;
+      VectorValue ytmp = 0;
+
+#pragma simd vectorlength(tensor_type::vectorsize)
+#pragma ivdep
+#pragma vector aligned
+      for (size_type iEntry = iEntryBeg; iEntry<iEntryEnd; ++iEntry) {
+        const size_type j    = cj[iEntry]; //tensor.coord(iEntry,0);
+        const size_type k    = ck[iEntry]; //tensor.coord(iEntry,1);
+        ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
+      }
+
+      y[iy] += ytmp ;
+    }
+  }
+
+#elif defined(__MIC__)
+
+  // Version specific to MIC architecture using manual vectorization
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type nDim = tensor.dimension();
+    for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
+
+      const size_type nEntry = tensor.num_entry(iy);
+      const size_type iEntryBeg = tensor.entry_begin(iy);
+      const size_type iEntryEnd = iEntryBeg + nEntry;
+            size_type iEntry    = iEntryBeg;
+
+      VectorValue ytmp = 0 ;
+
+      const size_type nBlock = nEntry / tensor_type::vectorsize;
+      const size_type nEntryB = nBlock * tensor_type::vectorsize;
+      const size_type iEnd = iEntryBeg + nEntryB;
+
+      typedef TinyVec<ValueType,tensor_type::vectorsize,tensor_type::use_intrinsics> TV;
+      TV vy;
+      vy.zero();
+      for (size_type block=0; block<nBlock; ++block, iEntry+=tensor_type::vectorsize) {
+        const size_type *j = &tensor.coord(iEntry,0);
+        const size_type *k = &tensor.coord(iEntry,1);
+        TV aj(a, j), ak(a, k), xj(x, j), xk(x, k),
+          c(&(tensor.value(iEntry)));
+
+        // vy += c * ( aj * xk + ak * xj)
+        aj.times_equal(xk);
+        aj.multiply_add(ak, xj);
+        vy.multiply_add(c, aj);
+
+      }
+      ytmp += vy.sum();
+
+      const size_type rem = iEntryEnd-iEntry;
+      if (rem > 8) {
+        typedef TinyVec<ValueType,tensor_type::vectorsize,true,true> TV2;
+        const size_type *j = &tensor.coord(iEntry,0);
+        const size_type *k = &tensor.coord(iEntry,1);
+        TV2 aj(a, j, rem), ak(a, k, rem), xj(x, j, rem), xk(x, k, rem),
+          c(&(tensor.value(iEntry)), rem);
+
+        // vy += c * ( aj * xk + ak * xj)
+        aj.times_equal(xk);
+        aj.multiply_add(ak, xj);
+        aj.times_equal(c);
+        ytmp += aj.sum();
+        iEntry += rem;
+      }
+
+      else if (rem > 0) {
+        typedef TinyVec<ValueType,8,true,true> TV2;
+        const size_type *j = &tensor.coord(iEntry,0);
+        const size_type *k = &tensor.coord(iEntry,1);
+        TV2 aj(a, j, rem), ak(a, k, rem), xj(x, j, rem), xk(x, k, rem),
+          c(&(tensor.value(iEntry)), rem);
+
+        // vy += c * ( aj * xk + ak * xj)
+        aj.times_equal(xk);
+        aj.multiply_add(ak, xj);
+        aj.times_equal(c);
+        ytmp += aj.sum();
+        iEntry += rem;
+      }
+
+      y[iy] += ytmp ;
+    }
+  }
+
+#else
+
+  // General version
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type nDim = tensor.dimension();
+    for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
+
+      const size_type nEntry = tensor.num_entry(iy);
+      const size_type iEntryBeg = tensor.entry_begin(iy);
+      const size_type iEntryEnd = iEntryBeg + nEntry;
+            size_type iEntry    = iEntryBeg;
+
+      VectorValue ytmp = 0 ;
+
+      // Do entries with a blocked loop of size vectorsize
+      if (tensor_type::vectorsize > 1 && nEntry >= tensor_type::vectorsize) {
+        const size_type nBlock = nEntry / tensor_type::vectorsize;
+        const size_type nEntryB = nBlock * tensor_type::vectorsize;
+        const size_type iEnd = iEntryBeg + nEntryB;
+
+        typedef TinyVec<ValueType,tensor_type::vectorsize,tensor_type::use_intrinsics> TV;
+        TV vy;
+        vy.zero();
+        for (; iEntry<iEnd; iEntry+=tensor_type::vectorsize) {
+          const size_type *j = &tensor.coord(iEntry,0);
+          const size_type *k = &tensor.coord(iEntry,1);
+          TV aj(a, j), ak(a, k), xj(x, j), xk(x, k), c(&(tensor.value(iEntry)));
+
+          // vy += c * ( aj * xk + ak * xj)
+          aj.times_equal(xk);
+          aj.multiply_add(ak, xj);
+          vy.multiply_add(c, aj);
+        }
+        ytmp += vy.sum();
+      }
+
+      // Do remaining entries with a scalar loop
+      for ( ; iEntry<iEntryEnd; ++iEntry) {
+        const size_type j = tensor.coord(iEntry,0);
+        const size_type k = tensor.coord(iEntry,1);
+
+        ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
+      }
+
+      y[iy] += ytmp ;
+    }
+  }
+#endif
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
+
+// Specialization of Multiply< BlockCrsMatrix< BlockSpec, ... > > > for
+// CrsProductTensor, which provides a version that processes blocks of FEM
+// columns together to reduce the number of global reads of the sparse 3 tensor
+
+// Even though this isn't specific to Threads, templating on Device creates a
+// duplicate specialization error for Cuda.  Need to see if we can fix this,
+// or put the implementation in another class easily specialized for Threads,
+// OpenMP, ...
+template< typename ValueType , typename MatrixValue , typename VectorValue ,
+          typename Device >
+class MultiplyImpl {
+public:
+
+  typedef Device device_type ;
+  typedef CrsProductTensor< ValueType , device_type > tensor_type;
+  typedef StochasticProductTensor< ValueType, tensor_type, device_type > BlockSpec;
+  typedef typename BlockSpec::size_type size_type ;
+  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , device_type > block_vector_type ;
+  typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
+
+  const matrix_type  m_A ;
+  const block_vector_type  m_x ;
+  const block_vector_type  m_y ;
+
+  MultiplyImpl( const matrix_type & A ,
+                const block_vector_type & x ,
+                const block_vector_type & y )
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  {}
+
+  //--------------------------------------------------------------------------
+  //  A( storage_size( m_A.block.size() ) , m_A.graph.row_map.size() );
+  //  x( m_A.block.dimension() , m_A.graph.row_map.first_count() );
+  //  y( m_A.block.dimension() , m_A.graph.row_map.first_count() );
+  //
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type iBlockRow ) const
+  {
+    // Prefer that y[ m_A.block.dimension() ] be scratch space
+    // on the local thread, but cannot dynamically allocate
+    VectorValue * const y = & m_y(0,iBlockRow);
+
+    const size_type iEntryBegin = m_A.graph.row_map[ iBlockRow ];
+    const size_type iEntryEnd   = m_A.graph.row_map[ iBlockRow + 1 ];
+
+    // Leading dimension guaranteed contiguous for LayoutLeft
+    for ( size_type j = 0 ; j < m_A.block.dimension() ; ++j ) { y[j] = 0 ; }
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      const VectorValue * const x = & m_x( 0 , m_A.graph.entries(iEntry) );
+      const MatrixValue * const a = & m_A.values( 0 , iEntry );
+
+      BlockMultiply< BlockSpec >::apply( m_A.block , a , x , y );
+    }
+
+  }
+
+  /*
+   * Compute work range = (begin, end) such that adjacent threads write to
+   * separate cache lines
+   */
+  KOKKOS_INLINE_FUNCTION
+  std::pair< size_type , size_type >
+  compute_work_range( const size_type work_count ,
+                      const size_type thread_count ,
+                      const size_type thread_rank ) const
+  {
+    enum { work_align = 64 / sizeof(VectorValue) };
+    enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
+    enum { work_mask  = work_align - 1 };
+
+    const size_type work_per_thread =
+      ( ( ( ( work_count + work_mask ) >> work_shift ) + thread_count - 1 ) /
+        thread_count ) << work_shift ;
+
+    const size_type work_begin =
+      std::min( thread_rank * work_per_thread , work_count );
+    const size_type work_end   =
+      std::min( work_begin + work_per_thread , work_count );
+
+    return std::make_pair( work_begin , work_end );
+  }
+
+#if defined(__MIC__)
+
+  // A MIC-specific version of the block-multiply algorithm, where block here
+  // means processing multiple FEM columns at a time
+  KOKKOS_INLINE_FUNCTION
+  void operator()( device_type device ) const
+  {
+    const size_type iBlockRow = device.league_rank();
+
+    // Check for valid row
+    const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+    if (iBlockRow >= row_count)
+      return;
+
+    const size_type num_thread = device.team_size();
+    const size_type thread_idx = device.team_rank();
+    std::pair<size_type,size_type> work_range =
+      compute_work_range(m_A.block.dimension(), num_thread, thread_idx);
+
+    // Prefer that y[ m_A.block.dimension() ] be scratch space
+    // on the local thread, but cannot dynamically allocate
+    VectorValue * const y = & m_y(0,iBlockRow);
+
+    // Leading dimension guaranteed contiguous for LayoutLeft
+    for ( size_type j = work_range.first ; j < work_range.second ; ++j )
+      y[j] = 0 ;
+
+    const tensor_type& tensor = m_A.block.tensor();
+
+    const size_type iBlockEntryBeg = m_A.graph.row_map[ iBlockRow ];
+    const size_type iBlockEntryEnd = m_A.graph.row_map[ iBlockRow + 1 ];
+    const size_type BlockSize = 9;
+    const size_type numBlock =
+      (iBlockEntryEnd-iBlockEntryBeg+BlockSize-1) / BlockSize;
+
+    const MatrixValue* sh_A[BlockSize];
+    const VectorValue* sh_x[BlockSize];
+
+    size_type iBlockEntry = iBlockEntryBeg;
+    for (size_type block = 0; block<numBlock; ++block, iBlockEntry+=BlockSize) {
+      const size_type block_size =
+        block == numBlock-1 ? iBlockEntryEnd-iBlockEntry : BlockSize;
+
+      for ( size_type col = 0; col < block_size; ++col ) {
+        const size_type iBlockColumn = m_A.graph.entries( iBlockEntry + col );
+        sh_x[col] = & m_x( 0 , iBlockColumn );
+        sh_A[col] = & m_A.values( 0 , iBlockEntry + col );
+      }
+
+      for ( size_type iy = work_range.first ; iy < work_range.second ; ++iy ) {
+
+        const size_type nEntry = tensor.num_entry(iy);
+        const size_type iEntryBeg = tensor.entry_begin(iy);
+        const size_type iEntryEnd = iEntryBeg + nEntry;
+              size_type iEntry    = iEntryBeg;
+
+        VectorValue ytmp = 0 ;
+
+        // Do entries with a blocked loop of size blocksize
+        const size_type nBlock = nEntry / tensor_type::vectorsize;
+        const size_type nEntryB = nBlock * tensor_type::vectorsize;
+        const size_type iEnd = iEntryBeg + nEntryB;
+
+        typedef TinyVec<ValueType,tensor_type::vectorsize,tensor_type::use_intrinsics> ValTV;
+        typedef TinyVec<MatrixValue,tensor_type::vectorsize,tensor_type::use_intrinsics> MatTV;
+        typedef TinyVec<VectorValue,tensor_type::vectorsize,tensor_type::use_intrinsics> VecTV;
+        VecTV vy;
+        vy.zero();
+        for (size_type block=0; block<nBlock; ++block, iEntry+=tensor_type::vectorsize) {
+          const size_type *j = &tensor.coord(iEntry,0);
+          const size_type *k = &tensor.coord(iEntry,1);
+          ValTV c(&(tensor.value(iEntry)));
+
+          for ( size_type col = 0; col < block_size; ++col ) {
+            MatTV aj(sh_A[col], j), ak(sh_A[col], k);
+            VecTV xj(sh_x[col], j), xk(sh_x[col], k);
+
+            // vy += c * ( aj * xk + ak * xj)
+            aj.times_equal(xk);
+            aj.multiply_add(ak, xj);
+            vy.multiply_add(c, aj);
+          }
+        }
+        ytmp += vy.sum();
+
+        const size_type rem = iEntryEnd-iEntry;
+        if (rem > 8) {
+          typedef TinyVec<ValueType,tensor_type::vectorsize,true,true> ValTV2;
+          typedef TinyVec<MatrixValue,tensor_type::vectorsize,true,true> MatTV2;
+          typedef TinyVec<VectorValue,tensor_type::vectorsize,true,true> VecTV2;
+          const size_type *j = &tensor.coord(iEntry,0);
+          const size_type *k = &tensor.coord(iEntry,1);
+          ValTV2 c(&(tensor.value(iEntry)), rem);
+
+          for ( size_type col = 0; col < block_size; ++col ) {
+            MatTV2 aj(sh_A[col], j, rem), ak(sh_A[col], k, rem);
+            VecTV2 xj(sh_x[col], j, rem), xk(sh_x[col], k, rem);
+
+            // vy += c * ( aj * xk + ak * xj)
+            aj.times_equal(xk);
+            aj.multiply_add(ak, xj);
+            aj.times_equal(c);
+            ytmp += aj.sum();
+            iEntry += rem;
+          }
+        }
+
+        else if (rem > 0) {
+          typedef TinyVec<ValueType,8,true,true> ValTV2;
+          typedef TinyVec<MatrixValue,8,true,true> MatTV2;
+          typedef TinyVec<VectorValue,8,true,true> VecTV2;
+          const size_type *j = &tensor.coord(iEntry,0);
+          const size_type *k = &tensor.coord(iEntry,1);
+          ValTV2 c(&(tensor.value(iEntry)), rem);
+
+          for ( size_type col = 0; col < block_size; ++col ) {
+            MatTV2 aj(sh_A[col], j, rem), ak(sh_A[col], k, rem);
+            VecTV2 xj(sh_x[col], j, rem), xk(sh_x[col], k, rem);
+
+            // vy += c * ( aj * xk + ak * xj)
+            aj.times_equal(xk);
+            aj.multiply_add(ak, xj);
+            aj.times_equal(c);
+            ytmp += aj.sum();
+            iEntry += rem;
+          }
+        }
+
+        y[iy] += ytmp ;
+      }
+
+      // Add a team barrier to keep the thread team in-sync before going on
+      // to the next block
+      device.team_barrier();
+    }
+
+  }
+
+#else
+
+  // A general hand-vectorized version of the block multiply algorithm, where
+  // block here means processing multiple FEM columns at a time.  Note that
+  // auto-vectorization of a block algorithm doesn't work, because the
+  // stochastic loop is not the inner-most loop.
+  KOKKOS_INLINE_FUNCTION
+  void operator()( device_type device ) const
+  {
+    const size_type iBlockRow = device.league_rank();
+
+    // Check for valid row
+    const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+    if (iBlockRow >= row_count)
+      return;
+
+    const size_type num_thread = device.team_size();
+    const size_type thread_idx = device.team_rank();
+    std::pair<size_type,size_type> work_range =
+      compute_work_range(m_A.block.dimension(), num_thread, thread_idx);
+
+    // Prefer that y[ m_A.block.dimension() ] be scratch space
+    // on the local thread, but cannot dynamically allocate
+    VectorValue * const y = & m_y(0,iBlockRow);
+
+    // Leading dimension guaranteed contiguous for LayoutLeft
+    for ( size_type j = work_range.first ; j < work_range.second ; ++j )
+      y[j] = 0 ;
+
+    const tensor_type& tensor = m_A.block.tensor();
+
+    const size_type iBlockEntryBeg = m_A.graph.row_map[ iBlockRow ];
+    const size_type iBlockEntryEnd = m_A.graph.row_map[ iBlockRow + 1 ];
+    const size_type BlockSize = 14;
+    const size_type numBlock =
+      (iBlockEntryEnd-iBlockEntryBeg+BlockSize-1) / BlockSize;
+
+    const MatrixValue* sh_A[BlockSize];
+    const VectorValue* sh_x[BlockSize];
+
+    size_type iBlockEntry = iBlockEntryBeg;
+    for (size_type block = 0; block<numBlock; ++block, iBlockEntry+=BlockSize) {
+      const size_type block_size =
+        block == numBlock-1 ? iBlockEntryEnd-iBlockEntry : BlockSize;
+
+      for ( size_type col = 0; col < block_size; ++col ) {
+        const size_type iBlockColumn = m_A.graph.entries( iBlockEntry + col );
+        sh_x[col] = & m_x( 0 , iBlockColumn );
+        sh_A[col] = & m_A.values( 0 , iBlockEntry + col );
+      }
+
+      for ( size_type iy = work_range.first ; iy < work_range.second ; ++iy ) {
+
+        const size_type nEntry = tensor.num_entry(iy);
+        const size_type iEntryBeg = tensor.entry_begin(iy);
+        const size_type iEntryEnd = iEntryBeg + nEntry;
+              size_type iEntry    = iEntryBeg;
+
+        VectorValue ytmp = 0 ;
+
+        // Do entries with a blocked loop of size blocksize
+        if (tensor_type::vectorsize > 1 && nEntry >= tensor_type::vectorsize) {
+          const size_type nBlock = nEntry / tensor_type::vectorsize;
+          const size_type nEntryB = nBlock * tensor_type::vectorsize;
+          const size_type iEnd = iEntryBeg + nEntryB;
+
+          typedef TinyVec<ValueType,tensor_type::vectorsize,tensor_type::use_intrinsics> ValTV;
+          typedef TinyVec<MatrixValue,tensor_type::vectorsize,tensor_type::use_intrinsics> MatTV;
+          typedef TinyVec<VectorValue,tensor_type::vectorsize,tensor_type::use_intrinsics> VecTV;
+          VecTV vy;
+          vy.zero();
+          for (; iEntry<iEnd; iEntry+=tensor_type::vectorsize) {
+            const size_type *j = &tensor.coord(iEntry,0);
+            const size_type *k = &tensor.coord(iEntry,1);
+            ValTV c(&(tensor.value(iEntry)));
+
+            for ( size_type col = 0; col < block_size; ++col ) {
+              MatTV aj(sh_A[col], j), ak(sh_A[col], k);
+              VecTV xj(sh_x[col], j), xk(sh_x[col], k);
+
+              // vy += c * ( aj * xk + ak * xj)
+              aj.times_equal(xk);
+              aj.multiply_add(ak, xj);
+              vy.multiply_add(c, aj);
+            }
+          }
+          ytmp += vy.sum();
+        }
+
+        // Do remaining entries with a scalar loop
+        for ( ; iEntry<iEntryEnd; ++iEntry) {
+          const size_type j = tensor.coord(iEntry,0);
+          const size_type k = tensor.coord(iEntry,1);
+          ValueType cijk = tensor.value(iEntry);
+
+          for ( size_type col = 0; col < block_size; ++col ) {
+            ytmp += cijk * ( sh_A[col][j] * sh_x[col][k] +
+                             sh_A[col][k] * sh_x[col][j] );
+          }
+
+        }
+
+        y[iy] += ytmp ;
+      }
+
+      // Add a team barrier to keep the thread team in-sync before going on
+      // to the next block
+      device.team_barrier();
+    }
+
+  }
+
+#endif
+
+  static void apply( const matrix_type & A ,
+                     const block_vector_type & x ,
+                     const block_vector_type & y )
+  {
+    // Generally the block algorithm seems to perform better on the MIC,
+    // as long as the stochastic size isn't too big, but doesn't perform
+    // any better on the CPU (probably because the CPU has a fat L3 cache
+    // to store the sparse 3 tensor).
+#ifdef __MIC__
+    const bool use_block_algorithm = true;
+#else
+    const bool use_block_algorithm = false;
+#endif
+
+    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
+    if (use_block_algorithm) {
+      typedef typename matrix_type::device_type device_type;
+#ifdef __MIC__
+      const size_t team_size = 4;  // 4 hyperthreads for MIC
+#else
+      const size_t team_size = 2;  // 2 for everything else
+#endif
+      const size_t league_size = row_count;
+      Kokkos::ParallelWorkRequest config(league_size, team_size);
+      Kokkos::parallel_for( config , MultiplyImpl(A,x,y) );
+    }
+    else {
+      Kokkos::parallel_for( row_count , MultiplyImpl(A,x,y) );
+    }
+  }
+};
+
+//----------------------------------------------------------------------------
 
 } /* namespace Stokhos */
 

@@ -398,7 +398,7 @@ void FirstOrderErrorStepControlStrategy<Scalar>::completeStep(
     } else {
       // Keep nextStepSize_ constant until we have no recent step failures.
       nextStepSize_ = currentStepSize_;
-      numStepFailures_ = std::max(--numStepFailures_,0);
+      numStepFailures_ = std::max(numStepFailures_-1,0);
     }
   }
   nextStepSize_ = std::max(nextStepSize_, minStepSize_);

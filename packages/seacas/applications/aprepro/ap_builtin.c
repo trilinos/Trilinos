@@ -127,6 +127,10 @@ double do_tanh(double x);
 double do_polarX(double rad, double ang);
 double do_polarY(double rad, double ang);
 double do_strtod(char *string);
+double do_csvrows(char *string);
+double do_csvcols(char *string);
+double do_rows(array *arr);
+double do_cols(array *arr);
 
 char  *do_getenv(char *string);
 char  *do_tolower(char *string);
@@ -154,6 +158,7 @@ double do_julday(double mon, double day, double year);
 double do_log1p(double mag);
 char  *do_include_path(char *newpath);
 char  *do_intout(double intval);
+char  *do_get_csv(char *filename, double i, double j);
 
 /* DO_INT:  Calculate integer nearest to zero from value */
 double do_int(double x)
@@ -729,6 +734,55 @@ double do_atanh(double x)
   x = x / (1.0 - x);
   return (z * LOG1P(x + x));
 }
+
+double do_rows(array *arr)
+{
+  return arr->rows;
+}
+
+double do_cols(array *arr)
+{
+  return arr->cols;
+}
+
+double do_csvrows(char * filename)
+{
+  size_t len = 0;
+  char *line = NULL;
+  double rows = 0;
+
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
+  }
+  fclose(fp);
+  if (line) free(line);
+
+  return (rows);
+}
+
+double do_csvcols(char * filename)
+{
+  char *delim = ",";
+  size_t len = 0;
+  char *line = NULL;
+
+  double cols = 0;
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    double tempCols = do_word_count(line,   delim);
+    if (tempCols > cols) {
+      cols = tempCols;
+    }
+  }
+  fclose(fp);
+  if (line) free(line);
+
+  return cols;
+}
+
 /*
   --------------------------STRING FUNCTIONS------------------------
  */
@@ -966,10 +1020,10 @@ double do_strtod(char *string)
 char *
 do_help(void)
 {
-  char comment = getsym("_C_")->value.svar[0];
-  printf ("\n%c   Enter {DUMP()}        to list defined variables\n", comment);
-  printf ("%c         {DUMP_FUNC()}   to list of all double and string functions\n", comment);
-  printf ("%c         {DUMP_PREVAR()} to list all predefined variables\n", comment);
+  char* comment = getsym("_C_")->value.svar;
+  printf ("\n%s   Enter {DUMP()}        to list defined variables\n", comment);
+  printf ("%s         {DUMP_FUNC()}   to list of all double and string functions\n", comment);
+  printf ("%s         {DUMP_PREVAR()} to list all predefined variables\n", comment);
   return("");
 }
 
@@ -1095,4 +1149,179 @@ char *do_extract(char *string, char *begin, char *end)
     free(tmpstr);
   }      
   return tmp;
+}
+
+char *do_get_csv(char *filename, double row, double col)
+{
+  char *delim = ",";
+
+  size_t len = 0;
+  char *line = NULL;
+
+  double rows = 0;
+  char *value = NULL;
+
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
+    if (rows == row) {
+      /* Found the correct row, now get the value at the specified
+	 column */
+      double num_cols = do_word_count(line, delim);
+      if (num_cols  > col) {
+	value = do_get_word(col, line, delim);
+      }
+      break;
+    }
+  }
+  fclose(fp);
+  if (line) free(line);
+
+  return value;
+}
+
+char *do_print_array(array *my_array_data)
+{
+  if (my_array_data != NULL) {
+    char *lines = NULL;
+    char *ret_string = NULL; 
+
+    int ir, ic;
+    int rows = my_array_data->rows;
+    int cols = my_array_data->cols;
+    int idx=0;
+
+    symrec *format = getsym("_FORMAT");
+
+    /* Assume a maximum of 32 characters per array entry.
+     * Total space for the array data is then 32*rows*cols
+     */
+    
+    int size = 32 * rows * cols;
+    lines = malloc(size * sizeof(char) + 1);
+    lines[0] = '\0';
+    
+    for (ir=0; ir < rows; ir++) {
+      if (ir > 0)
+	strcat(lines, "\n");
+      strcat(lines, "\t");
+
+      for (ic=0; ic < cols; ic++) {
+	assert(strlen(lines) <= size);
+	sprintf(&lines[strlen(lines)], format->value.svar, my_array_data->data[idx++]);
+	if (ic < cols-1)
+	  strcat(lines, "\t");
+      }
+    }
+    assert(strlen(lines) <= size);
+    NEWSTR(lines, ret_string);
+    if (lines) free(lines);
+    return ret_string;
+  }
+  else {
+    return "";
+  }
+}
+
+array *do_make_array(double rows, double cols)
+{
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = rows;
+  array_data->cols = cols;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(rows*cols,sizeof(double));
+  return array_data;
+}
+
+array *do_identity(double size)
+{
+  int i;
+  int isize = size;
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = isize;
+  array_data->cols = isize;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(size*size,sizeof(double));
+
+  for (i=0; i < isize; i++) {
+    array_data->data[i*isize+i] = 1.0;
+  }
+  return array_data;
+}
+
+array *do_transpose(array *a)
+{
+  int i,j;
+  array *array_data = (array*) malloc(sizeof(array));
+  array_data->rows = a->cols;
+  array_data->cols = a->rows;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) calloc(a->rows*a->cols,sizeof(double));
+  for (i=0; i < a->rows; i++) {
+    for (j=0; j < a->cols; j++) {
+      array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
+    }
+  }
+  return array_data;
+}
+
+array *do_csv_array(char *filename)
+{
+  char *delim = ",";
+  
+  size_t len = 0;
+  char *line = NULL;
+  int rows = 0;
+  int cols = 0;
+  int i=0;
+  int idx=0;
+  
+  FILE *fp = NULL;
+  
+  array *array_data = (array*) malloc(sizeof(array));
+
+  fp = open_file(filename, "r");
+  while (getline(&line, &len, fp) != -1) {
+    double tempCols = do_word_count(line,   delim);
+    if (tempCols > cols) {
+      cols = tempCols;
+    }
+    rows++;
+  }
+  array_data->rows = rows;
+  array_data->cols = cols;
+
+  /* Allocate space to store data... */
+  array_data->data = (double*) malloc( (rows*cols)*sizeof(double));
+
+  /* Read file again storing entries in array_data->data */
+  rewind(fp);
+    
+  idx = 0;
+  rows = 0;
+  while (getline(&line, &len, fp) != -1) {
+    for (i=0; i < array_data->cols; i++) {
+      char *tmp = i==0 ? line : NULL;
+      char *token = strtok(tmp, delim);
+      assert(token != NULL);
+      array_data->data[idx++] = atof(token);
+    }
+    rows++;
+  }
+  assert(rows == array_data->rows);
+
+  fclose(fp);
+  if (line) free(line);
+
+  /* dump_csv(array_data); */
+  return array_data;
+}
+
+char *do_allocate_csv(char *filename)
+{
+  return "";
 }

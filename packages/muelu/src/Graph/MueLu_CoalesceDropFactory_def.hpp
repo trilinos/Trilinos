@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -81,18 +81,21 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
-
-    typedef  Teuchos::ScalarTraits<SC> TST;
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
-    validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
-    validParamList->set< SC >                    ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection");
-    validParamList->set< SC >                    ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
-    validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
-    validParamList->set< bool >                  ("disable Dirichlet detection",   false, "Experimental option");
+    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
+    validParamList->set< SC >                    ("aggregation threshold",       zero, "Aggregation dropping threshold");
+    validParamList->set< SC >                    ("Dirichlet detection threshold", zero, "Threshold for determining whether entries are zero during Dirichlet row detection");
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian", "classical"), "algorithm"));
+      validParamList->set< std::string >         ("algorithm",             "original", "Dropping algorithm", typeValidator);
+    }
 
     return validParamList;
   }
@@ -123,17 +126,18 @@ namespace MueLu {
 
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
-    bool disableDirichletDetection = pL.get<bool>("disable Dirichlet detection");
 
     GetOStream(Parameters0, 0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("algorithm");
+      if (algo == "classical")
+        algo = "original";
 
-      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null    && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
+      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
 
-      SC threshold = Teuchos::as<SC>(pL.get<double>("aggregation threshold"));
+      SC threshold = Teuchos::as<SC>(pL.get<SC>("aggregation threshold"));
       GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
@@ -169,10 +173,7 @@ namespace MueLu {
 
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
-          if (!disableDirichletDetection)
-            boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
-          else
-            boundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
+          boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
           graph->SetBoundaryNodeMap(boundaryNodes);
           numTotal = A->getNodeNumEntries();
 
@@ -230,7 +231,7 @@ namespace MueLu {
               } else
                 numDropped++;
             }
-            if (rownnz == 1 && !disableDirichletDetection) {
+            if (rownnz == 1) {
               // If the only element remaining after filtering is diagonal, mark node as boundary
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)
@@ -282,11 +283,7 @@ namespace MueLu {
           // TODO the array one bigger than the number of local rows, and the last entry can
           // TODO hold the actual number of boundary nodes.  Clever, huh?
           ArrayRCP<const bool > pointBoundaryNodes;
-          if (!disableDirichletDetection)
-            pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
-          else {
-            pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
-          }
+          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
 
           LO blkSize = A->GetFixedBlockSize();
           GO indexBase = A->getRowMap()->getIndexBase();
@@ -297,16 +294,15 @@ namespace MueLu {
             ArrayView<const LO> indices;
             Array<LO>           indicesExtra;
 
-            // FIXME: for now, if any of the rows in the row block is Dirichlet, we
-            // assume that all are
-            // This may not be true in general, for instance we might have mixed b.c.
-            // where pressure is Dirichlet and velocities are not
+            // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
             bool isBoundary = false;
-            if (!disableDirichletDetection)
-              for (LO j = 0; j < blkSize; j++)
-                if (pointBoundaryNodes[row*blkSize+j])
-                  isBoundary = true;
-
+            isBoundary = true;
+            for (LO j = 0; j < blkSize; j++) {
+              if (!pointBoundaryNodes[row*blkSize+j]) {
+                isBoundary = false;
+                break;
+              }
+            }
             // Merge rows of A
             std::set<LO> cols;
             if (!isBoundary) {
@@ -383,11 +379,7 @@ namespace MueLu {
         // TODO the array one bigger than the number of local rows, and the last entry can
         // TODO hold the actual number of boundary nodes.  Clever, huh?
         ArrayRCP<const bool > pointBoundaryNodes;
-        if (!disableDirichletDetection)
-          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
-        else {
-          pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
-        }
+        pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
 
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
@@ -508,15 +500,15 @@ namespace MueLu {
               A->getLocalRowView(row, indices, vals);
 
             } else {
-              // FIXME: for now, if any of the rows in the row block is Dirichlet, we
-              // assume that all are
-              // This may not be true in general, for instance we might have mixed b.c.
-              // where pressure is Dirichlet and velocities are not
+              // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
               bool isBoundary = false;
-              if (!disableDirichletDetection)
-                for (LO j = 0; j < blkSize; j++)
-                  if (pointBoundaryNodes[row*blkSize+j])
-                    isBoundary = true;
+              isBoundary = true;
+              for (LO j = 0; j < blkSize; j++) {
+                if (!pointBoundaryNodes[row*blkSize+j]) {
+                  isBoundary = false;
+                  break;
+                }
+              }
 
               // Merge rows of A
               std::set<LO> cols;
@@ -662,8 +654,12 @@ namespace MueLu {
       // 4) create graph of amalgamated matrix
       RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
 
+      LO numRows = A->getRowMap()->getNodeNumElements();
+      LO numNodes = nodeMap->getNodeNumElements();
+      const ArrayRCP<bool> amalgBoundaryNodes(numNodes, false);
+
       // 5) do amalgamation. generate graph of amalgamated matrix
-      for(LO row=0; row<Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); row++) {
+      for(LO row=0; row<numRows; row++) {
         // get global DOF id
         GO grid = rowMap->getGlobalElement(row);
 
@@ -695,8 +691,11 @@ namespace MueLu {
         ////////////////// experimental
         //if(gBoundaryNodes->count(nodeId) == 0)
         //  (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
-        //if(realnnz == 1)
-        //  (*gBoundaryNodes)[nodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+        if(realnnz == 1) {
+          LO lNodeId = nodeMap->getLocalElement(nodeId);
+          amalgBoundaryNodes[lNodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+        }
+        //  (*gBoundaryNodes)[nodeId] = true;
         ///////////////////////////////
 
         Teuchos::ArrayRCP<GO> arr_cnodeIds = Teuchos::arcp( cnodeIds );
@@ -730,7 +729,22 @@ namespace MueLu {
       // 6) create MueLu Graph object
       RCP<GraphBase> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
-      // 7) store results in Level
+      // Detect and record rows that correspond to Dirichlet boundary conditions
+      graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+
+      if (GetVerbLevel() & Statistics0) {
+        GO numLocalBoundaryNodes  = 0;
+        GO numGlobalBoundaryNodes = 0;
+        for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+          if (amalgBoundaryNodes[i])
+            numLocalBoundaryNodes++;
+        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+        sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      }
+
+
+      // 8) store results in Level
       //graph->SetBoundaryNodeMap(gBoundaryNodeMap);
       Set(currentLevel, "DofsPerNode", blockdim);
       Set(currentLevel, "Graph", graph);

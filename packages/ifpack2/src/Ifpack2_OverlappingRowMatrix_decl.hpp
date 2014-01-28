@@ -56,24 +56,24 @@ namespace Ifpack2 {
 /// \brief Sparse matrix (Tpetra::RowMatrix subclass) with ghost rows.
 /// \tparam MatrixType Tpetra::RowMatrix or Tpetra::CrsMatrix specialization.
 template<class MatrixType>
-class OverlappingRowMatrix : 
+class OverlappingRowMatrix :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-				     typename MatrixType::local_ordinal_type,
-				     typename MatrixType::global_ordinal_type,
-				     typename MatrixType::node_type> {
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> {
 public:
   //! \name Typedefs
-  //@{ 
+  //@{
   typedef typename MatrixType::scalar_type scalar_type;
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, 
-			    global_ordinal_type, node_type> row_matrix_type;
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> row_matrix_type;
   //@}
   //! \name Constructors and destructor
-  //@{ 
+  //@{
 
   /// Standard constructor.
   ///
@@ -86,31 +86,31 @@ public:
   ///
   /// \param overlapLevel [in] The number of levels of overlap.
   OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
-			const int overlapLevel);
+                        const int overlapLevel);
 
   //! Subdomain constructor (NOT CURRENTLY IMPLEMENTED).
   OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
-			const int overlapLevel,
-			const int subdomainID);
+                        const int overlapLevel,
+                        const int subdomainID);
   //! Destructor
   ~OverlappingRowMatrix ();
 
   //@}
   //! @name Matrix query methods
-  //@{ 
-  
+  //@{
+
   //! The communicator over which the matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
-  
+
   //! The matrix's Kokkos Node instance.
   virtual Teuchos::RCP<node_type> getNode() const;
-  
+
   //! The Map that describes the distribution of rows over processes.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
   getRowMap () const;
-  
+
   //! The Map that describes the distribution of columns over processes.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
   getColMap () const;
 
   /// \brief The Map that describes the domain of this matrix.
@@ -124,17 +124,17 @@ public:
   /// The domain is the distribution of valid output vectors of apply().
   virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
   getRangeMap () const;
-  
+
   //! This matrix's graph.
   virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> >
   getGraph () const;
-  
+
   //! The global number of rows in this matrix.
   virtual global_size_t getGlobalNumRows () const;
-  
+
   //! The global number of columns in this matrix.
   virtual global_size_t getGlobalNumCols () const;
-  
+
   //! The number of rows owned by the calling process.
   virtual size_t getNodeNumRows () const;
 
@@ -144,16 +144,16 @@ public:
   /// operator on the calling process, that is, the number of elements
   /// listed in the column Map on the calling process.
   virtual size_t getNodeNumCols () const;
-  
-  //! The index base for global indices for this matrix. 
+
+  //! The index base for global indices for this matrix.
   virtual global_ordinal_type getIndexBase () const;
-  
+
   //! The global number of entries in this matrix.
   virtual global_size_t getGlobalNumEntries () const;
-  
+
   //! The number of entries in this matrix owned by the calling process.
   virtual size_t getNodeNumEntries () const;
-  
+
   /// \brief The number of entries in the given global row that are
   ///   owned by the calling process.
   ///
@@ -181,19 +181,19 @@ public:
 
   //! The number of diagonal entries owned by the calling process.
   virtual size_t getNodeNumDiags () const;
-  
+
   //! The maximum number of entries in any row on any process.
   virtual size_t getGlobalMaxNumRowEntries () const;
-  
+
   //! The maximum number of entries in any row on the calling process.
   virtual size_t getNodeMaxNumRowEntries() const;
-  
-  //! Whether this matrix has a column Map. 
+
+  //! Whether this matrix has a column Map.
   virtual bool hasColMap() const;
-  
+
   //! Whether this matrix is lower triangular.
   virtual bool isLowerTriangular() const;
-  
+
   //! Whether this matrix is upper triangular.
   virtual bool isUpperTriangular() const;
 
@@ -202,51 +202,51 @@ public:
 
   //! Whether this matrix is globally indexed.
   virtual bool isGloballyIndexed () const;
-  
+
   //! \c true if fillComplete() has been called, else \c false.
   virtual bool isFillComplete() const;
 
   //! \c true if row views are supported, else \c false.
-  virtual bool supportsRowViews() const;  
+  virtual bool supportsRowViews() const;
 
   //@}
   //! @name Extraction methods
-  //@{ 
-  
+  //@{
+
   //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
   /*!
     \param LocalRow - (In) Global row number for which indices are desired.
     \param Indices - (Out) Global column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumEntries - (Out) Number of indices.
-    
+
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void 
+  virtual void
   getGlobalRowCopy (global_ordinal_type GlobalRow,
-		    const Teuchos::ArrayView<global_ordinal_type> &Indices,
-		    const Teuchos::ArrayView<scalar_type> &Values,
-		    size_t &NumEntries) const;
-  
+                    const Teuchos::ArrayView<global_ordinal_type> &Indices,
+                    const Teuchos::ArrayView<scalar_type> &Values,
+                    size_t &NumEntries) const;
+
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
     \param Indices - (Out) Local column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumIndices - (Out) Number of indices.
-    
+
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getLocalRowCopy (local_ordinal_type LocalRow, 
-		   const Teuchos::ArrayView<local_ordinal_type> &Indices, 
-		   const Teuchos::ArrayView<scalar_type> &Values,
-		   size_t &NumEntries) const;
-  
+  getLocalRowCopy (local_ordinal_type LocalRow,
+                   const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                   const Teuchos::ArrayView<scalar_type> &Values,
+                   size_t &NumEntries) const;
+
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
@@ -254,14 +254,14 @@ public:
     \param Values    - (Out) Row values
     \pre <tt>isLocallyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-    
+
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getGlobalRowView (global_ordinal_type GlobalRow, 
-		    Teuchos::ArrayView<const global_ordinal_type> &indices, 
-		    Teuchos::ArrayView<const scalar_type> &values) const;
-  
+  getGlobalRowView (global_ordinal_type GlobalRow,
+                    Teuchos::ArrayView<const global_ordinal_type> &indices,
+                    Teuchos::ArrayView<const scalar_type> &values) const;
+
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -269,55 +269,55 @@ public:
     \param Values   - (Out) Row values
     \pre <tt>isGloballyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
-    
+
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getLocalRowView (local_ordinal_type LocalRow, 
-		   Teuchos::ArrayView<const local_ordinal_type> &indices, 
-		   Teuchos::ArrayView<const scalar_type> &values) const;
-  
+  getLocalRowView (local_ordinal_type LocalRow,
+                   Teuchos::ArrayView<const local_ordinal_type> &indices,
+                   Teuchos::ArrayView<const scalar_type> &values) const;
+
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
   virtual
   void getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const;
-  
+
   //@}
   //! \name Mathematical methods
   //@{
-  
+
   /**
    * \brief Scales the RowMatrix on the left with the Vector x.
    *
-   * This matrix will be scaled such that A(i,j) = x(i)*A(i,j) 
-   * where i denoes the global row number of A and 
+   * This matrix will be scaled such that A(i,j) = x(i)*A(i,j)
+   * where i denoes the global row number of A and
    * j denotes the global column number of A.
    *
    * \param x A vector to left scale this matrix.
    */
   virtual void
   leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
-  
+
   /**
    * \brief Scales the RowMatrix on the right with the Vector x.
    *
-   * This matrix will be scaled such that A(i,j) = x(j)*A(i,j) 
-   * where i denoes the global row number of A and 
+   * This matrix will be scaled such that A(i,j) = x(j)*A(i,j)
+   * where i denoes the global row number of A and
    * j denotes the global column number of A.
    *
    * \param x A vector to right scale this matrix.
    */
-  virtual void 
+  virtual void
   rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
-  
-  //! Returns the Frobenius norm of the matrix. 
+
+  //! Returns the Frobenius norm of the matrix.
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType
   getFrobeniusNorm () const;
-  
+
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
     vary according to the values of \c alpha and \c beta. Specifically
@@ -327,47 +327,31 @@ public:
     This is analagous to the *Multiply* function in Ifpack, not the *Apply*
   */
   virtual void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
-	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y, 
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS, 
-	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-  template<class DomainScalar, class RangeScalar>
-  void
-  applyTempl (const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
-	      Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &Y, 
-	      Teuchos::ETransp mode = Teuchos::NO_TRANS, 
-	      RangeScalar alpha = Teuchos::ScalarTraits<RangeScalar>::one(),
-	      RangeScalar beta = Teuchos::ScalarTraits<RangeScalar>::zero()) const;
-  
   //! Whether this operator's apply() method can apply the adjoint (transpose).
   virtual bool hasTransposeApply() const;
 
   virtual void
-  importMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
-		     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
-		     Tpetra::CombineMode CM = Tpetra::INSERT);
-
-  template <class OpScalar>
-  void 
-  importMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
-			  Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
-			  Tpetra::CombineMode CM = Tpetra::INSERT);
+  importMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
+                     Tpetra::CombineMode CM = Tpetra::INSERT);
 
   virtual void
-  exportMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
-		     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
-		     Tpetra::CombineMode CM = Tpetra::ADD);
-
-  template <class OpScalar>
-  void 
-  exportMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
-			  Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
-			  Tpetra::CombineMode CM = Tpetra::ADD);
+  exportMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
+                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+                     Tpetra::CombineMode CM = Tpetra::ADD);
   //@}
 
-private: 
+  std::string description() const;
+
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const;
+
+private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;

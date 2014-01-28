@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -60,10 +60,9 @@ typedef long long int GlobalOrdinal; // <<<<<<
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
-// Skip template names
+int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
-int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
 
   //
@@ -147,7 +146,7 @@ int main(int argc, char *argv[]) {
   H.Iterate(*B, nIts, *X);
 
   // Print relative residual norm
-  ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+  Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
   if (comm->getRank() == 0)
     std::cout << "||Residual|| = " << residualNorms << std::endl;
 

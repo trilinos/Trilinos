@@ -1050,7 +1050,7 @@ public:
   {
     typedef Kokkos::View< DataType , device > typeX ;
     typedef Kokkos::View< const DataType , device > const_typeX ;
-    typedef Kokkos::View< const DataType , device , Kokkos::MemoryRandomRead > const_typeR ;
+    typedef Kokkos::View< const DataType , device , Kokkos::MemoryRandomAccess > const_typeR ;
     typeX x( "X" );
     const_typeX xc = x ;
     const_typeR xr = x ;

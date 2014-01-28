@@ -58,9 +58,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   NO )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Zoltan2
-  HAVE_IFPACK2_ZOLTAN2
-  "Enables Zoltan2 reordering in Ifpack_AdditiveSchwarz"
+  ${PACKAGE_NAME}_ENABLE_IFPACK2_TIMER_BARRIER
+  HAVE_IFPACK2_TIMER_BARRIER
+  "Enables a barrier in Ifpack2 Additive Schwarz so that timing information is useful"
   NO )
 
 #

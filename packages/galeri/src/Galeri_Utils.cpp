@@ -76,7 +76,11 @@ Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
     throw(Exception(__FILE__, __LINE__,
                     "number of vectors in multivectors not consistent"));
 
-  int n = Matrix->NumGlobalRows();
+  if(Matrix->NumGlobalRows64() > std::numeric_limits<int>::max())
+    throw(Exception(__FILE__, __LINE__,
+                    "Matrix->NumGlobalRows64() > std::numeric_limits<int>::max()"));
+
+  int n = static_cast<int>(Matrix->NumGlobalRows64());
   int NumVectors = LHS->NumVectors();
 
   Epetra_SerialDenseMatrix DenseMatrix;
@@ -176,10 +180,13 @@ CreateCartesianCoordinates(const string CoordType,
   int ny = List.get("ny", -1);
   int nz = List.get("nz", -1);
 
-  int ix, iy, iz;
+  long long ix, iy, iz;
 
   int NumMyElements = BlockMap->NumMyElements();
-  int * MyGlobalElements = BlockMap->MyGlobalElements();
+  const int * MyGlobalElements_int = 0;
+  const long long * MyGlobalElements_LL = 0;
+
+  BlockMap->MyGlobalElements(MyGlobalElements_int, MyGlobalElements_LL);
 
   Epetra_MultiVector* Coord;
 
@@ -191,7 +198,7 @@ CreateCartesianCoordinates(const string CoordType,
 
     for (int i = 0 ; i < NumMyElements ; ++i)
     {
-      ix = MyGlobalElements[i];
+      ix = MyGlobalElements_int ? MyGlobalElements_int[i] : MyGlobalElements_LL[i];
       (*Coord)[0][i] = delta_x * ix;
     }
   }
@@ -204,8 +211,9 @@ CreateCartesianCoordinates(const string CoordType,
 
     for (int i = 0 ; i < NumMyElements ; ++i)
     {
-      ix = MyGlobalElements[i] % nx;
-      iy = (MyGlobalElements[i] - ix) / nx;
+      long long MyGlobalElement = MyGlobalElements_int ? MyGlobalElements_int[i] : MyGlobalElements_LL[i];
+      ix = MyGlobalElement % nx;
+      iy = (MyGlobalElement - ix) / nx;
 
       (*Coord)[0][i] = delta_x * ix;
       (*Coord)[1][i] = delta_y * iy;
@@ -221,8 +229,9 @@ CreateCartesianCoordinates(const string CoordType,
 
     for (int i = 0 ; i < NumMyElements ; i++)
     {
-      int ixy = MyGlobalElements[i] % (nx * ny);
-      iz = (MyGlobalElements[i] - ixy) / (nx * ny);
+      long long MyGlobalElement = MyGlobalElements_int ? MyGlobalElements_int[i] : MyGlobalElements_LL[i];
+      int ixy = MyGlobalElement % (nx * ny);
+      iz = (MyGlobalElement - ixy) / (nx * ny);
 
       ix = ixy % nx;
       iy = (ixy - ix) / ny;
@@ -273,6 +282,14 @@ string toString(const double& x)
 {
   char s[100];
   sprintf(s, "%g", x);
+  return string(s);
+}
+
+// ============================================================================
+string toString(const long long& x)
+{
+  char s[100];
+  sprintf(s, "%lld", x);
   return string(s);
 }
 

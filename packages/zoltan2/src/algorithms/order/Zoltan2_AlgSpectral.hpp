@@ -113,6 +113,7 @@ int AlgSpectral(
 
   // TODO: Sort Fiedler vector.
 
+  solution->setHavePerm(true);
   return ierr;
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }

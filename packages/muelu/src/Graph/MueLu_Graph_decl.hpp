@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -75,40 +75,45 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) {
+      minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
+      maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
     }
 
     virtual ~Graph() {}
     //@}
 
-    size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
-    size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
+    size_t GetNodeNumVertices() const                                        { return graph_->getNodeNumRows(); }
+    size_t GetNodeNumEdges()    const                                        { return graph_->getNodeNumEntries(); }
 
-    Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
+    Xpetra::global_size_t GetGlobalNumEdges() const                          { return graph_->getGlobalNumEntries(); }
 
-    const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
-    const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
-
+    const RCP<const Teuchos::Comm<int> > GetComm() const                     { return graph_->getComm(); }
+    const RCP<const Map> GetDomainMap() const                                { return graph_->getDomainMap(); }
     //! Returns overlapping import map (nodes).
-    const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
+    const RCP<const Map> GetImportMap() const                                { return graph_->getColMap();    }
 
     //! Set map with local ids of boundary nodes.
-    void SetBoundaryNodeMap(const ArrayRCP<const bool> & localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
+    void SetBoundaryNodeMap(const ArrayRCP<const bool>& localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
 
     //! Returns map with local ids of boundary nodes.
-    const ArrayRCP<const bool> GetBoundaryNodeMap() const { return localDirichletNodes_; }
+    const ArrayRCP<const bool> GetBoundaryNodeMap() const                    { return localDirichletNodes_; }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
+    ArrayView<const LO> getNeighborVertices(LO i) const {
+      ArrayView<const LO> rowView;
+      graph_->getLocalRowView(i, rowView);
+      return rowView;
+    }
 
     //! Return true if vertex with local id 'v' is on current process.
-    bool isLocalNeighborVertex(LocalOrdinal v) const;
+    bool isLocalNeighborVertex(LO i) const                                   { return i >= minLocalIndex_ && i <= maxLocalIndex_; }
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;
 #endif
 
     /// Return a simple one-line description of the Graph.
-    std::string description() const;
+    std::string description() const                                          { return "MueLu.description()"; }
 
     //! Print the Graph with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
@@ -122,6 +127,8 @@ namespace MueLu {
     //! Vector of Dirichlet boundary node IDs on current process.
     ArrayRCP<const bool> localDirichletNodes_;
 
+    // local index boundaries (cached from domain map)
+    LO minLocalIndex_, maxLocalIndex_;
   };
 
 } // namespace MueLu

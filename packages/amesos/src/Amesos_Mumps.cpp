@@ -472,17 +472,16 @@ int Amesos_Mumps::SymbolicFactorization()
 #endif
   }
 #else
-#ifdef IFPACK_SUBCOMM_CODE
   // This next three lines of code were required to make Amesos_Mumps work
-  // with Ifpack_SubdomainFilter. They may actually be usefull in all cases
+  // with Ifpack_SubdomainFilter. They is usefull in all cases
   // when using MUMPS on a subdomain.
   const Epetra_MpiComm* MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   assert (MpiComm != 0);
   MDS.comm_fortran = (MUMPS_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
-#else
   // only thing I can do, use MPI_COMM_WORLD. This will work in serial as well
-  MDS.comm_fortran = -987654;
-#endif
+  // Previously, the next line was uncommented, but we don't want MUMPS to work
+  // on the global MPI comm, but on the comm associated with the matrix
+  //  MDS.comm_fortran = -987654;
 #endif
   
   MDS.job = -1  ;     //  Initialization

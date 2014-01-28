@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -101,8 +101,6 @@ enum NodeState {
 // TODO: dangerous: same definition as in CheapAggregationAlgorithm
 class Aggregate {
 public:
-  int length;                   // current size of aggregate
-  int maxLength;                // max size of aggregate
   int index;                    // local aggregate id
   std::vector<int> list;  // list of node ids in aggregate
 };
@@ -133,43 +131,7 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
-  //@}
-
-  //! @name Build routines
-  //@{
-
-  //! BuildAggregates routine.
-  virtual void PrintAggregationInformation(const std::string phase, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
-    const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
-    const LocalOrdinal nRows = graph.GetNodeNumVertices();
-    const LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();
-
-    if(IsPrint(Statistics1)) {
-      LO localAggregated  = 0;
-      GO globalAggregated = 0;
-      GO globalNRows    = 0;
-      for(LO i=0; i<nRows; ++i)
-        if(aggStat[i] == NodeStats::AGGREGATED) localAggregated++;
-      sumAll(comm, (GO)localAggregated, globalAggregated);
-      sumAll(comm, (GO)nRows, globalNRows);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): " << phase << " Nodes aggregated = " << globalAggregated << " out of " << globalNRows << " nodes" << std::endl;
-      GO nAggregatesGlobal = 0;
-      sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
-      GetOStream(Statistics1, 0) << "Aggregation (UC): " << phase << " Total aggregates = " << nAggregatesGlobal << std::endl;
-    }
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-        if(aggStat[i] != NodeStats::AGGREGATED ) localNotAggregated++;
-        sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-        if(globalNotAggregated > 0)
-          GetOStream(Warnings0,0) << "Aggregation (UC): " << phase << " (WARNING) " << globalNotAggregated << " unaggregated nodes left" << std::endl;
-    }
-
-  }
-
+  virtual void BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
   //@}
 
   private:

@@ -37,8 +37,9 @@
 #include <vector>
 
 namespace Iohb {
-  Layout::Layout(bool show_labels, int precision)
-    : showLabels(show_labels), precision_(precision), count_(0), layout_()
+  Layout::Layout(bool show_labels, int precision, const std::string &separator, int field_width)
+    : layout_(), separator_(separator), precision_(precision), count_(0), fieldWidth_(field_width),
+      showLabels(show_labels), legendStarted(false)
   {}
 
   Layout::~Layout()
@@ -55,15 +56,34 @@ namespace Iohb {
     layout_ << label;
   }
 
+  void Layout::add_legend(const std::string& label)
+  {
+    if (legendStarted && !separator_.empty()) {
+      layout_ << separator_;
+    }
+    else {
+      legendStarted = true;
+    }
+    
+    if (fieldWidth_) {
+      layout_ << std::setw(fieldWidth_) << label;
+    }
+    else {
+      layout_ << label;
+    }
+  }
+
   void Layout::add(const std::string& name, double value)
   {
-    if (count_++ > 0) {
-      layout_ << ", ";
+    if (count_++ > 0 && !separator_.empty()) {
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
+    } else if (fieldWidth_) {
+      layout_ << std::setw(fieldWidth_);
     }
     layout_.setf(std::ios::scientific);
     layout_.setf(std::ios::showpoint);
@@ -72,39 +92,45 @@ namespace Iohb {
 
   void Layout::add(const std::string& name, int value)
   {
-    if (count_++ > 0) {
-      layout_ << ", ";
+    if (count_++ > 0 && !separator_.empty()) {
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
+    } else if (fieldWidth_) {
+      layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
   }
 
   void Layout::add(const std::string& name, long value)
   {
-    if (count_++ > 0) {
-      layout_ << ", ";
+    if (count_++ > 0 && !separator_.empty()) {
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
+    } else if (fieldWidth_) {
+      layout_ << std::setw(fieldWidth_);
     }
-  layout_ << value;
+    layout_ << value;
   }
 
   void Layout::add(const std::string& name, const std::string &value)
   {
-    if (count_++ > 0) {
-      layout_ << ", ";
+    if (count_++ > 0 && !separator_.empty()) {
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
+    } else if (fieldWidth_) {
+      layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
   }
@@ -114,8 +140,8 @@ namespace Iohb {
     if (value.size() == 1) {
       add(name, value[0]);
     } else {
-      if (count_++ > 0) {
-        layout_ << ", ";
+      if (count_++ > 0 && !separator_.empty()) {
+	layout_ << separator_;
       }
 
       if (showLabels && !name.empty()) {
@@ -125,9 +151,13 @@ namespace Iohb {
       layout_.setf(std::ios::scientific);
       layout_.setf(std::ios::showpoint);
       for (std::vector<double>::size_type i=0; i < value.size(); i++) {
+	if (!showLabels && fieldWidth_) {
+	  layout_ << std::setw(fieldWidth_);
+	}
         layout_ << std::setprecision(precision_) << value[i];
-        if (i < value.size()-1)
-          layout_ << ", ";
+        if (i < value.size()-1 && !separator_.empty()) {
+	  layout_ << separator_;
+	}
       }
     }
   }
@@ -137,8 +167,8 @@ namespace Iohb {
     if (value.size() == 1) {
       add(name, value[0]);
     } else {
-      if (count_++ > 0) {
-	layout_ << ", ";
+      if (count_++ > 0 && !separator_.empty()) {
+	layout_ << separator_;
       }
 
       if (showLabels && name != "") {
@@ -146,9 +176,13 @@ namespace Iohb {
 	layout_ << "=";
       }
       for (std::vector<int>::size_type i=0; i < value.size(); i++) {
+	if (!showLabels && fieldWidth_) {
+	  layout_ << std::setw(fieldWidth_);
+	}
 	layout_ << value[i];
-	if (i < value.size()-1)
-	  layout_ << ", ";
+	if (i < value.size()-1 && !separator_.empty()) {
+	  layout_ << separator_;
+	}
       }
     }
   }
@@ -158,8 +192,8 @@ namespace Iohb {
     if (value.size() == 1) {
       add(name, value[0]);
     } else {
-      if (count_++ > 0) {
-	layout_ << ", ";
+      if (count_++ > 0 && !separator_.empty()) {
+	layout_ << separator_;
       }
 
       if (showLabels && name != "") {
@@ -167,9 +201,13 @@ namespace Iohb {
 	layout_ << "=";
       }
       for (std::vector<long>::size_type i=0; i < value.size(); i++) {
+	if (!showLabels && fieldWidth_) {
+	  layout_ << std::setw(fieldWidth_);
+	}
 	layout_ << value[i];
-	if (i < value.size()-1)
-	  layout_ << ", ";
+	if (i < value.size()-1 && !separator_.empty()) {
+	  layout_ << separator_;
+	}
       }
     }
   }

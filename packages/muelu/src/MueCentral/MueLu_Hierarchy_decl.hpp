@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -104,7 +104,7 @@ namespace MueLu {
     Hierarchy(const RCP<Matrix> & A);
 
     //! Destructor.
-    virtual ~Hierarchy();
+    virtual ~Hierarchy() { }
 
     //@}
 
@@ -112,16 +112,22 @@ namespace MueLu {
     //@{
 
     //!
-    void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize);
+    Xpetra::global_size_t        GetMaxCoarseSize() const                                     { return maxCoarseSize_; }
+    void                         SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
+    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                                    { return 2000;   }
+
+
+    static int                   GetDefaultMaxLevels()                                        { return 10;     }
+    static CycleType             GetDefaultCycle()                                            { return VCYCLE; }
+    //@}
 
     //!
-    Xpetra::global_size_t GetMaxCoarseSize() const;
 
     template<class S2, class LO2, class GO2, class N2, class LMO2>
     friend class Hierarchy;
 
   private:
-    int LastLevelID() const;
+    int LastLevelID() const { return Levels_.size() - 1; }
     void DumpCurrentGraph() const;
 
   public:
@@ -191,10 +197,14 @@ namespace MueLu {
                const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
     //!
-    void Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+    void Setup(const FactoryManagerBase& manager = FactoryManager(), int startLevel = 0, int numDesiredLevels = GetDefaultMaxLevels());
 
     //! Clear impermanent data from previous setup
     void Clear();
+    void ExpertClear();
+
+    CycleType GetCycle()                 const { return Cycle_;  }
+    void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 
     /*!
       @brief Apply the multigrid preconditioner.
@@ -208,8 +218,8 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
-    void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
-                 const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
+    void Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
+                 bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
       @brief Print matrices in the multigrid hierarchy to file.
@@ -293,6 +303,8 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
     bool isPreconditioner_;
+
+    CycleType Cycle_;
 
     Xpetra::UnderlyingLib lib_;
 

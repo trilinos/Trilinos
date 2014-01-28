@@ -256,8 +256,8 @@ int Create_File(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 namespace {
   void output_exodus_names(int file_id, EXOTYPE type, const vector<string> &names)
   {
-    std::vector<char*> vars(names.size());
-    if (names.size() > 0) {
+    if (!names.empty()) {
+      std::vector<char*> vars(names.size());
       for (unsigned i = 0; i < names.size(); ++i) {
 	vars[i] = (char*)(names[i].c_str());
 	SMART_ASSERT(vars[i] != 0);
@@ -269,7 +269,7 @@ namespace {
   void output_compare_names(const char* type, const vector<string> &names, const std::vector<Tolerance> &tol,
 			    int num_vars1, int num_vars2)
   {
-    if (names.size() > 0) {
+    if (!names.empty()) {
       std::cout << type << " variables to be compared:" << std::endl;
       for (unsigned v = 0; v < names.size(); ++v)
 	{
@@ -292,7 +292,7 @@ namespace {
 
   void output_diff_names(const char *type, const vector<string> &names)
   {
-    if (names.size() > 0) {
+    if (!names.empty()) {
       std::cout << type << " variables to be differenced:" << std::endl;
       for (unsigned v = 0; v < names.size(); ++v)
 	std::cout << "\t" << names[v] << std::endl;
@@ -309,7 +309,7 @@ namespace {
     vector<string> x_list;  // exclusion list
     for (unsigned m = 0; m < names.size(); ++m) {
       string name = names[m];  chop_whitespace(name);
-      SMART_ASSERT(name.size() >= 1);
+      SMART_ASSERT(!name.empty());
       if (name[0] == '!')
 	x_list.push_back( extract_token(name, "!") ); // remove "!" & add
     }
@@ -393,7 +393,7 @@ namespace {
 			 const vector<string> &var_names1, const vector<string> &var_names2,
 			 std::vector<int> &truth_tab, bool quiet_flag, bool *diff_found)
   {
-    if (names.size() > 0)	{
+    if (!names.empty())	{
       int num_vars = names.size();
       
       truth_tab.resize(num_vars * num_entity);

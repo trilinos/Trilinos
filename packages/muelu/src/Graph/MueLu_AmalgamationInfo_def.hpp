@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -53,35 +53,87 @@
 #ifndef MUELU_AMALGAMATIONINFO_DEF_HPP_
 #define MUELU_AMALGAMATIONINFO_DEF_HPP_
 
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Vector.hpp>
+
 #include "MueLu_AmalgamationInfo_decl.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Aggregates.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids) const {
-    nodegid2dofgids_ = nodegid2dofgids;
-  }
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregates(const Aggregates& aggregates,
+        Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
+    int myPid = aggregates.GetMap()->getComm()->getRank();
+    //const Map& map = *(aggregates.GetMap());
+    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    LO size = procWinner.size();
+
+    GO total=0;
+    std::vector<LO> sizes(aggregates.GetNumAggregates());
+    for (LO lnode = 0; lnode < size; ++lnode) {
+      LO myAgg = vertex2AggId[lnode];
+      if (procWinner[lnode] == myPid) {
+        //GO gnodeid = map.getGlobalElement(lnode);
+        GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
+        std::vector<GO> gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
+        total += Teuchos::as<LO>(gDofIds.size());
+        sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
+      }
+    }
+    aggToRowMap = ArrayRCP<GO>(total,0);
+
+    aggStart = ArrayRCP<LO>(aggregates.GetNumAggregates()+1,0);
+    aggStart[0]=0;
+    for (GO i=0; i<aggregates.GetNumAggregates(); ++i) {
+      aggStart[i+1] = aggStart[i] + sizes[i];
+    }
+
+    // count, how many dofs have been recorded for each aggregate so far
+    Array<LO> numDofs(aggregates.GetNumAggregates(), 0); // empty array with number of Dofs for each aggregate
+
+    for (LO lnode = 0; lnode < size; ++lnode) {
+      LO myAgg = vertex2AggId[lnode];
+
+      if (procWinner[lnode] == myPid) {
+        //GO gnodeid = map.getGlobalElement(lnode);
+        GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
+        std::vector<GO> gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
+        LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
+        for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
+          //aggToRowMap[ aggStart[myAgg] + gDofId ] = gDofIds[gDofId]; // fill aggToRowMap structure
+          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
+          ++(numDofs[myAgg]);
+        }
+      }
+    }
+    // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
+
+  } //UnamalgamateAggregates
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetGlobalAmalgamationParams() const {
-    return nodegid2dofgids_;
+  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const {
+    Teuchos::RCP<const Map> nodeMap = aggregates.GetMap(); //aggregates.GetVertex2AggId();
+
+    Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
+    LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
+    for(LO n = 0; n<nodeElements; n++) {
+      GO gnodeid = (GO) nodeMap->getGlobalElement(n);
+      std::vector<GO> gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
+      for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
+        myDofGids->push_back(*gDofIdsIt);
+      }
+    }
+
+    Teuchos::ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
+    Teuchos::RCP<Map> importDofMap = MapFactory::Build(aggregates.GetMap()->lib(),
+                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGids(),
+                                                       aggregates.GetMap()->getIndexBase(), aggregates.GetMap()->getComm());
+    return importDofMap;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetNodeGIDVector(RCP<std::vector<GlobalOrdinal> > nodegids) const {
-    gNodeIds_ = nodegids;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<std::vector<GlobalOrdinal> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNodeGIDVector() const {
-    return gNodeIds_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
-    return "AmalgamationInfo";
-  }
 }
 
 

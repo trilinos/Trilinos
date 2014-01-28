@@ -206,8 +206,8 @@ namespace Tpetra {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
         srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getSourceMap(),
-	std::invalid_argument, "doImport: The source is a DistObject, yet its "
-	"Map is not identical to the Import's source Map.");
+        std::invalid_argument, "doImport: The source is a DistObject, yet its "
+        "Map is not identical to the Import's source Map.");
     }
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = importer.getNumSameIDs ();
@@ -239,8 +239,8 @@ namespace Tpetra {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
         srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getSourceMap(),
-	std::invalid_argument, "doExport: The source is a DistObject, yet its "
-	"Map is not identical to the Export's source Map.");
+        std::invalid_argument, "doExport: The source is a DistObject, yet its "
+        "Map is not identical to the Export's source Map.");
     }
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
@@ -271,9 +271,9 @@ namespace Tpetra {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
         srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getTargetMap(),
-	std::invalid_argument, 
-	"doImport (reverse mode): The source is a DistObject, yet its "
-	"Map is not identical to the Export's target Map.");
+        std::invalid_argument,
+        "doImport (reverse mode): The source is a DistObject, yet its "
+        "Map is not identical to the Export's target Map.");
     }
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
@@ -294,8 +294,8 @@ namespace Tpetra {
             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( 
-      *getMap() != *importer.getSourceMap(), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      *getMap() != *importer.getSourceMap(), std::invalid_argument,
       "doExport (reverse mode): The target object's Map "
       "is not identical to the Import's source Map.");
 #ifdef HAVE_TPETRA_DEBUG
@@ -304,9 +304,9 @@ namespace Tpetra {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
         srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getTargetMap(),
-	std::invalid_argument, 
-	"doExport (reverse mode): The source is a DistObject, yet its "
-	"Map is not identical to the Import's target Map.");
+        std::invalid_argument,
+        "doExport (reverse mode): The source is a DistObject, yet its "
+        "Map is not identical to the Import's target Map.");
     }
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = importer.getNumSameIDs();
@@ -351,7 +351,7 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    TEUCHOS_TEST_FOR_EXCEPTION( 
+    TEUCHOS_TEST_FOR_EXCEPTION(
       ! checkSizes (src), std::invalid_argument,
       "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
       "destination object is not a legal target for redistribution from the "
@@ -409,29 +409,39 @@ namespace Tpetra {
       // There is at least one GID to copy or permute.
       copyAndPermute (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
+
     // The method may return zero even if the implementation actually
     // does have a constant number of packets per LID.  However, if it
     // returns nonzero, we may use this information to avoid
     // (re)allocating num{Ex,Im}portPacketsPerLID_.  packAndPrepare()
     // will set this to its final value.
+    //
+    // We only need this if CM != ZERO, but it has to be lifted out of
+    // that scope because there are multiple tests for CM != ZERO.
     size_t constantNumPackets = this->constantNumberOfPackets ();
 
-    if (constantNumPackets == 0) {
-      numExportPacketsPerLID_.resize (exportLIDs.size ());
-      numImportPacketsPerLID_.resize (remoteLIDs.size ());
-    }
+    // We only need to pack communication buffers if the combine mode
+    // is not ZERO. A "ZERO combine mode" means that the results are
+    // the same as if we had received all zeros, and added them to the
+    // existing values. That means we don't need to communicate.
+    if (CM != ZERO) {
+      if (constantNumPackets == 0) {
+        numExportPacketsPerLID_.resize (exportLIDs.size ());
+        numImportPacketsPerLID_.resize (remoteLIDs.size ());
+      }
 
-    {
+      {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-      Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
+        Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-      // Ask the source to pack data.  Also ask it whether there are a
-      // constant number of packets per element (constantNumPackets is
-      // an output argument).  If there are, constantNumPackets will
-      // come back nonzero.  Otherwise, the source will fill the
-      // numExportPacketsPerLID_ array.
-      packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_ (),
-                      constantNumPackets, distor);
+        // Ask the source to pack data.  Also ask it whether there are a
+        // constant number of packets per element (constantNumPackets is
+        // an output argument).  If there are, constantNumPackets will
+        // come back nonzero.  Otherwise, the source will fill the
+        // numExportPacketsPerLID_ array.
+        packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_ (),
+                        constantNumPackets, distor);
+      }
     }
 
     // We don't need the source's data anymore, so it can let go of
@@ -442,89 +452,95 @@ namespace Tpetra {
       srcDistObj->releaseViews ();
     }
 
-    if (constantNumPackets != 0) {
-      // There are a constant number of packets per element.  We
-      // already know (from the number of "remote" (incoming)
-      // elements) how many incoming elements we expect, so we can
-      // resize the buffer accordingly.
-      const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-      if (as<size_t> (imports_.size()) != rbufLen) {
-        imports_.resize (rbufLen);
+    // We only need to send data if the combine mode is not ZERO.
+    if (CM != ZERO) {
+      if (constantNumPackets != 0) {
+        // There are a constant number of packets per element.  We
+        // already know (from the number of "remote" (incoming)
+        // elements) how many incoming elements we expect, so we can
+        // resize the buffer accordingly.
+        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
+        if (as<size_t> (imports_.size()) != rbufLen) {
+          imports_.resize (rbufLen);
+        }
       }
-    }
 
-    // Do we need to do communication (via doPostsAndWaits)?
-    bool needCommunication = true;
-    if (revOp == DoReverse && ! isDistributed ()) {
-      needCommunication = false;
-    }
-    // FIXME (mfh 30 Jun 2013): Checking whether the source object is
-    // distributed requires a cast to DistObject.  If it's not a
-    // DistObject, then I'm not quite sure what to do.  Perhaps it
-    // would be more appropriate for SrcDistObject to have an
-    // isDistributed() method.  For now, I'll just assume that we need
-    // to do communication unless the cast succeeds and the source is
-    // not distributed.
-    else if (revOp == DoForward && srcDistObj != NULL && ! srcDistObj->isDistributed ()) {
-      needCommunication = false;
-    }
-      
-    if (needCommunication) {
-      if (revOp == DoReverse) {
+      // Do we need to do communication (via doPostsAndWaits)?
+      bool needCommunication = true;
+      if (revOp == DoReverse && ! isDistributed ()) {
+        needCommunication = false;
+      }
+      // FIXME (mfh 30 Jun 2013): Checking whether the source object
+      // is distributed requires a cast to DistObject.  If it's not a
+      // DistObject, then I'm not quite sure what to do.  Perhaps it
+      // would be more appropriate for SrcDistObject to have an
+      // isDistributed() method.  For now, I'll just assume that we
+      // need to do communication unless the cast succeeds and the
+      // source is not distributed.
+      else if (revOp == DoForward && srcDistObj != NULL &&
+               ! srcDistObj->isDistributed ()) {
+        needCommunication = false;
+      }
+
+      if (needCommunication) {
+        if (revOp == DoReverse) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-        if (constantNumPackets == 0) { //variable num-packets-per-LID:
-          distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-                                         numImportPacketsPerLID_());
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-            totalImportPackets += numImportPacketsPerLID_[i];
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(),
+                                           1,
+                                           numImportPacketsPerLID_());
+            size_t totalImportPackets = 0;
+            for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += numImportPacketsPerLID_[i];
+            }
+            imports_.resize(totalImportPackets);
+            distor.doReversePostsAndWaits (exports_().getConst(),
+                                           numExportPacketsPerLID_(),
+                                           imports_(),
+                                           numImportPacketsPerLID_());
           }
-          imports_.resize(totalImportPackets);
-          distor.doReversePostsAndWaits (exports_().getConst(),
-                                         numExportPacketsPerLID_(),
-                                         imports_(),
-                                         numImportPacketsPerLID_());
-        }
-        else {
-          distor.doReversePostsAndWaits (exports_().getConst(),
-                                         constantNumPackets,
-                                         imports_());
-        }
-      }
-      else { // revOp == DoForward
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-        if (constantNumPackets == 0) { //variable num-packets-per-LID:
-          distor.doPostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-                                  numImportPacketsPerLID_());
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-            totalImportPackets += numImportPacketsPerLID_[i];
+          else {
+            distor.doReversePostsAndWaits (exports_ ().getConst (),
+                                           constantNumPackets,
+                                           imports_ ());
           }
-          imports_.resize(totalImportPackets);
-          distor.doPostsAndWaits (exports_().getConst(),
-                                  numExportPacketsPerLID_(),
-                                  imports_(),
-                                  numImportPacketsPerLID_());
         }
-        else {
-          distor.doPostsAndWaits (exports_().getConst(),
-                                  constantNumPackets,
-                                  imports_());
-        }
-      }
-      {
+        else { // revOp == DoForward
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-        unpackAndCombine (remoteLIDs, imports_(), numImportPacketsPerLID_(),
-                          constantNumPackets, distor, CM);
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doPostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
+                                    numImportPacketsPerLID_());
+            size_t totalImportPackets = 0;
+            for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += numImportPacketsPerLID_[i];
+            }
+            imports_.resize(totalImportPackets);
+            distor.doPostsAndWaits (exports_().getConst(),
+                                    numExportPacketsPerLID_(),
+                                    imports_(),
+                                    numImportPacketsPerLID_());
+          }
+          else {
+            distor.doPostsAndWaits (exports_ ().getConst (),
+                                    constantNumPackets,
+                                    imports_ ());
+          }
+        }
+        {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          unpackAndCombine (remoteLIDs, imports_(), numImportPacketsPerLID_(),
+                            constantNumPackets, distor, CM);
+        }
       }
-    }
-    this->releaseViews();
+    } // if (CM != ZERO)
+
+    this->releaseViews ();
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -569,5 +585,10 @@ namespace Tpetra {
 
 
 } // namespace Tpetra
+
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_DistObject_def.hpp"
+#endif
 
 #endif /* TPETRA_DISTOBJECT_DEF_HPP */

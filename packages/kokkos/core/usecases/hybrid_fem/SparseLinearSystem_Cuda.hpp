@@ -46,7 +46,7 @@
 
 #if defined( __CUDACC__ )
 
-#include <cusparse.h>
+#include <cusparse_v2.h>
 #include <Kokkos_Cuda.hpp>
 
 namespace Kokkos {
@@ -98,14 +98,14 @@ public:
     cusparseStatus_t status =
       cusparseDcsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
-                      nrow , ncol ,
-                      alpha ,
+                      nrow , ncol , A.coefficients.dimension_0() ,
+                      &alpha ,
                       s.descra ,
                       A.coefficients.ptr_on_device() ,
                       A.graph.row_map.ptr_on_device() ,
                       A.graph.entries.ptr_on_device() ,
                       x.ptr_on_device() ,
-                      beta ,
+                      &beta ,
                       y.ptr_on_device() );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -140,14 +140,14 @@ public:
     cusparseStatus_t status =
       cusparseScsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
-                      nrow , ncol ,
-                      alpha ,
+                      nrow , ncol , A.coefficients.dimension_0() ,
+                      &alpha ,
                       s.descra ,
                       A.coefficients.ptr_on_device() ,
                       A.graph.row_map.ptr_on_device() ,
                       A.graph.entries.ptr_on_device() ,
                       x.ptr_on_device() ,
-                      beta ,
+                      &beta ,
                       y.ptr_on_device() );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {

@@ -48,7 +48,7 @@ INCLUDE(TribitsPackageMacros)
 IF (NOT ${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT)
     MESSAGE(WARNING "Did not find a supported network protocol. "
             "Nessie requires one of the following TPLs to be enabled: "
-            " Portals, CrayPortals, InfiniBand,  DCMF, BGPDMA, Gemini")
+            " Portals, CrayPortals, InfiniBand, PAMI,  DCMF, BGPDMA, Gemini")
 ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nessie/client)

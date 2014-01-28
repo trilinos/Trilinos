@@ -51,6 +51,8 @@
 #include "shylu_util.h"
 #include "shylu.h"
 
+#include <Ifpack.h>
+
 static int shylu_dist_solve(
     shylu_symbolic *ssym,
     shylu_data *data,
@@ -293,7 +295,11 @@ static int shylu_local_solve(
 
     AztecOO *solver;
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-    if (config->schurSolver == "Amesos")
+    if ((config->schurSolver == "G") || (config->schurSolver == "IQR"))
+    {
+    	IFPACK_CHK_ERR(data->iqrSolver->Solve(*(data->schur_op), Bs, Xs));
+    }
+    else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
         data->OrigLP2->SetLHS(&Xs);

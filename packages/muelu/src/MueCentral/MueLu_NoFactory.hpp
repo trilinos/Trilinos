@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -47,6 +47,8 @@
 #define MUELU_NOFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Exceptions.hpp"
+
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 
@@ -61,21 +63,23 @@ namespace MueLu {
   class NoFactory : public FactoryBase {
 
     //! Constructor.
-    NoFactory();
+    NoFactory() { }
 
   public:
 
     //! Destructor.
-    virtual ~NoFactory();
+    virtual ~NoFactory() { }
 
     //! Implementation of FactoryBase interface
     //@{
 
     //!
-    void CallBuild(Level & requestedLevel) const;
+    void CallBuild(Level& requestedLevel) const {
+      throw Exceptions::RuntimeError("MueLu::NoFactory::Build(): this method cannot be called.");
+    }
 
     //!
-    void CallDeclareInput(Level & requestedLevel) const;
+    void CallDeclareInput(Level& requestedLevel) const { }
 
     //@}
 
@@ -83,7 +87,12 @@ namespace MueLu {
     //@{
 
     //!
-    static const RCP<const NoFactory> getRCP();
+    static const RCP<const NoFactory> getRCP() {
+      if (noFactory_.is_null())
+        noFactory_ = rcp(new NoFactory());
+
+      return noFactory_;
+    }
 
     //!
     static const NoFactory* get();

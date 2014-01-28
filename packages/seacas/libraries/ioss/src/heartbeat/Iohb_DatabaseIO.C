@@ -156,9 +156,12 @@ namespace Iohb {
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
     logStream(NULL), layout_(NULL), legend_(NULL),
-    tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), appendOutput(false),
-    initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
-  { }
+    tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5), fieldWidth_(0),
+    showLabels(false), showLegend(true), appendOutput(false),
+    addTimeField(false), initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
+  {
+    dbState = Ioss::STATE_UNKNOWN;
+  }
 
   DatabaseIO::~DatabaseIO()
   {
@@ -176,6 +179,10 @@ namespace Iohb {
       assert(legend_ == NULL);
 
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+
+      if (properties.exists("FIELD_SEPARATOR")) {
+	new_this->separator_ = properties.get("FIELD_SEPARATOR").get_string();
+      }
 
       if (properties.exists("FILE_FORMAT")) {
 	std::string format = properties.get("FILE_FORMAT").get_string();
@@ -199,9 +206,23 @@ namespace Iohb {
 	new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
 
+      if (properties.exists("SHOW_TIME_STAMP")) {
+	bool show_time_stamp = properties.get("SHOW_TIME_STAMP").get_int() == 1;
+	if (!show_time_stamp) {
+	  new_this->tsFormat="";
+	}
+      }
+
       if (properties.exists("PRECISION")) {
 	new_this->precision_ = properties.get("PRECISION").get_int();
       }
+
+      if (properties.exists("FIELD_WIDTH")) {
+	new_this->fieldWidth_ = properties.get("FIELD_WIDTH").get_int();
+      } else {
+	// +1.xxxxxxe+00 The x count is the precision the "+1.e+00" is the 7
+	new_this->fieldWidth_ = precision_ + 7;
+      }	
 
       if (properties.exists("SHOW_LABELS")) {
 	new_this->showLabels = (properties.get("SHOW_LABELS").get_int() == 1);
@@ -211,28 +232,28 @@ namespace Iohb {
 	new_this->showLegend = (properties.get("SHOW_LEGEND").get_int() == 1 && !new_this->appendOutput);
       }
 
+      if (properties.exists("SHOW_TIME_FIELD")) {
+	new_this->addTimeField = (properties.get("SHOW_TIME_FIELD").get_int() == 1);
+      }
+
       if (fileFormat == SPYHIS) {
+	new_this->addTimeField = true;
 	new_this->showLegend = true;
 	new_this->showLabels = false;
 	new_this->tsFormat = "";
       }
       
       if (showLegend) {
-	new_this->legend_ = new Layout(false, precision_);
+	new_this->legend_ = new Layout(false, precision_, separator_, fieldWidth_);
 	if (!tsFormat.empty()) {
 	  new_this->legend_->add_literal("+");
 	  new_this->legend_->add_literal(time_stamp(tsFormat));
 	  new_this->legend_->add_literal(" ");
 	}
-	if (!fileFormat == SPYHIS)
-	  new_this->legend_->add_literal("Legend: ");
 
-	if (!tsFormat.empty()) {
-	  new_this->legend_->add_literal("WallTime, ");
+	if (addTimeField) {
+	  new_this->legend_->add_legend("Time");
 	}
-
-	if (fileFormat == SPYHIS)
-	  new_this->legend_->add_literal("Time, ");
       }
       new_this->initialized_ = true;
     }
@@ -253,14 +274,14 @@ namespace Iohb {
     // If this is the first time, open the output stream and see if user wants a legend
     initialize(region);
 
-    layout_ = new Layout(showLabels, precision_);
+    layout_ = new Layout(showLabels, precision_, separator_, fieldWidth_);
     if (tsFormat != "") {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
       layout_->add_literal(" ");
     }
 
-    if (fileFormat == SPYHIS) {
+    if (addTimeField) {
       layout_->add("TIME", time/timeScaleFactor);
     }
 
@@ -362,18 +383,22 @@ namespace Iohb {
       int ncomp = field.transformed_storage()->component_count();
 
       if (legend_ != NULL && layout_ != NULL) {
-	legend_->add(field.get_name(), field.get_name());
-	if (ncomp > 1) {
-	  legend_->add_literal("(");
-	  legend_->add_literal(Ioss::Utils::to_string(ncomp));
-	  legend_->add_literal(")");
+	if (ncomp == 1) {
+	  legend_->add_legend(field.get_name());
+	}
+	else {
+	  const Ioss::VariableType *var_type = field.transformed_storage();
+	  for (int i=0; i < ncomp; i++) {
+	    std::string var_name = var_type->label_name(field.get_name(), i+1, '_');
+	    legend_->add_legend(var_name);
+	  }
 	}
       }
 
       if (field.get_type() == Ioss::Field::STRING) {
 	// Assume that if layout_ is NULL, then we want special one-line output.
 	if (layout_ == NULL) {
-	  Layout layout(false, 0);
+	  Layout layout(false, 0, separator_, fieldWidth_);
 	  layout.add_literal("-");
 	  layout.add_literal(time_stamp(tsFormat));
 	  layout.add_literal(" ");

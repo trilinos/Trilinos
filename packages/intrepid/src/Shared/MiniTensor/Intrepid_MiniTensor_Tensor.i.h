@@ -1158,7 +1158,7 @@ dyad(Vector<S, N> const & u, Vector<T, N> const & v)
 }
 
 //
-// R^N bun operator, just for Jay
+// R^N bun operator, just for Jay, and now Reese too.
 // \param u vector
 // \param v vector
 // \return \f$ u \otimes v \f$

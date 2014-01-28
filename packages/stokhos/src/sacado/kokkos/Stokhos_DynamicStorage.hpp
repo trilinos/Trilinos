@@ -1,14 +1,12 @@
-// $Id$
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -48,9 +46,13 @@
 
 #include "Kokkos_Macros.hpp"
 
+#include "Sacado_Traits.hpp"
+#include "Stokhos_KokkosTraits.hpp"
+#include <sstream>
+
 namespace Stokhos {
 
-  template <typename ordinal_t, typename value_t, typename node_t>
+  template <typename ordinal_t, typename value_t, typename device_t>
   class DynamicStorage {
   public:
 
@@ -60,23 +62,23 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::DynArrayTraits<value_type,node_type> ds;
+    typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
     //! Turn DynamicStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
     struct apply {
-      typedef DynamicStorage<ord_t,val_t,node_type> type;
+      typedef DynamicStorage<ord_t,val_t,dev_t> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const ordinal_type& sz,
-		   const value_type& x = value_type(0.0)) : sz_(sz) {
+                   const value_type& x = value_type(0.0)) : sz_(sz) {
       coeff_ = ds::get_and_fill(sz_, x);
     }
 
@@ -95,58 +97,58 @@ namespace Stokhos {
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
     DynamicStorage& operator=(const DynamicStorage& s) {
-      if (&s != this) { 
-	if (s.sz_ != sz_) {
-	  ds::destroy_and_release(coeff_, sz_);
-	  coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
-	  sz_ = s.sz_;
-	}
-	else
-	  ds::copy(s.coeff_, coeff_, sz_);
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          ds::destroy_and_release(coeff_, sz_);
+          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          sz_ = s.sz_;
+        }
+        else
+          ds::copy(s.coeff_, coeff_, sz_);
       }
       return *this;
     }
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
-    void init(const_reference v) { 
-      ds::fill(coeff_, sz_, v); 
+    void init(const_reference v) {
+      ds::fill(coeff_, sz_, v);
     }
 
     //! Initialize values to an array of values
     KOKKOS_INLINE_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       if (sz == 0)
-      	ds::copy(v, coeff_, sz_);
+        ds::copy(v, coeff_, sz_);
       else
-      	ds::copy(v, coeff_, sz);
+        ds::copy(v, coeff_, sz);
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ds::copy(coeff_, v, sz_); 
+      ds::copy(coeff_, v, sz_);
     }
 
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
-    void resize(const ordinal_type& sz) { 
+    void resize(const ordinal_type& sz) {
       if (sz != sz_) {
-	value_type *coeff_new = ds::get_and_fill(sz);
-	if (sz > sz_)
-	  ds::copy(coeff_, coeff_new, sz_);
-	else
-	  ds::copy(coeff_, coeff_new, sz);
-	ds::destroy_and_release(coeff_, sz_);
-	coeff_ = coeff_new;
-	sz_ = sz;
+        value_type *coeff_new = ds::get_and_fill(sz);
+        if (sz > sz_)
+          ds::copy(coeff_, coeff_new, sz_);
+        else
+          ds::copy(coeff_, coeff_new, sz);
+        ds::destroy_and_release(coeff_, sz_);
+        coeff_ = coeff_new;
+        sz_ = sz;
       }
     }
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
-    void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned) {}
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) {}
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
@@ -190,6 +192,22 @@ namespace Stokhos {
 
   };
 
+}
+
+namespace Sacado {
+  template <typename ordinal_t, typename value_t, typename device_t>
+  struct StringName< Stokhos::DynamicStorage<ordinal_t,
+                                             value_t,
+                                             device_t> > {
+    static std::string eval() {
+      std::stringstream ss;
+      ss << "Stokhos::DynamicStorage<"
+         << StringName<ordinal_t>::eval() << ","
+         << StringName<value_t>::eval() << ","
+         << StringName<device_t>::eval() << ">";
+      return ss.str();
+    }
+  };
 }
 
 #endif // STOKHOS_DYNAMIC_STORAGE_HPP

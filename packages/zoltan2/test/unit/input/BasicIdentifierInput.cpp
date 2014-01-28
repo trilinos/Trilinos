@@ -43,9 +43,9 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::BasicIdentifierInput 
+// Basic testing of Zoltan2::BasicIdentifierAdapter 
 
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     weights[i*weightDim + 1] = (nprocs-rank) / (i+1);
   }
 
-  // Create a Zoltan2::BasicIdentifierInput object
+  // Create a Zoltan2::BasicIdentifierAdapter object
   // and verify that it is correct
 
   typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
@@ -92,31 +92,24 @@ int main(int argc, char *argv[])
   strides.push_back(2);
   strides.push_back(2);
 
-  Zoltan2::BasicIdentifierInput<userTypes_t> ia( numLocalIds, myIds,
+  Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
     weightValues, strides);
 
-  if (rank == 0)
-    std::cout << "Testing " << ia.inputAdapterName() << std::endl;
-
-  if (!fail && ia.getLocalNumberOfIdentifiers() != size_t(numLocalIds)){
+  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)){
     fail = 4;
   }
 
-  if (!fail && ia.getNumberOfWeights() != weightDim)
+  if (!fail && ia.getNumWeightsPerID() != weightDim)
     fail = 5;
 
   const gno_t *globalIdsIn;
   scalar_t const *weightsIn[2];
   int weightStridesIn[2];
 
-  if (!fail && ia.getIdentifierList(globalIdsIn) != size_t(numLocalIds))
-    fail = 6;
+  ia.getIDsView(globalIdsIn);
 
-  for (int w=0; !fail && w < weightDim; w++){
-    if (ia.getIdentifierWeights(w, weightsIn[w], weightStridesIn[w]) <
-        size_t(numLocalIds * weightStridesIn[w]))
-      fail = 20;
-  }
+  for (int w=0; !fail && w < weightDim; w++)
+    ia.getWeightsView(weightsIn[w], weightStridesIn[w], w);
 
   const scalar_t *w1 = weightsIn[0];
   const scalar_t *w2 = weightsIn[1];

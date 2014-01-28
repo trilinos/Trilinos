@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -70,12 +70,20 @@
 #include "MueLu_CoupledAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
+
+namespace MueLuExamples {
+
 #include "MueLu_UseShortNames.hpp"
 
 void dumpAggregates(Aggregates & aggregates);
 
+}
+
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
+  using namespace MueLuExamples;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -172,6 +180,10 @@ int main(int argc, char *argv[]) {
 #include <iostream>
 #include <fstream>
 
+namespace MueLuExamples {
+
+#include "MueLu_UseShortNames.hpp"
+
 void dumpAggregates(Aggregates & aggregates) {
   using Teuchos::RCP;
 
@@ -196,5 +208,7 @@ void dumpAggregates(Aggregates & aggregates) {
 
       out.close();
     }
+
+}
 
 }

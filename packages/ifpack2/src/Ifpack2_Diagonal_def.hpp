@@ -44,58 +44,157 @@
 #define IFPACK2_DIAGONAL_DEF_HPP
 
 #include "Ifpack2_Diagonal_decl.hpp"
+#include "Tpetra_CrsMatrix_def.hpp"
 #include "Ifpack2_Condest.hpp"
 
 namespace Ifpack2 {
 
 template<class MatrixType>
-Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const MatrixType>& A)
- : isInitialized_(false),
-   isComputed_(false),
-   domainMap_(A->getDomainMap()),
-   rangeMap_(A->getRangeMap()),
-   matrix_(A),
-   inversediag_(),
-   numInitialize_(0),
-   numCompute_(0),
-   numApply_(0),
-   condEst_ (-Teuchos::ScalarTraits<magnitudeType>::one ())
-{
-}
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const row_matrix_type>& A) :
+  matrix_ (A),
+  initializeTime_ (0.0),
+  computeTime_ (0.0),
+  applyTime_ (0.0),
+  numInitialize_ (0),
+  numCompute_ (0),
+  numApply_ (0),
+  condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+  isInitialized_ (false),
+  isComputed_ (false)
+{}
 
 template<class MatrixType>
-Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& diag)
- : isInitialized_(false),
-   isComputed_(false),
-   domainMap_(),
-   rangeMap_(),
-   matrix_(),
-   inversediag_(diag),
-   numInitialize_(0),
-   numCompute_(0),
-   numApply_(0),
-   condEst_ (-Teuchos::ScalarTraits<magnitudeType>::one ())
-{
-}
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const crs_matrix_type>& A) :
+  matrix_ (A),
+  initializeTime_ (0.0),
+  computeTime_ (0.0),
+  applyTime_ (0.0),
+  numInitialize_ (0),
+  numCompute_ (0),
+  numApply_ (0),
+  condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+  isInitialized_ (false),
+  isComputed_ (false)
+{}
+
+template<class MatrixType>
+Diagonal<MatrixType>::
+Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag) :
+  userInverseDiag_ (diag),
+  inverseDiag_ (diag),
+  initializeTime_ (0.0),
+  computeTime_ (0.0),
+  applyTime_ (0.0),
+  numInitialize_ (0),
+  numCompute_ (0),
+  numApply_ (0),
+  condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+  isInitialized_ (false),
+  isComputed_ (false)
+{}
+
 
 template<class MatrixType>
 Diagonal<MatrixType>::~Diagonal()
-{
-}
+{}
 
 template<class MatrixType>
-void Diagonal<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*/)
+Teuchos::RCP<const typename Diagonal<MatrixType>::map_type>
+Diagonal<MatrixType>::getDomainMap () const
 {
+  if (matrix_.is_null ()) {
+    if (userInverseDiag_.is_null ()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::runtime_error, "Ifpack2::Diagonal::getDomainMap: "
+        "The input matrix A is null, and you did not provide a vector of "
+        "inverse diagonal entries.  Please call setMatrix() with a nonnull "
+        "input matrix before calling this method.");
+    } else {
+      return userInverseDiag_->getMap ();
+    }
+  } else {
+    return matrix_->getDomainMap ();
+  }
 }
 
-template<class MatrixType>
-void Diagonal<MatrixType>::initialize()
-{
-  if (isInitialized_) return;
 
-  // Precompute diagonal offsets so we don't have to search for them later.
-  if (matrix_ != Teuchos::null) {
-    matrix_->getLocalDiagOffsets(offsets_);
+template<class MatrixType>
+Teuchos::RCP<const typename Diagonal<MatrixType>::map_type>
+Diagonal<MatrixType>::getRangeMap () const
+{
+  if (matrix_.is_null ()) {
+    if (userInverseDiag_.is_null ()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::runtime_error, "Ifpack2::Diagonal::getRangeMap: "
+        "The input matrix A is null, and you did not provide a vector of "
+        "inverse diagonal entries.  Please call setMatrix() with a nonnull "
+        "input matrix before calling this method.");
+    } else {
+      return userInverseDiag_->getMap ();
+    }
+  } else {
+    return matrix_->getRangeMap ();
+  }
+}
+
+
+template<class MatrixType>
+void Diagonal<MatrixType>::setParameters (const Teuchos::ParameterList& /*params*/)
+{}
+
+
+template<class MatrixType>
+void Diagonal<MatrixType>::reset ()
+{
+  inverseDiag_ = Teuchos::null;
+  offsets_ = Teuchos::null;
+  condEst_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
+  isInitialized_ = false;
+  isComputed_ = false;
+}
+
+
+template<class MatrixType>
+void Diagonal<MatrixType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A.getRawPtr () != matrix_.getRawPtr ()) { // it's a different matrix
+    reset ();
+    matrix_ = A;
+  }
+}
+
+
+template<class MatrixType>
+void Diagonal<MatrixType>::initialize ()
+{
+  // Either the matrix to precondition must be nonnull, or the user
+  // must have provided a Vector of diagonal entries.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    matrix_.is_null () && userInverseDiag_.is_null (), std::runtime_error,
+    "Ifpack2::Diagonal::initialize: The matrix to precondition is null, "
+    "and you did not provide a Tpetra::Vector of diagonal entries.  "
+    "Please call setMatrix() with a nonnull input before calling this method.");
+
+  // If the user did provide an input matrix, then that takes
+  // precedence over the vector of inverse diagonal entries, if they
+  // provided one earlier.  This is only possible if they created this
+  // Diagonal instance using the constructor that takes a
+  // Tpetra::Vector pointer, and then called setMatrix() with a
+  // nonnull input matrix.
+  if (! matrix_.is_null ()) {
+    // If you call initialize(), it means that you are asserting that
+    // the structure of the input sparse matrix may have changed.
+    // This means we should always recompute the diagonal offsets, if
+    // the input matrix is a Tpetra::CrsMatrix.
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (matrix_);
+    if (A_crs.is_null ()) {
+      offsets_ = Teuchos::null; // offsets are no longer valid
+    }
+    else {
+      A_crs->getLocalDiagOffsets (offsets_);
+    }
   }
 
   isInitialized_ = true;
@@ -103,25 +202,45 @@ void Diagonal<MatrixType>::initialize()
 }
 
 template<class MatrixType>
-void Diagonal<MatrixType>::compute()
+void Diagonal<MatrixType>::compute ()
 {
+  // Either the matrix to precondition must be nonnull, or the user
+  // must have provided a Vector of diagonal entries.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    matrix_.is_null () && userInverseDiag_.is_null (), std::runtime_error,
+    "Ifpack2::Diagonal::compute: The matrix to precondition is null, "
+    "and you did not provide a Tpetra::Vector of diagonal entries.  "
+    "Please call setMatrix() with a nonnull input before calling this method.");
+
   if (! isInitialized_) {
     initialize ();
   }
-  isComputed_ = false;
-  if (matrix_.is_null ()) {
-    isComputed_ = true;
-    return;
+
+  // If the user did provide an input matrix, then that takes
+  // precedence over the vector of inverse diagonal entries, if they
+  // provided one earlier.  This is only possible if they created this
+  // Diagonal instance using the constructor that takes a
+  // Tpetra::Vector pointer, and then called setMatrix() with a
+  // nonnull input matrix.
+  if (matrix_.is_null ()) { // accept the user's diagonal
+    inverseDiag_ = userInverseDiag_;
   }
-
-  // Get the diagonal entries using the precomputed offsets and invert them.
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
-  Teuchos::RCP<vector_type> tmp_vec = 
-    Teuchos::rcp (new vector_type (matrix_->getRowMap ()));
-  matrix_->getLocalDiagCopy (*tmp_vec, offsets_ ());
-  tmp_vec->reciprocal (*tmp_vec);
-
-  inversediag_ = tmp_vec;
+  else {
+    Teuchos::RCP<vector_type> tmpVec (new vector_type (matrix_->getRowMap ()));
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (matrix_);
+    if (A_crs.is_null ()) {
+      // Get the diagonal entries from the Tpetra::RowMatrix.
+      matrix_->getLocalDiagCopy (*tmpVec);
+    }
+    else {
+      // Get the diagonal entries from the Tpetra::CrsMatrix using the
+      // precomputed offsets.
+      A_crs->getLocalDiagCopy (*tmpVec, offsets_ ());
+    }
+    tmpVec->reciprocal (*tmpVec); // invert the diagonal entries
+    inverseDiag_ = tmpVec;
+  }
 
   isComputed_ = true;
   ++numCompute_;
@@ -129,80 +248,40 @@ void Diagonal<MatrixType>::compute()
 
 template<class MatrixType>
 void Diagonal<MatrixType>::
-apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp /*mode*/,
-       Scalar alpha,
-       Scalar beta) const
+       scalar_type alpha,
+       scalar_type beta) const
 {
-  // This method will not just call applyTempl() for now to avoid doing the extra work of
-  // copying data to intermediate vectors to convert scalar types.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! isComputed (), std::runtime_error, "Ifpack2::Diagonal::apply: You "
+    "must first call compute() before you may call apply().  Once you have "
+    "called compute(), you need not call it again unless the values in the "
+    "matrix have changed, or unless you have called setMatrix().");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
-
+  Y.elementWiseMultiply (alpha, *inverseDiag_, X, beta);
   ++numApply_;
-  Y.elementWiseMultiply(alpha, *inversediag_, X, beta);
-}
-
-template<class MatrixType>
-template<class DomainScalar, class RangeScalar>
-void
-Diagonal<MatrixType>::
-applyTempl (const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-	    Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-	    Teuchos::ETransp /*mode*/,
-	    RangeScalar alpha,
-	    RangeScalar beta) const
-{
-  typedef typename Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeMultiVectorType;
-  typedef typename Tpetra::Vector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeVectorType;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::Diagonal::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
-
-  ++numApply_;
-
-  Teuchos::RCP<RangeMultiVectorType> Xtmp = rcp(new RangeMultiVectorType(X.getMap(), X.getNumVectors()));
-  Teuchos::RCP<RangeVectorType> invtmp = rcp(new RangeVectorType(inversediag_->getMap()));
-
-  for (size_t j = 0; j < X.getNumVectors(); ++j) {
-    Teuchos::ArrayRCP<const DomainScalar> xVals = X.getVector( j )->get1dView();
-    Teuchos::ArrayRCP<RangeScalar> xValsRange = Xtmp->getVectorNonConst( j )->get1dViewNonConst();
-    if( xVals.size() ) {
-      std::transform( xVals.begin(), xVals.end(), xValsRange.begin(), Teuchos::asFunc<RangeScalar>() );
-    }
-  }
-  Teuchos::ArrayRCP<const Scalar> invVals = inversediag_->get1dView();
-  Teuchos::ArrayRCP<RangeScalar> invValsRange = invtmp->get1dViewNonConst();
-  if( invVals.size() ) {
-    std::transform( invVals.begin(), invVals.end(), invValsRange.begin(), Teuchos::asFunc<RangeScalar>() );
-  }
-
-  Y.elementWiseMultiply(alpha, *invtmp, *Xtmp, beta);
 }
 
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 Diagonal<MatrixType>::
 computeCondEst (CondestType CT,
-		LocalOrdinal MaxIters,
-		magnitudeType Tol,
-		const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix)
+                local_ordinal_type MaxIters,
+                magnitude_type Tol,
+                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix)
 {
-  const magnitudeType minusOne = Teuchos::ScalarTraits<magnitudeType>::one ();
+  const magnitude_type minusOne = -Teuchos::ScalarTraits<magnitude_type>::one ();
 
-  if (!isComputed()) { // cannot compute right now
+  if (! isComputed ()) { // cannot compute right now
     return minusOne;
   }
   // NOTE: this is computing the *local* condest
   if (condEst_ == minusOne) {
-    condEst_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
+    condEst_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
   }
-  return(condEst_);
+  return condEst_;
 }
 
 template <class MatrixType>
@@ -236,20 +315,45 @@ double Diagonal<MatrixType>::getApplyTime() const {
 }
 
 template <class MatrixType>
-std::string Diagonal<MatrixType>::description() const
+std::string Diagonal<MatrixType>::description () const
 {
-  return std::string("Ifpack2::Diagonal");
+  std::ostringstream out;
+  out << "\"Ifpack2::Diagonal\": "
+      << "{";
+  if (this->getObjectLabel () != "") {
+    out << "Label: \"" << this->getObjectLabel () << "\", ";
+  }
+  out << "Number of initialize calls: " << numInitialize_
+      << ", Number of compute calls: " << numCompute_
+      << ", Number of apply calls: " << numApply_
+      << "}";
+  return out.str ();
 }
 
 template <class MatrixType>
-void Diagonal<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+void Diagonal<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
-  if (verbLevel != Teuchos::VERB_NONE) {
-    out << this->description() << std::endl;
-    out << "  numApply: " << numApply_ << std::endl;
+  using std::endl;
+
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+  if (vl != Teuchos::VERB_NONE) {
+    Teuchos::OSTab tab0 (out);
+    out << "\"Ifpack2::Diagonal\":";
+    Teuchos::OSTab tab1 (out);
+    out << "Template parameter: "
+        << Teuchos::TypeNameTraits<MatrixType>::name () << endl;
+    if (this->getObjectLabel () != "") {
+      out << "Label: \"" << this->getObjectLabel () << "\", ";
+    }
+    out << "Number of initialize calls: " << numInitialize_ << endl
+        << "Number of compute calls: " << numCompute_ << endl
+        << "Number of apply calls: " << numApply_ << endl;
   }
 }
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif

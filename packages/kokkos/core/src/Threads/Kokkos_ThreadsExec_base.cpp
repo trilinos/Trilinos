@@ -41,7 +41,9 @@
 //@HEADER
 */
 
+#include <cstdlib>
 #include <string>
+#include <iostream>
 #include <stdexcept>
 
 #include <KokkosCore_config.h>
@@ -68,12 +70,26 @@ namespace {
 
 pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
-// Pthreads compatible driver:
+// Pthreads compatible driver.
+// Recovery from an exception would require constant intra-thread health
+// verification; which would negatively impact runtime.  As such simply
+// abort the process.
 
 void * internal_pthread_driver( void * )
 {
-  ThreadsExec::driver();
-
+  try {
+    ThreadsExec::driver();
+  }
+  catch( const std::exception & x ) {
+    std::cerr << "Exception thrown from worker thread: " << x.what() << std::endl ;
+    std::cerr.flush();
+    std::abort();
+  }
+  catch( ... ) {
+    std::cerr << "Exception thrown from worker thread" << std::endl ;
+    std::cerr.flush();
+    std::abort();
+  }
   return NULL ;
 }
 
@@ -122,35 +138,6 @@ void ThreadsExec::global_unlock()
 }
 
 //----------------------------------------------------------------------------
-
-namespace {
-
-template< unsigned N > inline void noop_cycle();
-
-template<> inline void noop_cycle<0>() {}
-template< unsigned N > inline void noop_cycle()
-{
-#if !defined ( KOKKOS_DISABLE_ASM ) && \
-    ( defined( __GNUC__ ) || \
-      defined( __GNUG__ ) || \
-      defined( __INTEL_COMPILER__ ) )
-
-  asm volatile("nop");
-  noop_cycle<N-1>();
-
-#else
-  sched_yield();
-#endif
-}
-
-}
-
-void ThreadsExec::wait( volatile int & flag , const int value )
-{
-  // Issue 'NCycle' no-op operations between checks for the flag to change value.
-  enum { NCycle = 1 };
-  while ( value == flag ) { noop_cycle< NCycle >(); }
-}
 
 void ThreadsExec::wait_yield( volatile int & flag , const int value )
 {
@@ -240,11 +227,6 @@ void ThreadsExec::global_lock()
 void ThreadsExec::global_unlock()
 { ThreadLockWindows::singleton().unlock(); }
 
-void ThreadsExec::wait( volatile int & flag , const int value )
-{
-  while ( value == flag ) { Sleep(0); }
-}
-
 void ThreadsExec::wait_yield( volatile int & flag , const int value ) {}
 {
   while ( value == flag ) { Sleep(0); }
@@ -272,7 +254,6 @@ bool ThreadsExec::spawn()
 bool ThreadsExec::is_process() { return true ; }
 void ThreadsExec::global_lock() {}
 void ThreadsExec::global_unlock() {}
-void ThreadsExec::wait( volatile int & , const int ) {}
 void ThreadsExec::wait_yield( volatile int & , const int ) {}
 
 } // namespace Impl

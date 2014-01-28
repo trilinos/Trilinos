@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -53,7 +53,6 @@
 #include <Tpetra_MultiVector_decl.hpp>
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
-//TODO: Kokkos headers
 
 /*! @class TpetraOperator
     Wraps an existing MueLu::Hierarchy as a Tpetra::Operator.
@@ -64,17 +63,14 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
-  class TpetraOperator
-    : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  {
-
+  class TpetraOperator : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
 
     //! @name Constructor/Destructor
     //@{
 
     //! Constructor
-    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H) { }
+    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >& H) : Hierarchy_(H) { }
 
     //! Destructor.
     virtual ~TpetraOperator() { }
@@ -89,27 +85,25 @@ namespace MueLu {
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     /*!
-      \param[in] X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
+      \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
       \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.
-
     */
     void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
                                          Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar beta = Teuchos::ScalarTraits<Scalar>::one()) const;
+                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
     template <class NewNode, class NewLocalMatOps>
     Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps> >
-    clone(const RCP<NewNode> &new_node) const {
+    clone(const RCP<NewNode>& new_node) const {
       return Teuchos::rcp(new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps>(Hierarchy_->template clone<NewNode,NewLocalMatOps>(new_node)));
     }
 
   private:
-
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
 
   };

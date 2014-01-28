@@ -69,8 +69,8 @@ namespace panzer {
   class MaterialModel;
   class PureBasis;
   class IntegrationRule;
-  class EquationSetFactory;
-  class GlobalData;
+  struct EquationSetFactory;
+  struct GlobalData;
   class PhysicsBlock;
 }
 

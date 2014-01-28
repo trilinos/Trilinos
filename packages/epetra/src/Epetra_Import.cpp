@@ -100,7 +100,9 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
   for (i=NumSameIDs_; i< NumTargetIDs; i++) 
     if (sourceMap.MyGID(TargetGIDs[i])) NumPermuteIDs_++; // Check if Target GID is a local Source GID
     else NumRemoteIDs_++; // If not, then it is remote
-     
+
+
+  
   // Define remote and permutation lists  
   int_type * RemoteGIDs=0;
   RemoteLIDs_ = 0;
@@ -136,7 +138,7 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
   
   if (sourceMap.DistributedGlobal()) {
     if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
-  
+
 #ifdef EPETRA_ENABLE_DEBUG
     int myeq = (NumRemotePIDs==NumRemoteIDs_);
     int globaleq=0;
@@ -147,7 +149,7 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
       sourceMap.Comm().Barrier();
       sourceMap.Comm().Barrier();
       sourceMap.Comm().Barrier();
-      throw ReportError("Epetra_Import: UserRemotePIDs count wrong");
+      ReportError("Epetra_Import: UserRemotePIDs count wrong",-1);
     }
 #endif
 
@@ -223,6 +225,11 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     for(i=0; i<NumExportIDs_; i++)  {
       ExportPIDs_[i] = UserExportPIDs[i];
       ExportLIDs_[i] = UserExportLIDs[i];
+    }
+    
+    // Send Counts
+    for (i=0; i< NumExportIDs_; i++) {
+      NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
     }
 
 #ifdef HAVE_MPI

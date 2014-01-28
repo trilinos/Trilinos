@@ -115,7 +115,7 @@ int ex_get_prop_array (int   exoid,
                        void_int  *values)
 {
    int num_props, i, propid, status;
-   int found = FALSE;
+   int found = EX_FALSE;
    char name[MAX_VAR_NAME_LENGTH+1];
    char tmpstr[MAX_STR_LENGTH+1];
 
@@ -194,7 +194,7 @@ int ex_get_prop_array (int   exoid,
      }
 
      if (strcmp(tmpstr, prop_name) == 0) {
-       found = TRUE;
+       found = EX_TRUE;
        break;
      }
    }

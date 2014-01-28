@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -68,8 +68,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    this->Input(currentLevel, "A");
-    currentLevel.DeclareInput("Nullspace",    NULL);
+    Factory::Input(currentLevel, "A");
+    Factory::Input(currentLevel, "Nullspace");
+
+    coarseSolver_->DeclareInput(currentLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -81,19 +83,19 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0, 0) << "Warning: MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Matrix>      A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
-    RCP<MultiVector> B = currentLevel.Get< RCP<MultiVector> >      ("Nullspace",    NULL);
+    RCP<Matrix>      A = Factory::Get< RCP<Matrix> >     (currentLevel, "A");
+    RCP<MultiVector> B = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
 
     int m = B->getNumVectors();
 
     // Find which vectors we want to keep
-    Teuchos::Array<Scalar> br(m), bb(m);
+    Array<Scalar> br(m), bb(m);
     RCP<MultiVector> R = MultiVectorFactory::Build(B->getMap(), m);
     A->apply(*B, *R);
-    B->dot(*R, br);
-    B->dot(*B, bb);
+    B->  dot(*R, br);
+    B->  dot(*B, bb);
 
-    Teuchos::Array<size_t> selectedIndices;
+    Array<size_t> selectedIndices;
     for (int i = 0; i < m; i++) {
       Scalar rayleigh = br[i] / bb[i];
 
@@ -129,8 +131,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
-  {
+  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     coarseSolver_->Apply(X, B, InitialGuessIsZero);
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
@@ -142,7 +143,7 @@ namespace MueLu {
     for (int i = 0; i < n; i++) {
       RCP<Tpetra::Vector<SC,LO,GO,NO> > Xi = X_->getVectorNonConst(i);
 
-      Teuchos::Array<Scalar> dot(1);
+      Array<Scalar> dot(1);
       for (int k = 0; k < m; k++) {                                     // orthogonalize
         RCP<const Tpetra::Vector<SC,LO,GO,NO> > Bk = Borth__->getVector(k);
 

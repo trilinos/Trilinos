@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -98,7 +98,6 @@
 #include <MueLu_MLParameterListInterpreter.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
@@ -167,6 +166,8 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
 }
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 

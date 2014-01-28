@@ -89,7 +89,7 @@
     <Parameter name="maxCoarseSize"                         type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
@@ -97,11 +97,7 @@
       <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
-      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>      
     </ParameterList>
 
   </ParameterList>

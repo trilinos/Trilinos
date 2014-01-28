@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -51,7 +51,6 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 /*
   Comments about tests with hard coded results:
@@ -63,6 +62,7 @@
 
 namespace MueLuTests {
 
+  // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
@@ -88,7 +88,7 @@ namespace MueLuTests {
 
       Ifpack2Smoother smoother("RELAXATION", paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
@@ -117,7 +117,7 @@ namespace MueLuTests {
 
       Ifpack2Smoother smoother("RELAXATION",paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
@@ -148,7 +148,7 @@ namespace MueLuTests {
       paramList.set("chebyshev: zero starting solution", false);
       Ifpack2Smoother smoother("CHEBYSHEV",paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       TEST_FLOATING_EQUALITY(residualNorms, 5.269156e-01, 1e-7);  // Compare to residual reported by ML
 
@@ -165,7 +165,7 @@ namespace MueLuTests {
       Teuchos::ParameterList paramList;
       Ifpack2Smoother smoother("ILUT",paramList);
 
-      ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {
@@ -201,7 +201,7 @@ namespace MueLuTests {
       X->randomize();
 
       // Normalize X
-      Array<ST::magnitudeType> norms(1); X->norm2(norms);
+      Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1); X->norm2(norms);
       X->scale(1/norms[0]);
 
       // Compute RHS corresponding to X
@@ -214,13 +214,13 @@ namespace MueLuTests {
       out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
       out << "solve with zero initial guess" << std::endl;
-      Teuchos::Array<ST::magnitudeType> initialNorms(1); X->norm2(initialNorms);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> initialNorms(1); X->norm2(initialNorms);
       out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
 
       smoother.Apply(*X, *RHS, true);  //zero initial guess
 
-      Teuchos::Array<ST::magnitudeType> finalNorms(1); X->norm2(finalNorms);
-      Teuchos::Array<ST::magnitudeType> residualNorm1 = Utils::ResidualNorm(*A, *X, *RHS);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm1 = Utils::ResidualNorm(*A, *X, *RHS);
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
@@ -232,7 +232,7 @@ namespace MueLuTests {
       smoother.Apply(*X, *RHS, false); //nonzero initial guess
 
       X->norm2(finalNorms);
-      Teuchos::Array<ST::magnitudeType> residualNorm2 = Utils::ResidualNorm(*A, *X, *RHS);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm2 = Utils::ResidualNorm(*A, *X, *RHS);
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 

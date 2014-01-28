@@ -64,7 +64,7 @@ template<> struct TestDevice< Kokkos::HostSpace >
 
   TestDevice()
   {
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( 1 , 4 ) );
+    Kokkos::Threads::initialize( 4 , 1 /* use one NUMA region */ );
   }
   ~TestDevice()
   {

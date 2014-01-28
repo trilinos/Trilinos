@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -56,18 +56,18 @@
 // MueLu
 #include <MueLu_ShiftedLaplacian.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_UseShortNames.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
-typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS; 
-typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
-
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
+  typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
+  typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
+  typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
+  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
+  typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
+  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
     shifts.push_back(-curshift);
   }
   SLSolver -> setLevelShifts(shifts);
+  SLSolver -> initialize();
   SLSolver -> setupSlowRAP();
 
   tm = Teuchos::null;

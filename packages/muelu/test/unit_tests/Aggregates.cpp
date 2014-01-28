@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -55,9 +55,10 @@
 #include "MueLu_Aggregates.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   // Little utility to generate aggregates.
   RCP<Aggregates> gimmeAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo)
@@ -140,7 +141,7 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
-    RCP<AmalgamationInfo> amalgInfo = Teuchos::rcp(new AmalgamationInfo);
+    RCP<AmalgamationInfo> amalgInfo;
     RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
     TEST_EQUALITY(aggregates != Teuchos::null, true);
   }
@@ -153,7 +154,7 @@ namespace MueLuTests {
 
       RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
       RCP<const Map> rowmap = A->getRowMap();
-      RCP<AmalgamationInfo> amalgInfo = Teuchos::rcp(new AmalgamationInfo);
+      RCP<AmalgamationInfo> amalgInfo;
       RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
       GO numAggs = aggregates->GetNumAggregates();
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();

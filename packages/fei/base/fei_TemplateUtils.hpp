@@ -273,7 +273,7 @@ namespace fei {
       srg.rowNumbers.resize(numRows);
       srg.rowOffsets.resize(numRows+1);
 
-      int* rowNumPtr = &(srg.rowNumbers[0]);
+      int* rowNumPtr = numRows>0 ? &(srg.rowNumbers[0]): NULL;
       int* rowOffsPtr = &(srg.rowOffsets[0]);
 
       typename MAP_TYPE::iterator
@@ -294,7 +294,7 @@ namespace fei {
       rowOffsPtr[offset] = nnz;
 
       srg.packedColumnIndices.resize(nnz);
-      int* colPtr = &(srg.packedColumnIndices[0]);
+      int* colPtr = numRows>0 ? &(srg.packedColumnIndices[0]) : NULL;
       offset = 0;
       m_iter = map_obj.begin();
       int i = 0;

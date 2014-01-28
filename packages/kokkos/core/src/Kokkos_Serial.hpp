@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+/// \file Kokkos_Serial.hpp
+/// \brief Declaration and definition of Kokkos::Serial device.
+
 #ifndef KOKKOS_SERIAL_HPP
 #define KOKKOS_SERIAL_HPP
 
@@ -55,23 +58,46 @@
 
 namespace Kokkos {
 
-/** \brief Kokkos device for non-parallel execution */
+/// \class Serial
+/// \brief Kokkos device for non-parallel execution
+///
+/// A "device" represents a parallel execution model.  It tells Kokkos
+/// how to parallelize the execution of kernels in a parallel_for or
+/// parallel_reduce.  For example, the Threads device uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
+/// extensions, and the Cuda device uses NVIDIA's CUDA programming
+/// model.  The Serial device executes "parallel" kernels
+/// sequentially.  This is useful if you really do not want to use
+/// threads, or if you want to explore different combinations of MPI
+/// and shared-memory parallel programming models.
 class Serial {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The device type (same as this class).
   typedef Serial                device_type ;
+  //! The size_type typedef best suited for this device.
   typedef HostSpace::size_type  size_type ;
+  //! This device's preferred memory space.
   typedef HostSpace             memory_space ;
+  //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
+  /// \brief This device's host mirror type.
+  ///
+  /// Serial is a host device, so the host mirror type is the same as
+  /// the device type itself.
   typedef Serial                host_mirror_device_type ;
 
   //@}
-  //! \name Functions that all Kokkos devices must implement.
-  //@{
 
-  static bool in_parallel() { return false ; }
+  /// \brief True if and only if this method is being called in a
+  ///   thread-parallel function.
+  ///
+  /// For the Serial device, this method <i>always</i> returns false,
+  /// because parallel_for or parallel_reduce with the Serial device
+  /// always execute sequentially.
+  inline static int in_parallel() { return false ; }
 
   /** \brief  Set the device in a "sleep" state.
    *
@@ -101,17 +127,17 @@ public:
   /// device have completed.
   static void fence() {}
 
-  /// \brief Free any resources being consumed by the device.
-  ///
-  /// For the Serial device, this terminates spawned worker threads.
-  static void finalize();
+  static void initialize() {}
 
-  /** \brief  Print Serial configuration information */
-  static void print_configuration( std::ostream & );
+  static int is_initialized() { return 1 ; }
 
-  //----------------------------------------
-  /** \name Function for the functor device interface */
-  /**@{ */
+  //! Free any resources being consumed by the device.
+  static void finalize() {}
+
+  //! Print configuration information to the given output stream.
+  static void print_configuration( std::ostream & , const bool detail = false );
+
+  inline static void memory_fence() {};
 
   inline int league_rank() const { return 0 ; }
   inline int league_size() const { return 1 ; }
@@ -125,9 +151,6 @@ public:
 
   template< typename T >
   inline T * get_shmem( const int count );
-
-  /**@} */
-  //----------------------------------------
 
   static void * resize_reduce_scratch( const unsigned );
 };

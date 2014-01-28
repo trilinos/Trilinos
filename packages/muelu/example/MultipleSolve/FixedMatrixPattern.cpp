@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -59,7 +59,6 @@
 #include <MueLu_NoFactory.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // This example demonstrates how to reuse some parts of a multigrid setup between runs.
 //
@@ -72,9 +71,13 @@
 // This can be verified by using the --no-recycling option.
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  typedef Teuchos::ScalarTraits<SC> ST;
 
   //
   // Parameters

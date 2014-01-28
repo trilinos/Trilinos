@@ -241,7 +241,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
 }
 
 // ====================================================================== 
-bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, bool backward)
+bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, bool backward, bool reorder=false)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
@@ -254,6 +254,17 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
   List.set("relaxation: damping factor", 1.0);
   List.set("relaxation: type", PrecType);
   if(backward) List.set("relaxation: backward mode",backward);  
+
+  // Reordering if needed
+  int NumRows=A->NumMyRows();
+  std::vector<int> RowList(NumRows);
+  if(reorder) {
+    for(int i=0; i<NumRows; i++)
+      RowList[i]=i;
+    List.set("relaxation: number of local smoothing indices",NumRows);
+    List.set("relaxation: local smoothing indices",RowList.size()>0? &RowList[0] : (int*)0);
+  }
+
 
   int Iters1, Iters10;
 
@@ -331,7 +342,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
 }
 
 // ====================================================================== 
-bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,bool backward)
+bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,bool backward, bool reorder=false)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
@@ -346,7 +357,16 @@ bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,
   List.set("relaxation: sweeps",1550);
   List.set("relaxation: type", PrecType);
   if(backward) List.set("relaxation: backward mode",backward);
-  
+
+  // Reordering if needed
+  int NumRows=A->NumMyRows();
+  std::vector<int> RowList(NumRows);
+  if(reorder) {
+    for(int i=0; i<NumRows; i++)
+      RowList[i]=i;
+    List.set("relaxation: number of local smoothing indices",NumRows);
+    List.set("relaxation: local smoothing indices",RowList.size()>0? &RowList[0] : (int*)0);
+  }
 
   Ifpack_PointRelaxation Point(&*A);
 
@@ -374,6 +394,9 @@ bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,
     return(false);
   }
 }
+
+
+
 
 // ====================================================================== 
 int main(int argc, char *argv[])
@@ -422,10 +445,18 @@ int main(int argc, char *argv[])
   if(!BasicTest("symmetric Gauss-Seidel",A,false))
     TestPassed = false;
 
+  if(!BasicTest("symmetric Gauss-Seidel",A,false,true))
+    TestPassed = false;
+
   if (!SymmetricGallery) {
     if(!BasicTest("Gauss-Seidel",A,false))
       TestPassed = false;
     if(!BasicTest("Gauss-Seidel",A,true))
+      TestPassed = false;  
+
+    if(!BasicTest("Gauss-Seidel",A,false,true))
+      TestPassed = false;
+    if(!BasicTest("Gauss-Seidel",A,true,true))
       TestPassed = false;  
 
   }
@@ -437,10 +468,19 @@ int main(int argc, char *argv[])
   if(!KrylovTest("symmetric Gauss-Seidel",A,false))
     TestPassed = false;
 
+  if(!KrylovTest("symmetric Gauss-Seidel",A,false,true))
+    TestPassed = false;
+
+
   if (!SymmetricGallery) {
     if(!KrylovTest("Gauss-Seidel",A,false))
       TestPassed = false;
     if(!KrylovTest("Gauss-Seidel",A,true))
+      TestPassed = false;
+
+    if(!KrylovTest("Gauss-Seidel",A,false,true))
+      TestPassed = false;
+    if(!KrylovTest("Gauss-Seidel",A,true,true))
       TestPassed = false;
 
   }

@@ -128,7 +128,7 @@ class runTest {
   public:
   static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
     using std::endl;
-  
+
     ThreadedBlasKiller<Node>::kill();
 
     typedef double Scalar;
@@ -138,12 +138,6 @@ class runTest {
     typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
     typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLP;
     typedef Belos::SolverManager<Scalar,TMV,TOP>   BSM;
-
-#ifdef HAVE_BELOS_TPETRA_TIMERS
-    typedef Belos::MultiVecTraits<Scalar,TMV>      BMVT;
-    BMVT::mvTimesMatAddMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTimesMatAddMv()");
-    BMVT::mvTransMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTransMv()");
-#endif
 
     const bool IAmRoot = (comm->getRank() == 0);
 
@@ -240,7 +234,7 @@ int main(int argc, char*argv[])
   if (IAmRoot) {
     cout << "proc 0 total program time: " << timer.totalElapsedTime() << endl;
   }
-  
+
   return 0;
 }
 

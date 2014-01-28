@@ -255,7 +255,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         h_mv_type h_x = Kokkos::create_mirror_view(x);
         h_mv_type h_y = Kokkos::create_mirror_view(y);
         h_mv_type h_y_compare = Kokkos::create_mirror(y);
-    typename matrix_type::CrsArrayType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+    typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
     typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
 
     //Kokkos::deep_copy(h_graph.row_map,A.graph.row_map);
@@ -335,7 +335,7 @@ template<typename Scalar>
 int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile) {
         typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
         typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type> mv_type;
-        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomRead> mv_random_read_type;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomAccess> mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
 
         Scalar* val = NULL;
@@ -359,7 +359,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
         h_mv_type h_x = Kokkos::create_mirror_view(x);
         h_mv_type h_y = Kokkos::create_mirror_view(y);
         h_mv_type h_y_compare = Kokkos::create_mirror(y);
-    typename matrix_type::CrsArrayType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+    typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
     typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
 
     //Kokkos::deep_copy(h_graph.row_map,A.graph.row_map);
@@ -444,7 +444,7 @@ int main(int argc, char **argv)
 {
  long long int size = 110503; // a prime number
  int numVecs = 4;
- int threads=1;
+ int threads_per_numa=1;
  int device = 0;
  int numa=1;
  int test=-1;
@@ -457,7 +457,7 @@ int main(int argc, char **argv)
   if((strcmp(argv[i],"-d")==0)) {device=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-s")==0)) {size=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--threads")==0)) {threads=atoi(argv[++i]); continue;}
+  if((strcmp(argv[i],"--threads")==0)) {threads_per_numa=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--test")==0)) {test=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
@@ -472,11 +472,11 @@ int main(int argc, char **argv)
  )
 
 #ifdef _OPENMP
-   omp_set_num_threads(numa*threads);
-   Kokkos::OpenMP::initialize( numa);
+   omp_set_num_threads(numa*threads_per_numa);
+   Kokkos::OpenMP::initialize( numa*threads_per_numa , numa );
 #pragma message "Compile OpenMP"
 #else
-   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
+   Kokkos::Threads::initialize( numa*threads_per_numa , numa );
 #pragma message "Compile PThreads"
 #endif
 

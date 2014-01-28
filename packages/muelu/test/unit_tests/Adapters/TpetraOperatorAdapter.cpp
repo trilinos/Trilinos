@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -65,9 +65,10 @@
 #include "MueLu_TpetraOperator.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   typedef MueLu::Utils<SC,LO,GO,NO,LMO> Utils;
   typedef MueLu::TpetraOperator<SC,LO,GO,NO,LMO> TpetraOperator;
@@ -86,7 +87,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (SC) 1.0);
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     nullSpace->norm1(norms);
 
     RCP<Hierarchy> H = rcp(new Hierarchy());

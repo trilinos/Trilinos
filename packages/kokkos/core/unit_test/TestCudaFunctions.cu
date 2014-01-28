@@ -62,8 +62,10 @@
 #include <TestTile.hpp>
 
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
+#include <TestAggregate.hpp>
 
 namespace Test {
 
@@ -85,6 +87,12 @@ void test_device_cuda_view_impl()
 
 void test_device_cuda_view_api()
 {
+  typedef Kokkos::View< const int * , Kokkos::Cuda , Kokkos::MemoryTraits< Kokkos::RandomAccess > > view_texture_managed ;
+  typedef Kokkos::View< const int * , Kokkos::Cuda , Kokkos::MemoryTraits< Kokkos::RandomAccess | Kokkos::Unmanaged > > view_texture_unmanaged ;
+
+  typedef Kokkos::Impl::StaticAssertSame< typename view_texture_managed::specialize , Kokkos::Impl::ViewCudaTexture >::type spec_m ;
+  typedef Kokkos::Impl::StaticAssertSame< typename view_texture_unmanaged::specialize , Kokkos::Impl::ViewCudaTexture >::type spec_um ;
+
   TestViewAPI< double , Kokkos::Cuda >();
 
 #if 0
@@ -224,3 +232,36 @@ void test_device_cuda_tile()
 
 }
 
+//----------------------------------------------------------------------------
+
+namespace Test {
+
+void test_device_cuda_view_aggregate()
+{
+  TestViewAggregate< Kokkos::Cuda >();
+}
+
+}
+
+//----------------------------------------------------------------------------
+
+namespace Test {
+
+void test_device_cuda_scan()
+{
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScan< Kokkos::Cuda >( 10 );
+    TestScan< Kokkos::Cuda >( 10000 );
+  }
+  TestScan< Kokkos::Cuda >( 1000000 );
+  TestScan< Kokkos::Cuda >( 10000000 );
+  Kokkos::Cuda::fence();
+}
+
+void test_device_cuda_team_scan()
+{
+  TestScanRequest< Kokkos::Cuda >( 10 );
+  TestScanRequest< Kokkos::Cuda >( 10000 );
+}
+
+}

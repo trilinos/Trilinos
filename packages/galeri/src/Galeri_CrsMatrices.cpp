@@ -276,10 +276,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)sqrt((double)n);
       ny = nx;
-      if (nx * ny != n)
+      if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }
@@ -292,10 +292,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)sqrt((double)n);
       ny = nx;
-      if (nx * ny != n)
+      if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }
@@ -309,10 +309,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)sqrt((double)n);
       ny = nx;
-      if (nx * ny != n)
+      if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }
@@ -329,10 +329,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)sqrt((double)n);
       ny = nx;
-      if (nx * ny != n)
+      if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }
@@ -351,10 +351,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)sqrt((double)n); 
       ny = nx;
-      if (nx * ny != n)
+      if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }
@@ -380,10 +380,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)sqrt((double)n); 
       ny = nx;
-      if (nx * ny != n)
+      if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }
@@ -402,10 +402,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int nz = List.get("nz", -1);
     if (nx == -1 || ny == -1 || nz == -1)
     {
-      int n = Map->NumGlobalElements();
+      long long n = Map->NumGlobalElements64();
       nx = (int)pow((double)n, 0.33334);
       ny = nx; nz = nx;
-      if (nx * ny * nz != n)
+      if (((long long) nx) * ny * nz != n)
         throw(Exception(__FILE__, __LINE__,
                         "You need to specify nx and ny"));
     }

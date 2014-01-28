@@ -51,17 +51,20 @@
 #include <iomanip>
 
 namespace Test {
+#ifdef KOKKOS_HAVE_CUDA
 
 class cuda : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
+    Kokkos::Cuda::host_mirror_device_type::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
+    Kokkos::Cuda::host_mirror_device_type::finalize();
   }
 };
 
@@ -75,15 +78,10 @@ extern void cuda_test_insert_far(  uint32_t num_nodes
                                    , uint32_t num_duplicates
                                   );
 
-extern void cuda_test_insert_mark_pending_delete(  uint32_t num_nodes
-                            , uint32_t num_inserts
-                            , uint32_t num_duplicates
-                           );
-
 extern void cuda_test_failed_insert(  uint32_t num_nodes );
-extern void cuda_test_assignment_operators(  uint32_t num_nodes );
 extern void cuda_test_deep_copy(  uint32_t num_nodes );
 extern void cuda_test_vector_combinations(unsigned int size);
+extern void cuda_test_dualview_combinations(unsigned int size);
 
 
 #define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
@@ -115,18 +113,25 @@ extern void cuda_test_vector_combinations(unsigned int size);
       cuda_test_vector_combinations(size);                     \
   }
 
-CUDA_INSERT_TEST(close,               100000, 90000, 100, 500)
-CUDA_INSERT_TEST(far,                 100000, 90000, 100, 500)
-CUDA_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
-CUDA_FAILED_INSERT_TEST( 10000, 5000 )
-CUDA_ASSIGNEMENT_TEST( 10000, 5000 )
-CUDA_DEEP_COPY( 10000, 5000 )
+#define CUDA_DUALVIEW_COMBINE_TEST( size )                             \
+  TEST_F( cuda, dualview_combination##size##x) {       \
+      cuda_test_dualview_combinations(size);                     \
+  }
+
+CUDA_DUALVIEW_COMBINE_TEST( 10 )
 CUDA_VECTOR_COMBINE_TEST( 10 )
 CUDA_VECTOR_COMBINE_TEST( 3057 )
+
+CUDA_INSERT_TEST(close,               100000, 90000, 100, 500)
+CUDA_INSERT_TEST(far,                 100000, 90000, 100, 500)
+CUDA_FAILED_INSERT_TEST( 10000, 1000 )
+CUDA_DEEP_COPY( 10000, 1 )
 
 #undef CUDA_INSERT_TEST
 #undef CUDA_FAILED_INSERT_TEST
 #undef CUDA_ASSIGNEMENT_TEST
 #undef CUDA_DEEP_COPY
-#undef CUDA_VECTOR_COMBINE
+#undef CUDA_VECTOR_COMBINE_TEST
+#undef CUDA_DUALVIEW_COMBINE_TEST
+#endif
 }

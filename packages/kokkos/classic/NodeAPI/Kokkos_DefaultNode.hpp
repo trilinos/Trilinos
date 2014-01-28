@@ -57,6 +57,9 @@
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#endif
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -65,7 +68,7 @@ namespace KokkosClassic {
 
 namespace Details {
   /// \fn getNode
-  /// \brief Create a Kokkos Node instance with default parameters.
+  /// \brief Create and return a Kokkos Node instance.
   /// \tparam NodeType The Kokkos Node type.
   ///
   /// \warning This function is <i>not</i> safe to be called by
@@ -73,21 +76,30 @@ namespace Details {
   ///   function must be serialized.  Also, RCP is not currently
   ///   thread safe.
   ///
-  //
+  /// \param params [in/out] On input: Any parameters that the Kokkos
+  ///   Node accepts.  On output, the list may be modified to include
+  ///   missing parameters and their default values.  If params is
+  ///   null, default parameters will be used.
+  ///
   /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
   /// We presume that for every Kokkos Node, if that list of
   /// parameters is empty, then the Node will use default parameters.
   /// This is true for all the Node types implemented in Kokkos.
   template<class NodeType>
   Teuchos::RCP<NodeType>
-  getNode() {
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
     static Teuchos::RCP<NodeType> theNode;
     if (theNode.is_null ()) {
-      Teuchos::ParameterList defaultParams;
-      theNode = Teuchos::rcp (new NodeType (defaultParams));
+      if (params.is_null ()) {
+        Teuchos::ParameterList defaultParams;
+        theNode = Teuchos::rcp (new NodeType (defaultParams));
+      } else {
+        theNode = Teuchos::rcp (new NodeType (*params));
+      }
     }
     return theNode;
   }
+
 } // namespace Details
 
   /** \brief Class to specify %Kokkos default node type and instantiate the default node.
@@ -103,6 +115,17 @@ namespace Details {
       typedef OpenMPNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
       typedef ThrustGPUNode DefaultNodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
+#    pragma message "Kokkos default Node type: Kokkos::Compat::CudaWrapperNode"
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
+#  else
+      typedef SerialNode DefaultNodeType;
+#  endif // defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 #else
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
@@ -110,11 +133,8 @@ namespace Details {
 
       //! \brief Return a pointer to the default node.
       static RCP<DefaultNodeType> getDefaultNode();
-
-    private:
-      static RCP<DefaultNodeType> node_;
   };
 
-}
+} // namespace KokkosClassic
 
 #endif

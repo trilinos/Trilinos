@@ -47,7 +47,7 @@
 //
 
 #include <Zoltan2_CoordinateModel.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <set>
@@ -157,11 +157,11 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
 
   //////////////////////////////////////////////////////////////
-  // Create a BasicCoordinateInput adapter object.
+  // Create a BasicVectorAdapter adapter object.
   //////////////////////////////////////////////////////////////
 
-  typedef Zoltan2::BasicCoordinateInput<mv_t> ia_t;
-  typedef Zoltan2::CoordinateInput<mv_t>      base_ia_t;
+  typedef Zoltan2::BasicVectorAdapter<mv_t> ia_t;
+  typedef Zoltan2::VectorAdapter<mv_t> base_ia_t;
 
   RCP<ia_t> ia;
 

@@ -1,5 +1,6 @@
 // Type definitions for templated classes (generally graph-related) that do not require a scalar.
 
+
 #include <Xpetra_UseShortNamesOrdinal.hpp>
 
 #ifdef MUELU_AGGREGATES_SHORT
@@ -60,6 +61,10 @@ typedef MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,Local
 
 #ifdef MUELU_ONEPTAGGREGATIONALGORITHM_SHORT
 typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> OnePtAggregationAlgorithm;
+#endif
+
+#ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_SHORT
+typedef MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreserveDirichletAggregationAlgorithm;
 #endif
 
 #ifdef MUELU_PRFACTORY_SHORT
@@ -145,4 +150,3 @@ typedef MueLu::VariableContainer VariableContainer;
 #ifdef MUELU_SMOOTHERFACTORYBASE_SHORT
 typedef MueLu::SmootherFactoryBase SmootherFactoryBase;
 #endif
-

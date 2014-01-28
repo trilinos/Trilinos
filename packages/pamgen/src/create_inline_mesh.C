@@ -7,19 +7,25 @@
 #include "../mesh_spec_lt/pamgen_mesh_specification.h" 
 #include "inline_mesh_desc.h"
 ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,long long rank, long long num_procs);
+ms_lt::Mesh_Specification * consolidateMeshSpecification_LT(ms_lt::Mesh_Specification * bms);
+
+
 
 /*****************************************************************************/
 long long Delete_Pamgen_Mesh()
 /*****************************************************************************/
 {
-  if(PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage){
-    delete PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage;
-    PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage = NULL;
+  if(PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage){
+    delete PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage;
   }
-  if(ms_lt::Mesh_Specification::static_storage){
-    delete ms_lt::Mesh_Specification::static_storage;
-    ms_lt::Mesh_Specification::static_storage = NULL;
+  PAMGEN_NEVADA::Inline_Mesh_Desc::im_static_storage = NULL;
+  PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage = NULL;
+  
+  if(ms_lt::Mesh_Specification::first_ms_static_storage){
+    delete ms_lt::Mesh_Specification::first_ms_static_storage;
   }
+  ms_lt::Mesh_Specification::first_ms_static_storage = NULL;
+
   return 0;
 }
 
@@ -32,7 +38,10 @@ long long Create_Pamgen_Mesh(const char * file_char_array,
 /*****************************************************************************/
 {
   PAMGEN_NEVADA::Inline_Mesh_Desc * imd = NULL;
+  PAMGEN_NEVADA::Inline_Mesh_Desc * fimd = NULL;
   std::string fn("PAMGEN LIBRARY");
+
+  PAMGEN_NEVADA::Partition::partition_count = 0;
 
   // copy input into stream, no file operations in library.
   std::stringstream input_stream;
@@ -42,7 +51,7 @@ long long Create_Pamgen_Mesh(const char * file_char_array,
 
   long long pec = 0;
 
-  imd = PAMGEN_NEVADA::Parse_Inline_Mesh(fn,
+  fimd = PAMGEN_NEVADA::Parse_Inline_Mesh(fn,
 					 input_stream,
 					 pec,
 					 dimension,
@@ -50,13 +59,27 @@ long long Create_Pamgen_Mesh(const char * file_char_array,
 
   if(pec > 0)return ERROR_PARSING_DEFINITION;
   
-  if(!imd)return ERROR_CREATING_IMD;
+  if(!fimd)return ERROR_CREATING_IMD;
+  imd = fimd;
+  ms_lt::Mesh_Specification * ams = NULL;
+  while(imd){
 
+    ams = buildMeshSpecification_LT(imd,
+				    rank, 
+				    num_procs);
+    
+    if(!ams)return ERROR_CREATING_MS;
 
-  ms_lt::Mesh_Specification * ams = buildMeshSpecification_LT(imd,
-							      rank, 
-							      num_procs);
-  if(!ams)return ERROR_CREATING_MS;
+    ms_lt::Mesh_Specification::Add_MS(ams);
+
+    
+    imd = imd->next;
+  }
+
+  ms_lt::Mesh_Specification * nms =  ms_lt::Mesh_Specification::first_ms_static_storage->consolidateMS();
+  
+  ms_lt::Mesh_Specification::Replace_MS(nms);
+
 
   return ERROR_FREE_CREATION;
 }
@@ -86,7 +109,7 @@ long long getPamgenEchoStreamSize()
 long long getPamgenErrorStreamSize()
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage->getErrorString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getErrorString();
   const char * cst = st.c_str();
   long long stsz = strlen(cst);
   return stsz;
@@ -96,7 +119,7 @@ long long getPamgenErrorStreamSize()
 long long getPamgenWarningStreamSize()
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage->getWarningString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getWarningString();
   const char * cst = st.c_str();
   long long stsz = strlen(cst);
   return stsz;
@@ -107,7 +130,7 @@ long long getPamgenWarningStreamSize()
 long long getPamgenInfoStreamSize()
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage->getInfoString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getInfoString();
   const char * cst = st.c_str();
   long long stsz = strlen(cst);
   return stsz;
@@ -117,7 +140,7 @@ long long getPamgenInfoStreamSize()
 char * getPamgenErrorStream(char * car)
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage->getErrorString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getErrorString();
   const char * cst = st.c_str();
   strcpy(car,cst);
   return car;
@@ -127,7 +150,7 @@ char * getPamgenErrorStream(char * car)
 char * getPamgenWarningStream(char * car)
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage->getWarningString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getWarningString();
   const char * cst = st.c_str();
   strcpy(car,cst);
   return car;
@@ -137,7 +160,7 @@ char * getPamgenWarningStream(char * car)
 char * getPamgenInfoStream(char * car)
 /*****************************************************************************/
 {
-  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::static_storage->getInfoString();
+  std::string st = PAMGEN_NEVADA::Inline_Mesh_Desc::first_im_static_storage->getInfoString();
   const char * cst = st.c_str();
   strcpy(car,cst);
   return car;

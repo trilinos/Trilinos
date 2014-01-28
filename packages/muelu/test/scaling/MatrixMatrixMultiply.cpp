@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -57,6 +57,9 @@
 #include "MueLu.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include <MueLu_UseDefaultTypes.hpp>
+
+namespace MueLuTests {
+
 #include <MueLu_UseShortNames.hpp>
 
 // generate "random" whole number in interval [a,b]
@@ -75,11 +78,16 @@ Teuchos::RCP<Matrix> generateRandomMatrix(LO const &minEntriesPerRow, LO const &
                                           Teuchos::RCP<const Map> const &rowMap,
                                           Teuchos::RCP<const Map> const &domainMap);
 
+}
+
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
+  using namespace MueLuTests;
 
   //
   // MPI initialization using Teuchos
@@ -126,7 +134,7 @@ int main(int argc, char *argv[]) {
   TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
 
   unsigned int seed = generateSeed(*comm, optSeed);
-  ST::seedrandom(seed);
+  Teuchos::ScalarTraits<SC>::seedrandom(seed);
 
   for (int jj=0; jj<optNmults; ++jj) {
 
@@ -206,10 +214,14 @@ int main(int argc, char *argv[]) {
 
 //- -- --------------------------------------------------------
 
+namespace MueLuTests {
+
+#include <MueLu_UseShortNames.hpp>
+
 template <class T>
 size_t generateRandomNumber(T a, T b)
 {
-    Scalar rv = (ST::random()+1)*0.5; //shift "random" value from interval [-1,1] to [0,1]
+    Scalar rv = (Teuchos::ScalarTraits<SC>::random()+1)*0.5; //shift "random" value from interval [-1,1] to [0,1]
     size_t numMyElements = Teuchos::as<size_t>(a + rv * (b - a));
     return numMyElements;
 }
@@ -270,7 +282,7 @@ Teuchos::RCP<Matrix> generateRandomMatrix(LO const &minEntriesPerRow, LO const &
 
     Array<Scalar> vals(realMaxEntriesPerRow);
     //stick in ones for values
-    for (LO j=0; j< realMaxEntriesPerRow; ++j) vals[j] = ST::one();
+    for (LO j=0; j< realMaxEntriesPerRow; ++j) vals[j] = Teuchos::ScalarTraits<SC>::one();
     Array<GO> cols(realMaxEntriesPerRow);
     for (size_t i = 0; i < numLocalRowsInA; ++i) {
       ArrayView<SC> av(&vals[0],eprData[i]);
@@ -285,4 +297,6 @@ Teuchos::RCP<Matrix> generateRandomMatrix(LO const &minEntriesPerRow, LO const &
     A->fillComplete(domainMap,rowMap);
 
     return A;
+}
+
 }

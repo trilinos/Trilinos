@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -83,30 +83,33 @@ namespace Xpetra {
   class TpetraVector
     : public virtual Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>, public TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
+    typedef void LocalMatOps;
+#undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
   public:
 
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;          // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;        // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm2;        // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normInf;      // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normWeighted; // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::meanValue;    // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceGlobalValue;    // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoGlobalValue;    // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue;    // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;    // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot;                   // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1;                 // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2;                 // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;               // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;          // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue;             // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue;    // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue;    // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue;     // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue;     // overloading, not hiding
 
     //! @name Constructor/Destructor Methods
     //@{
 
     //! Sets all vector entries to zero.
-    TpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
-      : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,1,zeroOut) { }
+    TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true)
+      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,1,zeroOut) { }
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    TpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView< const Scalar > &A)
-      : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,A,map->getNodeNumElements(),1) { }
+    TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
+      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1) { }
 
     //! Destructor.
     virtual ~TpetraVector() { }
@@ -159,20 +162,20 @@ namespace Xpetra {
     //@}
 
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const { XPETRA_MONITOR("TpetraVector::dot"); return getTpetra_Vector()->dot(*toTpetra(a)); }
+    Scalar dot(const Vector &a) const { XPETRA_MONITOR("TpetraVector::dot"); return getTpetra_Vector()->dot(*toTpetra(a)); }
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights) const { XPETRA_MONITOR("TpetraVector::normWeighted"); return getTpetra_Vector()->normWeighted(*toTpetra(weights)); }
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { XPETRA_MONITOR("TpetraVector::normWeighted"); return getTpetra_Vector()->normWeighted(*toTpetra(weights)); }
 
 
     //! @name Xpetra specific
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec) { }
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (vec) { }
 
     //! Get the underlying Tpetra multivector
-    RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
+    RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getTpetra_Vector() const { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
 
     //@}
 

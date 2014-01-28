@@ -59,15 +59,9 @@ protected:
 
 TEST_F( hwloc, query)
 {
-  const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-
-  const unsigned core_size =
-    Kokkos::hwloc::get_core_capacity();
-
-  std::cout << " NUMA[" << core_topo.first << "]"
-            << " CORE[" << core_topo.second << "]"
-            << " PU[" << core_size << "]"
+  std::cout << " NUMA[" << Kokkos::hwloc::get_available_numa_count() << "]"
+            << " CORE[" << Kokkos::hwloc::get_available_cores_per_numa() << "]"
+            << " PU[" << Kokkos::hwloc::get_available_threads_per_core()  << "]"
             << std::endl ;
 }
 

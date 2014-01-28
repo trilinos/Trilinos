@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -111,6 +111,8 @@ namespace MueLu {
       }
     }
 #endif
+
+    typedef Teuchos::ScalarTraits<SC> ST;
 
     if (perturb) {
       if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {

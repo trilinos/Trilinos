@@ -145,7 +145,9 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(vb_level >= 15) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
-  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  
+  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",true);  
+  bool disable_addon = List_.get("refmaxwell: disable addon",true);
+
   
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
@@ -188,7 +190,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* EXPERIMENTAL - Lump M1, if requested */
   lump_m1 = List_.get("refmaxwell: lump m1",false);
-  if(lump_m1){
+  if(!disable_addon && lump_m1){
     Epetra_Vector mvec1(*RangeMap_,false), mvec2(*RangeMap_,false);
     mvec1.PutScalar(1.0);
     M1_Matrix_->Multiply(false,mvec1,mvec2);
@@ -214,13 +216,18 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   }/*end if */
   
   /* Build the TMT-Agg Matrix */
-  if(aggregate_with_sigma)
+  if(aggregate_with_sigma) {
 #ifdef ENABLE_MS_MATRIX
     ML_Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #else
-  ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #endif
-  else ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with SM or Ms\n");
+  }
+  else {
+    ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with M1\n");    
+  }
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
   
 #ifdef ML_TIMING
@@ -228,11 +235,12 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #endif
   
   /* Boundary nuke the edge matrices */
+  if(!disable_addon) {
 #ifdef ENABLE_MS_MATRIX
-  Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
+    Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
 #endif
-  Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
-
+    Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
+  }
 
   /* DEBUG: Output matrices */
   if(print_hierarchy == -1 || print_hierarchy == 0){
@@ -258,11 +266,13 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   SM_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*SM_Matrix_,SM_Matrix_Trans_,"SM",(verbose_&&!Comm_->MyPID())));
   D0_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",(verbose_&&!Comm_->MyPID())));
   D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",(verbose_&&!Comm_->MyPID())));
+  if(!disable_addon) {
 #ifdef ENABLE_MS_MATRIX
-  if(Ms_Matrix_!= M1_Matrix_) Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
+    if(Ms_Matrix_!= M1_Matrix_) Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
 #endif
-  M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
-  M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));
+    M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
+    M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));
+  }
   if(TMT_Matrix_) TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID()))); 
   TMT_Agg_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Agg_Matrix_,TMT_Agg_Matrix_Trans_,"TMTA",(verbose_&&!Comm_->MyPID())));
 #endif
@@ -272,7 +282,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #endif
   
   /* Build the (1,1) Block Operator, if needed */
-  if(List_.get("refmaxwell: disable addon",true))
+  if(disable_addon) 
     Operator11_=rcp((Epetra_CrsMatrix*)SM_Matrix_,false);
   else
     Operator11_=rcp(new ML_RefMaxwell_11_Operator(*SM_Matrix_,*D0_Matrix_,*M0inv_Matrix_,*M1_Matrix_));
@@ -390,6 +400,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   int printl=ML_Get_PrintLevel();
   int output_level=List_.get("ML output",0);
   output_level=List_.get("output",output_level);
+  bool disable_addon = List_.get("refmaxwell: disable addon",true);
 
   ML_Set_PrintLevel(output_level);
   if(EdgePC) {delete EdgePC; EdgePC=0;}
@@ -398,7 +409,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
   if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
-  if(lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
+  if(!disable_addon && lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
   ML_Set_PrintLevel(output_level);  
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}

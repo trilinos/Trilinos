@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -76,7 +76,6 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -85,6 +84,9 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
+
+namespace MueLuTests {
+#include "MueLu_UseShortNames.hpp"
 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
@@ -169,8 +171,12 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
   //verbose mode: return rcp (new MergedSmoother(smootherList, true));
 }
 
+}
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
+  using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -234,7 +240,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;

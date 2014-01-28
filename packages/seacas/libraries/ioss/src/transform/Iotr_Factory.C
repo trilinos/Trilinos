@@ -45,7 +45,7 @@ Ioss::Transform* Factory::create(const std::string& type)
   Ioss::Transform *transform = NULL;
   FactoryMap::iterator iter = registry()->find(type);
   if (iter == registry()->end()) {
-    if (registry()->size() == 0) {
+    if (registry()->empty()) {
       std::ostringstream errmsg;
       errmsg << "ERROR: No transformations have been registered.\n"
 	     << "       Was Iotr::Initializer::initialize() called?\n\n";

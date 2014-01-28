@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -57,7 +57,7 @@
 #include "MueLu_Zoltan2Interface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
 #include <Teuchos_Utils.hpp>
@@ -125,10 +125,10 @@ namespace MueLu {
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
     ArrayView<const GO> coordsElements = map   ->getNodeElementList();
-    for (LO i = 0; i < Teuchos::as<LO>(rowMap->getNodeNumElements ()); i++)
+    for (LO i = 0; i < Teuchos::as<LO>(map->getNodeNumElements()); i++)
       TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i]-indexBase)*blkSize + indexBase != rowElements[i*blkSize],
                                  Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i]
-                                 << ", row GID = " << rowElements[i*blkSize] << std::endl);
+                                 << ", row GID = " << rowElements[i*blkSize] << ", blkSize = " << blkSize << std::endl);
 #endif
 
     if (numParts == 1) {
@@ -185,7 +185,7 @@ namespace MueLu {
                                algo != "rcb",
                                Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
 
-    typedef Zoltan2::BasicCoordinateInput<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
+    typedef Zoltan2::BasicVectorAdapter<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);

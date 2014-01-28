@@ -124,6 +124,7 @@ namespace Ioss {
       if (iodatabase->open_create_behavior() != Ioss::DB_APPEND)
 	Region::begin_mode(STATE_READONLY);
     }
+
     properties.add(Property(this,
 			    "node_block_count",    Property::INTEGER));
     properties.add(Property(this,
@@ -160,6 +161,11 @@ namespace Ioss {
 			    "current_state",       Property::INTEGER));
     properties.add(Property(this,
 			    "database_name",       Property::STRING));
+
+    if (iodatabase->usage() == Ioss::WRITE_HISTORY &&
+	!(iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND)) {
+      Ioss::Utils::generate_history_mesh(this);
+    }
   }
 
   Region::~Region()
@@ -519,7 +525,7 @@ namespace Ioss {
     } else if (state <= 0 || state > stateCount) {
       std::ostringstream errmsg;
       errmsg << "ERROR: Requested state (" << state << ") is invalid.\n"
-	     << "       State must be between 0 and " << stateCount << ".\n"
+	     << "       State must be between 1 and " << stateCount << ".\n"
 	     << "       [" << get_database()->get_filename() << "]\n";
       IOSS_ERROR(errmsg);
     } else {
@@ -955,7 +961,18 @@ namespace Ioss {
 	IOSS_ERROR(errmsg);
       }
     }
-    return add_alias(db_name, db_name);
+
+    bool success = add_alias(db_name, db_name);
+
+    // "db_name" property is used with the canonical name setting.
+    if (success && ge->property_exists("db_name")) {
+      std::string canon_name = ge->get_property("db_name").get_string();
+      if (canon_name != db_name) {
+	success = add_alias(db_name, canon_name);
+      }
+    }
+
+    return success;
   }
 
   bool Region::add_alias(const std::string &db_name, const std::string &alias)

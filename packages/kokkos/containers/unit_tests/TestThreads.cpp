@@ -47,33 +47,37 @@
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
+
 #include <Kokkos_Vector.hpp>
 #include <iomanip>
 
 
 //----------------------------------------------------------------------------
 #include <TestUnorderedMap.hpp>
+
 #include <TestVector.hpp>
+#include <TestDualView.hpp>
 
 namespace Test {
 
+#ifdef KOKKOS_HAVE_PTHREAD
 class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
 
-    std::pair<unsigned, unsigned> team_league(1,4);
-    if (Kokkos::hwloc::available()) {
-      const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
-      const unsigned num_hyper_threads =  Kokkos::hwloc::get_core_capacity();
-      team_league.first  = core_top.first ;
-      team_league.second = core_top.second * num_hyper_threads;
+    unsigned team_count = 1 ;
+    unsigned threads_per_team = 4 ;
+
+    if ( Kokkos::hwloc::available() ) {
+      team_count = Kokkos::hwloc::get_available_numa_count();
+      threads_per_team = Kokkos::hwloc::get_available_cores_per_numa() *
+                         Kokkos::hwloc::get_available_threads_per_core();
     }
 
-    std::cout << "Threads: " << team_league.first << "x" << team_league.second << std::endl;
-
-    Kokkos::Threads::initialize( team_league );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
+    //Kokkos::Threads::initialize( 1);
   }
 
   static void TearDownTestCase()
@@ -111,21 +115,28 @@ protected:
       test_vector_combinations<int,Kokkos::Threads>(size);                     \
   }
 
-THREADS_INSERT_TEST(close,               100000, 90000, 100, 500)
-THREADS_INSERT_TEST(far,                 100000, 90000, 100, 500)
-THREADS_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
-THREADS_FAILED_INSERT_TEST( 10000, 5000 )
-THREADS_ASSIGNEMENT_TEST( 10000, 5000 )
-THREADS_DEEP_COPY( 10000, 5000 )
+#define THREADS_DUALVIEW_COMBINE_TEST( size )                             \
+  TEST_F( threads, dualview_combination##size##x) {       \
+      test_dualview_combinations<int,Kokkos::Threads>(size);                     \
+  }
+
+THREADS_INSERT_TEST(close,100000, 90000, 100, 500)
+THREADS_INSERT_TEST(far,100000, 90000, 100, 500)
+THREADS_FAILED_INSERT_TEST( 10000, 1000 )
+THREADS_DEEP_COPY( 10000, 1 )
+
 THREADS_VECTOR_COMBINE_TEST( 10 )
 THREADS_VECTOR_COMBINE_TEST( 3057 )
+THREADS_DUALVIEW_COMBINE_TEST( 10 )
 
 #undef THREADS_INSERT_TEST
 #undef THREADS_FAILED_INSERT_TEST
 #undef THREADS_ASSIGNEMENT_TEST
 #undef THREADS_DEEP_COPY
-#undef THREADS_VECTOR_COMBINE
+#undef THREADS_VECTOR_COMBINE_TEST
+#undef THREADS_DUALVIEW_COMBINE_TEST
 
+#endif
 } // namespace Test
 
 

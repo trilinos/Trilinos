@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -67,8 +67,7 @@ namespace MueLu {
    TODO handle systems
 */
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class LWGraph
-    : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> { //FIXME  shortnames isn't working
+  class LWGraph : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 #undef MUELU_LWGRAPH_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
@@ -76,9 +75,13 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    LWGraph(const ArrayRCP<const LocalOrdinal> & rowPtrs, const ArrayRCP<const LocalOrdinal> & colPtrs,
-            const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, std::string const & objectLabel="")
-            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), domainMapRef_(*domainMap), objectLabel_(objectLabel) {}
+    LWGraph(const ArrayRCP<const LO>& rowPtrs, const ArrayRCP<const LO>& colPtrs,
+            const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, const std::string& objectLabel = "")
+            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), domainMapRef_(*domainMap), objectLabel_(objectLabel)
+    {
+      minLocalIndex_ = domainMapRef_.getMinLocalIndex();
+      maxLocalIndex_ = domainMapRef_.getMaxLocalIndex();
+    }
 
     virtual ~LWGraph() {}
     //@}
@@ -94,28 +97,29 @@ namespace MueLu {
       return out;
     }
 
-    const RCP<const Teuchos::Comm<int> > GetComm() const { return domainMap_->getComm(); }
-    const RCP<const Map> GetDomainMap() const            { return domainMap_; }
+    const RCP<const Teuchos::Comm<int> > GetComm()      const    { return domainMap_->getComm(); }
+    const RCP<const Map>                 GetDomainMap() const    { return domainMap_; }
     //! Returns overlapping import map (nodes).
-    const RCP<const Map> GetImportMap() const            { return importMap_; }
+    const RCP<const Map>                 GetImportMap() const    { return importMap_; }
 
-    void SetBoundaryNodeMap(RCP<const Map> const &map)   {throw(Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."));}
+    void SetBoundaryNodeMap(RCP<const Map> const &map)           { throw Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."); }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
+    Teuchos::ArrayView<const LO> getNeighborVertices(LO i) const { return columns_.view(rows_[i], rows_[i+1]-rows_[i]); }
 
     //! Return true if vertex with local id 'v' is on current process.
-    bool isLocalNeighborVertex(LocalOrdinal v) const;
+    bool isLocalNeighborVertex(LO i) const                       { return i >= minLocalIndex_ && i <= maxLocalIndex_; }
 
     //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
-    void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry) { dirichletBoundaries_ = bndry; }
+    void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry)   { dirichletBoundaries_ = bndry; }
 
     //! Returns map with global ids of boundary nodes.
-    const ArrayRCP<const bool> GetBoundaryNodeMap() const { return dirichletBoundaries_; }
+    const ArrayRCP<const bool> GetBoundaryNodeMap() const        { return dirichletBoundaries_; }
 
 
     /// Return a simple one-line description of the Graph.
-    std::string description() const;
+    std::string description() const                              { return "MueLu.description()"; } //FIXME use object's label
+
 
     //! Print the Graph with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
@@ -125,9 +129,9 @@ namespace MueLu {
   private:
 
     //! Indices into columns_ array.  Part of local graph information.
-    const ArrayRCP<const LocalOrdinal> rows_;
+    const ArrayRCP<const LO> rows_;
     //! Columns corresponding to connections.  Part of local graph information.
-    const ArrayRCP<const LocalOrdinal> columns_;
+    const ArrayRCP<const LO> columns_;
     //! Graph maps
     const RCP<const Map> domainMap_, importMap_;
     const Map& domainMapRef_;
@@ -136,6 +140,8 @@ namespace MueLu {
     //! Boolean array marking Dirichlet rows.
     ArrayRCP<const bool> dirichletBoundaries_;
 
+    // local index boundaries (cached from domain map)
+    LO minLocalIndex_, maxLocalIndex_;
   };
 
 } // namespace MueLu

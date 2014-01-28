@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -75,17 +75,10 @@
 
 typedef double Scalar;
 typedef int    LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//typedef long long int    GlobalOrdinal;
 typedef int    GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#warning Teuchos support for long long not enabled.
-#endif
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -99,6 +92,7 @@ typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps Local
 #endif
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
   using Teuchos::RCP;
 
   Teuchos::oblackholestream blackhole;

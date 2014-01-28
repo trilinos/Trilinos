@@ -51,14 +51,26 @@ struct ExodusData {
     const std::vector<int> globalIdsOfLocalNodes;
 
     std::vector<SharedNode> *sharedNodes;
+
+    // A sideset' is basically an exodus sideset.  A
+    // sideset has a list of elements and a corresponding local
+    // element side (1-based) The side id is: side_id =
+    // 10*element_id + local_side_number This assumes that all
+    // sides in a sideset are boundary sides.
+    std::vector< std::vector<int> > sidesetConnectivity;
+    std::vector< std::vector<std::string> > sidesetTouchingBlocks;
+
     ExodusData(const std::vector<double> coords, const std::vector< std::vector<int> > elemBlockConnectivity,
                const std::vector<int> globalNumOfElemsInBlock, const std::vector<int> localNumOfElemsInBlock,
                const std::vector<Topology> blockTopoData, int globalNumNodes, const std::vector<int> globalIdsOfLocalElems,
-               const std::vector<int> globalIdsLocalNodes)
+               const std::vector<int> globalIdsLocalNodes,
+               const std::vector< std::vector<int> > & sidesetConn = std::vector< std::vector<int> >(),
+               const std::vector< std::vector<std::string> > & sidesetBlocks = std::vector< std::vector<std::string> >())
     : coordinates(coords), elementBlockConnectivity(elemBlockConnectivity),
       globalNumberOfElementsInBlock(globalNumOfElemsInBlock), localNumberOfElementsInBlock(localNumOfElemsInBlock),
       blockTopologicalData(blockTopoData), globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
-      globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0)
+      globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0), sidesetConnectivity(sidesetConn),
+      sidesetTouchingBlocks(sidesetBlocks)
     {
 
     }
@@ -202,6 +214,8 @@ public:
     virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
 
     virtual void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const;
+
+    virtual std::vector<std::string> sideset_touching_blocks(int64_t set_id) const;
 
     virtual void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const;
 

@@ -51,23 +51,91 @@
 namespace Kokkos {
 class HostSpace ;
 class CudaSpace ;
-}
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
+//-------- Identify Compiler Version -----------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) && ! defined( KOKKOS_HAVE_CUDA )
-#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
+#if defined __ECC || defined __ICC || defined __INTEL_COMPILER
+  #define KOKKOS_COMPILER_NAME "Intel C++"
+  #if defined __ICC
+    #define KOKKOS_COMPILER_VERSION __ICC
+  #else
+    #if defined __INTEL_COMPILER
+      #define KOKKOS_COMPILER_VERSION __INTEL_COMPILER
+    #else
+      #define KOKKOS_COMPILER_VERSION __ECC
+    #endif
+  #endif
+  #define KOKKOS_COMPILER_INTEL 1
 #endif
 
-#if defined( _OPENMP ) && ! defined( KOKKOS_HAVE_OPENMP )
-#error "Compiling Kokkos for OpenMP but KOKKOS_HAVE_OPENMP is undefined"
+#if defined __IBMC__ || defined __IBMCPP__
+  #define KOKKOS_COMPILER_NAME "IBM C++"
+  #if defined __IBMC__
+    #define KOKKOS_COMPILER_VERSION __IBMC__
+  #else
+    #define KOKKOS_COMPILER_VERSION __IBMCPP__
+  #endif
+  #define KOKKOS_COMPILER_IBM 1
 #endif
+
+#if defined __APPLE_CC__
+   /* Apple uses GNU as compiler */
+  #define KOKKOS_COMPILER_APPLECC 1
+#endif
+
+#if defined __clang__
+  #define KOKKOS_COMPILER_NAME "Clang"
+  #define KOKKOS_COMPILER_VERSION __clang_major__*100+__clang_minor__*10+__clang_patchlevel__
+  #define KOKKOS_COMPILER_CLANG 1
+#endif
+
+#if defined __GNUC__ && !defined KOKKOS_COMPILER_NAME && !defined __clang__
+  #define KOKKOS_COMPILER_NAME "Gnu GCC"
+  #define KOKKOS_COMPILER_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+  #define KOKKOS_COMPILER_GCC 1
+#endif
+
+#if defined __PGIC__ && !defined KOKKOS_COMPILER_NAME
+  #define KOKKOS_COMPILER_NAME "PGI C++"
+  #define KOKKOS_COMPILER_VERSION __PGIC__*100+__PGIC_MINOR__*10+__PGIC_PATCHLEVEL__
+  #define KOKKOS_COMPILER_PGI 1
+#endif
+
+#if defined __NVCC__
+  #define KOKKOS_DEVICE_COMPILER_NAME "NVIDIA NVCC"
+  #define KOKKOS_DEVICE_COMPILER_VERSION __NVCC__
+#endif
+
+#if !defined KOKKOS_COMPILER_NAME
+  #define KOKKOS_COMPILER_NAME "Unknown compiler"
+#endif
+
+#if !defined KOKKOS_COMPILER_VERSION
+  #define KOKKOS_COMPILER_VERSION 0
+#endif
+
+#if !defined KOKKOS_DEVICE_COMPILER_NAME
+  #define KOKKOS_DEVICE_COMPILER_NAME KOKKOS_COMPILER_NAME
+#endif
+
+#if !defined KOKKOS_DEVICE_COMPILER_VERSION
+  #define KOKKOS_DEVICE_COMPILER_VERSION KOKKOS_COMPILER_VERSION
+#endif
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ ) 
+
+// Compiling with CUDA compiler.
+
+#if ! defined( KOKKOS_HAVE_CUDA )
+#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
+#endif
 
 #include <cuda.h>
 
@@ -120,6 +188,10 @@ class CudaSpace ;
 
 #if defined( __INTEL_COMPILER )
 
+#if (__INTEL_COMPILER < 1200)
+#define KOKKOS_DISABLE_ASM true;
+#endif
+
 /*  Compiling with Intel compiler */
 /*  TBD: Version testing */
 
@@ -133,9 +205,20 @@ class CudaSpace ;
  *  These devices are used in no-offload mode so the HostSpace is the MIC space.
  */
 
+#else
+
+#ifndef KOKKOS_USE_PRAGMA_SIMD
+#define KOKKOS_USE_PRAGMA_SIMD
 #endif
 
-#endif
+/*
+  #pragma simd vectorlength(N)
+  #pragma ivdep
+*/
+
+#endif /* #if defined( __MIC__ ) */
+
+#endif /* #if defined( __INTEL_COMPILER ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -158,7 +241,11 @@ class CudaSpace ;
 
 #if defined( _OPENMP )
 
-/*  Compiling with in OpenMP mode.
+#if ! defined( KOKKOS_HAVE_OPENMP )
+#error "Compiling Kokkos for OpenMP but KOKKOS_HAVE_OPENMP is undefined"
+#endif
+
+/*  Compiling with OpenMP.
  *  The value of _OPENMP is an integer value YYYYMM
  *  where YYYY and MM are the year and month designation
  *  of the supported OpenMP API version.

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -54,46 +54,46 @@ namespace MueLu {
   namespace Exceptions {
 
     //! Exception indicating invalid cast attempted
-    class BadCast : public Teuchos::ExceptionBase
-    {
+    class BadCast : public Teuchos::ExceptionBase {
     public:
       BadCast(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
     //! Exception throws when you call an unimplemented method of MueLu
     /** Mainly use for development in progress. **/
-    class NotImplemented : public Teuchos::ExceptionBase
-    {
+    class NotImplemented : public Teuchos::ExceptionBase {
     public:
       NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
     //! Exception throws to report errors in the internal logical of the program.
-    class RuntimeError : public Teuchos::ExceptionBase
-    {
+    class RuntimeError : public Teuchos::ExceptionBase {
     public:
       RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
     //! Exception throws to report overflows.
-    class Overflow : public Teuchos::ExceptionBase
-    {
+    class Overflow : public Teuchos::ExceptionBase {
     public:
       Overflow(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
     //! Exception throws to report incompatible objects (like maps).
-    class Incompatible : public Teuchos::ExceptionBase
-    {
+    class Incompatible : public Teuchos::ExceptionBase {
     public:
       Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
     //! Exception throws to report data dependency problems between factories.
-    class DependencyError : public Teuchos::ExceptionBase
-    {
+    class DependencyError : public Teuchos::ExceptionBase {
     public:
       DependencyError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
+    };
+
+    //! Exception throws to report invalid user entry
+    class InvalidArgument: public Teuchos::ExceptionBase {
+    public:
+      InvalidArgument(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) { }
     };
 
   }

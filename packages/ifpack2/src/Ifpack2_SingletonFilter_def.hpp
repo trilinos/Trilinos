@@ -106,7 +106,7 @@ SingletonFilter<MatrixType>::SingletonFilter(const Teuchos::RCP<const Tpetra::Ro
   NumEntries_.resize(NumRows_);
   SingletonIndex_.resize(NumSingletons_);
 
-  
+
   // now compute the nonzeros per row
   size_t count = 0;
   for (size_t i = 0 ; i < NumRowsA_ ; ++i) {
@@ -117,7 +117,7 @@ SingletonFilter<MatrixType>::SingletonFilter(const Teuchos::RCP<const Tpetra::Ro
       NumEntries_[ii] = Nnz;
       NumNonzeros_ += Nnz;
       if (Nnz > MaxNumEntries_)
-	MaxNumEntries_ = Nnz;
+        MaxNumEntries_ = Nnz;
     }
     else {
       SingletonIndex_[count] = i;
@@ -146,7 +146,7 @@ SingletonFilter<MatrixType>::~SingletonFilter() { }
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP<const Teuchos::Comm<int> > 
+Teuchos::RCP<const Teuchos::Comm<int> >
 SingletonFilter<MatrixType>::getComm() const
 {
   return A_->getComm();
@@ -154,7 +154,7 @@ SingletonFilter<MatrixType>::getComm() const
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP<typename MatrixType::node_type> 
+Teuchos::RCP<typename MatrixType::node_type>
 SingletonFilter<MatrixType>::getNode() const
 {
   return A_->getNode();
@@ -163,8 +163,8 @@ SingletonFilter<MatrixType>::getNode() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 SingletonFilter<MatrixType>::getRowMap() const
 {
   return ReducedMap_;
@@ -173,8 +173,8 @@ SingletonFilter<MatrixType>::getRowMap() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 SingletonFilter<MatrixType>::getColMap() const
 {
   return ReducedMap_;
@@ -183,8 +183,8 @@ SingletonFilter<MatrixType>::getColMap() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 SingletonFilter<MatrixType>::getDomainMap() const
 {
   return ReducedMap_;
@@ -193,8 +193,8 @@ SingletonFilter<MatrixType>::getDomainMap() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 SingletonFilter<MatrixType>::getRangeMap() const
 {
   return ReducedMap_;
@@ -232,28 +232,28 @@ size_t SingletonFilter<MatrixType>::getNodeNumRows() const
 }
 
 //==========================================================================
- 
+
 template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getNodeNumCols() const
 {
   return NumRows_;
 }
 
-//==========================================================================  
+//==========================================================================
 template<class MatrixType>
 typename MatrixType::global_ordinal_type SingletonFilter<MatrixType>::getIndexBase() const
 {
   return A_->getIndexBase();
 }
 
-//========================================================================== 
+//==========================================================================
 template<class MatrixType>
 global_size_t SingletonFilter<MatrixType>::getGlobalNumEntries() const
 {
   return NumNonzeros_;
 }
 
-//========================================================================== 
+//==========================================================================
 template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getNodeNumEntries() const
 {
@@ -261,106 +261,106 @@ size_t SingletonFilter<MatrixType>::getNodeNumEntries() const
 }
 
 //==========================================================================
-template<class MatrixType> 
+template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getNumEntriesInGlobalRow.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
+//==========================================================================
+template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
 {
   return NumEntries_[localRow];
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 global_size_t SingletonFilter<MatrixType>::getGlobalNumDiags() const
 {
   return A_->getGlobalNumDiags();
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getNodeNumDiags() const
 {
   return A_->getNodeNumDiags();
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 size_t SingletonFilter<MatrixType>::getNodeMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::hasColMap() const
 {
   return true;
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::isLowerTriangular() const
 {
   return A_->isLowerTriangular();
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::isUpperTriangular() const
 {
   return A_->isUpperTriangular();
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::isLocallyIndexed() const
 {
   return A_->isLocallyIndexed();
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::isGloballyIndexed() const
 {
   return A_->isGloballyIndexed();
 }
 
-//==========================================================================  
-template<class MatrixType>   
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::isFillComplete() const
 {
   return A_->isFillComplete();
 }
-  
+
 //==========================================================================
-template<class MatrixType> 
+template<class MatrixType>
 void SingletonFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal GlobalRow,
-						  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-						  const Teuchos::ArrayView<Scalar> &Values,
-						  size_t &NumEntries) const
+                                                  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
+                                                  const Teuchos::ArrayView<Scalar> &Values,
+                                                  size_t &NumEntries) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getGlobalRowCopy.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow, 
-					      const Teuchos::ArrayView<LocalOrdinal> &Indices, 
-					      const Teuchos::ArrayView<Scalar> &Values,
-					      size_t &NumEntries) const 
-{ 
+//==========================================================================
+template<class MatrixType>
+void SingletonFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
+                                              const Teuchos::ArrayView<LocalOrdinal> &Indices,
+                                              const Teuchos::ArrayView<Scalar> &Values,
+                                              size_t &NumEntries) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION((LocalRow < 0 || (size_t) LocalRow >=  NumRows_ || (size_t) Indices.size() <  NumEntries_[LocalRow]), std::runtime_error, "Ifpack2::SingletonFilter::getLocalRowCopy invalid row or array size.");
 
   size_t Nnz;
@@ -380,72 +380,62 @@ void SingletonFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
 
 }
 
-//==========================================================================  
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow, 
-						  Teuchos::ArrayView<const GlobalOrdinal> &indices, 
-						  Teuchos::ArrayView<const Scalar> &values) const
+//==========================================================================
+template<class MatrixType>
+void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow,
+                                                  Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                                                  Teuchos::ArrayView<const Scalar> &values) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter: does not support getGlobalRowView.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow, 
-						 Teuchos::ArrayView<const LocalOrdinal> &indices, 
-						 Teuchos::ArrayView<const Scalar> &values) const
+//==========================================================================
+template<class MatrixType>
+void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
+                                                 Teuchos::ArrayView<const LocalOrdinal> &indices,
+                                                 Teuchos::ArrayView<const Scalar> &values) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter: does not support getLocalRowView.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
+//==========================================================================
+template<class MatrixType>
 void SingletonFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const
 {
   // This is somewhat dubious as to how the maps match.
   return A_->getLocalDiagCopy(diag);
 }
 
-//========================================================================== 
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) 
+//==========================================================================
+template<class MatrixType>
+void SingletonFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not support leftScale.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) 
+//==========================================================================
+template<class MatrixType>
+void SingletonFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not support rightScale.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-				       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-				       Teuchos::ETransp mode, 
-				       Scalar alpha,
-				       Scalar beta) const
-{  
-  this->template applyTempl<Scalar,Scalar>(X, Y, mode, alpha, beta);
-}
+//==========================================================================
+template<class MatrixType>
+void SingletonFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                                       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+                                       Teuchos::ETransp mode,
+                                       Scalar alpha,
+                                       Scalar beta) const
+{
+  typedef Scalar DomainScalar;
+  typedef Scalar RangeScalar;
 
-
-//==========================================================================  
-template<class MatrixType> 
-template<class DomainScalar, class RangeScalar>
-void SingletonFilter<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-					     Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-					     Teuchos::ETransp mode, 
-					     RangeScalar alpha,
-					     RangeScalar beta) const
-{  
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
 
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-			     "Ifpack2::SingletonFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
-  
+                             "Ifpack2::SingletonFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+
   RangeScalar zero = Teuchos::ScalarTraits<RangeScalar>::zero();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = Y.get2dViewNonConst();
@@ -459,51 +449,51 @@ void SingletonFilter<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainSca
     // Use this class's getrow to make the below code simpler
     getLocalRowCopy(i,Indices_(),Values_(),Nnz);
     if (mode==Teuchos::NO_TRANS){
-      for (size_t j = 0 ; j < Nnz ; ++j) 
-	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];      
+      for (size_t j = 0 ; j < Nnz ; ++j)
+        for (size_t k = 0 ; k < NumVectors ; ++k)
+          y_ptr[k][i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];
     }
     else if (mode==Teuchos::TRANS){
-      for (size_t j = 0 ; j < Nnz ; ++j) 
-	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
+      for (size_t j = 0 ; j < Nnz ; ++j)
+        for (size_t k = 0 ; k < NumVectors ; ++k)
+          y_ptr[k][Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
-      for (size_t j = 0 ; j < Nnz ; ++j) 
-	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
+      for (size_t j = 0 ; j < Nnz ; ++j)
+        for (size_t k = 0 ; k < NumVectors ; ++k)
+          y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
     }
   }
 }
-  
 
-//==========================================================================  
-template<class MatrixType> 
+
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::hasTransposeApply() const
 {
   return true;
 }
 
-//==========================================================================  
-template<class MatrixType> 
+//==========================================================================
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::supportsRowViews() const
 {
   return false;
 }
 
 //==============================================================================
-template<class MatrixType> 
-void SingletonFilter<MatrixType>::SolveSingletons(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
-						  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
+template<class MatrixType>
+void SingletonFilter<MatrixType>::SolveSingletons(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
+                                                  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
   this->template SolveSingletonsTempl<Scalar,Scalar>(RHS, LHS);
 }
 
 //==============================================================================
-template<class MatrixType> 
+template<class MatrixType>
 template<class DomainScalar, class RangeScalar>
-void SingletonFilter<MatrixType>::SolveSingletonsTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
-						       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
+void SingletonFilter<MatrixType>::SolveSingletonsTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
+                                                       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > RHS_ptr = RHS.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        LHS_ptr = LHS.get2dViewNonConst();
@@ -515,28 +505,28 @@ void SingletonFilter<MatrixType>::SolveSingletonsTempl(const Tpetra::MultiVector
     A_->getLocalRowCopy(ii,Indices_(),Values_(),Nnz);
     for (size_t j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] == ii) {
-	for (size_t k = 0 ; k < LHS.getNumVectors() ; ++k)
-	  LHS_ptr[k][ii] = (RangeScalar)RHS_ptr[k][ii] / (RangeScalar)Values_[j];
+        for (size_t k = 0 ; k < LHS.getNumVectors() ; ++k)
+          LHS_ptr[k][ii] = (RangeScalar)RHS_ptr[k][ii] / (RangeScalar)Values_[j];
       }
     }
   }
 }
 
 //==============================================================================
-template<class MatrixType> 
+template<class MatrixType>
 void SingletonFilter<MatrixType>::CreateReducedRHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
-						   const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
-						   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
+                                                   const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
+                                                   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
 {
   this->template CreateReducedRHSTempl<Scalar,Scalar>(LHS, RHS, ReducedRHS);
 }
 
 //==============================================================================
-template<class MatrixType> 
+template<class MatrixType>
 template<class DomainScalar, class RangeScalar>
 void SingletonFilter<MatrixType>::CreateReducedRHSTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
-							const Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
-							Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
+                                                        const Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
+                                                        Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
 {
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const RangeScalar > > RHS_ptr = RHS.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > LHS_ptr = LHS.get2dView();
@@ -550,33 +540,33 @@ void SingletonFilter<MatrixType>::CreateReducedRHSTempl(const Tpetra::MultiVecto
 
   for (size_t i = 0 ; i < NumRows_ ; ++i) {
     LocalOrdinal ii = InvReorder_[i];
-    size_t Nnz; 
+    size_t Nnz;
     A_->getLocalRowCopy(ii,Indices_(),Values_(),Nnz);
 
     for (size_t j = 0 ; j < Nnz ; ++j) {
       if (Reorder_[Indices_[j]] == -1) {
-	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  ReducedRHS_ptr[k][i] -= (RangeScalar)Values_[j] * (RangeScalar)LHS_ptr[k][Indices_[j]];
+        for (size_t k = 0 ; k < NumVectors ; ++k)
+          ReducedRHS_ptr[k][i] -= (RangeScalar)Values_[j] * (RangeScalar)LHS_ptr[k][Indices_[j]];
       }
     }
   }
 }
 
 //==============================================================================
-template<class MatrixType> 
+template<class MatrixType>
 void SingletonFilter<MatrixType>::UpdateLHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
-					    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
+                                            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
   this->template UpdateLHSTempl<Scalar,Scalar>(ReducedLHS, LHS);
 }
 
 //==============================================================================
-template<class MatrixType> 
+template<class MatrixType>
 template<class DomainScalar, class RangeScalar>
 void SingletonFilter<MatrixType>::UpdateLHSTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
-						 Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
+                                                 Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
-  
+
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        LHS_ptr = LHS.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> >  ReducedLHS_ptr = ReducedLHS.get2dView();
 
@@ -585,27 +575,27 @@ void SingletonFilter<MatrixType>::UpdateLHSTempl(const Tpetra::MultiVector<Domai
       LHS_ptr[k][InvReorder_[i]] = (RangeScalar)ReducedLHS_ptr[k][i];
 }
 
-//==========================================================================  
-template<class MatrixType> 
+//==========================================================================
+template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType SingletonFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getFrobeniusNorm.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
-TPETRA_DEPRECATED  void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow, 
-								     Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-								     Teuchos::ArrayRCP<const Scalar>        &values) const
+//==========================================================================
+template<class MatrixType>
+TPETRA_DEPRECATED  void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow,
+                                                                     Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
+                                                                     Teuchos::ArrayRCP<const Scalar>        &values) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getGlobalRowView.");
 }
 
-//==========================================================================  
-template<class MatrixType> 
+//==========================================================================
+template<class MatrixType>
 TPETRA_DEPRECATED  void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
-								    Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-								    Teuchos::ArrayRCP<const Scalar>       &values) const
+                                                                    Teuchos::ArrayRCP<const LocalOrdinal> &indices,
+                                                                    Teuchos::ArrayRCP<const Scalar>       &values) const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getLocalRowView.");
 }

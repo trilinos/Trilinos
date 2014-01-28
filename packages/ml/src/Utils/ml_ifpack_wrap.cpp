@@ -6,6 +6,7 @@
 #include "ml_config.h"
 #include "ml_include.h"
 #if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA)
+#include "Ifpack_config.h"
 #include "ml_utils.h"
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
@@ -23,7 +24,11 @@
 // converter from ML_Operator to Epetra_RowMatrix (only wraps)
 #include "ml_RowMatrix.h"
 // IFPACK factory class
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+#include "Ifpack_DynamicFactory.h"
+#else
 #include "Ifpack.h"
+#endif
 #include "Ifpack_Chebyshev.h"
 
 using namespace ML_Epetra;
@@ -214,7 +219,11 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
     // we enter the IFPACK world through the factory only
     if (hasRows == 1) {
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+      Ifpack_DynamicFactory Factory;
+#else
       Ifpack Factory;
+#endif
       Ifpack_Preconditioner* Prec;
 
       // create the preconditioner

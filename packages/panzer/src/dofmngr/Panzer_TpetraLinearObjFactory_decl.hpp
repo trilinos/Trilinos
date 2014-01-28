@@ -90,6 +90,12 @@ public:
 
 /*************** Linear object factory methods *******************/
 
+   virtual void readVector(const std::string & identifier,LinearObjContainer & loc,int id) const 
+   { TEUCHOS_ASSERT(false); }
+
+   virtual void writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const
+   { TEUCHOS_ASSERT(false); }
+
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
    virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
@@ -245,6 +251,8 @@ protected:
    mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedMap_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > graph_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedGraph_;
+   mutable Teuchos::RCP<ImportType> ghostedImporter_;
+   mutable Teuchos::RCP<ExportType> ghostedExporter_;
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > gidProvider_;
 

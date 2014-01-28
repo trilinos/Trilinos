@@ -49,7 +49,7 @@
 
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <vector>
 #include <cstdlib>
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
 
   // TODO explain
-  typedef Zoltan2::BasicCoordinateInput<myTypes> inputAdapter_t;
+  typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.

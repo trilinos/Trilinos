@@ -42,7 +42,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef _ZOLTAN2_ALGBLOCK_HPP
+#ifndef _ZOLTAN2_ALGBLOCK_HPP_
 #define _ZOLTAN2_ALGBLOCK_HPP_
 
 #include <Zoltan2_IdentifierModel.hpp>

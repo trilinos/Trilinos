@@ -175,6 +175,13 @@ Tensor<T, N>
 piola_inverse(Tensor<T, N> const & F, Tensor<T, N> const & P);
 
 ///
+/// Smallest eigenvalue by inverse iteration.
+///
+template<typename T, Index N>
+T
+smallest_eigenvalue(Tensor<T, N> const & A);
+
+///
 /// Check strict ellipticity condition for 4th-order tensor.
 /// Assume A has major symmetries.
 /// \param A 4th-order tensor is transformed into 2nd-order
@@ -188,7 +195,7 @@ check_strict_ellipticity(Tensor4<T, N> const & A);
 
 ///
 /// Check strong ellipticity condition for 4th-order tensor.
-/// Assume A has major symmetries.
+/// Assume A has major and minor symmetries.
 /// \param A 4th-order tensor.
 /// \return whether \f$ (m\odot n):A:(m\odot n) > 0 \forall m,n \neq 0 \f$.
 ///

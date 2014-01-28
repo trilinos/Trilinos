@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -51,6 +51,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_Ifpack2Smoother.hpp"
 
 namespace MueLu {
 
@@ -109,9 +110,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildSmoother(Level& currentLevel, PreOrPost const preOrPost) const {
-    RCP<SmootherPrototype> preSmoother;
-    RCP<SmootherPrototype> postSmoother;
-
     // SmootherFactory is quite tricky because of the fact that one of the smoother prototypes may be zero.
     // The challenge is that we have no way of knowing how user uses this factory. For instance, lets say
     // user wants to use s1 prototype as a presmoother, and s2 as a postsmoother. He could do:
@@ -132,11 +130,15 @@ namespace MueLu {
     // there is no way to be sure that this factory would generate any of "PreSmoother" or "PostSmoother", unless you are
     // able to cast it to SmootherFactory, do GetPrototypes and to check whether any of those is Teuchos::null.
 
-    if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
-        preSmoother = preSmootherPrototype_->Copy();
-        preSmoother->Setup(currentLevel);
+    RCP<SmootherPrototype> preSmoother, postSmoother;
+    ParameterList preSmootherParams, postSmootherParams;
 
-        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
+    if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
+      preSmoother = preSmootherPrototype_->Copy();
+      preSmoother->Setup(currentLevel);
+      preSmootherParams = preSmoother->GetParameterList();
+
+      currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
     }
 
     if ((preOrPost & POST) && !postSmootherPrototype_.is_null()) {
@@ -175,8 +177,25 @@ namespace MueLu {
         postSmoother = postSmootherPrototype_->Copy();
         postSmoother->Setup(currentLevel);
       }
+      postSmootherParams = postSmoother->GetParameterList();
 
       currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
+    }
+
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    if (postSmoother == preSmoother && !preSmoother.is_null()) {
+      paramList = preSmoother->GetParameterList();
+
+    } else {
+      if (!preSmoother.is_null()) {
+        ParameterList& preList = paramList.sublist("presmoother", false);
+        preList = preSmootherParams;
+      }
+
+      if (!postSmoother.is_null()) {
+        ParameterList& postList = paramList.sublist("postsmoother", false);
+        postList = postSmootherParams;
+      }
     }
 
   } // Build()

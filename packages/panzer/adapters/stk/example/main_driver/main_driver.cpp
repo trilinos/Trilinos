@@ -56,7 +56,7 @@
 #include "Kokkos_DefaultNode.hpp"
 
 #include "Panzer_ConfigDefs.hpp"
-#include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
+#include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_String_Utilities.hpp"
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     std::map<int,std::string> responseIndexToName;
     {
-      panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
+      panzer_stk::ModelEvaluatorFactory<double> me_factory;
       
       // Add in the application specific observer factories
       {

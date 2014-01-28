@@ -320,6 +320,7 @@ private:
   //! Get Drop Rule
   int DropRule() const{return DropRule_;}
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(Graph().NumGlobalRows());};
   
@@ -331,7 +332,20 @@ private:
   
   //! Returns the number of diagonal entries found in the global input graph.
   virtual int NumGlobalBlockDiagonals() const {return(Graph().NumGlobalBlockDiagonals());};
+#endif
+
+  //! Returns the number of global matrix rows.
+  long long NumGlobalRows64() const {return(Graph().NumGlobalRows64());};
   
+  //! Returns the number of global matrix columns.
+  long long NumGlobalCols64() const {return(Graph().NumGlobalCols64());};
+  
+  //! Returns the number of nonzero entries in the global graph.
+  long long NumGlobalNonzeros64() const {return(Graph().NumGlobalNonzeros64());};
+  
+  //! Returns the number of diagonal entries found in the global input graph.
+  virtual long long NumGlobalBlockDiagonals64() const {return(Graph().NumGlobalBlockDiagonals64());};
+
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(Graph().NumMyRows());};
   
@@ -347,9 +361,12 @@ private:
   //! Returns the number of nonzero diagonal values found in matrix.
   virtual int NumMyDiagonals() const {return(NumMyDiagonals_);};
   
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the index base for row and column indices for this graph.
   int IndexBase() const {return(Graph().IndexBase());};
-  
+#endif
+  long long IndexBase64() const {return(Graph().IndexBase64());};
+
   //! Returns the address of the Epetra_CrsGraph associated with this factored matrix.
   const Epetra_CrsGraph & Graph() const {return(*Graph_);};
   
@@ -421,6 +438,9 @@ private:
   int *etree_,*perm_r_,*perm_c_;
   //@}
 
+
+  template<typename int_type>
+  int TInitialize();
 };
 
 #endif /* HAVE_IFPACK_SUPERLU */

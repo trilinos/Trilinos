@@ -878,6 +878,7 @@ size_t dimension(
 template< unsigned ScalarSize , unsigned Rank ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
+KOKKOS_INLINE_FUNCTION
 size_t cardinality_count(
   const Shape<ScalarSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )
 {

@@ -33,16 +33,31 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
   MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Experimental=ON requires Xpetra_ENABLE_Experimental=ON.")
 ENDIF ()
 
+# Memory testing
+IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
+  SET(MUELU_VALGRIND_TESTING YES)
+ELSE()
+  SET(MUELU_VALGRIND_TESTING NO)
+ENDIF()
+
 # Profiling
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
   HAVE_${PACKAGE_NAME_UC}_PROFILING
   "Enable detailed timing and memory profiling of MueLu."
-  ON)
+  OFF)
 
 # Profiling (expert users only. There is no TPL for Google Perftools)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
   HAVE_${PACKAGE_NAME_UC}_GOOGLE_PERFTOOLS
   "Enable detailed memory profiling using Google Perftools."
+  OFF)
+
+# Boost
+# We don't actually need this option, but boost is not *really* needed, and
+# I really want to hide unnecessary warnings
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
+  HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
+  "Enable Boost"
   OFF)
 
 # Explicit instantiation options:
@@ -108,6 +123,17 @@ IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPL
 ELSE()
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
+
+
+# ML's MMM
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
+  HAVE_${PACKAGE_NAME_UC}_ML_MMM
+  "Use ML's Matrix-Matrix-Multiply when available"
+  OFF)
+IF (${PACKAGE_NAME}_ENABLE_ML_MMM AND NOT ${PACKAGE_NAME}_ENABLE_ML)
+  MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_ML_MMM=ON requires MueLu_ENABLE_ML=ON.")
+ENDIF ()
+
 
 #
 # C) Add the libraries, tests, and examples

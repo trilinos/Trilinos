@@ -55,10 +55,136 @@
 #include <sstream>
 #include <fstream>
 #include <Tpetra_MultiVector_decl.hpp>
-#include <Zoltan2_XpetraMultiVectorInput.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Tpetra_Distributor.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+
+
+//#define HAVE_ZOLTAN2_ZOLTAN
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+#include <zoltan.h>
+#endif
+
+using Teuchos::CommandLineProcessor;
+
+namespace GeometricGen{
+#define CATCH_EXCEPTIONS(pp) \
+        catch (std::runtime_error &e) { \
+            cout << "Runtime exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            return -1; \
+        } \
+        catch (std::logic_error &e) { \
+            cout << "Logic exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            return -1; \
+        } \
+        catch (std::bad_alloc &e) { \
+            cout << "Bad_alloc exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            return -1; \
+        } \
+        catch (std::exception &e) { \
+            cout << "Unknown exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            return -1; \
+        }
+
+
+
+
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+
+
+template <typename tMVector_t>
+class DOTS{
+public:
+  vector<vector<float> > weights;
+  tMVector_t *coordinates;
+};
+
+template <typename tMVector_t>
+int getNumObj(void *data, int *ierr)
+{
+  *ierr = 0;
+  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+  return dots_->coordinates->getLocalLength();
+}
+//////////////////////////
+template <typename tMVector_t>
+void getCoordinates(void *data, int numGid, int numLid,
+  int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+  int dim, double *coords_, int *ierr)
+{
+	  // I know that Zoltan asks for coordinates in gid order.
+	  if (dim == 3){
+		  *ierr = 0;
+		  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+		  double *val = coords_;
+		  const scalar_t *x = dots_->coordinates->getData(0).getRawPtr();
+		  const scalar_t *y = dots_->coordinates->getData(1).getRawPtr();
+		  const scalar_t *z = dots_->coordinates->getData(2).getRawPtr();
+		  for (int i=0; i < numObj; i++){
+			  *val++ = static_cast<double>(x[i]);
+			  *val++ = static_cast<double>(y[i]);
+			  *val++ = static_cast<double>(z[i]);
+		  }
+	  }
+	  else {
+		  *ierr = 0;
+		  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+		  double *val = coords_;
+		  const scalar_t *x = dots_->coordinates->getData(0).getRawPtr();
+		  const scalar_t *y = dots_->coordinates->getData(1).getRawPtr();
+		  for (int i=0; i < numObj; i++){
+			  *val++ = static_cast<double>(x[i]);
+			  *val++ = static_cast<double>(y[i]);
+		  }
+
+
+	  }
+}
+template <typename tMVector_t>
+int getDim(void *data, int *ierr)
+{
+  *ierr = 0;
+  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+  int dim =  dots_->coordinates->getNumVectors();
+
+  return dim;
+}
+
+//////////////////////////
+template <typename tMVector_t>
+void getObjList(void *data, int numGid, int numLid,
+  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+  int wgt_dim, float *obj_wgts, int *ierr)
+{
+  *ierr = 0;
+  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+
+  size_t localLen = dots_->coordinates->getLocalLength();
+  const gno_t *ids =
+               dots_->coordinates->getMap()->getNodeElementList().getRawPtr();
+
+  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t))
+    memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);
+  else
+    for (size_t i=0; i < localLen; i++)
+      gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
+
+  if (wgt_dim > 0){
+    float *wgts = obj_wgts;
+    for (size_t i=0; i < localLen; i++)
+      for (int w=0; w < wgt_dim; w++)
+        *wgts++ = dots_->weights[w][i];
+  }
+}
+#endif
+
 
 enum shape {SQUARE, RECTANGLE, CIRCLE, CUBE, RECTANGULAR_PRISM, SPHERE};
 const std::string shapes[] = {"SQUARE", "RECTANGLE", "CIRCLE", "CUBE", "RECTANGULAR_PRISM", "SPHERE"};
@@ -783,7 +909,8 @@ private:
   T **wghts;
   WeightDistribution<T,T> **wd;
   int weight_dimension;  //dimension of the geometry
-
+  int predistribution;
+  RCP<const Teuchos::Comm<int> > comm;
   //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
   //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmwVector;
   int worldSize;
@@ -795,7 +922,10 @@ private:
   T minz;
   T maxz;
   std::string outfile;
+  float perturbation_ratio;
 
+  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+  typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
 
 
   template <typename tt>
@@ -1318,6 +1448,23 @@ private:
             this->weight_dimension = dim;
           }
         }
+        else if(paramName == "predistribution"){
+          int pre_distribution = fromString<int>(getParamVal<std::string>(pe, paramName));
+          if(pre_distribution < 0 && pre_distribution > 3){
+            throw INVALID(paramName);
+          } else {
+            this->predistribution = pre_distribution;
+          }
+        }
+        else if(paramName == "perturbation_ratio"){
+          float perturbation = fromString<float>(getParamVal<std::string>(pe, paramName));
+          if(perturbation < 0 && perturbation > 1){
+            throw INVALID(paramName);
+          } else {
+            this->perturbation_ratio = perturbation;
+          }
+        }
+
 
         else if(paramName == "proc_load_distributions"){
           proc_load_distributions = getParamVal<std::string>(pe, paramName);
@@ -1468,11 +1615,13 @@ public:
     cout << "\thole-6:CIRCLE,XCENTER,YCENTER,RADIUS (only for dim=2)" << endl;
     cout << "- out_file:out_file_path : if provided output will be written to files." << endl;
     cout << "- proc_load_distributions:ratio_0, ratio_1, ratio_2....ratio_n. Loads of each processor, should be as many as MPI ranks and should sum up to 1." << endl;
-
+    cout << "- predistribution:distribution_option. Predistribution of the coordinates to the processors. 0 for NONE, 1 RCB, 2 MJ, 3 BLOCK." << endl;
+    cout << "- perturbation_ratio:the percent of the local data which will be perturbed in order to simulate the changes in the dynamic partitioning. Float value between 0 and 1." << endl;
   }
 
   GeometricGenerator(Teuchos::ParameterList &params, const RCP<const Teuchos::Comm<int> > & comm_){
     this->wd = NULL;
+    this->comm = comm_;
     this->holes = NULL; //to represent if there is any hole in the input
     this->coordinate_dimension = 0;  //dimension of the geometry
     this->weight_dimension = 0;  //dimension of the geometry
@@ -1484,6 +1633,8 @@ public:
     this->holeCount = 0;
     this->distributionCount = 0;
     this->outfile = "";
+    this->predistribution = 0;
+    this->perturbation_ratio = 0;
     //this->points =  NULL;
 
     /*
@@ -1547,7 +1698,7 @@ public:
     }
 
     this->numLocalCoords = 0;
-    srand (myRank + 1);
+    srand ((myRank + 1) * this->numLocalCoords);
     for (int i = 0; i < distributionCount; ++i){
 
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
@@ -1560,6 +1711,52 @@ public:
       this->numLocalCoords += requestedPointCount;
     }
 
+    /*
+
+    if (this->myRank >= 0){
+        for(lno_t i = 0; i < this->numLocalCoords; ++i){
+
+          cout <<"me:" << this->myRank << " "<< this->coords[0][i];
+          if(this->coordinate_dimension > 1){
+        	  cout << " " << this->coords[1][i];
+          }
+          if(this->coordinate_dimension > 2){
+        	  cout  << " " << this->coords[2][i];
+          }
+          cout << std::endl;
+        }
+    }
+	*/
+
+
+
+    if (this->predistribution){
+    	redistribute();
+    }
+
+
+
+    int scale = 3;
+    if (this->perturbation_ratio > 0){
+    	this->perturb_data(this->perturbation_ratio, scale);
+    }
+    /*
+    if (this->myRank >= 0){
+    	cout << "after distribution" << endl;
+        for(lno_t i = 0; i < this->numLocalCoords; ++i){
+
+          cout <<"me:" << this->myRank << " " << this->coords[0][i];
+          if(this->coordinate_dimension > 1){
+        	  cout << " " << this->coords[1][i];
+          }
+          if(this->coordinate_dimension > 2){
+        	  cout  << " " << this->coords[2][i];
+          }
+          cout << std::endl;
+        }
+    }
+
+    */
 
 
     if (this->distinctCoordSet){
@@ -1582,12 +1779,28 @@ public:
         myfile << std::endl;
       }
       myfile.close();
+
+      if (this->myRank == 0){
+    	  std::ofstream gnuplotfile("gnu.gnuplot");
+    	  for(int i = 0; i < this->worldSize; ++i){
+    		  string s = "splot";
+    		  if (this->coordinate_dimension == 2){
+    			  s = "plot";
+    		  }
+    		  if (i > 0){
+    			  s = "replot";
+    		  }
+    		  gnuplotfile << s << " \"" << (this->outfile + toString<int>(i)) << "\"" << endl;
+    	  }
+    	  gnuplotfile  << "pause -1" << endl;
+    	  gnuplotfile.close();
+      }
     }
 
 
 
     /*
-		Zoltan2::XpetraMultiVectorInput < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > xmv (RCP < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > (tmVector));
+		Zoltan2::XpetraMultiVectorAdapter < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > xmv (RCP < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > (tmVector));
 
 		RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector2;
 		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;
@@ -1629,6 +1842,836 @@ public:
       }
     }
   }
+
+  //############################################################//
+  ///######Start perturbation function##########################//
+  //############################################################//
+  void perturb_data(float used_perturbation_ratio, int scale){
+	  T *maxCoords= new T [this->coordinate_dimension];
+	  T *minCoords= new T [this->coordinate_dimension];
+	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
+		  minCoords[dim] = maxCoords[dim] = this->coords[dim][0];
+		  for (lno_t i = 1; i < this->numLocalCoords; ++i){
+			  if (minCoords[dim] > this->coords[dim][i]){
+				  minCoords[dim] = this->coords[dim][i];
+			  }
+
+			  if (maxCoords[dim] < this->coords[dim][i]){
+				  maxCoords[dim] = this->coords[dim][i];
+			  }
+		  }
+
+
+
+
+		  T center = (maxCoords[dim] + minCoords[dim]) / 2;
+
+		  minCoords[dim] = center - (center - minCoords[dim]) * scale;
+		  maxCoords[dim] = (maxCoords[dim] - center) * scale + center;
+
+	  }
+
+	  gno_t numLocalToPerturb = this->numLocalCoords * used_perturbation_ratio;
+	  //cout << "numLocalToPerturb :" << numLocalToPerturb  << endl;
+	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
+		  T range = maxCoords[dim] - minCoords[dim];
+		  for (int i = 0; i < numLocalToPerturb; ++i){
+			  this->coords[dim][i] = (rand() / double (RAND_MAX)) * (range) +  minCoords[dim];
+
+		  }
+	  }
+	  delete []maxCoords;
+	  delete []minCoords;
+  }
+
+  //############################################################//
+  ///######Start Predistribution functions######################//
+  //############################################################//
+
+  //Returns the partitioning dimension as even as possible
+  void getBestSurface (int remaining, int *dimProcs, int dim, int currentDim, int &bestSurface, int *bestDimProcs){
+
+	  if (currentDim < dim - 1){
+		  int ipx = 1;
+		  while(ipx <= remaining) {
+			  if(remaining % ipx == 0) {
+				  int nremain = remaining / ipx;
+				  dimProcs[currentDim] = ipx;
+				  getBestSurface (nremain, dimProcs, dim, currentDim + 1, bestSurface, bestDimProcs);
+			  }
+			  ipx++;
+		  }
+	  }
+	  else {
+		  dimProcs[currentDim] = remaining;
+		  int surface = 0;
+		  for (int i = 0; i < dim; ++i) surface += dimProcs[i];
+		  if (surface < bestSurface){
+			  bestSurface = surface;
+			  for (int i = 0; i < dim; ++i) bestDimProcs[i] = dimProcs[i];
+		  }
+	  }
+
+  }
+
+  //returns min and max coordinates along each dimension
+  void getMinMaxCoords(T *globalMaxCoords, T *globalMinCoords){
+	  T *maxCoords= new T [this->coordinate_dimension];
+	  T *minCoords= new T [this->coordinate_dimension];
+	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
+		  minCoords[dim] = maxCoords[dim] = this->coords[dim][0];
+		  for (lno_t i = 1; i < this->numLocalCoords; ++i){
+			  if (minCoords[dim] > this->coords[dim][i]){
+				  minCoords[dim] = this->coords[dim][i];
+			  }
+
+			  if (maxCoords[dim] < this->coords[dim][i]){
+				  maxCoords[dim] = this->coords[dim][i];
+			  }
+		  }
+	  }
+
+	  reduceAll<int, T>( *(this->comm), Teuchos::REDUCE_MAX,
+			  	  	  	  	  	  this->coordinate_dimension,
+			  	  	  	  	  	  maxCoords,
+			  	  	  	  	  	  globalMaxCoords);
+
+
+	  reduceAll<int, T>( *(this->comm), Teuchos::REDUCE_MIN,
+	  			  	  	  	  	  	  this->coordinate_dimension,
+	  			  	  	  	  	  	  minCoords,
+	  			  	  	  	  	  	  globalMinCoords);
+
+	  delete []maxCoords;
+	  delete []minCoords;
+  }
+
+
+  //performs a block partitioning.
+  //then distributes the points of the overloaded parts to underloaded parts.
+  void blockPartition(int *coordinate_grid_parts){
+
+
+	  //############################################################//
+	  ///getting minimum and maximum coordinates for each dimension///
+	  //############################################################//
+
+	  T *maxCoords= new T [this->coordinate_dimension];
+	  T *minCoords= new T [this->coordinate_dimension];
+	  //global min and max coordinates in each dimension.
+	  this->getMinMaxCoords(maxCoords, minCoords);
+
+
+	  //############################################################//
+	  ///getting the best partitioning number along each dimension ///
+	  //############################################################//
+	  int remaining = this->worldSize;
+	  int coord_dim = this->coordinate_dimension;
+	  int *dimProcs = new int[coord_dim];
+	  int *bestDimProcs = new int[coord_dim];
+	  int currentDim = 0;
+
+	  int bestSurface = 0;
+	  dimProcs[0] = remaining;
+	  for (int i = 1; i < coord_dim; ++i) dimProcs[i] = 1;
+	  for (int i = 0; i < coord_dim; ++i) bestSurface += dimProcs[i];
+	  for (int i = 0; i < coord_dim; ++i) bestDimProcs[i] = dimProcs[i];
+	  //divides the parts into dimensions as even as possible.
+	  getBestSurface ( remaining, dimProcs,  coord_dim,  currentDim, bestSurface, bestDimProcs);
+
+
+	  delete []dimProcs;
+
+	  //############################################################//
+	  ///getting the size of a slice along each dimension ///
+	  //############################################################//
+	  int *shiftProcCount = new int[coord_dim];
+	  //how the consecutive parts along a dimension
+	  //differs in the index.
+
+	  int remainingProc = this->worldSize;
+	  for (int dim = 0; dim < coord_dim; ++dim){
+		  remainingProc = remainingProc /  bestDimProcs[dim];
+		  shiftProcCount[dim] = remainingProc;
+	  }
+
+	  T *dim_slices = new T[coord_dim];
+	  for (int dim = 0; dim < coord_dim; ++dim){
+		  T dim_range = maxCoords[dim] - minCoords[dim];
+		  T slice = dim_range / bestDimProcs[dim];
+		  dim_slices[dim] = slice;
+	  }
+
+	  //############################################################//
+	  ///##################Initial part assignments ###############///
+	  //############################################################//
+
+	  gno_t *numPointsInParts = new gno_t[this->worldSize];
+	  gno_t *numGlobalPointsInParts = new gno_t[this->worldSize];
+	  gno_t *numPointsInPartsInclusiveUptoMyIndex = new gno_t[this->worldSize];
+
+	  gno_t *partBegins = new gno_t [this->worldSize];
+	  gno_t *partNext = new gno_t[this->numLocalCoords];
+
+
+	  for (int i = 0; i < this->numLocalCoords; ++i){
+		  partNext[i] = -1;
+	  }
+	  for (int i = 0; i < this->worldSize; ++i) {
+		  partBegins[i] = 1;
+	  }
+
+	  for (int i = 0; i < this->worldSize; ++i)
+		  numPointsInParts[i] = 0;
+
+	  for (int i = 0; i < this->numLocalCoords; ++i){
+		  int partIndex = 0;
+		  for (int dim = 0; dim < coord_dim; ++dim){
+			  int shift = int ((this->coords[dim][i] - minCoords[dim]) / dim_slices[dim]);
+			  if (shift >= bestDimProcs[dim]){
+				  shift = bestDimProcs[dim] - 1;
+			  }
+			  shift = shift * shiftProcCount[dim];
+			  partIndex += shift;
+		  }
+		  numPointsInParts[partIndex] += 1;
+		  coordinate_grid_parts[i] = partIndex;
+
+		  partNext[i] = partBegins[partIndex];
+		  partBegins[partIndex] = i;
+
+	  }
+
+	  //############################################################//
+	  ///#########Counting the num points in each  part ###########///
+	  //############################################################//
+	  reduceAll<int, gno_t>( *(this->comm), Teuchos::REDUCE_SUM,
+			  	  	  	  	  	  	  this->worldSize,
+			  	  	  	  	  	  	  numPointsInParts,
+			  	  	  	  	  	  	  numGlobalPointsInParts);
+
+
+      Teuchos::scan<int,gno_t>(
+    		  *(this->comm), Teuchos::REDUCE_SUM,
+    		  this->worldSize,
+    		  numPointsInParts,
+    		  numPointsInPartsInclusiveUptoMyIndex
+      );
+
+
+
+
+	  /*
+	  gno_t totalSize = 0;
+	  for (int i = 0; i < this->worldSize; ++i){
+		  totalSize += numPointsInParts[i];
+	  }
+	  if (totalSize != this->numLocalCoords){
+		  cout << "me:" << this->myRank << " ts:" << totalSize << " nl:" << this->numLocalCoords << endl;
+	  }
+	  */
+
+
+      //cout << "me:" << this->myRank << " ilk print" << endl;
+
+	  gno_t optimal_num = this->numGlobalCoords / double (this->worldSize) + 0.5;
+#ifdef printparts
+	  if (this->myRank == 0){
+		  gno_t totalSize = 0;
+		  for (int i = 0; i < this->worldSize; ++i){
+			  cout << "me:" << this->myRank << " NumPoints in part:" << i << " is: " << numGlobalPointsInParts[i] << endl;
+			  totalSize += numGlobalPointsInParts[i];
+		  }
+		  cout << "Total:" << totalSize << " ng:" << this->numGlobalCoords << endl;
+		  cout << "optimal_num:" << optimal_num << endl;
+	  }
+#endif
+	  gno_t *extraInPart = new gno_t [this->worldSize];
+
+	  gno_t extraExchange = 0;
+	  for (int i = 0; i < this->worldSize; ++i){
+		  extraInPart[i] = numGlobalPointsInParts[i] - optimal_num;
+		  extraExchange += extraInPart[i];
+	  }
+	  if (extraExchange != 0){
+		  int addition = -1;
+		  if (extraExchange < 0) addition = 1;
+		  for (int i = 0; i < extraExchange; ++i){
+			  extraInPart[i % this->worldSize] += addition;
+		  }
+	  }
+
+	  //############################################################//
+	  ///######Check the overloaded and underloaded parts #########///
+	  //############################################################//
+
+      int overloadedPartCount = 0;
+      int *overloadedPartIndices = new int [this->worldSize];
+
+
+      int underloadedPartCount = 0;
+      int *underloadedPartIndices = new int [this->worldSize];
+
+      for (int i = 0; i < this->worldSize; ++i){
+    	  if(extraInPart[i] > 0){
+    		  overloadedPartIndices[overloadedPartCount++] = i;
+    	  }
+    	  else if(extraInPart[i] < 0){
+    		  underloadedPartIndices[underloadedPartCount++] = i;
+    	  }
+      }
+
+      int underloadpartindex = underloadedPartCount - 1;
+
+
+      int numPartsISendFrom = 0;
+      int *mySendFromParts = new int[this->worldSize * 2];
+      gno_t *mySendFromPartsCounts = new gno_t[this->worldSize * 2];
+
+      int numPartsISendTo = 0;
+      int *mySendParts = new int[this->worldSize * 2];
+      gno_t *mySendCountsToParts = new gno_t[this->worldSize * 2];
+
+
+	  //############################################################//
+	  ///######Calculating##########################################//
+      ///######*which processors ##################################///
+      ///######*which overloaded parts elements should be converted///
+      ///######*into which underloaded parts elements #############///
+	  //############################################################//
+      for (int i = overloadedPartCount - 1; i >= 0; --i){
+    	  //get the overloaded part
+    	  //the overload
+    	  int overloadPart = overloadedPartIndices[i];
+    	  gno_t overload = extraInPart[overloadPart];
+    	  gno_t myload = numPointsInParts[overloadPart];
+
+
+    	  //the inclusive load of the processors up to me
+    	  gno_t inclusiveLoadUpToMe = numPointsInPartsInclusiveUptoMyIndex[overloadPart];
+
+    	  //the exclusive load of the processors up to me
+    	  gno_t exclusiveLoadUptoMe = inclusiveLoadUpToMe - myload;
+
+
+    	  if (exclusiveLoadUptoMe >= overload){
+    		  //this processor does not have to convert anything.
+    		  //for this overloaded part.
+    		  //set the extra for this processor to zero.
+    		  overloadedPartIndices[i] = -1;
+    		  extraInPart[overloadPart] = 0;
+    		  //then consume underloaded parts.
+    		  while (overload > 0){
+    			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
+    			  gno_t underload = extraInPart[nextUnderLoadedPart];
+    			  gno_t left = overload + underload;
+
+    			  if(left >= 0){
+    				  extraInPart[nextUnderLoadedPart] = 0;
+    				  underloadedPartIndices[underloadpartindex--] = -1;
+    			  }
+    			  else {
+    				  extraInPart[nextUnderLoadedPart] = left;
+    			  }
+    			  overload = left;
+    		  }
+    	  }
+    	  else if (exclusiveLoadUptoMe < overload){
+    		  //if the previous processors load is not enough
+    		  //then this processor should convert some of its elements.
+    		  gno_t mySendCount = overload - exclusiveLoadUptoMe;
+    		  //how much more needed.
+    		  gno_t sendAfterMe = 0;
+    		  //if my load is not enough
+    		  //then the next processor will continue to convert.
+    		  if (mySendCount > myload){
+    			  sendAfterMe = mySendCount - myload;
+    			  mySendCount = myload;
+    		  }
+
+
+    		  //this processors will convert from overloaded part
+    		  //as many as mySendCount items.
+    		  mySendFromParts[numPartsISendFrom] = overloadPart;
+    	      mySendFromPartsCounts[numPartsISendFrom++] = mySendCount;
+
+    	      //first consume underloaded parts for the previous processors.
+    		  while (exclusiveLoadUptoMe > 0){
+    			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
+    			  gno_t underload = extraInPart[nextUnderLoadedPart];
+    			  gno_t left = exclusiveLoadUptoMe + underload;
+
+    			  if(left >= 0){
+    				  extraInPart[nextUnderLoadedPart] = 0;
+    				  underloadedPartIndices[underloadpartindex--] = -1;
+    			  }
+    			  else {
+    				  extraInPart[nextUnderLoadedPart] = left;
+    			  }
+    			  exclusiveLoadUptoMe = left;
+    		  }
+
+    		  //consume underloaded parts for my load.
+    		  while (mySendCount > 0){
+    			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
+    			  gno_t underload = extraInPart[nextUnderLoadedPart];
+    			  gno_t left = mySendCount + underload;
+
+    			  if(left >= 0){
+    				  mySendParts[numPartsISendTo] = nextUnderLoadedPart;
+    				  mySendCountsToParts[numPartsISendTo++] = -underload;
+
+    				  extraInPart[nextUnderLoadedPart] = 0;
+    				  underloadedPartIndices[underloadpartindex--] = -1;
+    			  }
+    			  else {
+    				  extraInPart[nextUnderLoadedPart] = left;
+
+    				  mySendParts[numPartsISendTo] = nextUnderLoadedPart;
+    				  mySendCountsToParts[numPartsISendTo++] = mySendCount;
+
+    			  }
+    			  mySendCount = left;
+    		  }
+    		  //consume underloaded parts for the load of the processors after my index.
+    		  while (sendAfterMe > 0){
+    			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
+    			  gno_t underload = extraInPart[nextUnderLoadedPart];
+    			  gno_t left = sendAfterMe + underload;
+
+    			  if(left >= 0){
+    				  extraInPart[nextUnderLoadedPart] = 0;
+    				  underloadedPartIndices[underloadpartindex--] = -1;
+    			  }
+    			  else {
+    				  extraInPart[nextUnderLoadedPart] = left;
+    			  }
+    			  sendAfterMe = left;
+    		  }
+    	  }
+      }
+
+
+	  //############################################################//
+	  ///######Perform actual conversion############################//
+	  //############################################################//
+      for (int i = 0 ; i < numPartsISendFrom; ++i){
+
+    	  //get the part from which the elements will be converted.
+    	  int sendFromPart = mySendFromParts[i];
+    	  gno_t sendCount = mySendFromPartsCounts[i];
+    	  while(sendCount > 0){
+    		  int partToSendIndex = numPartsISendTo - 1;
+    		  int partToSend = mySendParts[partToSendIndex];
+
+    		  int sendCountToThisPart = mySendCountsToParts[partToSendIndex];
+
+    		  //determine which part i should convert to
+    		  //and how many to this part.
+    		  if (sendCountToThisPart <= sendCount){
+    			  mySendParts[partToSendIndex] = 0;
+    			  mySendCountsToParts[partToSendIndex] = 0;
+    			  --numPartsISendTo;
+    			  sendCount -= sendCountToThisPart;
+    		  }
+    		  else {
+    			  mySendCountsToParts[partToSendIndex] = sendCountToThisPart - sendCount;
+    			  sendCountToThisPart = sendCount;
+    			  sendCount = 0;
+    		  }
+
+
+        	  gno_t toChange = partBegins[sendFromPart];
+    		  gno_t previous_begin = partBegins[partToSend];
+
+    		  //do the conversion.
+    		  for (int k = 0; k < sendCountToThisPart - 1; ++k){
+    			  coordinate_grid_parts[toChange] = partToSend;
+    			  toChange = partNext[toChange];
+    		  }
+    		  coordinate_grid_parts[toChange] = partToSend;
+
+    		  gno_t newBegin = partNext[toChange];
+    		  partNext[toChange] = previous_begin;
+    		  partBegins[partToSend] = partBegins[sendFromPart];
+    		  partBegins[sendFromPart] = newBegin;
+    	  }
+      }
+
+      //if (this->myRank == 0) cout << "4" << endl;
+
+#ifdef printparts
+
+
+      for (int i = 0; i < this->worldSize; ++i) numPointsInParts[i] = 0;
+
+      for (int i = 0; i < this->numLocalCoords; ++i){
+    	  numPointsInParts[coordinate_grid_parts[i]] += 1;
+      }
+
+	  reduceAll<int, gno_t>( *(this->comm), Teuchos::REDUCE_SUM,
+			  	  	  	  	  	  	  this->worldSize,
+			  	  	  	  	  	  	  numPointsInParts,
+			  	  	  	  	  	  	  numGlobalPointsInParts);
+	  if (this->myRank == 0){
+		  cout << "reassigning" << endl;
+		  gno_t totalSize = 0;
+		  for (int i = 0; i < this->worldSize; ++i){
+			  cout << "me:" << this->myRank << " NumPoints in part:" << i << " is: " << numGlobalPointsInParts[i] << endl;
+			  totalSize += numGlobalPointsInParts[i];
+		  }
+		  cout << "Total:" << totalSize << " ng:" << this->numGlobalCoords << endl;
+	  }
+#endif
+	  delete []mySendCountsToParts;
+	  delete []mySendParts;
+	  delete []mySendFromPartsCounts;
+	  delete []mySendFromParts;
+	  delete []underloadedPartIndices;
+	  delete []overloadedPartIndices;
+	  delete []extraInPart;
+	  delete []partNext;
+	  delete []partBegins;
+	  delete []numPointsInPartsInclusiveUptoMyIndex;
+	  delete []numPointsInParts;
+	  delete []numGlobalPointsInParts;
+
+	  delete []shiftProcCount;
+	  delete []bestDimProcs;
+	  delete []dim_slices;
+      delete []minCoords;
+      delete []maxCoords;
+  }
+
+  //given the part numbers for each local coordinate,
+  //distributes the coordinates to the corresponding processors.
+  void distribute_points(int *coordinate_grid_parts){
+
+	  Tpetra::Distributor distributor(comm);
+	  ArrayView<const int> pIds( coordinate_grid_parts, this->numLocalCoords);
+	  /*
+	  for (int i = 0 ; i < this->numLocalCoords; ++i){
+		  cout << "me:" << this->myRank << " to part:" << coordinate_grid_parts[i] << endl;
+	  }
+	  */
+	  gno_t numMyNewGnos = distributor.createFromSends(pIds);
+
+	  //cout << "distribution step 1 me:" << this->myRank << " numLocal:"  <<numMyNewGnos << " old:" <<  numLocalCoords << endl;
+
+	  this->numLocalCoords = numMyNewGnos;
+
+
+	  ArrayRCP<T> recvBuf2(distributor.getTotalReceiveLength());
+
+	  for (int i = 0; i < this->coordinate_dimension; ++i){
+		  ArrayView<T> s(this->coords[i], this->numLocalCoords);
+	      distributor.doPostsAndWaits<T>(s, 1, recvBuf2());
+		  delete [] this->coords[i];
+		  this->coords[i] = new T[this->numLocalCoords];
+	      for (int j = 0; j < this->numLocalCoords; ++j){
+	    	  this->coords[i][j] = recvBuf2[j];
+	      }
+
+	  }
+  }
+
+  //calls MJ for p = numProcs
+  int predistributeMJ(int *coordinate_grid_parts){
+	  int coord_dim = this->coordinate_dimension;
+	  //int weight_dim = 0;
+
+	  lno_t numLocalPoints = this->numLocalCoords;
+	  gno_t numGlobalPoints = this->numGlobalCoords;
+
+
+	  //T **weight = NULL;
+	  //typedef Tpetra::MultiVector<T, lno_t, gno_t, node_t> tMVector_t;
+	  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
+			  new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
+
+	  Teuchos::Array<Teuchos::ArrayView<const T> > coordView(coord_dim);
+
+
+
+	  for (int i=0; i < coord_dim; i++){
+		  if(numLocalPoints > 0){
+			  Teuchos::ArrayView<const T> a(coords[i], numLocalPoints);
+			  coordView[i] = a;
+		  } else{
+			  Teuchos::ArrayView<const T> a;
+			  coordView[i] = a;
+		  }
+	  }
+
+	  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(
+			  new Tpetra::MultiVector<T, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
+
+
+	  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
+	  vector<const T *> weights;
+	  vector <int> stride;
+
+	  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+	  //inputAdapter_t ia(coordsConst);
+	  inputAdapter_t ia(coordsConst,weights, stride);
+
+	  Teuchos::RCP <Teuchos::ParameterList> params ;
+	  params =RCP <Teuchos::ParameterList> (new Teuchos::ParameterList, true);
+
+
+	  params->set("algorithm", "multijagged");
+	  params->set("num_global_parts", this->worldSize);
+
+	  //TODO we need to fix the setting parts.
+	  //Although MJ sets the parts with
+	  //currently the part setting is not correct when migration is done.
+	  params->set("migration_check_option", 2);
+
+
+	  Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
+
+
+	  try {
+#ifdef HAVE_ZOLTAN2_MPI
+		  problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr(),
+				  MPI_COMM_WORLD);
+#else
+		  problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr());
+#endif
+	  }
+	  CATCH_EXCEPTIONS("PartitioningProblem()")
+
+	  try {
+		  problem->solve();
+	  }
+	  CATCH_EXCEPTIONS("solve()")
+
+	  const zoltan2_partId_t *partIds= problem->getSolution().getPartList();
+
+	  for (int i = 0; i < this->numLocalCoords;++i){
+		  coordinate_grid_parts[i] = partIds[i];
+		  //cout << "me:" << this->myRank << " i:" << i << " goes to:" << partIds[i] << endl;
+	  }
+	  delete problem;
+	  return 0;
+  }
+
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+  //calls RCP for p = numProcs
+  int predistributeRCB(int *coordinate_grid_parts){
+	  int rank = this->myRank;
+	  int nprocs = this->worldSize;
+	  DOTS<tMVector_t> dots_;
+
+	  MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
+
+
+	  int weightDim = 0;
+	  int debugLevel=0;
+	  string memoryOn("memoryOn");
+	  string memoryOff("memoryOff");
+	  bool doMemory=false;
+	  int numGlobalParts = nprocs;
+	  int dummyTimer=0;
+	  bool remap=0;
+
+	  string balanceCount("balance_object_count");
+	  string balanceWeight("balance_object_weight");
+	  string mcnorm1("multicriteria_minimize_total_weight");
+	  string mcnorm2("multicriteria_balance_total_maximum");
+	  string mcnorm3("multicriteria_minimize_maximum_weight");
+	  string objective(balanceWeight);   // default
+
+	  // Process command line input
+	  CommandLineProcessor commandLine(false, true);
+	  //commandLine.setOption("size", &numGlobalCoords,
+	  //  "Approximate number of global coordinates.");
+	  int input_option = 0;
+	  commandLine.setOption("input_option", &input_option,
+	    "whether to use mesh creation, geometric generator, or file input");
+	  string inputFile = "";
+
+	  commandLine.setOption("input_file", &inputFile,
+	    "the input file for geometric generator or file input");
+
+
+	  commandLine.setOption("size", &numGlobalCoords,
+	    "Approximate number of global coordinates.");
+	  commandLine.setOption("numParts", &numGlobalParts,
+	    "Number of parts (default is one per proc).");
+	  commandLine.setOption("weightDim", &weightDim,
+	    "Number of weights per coordinate, zero implies uniform weights.");
+	  commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
+	  commandLine.setOption("remap", "no-remap", &remap,
+	    "Zoltan1 REMAP parameter; disabled by default for scalability testing");
+	  commandLine.setOption("timers", &dummyTimer, "ignored");
+	  commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
+	    "do memory profiling");
+
+	  string doc(balanceCount);
+	  doc.append(": ignore weights\n");
+	  doc.append(balanceWeight);
+	  doc.append(": balance on first weight\n");
+	  doc.append(mcnorm1);
+	  doc.append(": given multiple weights, balance their total.\n");
+	  doc.append(mcnorm3);
+	  doc.append(": given multiple weights, "
+	             "balance the maximum for each coordinate.\n");
+	  doc.append(mcnorm2);
+	  doc.append(": given multiple weights, balance the L2 norm of the weights.\n");
+	  commandLine.setOption("objective", &objective,  doc.c_str());
+
+	  CommandLineProcessor::EParseCommandLineReturn rc =
+	    commandLine.parse(0, NULL);
+
+
+
+	  if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+	    if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+	      if (rank==0) cout << "PASS" << endl;
+	      return 1;
+	    }
+	    else {
+	      if (rank==0) cout << "FAIL" << endl;
+	      return 0;
+	    }
+	  }
+
+	  //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
+
+	  // Create the data structure
+
+	  int coord_dim = this->coordinate_dimension;
+
+
+	  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
+			  new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, this->numLocalCoords, 0, this->comm));
+
+	  Teuchos::Array<Teuchos::ArrayView<const T> > coordView(coord_dim);
+	  for (int i=0; i < coord_dim; i++){
+		  if(numLocalCoords > 0){
+			  Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalCoords);
+			  coordView[i] = a;
+		  } else{
+			  Teuchos::ArrayView<const scalar_t> a;
+			  coordView[i] = a;
+		  }
+	  }
+
+	  tMVector_t *tmVector = new tMVector_t( mp, coordView.view(0, coord_dim), coord_dim);
+
+	  dots_.coordinates = tmVector;
+	  dots_.weights.resize(weightDim);
+
+
+	  MEMORY_CHECK(doMemory && rank==0, "After creating input");
+
+	  // Now call Zoltan to partition the problem.
+
+	  float ver;
+	  int aok = Zoltan_Initialize(0,NULL, &ver);
+
+	  if (aok != 0){
+	    printf("Zoltan_Initialize failed\n");
+	    exit(0);
+	  }
+
+	  struct Zoltan_Struct *zz;
+	  zz = Zoltan_Create(MPI_COMM_WORLD);
+
+	  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+	  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+	  Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
+	  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
+	  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
+	  Zoltan_Set_Param(zz, "RETURN_LISTS", "PART");
+	  std::ostringstream oss;
+	  oss << numGlobalParts;
+	  Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", oss.str().c_str());
+	  oss.str("");
+	  oss << debugLevel;
+	  Zoltan_Set_Param(zz, "DEBUG_LEVEL", oss.str().c_str());
+
+	  if (remap)
+	    Zoltan_Set_Param(zz, "REMAP", "1");
+	  else
+	    Zoltan_Set_Param(zz, "REMAP", "0");
+
+	  if (objective != balanceCount){
+	    oss.str("");
+	    oss << weightDim;
+	    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
+
+	    if (objective == mcnorm1)
+	      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "1");
+	    else if (objective == mcnorm2)
+	      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "2");
+	    else if (objective == mcnorm3)
+	      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "3");
+	  }
+	  else{
+	    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
+	  }
+
+	  Zoltan_Set_Num_Obj_Fn(zz, getNumObj<tMVector_t>, &dots_);
+	  Zoltan_Set_Obj_List_Fn(zz, getObjList<tMVector_t>, &dots_);
+	  Zoltan_Set_Num_Geom_Fn(zz,  getDim<tMVector_t>, &dots_);
+	  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates<tMVector_t>, &dots_);
+
+	  int changes, numGidEntries, numLidEntries, numImport, numExport;
+	  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
+	  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids;
+	  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+
+	  MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");
+
+
+	  aok = Zoltan_LB_Partition(zz, &changes, &numGidEntries, &numLidEntries,
+	                            &numImport, &importGlobalGids, &importLocalGids,
+	                            &importProcs, &importToPart,
+	                            &numExport, &exportGlobalGids, &exportLocalGids,
+	                            &exportProcs, &exportToPart);
+
+
+	  MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
+
+	  for (lno_t i = 0; i < numLocalCoords; i++)
+		  coordinate_grid_parts[i] = exportToPart[i];
+	  Zoltan_Destroy(&zz);
+	  MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
+
+	  delete dots_.coordinates;
+	  return 0;
+}
+#endif
+  void redistribute(){
+	  int *coordinate_grid_parts = new int[this->numLocalCoords];
+	  switch (this->predistribution){
+	  case 1:
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+		  this->predistributeRCB(coordinate_grid_parts);
+		  break;
+#endif
+	  case 2:
+
+		  this->predistributeMJ(coordinate_grid_parts);
+		  break;
+	  case 3:
+		  //block
+		  blockPartition(coordinate_grid_parts);
+		  break;
+	  }
+	  this->distribute_points(coordinate_grid_parts);
+
+	  delete []coordinate_grid_parts;
+
+
+  }
+
+  //############################################################//
+  ///########END Predistribution functions######################//
+  //############################################################//
+
 
   int getWeightDimension(){
     return this->weight_dimension;
@@ -1673,3 +2716,4 @@ public:
     }
   }
 };
+}

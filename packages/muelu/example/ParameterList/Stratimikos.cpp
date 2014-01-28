@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -75,14 +75,14 @@
 #include <MueLu.hpp> // TODO Usefull?
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-int main(int argc,char * argv[])
-{
+int main(int argc,char * argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 

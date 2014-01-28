@@ -59,6 +59,18 @@ inverse(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
+  Index const
+  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+
+  if (dimension > maximum_dimension) {
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Requested dimension (" << dimension;
+    std::cerr << ") exceeds maximum allowed for inverse: " << maximum_dimension;
+    std::cerr << std::endl;
+    exit(1);
+  }
+
   switch (dimension) {
 
   case 3:
@@ -99,10 +111,10 @@ inverse(Tensor<T, N> const & A)
 
   // Set 1 ... dimension bits to one.
   Index
-  intact_rows = (1 << dimension) - 1;
+  intact_rows = static_cast<Index>((1UL << dimension) - 1);
 
   Index
-  intact_cols = (1 << dimension) - 1;
+  intact_cols = static_cast<Index>((1UL << dimension) - 1);
 
   // Gauss-Jordan elimination with full pivoting
   for (Index k = 0; k < dimension; ++k) {
@@ -689,7 +701,7 @@ log_gregory(Tensor<T, N> const & A)
   Index
   k = 1;
 
-  while (relative_error > tol && k <= max_iter) {
+  while (relative_error > tol && k <= max_iter + 1) {
     term = static_cast<T>((2 * k - 1.0) / (2 * k + 1.0)) * term * C;
     B = B + term;
     norm_term = norm_1(term);
@@ -953,9 +965,8 @@ gaussian_elimination(Tensor<T, N> const & A)
   return U;
 }
 
+//
 // Apply Givens-Jacobi rotation on the left in place.
-// \param c and s for a rotation G in form [c, s; -s, c]
-// \param A
 //
 template<typename T, Index N>
 void
@@ -973,9 +984,8 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
+//
 // Apply Givens-Jacobi rotation on the right in place.
-// \param A
-// \param c and s for a rotation G in form [c, s; -s, c]
 //
 template<typename T, Index N>
 void
@@ -993,10 +1003,30 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
+///
+/// Apply rank-one update on the left in place
+///
+template<typename T, Index N>
+void
+rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+{
+  A -= beta * dyad(v, dot(v, A));
+  return;
+}
+
+///
+/// Apply rank-one update on the right in place
+///
+template<typename T, Index N>
+void
+rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+{
+  A -= beta * dyad(dot(A, v), v);
+  return;
+}
+
 //
 // R^N exponential map of a skew-symmetric tensor.
-// \param r \f$ r \in so(N) \f$
-// \return \f$ R = \exp R \f$ with \f$ R \in SO(N) \f$
 //
 template<typename T, Index N>
 Tensor<T, N>
@@ -1872,6 +1902,7 @@ namespace {
 // R^N eigenvalue decomposition for symmetric 2nd-order tensor
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
+// See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
 template<typename T, Index N>
 std::pair<Tensor<T, N>, Tensor<T, N> >
@@ -1892,8 +1923,10 @@ eig_sym_NxN(Tensor<T, N> const & A)
   T
   tol = machine_epsilon<T>() * norm(A);
 
+  // Estimate based on random generation and linear regression.
+  // Golub & Van Loan p 429 expect ~ dimension * log(dimension)
   Index const
-  max_iter = 128;
+  max_iter = 5 * dimension * dimension / 2;
 
   Index
   num_iter = 0;
@@ -1936,10 +1969,6 @@ eig_sym_NxN(Tensor<T, N> const & A)
 
     off = norm_off_diagonal(D);
     num_iter++;
-  }
-
-  if (num_iter == max_iter) {
-    std::cerr << "WARNING: EIG iteration did not converge." << std::endl;
   }
 
   Vector<T, N> d(dimension);

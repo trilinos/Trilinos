@@ -42,6 +42,8 @@
 /* GLOBAL VAR */
 
 DCMF_Protocol_t send_prot;
+DCMF_Protocol_t control0_prot;
+DCMF_Control_t info;
 DCMF_Protocol_t req_index_prot;
 
 DCMF_Send_Configuration_t conf;	/* Register the send protocol for intial conn */
@@ -53,12 +55,10 @@ size_t my_rank;
 volatile unsigned _recv_active;
 volatile unsigned send_active;
 volatile unsigned _recv_iteration;
-volatile unsigned _new_conn_active;
+volatile unsigned confirm_conn;
 DCMF_Request_t _recv_request[ITERATIONS];
 char _recv_buffer[BUFSIZE] __attribute__ ((__aligned__ (16)));
-volatile static int new_conn_index;
-volatile static int insert_conn_index;
-int conn_list[1024];
+volatile static int _is_server;
 
 /*** End of GLOBAL VAR ***/
 
@@ -278,6 +278,7 @@ typedef struct
     remote_rank;
   int
     mypid;
+  size_t  conn_req[1024];
   bgpdcmf_request_queue_handle
     req_queue;
 } bgpdcmf_transport_global;
@@ -325,8 +326,6 @@ create_status (const NNTI_buffer_t * reg_buf,
 static void
 create_peer (NNTI_peer_t * peer, int rank);
 static NNTI_result_t
-recv_full (int rank, void *buf, size_t num);
-static NNTI_result_t
 inject_full (int rank, const void *buf, size_t num);
 static NNTI_result_t
 init_connection (bgpdcmf_connection ** conn, int rank, const int is_server);
@@ -366,10 +365,11 @@ send_req (nnti_bgpdcmf_client_queue_attrs * local_req_queue_attrs,
 	  uint64_t offset, const NNTI_buffer_t * reg_buf,
 	  int rank, dcmf_work_request * wr);
 
-static  int
+static NNTI_result_t
 send_req_wc (nnti_bgpdcmf_client_queue_attrs * local_req_queue_attrs,
 	     nnti_bgpdcmf_server_queue_attrs * remote_req_queue_attrs,
-	     const NNTI_buffer_t * reg_buf, uint64_t offset, dcmf_work_request * wr, int rank);
+	     uint64_t offset,
+	     const NNTI_buffer_t * reg_buf, dcmf_work_request * wr, int rank);
 
 static int
 request_send (nnti_bgpdcmf_client_queue_attrs * client_q,
@@ -479,7 +479,7 @@ static nthread_lock_t
 static bgpdcmf_transport_global
   transport_global_data;
 static const int
-  MIN_TIMEOUT = 1000;		/* in milliseconds */
+  MIN_TIMEOUT = 100000000;		/* in milliseconds */
 static log_level
   nnti_event_debug_level;
 static nnti_bgpdcmf_fetch_index_req
@@ -541,6 +541,15 @@ decrement (void *clientdata, DCMF_Error_t * err)
 }
 
 
+void control_recv (void                 * clientdata,
+                   const DCMF_Control_t * info,
+                   size_t                 peer)
+{
+  DCMF_Control_t tmp;
+  memcpy((void *)&tmp, (const void *)info, sizeof(DCMF_Control_t));
+  (*((unsigned *)clientdata))--;
+  //log_debug(nnti_debug_level, "Received a confirmation on connection\n");
+}
 
 /* --------------------------------------------------------------- */
 
@@ -551,16 +560,39 @@ cb_recv_new_short (void *clientdata,
 {
   unsigned *
     _clientdata = (unsigned *) clientdata;
+  NNTI_result_t
+    rc = NNTI_OK;
+
+  bgpdcmf_connection *
+    conn = NULL;
+
   memcpy (&_recv_buffer, src, bytes);
+  nthread_lock (&nnti_bgpdcmf_lock);
   if (strncmp (_recv_buffer, "INIT", 4) == 0)
     {
-      nthread_lock (&nnti_bgpdcmf_lock);
-      conn_list[new_conn_index] = peer;
-      new_conn_index++;
-      nthread_unlock (&nnti_bgpdcmf_lock);
+       conn = get_conn_rank(peer);
+       if (conn == NULL) {
+		transport_global_data.conn_req[peer] = peer;
+       }
     }
-  // fprintf(stderr, "(%zd) cb_recv_new_short() bytes  %d : clientdata = %p, %d => %d\n", my_rank, bytes, _clientdata, *_clientdata, *_clientdata-1);
+    else if(_is_server == 1){
+	struct
+  	{
+    		nnti_bgpdcmf_client_queue_attrs
+      		client_attrs;
+  	} ca_in;
+  	memset (&ca_in, 0, sizeof (ca_in));
+        memcpy(&ca_in, src, sizeof (ca_in));
+	conn = get_conn_rank(peer);
+	 if (conn != NULL)
+		conn->queue_remote_attrs.client = ca_in.client_attrs;
+	  DCMF_CriticalSection_enter (0);
+          DCMF_Control (&control0_prot, DCMF_MATCH_CONSISTENCY, peer, &info);
+	  DCMF_CriticalSection_exit (0);
+  // log_debug(nnti_debug_level, "(%zd) cb_recv_new_short() recv full client attr  bytes  %d : clientdata = %p, %d => %d\n", my_rank, bytes, _clientdata, *_clientdata, *_clientdata-1);
+    }
   --*_clientdata;
+    nthread_unlock (&nnti_bgpdcmf_lock);
 }
 
 /* -------------------------------------------------------------- */
@@ -580,6 +612,7 @@ cb_recv_new (void *clientdata,
   cb_info->function = decrement;
   cb_info->clientdata = clientdata;
 
+  // log_debug(nnti_debug_level, "cb_recv_new long case\n");
   return &_recv_request[_recv_iteration++];
 }
 
@@ -597,13 +630,17 @@ send_once (char *buffer, size_t sndlen, size_t targetrank,
   send_active = 1;
   DCMF_Callback_t
   cb_info = { decrement, (void *) &send_active };
-
+  nthread_lock (&nnti_bgpdcmf_lock);
+  DCMF_CriticalSection_enter (0);
   DCMF_Send (protocol,
 	     &request,
 	     cb_info, consistency, targetrank, sndlen, buffer, &msginfo, 1);
 
   while (send_active)
     DCMF_Messager_advance ();
+  DCMF_CriticalSection_exit (0);
+  nthread_unlock (&nnti_bgpdcmf_lock);
+  //log_debug(nnti_debug_level, "Send once completed %d\n", transport_global_data.myrank);
   send_active = 1;
 }
 
@@ -623,18 +660,6 @@ dump_memregion (DCMF_Memregion_t * memreg)
 /* ==================== */
 
 
-void
-recv_once ()
-{
-  TRACE_ERR ((stderr, "(%zd) recv_once() Before advance\n", my_rank));
-  while (_recv_active)
-    DCMF_Messager_advance ();
-
-  _recv_active = 1;
-  TRACE_ERR ((stderr, "(%zd) recv_once()  After advance\n", my_rank));
-}
-
-
 
 /**
  * @brief Initialize NNTI to use a specific transport.
@@ -649,6 +674,7 @@ NNTI_bgpdcmf_init (const NNTI_transport_id_t trans_id,
 
   NNTI_result_t
     rc = NNTI_OK;
+  int i;
 
 #ifndef HAS_MPI
   DCMF_Messager_initialize ();
@@ -661,7 +687,7 @@ NNTI_bgpdcmf_init (const NNTI_transport_id_t trans_id,
   initialized = 0;
   _recv_active = 1;
   send_active = 1;
-  _new_conn_active = 1;
+  confirm_conn = 1;
   _recv_iteration = 0;
 
   if (!initialized)
@@ -679,6 +705,19 @@ NNTI_bgpdcmf_init (const NNTI_transport_id_t trans_id,
 	  fprintf (stderr, "DCMF_SEND register failed in _init\n");
 	}
 
+      /*   Register DCMF control */
+      DCMF_Control_Configuration_t c0_conf;
+        c0_conf.protocol = DCMF_DEFAULT_CONTROL_PROTOCOL;
+        c0_conf.network = DCMF_TORUS_NETWORK;
+  	c0_conf.cb_recv = control_recv;
+  	c0_conf.cb_recv_clientdata = (void *)&confirm_conn; 
+      result =  DCMF_Control_register(&control0_prot, &c0_conf);
+
+      if (result != DCMF_SUCCESS)
+        {
+          fprintf (stderr, "DCMF_Control register failed register failed in _init\n");
+        }
+
       memset (&transport_global_data, 0, sizeof (bgpdcmf_transport_global));
 
       nthread_lock_init (&nnti_bgpdcmf_lock);
@@ -687,21 +726,24 @@ NNTI_bgpdcmf_init (const NNTI_transport_id_t trans_id,
       nthread_lock_init (&nnti_wr_wrhash_lock);
       nthread_lock_init (&nnti_buf_bufhash_lock);
 
-      log_debug (nnti_debug_level, "my_url=%s", my_url);
+      //log_debug (nnti_debug_level, "my_url=%s", my_url);
 
 
-      log_debug (nnti_debug_level, "initializing Blue Gene  DMA DCMF device");
+      //log_debug (nnti_debug_level, "initializing Blue Gene  DMA DCMF device");
 
       transport_global_data.mypid = getpid ();
       transport_global_data.myrank = my_rank;
-
+      for (i = 0; i< 1024; ++i)
+        {
+                transport_global_data.conn_req[i] = -1;
+        }
 
       create_peer (&trans_hdl->me, transport_global_data.myrank);
 
       initialized = TRUE;
     }
 
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 }
@@ -727,12 +769,12 @@ NNTI_bgpdcmf_get_url (const NNTI_transport_t * trans_hdl,
   assert (url);
   assert (maxlen > 0);
 
-  log_debug (nnti_debug_level, "enter");
+  //log_debug (nnti_debug_level, "enter");
 
   strncpy (url, trans_hdl->me.url, maxlen);
   url[maxlen - 1] = '\0';
 
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 }
@@ -779,7 +821,7 @@ NNTI_bgpdcmf_connect (const NNTI_transport_t * trans_hdl,
   assert (trans_hdl);
   assert (peer_hdl);
 
-  log_debug (nnti_debug_level, "enter");
+  //log_debug (nnti_debug_level, "enter URL = %s  myrank = %d", url, transport_global_data.myrank);
 
   if (url != NULL)
     {
@@ -798,10 +840,9 @@ NNTI_bgpdcmf_connect (const NNTI_transport_t * trans_hdl,
 	{
 	  return (rc);
 	}
-      temp = strdup (url);
-      tmp = strtok (temp, "//");
-      pset_rank = strtol (tmp + 1, NULL, 0);
+      pset_rank = strtol (address , NULL, 10);
       transport_global_data.remote_rank = pset_rank;	/* This is server rank */
+      //log_debug (nnti_debug_level, "connect client  to %d  ", pset_rank);
     }
   else
     {
@@ -826,7 +867,7 @@ NNTI_bgpdcmf_connect (const NNTI_transport_t * trans_hdl,
   insert_conn_rank (pset_rank, conn);
 cleanup:
   free (sendbuf);
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
   return (rc);
 }
 
@@ -847,7 +888,7 @@ NNTI_bgpdcmf_disconnect (const NNTI_transport_t * trans_hdl,
   assert (trans_hdl);
   assert (peer_hdl);
 
-  log_debug (nnti_debug_level, "enter");
+  //log_debug (nnti_debug_level, "enter");
   bgpdcmf_connection *
     conn =
     get_conn_rank (peer_hdl->peer.NNTI_remote_process_t_u.bgpdcmf.pset_rank);
@@ -856,7 +897,7 @@ NNTI_bgpdcmf_disconnect (const NNTI_transport_t * trans_hdl,
 
   free (peer_hdl->url);
 
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 }
@@ -894,7 +935,7 @@ NNTI_bgpdcmf_register_memory (const NNTI_transport_t * trans_hdl,
   assert (ops > 0);
   assert (reg_buf);
 
-  log_debug (nnti_debug_level, "enter");
+  log_debug (nnti_debug_level, "register memory enter buffer=%p", reg_buf);
 
   old_buf = get_buf_bufhash (hash6432shift ((uint64_t) buffer));
   if (old_buf == NULL)
@@ -922,9 +963,10 @@ NNTI_bgpdcmf_register_memory (const NNTI_transport_t * trans_hdl,
       reg_buf->buffer_owner = *peer;
     }
 
-
+/*
   log_debug (nnti_debug_level, "rpc_buffer->payload_size=%ld",
 	     reg_buf->payload_size);
+*/
   reg_buf->buffer_addr.transport_id = NNTI_TRANSPORT_DCMF;
   reg_buf->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.size = size;
   reg_buf->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.buf = (uint64_t) buffer;
@@ -945,6 +987,8 @@ NNTI_bgpdcmf_register_memory (const NNTI_transport_t * trans_hdl,
 	  bgpdcmf_mem_hdl->type = REQUEST_BUFFER;
 	  memset (q_hdl, 0, sizeof (bgpdcmf_request_queue_handle));
 	  q_hdl->reg_buf = reg_buf;	/* req buffer can be accessed from global req_queue  */
+	  transport_global_data.req_queue.reg_buf = reg_buf;
+	  //log_debug(nnti_debug_level, "register req buffer for server");
 
 	  server_req_queue_init (q_hdl, buffer, size, num_elements);
 
@@ -1080,11 +1124,11 @@ NNTI_bgpdcmf_register_memory (const NNTI_transport_t * trans_hdl,
   if (bgpdcmf_mem_hdl->ref_count == 1)
     {
       insert_buf_bufhash (reg_buf);
-      log_debug (nnti_debug_level, "bgpdcmf_mem_hdl->type==%llu",
-		 (uint64_t) bgpdcmf_mem_hdl->type);
-      log_debug (nnti_debug_level, "reg_buf.buf.hash==%llu",
-		 (uint64_t) hash6432shift (reg_buf->buffer_addr.
-					   NNTI_remote_addr_t_u.bgpdcmf.buf));
+      //log_debug (nnti_debug_level, "bgpdcmf_mem_hdl->type==%llu",
+		 //(uint64_t) bgpdcmf_mem_hdl->type);
+      //log_debug (nnti_debug_level, "reg_buf.buf.hash==%llu",
+		 //(uint64_t) hash6432shift (reg_buf->buffer_addr.
+		//			   NNTI_remote_addr_t_u.bgpdcmf.buf));
     }
 
   return (rc);
@@ -1107,7 +1151,7 @@ NNTI_bgpdcmf_unregister_memory (NNTI_buffer_t * reg_buf)
 
   assert (reg_buf);
 
-  log_debug (nnti_debug_level, "enter");
+  //log_debug (nnti_debug_level, "enter unregistered buffer %p", reg_buf);
 
   bgpdcmf_mem_hdl = (bgpdcmf_memory_handle *) reg_buf->transport_private;
 
@@ -1116,8 +1160,8 @@ NNTI_bgpdcmf_unregister_memory (NNTI_buffer_t * reg_buf)
 
   if (bgpdcmf_mem_hdl->ref_count == 0)
     {
-      log_debug (nnti_debug_level,
-		 "bgpdcmf_mem_hdl->ref_count is 0.  release all resources.");
+      //log_debug (nnti_debug_level,
+		 //"bgpdcmf_mem_hdl->ref_count is 0.  release all resources.");
 
       if (bgpdcmf_mem_hdl->type == REQUEST_BUFFER)
 	{
@@ -1135,9 +1179,10 @@ NNTI_bgpdcmf_unregister_memory (NNTI_buffer_t * reg_buf)
 	{
 	  dcmf_work_request *
 	    wr = bgpdcmf_mem_hdl->wr_queue.front ();
-	  log_debug (nnti_debug_level, "removing pending wr=%p", wr);
+	  //log_debug (nnti_debug_level, "removing pending wr=%p", wr);
 	  bgpdcmf_mem_hdl->wr_queue.pop_front ();
 	  del_wr_wrhash (wr);
+  	  //log_debug (nnti_debug_level, " called in unregister memory");
 	}
       nthread_unlock (&bgpdcmf_mem_hdl->wr_queue_lock);
     }
@@ -1151,7 +1196,7 @@ NNTI_bgpdcmf_unregister_memory (NNTI_buffer_t * reg_buf)
   reg_buf->payload = 0;
   reg_buf->transport_private = 0;
 
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 }
@@ -1237,9 +1282,10 @@ NNTI_bgpdcmf_put (const NNTI_buffer_t * src_buffer_hdl,
 	    (DCMF_Memregion_t *) & dest_buffer_hdl->buffer_addr.
 	    NNTI_remote_addr_t_u.bgpdcmf.mem_hdl, src_offset, dest_offset,
 	    _cb_done);
-  while (wr->wc.local_send_complete)
+  while (wr->wc.remote_put_complete)
     DCMF_Messager_advance ();
   DCMF_CriticalSection_exit (0);
+  //log_debug(nnti_debug_level, "messeger advance in put");
   memcpy (&wr->wc_dest_mem_hdl,
 	  &dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.
 	  wc_mem_hdl, sizeof (DCMF_Memregion_t));
@@ -1249,7 +1295,7 @@ NNTI_bgpdcmf_put (const NNTI_buffer_t * src_buffer_hdl,
   src_buf_mem_hdl->wr_queue.push_back (wr);
   nthread_unlock (&src_buf_mem_hdl->wr_queue_lock);
   insert_wr_wrhash (wr);
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 }
@@ -1273,7 +1319,6 @@ NNTI_bgpdcmf_send (const NNTI_peer_t * peer_hdl,
   bgpdcmf_memory_handle *
     bgpdcmf_mem_hdl = NULL;
 
-  log_debug (nnti_debug_level, "enter");
 
   assert (peer_hdl);
   assert (msg_hdl);
@@ -1290,6 +1335,7 @@ NNTI_bgpdcmf_send (const NNTI_peer_t * peer_hdl,
       request_send (&conn->queue_local_attrs,
 		    &conn->queue_remote_attrs.server, msg_hdl,
 		    conn->peer_rank);
+      log_debug (nnti_debug_level, "sending request to (%s)", peer_hdl->url);
 
     }
   else
@@ -1299,9 +1345,8 @@ NNTI_bgpdcmf_send (const NNTI_peer_t * peer_hdl,
 	log_error (nnti_debug_level, "Put() failed: %d", rc);
     }
 
-  log_debug (nnti_debug_level, "sending to (%s)", peer_hdl->url);
 
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 }
@@ -1376,6 +1421,16 @@ NNTI_bgpdcmf_get (const NNTI_buffer_t * src_buffer_hdl,
   DCMF_Result
     dcmf_result;
 
+  size_t
+      regsize;
+    void *
+      base;
+    DCMF_Memregion_query ((DCMF_Memregion_t *)&src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.mem_hdl, &regsize,
+                          &base);
+    log_debug(nnti_debug_level, "GET SRC base %p size %ld rank %d\n", base, regsize, srv_rank);
+    DCMF_Memregion_query (&target_buf_mem_hdl->mem_hdl, &regsize, &base);
+    log_debug(nnti_debug_level, "GET DEST base %p size %ld length %llu\n", base, regsize, src_length);
+
   nthread_lock (&nnti_bgpdcmf_lock);
   DCMF_CriticalSection_enter (0);
   done_callback.function = decrement;
@@ -1393,6 +1448,7 @@ NNTI_bgpdcmf_get (const NNTI_buffer_t * src_buffer_hdl,
   while (wr->wc.local_get_complete > 0)
     DCMF_Messager_advance ();
   DCMF_CriticalSection_exit (0);
+  log_debug(nnti_debug_level, "messager advance in get");
   assert (dcmf_result == DCMF_SUCCESS);
   memcpy (&wr->wc_dest_mem_hdl,
 	  &src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.
@@ -1402,7 +1458,7 @@ NNTI_bgpdcmf_get (const NNTI_buffer_t * src_buffer_hdl,
   target_buf_mem_hdl->wr_queue.push_back (wr);
   nthread_unlock (&target_buf_mem_hdl->wr_queue_lock);
   insert_wr_wrhash (wr);
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
 
   return (rc);
 
@@ -1437,7 +1493,6 @@ NNTI_bgpdcmf_wait (const NNTI_buffer_t * reg_buf,
     retry_count = 0;
 
 
-  log_debug (nnti_debug_level, "enter");
 
   bgpdcmf_mem_hdl = (bgpdcmf_memory_handle *) reg_buf->transport_private;
 
@@ -1458,6 +1513,7 @@ NNTI_bgpdcmf_wait (const NNTI_buffer_t * reg_buf,
 	  bgpdcmf_mem_hdl->wr_queue.pop_front ();
 	}
     }
+  log_debug (nnti_debug_level, "bgpdcmf_wait  buffer = %p work request =%p", reg_buf, wr);
   nnti_rc = process_event (reg_buf, remote_op, wr, timeout_per_call);
   conn = get_conn_rank (wr->peer_rank);
   memset (status, 0, sizeof (NNTI_status_t));
@@ -1475,7 +1531,6 @@ NNTI_bgpdcmf_wait (const NNTI_buffer_t * reg_buf,
 	case NNTI_PUT_SRC:	/* I am client here */
 	  create_peer (&status->src, transport_global_data.myrank);
 	  create_peer (&status->dest, conn->peer_rank);
-	  //      del_wr_wrhash(wr);
 	  break;
 	case NNTI_RECV_QUEUE:
 	case NNTI_RECV_DST:
@@ -1492,15 +1547,17 @@ NNTI_bgpdcmf_wait (const NNTI_buffer_t * reg_buf,
 
       if ((bgpdcmf_mem_hdl->type == RDMA_TARGET_BUFFER)
 	  || (bgpdcmf_mem_hdl->type == RECEIVE_BUFFER)
+	  || (bgpdcmf_mem_hdl->type == RESULT_BUFFER)
 	  || (bgpdcmf_mem_hdl->type == GET_SRC_BUFFER)
 	  || (bgpdcmf_mem_hdl->type == REQUEST_BUFFER)
 	  || (bgpdcmf_mem_hdl->type == PUT_DST_BUFFER))
 	{
-	  bgpdcmf_mem_hdl->wr_queue.push_back (wr);
+	  repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
 	}
       else
 	{
 	  del_wr_wrhash (wr);
+	  log_debug(nnti_debug_level, " delete wr called in bgpdcmf_wait wr = %p buffer = %p", wr, reg_buf);
 	  free (wr);
 	}
     }
@@ -1593,7 +1650,7 @@ NNTI_bgpdcmf_waitany (const NNTI_buffer_t ** buf_list,
 
 cleanup:
 
-  log_debug (debug_level, "exit");
+  //log_debug (debug_level, "exit");
 
   trios_stop_timer ("NNTI_bgpdcmf_waitany", total_time);
 
@@ -1652,7 +1709,7 @@ register_wc (dcmf_work_request * wr)
       return (NNTI_EIO);
     }
 
-  log_debug (nnti_debug_level, "exit  wr(%p)", wr);
+  //log_debug (nnti_debug_level, "exit  wr(%p)", wr);
 
   return ((NNTI_result_t) DCMF_SUCCESS);
 
@@ -1714,6 +1771,8 @@ send_ack (const NNTI_buffer_t * reg_buf, dcmf_work_request * wr)
     DCMF_Put_register (&put_prot, &put_conf);
     DCMF_CriticalSection_exit (0);
   }
+  nthread_lock(&nnti_bgpdcmf_lock);
+  DCMF_CriticalSection_enter (0);
   volatile unsigned
     active0 = 1;
   DCMF_Callback_t
@@ -1733,13 +1792,14 @@ send_ack (const NNTI_buffer_t * reg_buf, dcmf_work_request * wr)
      DCMF_Memregion_query ((DCMF_Memregion_t *) &wr->wc_dest_mem_hdl, &length, &base);
    */
 
-  DCMF_CriticalSection_enter (0);
   DCMF_Put (&put_prot, &req0, cb0, DCMF_SEQUENTIAL_CONSISTENCY,
 	    wr->peer_rank, sizeof (nnti_bgpdcmf_work_completion),
 	    &wr->wc_mem_hdl, &wr->wc_dest_mem_hdl, 0, 0, _cb_null);
   while (active0)
     DCMF_Messager_advance ();
   DCMF_CriticalSection_exit (0);
+  nthread_unlock(&nnti_bgpdcmf_lock);
+  //log_debug(nnti_debug_level, "messager advance in send ack");
   return (rc);
 }
 
@@ -1760,7 +1820,7 @@ process_event (const NNTI_buffer_t * reg_buf,
 
   bgpdcmf_mem_hdl = (bgpdcmf_memory_handle *) reg_buf->transport_private;
 
-  log_debug (nnti_debug_level, "enter");
+  //log_debug (nnti_debug_level, "enter");
   long
     entry_time = trios_get_time_ms ();
   long
@@ -1773,7 +1833,8 @@ process_event (const NNTI_buffer_t * reg_buf,
     case SEND_BUFFER:
       while (wr->wc.remote_put_complete > 0)
 	{
-	  DCMF_Messager_advance ();
+          usleep(100);	
+          log_debug(nnti_debug_level, "messager advance in process event"); 
 	  elapsed_time = (trios_get_time_ms () - entry_time);
 	  if (((timeout >= 0) && (elapsed_time >= timeout))
 	      || trios_exit_now ())
@@ -1792,6 +1853,7 @@ process_event (const NNTI_buffer_t * reg_buf,
 	  fprintf (stderr, "process_event send buffer sending ack\n");
 	  send_ack (reg_buf, wr);
 	}
+       log_debug (nnti_debug_level, "process event send buffer");
       break;
     case PUT_SRC_BUFFER:
       wr->last_op = DCMF_OP_PUT_INITIATOR;
@@ -1813,7 +1875,7 @@ process_event (const NNTI_buffer_t * reg_buf,
 	    }
 	  wr->wc.op_complete = 1;
 	  wr->op_state = RDMA_COMPLETE;
-	  fprintf (stderr, "process_event PUT SRC  ack\n");
+          log_debug (nnti_debug_level, "process event put src  buffer");
 	  send_ack (reg_buf, wr);
 	}
       break;
@@ -1837,7 +1899,7 @@ process_event (const NNTI_buffer_t * reg_buf,
 	    }
 	  wr->op_state = RDMA_COMPLETE;
 	  wr->wc.op_complete = 1;
-	  fprintf (stderr, "process_event GET DEST ack\n");
+          log_debug (nnti_debug_level, "process event get dest buffer");
 	  send_ack (reg_buf, wr);
 	}
       break;
@@ -1850,13 +1912,12 @@ process_event (const NNTI_buffer_t * reg_buf,
 
 	wr->last_op = DCMF_OP_NEW_REQUEST;
 
-	log_debug (debug_level,
-		   "recv completion - reg_buf=%p current_req_index =%llu processing=%llu",
+	log_debug(nnti_debug_level,
+		   "recv completion - reg_buf=%p current_req_index =%llu processing=%llu\n",
 		   reg_buf, q->req_index, q->req_processed);
-
 	while (q->req_index == q->req_processed)
 	  {
-	    elapsed_time = (trios_get_time_ms () - entry_time);
+	 /*   elapsed_time = (trios_get_time_ms () - entry_time);
 	    if (((timeout >= 0) && (elapsed_time >= timeout))
 		|| trios_exit_now ())
 	      {
@@ -1866,6 +1927,8 @@ process_event (const NNTI_buffer_t * reg_buf,
 		nnti_rc = NNTI_ETIMEDOUT;
 		break;
 	      }
+           */
+		usleep(100);
 
 	  }
 	index = q->req_processed;
@@ -1955,10 +2018,11 @@ process_event (const NNTI_buffer_t * reg_buf,
 	}
       wr->peer_rank = wr->wc.req_rank;
       wr->op_state = RDMA_COMPLETE;
+      log_debug(nnti_debug_level, "process event result buffer");
       break;
     case PUT_DST_BUFFER:
       wr->last_op = DCMF_OP_PUT_TARGET;
-      fprintf (stderr, "PUT DST Buffer\n");
+      //fprintf (stderr, "PUT DST Buffer\n");
       while (wr->wc.op_complete != 1)
 	{
 	  elapsed_time = (trios_get_time_ms () - entry_time);
@@ -1974,10 +2038,11 @@ process_event (const NNTI_buffer_t * reg_buf,
 
 	}
       wr->op_state = RDMA_COMPLETE;
+      log_debug(nnti_debug_level, "process event PUT DST  buffer");
       break;
     case GET_SRC_BUFFER:
       wr->last_op = DCMF_OP_GET_TARGET;
-      fprintf (stderr, "GET SRC BUFFER\n");
+      //fprintf (stderr, "GET SRC BUFFER\n");
       if (wr->op_state == RDMA_READ_INIT)
 	{
 	  while (wr->wc.op_complete != 1)
@@ -1996,6 +2061,7 @@ process_event (const NNTI_buffer_t * reg_buf,
 	    }
 	  wr->op_state = RDMA_COMPLETE;
 	}
+      log_debug(nnti_debug_level, "process event GET SRC  buffer");
       break;
     case RDMA_TARGET_BUFFER:
       if ((wr->last_op == DCMF_OP_GET_INITIATOR) ||
@@ -2055,7 +2121,7 @@ process_event (const NNTI_buffer_t * reg_buf,
       fprintf (stderr, "UNKNOWN_BUFFER\n");
       break;
     }
-  log_debug (nnti_debug_level, "exit");
+  //log_debug (nnti_debug_level, "exit");
   return (nnti_rc);
 }
 
@@ -2063,33 +2129,12 @@ process_event (const NNTI_buffer_t * reg_buf,
 static void
 create_peer (NNTI_peer_t * peer, int rank)
 {
-  sprintf (peer->url, "dcmf://%d/", rank);
+  sprintf (peer->url, "dcmf://%d", rank);
 
   peer->peer.transport_id = NNTI_TRANSPORT_DCMF;
   peer->peer.NNTI_remote_process_t_u.bgpdcmf.pset_rank = rank;
 }
 
-
-
-/*
- * Loop over polling recv fifo 0  until everything arrives.
- */
-static
-  NNTI_result_t
-recv_full (int rank, void *buf, size_t num)
-{
-  _recv_active = 1;
-  while (_recv_active)
-    DCMF_Messager_advance ();
-
-  TRACE_ERR ((stderr,
-	      "recv_full()  After advance  size recved %d  from (%zd)\n", num,
-	      rank));
-  memcpy (buf, &_recv_buffer, num);
-  /* buf = &_recv_buffer; */
-  _recv_active = 1;
-  return NNTI_OK;
-}
 
 /*
  * Keep looping until all bytes have been accepted by the kernel.
@@ -2104,11 +2149,12 @@ inject_full (int rank, const void *buf, size_t num)
     msginfo;
   DCMF_Request_t
     request;
-
+  
   send_active = 1;
+  nthread_lock(&nnti_bgpdcmf_lock);
+  DCMF_CriticalSection_enter (0);
   DCMF_Callback_t
   cb_info = { decrement, (void *) &send_active };
-  log_debug (nnti_debug_level, "inject full to %d", rank);
   DCMF_Send (&send_prot,
 	     &request,
 	     cb_info,
@@ -2119,6 +2165,8 @@ inject_full (int rank, const void *buf, size_t num)
 	      num));
   while (send_active)
     DCMF_Messager_advance ();
+  DCMF_CriticalSection_exit (0);
+  nthread_unlock(&nnti_bgpdcmf_lock);
   send_active = 1;
   return rc;
 }
@@ -2150,8 +2198,11 @@ new_client_connection (bgpdcmf_connection * c, int peer_rank)
   memset (&sa_in, 0, sizeof (sa_in));
 
   _recv_active = 1;
+   confirm_conn = 1;
+  nthread_lock(&nnti_bgpdcmf_lock);
   while (_recv_active)
     DCMF_Messager_advance ();
+  nthread_unlock(&nnti_bgpdcmf_lock);
   memcpy (&sa_in, &_recv_buffer, sizeof (sa_in));
   _recv_active = 1;
 
@@ -2164,6 +2215,10 @@ new_client_connection (bgpdcmf_connection * c, int peer_rank)
 	  &c->queue_local_attrs.req_index_mem_hdl, sizeof (DCMF_Memregion_t));
 
   rc = inject_full (peer_rank, &ca_out, sizeof (ca_out));
+  nthread_lock(&nnti_bgpdcmf_lock);
+  while (confirm_conn)
+	DCMF_Messager_advance ();
+  nthread_unlock(&nnti_bgpdcmf_lock);
   return rc;
 }
 
@@ -2185,16 +2240,7 @@ new_server_connection (bgpdcmf_connection * c, int rank)
       server_attrs;
   } sa_out;
 
-  struct
-  {
-    nnti_bgpdcmf_client_queue_attrs
-      client_attrs;
-  } ca_in;
-
-
   assert (transport_global_data.req_queue.reg_buf);
-
-
 
   c->connection_type = SERVER_CONNECTION;
   c->peer_rank = rank;
@@ -2230,20 +2276,6 @@ new_server_connection (bgpdcmf_connection * c, int rank)
       fprintf (stderr, "new server connection: failed inject full\n");
       goto out;
     }
-  fprintf (stderr, "server new connection inject full done %d\n", rank);
-  memset (&ca_in, 0, sizeof (ca_in));
-
-  log_debug (nnti_debug_level, "server new connection recv full waiting %d\n",
-	     rank);
-  rc = recv_full (rank, &ca_in, sizeof (ca_in));
-  if (rc)
-    {
-      fprintf (stderr, "new server connection: failed recv full\n");
-      goto out;
-    }
-
-  fprintf (stderr, "server new connection recv full done %d\n", rank);
-  c->queue_remote_attrs.client = ca_in.client_attrs;
 
 out:
   return rc;
@@ -2259,8 +2291,10 @@ insert_conn_rank (const uint32_t pset_rank, bgpdcmf_connection * conn)
   nthread_lock (&nnti_conn_peer_lock);
   if (connections_by_rank.find (pset_rank) != connections_by_rank.end ())
     {
-      assert (connections_by_rank.find (pset_rank) ==
-	      connections_by_rank.end ());
+      if (connections_by_rank[pset_rank] == conn){
+	  log_debug (nnti_debug_level, "connection already exists");
+	  return(rc);
+       }
     }
   connections_by_rank[pset_rank] = conn;	// add to connection map
   nthread_unlock (&nnti_conn_peer_lock);
@@ -2289,10 +2323,8 @@ get_conn_rank (const uint32_t pset_rank)
 
   if (conn != NULL)
     {
-      log_debug (nnti_debug_level, "connection found");
       return conn;
     }
-
   log_debug (nnti_debug_level, "connection NOT found");
   return (NULL);
 }
@@ -2318,7 +2350,6 @@ del_conn_rank (const uint32_t pset_rank)
 
   if (conn != NULL)
     {
-      log_debug (nnti_debug_level, "connection found");
       connections_by_rank.erase (key);
     }
   else
@@ -2343,10 +2374,8 @@ init_connection (bgpdcmf_connection ** conn,
   bgpdcmf_connection *
     c = NULL;
 
-  log_debug (nnti_debug_level, "initializing BGP dma torus connection");
 
   c = (bgpdcmf_connection *) calloc (1, sizeof (bgpdcmf_connection));
-  log_debug (nnti_debug_level, "calloc returned c=%p.", c);
   if (c == NULL)
     {
       log_error (nnti_debug_level,
@@ -2421,44 +2450,31 @@ check_poll_for_new_connections ()
     i;
 
   _recv_active = 1;
-  new_conn_index = 0;
-  insert_conn_index = 0;
-  unsigned
-    last = _recv_active;
-  while (_recv_active > 0)
+   _is_server = 1;
+  log_debug(nnti_debug_level, "server poll for new connection");
+  while (_recv_active)
     {
-      if (last == _recv_active)
-	{
-	  DCMF_Messager_advance ();
-	  if (new_conn_index > 0)
-	    break;
-	}
-      last--;
-    }
-  nthread_lock (&nnti_bgpdcmf_lock);
-  if (new_conn_index > 0)
-    {
-      fprintf (stderr, "Got many new connections %d\n", new_conn_index);
-      for (i = 0; i <= new_conn_index; ++i)
-	{
-	  peer_rank = conn_list[i];
-	  rc = init_connection (&conn, peer_rank, 1);
-	  if (rc != NNTI_OK)
-	    {
-	      fprintf (stderr, "Server make new connection failed\n");
-	      goto cleanup;
-	    }
-	  insert_conn_rank (peer_rank, conn);
-	  insert_conn_index++;
 
-	  log_debug (nnti_debug_level,
-		     "accepted new connection from 192.168.1.%d", peer_rank);
-	  fprintf (stderr,
-		   "\naccepted new connection from 192.168.1.%d\n",
-		   peer_rank);
-	}
+  	nthread_lock (&nnti_bgpdcmf_lock);
+  	for (i = 0; i< 1024; ++i)
+    	{
+        	peer_rank = transport_global_data.conn_req[i];
+       		if(peer_rank != -1) {
+       			conn = get_conn_rank(peer_rank);
+       			if (conn == NULL) {
+      				rc = init_connection (&conn, peer_rank, 1);
+       				if (rc != NNTI_OK)
+       				{
+            				fprintf (stderr, "Server make new connection failed\n");
+        			}
+      				insert_conn_rank (peer_rank, conn);
+       			}
+		}
+    	}
+	  DCMF_Messager_advance ();
+     	  nthread_unlock(&nnti_bgpdcmf_lock);
+	  usleep(10000);
     }
-  nthread_unlock (&nnti_bgpdcmf_lock);
 cleanup:
   return rc;
 }
@@ -2524,13 +2540,6 @@ fetch_req_index_thread (void *args)
   _cb_null.function = NULL;
   _cb_null.clientdata = (void *) NULL;
 
-  while (insert_conn_index < new_conn_index)
-    {
-      log_debug (nnti_debug_level,
-		 "This thread sleeping until all connection done %d\n",
-		 insert_conn_index);
-      usleep (30);
-    }
 
   /* SIGINT (Ctrl-C) will get us out of this loop */
   log_debug (nnti_debug_level, "listening for buffer index to send request");
@@ -2542,7 +2551,7 @@ fetch_req_index_thread (void *args)
 	    {
 	      nthread_lock (&nnti_index_lock);
 	      peer = q->unblock_buffer[i].req_rank;
-	      fprintf (stderr, " fetch index rank %d  index %d\n", peer, i);
+	      //fprintf (stderr, " fetch index rank %d  index %d\n", peer, i);
 	      DCMF_CriticalSection_enter (0);
 	      if (peer != -1)
 		{
@@ -2672,7 +2681,7 @@ fetch_server_req_buffer_offset (nnti_bgpdcmf_client_queue_attrs *
     base;
   DCMF_Memregion_query (&local_req_queue_attrs->fetch_index_hdl, &length,
 			&base);
-
+  nthread_lock(&nnti_bgpdcmf_lock);
   DCMF_CriticalSection_enter (0);
 
   DCMF_Put (&put_prot, &req0, cb0, DCMF_SEQUENTIAL_CONSISTENCY,
@@ -2683,6 +2692,7 @@ fetch_server_req_buffer_offset (nnti_bgpdcmf_client_queue_attrs *
   while (active0)
     DCMF_Messager_advance ();
   DCMF_CriticalSection_exit (0);
+  nthread_unlock(&nnti_bgpdcmf_lock);
 
   while (local_req_queue_attrs->req_index == -1)
     usleep (10);
@@ -2723,19 +2733,27 @@ send_req (nnti_bgpdcmf_client_queue_attrs * local_req_queue_attrs,
 
     _cb_done.function = decrement;
     _cb_done.clientdata = (void *) &wr->wc.remote_put_complete;
+/*
     size_t
       regsize;
     void *
       base;
     DCMF_Memregion_query (&remote_req_queue_attrs->req_mem_hdl, &regsize,
 			  &base);
+    log_debug(nnti_debug_level, "remote req send base %p size %ld\n", base, regsize);
+    DCMF_Memregion_query (&src_buf_mem_hdl->mem_hdl, &regsize, &base);
+    log_debug(nnti_debug_level, "local buffer req send base %p size %ld length %llu\n", base, regsize, length);
+ 
+*/   
+    nthread_lock(&nnti_bgpdcmf_lock);
     DCMF_CriticalSection_enter (0);
     DCMF_Put (&put_prot, &req0, cb0, DCMF_SEQUENTIAL_CONSISTENCY,
 	      rank, length, &src_buf_mem_hdl->mem_hdl,
 	      &remote_req_queue_attrs->req_mem_hdl, 0, offset, _cb_done);
-    while (wr->wc.local_send_complete)
+    while (wr->wc.remote_put_complete)
       DCMF_Messager_advance ();
     DCMF_CriticalSection_exit (0);
+    nthread_unlock(&nnti_bgpdcmf_lock);
   }
   return (0);
 }
@@ -2775,13 +2793,16 @@ send_req_wc (nnti_bgpdcmf_client_queue_attrs * client_q,
     register_wc (wr);
 /*
   SHYAMALI DEBUG
-  size_t  regsize;
-  void * base;
-   DCMF_Memregion_query (&server_q->wc_mem_hdl, &regsize, &base);
-   fprintf(stderr, "server work completion base %p size %ld\n", base, regsize);
-   DCMF_Memregion_query (&wr->wc_mem_hdl, &regsize, &base);
-   fprintf(stderr, "client  work completion base %p size %ld\n", base, regsize);
+  if(transport_global_data.myrank == 0) {
+  	size_t  regsize;
+  	void * base;
+   	DCMF_Memregion_query (&server_q->wc_mem_hdl, &regsize, &base);
+  	 fprintf(stderr, "server work completion base %p size %ld\n", base, regsize);
+  	 DCMF_Memregion_query (&wr->wc_mem_hdl, &regsize, &base);
+   	fprintf(stderr, "client  work completion base %p size %ld\n", base, regsize);
+   }
  */
+    nthread_lock(&nnti_bgpdcmf_lock);
     DCMF_CriticalSection_enter (0);
     DCMF_Put (&put_prot, &req0, cb0, DCMF_SEQUENTIAL_CONSISTENCY,
 	      rank, sizeof (nnti_bgpdcmf_work_completion), &wr->wc_mem_hdl,
@@ -2789,6 +2810,7 @@ send_req_wc (nnti_bgpdcmf_client_queue_attrs * client_q,
     while (active0)
       DCMF_Messager_advance ();
     DCMF_CriticalSection_exit (0);
+    nthread_unlock(&nnti_bgpdcmf_lock);
   }
   return (0);
 
@@ -2825,15 +2847,8 @@ request_send (nnti_bgpdcmf_client_queue_attrs * client_q,
   bgpdcmf_mem_hdl->wr_queue.push_back (wr);
 
   insert_wr_wrhash (wr);
-
-  log_debug (nnti_debug_level, "enter");
-
-  log_debug (nnti_debug_level, "calling fetch_add_buffer_offset()");
   rc = fetch_server_req_buffer_offset (client_q, server_q, 1, &offset, rank);
-  fprintf (stderr, "Time: %llu after fetch_add_buffer_offset() offset %llu\n",
-	   getticks (), offset);
 
-  log_debug (nnti_debug_level, "calling send_req()");
   rc =
     send_req (client_q, server_q, offset * server_q->req_size, reg_buf, rank,
 	      wr);
@@ -2848,11 +2863,8 @@ request_send (nnti_bgpdcmf_client_queue_attrs * client_q,
   wr->wc.dest_offset = client_q->req_index * server_q->req_size;
   wr->peer_rank = rank;
 
-/* Shyamali */
-  log_debug (nnti_debug_level, "calling send_wc()");
+  log_debug (nnti_debug_level, "calling send_req_wc()");
   rc = send_req_wc (client_q, server_q, reg_buf, offset * wc_size, wr, rank);
-/* Shyamali END */
-  log_debug (nnti_debug_level, "exit");
   return (0);
 }
 
@@ -2973,7 +2985,7 @@ insert_buf_bufhash (NNTI_buffer_t * buf)
   buffers_by_bufhash[h] = buf;
   nthread_unlock (&nnti_buf_bufhash_lock);
 
-  log_debug (nnti_debug_level, "bufhash buffer added (buf=%p)", buf);
+  //log_debug (nnti_debug_level, "bufhash buffer added (buf=%p)", buf);
 
   return (rc);
 }
@@ -2983,9 +2995,10 @@ get_buf_bufhash (const uint32_t bufhash)
 {
   NNTI_buffer_t *
     buf = NULL;
-
+/*
   log_debug (nnti_debug_level, "looking for bufhash=%llu",
 	     (uint64_t) bufhash);
+*/
   nthread_lock (&nnti_buf_bufhash_lock);
   if (buffers_by_bufhash.find (bufhash) != buffers_by_bufhash.end ())
     {
@@ -2995,13 +3008,9 @@ get_buf_bufhash (const uint32_t bufhash)
 
   if (buf != NULL)
     {
-      log_debug (nnti_debug_level, "buffer found (buf=%p)", buf);
+      //log_debug (nnti_debug_level, "buffer found (buf=%p)", buf);
       return buf;
     }
-
-  log_debug (nnti_debug_level, "buffer NOT found");
-  print_bufhash_map ();
-
   return (NULL);
 }
 
@@ -3078,7 +3087,7 @@ get_wr_wrhash (const uint32_t wrhash)
   dcmf_work_request *
     wr = NULL;
 
-  log_debug (nnti_debug_level, "looking for wrhash=%llu", (uint64_t) wrhash);
+  //log_debug (nnti_debug_level, "looking for wrhash=%llu", (uint64_t) wrhash);
   nthread_lock (&nnti_wr_wrhash_lock);
   if (wr_by_wrhash.find (wrhash) != wr_by_wrhash.end ())
     {
@@ -3092,7 +3101,7 @@ get_wr_wrhash (const uint32_t wrhash)
       return wr;
     }
 
-  log_debug (nnti_debug_level, "work request NOT found");
+ log_debug (nnti_debug_level, "work request NOT found");
   print_wrhash_map ();
 
   return (NULL);
@@ -3115,7 +3124,7 @@ del_wr_wrhash (dcmf_work_request * wr)
 
   if (wr != NULL)
     {
-      log_debug (debug_level, "work request found");
+      //log_debug (debug_level, "work request found wr=%p", wr);
       wr_by_wrhash.erase (h);
     }
   else
@@ -3306,21 +3315,19 @@ repost_recv_work_request (NNTI_buffer_t * reg_buf, dcmf_work_request * wr)
   bgpdcmf_mem_hdl = (bgpdcmf_memory_handle *) reg_buf->transport_private;
   assert (bgpdcmf_mem_hdl);
 
-  memset (&wr->wc, 0, sizeof (nnti_bgpdcmf_work_completion));
+  //memset (&wr->wc, 0, sizeof (nnti_bgpdcmf_work_completion));
 
   wr->last_op = 0;
+  wr->wc.op_complete = 0 ;
 
-  memset (&wr->op_state, 0, sizeof (bgpdcmf_op_state_t));
-  register_wc (wr);
+  //memset (&wr->op_state, 0, sizeof (bgpdcmf_op_state_t));
+  //register_wc (wr);
 
-  bgpdcmf_mem_hdl->wr_queue.push_back (wr);
+  bgpdcmf_mem_hdl->wr_queue.push_back(wr);
 
-  reg_buf->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.wc_addr =
-    (uint64_t) & wr->wc;
-
-  memcpy (&reg_buf->buffer_addr.NNTI_remote_addr_t_u.bgpdcmf.wc_mem_hdl,
-	  &wr->wc_mem_hdl, sizeof (DCMF_Memregion_t));
   log_debug (nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
 
   return (NNTI_OK);
 }
+
+

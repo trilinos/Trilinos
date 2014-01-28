@@ -108,7 +108,7 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
     dst.m_ptr_on_device = (scalar_type *)
       memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , cap );
 
-    ViewInitialize< device_type > init( dst );
+    ViewFill< View > init( dst , typename traits::value_type() );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -146,7 +146,7 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
       dst.m_ptr_on_device = (dst_scalar_type *)
         dst_memory_space::allocate( label , typeid(dst_scalar_type) , sizeof(dst_scalar_type) , cap );
 
-      ViewInitialize< dst_device_type > init( dst );
+      ViewFill< View > init( dst , typename traits::value_type() );
     }
     else {
       dst_shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );

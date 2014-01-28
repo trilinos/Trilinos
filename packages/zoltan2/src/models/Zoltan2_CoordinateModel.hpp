@@ -57,11 +57,10 @@
 #endif
 
 #include <Zoltan2_Model.hpp>
-#include <Zoltan2_MatrixInput.hpp>
-#include <Zoltan2_GraphInput.hpp>
-#include <Zoltan2_IdentifierInput.hpp>
-#include <Zoltan2_CoordinateInput.hpp>
-#include <Zoltan2_VectorInput.hpp>
+#include <Zoltan2_MatrixAdapter.hpp>
+#include <Zoltan2_GraphAdapter.hpp>
+#include <Zoltan2_IdentifierAdapter.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
@@ -147,27 +146,24 @@ public:
   {
     return getGlobalNumCoordinates();
   }
-
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from CoordinateInput.
+// Coordinate model derived from MatrixAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<CoordinateInput<User> > : 
-  public Model<CoordinateInput<User> >
+class CoordinateModel<MatrixAdapter<User> > : 
+  public Model<MatrixAdapter<User> >
 {
-
 public:
 
-  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
-  typedef typename CoordinateInput<User>::gno_t     gno_t;
-  typedef typename CoordinateInput<User>::lno_t     lno_t;
-  typedef typename CoordinateInput<User>::gid_t     gid_t;
+  typedef typename MatrixAdapter<User>::scalar_t  scalar_t;
+  typedef typename MatrixAdapter<User>::gno_t     gno_t;
+  typedef typename MatrixAdapter<User>::lno_t     lno_t;
+  typedef typename MatrixAdapter<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -179,7 +175,7 @@ public:
        \param  modelFlags    a bit map of ModelFlags
    */
   
-  CoordinateModel( const CoordinateInput<User> *ia, 
+  CoordinateModel( const MatrixAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -189,209 +185,7 @@ public:
 
   global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
 
-  int getCoordinateWeightDim() const { return userNumWeights_;}
-
-  size_t getCoordinates(ArrayView<const gno_t>  &Ids,
-    ArrayView<input_t> &xyz,
-    ArrayView<input_t> &wgts) const 
-  {
-    xyz = xyz_.view(0, coordinateDim_);
-    wgts = weights_.view(0, userNumWeights_);
-
-    size_t nCoord = getLocalNumCoordinates();
-    Ids =  ArrayView<const gno_t>();
-
-    if (nCoord){
-      if (gnosAreGids_)
-        Ids = Teuchos::arrayView<const gno_t>(
-          reinterpret_cast<const gno_t *>(gids_.getRawPtr()), nCoord);
-      else
-        Ids = gnosConst_.view(0, nCoord);
-    }
-    
-    return nCoord;
-  }
-
-  ////////////////////////////////////////////////////
-  // The Model interface.
-  ////////////////////////////////////////////////////
-
-  size_t getLocalNumObjects() const
-  {
-    return getLocalNumCoordinates();
-  }
-
-  size_t getGlobalNumObjects() const
-  {
-    return getGlobalNumCoordinates();
-  }
-
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
-  { 
-    ArrayView<input_t> xyz;
-    ArrayView<input_t> weights;
-    getCoordinates(gnos, xyz, weights);
-  }
-
-private:
-
-  bool gnosAreGids_;
-  gno_t numGlobalCoordinates_;
-  const RCP<const Environment> env_;
-  const RCP<const Comm<int> > comm_;
-  int coordinateDim_;
-  ArrayRCP<const gid_t> gids_;
-  ArrayRCP<input_t> xyz_;
-  int userNumWeights_;
-  ArrayRCP<input_t> weights_;
-  ArrayRCP<gno_t> gnos_;
-  ArrayRCP<const gno_t> gnosConst_;
-
-};
-
-template <typename User>
-  CoordinateModel<CoordinateInput<User> >::CoordinateModel( 
-    const CoordinateInput<User> *ia, 
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    modelFlag_t flags):
-      gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
-      coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(), 
-      gnos_(), gnosConst_()
-{
-  bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
-
-  size_t nLocalIds = ia->getLocalNumberOfCoordinates();
-
-  // Get coordinates and weights (if any)
-
-  coordinateDim_ = ia->getCoordinateDimension();
-  userNumWeights_ = ia->getNumberOfWeights();
-
-  Model<CoordinateInput<User> >::maxCount(*comm, coordinateDim_, 
-    userNumWeights_);
-
-  env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
-    coordinateDim_ > 0, COMPLEX_ASSERTION);
-
-  input_t *coordArray = new input_t [coordinateDim_];
-  input_t *weightArray = NULL;
-  if (userNumWeights_)
-    weightArray = new input_t [userNumWeights_];
-
-  env_->localMemoryAssertion(__FILE__, __LINE__, userNumWeights_+coordinateDim_,
-    coordArray && (!userNumWeights_ || weightArray));
-
-  Array<lno_t> arrayLengths(userNumWeights_, 0);
-
-  if (nLocalIds){
-    for (int dim=0; dim < coordinateDim_; dim++){
-      int stride;
-      const gid_t *gids=NULL;
-      const scalar_t *coords=NULL;
-      try{
-        ia->getCoordinates(dim, gids, coords, stride);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-
-      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
-      coordArray[dim] = input_t(cArray, stride);
-
-      if (dim==0)
-        gids_ = arcp(gids, 0, nLocalIds, false);
-    }
-
-    for (int dim=0; dim < userNumWeights_; dim++){
-      int stride;
-      const scalar_t *weights;
-      try{
-        ia->getCoordinateWeights(dim, weights, stride);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-
-      if (weights){
-        ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[dim] = input_t(wArray, stride);
-        arrayLengths[dim] = nLocalIds;
-      }
-    }
-  }
-
-  xyz_ = arcp(coordArray, 0, coordinateDim_);
-
-  if (userNumWeights_)
-    weights_ = arcp(weightArray, 0, userNumWeights_);
-
-  // Sets this->weightDim_, this->uniform_
-  this->setWeightArrayLengths(arrayLengths, *comm_);
-
-  // Create identifier map.
-
-  RCP<const idmap_t> idMap;
-
-  try{
-    idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIds));
-  }
-  Z2_FORWARD_EXCEPTIONS;
-
-  numGlobalCoordinates_ = idMap->getGlobalNumberOfIds();
-  gnosAreGids_ = idMap->gnosAreGids();
-
-  this->setIdentifierMap(idMap);
-
-  if (!gnosAreGids_ && nLocalIds>0){
-    gno_t *tmpGno = new gno_t [nLocalIds];
-    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
-    gnos_ = arcp(tmpGno, 0, nLocalIds);
-
-    try{
-      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
-      idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds), 
-        TRANSLATE_APP_TO_LIB);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-  }
-
-  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
-
-  env_->memory("After construction of coordinate model");
-}
-
-////////////////////////////////////////////////////////////////
-// Coordinate model derived from MatrixInput.
-////////////////////////////////////////////////////////////////
-
-template <typename User>
-class CoordinateModel<MatrixInput<User> > : 
-  public Model<MatrixInput<User> >
-{
-public:
-
-  typedef typename MatrixInput<User>::scalar_t  scalar_t;
-  typedef typename MatrixInput<User>::gno_t     gno_t;
-  typedef typename MatrixInput<User>::lno_t     lno_t;
-  typedef typename MatrixInput<User>::gid_t     gid_t;
-  typedef IdentifierMap<User> idmap_t;
-  typedef StridedData<lno_t, scalar_t> input_t;
-
-  /*! \brief Constructor
-
-       \param ia  the input adapter from which to build the model
-       \param env   the application environment (including problem parameters)
-       \param comm  the problem communicator
-       \param  modelFlags    a bit map of ModelFlags
-   */
-  
-  CoordinateModel( const MatrixInput<User> *ia, 
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    modelFlag_t flags);
-
-  int getCoordinateDim() const { return coordinateDim_; }
-
-  size_t getLocalNumCoordinates() const { return gids_.size(); }
-
-  global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
-
-  /* \brief Weights are not implemented in MatrixInput.
+  /* \brief Weights are not implemented in MatrixAdapter.
    *
    *   Whereas a computational model may create weights to use with
    *   a matrix problem, they are not inherent in the input.
@@ -433,12 +227,6 @@ public:
     return getGlobalNumCoordinates();
   }
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
-  { 
-    ArrayView<input_t> xyz;
-    ArrayView<input_t> weights;
-    getCoordinates(gnos, xyz, weights);
-  }
 
 private:
 
@@ -456,29 +244,32 @@ private:
 };
 
 template <typename User>
-  CoordinateModel<MatrixInput<User> >::CoordinateModel( 
-    const MatrixInput<User> *ia, 
+  CoordinateModel<MatrixAdapter<User> >::CoordinateModel( 
+    const MatrixAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(), 
       gnos_(), gnosConst_()
 {
+  this->env_->debug(DETAILED_STATUS, "CoordinateModel<MatrixAdapter>");
+
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
   userNumWeights_= 0;  // matrix input does not have weights
 
   coordinateDim_ = ia->getCoordinateDimension();
 
-  Model<MatrixInput<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
+  Model<MatrixAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
 
-  size_t nLocalIds = (coordinateDim_ ? ia->getLocalNumRows() : 0);
+  size_t nLocalIds = (coordinateDim_ ? ia->getLocalNumIDs() : 0);
 
   // Get coordinates
 
+  this->env_->debug(DETAILED_STATUS, "    getting coordinates");
   input_t *coordArray = new input_t [coordinateDim_];
   env_->localMemoryAssertion(__FILE__, __LINE__, coordinateDim_, coordArray);
 
@@ -487,7 +278,7 @@ template <typename User>
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getRowCoordinates(dim, coords, stride);
+        ia->getCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -500,16 +291,12 @@ template <typename User>
 
   // Create identifier map.
 
-  const gid_t *rowGids;
-  const lno_t *offsets;
-  const gid_t *colGids;
-
-  ia->getRowListView(rowGids, offsets, colGids);
-
-  gids_ = arcp<const gid_t>(rowGids, 0, nLocalIds, false);
+  this->env_->debug(DETAILED_STATUS, "    getting identifiers");
+  const gid_t *gids;
+  ia->getIDsView(gids);
+  gids_ = arcp<const gid_t>(gids, 0, nLocalIds, false);
 
   RCP<const idmap_t> idMap;
-
   try{
     idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIds));
   }
@@ -536,27 +323,28 @@ template <typename User>
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
 
   env_->memory("After construction of coordinate model");
+  this->env_->debug(DETAILED_STATUS, "    finished");
 }
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from VectorInput.
+// Coordinate model derived from VectorAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<VectorInput<User> > : 
-  public Model<VectorInput<User> >
+class CoordinateModel<VectorAdapter<User> > : 
+  public Model<VectorAdapter<User> >
 {
 
 public:
 
-  typedef typename VectorInput<User>::scalar_t  scalar_t;
-  typedef typename VectorInput<User>::gno_t     gno_t;
-  typedef typename VectorInput<User>::gid_t     gid_t;
-  typedef typename VectorInput<User>::lno_t     lno_t;
+  typedef typename VectorAdapter<User>::scalar_t  scalar_t;
+  typedef typename VectorAdapter<User>::gno_t     gno_t;
+  typedef typename VectorAdapter<User>::gid_t     gid_t;
+  typedef typename VectorAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   typedef IdentifierMap<User> idmap_t;
 
-  CoordinateModel( const VectorInput<User> *ia, 
+  CoordinateModel( const VectorAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -597,12 +385,6 @@ public:
 
   size_t getGlobalNumObjects() const {return numGlobalCoordinates_;}
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {
-    ArrayView<input_t> a, b;
-    getCoordinates(gnos, a, b);
-    return;
-  }
-
 private:
 
   bool gnosAreGids_;
@@ -619,8 +401,8 @@ private:
 };
 
 template <typename User>
-CoordinateModel<VectorInput<User> >::CoordinateModel( 
-    const VectorInput<User> *ia, 
+CoordinateModel<VectorAdapter<User> >::CoordinateModel( 
+    const VectorAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
@@ -629,14 +411,14 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  size_t nLocalIds = ia->getLocalLength();
+  size_t nLocalIds = ia->getLocalNumIDs();
 
   // Get coordinates and weights (if any)
 
-  coordinateDim_ = ia->getNumberOfVectors();
-  userNumWeights_ = ia->getNumberOfWeights();
+  coordinateDim_ = ia->getNumEntriesPerID();
+  userNumWeights_ = ia->getNumWeightsPerID();
 
-  Model<VectorInput<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
+  Model<VectorAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
@@ -652,34 +434,34 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
   Array<lno_t> arrayLengths(userNumWeights_, 0);
 
   if (nLocalIds){
+    const gid_t *gids=NULL;
+    ia->getIDsView(gids);
+    gids_ = arcp(gids, 0, nLocalIds, false);
+
     for (int dim=0; dim < coordinateDim_; dim++){
       int stride;
-      const gid_t *gids=NULL;
       const scalar_t *coords=NULL;
       try{
-        ia->getVector(dim, gids, coords, stride);
+        ia->getEntriesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
       coordArray[dim] = input_t(cArray, stride);
-
-      if (dim==0)
-        gids_ = arcp(gids, 0, nLocalIds, false);
     }
 
-    for (int dim=0; dim < userNumWeights_; dim++){
+    for (int idx=0; idx < userNumWeights_; idx++){
       int stride;
       const scalar_t *weights;
       try{
-        ia->getVectorWeights(dim, weights, stride);
+        ia->getWeightsView(weights, stride, idx);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[dim] = input_t(wArray, stride);
-        arrayLengths[dim] = nLocalIds;
+        weightArray[idx] = input_t(wArray, stride);
+        arrayLengths[idx] = nLocalIds;
       }
     }
   }
@@ -725,23 +507,23 @@ CoordinateModel<VectorInput<User> >::CoordinateModel(
 }
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from IdentifierInput.
-// A coordinate model can not be built from IdentifierInput.
+// Coordinate model derived from IdentifierAdapter.
+// A coordinate model can not be built from IdentifierAdapter.
 // This specialization exists so that other code can compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<IdentifierInput<User> > : 
-  public Model<IdentifierInput<User> >
+class CoordinateModel<IdentifierAdapter<User> > : 
+  public Model<IdentifierAdapter<User> >
 {
 public:
 
-  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
-  typedef typename IdentifierInput<User>::gno_t     gno_t;
-  typedef typename IdentifierInput<User>::lno_t     lno_t;
+  typedef typename IdentifierAdapter<User>::scalar_t  scalar_t;
+  typedef typename IdentifierAdapter<User>::gno_t     gno_t;
+  typedef typename IdentifierAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   
-  CoordinateModel( const IdentifierInput<User> *ia, 
+  CoordinateModel( const IdentifierAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags)
   {
@@ -763,29 +545,28 @@ public:
 
   size_t getLocalNumObjects() const {return 0;}
   size_t getGlobalNumObjects() const {return 0;}
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {return;}
 };
 
 
 ////////////////////////////////////////////////////////////////
-// Coordinate model derived from GraphInput.
+// Coordinate model derived from GraphAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class CoordinateModel<GraphInput<User> > : 
-  public Model<GraphInput<User> >
+class CoordinateModel<GraphAdapter<User> > : 
+  public Model<GraphAdapter<User> >
 {
 
 public:
 
-  typedef typename GraphInput<User>::scalar_t  scalar_t;
-  typedef typename GraphInput<User>::gno_t     gno_t;
-  typedef typename GraphInput<User>::gid_t     gid_t;
-  typedef typename GraphInput<User>::lno_t     lno_t;
+  typedef typename GraphAdapter<User>::scalar_t  scalar_t;
+  typedef typename GraphAdapter<User>::gno_t     gno_t;
+  typedef typename GraphAdapter<User>::gid_t     gid_t;
+  typedef typename GraphAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
   typedef IdentifierMap<User> idmap_t;
 
-  CoordinateModel( const GraphInput<User> *ia, 
+  CoordinateModel( const GraphAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
@@ -826,12 +607,6 @@ public:
 
   size_t getGlobalNumObjects() const {return numGlobalCoordinates_;}
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {
-    ArrayView<input_t> a, b;
-    getCoordinates(gnos, a, b);
-    return;
-  }
-
 private:
 
   bool gnosAreGids_;
@@ -848,8 +623,8 @@ private:
 };
 
 template <typename User>
-CoordinateModel<GraphInput<User> >::CoordinateModel( 
-    const GraphInput<User> *ia, 
+CoordinateModel<GraphAdapter<User> >::CoordinateModel( 
+    const GraphAdapter<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags):
       gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
@@ -862,11 +637,18 @@ CoordinateModel<GraphInput<User> >::CoordinateModel(
    "graph input does not have vertex coordinates",
    coordinateDim_>0, BASIC_ASSERTION);
 
+  // CoordinateModel is built with points == GRAPH_VERTEX from GraphAdapter.
+  // It is not ready to use points == GRAPH_EDGE from GraphAdapter.
+  env->localInputAssertion(__FILE__, __LINE__, 
+   "CoordinateModel from GraphAdapter is implemented only for "
+   "Graph Vertices as primary object, not for Graph Edges", 
+   ia->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX, BASIC_ASSERTION);
+
   // Get coordinates and weights (if any)
 
-  userNumWeights_ = ia->getVertexWeightDimension();
+  userNumWeights_ = ia->getNumWeightsPerVertex();
 
-  Model<GraphInput<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
+  Model<GraphAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   input_t *coordArray = new input_t [coordinateDim_];
   input_t *weightArray = NULL;
@@ -878,22 +660,21 @@ CoordinateModel<GraphInput<User> >::CoordinateModel(
 
   Array<lno_t> arrayLengths(userNumWeights_, 0);
 
-  size_t nLocalIds = ia->getLocalNumberOfVertices();
+  size_t nLocalIds = ia->getLocalNumVertices();
 
   if (nLocalIds){
     const gid_t *globalIds=NULL;
     const lno_t *offsets=NULL;
     const gid_t *edgeIds=NULL;
 
-    size_t numIds = ia->getVertexListView(globalIds, offsets, edgeIds);
-
+    ia->getVertexIDsView(globalIds, offsets, edgeIds);
     gids_ = arcp(globalIds, 0, nLocalIds, false);
 
     for (int dim=0; dim < coordinateDim_; dim++){
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getVertexCoordinates(dim, coords, stride);
+        ia->getVertexCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -901,18 +682,18 @@ CoordinateModel<GraphInput<User> >::CoordinateModel(
       coordArray[dim] = input_t(cArray, stride);
     }
 
-    for (int dim=0; dim < userNumWeights_; dim++){
+    for (int idx=0; idx < userNumWeights_; idx++){
       int stride;
       const scalar_t *weights;
       try{
-        ia->getVertexWeights(dim, weights, stride);
+        ia->getVertexWeightsView(weights, stride, idx);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[dim] = input_t(wArray, stride);
-        arrayLengths[dim] = nLocalIds;
+        weightArray[idx] = input_t(wArray, stride);
+        arrayLengths[idx] = nLocalIds;
       }
     }
   }

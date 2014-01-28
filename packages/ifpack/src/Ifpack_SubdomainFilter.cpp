@@ -35,12 +35,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef IFPACK_SUBCOMM_CODE
+#include "Ifpack_ConfigDefs.h"
+
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 
 #include <vector>
 #include <algorithm>
-
-#include "Ifpack_ConfigDefs.h"
 
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -48,12 +48,13 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
-#include "Ifpack_SubdomainFilter.h"
 #include "Ifpack_OverlappingRowMatrix.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_BLAS_wrappers.h"
+
+#include "Ifpack_SubdomainFilter.h"
 
 using namespace Teuchos;
 
@@ -328,4 +329,4 @@ const Epetra_BlockMap& Ifpack_SubdomainFilter::Map() const
   return(*Map_);
 }
 
-#endif //ifdef IFPACK_SUBCOMM_CODE
+#endif //ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS

@@ -41,6 +41,7 @@
 #ifndef EPETRAEXT_BLOCKMAPOUT_H
 #define EPETRAEXT_BLOCKMAPOUT_H
 
+#include <Epetra_ConfigDefs.h>
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_BlockMap;
 namespace EpetraExt {
@@ -74,7 +75,6 @@ namespace EpetraExt {
 				   const char * mapName=0,
 				   const char *mapDescription=0, 
 				   bool writeHeader=true);
-
    
 
   //! Writes an Epetra_BlockMap or Epetra_Map object to a file handle.
@@ -91,7 +91,8 @@ namespace EpetraExt {
   int BlockMapToHandle(std::FILE * handle, const Epetra_BlockMap & blockMap);
 
   // Internal function
-  int writeBlockMap(std::FILE * handle, int length, const int * v1, const int * v2, bool doSizes);
+  int writeBlockMap(std::FILE * handle, long long length, const int * v1, const int * v2, bool doSizes);
+  int writeBlockMap(std::FILE * handle, long long length, const long long * v1, const int * v2, bool doSizes);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_BLOCKMAPOUT_H */

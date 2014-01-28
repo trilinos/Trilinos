@@ -108,6 +108,8 @@ public:
 
   virtual Teuchos::RCP<Epetra_Vector>& get_overlapped_xdot(){return overlapped_xdot;}
 
+  virtual Teuchos::RCP<Epetra_Vector>& get_overlapped_xdotdot(){return overlapped_xdotdot;}
+
   virtual Teuchos::RCP<Epetra_Vector>& get_overlapped_f(){return overlapped_f;}
 
   virtual Teuchos::RCP<Epetra_CrsMatrix>& get_overlapped_jac(){return overlapped_jac;}
@@ -136,6 +138,9 @@ protected:
   
       //! Overlapped time derivative vector
       Teuchos::RCP<Epetra_Vector> overlapped_xdot;
+  
+      //! Overlapped time acceleration vector
+      Teuchos::RCP<Epetra_Vector> overlapped_xdotdot;
   
       //! Overlapped residual vector
       Teuchos::RCP<Epetra_Vector> overlapped_f;

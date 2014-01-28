@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -174,9 +174,6 @@ namespace MueLu {
 
     //! amesos-specific key phrase that denote smoother type
     std::string type_;
-
-    //! parameter list that is used by Amesos internally
-    Teuchos::ParameterList paramList_;
 
     //! Matrix. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
     RCP<Matrix> A_;

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -202,9 +202,9 @@ namespace MueLu {
         @param[in] msgLevel    Governs whether information should be printed.
         @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
     */
-    FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0)
+    FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0)
       : Monitor(object, msg, msgLevel, timerLevel),
-        timerMonitorExclusive_(object, object.ShortClassName() + " " + MUELU_TIMER_AS_STRING + " : " + msg, timerLevel)
+        timerMonitorExclusive_(object, object.ShortClassName() + " : " + msg, timerLevel)
     {
       if (IsPrint(TimingsByLevel)) {
         levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg + " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
@@ -222,9 +222,9 @@ namespace MueLu {
 
       TODO: code factorization
     */
-    FactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0)
+    FactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0)
       : Monitor(object, msg, msgLevel, timerLevel),
-      timerMonitorExclusive_(object, object.ShortClassName() + " " + MUELU_TIMER_AS_STRING + " : " + msg, timerLevel)
+      timerMonitorExclusive_(object, object.ShortClassName() + " : " + msg, timerLevel)
     {
       if (IsPrint(TimingsByLevel)) {
         levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg + " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));

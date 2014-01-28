@@ -44,7 +44,9 @@
 #ifndef KOKKOSTRAITS_HPP
 #define KOKKOSTRAITS_HPP
 
+#include <stddef.h>
 #include <Kokkos_Macros.hpp>
+#include <stdint.h>
 
 namespace Kokkos {
 namespace Impl {
@@ -58,7 +60,9 @@ namespace Impl {
 template < class T , T v >
 struct integral_constant
 {
-  static const T value = v ;
+  // Declaration of 'static const' causes an unresolved linker symbol in debug
+  // static const T value = v ;
+  enum { value = T(v) };
   typedef T value_type;
   typedef integral_constant<T,v> type;
   KOKKOS_INLINE_FUNCTION operator T() { return v ; }
@@ -139,6 +143,8 @@ struct unsigned_ : public integral_constant<unsigned,I> {};
 template< int I >
 struct int_ : public integral_constant<int,I> {};
 
+typedef bool_<true> true_;
+typedef bool_<false> false_;
 //----------------------------------------------------------------------------
 // if_
 
@@ -242,6 +248,40 @@ struct power_of_two<1,true>
 };
 
 //----------------------------------------------------------------------------
+
+template< typename T , T v , bool NonZero = ( v != T(0) ) >
+struct integral_nonzero_constant
+{
+  // Declaration of 'static const' causes an unresolved linker symbol in debug
+  // static const T value = v ;
+  enum { value = T(v) };
+  typedef T value_type ;
+  typedef integral_nonzero_constant<T,v> type ;
+  KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & ) {}
+};
+
+template< typename T , T zero >
+struct integral_nonzero_constant<T,zero,false>
+{
+  const T value ;
+  typedef T value_type ;
+  typedef integral_nonzero_constant<T,0> type ;
+  KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & v ) : value(v) {}
+};
+
+//----------------------------------------------------------------------------
+
+template <typename T> struct is_integral : public false_ {};
+
+template <> struct is_integral<int8_t>  : public true_ {};
+template <> struct is_integral<int16_t> : public true_ {};
+template <> struct is_integral<int32_t> : public true_ {};
+template <> struct is_integral<int64_t> : public true_ {};
+
+template <> struct is_integral<uint8_t>  : public true_ {};
+template <> struct is_integral<uint16_t> : public true_ {};
+template <> struct is_integral<uint32_t> : public true_ {};
+template <> struct is_integral<uint64_t> : public true_ {};
 
 } // namespace Impl
 } // namespace Kokkos

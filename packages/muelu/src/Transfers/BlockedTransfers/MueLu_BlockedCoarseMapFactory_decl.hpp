@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -89,12 +89,13 @@ public:
   //! Destructor
   virtual ~BlockedCoarseMapFactory();
 
-  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
   //@}
 
   //! @name Input
   //@{
+
+  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
   /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
         If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class

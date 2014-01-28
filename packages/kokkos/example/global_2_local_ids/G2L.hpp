@@ -74,7 +74,7 @@ struct fill_map
 {
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
+  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
   typedef Kokkos::UnorderedMap<uint32_t,size_type,device_type> global_id_view;
 
   global_id_view global_2_local;
@@ -100,9 +100,8 @@ struct find_test
 {
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
+  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
   typedef Kokkos::UnorderedMap<const uint32_t, const size_type,device_type> global_id_view;
-  typedef typename global_id_view::const_pointer const_pointer;
 
   global_id_view global_2_local;
   local_id_view local_2_global;
@@ -126,9 +125,11 @@ struct find_test
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type i, value_type & num_errors) const
   {
-    const_pointer ptr = global_2_local.find( local_2_global[i] );
+    uint32_t index = global_2_local.find( local_2_global[i] );
 
-    if (ptr->first != local_2_global[i] || ptr->second != i)
+    if (  !global_2_local.valid_at(index)
+        || global_2_local.key_at(index) != local_2_global[i]
+        || global_2_local.value_at(index) != i)
       ++num_errors;
   }
 
@@ -202,16 +203,16 @@ size_t run_test(unsigned num_ids, unsigned num_find_iterations)
 {
   // expect to fail
   unsigned capacity = (num_ids*2u)/3u;
-  std::cout << "  capacity at 66%" << std::endl;
+  std::cout << " 66% of needed capacity (should fail)" << std::endl;
   test_global_to_local_ids<Device>(num_ids, capacity, num_find_iterations);
 
   //should not fail
-  std::cout << "  capacity at 100%" << std::endl;
+  std::cout << " 100% of needed capacity" << std::endl;
   capacity = num_ids;
   size_t num_errors = test_global_to_local_ids<Device>(num_ids, capacity, num_find_iterations);
 
   //should not fail
-  std::cout << "  capacity at 150%" << std::endl;
+  std::cout << " 150% of needed capacity" << std::endl;
   capacity = (num_ids*3u)/2u;
   num_errors += test_global_to_local_ids<Device>(num_ids, capacity, num_find_iterations);
 

@@ -55,7 +55,7 @@ typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
 create_mirror( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view )
 {
   // Force copy:
-  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
+  typedef Impl::ViewAssignment< Impl::ViewDefault > alloc ;
   typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType >  crsarray_type ;
 
   typename crsarray_type::HostMirror               tmp ;

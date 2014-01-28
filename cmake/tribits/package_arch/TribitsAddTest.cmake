@@ -132,6 +132,12 @@ INCLUDE(TribitsAddTestHelpers)
 #     will need to adjust the path to your executable or other command.  Also,
 #     input file locations will need to point down a directory.
 #
+#   RUN_SERIAL
+#
+#     If specified then no other tests will be allowed to run while this test
+#     is running. This is useful for devices(like cuda cards) that require
+#     exclusive access for processes/threads.
+#
 #   ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
 #
 #     If specified, then a set of arguments can be passed in quotes.  If
@@ -279,7 +285,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      #lists
      "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT"
      #options
-     "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;CREATE_WORKING_DIR"
+     "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;CREATE_WORKING_DIR;RUN_SERIAL"
      ${ARGN}
      )
   # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
@@ -401,7 +407,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}" ${PARSE_CREATE_WORKING_DIR}
-        ${INARGS} )
+        ${PARSE_RUN_SERIAL} ${INARGS} )
   
       MATH(EXPR COUNTER ${COUNTER}+1 )
   
@@ -431,7 +437,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}" ${PARSE_CREATE_WORKING_DIR}
-        ${INARGS} )
+        ${PARSE_RUN_SERIAL} ${INARGS} )
 
     ENDFOREACH()
 

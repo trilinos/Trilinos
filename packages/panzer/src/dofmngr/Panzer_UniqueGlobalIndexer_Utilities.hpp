@@ -80,11 +80,6 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
 
-// template <typename LocalOrdinalT,typename GlobalOrdinalT>
-// Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> >
-// buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
-// { return buildGhostedFieldReducedVector<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType>(ugi); }
-
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
   * vector hence the required node type template parameter.
@@ -153,7 +148,14 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
                                     Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> & dataVector);
 
 /** Construct a map that only uses a certain field.
- */
+  *
+  * \param[in] fieldNum Field ID to use to build the map
+  * \param[in] fieldVector An listing of the fields. For instance [0,1,2,0,1,2,0,1,2...]
+  *                        for a three dimensional interlaced vector field.
+  *                        
+  * \returns A vector that contains the indices of the field requested. Again for the
+  *          three dimensional vector field if fieldNum==1, it would be [1,4,7,10,13,...].
+  */
 template <typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
 getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fieldVector);

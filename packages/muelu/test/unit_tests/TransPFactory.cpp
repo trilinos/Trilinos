@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -55,9 +55,10 @@
 #include "MueLu_SaPFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   TEUCHOS_UNIT_TEST(TransPFactory, Constructor)
   {
@@ -115,7 +116,7 @@ namespace MueLuTests {
     //Calculate R * X
     R->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the R created by TransPFactory." << std::endl;
     out << "||X||_2 = " << normX << std::endl;

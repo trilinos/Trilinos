@@ -510,7 +510,7 @@ int main(int argc, char **argv)
 {
  long long int size = 110503; // a prime number
  int numVecs = -1;
- int threads=1;
+ int threads_per_numa=1;
  int device = 0;
  int numa=1;
  int test=-1;
@@ -521,7 +521,7 @@ int main(int argc, char **argv)
   if((strcmp(argv[i],"-d")==0)) {device=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-s")==0)) {size=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--threads")==0)) {threads=atoi(argv[++i]); continue;}
+  if((strcmp(argv[i],"--threads")==0)) {threads_per_numa=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--test")==0)) {test=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 
  if(numa>1 || threads>1)
  {
-   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
+   Kokkos::Threads::initialize( numa * threads_per_numa , numa );
  }
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};

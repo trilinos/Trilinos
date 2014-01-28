@@ -346,6 +346,60 @@ create_flat_sparse_3_tensor(
   return FlatSparse3Tensor<ValueType, Device>::create( basis, Cijk, params );
 }
 
+template <typename ValueType, typename Device>
+class BlockMultiply< FlatSparse3Tensor< ValueType , Device > >
+{
+public:
+
+  typedef typename Device::size_type size_type ;
+  typedef FlatSparse3Tensor< ValueType , Device > tensor_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+
+    const size_type nDim = tensor.dimension();
+
+    // Loop over i
+    for ( size_type i = 0; i < nDim; ++i) {
+      VectorValue ytmp = 0;
+
+      // Loop over k for this i
+      const size_type nk = tensor.num_k(i);
+      const size_type kBeg = tensor.k_begin(i);
+      const size_type kEnd = kBeg + nk;
+      for (size_type kEntry = kBeg; kEntry < kEnd; ++kEntry) {
+        const size_type k = tensor.k_coord(kEntry);
+        const MatrixValue ak = a[k];
+        const VectorValue xk = x[k];
+
+        // Loop over j for this i,k
+        const size_type nj = tensor.num_j(kEntry);
+        const size_type jBeg = tensor.j_begin(kEntry);
+        const size_type jEnd = jBeg + nj;
+        for (size_type jEntry = jBeg; jEntry < jEnd; ++jEntry) {
+          const size_type j = tensor.j_coord(jEntry);
+          ytmp += tensor.value(jEntry) * ( a[j] * xk + ak * x[j] );
+        }
+      }
+
+      y[i] += ytmp ;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
+
 } /* namespace Stokhos */
 
 //----------------------------------------------------------------------------

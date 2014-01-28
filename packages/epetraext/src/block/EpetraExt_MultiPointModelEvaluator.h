@@ -44,6 +44,7 @@
 #ifndef EPETRAEXT_MULTIPOINTMODELEVALUATOR_H
 #define EPETRAEXT_MULTIPOINTMODELEVALUATOR_H
 
+#include "Epetra_ConfigDefs.h"
 #include "EpetraExt_ModelEvaluator.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "EpetraExt_BlockVector.h"
@@ -184,10 +185,21 @@ namespace EpetraExt {
      Used in creating global XYZT Jacobian matrix for different
      finite difference schemes.
    */
-   std::vector< std::vector<int> >* rowStencil;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+   std::vector< std::vector<int> >* rowStencil_int;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+   std::vector< std::vector<long long> >* rowStencil_LL;
+#endif
 
    //! Set of indices into global XYZT Jacobian matrix.
-   std::vector<int>* rowIndex;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+   std::vector<int>* rowIndex_int;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+   std::vector<long long>* rowIndex_LL;
+#endif
+   bool longlong;
 
    //! Some local data
    EDerivativeMultiVectorOrientation orientation_DgDp;

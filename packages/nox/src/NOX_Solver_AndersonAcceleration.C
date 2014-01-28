@@ -55,6 +55,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_DataAccess.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Assert.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Solver_SolverUtils.H"
@@ -89,13 +91,28 @@ void NOX::Solver::AndersonAcceleration::init()
   stepSize = 0.0;
   nIter = 0;
   tempVec->init(0.0);
-  Teuchos::ParameterList validParams;
-  validParams.set("Storage Depth", 2, "max number of previous iterates for which data stored");
-  validParams.set("Mixing Parameter", 1.0, "damping factor applied to residuals");
-  validParams.sublist("Preconditioning").set("Precondition", false, "flag for preconditioning");
-  validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires Jacobian");
-  paramsPtr->sublist("Anderson Parameters").validateParametersAndSetDefaults(validParams);
+  nStore = 0;
+
+  {
+    Teuchos::ParameterList validParams;
+    validParams.set("Storage Depth", 2, "max number of previous iterates for which data stored");
+    validParams.set("Disable Storage Depth Check for Unit Testing", false, "If set to true, the check on the storage depth size is disabled so that we can generate some corner cases for unit testing.  WARNING: users should never set this to true!");
+    validParams.set("Mixing Parameter", 1.0, "damping factor applied to residuals");
+    validParams.sublist("Preconditioning").set("Precondition", false, "flag for preconditioning");
+    validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires Jacobian");
+    validParams.set("Adjust Matrix for Condition Number", false, "If true, the QR matrix will be resized if the condiiton number is greater than the dropTolerance");
+    validParams.set("Condition Number Drop Tolerance", 1.0e+12, "If adjusting for condition number, this is the condition number value above which the QR matrix will be resized.");
+    validParams.set("Acceleration Start Iteration",1,"The nonlinear iteration where Anderson Acceleration will start. Normally AA starts from the first iteration, but it can be advantageous to delay the start and allow normal picard iteration to get a better initial guess for the AA history.");
+    paramsPtr->sublist("Anderson Parameters").validateParametersAndSetDefaults(validParams);
+  }
+
   storeParam = paramsPtr->sublist("Anderson Parameters").get<int>("Storage Depth");
+  disableStorageDepthCheckForUnitTesting = paramsPtr->sublist("Anderson Parameters").get<bool>("Disable Storage Depth Check for Unit Testing");
+
+  if (!disableStorageDepthCheckForUnitTesting) {
+    TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" with a value of " << storeParam << " must be less than the number of unknowns in the nonlinear problem which is currently " << solnPtr->getX().length() << ".  This reults in an ill-conditioned F matrix.");
+  }
+
   mixParam = paramsPtr->sublist("Anderson Parameters").get<double>("Mixing Parameter");
   if (storeParam <= 0){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
@@ -105,11 +122,16 @@ void NOX::Solver::AndersonAcceleration::init()
   if ((mixParam < -1.0) || (mixParam == 0) || (mixParam > 1.0)){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
       << "Mixing parameter must be in [-1,0)U(0,1]" << std::endl;
-    throw "NOX Error"; 
+    throw "NOX Error";
   }
   precond = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Precondition");
-  recomputeJacobian = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").
-    get<bool>("Recompute Jacobian");
+  recomputeJacobian = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Recompute Jacobian");
+  adjustForConditionNumber = paramsPtr->sublist("Anderson Parameters").get<bool>("Adjust Matrix for Condition Number");
+  dropTolerance = paramsPtr->sublist("Anderson Parameters").get<double>("Condition Number Drop Tolerance");
+  accelerationStartIteration = paramsPtr->sublist("Anderson Parameters").get<int>("Acceleration Start Iteration");
+  
+  TEUCHOS_TEST_FOR_EXCEPTION((accelerationStartIteration < 1),std::logic_error,"Error - The \"Acceleration Start Iteration\" should be greater than 0!");
+
   status = NOX::StatusTest::Unconverged;
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
@@ -186,13 +208,13 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 		      << "flagged as converged." << std::endl;
     }
     printUpdate();
-
+    
     // First check status
-      if (status != NOX::StatusTest::Unconverged) {
-        prePostOperator.runPostIterate(*this);
-        printUpdate();
-        return status;
-      }
+    if (status != NOX::StatusTest::Unconverged) {
+      prePostOperator.runPostIterate(*this);
+      printUpdate();
+      return status;
+    }
 
     // Copy initial guess to old soln
     *oldSolnPtr = *solnPtr;
@@ -219,14 +241,15 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     }
     else
       *precF = solnPtr->getF();
-
+    
     // Evaluate the current status.
     status = testPtr->checkStatus(*this, checkType);
-
+    
     //Update iteration count
     nIter++;
-
+    
     printUpdate();
+    return status;
   }
 
   // First check status
@@ -237,7 +260,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   }
 
   // Manage the matrices of past iterates and QR factors
-  if (nIter == 1){
+  if (nIter == accelerationStartIteration) {
     // Initialize
     nStore = 1;
     xMat.push_back(solnPtr->getX().clone(NOX::DeepCopy));
@@ -246,7 +269,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     rMat.shape(0,0);
     qrAdd(*oldPrecF);
     }
-  else{
+  else if (nIter > accelerationStartIteration) {
     if (nStore < storeParam){
       xMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
       nStore++;
@@ -266,6 +289,35 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   *oldSolnPtr = *solnPtr;
   *oldPrecF = *precF;
 
+  // Adjust for condition number
+  if (nStore > 0) {
+    //Teuchos::
+    Teuchos::LAPACK<int,double> lapack;
+    char normType = '1';
+    double invCondNum = 0.0;
+    int info = 0;
+    if ( WORK.size() < static_cast<std::size_t>(4*nStore) )
+      WORK.resize(4*nStore);
+    if (IWORK.size() < static_cast<std::size_t>(nStore))
+      IWORK.resize(nStore);
+    lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
+    if (utilsPtr->isPrintType(Utils::Details))
+      utilsPtr->out() << "    R condition number estimate ("<< nStore << ") = " << 1.0/invCondNum << std::endl;
+    
+    if (adjustForConditionNumber) {
+      while ( (1.0/invCondNum > dropTolerance) && (nStore > 1)  ) {
+	for (int ii = 0; ii<nStore-1; ii++)
+	  *(xMat[ii]) = *(xMat[ii+1]);
+	xMat.pop_back();
+	qrDelete();
+	--nStore;
+	lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
+	if (utilsPtr->isPrintType(Utils::Details))
+	  utilsPtr->out() << "    Adjusted R condition number estimate ("<< nStore << ") = " << 1.0/invCondNum << std::endl;
+      }
+    }
+  }
+
   // Solve the least-squares problem.
   Teuchos::SerialDenseMatrix<int,double> gamma(nStore,1), RHS(nStore,1), Rgamma(nStore,1);
   for (int ii = 0; ii<nStore; ii++)
@@ -279,7 +331,9 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     }
     gamma(ii,0) /= rMat(ii,ii);
   }
-  Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
+
+  if (nStore > 0)
+    Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
 
   // Compute the new solution.
   solnPtr->computeX(*solnPtr, *precF, mixParam);  

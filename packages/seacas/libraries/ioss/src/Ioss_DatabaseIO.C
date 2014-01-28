@@ -67,7 +67,7 @@ namespace {
 		 const Ioss::ParallelUtils &util);
 
 #ifndef NDEBUG
-  bool is_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
+  bool internal_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
 			      const Ioss::Field &field, const Ioss::ParallelUtils &util)
   {
     if (single_proc_only)
@@ -146,9 +146,6 @@ namespace {
 }
 
 namespace Ioss {
-  bool DatabaseIO::useGenericCanonicalNameDefault = false;
-  std::set<std::string> DatabaseIO::outputFileList; 
-  
   DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
 			 DatabaseUsage db_usage,
 			 MPI_Comm communicator,
@@ -158,16 +155,13 @@ namespace Ioss {
       timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
       util_(communicator), region_(region), isInput(is_input_event(db_usage)),
+      isParallelConsistent(true), 
       singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
-      doLogging(false), useGenericCanonicalName(useGenericCanonicalNameDefault)
+      doLogging(false), useGenericCanonicalName(false)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
 
-    if (!isInput) {
-      check_for_duplicate_output_file(filename);
-    }
-    
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and add to the 'properties' map.
 
@@ -228,26 +222,14 @@ namespace Ioss {
       useGenericCanonicalName = (generic != 0);
     }
 
+    if (properties.exists("PARALLEL_CONSISTENCY")) {
+      int consistent = properties.get("PARALLEL_CONSISTENCY").get_int();
+      set_parallel_consistency(consistent == 1);
+    }
   }
 
   DatabaseIO::~DatabaseIO()
   {
-  }
-
- void DatabaseIO::check_for_duplicate_output_file(const std::string &filename)
-  {
-    if (!outputFileList.insert(filename).second) {
-      IOSS_WARNING << "WARNING: Multiple outputs from this application are attempting to write to the file\n         '"
-		   << filename
-		   << "'.\n         This can result in a corrupted file and should be avoided.\n\n";
-    }
-  }
-
-  bool DatabaseIO::set_use_generic_canonical_name_default(bool yes_no)
-  {
-    bool old_value = useGenericCanonicalNameDefault;
-    useGenericCanonicalNameDefault = yes_no;
-    return old_value;
   }
 
   int DatabaseIO::int_byte_size_api() const
@@ -296,7 +278,7 @@ namespace Ioss {
 
   void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field) const
   {
-    assert(is_parallel_consistent(singleProcOnly, ge, field, util_));
+    assert(!is_parallel_consistent() || internal_parallel_consistent(singleProcOnly, ge, field, util_));
     if (get_logging()) {
       log_field(">", ge, field, singleProcOnly, util_);
     }
@@ -540,14 +522,14 @@ namespace Ioss {
 	  side_topo.insert(std::make_pair(block->topology(), ftopo));
 	}
       }
-      assert(side_topo.size() > 0);
-      assert(sideTopology.size() == 0);
+      assert(!side_topo.empty());
+      assert(sideTopology.empty());
       // Copy into the sideTopology container...
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
       std::copy(side_topo.begin(), side_topo.end(),
 		std::back_inserter(new_this->sideTopology));
     }
-    assert(sideTopology.size() > 0);
+    assert(!sideTopology.empty());
   }
 
   AxisAlignedBoundingBox DatabaseIO::get_bounding_box(const Ioss::ElementBlock *eb) const

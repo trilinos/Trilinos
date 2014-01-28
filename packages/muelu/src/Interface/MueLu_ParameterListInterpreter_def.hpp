@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -96,8 +96,9 @@ namespace MueLu {
     //    </ParameterList>
     //   </ParameterList>
     FactoryMap factoryMap;
+    FactoryManagerMap factoryManagers;
     if (paramList.isSublist("Factories"))
-      this->BuildFactoryMap(paramList.sublist("Factories"), factoryMap, factoryMap);
+      this->BuildFactoryMap(paramList.sublist("Factories"), factoryMap, factoryMap, factoryManagers);
 
     // Parameter List Parsing:
     // ---------
@@ -203,19 +204,15 @@ namespace MueLu {
           //
           //  </ParameterList>
           FactoryMap levelFactoryMap;
-          BuildFactoryMap(levelList, factoryMap, levelFactoryMap);
+          BuildFactoryMap(levelList, factoryMap, levelFactoryMap, factoryManagers);
 
           RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
 
-          if (startLevel >= 0) {
+          if (startLevel >= 0)
             this->AddFactoryManager(startLevel, numDesiredLevel, m);
-          } else if (startLevel == -1) { // -1 == coarsest level
-            this->SetFactoryManagerCoarsestLevel(m);
-          } else {
+          else
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
-          }
         } /* TODO: else { } */
-
       }
     }
   }
@@ -234,14 +231,46 @@ namespace MueLu {
   //
   //TODO: static?
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut) const {
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut, FactoryManagerMap & factoryManagers) const {
     for (Teuchos::ParameterList::ConstIterator param = paramList.begin(); param != paramList.end(); ++param) {
       const std::string             & paramName  = paramList.name(param);
       const Teuchos::ParameterEntry & paramValue = paramList.entry(param);
 
       //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
 
-      factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn);
+      // TODO: add support for "factory groups" which are stored in a map.
+      // A factory group has a name and a list of factories
+
+
+      if (paramValue.isList()) {
+        Teuchos::ParameterList paramList1 = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
+        if(paramList1.isParameter("factory")) { // default: just a factory definition
+          factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+        } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
+          std::string groupType = paramList1.get<std::string>("group");
+          TEUCHOS_TEST_FOR_EXCEPTION(groupType!="FactoryManager", Exceptions::RuntimeError, "group must be of type \"FactoryManager\".");
+
+          Teuchos::ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
+          groupList.remove("group");
+
+          FactoryMap groupFactoryMap;
+          BuildFactoryMap(groupList, factoryMapIn, groupFactoryMap, factoryManagers);
+
+          // do not store groupFactoryMap in factoryMapOut
+          // Create a factory manager object from groupFactoryMap and store it in
+          // ParameterListInterpreter::factoryManagers_
+          RCP<FactoryManagerBase> m = rcp(new FactoryManager(groupFactoryMap));
+
+          factoryManagers[paramName] = m;
+
+        } else {
+          this->GetOStream(Warnings0,  0) << "Warning: Could not interpret parameter list " << paramList1 << std::endl;
+          TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
+        }
+      } else {
+        // default: just a factory (no parameter list)
+        factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+      }
     }
   }
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -65,9 +65,10 @@
 #include "Xpetra_VectorFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 TEUCHOS_UNIT_TEST(Hierarchy, Constructor)
 {
@@ -146,7 +147,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
   MueLu::Hierarchy<SC, LO, GO, NO, LMO> H;
@@ -238,7 +239,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
   MueLu::Hierarchy<SC, LO, GO, NO, LMO> H;
@@ -375,6 +376,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level
@@ -440,6 +442,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level
@@ -458,6 +461,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
 
   bool r; // cf. bug Teuchos Bug 5214
   r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
+  std::cout << "............." << std::endl;
   r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
   r = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ); TEST_EQUALITY(r, true);
 
@@ -523,6 +527,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // setup smoother factory
   RCP<SmootherPrototype> smooProto;
@@ -693,7 +698,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   //diff = A_v + (-1.0)*(Ain_v) + 0*diff
   diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
 
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   diff->norm2(norms);
   out << "||diff|| = " << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-15, true);

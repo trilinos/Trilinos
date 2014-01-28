@@ -55,8 +55,23 @@ void TreeBuildingXMLHandler::characters(const std::string& chars)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(current_.isEmpty(), std::logic_error,
                      "TreeBuildingXMLHandler::trying to add content to an empty node");
-                        
-  current_.addContent(StrUtils::fixUnprintableCharacters(chars));
+
+  size_t k = current_.numContentLines();
+  // a new line indicates the start of a new ContentLine. Only add it if current line is not empty.
+  if(chars.compare("\n")==0) {
+    if((k>0) && (current_.getContentLine(k-1).length()>0))
+      current_.addContent("");
+  } else {
+    // If no contentLine exists to append create one, else add to the last contentLine
+    // Do not add white characters at the start of a new line
+    if(k==0) {
+      if(!StrUtils::isWhite(chars))
+        current_.addContent(StrUtils::fixUnprintableCharacters(chars));
+    } else {
+      if((!StrUtils::isWhite(chars)) || (current_.getContentLine(k-1).length()>0))
+        current_.appendContentLine(k-1,StrUtils::fixUnprintableCharacters(chars));
+    }
+  }
 }
 
 void TreeBuildingXMLHandler::startElement(const std::string& tag, 
@@ -90,6 +105,11 @@ int TreeBuildingXMLHandler::endElement(const std::string& tag)
       if (current_.getTag() != tag) {
         error = 1; // error: tags must be balanced
       }
+      // remove empty contentLines at the end.
+      size_t k = current_.numContentLines();
+      while( (k>0) && (current_.getContentLine(--k).length() == 0))
+        current_.removeContentLine(k);
+
       current_ = path_.top();
       path_.pop();
     }

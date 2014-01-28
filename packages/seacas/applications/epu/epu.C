@@ -691,7 +691,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	if (debug_level & 1)
 	  std::cout << time_stamp(tsFormat);
 	std::cout << "Writing out master global elements information...\n";
-	if (global_element_map.size() > 0) {
+	if (!global_element_map.empty()) {
 	  error = ex_put_elem_num_map(ExodusFile::output(), TOPTR(global_element_map));
 	  if (error < 0)
 	    exodus_error(__LINE__);
@@ -2691,7 +2691,7 @@ namespace {
     // has restricted the output of certain variables to certain element
     // blocks. If so, then the truth table is modified to match the
     // users request.
-    if (variable_names.size() == 0)
+    if (variable_names.empty())
       return;
 
     // Check for a non-zero id entry in the variable_names list which

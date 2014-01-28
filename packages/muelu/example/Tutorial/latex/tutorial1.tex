@@ -374,3 +374,253 @@ First, the \textit{CoalesceDropFactory} builds the graph of the fine level matri
 Note, that the \textit{TentativePFactory} both generates the non-smoothed tentative transfer operator as well as the coarse level null space. Once the tentative prolongation operator is built, it is smoothed using the \textit{SaPFactory}. The \textit{TransPFacotry} builds the restriction operator just by transposing the smoothed prolongation operator. Finally, the \textit{RAPFactory} builds the coarse level matrix $A$.
 
 Alltogether, the algorithm ends with an approximation of the coarse level null space and a coarse matrix $A$.
+
+
+\section{Tutorial n}
+
+
+% basic design
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{5cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
+\node(AmalgamationFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AmalgamationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgamationFactory] (CoalesceDropFactory) {CoalesceDropFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=CoalesceDropFactory] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggregationFactory,node distance=6cm] (CoarseMapFactory) {CoarseMapFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=TentativePFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (RAPFactory) {RAPFactory};
+\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
+\draw[->] (A) -- (AmalgamationFactory);
+\draw[->] (AmalgamationFactory) -- node [near start, left] {UnAmalgamationInfo} (CoalesceDropFactory);
+\draw[->] (AmalgamationFactory) to[out=-15,in=15] node [near start, right] {UnAmalgamationInfo} (TentativePFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, left] {DofsPerNode} (AggregationFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, right] {Graph} (AggregationFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (CoalesceDropFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (CoarseMapFactory) to[out=190,in=10] node [near start, right] {CoarseMap} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, below] {P} (TransPFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+
+% symmetric design of 2x2 blocked preconditioner with repartitioning
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{5cm}
+\def\factoryheight{0.75cm}
+
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (1,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
+\node(AFact11) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact11] (AmalgFact11) {AmalgFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgFact11] (DropFact11) {DropFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=DropFact11] (AggregationFact11) {AggregationFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=AggregationFact11,node distance=6cm] (CoarseMapFact11) {CoarseMapFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact11] (PFact11) {PFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=PFact11,node distance=6cm] (RFact11) {RFact11};
+\draw[->] (AFact11) -- node [near start, right] {A} (AmalgFact11);
+\draw[->] (AFact11) to[out=190,in=175] node [near start, right] {A} (DropFact11);
+\draw[->] (AmalgFact11) -- node [near start, left] {UnamalgInfo} (DropFact11);
+\draw[->] (DropFact11) -- node [near start, right] {Graph} (AggregationFact11);
+\draw[->] (AggregationFact11) -- node [near start, left] {Aggregates} (PFact11);
+\draw[->] (PFact11) -- node [near start, above] {P} (RFact11);
+\draw[->] (CoarseMapFact11) -- node [near start, below] {coarseMap} (PFact11);
+\draw[->] (AmalgFact11) to[out=-15,in=15] node[near start, left] {UnamalgInfo} (PFact11);
+\draw[->] (A) -- (AFact11);
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AFact11,node distance=8cm] (AFact22) {AFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact22] (AmalgFact22) {AmalgFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgFact22] (DropFact22) {DropFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=DropFact22] (AggregationFact22) {AggregationFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggregationFact22,node distance=6cm] (CoarseMapFact22) {CoarseMapFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact22] (PFact22) {PFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=PFact22,node distance=6cm] (RFact22) {RFact22};
+\draw[->] (AFact22) -- node [near start, right] {A} (AmalgFact22);
+\draw[->] (AFact22) to[out=-10,in=5] node [near start, right] {A} (DropFact22);
+\draw[->] (AmalgFact22) -- node [near start, right] {UnamalgInfo} (DropFact22);
+\draw[->] (DropFact22) -- node [near start, right] {Graph} (AggregationFact22);
+\draw[->] (AggregationFact22) -- node [near start, right] {Aggregates} (PFact22);
+\draw[->] (PFact22) -- node [near start, below] {P} (RFact22);
+\draw[->] (CoarseMapFact22) -- node [near start, below] {coarseMap} (PFact22);
+\draw[->] (AmalgFact22) to[out=195,in=165] node[near start, right] {UnamalgInfo} (PFact22);
+\draw[->] (A) -- (AFact22);
+
+\node (BlockedPFact) at (-5,-2) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedPFact};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=BlockedPFact,node distance=12cm] (GenericRFact) {GenericRFact};
+\draw[->] (PFact11) -- node [near start, right] {P} (BlockedPFact);
+\draw[->] (PFact22) -- node [near start, below] {P} (BlockedPFact);
+\draw[->,dashed] (RFact11) -- node [near start, below] {R} (GenericRFact);
+\draw[->,dashed] (RFact22) -- node [near start, right] {R} (GenericRFact);
+
+\node (BlockedRAPFact) at (1,-4) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedRAPFact};
+\draw[->] (BlockedPFact) -- node [near start, below] {P} (BlockedRAPFact);
+\draw[->] (GenericRFact) -- node [near start, below] {R} (BlockedRAPFact);
+\draw[->] (A) -- (BlockedRAPFact);
+
+\node (RebAFact11) at (-3,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact11] (RebAmalgFact11) {RebAmalgFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFact11] (IsorropiaInterface11) {IsorropiaInterface11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface11] (RepartitionInterface11){RepartitionInterface11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface11] (RepartitionFactory11) {RepartitionFactory11};
+
+
+\node (RebAFact22) at (5,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact22] (RebAmalgFact22) {RebAmalgFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFact22] (IsorropiaInterface22) {IsorropiaInterface22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface22] (RepartitionInterface22){RepartitionInterface22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface22] (RepartitionFactory22) {RepartitionFactory22};
+
+\node (RebBlockedPFact) at (-5,-16) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedPFact};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RebBlockedPFact,node distance=12cm] (RebBlockedRFact) {RebBlockedRFact};
+\node (RebBlockedRAPFact) at (1,-18) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedRAPFact};
+\coordinate [left of=BlockedRAPFact,node distance=5cm](coLeftOfBlockedRAPFact);
+\coordinate [right of=BlockedRAPFact,node distance=5cm](coRightOfBlockedRAPFact);
+\draw[->] (BlockedRAPFact) -- node [near start, right] {A} (RebBlockedRAPFact);
+\draw[->] (BlockedRAPFact) to[out=180,in=10] (coLeftOfBlockedRAPFact) to[out=190,in=150] node[near start, right] {A} (RebBlockedPFact);
+\draw[->] (BlockedPFact) to[out=220,in=160] node [near start, right] {P} (RebBlockedPFact);
+
+\draw[->] (BlockedRAPFact) to[out=0,in=170] (coRightOfBlockedRAPFact) to[out=-10,in=30] node[near start, right] {A} (RebBlockedRFact);
+\draw[->] (GenericRFact) to[out=-40,in=20] node [near start, right] {R} (RebBlockedRFact);
+
+\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact11);
+\draw[->] (RebAFact11) -- node [near start, right] {A} (RebAmalgFact11);
+\draw[->] (RebAmalgFact11) -- node [near start, right] {UnamalgInfo} (IsorropiaInterface11);
+\draw[->] (IsorropiaInterface11) -- node [near start, right] {Amalg.Part.} (RepartitionInterface11);
+\draw[->] (RepartitionInterface11) -- node [near start, right] {Partition} (RepartitionFactory11);
+\draw[->] (RepartitionFactory11) -- node [near start, left] {Importer} (RebBlockedPFact);
+\draw[->] (RepartitionFactory11) -- node [near start, right] {Importer} (RebBlockedRAPFact);
+
+\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact22);
+\draw[->] (RebAFact22) -- node [near start, right] {A} (RebAmalgFact22);
+\draw[->] (RebAmalgFact22) -- node [near start, right] {UnamalgInfo} (IsorropiaInterface22);
+\draw[->] (IsorropiaInterface22) -- node [near start, right] {Amalg.Part.} (RepartitionInterface22);
+\draw[->] (RepartitionInterface22) -- node [near start, right] {Partition} (RepartitionFactory22);
+\draw[->] (RepartitionFactory22) -- node [near start, right] {Importer} (RebBlockedRFact);
+\draw[->] (RepartitionFactory22) -- node [near start, left] {Importer} (RebBlockedRAPFact);
+
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRAPFact](Acoarse){A};
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedPFact, node distance=4cm](Pcoarse){P};
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRFact, node distance=4cm](Rcoarse){R};
+\draw[->] (RebBlockedRAPFact) -- (Acoarse);
+\draw[->] (RebBlockedPFact) -- (Pcoarse);
+\draw[->] (RebBlockedRFact) -- (Rcoarse);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+
+% non-symmetric design of 2x2 block preconditioner with reusing aggregates of upper-left block
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{5cm}
+\def\factoryheight{0.75cm}
+
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (1,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
+\node(AFact11) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact11] (AmalgFact11) {AmalgFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AmalgFact11] (DropFact11) {DropFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=DropFact11] (AggregationFact11) {AggregationFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=AggregationFact11,node distance=6cm] (CoarseMapFact11) {CoarseMapFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact11] (PFact11) {PFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=PFact11,node distance=6cm] (RFact11) {RFact11};
+\draw[->] (AFact11) -- node [near start, right] {A} (AmalgFact11);
+\draw[->] (AFact11) to[out=190,in=175] node [near start, right] {A} (DropFact11);
+\draw[->] (AmalgFact11) -- node [near start, left] {UnamalgInfo} (DropFact11);
+\draw[->] (DropFact11) -- node [near start, right] {Graph} (AggregationFact11);
+\draw[->] (AggregationFact11) -- node [near start, left] {Aggregates} (PFact11);
+\draw[->] (PFact11) -- node [near start, above] {P} (RFact11);
+\draw[->] (CoarseMapFact11) -- node [near start, below] {coarseMap} (PFact11);
+\draw[->] (AmalgFact11) to[out=-15,in=15] node[near start, left] {UnamalgInfo} (PFact11);
+\draw[->] (A) -- (AFact11);
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AFact11,node distance=8cm] (AFact22) {AFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AFact22] (AmalgFact22) {AmalgFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggregationFact22,node distance=6cm] (CoarseMapFact22) {CoarseMapFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFact22] (PFact22) {PFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=PFact22,node distance=6cm] (RFact22) {RFact22};
+\draw[->] (AFact22) -- node [near start, right] {A} (AmalgFact22);
+\draw[->] (AmalgFact22) -- node [near start, right] {UnamalgInfo} (PFact22);
+\draw[->] (PFact22) -- node [near start, below] {P} (RFact22);
+\draw[->] (CoarseMapFact22) -- node [near start, below] {coarseMap} (PFact22);
+\draw[->] (AggregationFact11) -- node [near end, above] {Aggregates} (PFact22);
+\draw[->] (A) -- (AFact22);
+
+\node (BlockedPFact) at (-5,-2) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedPFact};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=BlockedPFact,node distance=12cm] (GenericRFact) {GenericRFact};
+\draw[->] (PFact11) -- node [near start, right] {P} (BlockedPFact);
+\draw[->] (PFact22) -- node [near start, below] {P} (BlockedPFact);
+\draw[->,dashed] (RFact11) -- node [near start, below] {R} (GenericRFact);
+\draw[->,dashed] (RFact22) -- node [near start, right] {R} (GenericRFact);
+
+\node (BlockedRAPFact) at (1,-4) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {BlockedRAPFact};
+\draw[->] (BlockedPFact) -- node [near start, below] {P} (BlockedRAPFact);
+\draw[->] (GenericRFact) -- node [near start, below] {R} (BlockedRAPFact);
+\draw[->] (A) -- (BlockedRAPFact);
+
+\node (RebAFact11) at (-3,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact11] (RebAmalgFact11) {RebAmalgFact11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFact11] (IsorropiaInterface11) {IsorropiaInterface11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface11] (RepartitionInterface11){RepartitionInterface11};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface11] (RepartitionFactory11) {RepartitionFactory11};
+
+
+\node (RebAFact22) at (5,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebAFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAFact22] (RebAmalgFact22) {RebAmalgFact22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface22] (RepartitionInterface22){RepartitionInterface22};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface22] (RepartitionFactory22) {RepartitionFactory22};
+
+\node (RebBlockedPFact) at (-5,-16) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedPFact};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RebBlockedPFact,node distance=12cm] (RebBlockedRFact) {RebBlockedRFact};
+\node (RebBlockedRAPFact) at (1,-18) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebBlockedRAPFact};
+\coordinate [left of=BlockedRAPFact,node distance=5cm](coLeftOfBlockedRAPFact);
+\coordinate [right of=BlockedRAPFact,node distance=5cm](coRightOfBlockedRAPFact);
+\draw[->] (BlockedRAPFact) -- node [near start, right] {A} (RebBlockedRAPFact);
+\draw[->] (BlockedRAPFact) to[out=180,in=10] (coLeftOfBlockedRAPFact) to[out=190,in=150] node[near start, right] {A} (RebBlockedPFact);
+\draw[->] (BlockedPFact) to[out=220,in=160] node [near start, right] {P} (RebBlockedPFact);
+
+\draw[->] (BlockedRAPFact) to[out=0,in=170] (coRightOfBlockedRAPFact) to[out=-10,in=30] node[near start, right] {A} (RebBlockedRFact);
+\draw[->] (GenericRFact) to[out=-40,in=20] node [near start, right] {R} (RebBlockedRFact);
+
+\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact11);
+\draw[->] (RebAFact11) -- node [near start, right] {A} (RebAmalgFact11);
+\draw[->] (RebAmalgFact11) -- node [near start, right] {UnamalgInfo} (IsorropiaInterface11);
+\draw[->] (IsorropiaInterface11) -- node [near start, right] {Amalg.Part.} (RepartitionInterface11);
+\draw[->] (RepartitionInterface11) -- node [near start, right] {Partition} (RepartitionFactory11);
+\draw[->] (RepartitionFactory11) -- node [near start, left] {Importer} (RebBlockedPFact);
+\draw[->] (RepartitionFactory11) -- node [near start, right] {Importer} (RebBlockedRAPFact);
+
+\draw[->] (BlockedRAPFact) -- node [near start, below] {A} (RebAFact22);
+\draw[->] (RebAFact22) -- node [near start, right] {A} (RebAmalgFact22);
+\draw[->] (RebAmalgFact22) -- node [near start, right] {UnamalgInfo} (RepartitionInterface22);
+\draw[->] (IsorropiaInterface11) -- node [near end, above] {Amalg.Part.} (RepartitionInterface22);
+\draw[->] (RepartitionInterface22) -- node [near start, right] {Partition} (RepartitionFactory22);
+\draw[->] (RepartitionFactory22) -- node [near start, right] {Importer} (RebBlockedRFact);
+\draw[->] (RepartitionFactory22) -- node [near start, left] {Importer} (RebBlockedRAPFact);
+
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRAPFact](Acoarse){A};
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedPFact, node distance=4cm](Pcoarse){P};
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, below of=RebBlockedRFact, node distance=4cm](Rcoarse){R};
+\draw[->] (RebBlockedRAPFact) -- (Acoarse);
+\draw[->] (RebBlockedPFact) -- (Pcoarse);
+\draw[->] (RebBlockedRFact) -- (Rcoarse);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox

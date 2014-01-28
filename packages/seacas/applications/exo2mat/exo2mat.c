@@ -79,8 +79,8 @@ mat_t *mat_file=0;  /* file for binary .mat output */
 static char *qainfo[] =
 {
   "exo2mat",
-  "2012/07/09",
-  "2.01",
+  "2014/01/14",
+  "2.02",
 };
 
 
@@ -223,7 +223,7 @@ int main (int argc, char *argv[])
 {
 
   char  
-    *str,**str2,*(*qa_records)[4],*line, *oname, *dot, *filename;
+    *str,**str2,*line, *oname, *dot, *filename;
 
   const char* ext=EXT;
 
@@ -377,37 +377,24 @@ int main (int argc, char *argv[])
   /* title */
   PutStr("Title",line);
 
-  /* QA records */
-  if (num_qa_lines > 0 ){
-    qa_records  =(char *(*)[4]) calloc (num_qa_lines*4,sizeof(char **));
-    for (i=0;i<num_qa_lines;i++) 
-      for (j=0;j<4;j++)
-	qa_records[i][j]=(char *) calloc ((MAX_STR_LENGTH+1),sizeof(char));
-    err=ex_get_qa(exo_file,qa_records);
-    str[0]='\0';
-    for (i=0;i<num_qa_lines;i++){
-      for (j=0;j<4;j++)
-	sprintf(str+strlen(str),"%s ",qa_records[i][j]);
-      strcat(str,"\n");
-    }
-    for (i=0;i<num_qa_lines;i++){
-        for (j=0;j<4;j++)
-	  free(qa_records[i][j]);
-    }
-    free(qa_records);
-  }
-
   /* information records */
   if (num_info_lines > 0 ){
     err = ex_get_info(exo_file,str2);
     str[0]='\0';
-    for (i=0;i<num_info_lines;i++)
-      sprintf(str+strlen(str),"%s\n",str2[i]);
+    for (i=0;i<num_info_lines;i++) {
+      if (strlen(str2[i]) > 0) {
+	strcat(str, str2[i]);
+	strcat(str, "\n");
+      }
+    }
     PutStr("info",str);
     str[0]='\0';
-    for (i=0;i<num_info_lines;i++)
-      if (strncmp(str2[i],"cavi",4)==0)
-	sprintf(str+strlen(str),"%s\n",str2[i]);
+    for (i=0;i<num_info_lines;i++) {
+      if (strlen(str2[i]) > 0 && strncmp(str2[i],"cavi",4)==0) {
+	strcat(str, str2[i]);
+	strcat(str, "\n");
+      }
+    }
     PutStr("cvxp",str);
   }
 
@@ -556,8 +543,10 @@ int main (int argc, char *argv[])
     free(iscr);
   }
   str[0]='\0';
-  for (i=0;i<num_blocks;i++)
-    sprintf(str+strlen(str),"%s\n",str2[i]);
+  for (i=0;i<num_blocks;i++) {
+    strcat(str, str2[i]);
+    strcat(str, "\n");
+  }
   PutStr("blknames",str);  
 
   /* time values */
@@ -572,8 +561,10 @@ int main (int argc, char *argv[])
   if (num_global_vars > 0 ) {
     err = ex_get_variable_names(exo_file,EX_GLOBAL,num_global_vars,str2);
     str[0]='\0';
-    for (i=0;i<num_global_vars;i++)
-      sprintf(str+strlen(str),"%s\n",str2[i]);
+    for (i=0;i<num_global_vars;i++) {
+      strcat(str, str2[i]);
+      strcat(str, "\n");
+    }
     PutStr("gnames",str);
     scr = (double *) calloc (num_time_steps,sizeof(double));
     for (i=0;i<num_global_vars;i++){
@@ -588,8 +579,10 @@ int main (int argc, char *argv[])
   if (num_nodal_vars > 0 ) {
     err = ex_get_variable_names(exo_file,EX_NODAL,num_nodal_vars,str2);
     str[0]='\0';
-    for (i=0;i<num_nodal_vars;i++)
-      sprintf(str+strlen(str),"%s\n",str2[i]);
+    for (i=0;i<num_nodal_vars;i++) {
+      strcat(str, str2[i]);
+      strcat(str, "\n");
+    }
     PutStr("nnames",str);
     scr = (double *) calloc (num_nodes*num_time_steps,sizeof(double));
     for (i=0;i<num_nodal_vars;i++){
@@ -606,8 +599,10 @@ int main (int argc, char *argv[])
   if (num_element_vars > 0 ) {
     err = ex_get_variable_names(exo_file,EX_ELEM_BLOCK,num_element_vars,str2);
     str[0]='\0';
-    for (i=0;i<num_element_vars;i++)
-      sprintf(str+strlen(str),"%s\n",str2[i]);
+    for (i=0;i<num_element_vars;i++) {
+      strcat(str, str2[i]);
+      strcat(str, "\n");
+    }
     PutStr("enames",str);
     /* truth table */
     iscr = (int *) calloc(num_element_vars*num_blocks, sizeof(int));

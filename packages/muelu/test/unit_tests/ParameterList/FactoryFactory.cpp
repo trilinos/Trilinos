@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -64,13 +64,15 @@
 #include "MueLu_FactoryFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
 
-#define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn)
+#include "MueLu_UseShortNames.hpp"
+
+#define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagersIn)
 
   typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap;
+  typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
   // This is not a real unit test, because output of BuildFactory is not verified. But anyway, it still useful.
   TEUCHOS_UNIT_TEST(FactoryFactory, BuildFactory)
@@ -92,10 +94,11 @@ namespace MueLuTests {
         const Teuchos::ParameterEntry& paramValue = paramList->entry(param);
 
         const FactoryMap factoryMapIn;
+        FactoryManagerMap factoryManagersIn;
 
         // Test when it is not a sublist
         try {
-          const std::string& testparam = Teuchos::getValue<std::string>(paramValue);
+          Teuchos::getValue<std::string>(paramValue);
           RUN;
           continue;
         } catch (Teuchos::bad_any_cast) { }
@@ -104,7 +107,7 @@ namespace MueLuTests {
 
         // Test when sublist does not contain type
         try {
-          std::string type = sublist.get<std::string>("type");
+          sublist.get<std::string>("type");
         } catch (Teuchos::Exceptions::InvalidParameterName) {
           RUN;
           continue;

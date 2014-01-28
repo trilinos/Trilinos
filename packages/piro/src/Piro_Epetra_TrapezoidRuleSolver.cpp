@@ -220,7 +220,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
 
   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*model->get_x_init()));
   RCP<Epetra_Vector> v = rcp(new Epetra_Vector(*model->get_x_dot_init()));
-  RCP<Epetra_Vector> a = rcp(new Epetra_Vector(*model->get_f_map()));
+  RCP<Epetra_Vector> a = rcp(new Epetra_Vector(*model->get_x_dotdot_init()));
   RCP<Epetra_Vector> x_pred = rcp(new Epetra_Vector(*model->get_f_map()));
   RCP<Epetra_Vector> a_old = rcp(new Epetra_Vector(*model->get_f_map()));
 
@@ -243,7 +243,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
      *x_pred = *x;
      model->injectData(x_pred, x_pred, pert, t);
      noxSolver->evalModel(nox_inargs, nox_outargs);
-     a->Update(pert, *gx_out,  -pert, *x_pred,0.0);
+     a->Update(pert, *gx_out,  -pert, *x_pred, 0.0);
      a->Norm2(&nrm); *out << "Calculated a_init = " << nrm << std::endl;
    }
 
@@ -341,6 +341,11 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::TrapezoidDecorator::get_x_dot_in
   return model->get_x_dot_init();
 }
 
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::TrapezoidDecorator::get_x_dotdot_init() const
+{
+  return model->get_x_dotdot_init();
+}
+
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::TrapezoidDecorator::get_p_init(int l) const
 {
   return model->get_p_init(l);
@@ -383,10 +388,9 @@ void Piro::Epetra::TrapezoidDecorator::evalModel( const InArgs& inArgs,
   InArgs modelInArgs(inArgs);
 
   xDotDot->Update(fdt2, *inArgs.get_x(), -fdt2, *x_pred, 0.0);
-  // WARNING:: Model must use  x_dot  as xDotDot!!!
-  modelInArgs.set_x_dot(xDotDot); 
+  modelInArgs.set_x_dotdot(xDotDot); 
 
-  modelInArgs.set_alpha(fdt2);  // fdt2 = 4/(dt)^2
+  modelInArgs.set_omega(fdt2);  // fdt2 = 4/(dt)^2
   modelInArgs.set_beta(1.0);
   modelInArgs.set_t(time);
 

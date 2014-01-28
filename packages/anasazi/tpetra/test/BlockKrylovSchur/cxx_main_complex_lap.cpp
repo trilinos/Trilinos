@@ -42,37 +42,33 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-using namespace Teuchos;
-using Tpetra::Platform;
-using Tpetra::Operator;
 using Tpetra::CrsMatrix;
-using Tpetra::MultiVector;
 using Tpetra::Map;
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::tuple;
   using std::cout;
   using std::endl;
 
   typedef double                              ST;
-  typedef ScalarTraits<ST>                   SCT;
+  typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef MultiVector<ST,int>                 MV;
-  typedef Operator<ST,int>                    OP;
+  typedef Tpetra::MultiVector<ST,int>         MV;
+  typedef Tpetra::Operator<ST,int>            OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   const ST ONE  = SCT::one();
 
-  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  Teuchos::GlobalMPISession mpisess (&argc,&argv,&std::cout);
 
-  int MyPID = 0;
-  int NumImages = 1;
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
-
-  MyPID = rank(*comm);
-  NumImages = size(*comm);
+  const int MyPID = comm->getRank ();
+  const int NumImages = comm->getSize ();
 
   bool testFailed;
   bool verbose = false;
@@ -85,7 +81,7 @@ int main(int argc, char *argv[])
   int numBlocks = 3 * NumImages;
   int maxRestarts = 50;
 
-  CommandLineProcessor cmdp(false,true);
+  Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
@@ -95,7 +91,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("numBlocks",&numBlocks,"Number of blocks in Krylov basis.");
   cmdp.setOption("maxRestarts",&maxRestarts,"Number of restarts allowed.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
   if (debug) verbose = true;
@@ -109,8 +105,8 @@ int main(int argc, char *argv[])
   int dim = ROWS_PER_PROC * NumImages;
 
   // create map
-  Map<int> map(dim,0,comm);
-  RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,4));
+  RCP<const Map<int> > map = rcp (new Map<int> (dim,0,comm));
+  RCP<CrsMatrix<ST,int> > K = rcp (new CrsMatrix<ST,int> (map, 4));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
@@ -131,22 +127,22 @@ int main(int argc, char *argv[])
   K->fillComplete();
 
   // Create initial vectors
-  RCP<MV> ivec = rcp( new MV(map,blockSize) );
-  ivec->random();
+  RCP<MV> ivec = rcp (new MV (map,blockSize));
+  ivec->randomize ();
 
   // Create eigenproblem
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
-    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
+    rcp (new Anasazi::BasicEigenproblem<ST,MV,OP> (K, ivec));
   //
   // Inform the eigenproblem that the operator K is symmetric
-  problem->setHermitian(true);
+  problem->setHermitian (true);
   //
   // Set the number of eigenvalues requested
-  problem->setNEV( nev );
+  problem->setNEV (nev);
   //
   // Inform the eigenproblem that you are done passing it information
-  bool boolret = problem->setProblem();
-  if (boolret != true) {
+  bool boolret = problem->setProblem ();
+  if (! boolret) {
     if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;
@@ -166,7 +162,7 @@ int main(int argc, char *argv[])
   // Eigensolver parameters
   //
   // Create parameter list to pass into the solver manager
-  ParameterList MyPL;
+  Teuchos::ParameterList MyPL;
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
@@ -198,8 +194,8 @@ int main(int argc, char *argv[])
 
     // Compute the direct residual
     std::vector<MT> normV( numev );
-    SerialDenseMatrix<int,ST> T(numev,numev);
-    for (int i=0; i<numev; i++) {
+    Teuchos::SerialDenseMatrix<int,ST> T (numev, numev);
+    for (int i = 0; i < numev; ++i) {
       T(i,i) = sol.Evals[i].realpart;
     }
     RCP<MV> Kvecs = MVT::Clone( *evecs, numev );

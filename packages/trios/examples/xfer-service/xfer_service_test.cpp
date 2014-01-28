@@ -97,9 +97,10 @@ int print_args(
         out << prefix << " ------------  ARGUMENTS (server) ----------- " << std::endl;
 
     out << prefix << " \tserver-url       = " << args.server_url.c_str() << std::endl;
+    out << prefix << " \turl-file         = " << args.url_file << std::endl;
+    out << prefix << " \ttransport        = " << args.transport_name << std::endl;
 
     if (args.client_flag) {
-        out << prefix << " \ttransport        = " << args.transport_name << std::endl;
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
         out << prefix << " \tnum-trials       = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
@@ -159,12 +160,14 @@ int main(int argc, char *argv[])
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
             NSSI_RPC_BGPDCMF,
+            NSSI_RPC_BGQPAMI,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",
             "ib",
             "gni",
             "bgpdcmf",
+            "bgqpami",
             "mpi"
     };
 
@@ -254,10 +257,11 @@ int main(int argc, char *argv[])
         // Set an enumeration command line option for the io_method
         parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
                 "NSSI transports (not all are available on every platform): \n"
-                "\t\t\tportals : Cray or Schutt\n"
+                "\t\t\tportals    : Cray or Schutt\n"
                 "\t\t\tinfiniband : libibverbs\n"
-                "\t\t\tgemini : Cray\n"
-                "\t\t\tmpi : isend/irecv implementation\n"
+                "\t\t\tgemini     : Cray\n"
+                "\t\t\tbgpdcmf    : BlueGene/P DCMF\n"
+                "\t\t\tmpi        : isend/irecv implementation\n"
                 );
 
 

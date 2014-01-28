@@ -38,45 +38,46 @@ template<typename MatrixType> struct sa_level;
 namespace relaxation
 {
 
-template <typename ValueType, typename MemorySpace>
+template <typename ValueType, typename MemorySpace, typename Orientation>
 class block_polynomial : public cusp::linear_operator<ValueType, MemorySpace>
 {
 public:
 
-    // note: default_coefficients lives on the host
-    cusp::array1d<ValueType, cusp::host_memory> default_coefficients;
-    cusp::array2d<ValueType, MemorySpace> residual;
-    cusp::array2d<ValueType, MemorySpace> h;
-    cusp::array2d<ValueType, MemorySpace> y;
+  typedef Orientation orientation;
 
-    block_polynomial();
+  // note: default_coefficients lives on the host
+  cusp::array1d<ValueType, cusp::host_memory> default_coefficients;
+  cusp::array2d<ValueType, MemorySpace, Orientation> residual;
+  cusp::array2d<ValueType, MemorySpace, Orientation> h;
+  cusp::array2d<ValueType, MemorySpace, Orientation> y;
 
-    template <typename MatrixType, typename VectorType>
-    block_polynomial(const MatrixType& A, const VectorType& coefficients);
+  block_polynomial();
 
-    template <typename MemorySpace2>
-    block_polynomial(const block_polynomial<ValueType,MemorySpace2>& A);
+  template <typename MatrixType, typename VectorType>
+  block_polynomial(const MatrixType& A, const VectorType& coefficients);
 
-    template <typename MatrixType>
-    block_polynomial(const cusp::precond::aggregation::sa_level<MatrixType>& sa_level);
+  template <typename MemorySpace2>
+  block_polynomial(const block_polynomial<ValueType,MemorySpace2,Orientation>& A);
 
-    // ignores initial x
-    template<typename MatrixType, typename VectorType1, typename VectorType2>
-    void presmooth(const MatrixType& A, const VectorType1& b, VectorType2& x);
-   
-    // smooths initial x
-    template<typename MatrixType, typename VectorType1, typename VectorType2>
-    void postsmooth(const MatrixType& A, const VectorType1& b, VectorType2& x);
+  template <typename MatrixType>
+  block_polynomial(const cusp::precond::aggregation::sa_level<MatrixType>& sa_level);
 
-    template <typename MatrixType, typename VectorType1, typename VectorType2>
-    void operator()(const MatrixType& A, const VectorType1& b, VectorType2& x) const;
+  // ignores initial x
+  template<typename MatrixType, typename VectorType1, typename VectorType2>
+  void presmooth(const MatrixType& A, const VectorType1& b, VectorType2& x);
 
-    template <typename MatrixType, typename VectorType1, typename VectorType2, typename VectorType3>
-    void operator()(const MatrixType& A, const VectorType1& b, VectorType2& x, VectorType3& coeffients);
+  // smooths initial x
+  template<typename MatrixType, typename VectorType1, typename VectorType2>
+  void postsmooth(const MatrixType& A, const VectorType1& b, VectorType2& x);
+
+  template <typename MatrixType, typename VectorType1, typename VectorType2>
+  void operator()(const MatrixType& A, const VectorType1& b, VectorType2& x) const;
+
+  template <typename MatrixType, typename VectorType1, typename VectorType2, typename VectorType3>
+  void operator()(const MatrixType& A, const VectorType1& b, VectorType2& x, VectorType3& coeffients);
 };
 
 } // end namespace relaxation
 } // end namespace cusp
 
 #include <cusp/relaxation/block_polynomial.inl>
-

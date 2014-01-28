@@ -168,7 +168,7 @@ if __name__ == "__main__":
         main(iAmRoot)
     except Exception, e:
         print "Processor", comm.getRank(), ": Exception raised"
-        print e
+        print "  Exception text = '%s'" % str(e)
         errors = 1
 
     # Sum the errors, report the status and exit

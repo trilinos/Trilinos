@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -55,11 +55,12 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 // This file is intended to house all the tests for MueLu_Utilities.hpp.
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   TEUCHOS_UNIT_TEST(Utilities,MatMatMult_EpetraVsTpetra)
@@ -68,6 +69,8 @@ namespace MueLuTests {
     out << "This test compares the matrix matrix multiply between Tpetra and Epetra" << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    typedef Teuchos::ScalarTraits<SC> ST;
 
     //Calculate result = (Op*Op)*X for Epetra
     int nx = 37*comm->getSize();

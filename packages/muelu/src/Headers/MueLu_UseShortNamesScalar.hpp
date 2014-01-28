@@ -18,6 +18,10 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalM
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
+#ifdef MUELU_SCHWARZSMOOTHER_SHORT
+typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchwarzSmoother;
+#endif
+
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AlgebraicPermutationStrategy;
 #endif
@@ -82,8 +86,8 @@ typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> D
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
 #endif
 
-#ifdef MUELU_DISTANCELAPLACIANFACTORY_SHORT
-typedef MueLu::DistanceLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DistanceLaplacianFactory;
+#ifdef MUELU_EASYPARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::EasyParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EasyParameterListInterpreter;
 #endif
 
 #ifdef MUELU_EMINPFACTORY_SHORT

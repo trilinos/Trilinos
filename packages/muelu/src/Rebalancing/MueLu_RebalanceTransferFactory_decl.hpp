@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -96,7 +96,7 @@ namespace MueLu {
         If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
         will fall back to the settings in FactoryManager.
     */
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -104,7 +104,7 @@ namespace MueLu {
     //@{
 
     //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 

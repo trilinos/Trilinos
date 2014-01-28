@@ -167,9 +167,16 @@ protected:
   }
 
   //! Returns the number of global rows, or -1 if Matrix() returns 0.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   inline int NumGlobalRows() const
   {
     return(Matrix()->NumGlobalRows());
+  }
+#endif
+
+  inline long long NumGlobalRows64() const
+  {
+    return(Matrix()->NumGlobalRows64());
   }
 
   //! Returns the number of local rows, or -1 if Matrix() returns 0.
@@ -256,8 +263,8 @@ protected:
   //! Quick access ids for the individual timings
   int MtxRedistTime_, MtxConvTime_, VecRedistTime_, SymFactTime_, NumFactTime_, SolveTime_;
 
-  int NumGlobalRows_;
-  int NumGlobalNonzeros_;
+  long long NumGlobalRows_;
+  long long NumGlobalNonzeros_;
 
   Teuchos::RCP<Teuchos::ParameterList> ParameterList_ ; 
 

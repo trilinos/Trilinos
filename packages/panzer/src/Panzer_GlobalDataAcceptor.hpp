@@ -47,7 +47,7 @@
 
 namespace panzer {
 
-  class GlobalData;
+  struct GlobalData;
   
   /** \brief Interface for accessing the GlobalData object.  */
   class GlobalDataAcceptor {

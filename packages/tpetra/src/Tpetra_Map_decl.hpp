@@ -168,7 +168,7 @@ namespace Tpetra {
   /// <li>the (ordered) list of global indices on each process p in
   ///   the Map's communicator forms a contiguous interval, and </li>
   /// <li>if process p owns a global index \f$g_p\f$ and process q
-  ///   owns a global index \f$g_q\f$, and if \f$p > q\f$, then 
+  ///   owns a global index \f$g_q\f$, and if \f$p > q\f$, then
   ///   \f$g_p > g_q\f$. </li>
   /// </ol>
   /// Different processes may own different numbers of global indices.
@@ -1003,7 +1003,7 @@ namespace Tpetra {
    */
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
+  createOneToOne (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
 
   /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
              The rule to break ties is specifed by the tie break object.

@@ -12,8 +12,8 @@
 namespace SEAMS {
 extern SEAMS::Aprepro *aprepro;
 
-void init_table(char comment);
-char comm_string[2];
+void init_table(const char *comment);
+char comm_string[32];
 
 extern double
   do_fabs(double x),
@@ -66,7 +66,9 @@ extern double
   do_angle(double x1, double y1, double x2, double y2),
   do_angled(double x1, double y1, double x2, double y2),
   do_word_count(char *string, char *delm),
-  do_strtod(char *string);
+  do_strtod(char *string),
+  do_rows(const array *arr),
+  do_cols(const array *arr);
 
 #if 0
   do_julday(double mon, double day, double year),
@@ -109,6 +111,13 @@ struct init_d arith_fncts[] =
   {"tan",            do_tan,    "tan(x)","Tangent of x, with x in radians. "},
   {"tand",           do_tand,   "tand(x)","Tangent of x, with x in radians. "},
   {"tanh",           do_tanh,   "tanh(x)","Hyperbolic tangent of x. "},
+  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+};
+
+struct init_a  arith_a_fncts[] =
+{
+  {"rows",           do_rows,   "rows(array)","Returns the number of rows in the array. "},
+  {"cols",           do_cols,   "cols(array)","Returns the number of columns in the array. "},
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
@@ -190,7 +199,8 @@ extern const char
   *do_tostring(double x),
 
   *do_get_word(double n, char *string, char *delm),
-  *do_extract(char *string, char *begin, char *end);
+  *do_extract(char *string, char *begin, char *end),
+  *do_print_array(const array *arr);
   
 #if defined(EXODUSII)
   *do_exodus_info(char *filename),
@@ -260,6 +270,45 @@ struct str_ccc_init string_ccc_fncts[] =
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 
+struct str_a_init string_a_fncts[] =
+  {
+    {"print_array",  do_print_array, "print_array(array)","Prints the data in the array."},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
+extern array *do_csv_array(const char *filename);
+extern array *do_make_array(double rows, double cols);
+extern array *do_identity(double size);
+extern array *do_transpose(const array *array);
+
+struct array_c_init array_c_fncts[] =
+  {
+    {"csv_array",         do_csv_array,      "csv_array(filename)",
+     "Create a 2D array from the data in a csv file."},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
+struct array_dd_init array_dd_fncts[] =
+  {
+    {"make_array",        do_make_array,     "make_array(rows, cols)",
+     "Create a 2D array of size 'rows' by 'cols' initialized to zero."},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
+struct array_d_init array_d_fncts[] =
+  {
+    {"identity",          do_identity,     "identity(size)",
+     "Create a 2D identity array with 'size' rows and columns. Diagonal = 1.0"},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
+struct array_a_init array_a_fncts[] =
+  {
+    {"transpose",         do_transpose,      "transpose(array)",
+     "Return the transpose of input array"},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
 struct var_init variables[] =
 {
   {"DEG",  57.29577951308232087680},	/* 180/pi, degrees per radian */
@@ -286,7 +335,7 @@ struct svar_init svariables[] =
  *	 initialize is differently than the other string variables.
  */
 
-  void Aprepro::init_table(char comment)
+  void Aprepro::init_table(const char *comment)
   {
     for (int i = 0; arith_fncts[i].fname != 0; i++) {
       symrec *ptr = putsym(arith_fncts[i].fname, FUNCTION, 1);
@@ -300,6 +349,13 @@ struct svar_init svariables[] =
       ptr->value.fnctptr_dd = arith_dd_fncts[i].fnct;
       ptr->info = arith_dd_fncts[i].description;
       ptr->syntax = arith_dd_fncts[i].syntax;
+    }
+
+    for (int i = 0; arith_a_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_a_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_a = arith_a_fncts[i].fnct;
+      ptr->info = arith_a_fncts[i].description;
+      ptr->syntax = arith_a_fncts[i].syntax;
     }
 
     for (int i = 0; arith_dddd_fncts[i].fname != 0; i++) {
@@ -356,6 +412,41 @@ struct svar_init svariables[] =
       ptr->value.strfnct_ccc = string_ccc_fncts[i].fnct;
       ptr->info = string_ccc_fncts[i].description;
       ptr->syntax = string_ccc_fncts[i].syntax;
+    }
+
+    for (int i = 0; string_a_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(string_a_fncts[i].fname, STRING_FUNCTION, 1);
+      ptr->value.strfnct_a = string_a_fncts[i].fnct;
+      ptr->info = string_a_fncts[i].description;
+      ptr->syntax = string_a_fncts[i].syntax;
+    }
+
+    for (int i = 0; array_c_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(array_c_fncts[i].fname, ARRAY_FUNCTION, 1);
+      ptr->value.arrfnct_c = array_c_fncts[i].fnct;
+      ptr->info = array_c_fncts[i].description;
+      ptr->syntax = array_c_fncts[i].syntax;
+    }
+
+    for (int i = 0; array_dd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(array_dd_fncts[i].fname, ARRAY_FUNCTION, 1);
+      ptr->value.arrfnct_dd = array_dd_fncts[i].fnct;
+      ptr->info = array_dd_fncts[i].description;
+      ptr->syntax = array_dd_fncts[i].syntax;
+    }
+
+    for (int i = 0; array_d_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(array_d_fncts[i].fname, ARRAY_FUNCTION, 1);
+      ptr->value.arrfnct_d = array_d_fncts[i].fnct;
+      ptr->info = array_d_fncts[i].description;
+      ptr->syntax = array_d_fncts[i].syntax;
+    }
+
+    for (int i = 0; array_a_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(array_a_fncts[i].fname, ARRAY_FUNCTION, 1);
+      ptr->value.arrfnct_a = array_a_fncts[i].fnct;
+      ptr->info = array_a_fncts[i].description;
+      ptr->syntax = array_a_fncts[i].syntax;
     }
 
     for (int i = 0; variables[i].vname != 0; i++) {

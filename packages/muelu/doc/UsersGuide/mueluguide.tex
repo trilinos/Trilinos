@@ -1,0 +1,232 @@
+\documentclass{article}[11pt]
+\usepackage{fancyhdr, tabularx, verbatim, epsfig}
+\usepackage{amssymb,psboxit}
+\usepackage{rotating}
+\usepackage[pdftex,
+            pdfpagemode=none,
+            pdfstartview=FitH]{hyperref}
+\usepackage{xspace}
+
+\usepackage{graphicx,type1cm,eso-pic,color}
+
+% Lightly print `DRAFT' on every page of the document
+\makeatletter
+\AddToShipoutPicture{%
+  \setlength{\@tempdimb}{.5\paperwidth}%
+    \setlength{\@tempdimc}{.5\paperheight}%
+    \setlength{\unitlength}{1pt}%
+    \put(\strip@pt\@tempdimb,\strip@pt\@tempdimc){%
+      \makebox(0,0){\rotatebox{45}{\textcolor[gray]{0.93}%
+        {\fontsize{5cm}{5cm}\selectfont{DRAFT}}}}%
+    }%
+}
+\makeatother
+
+
+\hypersetup{
+  pdfauthor  = {Jonathan J. Hu, Andrey Prokopenko},
+  pdftitle   = {MueLu 0.01 User's Guide},
+  colorlinks = {true},
+  citecolor  = {blue},
+}
+
+\def\optionbox#1#2{\noindent$\hphantom{ii}${\parbox[t]{1.5in}{\it
+#1}}{\parbox[t]{4.8in}{#2}} \\[1.1em]}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{3.0in}{\sf
+#1}\parbox[t]{3.35in}{#2}\\[0.8em]}
+
+\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
+#1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
+
+\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
+\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf
+#1}\vspace{1em}}}}}
+
+
+\setlength{\oddsidemargin} {0.1\oddsidemargin}
+\setlength{\evensidemargin}{0.5\evensidemargin}
+\setlength{\topmargin}     {0.0\topmargin}
+\setlength{\textheight}    {1.16\textheight}
+\setlength{\textwidth}     {1.35\textwidth}
+
+\newcommand{\amesos}       {\textsc{Amesos}\xspace}
+\newcommand{\anasazi}      {\textsc{Anasazi}\xspace}
+\newcommand{\aztecoo}      {\textsc{AztecOO}\xspace}
+\newcommand{\belos}        {\textsc{Belos}\xspace}
+\newcommand{\epetra}       {\textsc{Epetra}\xspace}
+\newcommand{\epetraext}    {\textsc{EpetraExt}\xspace}
+\newcommand{\galeri}       {\textsc{Galeri}\xspace}
+\newcommand{\ifpack}       {\textsc{Ifpack}\xspace}
+\newcommand{\ifpacktwo}    {\textsc{Ifpack2}\xspace}
+\newcommand{\loca}         {\textsc{Loca}\xspace}
+\newcommand{\ml}           {\textsc{ML}\xspace}
+\newcommand{\muelu}        {\textsc{MueLu}\xspace}
+\newcommand{\nox}          {\textsc{NOX}\xspace}
+\newcommand{\stratimikos}  {\textsc{Stratimikos}\xspace}
+\newcommand{\teuchos}      {\textsc{Teuchos}\xspace}
+\newcommand{\trilinos}     {\textsc{Trilinos}\xspace}
+\newcommand{\zoltan}       {\textsc{Zoltan}\xspace}
+\newcommand{\zoltantwo}    {\textsc{Zoltan2}\xspace}
+
+\newcommand{\klu}          {\textsc{Klu}\xspace}
+\newcommand{\metis}        {\textsc{Metis}\xspace}
+\newcommand{\mumps}        {\textsc{Mumps}\xspace}
+\newcommand{\umfpack}      {\textsc{Umfpack}\xspace}
+\newcommand{\superlu}      {\textsc{SuperLU}\xspace}
+\newcommand{\superludist}  {\textsc{SuperLU\_dist}\xspace}
+\newcommand{\parmetis}     {\textsc{ParMetis}\xspace}
+\newcommand{\paraview}     {\textsc{ParaView}\xspace}
+
+\newcommand{\parameterlist}{\texttt{ParameterList}\xspace}
+
+\newcommand \trilinosWeb   {trilinos.sandia.gov\xspace}
+
+\newcommand{\be}  {\begin{enumerate}}
+\newcommand{\ee}  {\end{enumerate}}
+\newcommand{\cba}[3]{\choicebox{\texttt{#1}}{[{\texttt #2}] #3}}
+\newcommand{\cbb}[4]{\choicebox{\texttt{#1}}{[{\texttt #2}] #4 {\bf Default:~}#3.}}
+\newcommand{\cbc}[4]{\choicebox{\texttt{\color{red}#1}}{[{\texttt #2}] #4 {\bf Default:~}#3.}}
+
+\newcommand{\comm}[2]{\bigskip
+                      \begin{tabular}{|p{4.5in}|}\hline
+                      \multicolumn{1}{|c|}{{\bf Comment by #1}}\\ \hline
+                      #2\\ \hline
+                      \end{tabular}\\
+                      \bigskip
+                     }
+
+\begin{document}
+% \bibliographystyle{siam}
+\setcounter{page}{3}
+
+\large
+
+\begin{center}
+SAND????-????
+Unlimited Release \\
+Printed Oct 2013
+\end{center}
+
+\vspace{0.2in}
+
+\begin{center}
+{\Large {\bf MueLu 0.01 User's Guide}}
+
+\vspace*{0.8in}
+Andrey Prokopenko \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+Mailstop 1318 \\
+P.O.~Box 5800 \\
+Albuquerque, NM 87185-1318\\[10pt]
+Jonathan J. Hu \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+Mailstop 9159 \\
+P.O.~Box 0969 \\
+Livermore, CA 94551-0969
+
+
+\vspace*{1in}
+
+\end{center}
+
+\begin{abstract}
+
+Blah-blah-blah.
+
+\end{abstract}
+
+\clearpage
+\newpage
+
+\vfill
+\begin{center}
+(page intentionally left blank)
+\end{center}
+\clearpage
+\newpage
+
+
+\tableofcontents
+\newpage
+
+%-----------------------------%
+\section{\muelu options}
+%-----------------------------%
+In this section, we report the complete list of input parameters. Input parameters are passed to \muelu in a single \parameterlist.
+
+Some of the parameters that affect the preconditioner may in principle be different from level to level. By default, the parameter affects all levels
+in the multigrid hierarchy. To change the behaviour on a particular level, say level $d$, one is to construct a sublist of a \parameterlist with the
+name "level $d$".
+
+Rather than implementing all possible algorithms, \muelu relies on other \trilinos packages. For instance, smoothers are provided by \ifpack or
+\ifpacktwo. Many of those algorithms take a list of parameters specifying their behaviour. \muelu simply passes this list to the proper package.
+
+\
+
+\cbb{verbosity}                          {int}       {"high"}        {Controll of the amount of printed information. Possible values: "none", "low",
+                                                                     "medium", "high", "extreme".}
+\cbb{number of equations}                {int}       {1}             {Number of PDE equations at each gride node. Only constant block size is considered.}
+% \cbc{explicit restriction}               {bool}      {true}          {Restrition operator is constructed as a separate matrix.}
+\cbb{max levels}                         {int}       {10}            {Maximum number of levels.}
+\cbb{cycle type}                         {string}    {"V"}           {Multigrid cycle type. Possible values: "V", "W".}
+
+\cba{print}                              {\parameterlist}            {Saving a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A",
+                                                                      "P", "R") of type "string" and value "\{$<$levels separated by comma$>$\}". A
+                                                                      matrix is saved in two files: a) data is saved in the MatrixMarket format in a
+                                                                      file called "A\_$<$level$>$.mm", or similar; b) row map is saved in the
+                                                                      MatrixMarket format in a file called "rowmap\_A\_$<$level$>$.mm", or similar.}
+
+\cbb{multigrid algorithm}                {string}    {"sa"}          {Multigrid method. Possible values: "sa", "emin", "pg".}
+
+\cbb{aggregation: type}                  {string}    {"uncoupled"}   {Aggregation scheme. Possible values: "uncoupled", "coupled".}
+\cbc{aggregation: symmetrize}            {bool}      {false}         {Symmetrize connectivity graph for nonsymmetric matrices.}
+\cbb{aggregation: drop scheme}           {string}    {"classical"}   {Aggregation connectivity dropping scheme. Possible values: "classical", "laplacian".}
+\cbb{aggregation: drop tol}              {double}    {0.0}           {Aggregation dropping threshold.}
+\cbb{aggregation: Dirichlet threshold}   {double}    {}              {}
+
+\cbb{smoother: pre or post}              {string}    {"both"}        {Smoother combination. Possible values: "pre", "post", "both", "none".}
+\cbb{smoother: type}                     {string}    {"gs"}          {Smoother type. Possible values: see Table~\ref{t:smoothers}.}
+\cbb{smoother: pre type}                 {string}    {}              {Pre-smoother type. Possible values: see Table~\ref{t:smoothers}.}
+\cbb{smoother: post type}                {string}    {}              {Post-smoother type. Possible values: see Table~\ref{t:smoothers}.}
+\cba{smoother: params}                   {\parameterlist}            {Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
+\cba{smoother: pre params}               {\parameterlist}            {Pre-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
+\cba{smoother: post params}              {\parameterlist}            {Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
+\cbc{smoother: sweeps}                   {int}       {2}             {Number of smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
+\cbc{smoother: pre sweeps}               {int}       {2}             {Number of pre-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
+\cbc{smoother: post sweeps}              {int}       {2}             {Number of post-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
+
+\cbb{coarse: type}                       {string}    {"SuperLU"}     {Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
+\cba{coarse: params}                     {\parameterlist}            {Coarse solver parameters. \muelu passes them directly to coarse solver.}
+\cbb{coarse: max size}                   {int}       {2000}          {Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.}
+
+\cbb{repartition: enable}                {bool}      {false}         {Repartitioning on/off switch.}
+\cbb{repartition: partitioner}           {string}    {"zoltan2"}     {Partitioning package to use. Possible values: "zoltan", "zoltan2".}
+\cba{repartition: params}                {\parameterlist}            {Partitioner parameters. \muelu passes them directly to partitioner.}
+\cbb{repartition: start level}           {int}       {2}             {Minimum level to run partitioner. \muelu does not repartition for finer levels.}
+\cbb{repartition: min rows per proc}     {int}       {800}           {Desired minimum number of rows per processor. If actual number if smaller, then
+                                                                      repartitioning occurs.}
+\cbb{repartition: max imbalance}         {double}    {1.2}           {Desired maximum nonzero imbalance ratio.}
+\cbb{repartition: remap parts}           {bool}      {true}          {Postprocessing for partitioning to reduce data migration.}
+\cbb{repartition: keep proc 0}           {bool}      {true}          {Postprocessing for partitioning to keep processor 0 from dropping out. The goal
+                                                                      is to keep processor 0 of the original fine level communication even when we use
+                                                                      level subcommunicators.}
+
+\cbb{sa: damping factor}                 {double}    {4/3}           {Damping factor for smoothed aggregation.}
+\cbb{sa: use filtered matrix}            {bool}      {true}          {Matrix to use for smoothing the tentative prolongator. The two options are: to
+                                                                      use the original matrix, and to use the filtered matrix with filtering based on
+                                                                      filtered graph used for aggregation.}
+\cbb{filtered matrix: use lumping}       {bool}      {false}         {During construction of a filtered matrix we have an option to add dropped
+                                                                      entries to the diagonal. This is useful for preserving constant nullspace
+                                                                      for the Laplacian type matrix.}
+
+\cbb{emin: iterative method}             {string}    {"cg"}          {Iterative method to use for energy minimization of intial prolongator in
+                                                                      energy-minimization. Possible values: "cg".}
+\cbb{emin: num iterations}               {int}       {2}             {Number of iterations to minimize initial prolongator energy in
+                                                                      energy-minimization.}
+\cbb{emin: pattern}                      {string}    {"AkPtent"}     {Sparsity pattern to use for energy minization. Possible values: "AkPtent".}
+\cbb{emin: pattern order}                {int}       {1}             {Matrix order for the "AkPtent" pattern.}
+
+\end{document}

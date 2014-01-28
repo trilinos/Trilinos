@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
   #ifdef _OPENMP
   Kokkos::OpenMP::initialize(teams*num_threads);
   #else
-  Kokkos::Threads::initialize(std::pair<unsigned int,unsigned int>(teams,num_threads));
+  Kokkos::Threads::initialize(teams*num_threads);
   #endif
 #endif
 

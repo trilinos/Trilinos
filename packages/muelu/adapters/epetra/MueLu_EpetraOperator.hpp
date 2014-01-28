@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -58,15 +58,16 @@
 
 namespace MueLu {
 
-  class EpetraOperator
-    : public Epetra_Operator
-  {
+  class EpetraOperator : public Epetra_Operator {
+    typedef double                                              SC;
+    typedef int                                                 LO;
+    typedef int                                                 GO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
+    typedef KokkosClassic::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
 
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef KokkosClassic::DefaultKernels<double,int,Node>::SparseOps LocalMatOps;
-
-    typedef Xpetra::Matrix<double, int, int, Node, LocalMatOps> Matrix;
-    typedef MueLu::Utils<double, int, int, Node, LocalMatOps>     Utils;
+    typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>                     Matrix;
+    typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>                   Hierarchy;
+    typedef MueLu::Utils<SC,LO,GO,NO,LMO>                       Utils;
 
   public:
 
@@ -74,14 +75,14 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    EpetraOperator(const RCP<MueLu::Hierarchy<double, int, int, Node, LocalMatOps> > & H) : Hierarchy_(H) { }
+    EpetraOperator(const RCP<Hierarchy>& H) : Hierarchy_(H) { }
 
     //! Destructor.
     virtual ~EpetraOperator() { }
 
     //@}
 
-    int SetUseTranspose(bool UseTransposeBool);
+    int SetUseTranspose(bool UseTransposeBool) { return -1; }
 
     //! @name Mathematical functions
     //@{
@@ -95,7 +96,7 @@ namespace MueLu {
 
       \return Integer error code, set to 0 if successful.
     */
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const { return -1; }
 
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
     /*!
@@ -117,20 +118,20 @@ namespace MueLu {
 
        \warning This method must not be called unless HasNormInf() returns true.
     */
-    double NormInf() const;
+    double NormInf() const { return 0; }
     //@}
 
     //! @name Attribute access functions
     //@{
 
     //! Returns a character string describing the operator
-    const char * Label() const;
+    const char * Label() const { return "MueLu::Hierarchy"; }
 
     //! Returns the current UseTranspose setting.
-    bool UseTranspose() const;
+    bool UseTranspose() const { return false; }
 
     //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
-    bool HasNormInf() const;
+    bool HasNormInf() const { return 0; }
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
     const Epetra_Comm & Comm() const;
@@ -142,13 +143,13 @@ namespace MueLu {
     const Epetra_Map & OperatorRangeMap() const;
 
     //! Direct access to the underlying MueLu::Hierarchy.
-    RCP<MueLu::Hierarchy<double, int, int, Node, LocalMatOps> > GetHierarchy() const;
+    RCP<Hierarchy> GetHierarchy() const { return Hierarchy_; }
 
     //@}
 
   private:
 
-    RCP<MueLu::Hierarchy<double, int, int, Node, LocalMatOps> > Hierarchy_;
+    RCP<Hierarchy> Hierarchy_;
 
   };
 

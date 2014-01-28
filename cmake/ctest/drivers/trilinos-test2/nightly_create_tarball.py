@@ -113,7 +113,7 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("SEACAS", False),
   ("Shards", True),
   ("ShyLU", True),
-  ("STK", True),
+  ("STK", False),
   ("Stokhos", True),
   ("Stratimikos", True),
   ("Sundance", True),
@@ -270,6 +270,7 @@ def main(package_enable_disable_list, options):
   cmake_configure_options.append(("HAVE_GCC_ABI_DEMANGLE", "ON"))
   cmake_configure_options.append(("Trilinos_WARNINGS_AS_ERRORS_FLAGS", ""))
   cmake_configure_options.append(("CMAKE_VERBOSE_MAKEFILE", "TRUE"))
+  cmake_configure_options.append(("Trilinos_ENABLE_CPACK_PACKAGING", "ON"))
   for package, is_enabled in package_enable_disable_list:
     if is_enabled:
       on_or_off = "ON"

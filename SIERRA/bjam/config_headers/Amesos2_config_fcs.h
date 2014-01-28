@@ -99,3 +99,9 @@
 
 /* Define if you want to build amesos2-lapack */
 /* #undef HAVE_AMESOS2_LAPACK */
+
+/* Define if you want to build amesos2-cholmod */
+/* #undef HAVE_AMESOS2_CHOLMOD */
+
+/* Define if you want to enable experimental features */
+/* #undef HAVE_AMESOS2_EXPERIMENTAL */

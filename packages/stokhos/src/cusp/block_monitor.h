@@ -53,138 +53,150 @@ namespace cusp
 template <typename ValueType>
 class default_block_monitor
 {
-    public:
-    typedef typename norm_type<ValueType>::type Real;
-  
-    /*! Construct a \p default_monitor for a given right-hand-side \p b
-     *
-     *  The \p default_monitor terminates iteration when the residual norm
-     *  satisfies the condition
-     *       ||b - A x|| <= absolute_tolerance + relative_tolerance * ||b||
-     *  or when the iteration limit is reached.
-     *
-     *  \param b right-hand-side of the linear system A x = b
-     *  \param iteration_limit maximum number of solver iterations to allow
-     *  \param relative_tolerance determines convergence criteria
-     *  \param absolute_tolerance determines convergence criteria
-     *
-     *  \tparam VectorType vector
-     */
-    template <typename MV>
-    default_block_monitor(const MV& b, size_t iteration_limit = 500, Real absolute_tolerance = 1e-6, Real relative_tolerance = 1e-6)
-        : numRHS(b.num_cols),
-          iteration_limit_(iteration_limit),
-          iteration_count_(0),
-          relative_tolerance_(relative_tolerance),
-          absolute_tolerance_(absolute_tolerance),
-	  b_norm(b.num_cols)
-	  
+public:
+  typedef typename norm_type<ValueType>::type Real;
+
+  /*! Construct a \p default_monitor for a given right-hand-side \p b
+   *
+   *  The \p default_monitor terminates iteration when the residual norm
+   *  satisfies the condition
+   *       ||b - A x|| <= absolute_tolerance + relative_tolerance * ||b||
+   *  or when the iteration limit is reached.
+   *
+   *  \param b right-hand-side of the linear system A x = b
+   *  \param iteration_limit maximum number of solver iterations to allow
+   *  \param relative_tolerance determines convergence criteria
+   *  \param absolute_tolerance determines convergence criteria
+   *
+   *  \tparam VectorType vector
+   */
+  template <typename MV>
+  default_block_monitor(const MV& b,
+                        size_t iteration_limit = 500,
+                        Real absolute_tolerance = 1e-6,
+                        Real relative_tolerance = 1e-6,
+                        bool verbose = true) :
+    numRHS(b.num_cols),
+    iteration_limit_(iteration_limit),
+    iteration_count_(0),
+    relative_tolerance_(relative_tolerance),
+    absolute_tolerance_(absolute_tolerance),
+    verbose_(verbose),
+    b_norm(b.num_cols)
     {
-	for (int i = 0; i < numRHS; i++)
-                b_norm[i] = cusp::blas::nrm2(b.column(i));
+      for (int i = 0; i < numRHS; i++)
+        b_norm[i] = cusp::blas::nrm2(b.column(i));
     }
 
-    /*! increment the iteration count
-     */
-    void operator++(void) {  ++iteration_count_; } // prefix increment
+  /*! increment the iteration count
+   */
+  void operator++(void) {  ++iteration_count_; } // prefix increment
 
-    /*! applies convergence criteria to determine whether iteration is finished
-     *
-     *  \param r residual vector of the linear system (r = b - A x)
-     *  \tparam Vector vector
-     */
-    template <typename MV>
-    bool finished(const MV& r)
+  /*! applies convergence criteria to determine whether iteration is finished
+   *
+   *  \param r residual vector of the linear system (r = b - A x)
+   *  \tparam Vector vector
+   */
+  template <typename MV>
+  bool finished(const MV& r)
+  {
+
+    if (converged(r))
     {
-	
-	if (converged(r))
-        {
-	    cusp::array1d<ValueType, cusp::host_memory> resid(numRHS);
-	    std::cout << "Successfully converged after " << iteration_count() << " iterations to tolerance " << tolerance(0) << std::endl;
-            std::cout << "with residual norms " <<  std::endl;
-	    for (int i = 0; i < numRHS; i++)
-                resid[i] = cusp::blas::nrm2(r.column(i));
-            
-	    cusp::print(resid);
-
-	    return true;
+      if (verbose_) {
+        cusp::array1d<ValueType, cusp::host_memory> resid(numRHS);
+        std::cout << "Successfully converged after " << iteration_count() << " iterations to tolerance " << tolerance(0) << std::endl;
+        std::cout << "with max residual norm ";
+        Real norm_max = 0;
+        for (int i = 0; i < numRHS; i++) {
+          resid[i] = cusp::blas::nrm2(r.column(i));
+          if (resid[i] >  norm_max) norm_max = resid[i];
         }
-        else if (iteration_count() >= iteration_limit())
-        {
-	    cusp::array1d<ValueType, cusp::host_memory> resid(numRHS);
-            std::cout << "Failed to converge after " << iteration_count() << " iterations." << std::endl;	
-            std::cout << "with residual norms " <<  std::endl;
-	    for (int i = 0; i < numRHS; i++)
-                resid[i] = cusp::blas::nrm2(r.column(i));
+        std::cout << norm_max << std::endl;
 
-            cusp::print(resid);
+        //cusp::print(resid);
+      }
 
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-
-
+      return true;
     }
-   
-    /*! whether the last tested residual satifies the convergence tolerance
-     */
-    template <typename MV>
-    bool converged(MV& r) const
+    else if (iteration_count() >= iteration_limit())
     {
-	for (int i = 0; i < numRHS; i++){
-		 
-		if (cusp::blas::nrm2(r.column(i)) > tolerance(i)){
-			return false;
-		}
-	}
+      if (verbose_) {
+        cusp::array1d<ValueType, cusp::host_memory> resid(numRHS);
+        std::cout << "Failed to converge after " << iteration_count() << " iterations." << std::endl;
+        std::cout << "with max residual norm ";
+        Real norm_max = 0;
+        for (int i = 0; i < numRHS; i++) {
+          resid[i] = cusp::blas::nrm2(r.column(i));
+          if (resid[i] >  norm_max) norm_max = resid[i];
+        }
+        std::cout << norm_max << std::endl;
 
-        return true;
+        //cusp::print(resid);
+      }
+
+      return true;
+    }
+    else
+    {
+      return false;
     }
 
 
+  }
 
-    
-     /*! number of iterations
-     */
-    size_t iteration_count() const { return iteration_count_; }
+  /*! whether the last tested residual satifies the convergence tolerance
+   */
+  template <typename MV>
+  bool converged(MV& r) const
+  {
+    for (int i = 0; i < numRHS; i++){
 
-    /*! maximum number of iterations
-     */
-    size_t iteration_limit() const { return iteration_limit_; }
+      if (cusp::blas::nrm2(r.column(i)) > tolerance(i)){
+        return false;
+      }
+    }
 
-    /*! relative tolerance
-     */
-    Real relative_tolerance() const { return relative_tolerance_; }
-    
-    /*! absolute tolerance
-     */
-    Real absolute_tolerance() const { return absolute_tolerance_; }
-   
-    /*! tolerance
-     *
-     *  Equal to absolute_tolerance() + relative_tolerance() * ||b||
-     *
-     */ 
-    
+    return true;
+  }
 
-    Real tolerance(int i) const { return absolute_tolerance() + relative_tolerance() * b_norm[i]; }
+  /*! number of iterations
+   */
+  size_t iteration_count() const { return iteration_count_; }
 
-    protected:
-    
-    Real relative_tolerance_;
-    Real absolute_tolerance_;
-    size_t numRHS;
-    size_t iteration_limit_;
-    size_t iteration_count_;
-    cusp::array1d<ValueType, cusp::host_memory> b_norm;
+  /*! maximum number of iterations
+   */
+  size_t iteration_limit() const { return iteration_limit_; }
+
+  /*! relative tolerance
+   */
+  Real relative_tolerance() const { return relative_tolerance_; }
+
+  /*! absolute tolerance
+   */
+  Real absolute_tolerance() const { return absolute_tolerance_; }
+
+  /*! tolerance
+   *
+   *  Equal to absolute_tolerance() + relative_tolerance() * ||b||
+   *
+   */
+  Real tolerance(int i) const { return absolute_tolerance() + relative_tolerance() * b_norm[i]; }
+
+protected:
+
+  Real relative_tolerance_;
+  Real absolute_tolerance_;
+  bool verbose_;
+  size_t numRHS;
+  size_t iteration_limit_;
+  size_t iteration_count_;
+  cusp::array1d<ValueType, cusp::host_memory> b_norm;
 
 };
 
 /*! \p verbose_monitor is similar to \p default monitor except that
- * it displays the solver status during iteration and reports a 
+ * it displays the solver status during iteration and reports a
  * summary after iteration has stopped.
  *
  * \tparam ValueType scalar type used in the solver (e.g. \c float or \c cusp::complex<double>).
@@ -226,12 +238,12 @@ class verbose_block_monitor : public default_block_monitor<ValueType>
         std::cout << super::iteration_limit() << " iterations " << std::endl;
         std::cout << "  Iteration Number  | Residual Norm" << std::endl;
     }
-    
+
     template <typename MV>
     bool finished(const MV& r)
     {
-	for (int i = 0; i < r.num_cols; i++)
-	        super::r_norm[i] = cusp::blas::nrm2(r.column(i));
+        for (int i = 0; i < r.num_cols; i++)
+                super::r_norm[i] = cusp::blas::nrm2(r.column(i));
 
         std::cout << "       "  << std::setw(10) << super::iteration_count();
         std::cout << "       "  << std::setw(10) << std::scientific << super::residual_norm_average() << std::endl;
@@ -259,4 +271,3 @@ class verbose_block_monitor : public default_block_monitor<ValueType>
  */
 
 } // end namespace cusp
-

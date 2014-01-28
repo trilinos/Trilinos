@@ -386,7 +386,7 @@ static int ex_inquire_internal (int      exoid,
 				float   *ret_float,
 				char    *ret_char)
 {
-  int dimid, varid, tmp_num;
+  int dimid, varid;
   void_int *ids = NULL;
   size_t i;
   size_t ldum = 0;
@@ -755,12 +755,20 @@ static int ex_inquire_internal (int      exoid,
 	if (stat_vals[i] == 0) /* is this object null? */
 	  continue;
 
-	if (ex_int64_status(exoid) & EX_IDS_INT64_API)
+	if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
+	  int64_t tmp_len = 0;
 	  id = ((int64_t*)ids)[i];
-	else
+	  status = ex_get_side_set_node_list_len(exoid, id, &tmp_len);
+	  if (status == NC_NOERR) *ret_int += tmp_len;
+	}
+	else {
+	  int tmp_len = 0;
 	  id = ((int*)ids)[i];
-	  
-	if ((status = ex_get_side_set_node_list_len(exoid, id, &tmp_num)) != NC_NOERR) {
+	  status = ex_get_side_set_node_list_len(exoid, id, &tmp_len);
+	  if (status == NC_NOERR) *ret_int += tmp_len;
+	}
+
+	if (status != NC_NOERR) {
 	  *ret_int = 0;
 	  exerrval = status;
 	  sprintf(errmsg,
@@ -771,7 +779,6 @@ static int ex_inquire_internal (int      exoid,
 	  free(ids);
 	  return (EX_FATAL);
 	}
-	*ret_int += tmp_num;
       }
 
       free(stat_vals);

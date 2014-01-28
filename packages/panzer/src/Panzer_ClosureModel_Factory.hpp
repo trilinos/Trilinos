@@ -58,7 +58,7 @@ namespace panzer {
 
   class FieldLayoutLibrary;
   class IntegrationRule;
-  class GlobalData;
+  struct GlobalData;
 
   template<typename EvalT>
   class ClosureModelFactory : public panzer::Base {

@@ -119,17 +119,16 @@ Machine::Machine( int * argc , char *** argv )
 
     if ( i < *argc ) {
 
-      const std::pair<unsigned,unsigned> core_top  = Kokkos::hwloc::get_core_topology();
-      const unsigned                     core_size = Kokkos::hwloc::get_core_capacity();
-
-      std::pair<unsigned,unsigned> league_gang(core_top.first,core_top.second * core_size);
-
+      unsigned team_count       = Kokkos::hwloc::get_available_numa_count();
+      unsigned threads_per_team = Kokkos::hwloc::get_available_cores_per_numa() *
+                                  Kokkos::hwloc::get_available_threads_per_core();
+ 
       if ( i + 2 < *argc ) {
-        league_gang.first  = atoi( (*argv)[i+1] );
-        league_gang.second = atoi( (*argv)[i+2] );
+        team_count       = atoi( (*argv)[i+1] );
+        threads_per_team = atoi( (*argv)[i+2] );
       }
 
-      Kokkos::Threads::initialize( league_gang , core_top );
+      Kokkos::Threads::initialize( team_count * threads_per_team );
     }
   }
 

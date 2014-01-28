@@ -72,10 +72,7 @@ namespace Tpetra {
                size_t NumVectors,
                bool zeroOut) : /* default is true */
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -106,10 +103,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source) :
     DO (source),
-    lclMV_ (MVT::getNode (source.lclMV_)),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (MVT::getNode (source.lclMV_))
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -147,10 +141,7 @@ namespace Tpetra {
                const KokkosClassic::MultiVector<Scalar,Node>& localMultiVector,
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (localMultiVector),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (localMultiVector)
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -170,10 +161,7 @@ namespace Tpetra {
                size_t NumVectors,
                EPrivateHostViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -201,10 +189,7 @@ namespace Tpetra {
                size_t NumVectors,
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -232,10 +217,7 @@ namespace Tpetra {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (map->getNode ()),
-    whichVectors_ (WhichVectors),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    whichVectors_ (WhichVectors)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -273,10 +255,7 @@ namespace Tpetra {
                const size_t LDA,
                const size_t numVecs) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
     const size_t numRows = this->getLocalLength ();
@@ -293,10 +272,7 @@ namespace Tpetra {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (localMultiVector),
-    whichVectors_ (WhichVectors),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    whichVectors_ (WhichVectors)
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -331,10 +307,7 @@ namespace Tpetra {
                size_t LDA,
                size_t NumVectors) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -385,10 +358,7 @@ namespace Tpetra {
                const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
                size_t NumVectors) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -671,7 +641,7 @@ namespace Tpetra {
         pack.src = sourceMV.getKokkosView();
         pack.stride = stride;
         pack.numCols = numCols;
-        pack.pack();
+        pack.pack ();
       }
       else {
         Details::PackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,device_type> pack;
@@ -682,7 +652,7 @@ namespace Tpetra {
           getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
         pack.stride = stride;
         pack.numCols = numCols;
-        pack.pack();
+        pack.pack ();
       }
     }
   }
@@ -1906,38 +1876,62 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
   {
-    const char tfecfFuncName[] = "operator=()";
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::endl;
+#endif // HAVE_TPETRA_DEBUG
+
+    const char tfecfFuncName[] = "operator=";
     // Check for special case of this=Source, in which case we do nothing.
     if (this != &source) {
+      // Whether the input and *this are compatible on the calling process.
+      const int locallyCompat =
+        (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::invalid_argument,
-          ": MultiVectors do not have compatible Maps:" << std::endl
-          << "this->getMap(): " << std::endl << *this->getMap()
-          << "source.getMap(): " << std::endl << *source.getMap() << std::endl);
+      int globallyCompat = 1; // innocent until proven guilty
+      reduceAll<int, int> (* (this->getMap ()->getComm ()), REDUCE_MIN,
+                           locallyCompat, outArg (globallyCompat));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        globallyCompat == 0, std::invalid_argument,
+        ": MultiVectors do not have the same local length on all processes.");
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::invalid_argument,
-          ": MultiVectors do not have the same local length.");
-#endif
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::invalid_argument,
-          ": MultiVectors must have the same number of vectors.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        locallyCompat == 0, std::invalid_argument,
+        ": MultiVectors do not have the same local length on the calling "
+        "process " << this->getMap ()->getComm ()->getSize () << ".  *this "
+        "has " << this->getLocalLength () << " local rows, and source has "
+        << source.getLocalLength () << " rows.");
+#endif // HAVE_TPETRA_DEBUG
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        source.getNumVectors() != getNumVectors(), std::invalid_argument,
+        ": MultiVectors must have the same number of vectors.");
+
       Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
       const size_t numVecs = getNumVectors();
-      if (isConstantStride() && source.isConstantStride() && getLocalLength()==getStride() && source.getLocalLength()==source.getStride()) {
+      if (isConstantStride () && source.isConstantStride () &&
+          getLocalLength () == getStride () &&
+          source.getLocalLength ()== source.getStride ()) {
         // Both multivectors' data are stored contiguously, so we can
         // copy in one call.
         KOKKOS_NODE_TRACE("MultiVector::operator=()")
-        node->template copyBuffers<Scalar>(getLocalLength()*numVecs, MVT::getValues(source.lclMV_), MVT::getValuesNonConst(lclMV_) );
+        node->template copyBuffers<Scalar> (getLocalLength () * numVecs,
+                                            MVT::getValues (source.lclMV_),
+                                            MVT::getValuesNonConst (lclMV_));
       }
       else {
         // We have to copy the columns one at a time.
         for (size_t j=0; j < numVecs; ++j) {
           KOKKOS_NODE_TRACE("MultiVector::operator=()")
-          node->template copyBuffers<Scalar>(getLocalLength(), source.getSubArrayRCP(MVT::getValues(source.lclMV_),j),
-                                                                      getSubArrayRCP(MVT::getValuesNonConst(lclMV_),j) );
+          node->template copyBuffers<Scalar> (getLocalLength (),
+                                              source.getSubArrayRCP (MVT::getValues (source.lclMV_), j),
+                                              getSubArrayRCP (MVT::getValuesNonConst(lclMV_), j));
         }
       }
     }
-    return(*this);
+    return *this;
   }
 
 
@@ -2937,21 +2931,6 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViews() const
   {
-    if (! createViewsRaisedEfficiencyWarning_) {
-      TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
-        "::createViews(): The const view "
-        "has already been created and is therefore not null.  (For"
-        "Tpetra developers: cview_.total_count() = " << cview_.total_count ()
-        << ".  This "
-        "means that MultiVector is either creating a view unnecessarily, or "
-        "hanging on to a view beyond its needed scope (since releaseViews() "
-        "should always release both the const and nonconst views).  This probably "
-        "does not affect correctness, it but does affect total memory use.  "
-        "We will only report this warning once per (Multi)Vector instance.  "
-        "Please report this performance bug to the Tpetra developers.");
-      createViewsRaisedEfficiencyWarning_ = true;
-    }
-
     Teuchos::RCP<Node> node = this->getMap ()->getNode ();
     if (cview_.is_null () && getLocalLength () > 0) {
       Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
@@ -2965,20 +2944,6 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
   {
-    if (! createViewsNonConstRaisedEfficiencyWarning_) {
-      TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
-        "::createViewsNonConst(): The nonconst view "
-        "has already been created and is therefore not null.  (For"
-        "Tpetra developers: ncview_.total_count() = " << ncview_.total_count ()
-        << ".  This means that MultiVector is either creating a view "
-        "unnecessarily, or hanging on to a view beyond its needed scope (since "
-        "releaseViews() should always release both the const and nonconst "
-        "views).  This probably does not affect correctness, it but does affect "
-        "total memory use.  "
-        "Please report this performance bug to the Tpetra developers.");
-      createViewsNonConstRaisedEfficiencyWarning_ = true;
-    }
-
     Teuchos::RCP<Node> node = this->getMap ()->getNode ();
     if (ncview_.is_null () && getLocalLength () > 0) {
       Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
@@ -2999,26 +2964,6 @@ namespace Tpetra {
     (void) constViewCount;
     (void) nonconstViewCount;
 
-    const bool viewWontGetReleased = constViewCount > 1 || nonconstViewCount > 1;
-    if (viewWontGetReleased && ! releaseViewsRaisedEfficiencyWarning_) {
-      const bool both = constViewCount > 1 && nonconstViewCount > 1;
-      const char* const text = both ? "Both the const view and the nonconst view have" :
-        ((constViewCount > 1) ? "The const view has" : "The nonconst view has");
-      // Prevent (unused variable) compiler warning, since the macro
-      // below doesn't exist unless efficiency warnings are enabled.
-      (void) text;
-
-      TPETRA_EFFICIENCY_WARNING(viewWontGetReleased, std::runtime_error,
-        "::releaseViews(): " << text << " a reference count greater than 1.  "
-        "For Tpetra developers: cview_.total_count() = " << constViewCount
-        << " and ncview_.total_count() = " << nonconstViewCount << ".  This "
-        "means that releaseViews() won't actually free memory.  This probably "
-        "does not affect correctness, it but does affect total memory use.  "
-        "We will only report this warning once per (Multi)Vector instance.  "
-        "Please report this performance bug to the Tpetra developers.");
-      releaseViewsRaisedEfficiencyWarning_ = true;
-    }
-
     // Release the views.
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
@@ -3034,7 +2979,23 @@ namespace Tpetra {
     replaceMap (newMap);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+    createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
+    return src;
+  }
+
+  template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
+  void deep_copy( MultiVector<DS,DL,DG,DN>& dst,
+                  const MultiVector<SS,SL,SG,SN>& src) {
+    dst = src;
+  }
 } // namespace Tpetra
+
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_MultiVector_def.hpp"
+#endif
 
 //
 // Explicit instantiation macro
@@ -3045,6 +3006,8 @@ namespace Tpetra {
 #define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
+  template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
+  template void deep_copy( MultiVector< SCALAR , LO , GO , NODE >& dst, const MultiVector< SCALAR , LO , GO , NODE >& src); \
 
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP

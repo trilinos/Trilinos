@@ -652,7 +652,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_f( 
-  const RCP<VectorBase<Scalar> > &f
+  const Evaluation<VectorBase<Scalar> > &f
   )
 {
   assert_supports(OUT_ARG_f);
@@ -661,7 +661,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::set_f(
 
 
 template<class Scalar>
-RCP<VectorBase<Scalar> >
+ModelEvaluatorBase::Evaluation<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 {
   assert_supports(OUT_ARG_f);

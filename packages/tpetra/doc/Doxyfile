@@ -47,19 +47,27 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc groups.doc ../src ../rti ../ext ../example/PowerMethod ../example/RTInterface ../example/MultiPrec ../inout
+INPUT                  = index.doc groups.doc \
+                         ../src ../ext ../inout ../rti ../example \
+                         ../example/Lesson01-Init/index.doc \
+                         ../example/Lesson02-Map-Vector/index.doc \
+                         ../example/Lesson03-Power-Method/index.doc \
+                         ../example/Lesson04-Sparse-Matrix-Fill/index.doc \
+                         ../example/Lesson05-Redistribution/index.doc
 FILE_PATTERNS          = *.hpp *.cpp
-RECURSIVE              = NO
+RECURSIVE              = YES
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
                          ../src/Tpetra_ExplicitInstantiationHelpers.hpp \
                          ../src/Tpetra_CrsMatrix_def.hpp \
                          ../src/Tpetra_CrsMatrixMultiplyOp_def.hpp \
                          ../src/Tpetra_CrsMatrixSolveOp_def.hpp \
                          ../src/Tpetra_Map_def.hpp \
-                         ../ext/TpetraExt_BlockExtraction_def.hpp
+                         ../ext/TpetraExt_BlockExtraction_def.hpp \
+                         ../example/advanced/ \
+                         ../example/not-built/
 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           =  ../example ../test
+EXAMPLE_PATH           =  ../example
 EXAMPLE_RECURSIVE       = YES
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 

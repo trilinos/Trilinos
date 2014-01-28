@@ -90,6 +90,15 @@ namespace SLU {
               int, int, int*, void *, int, int *, int *,
               SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
       extern void
+      sgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+             char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             float *, float *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      extern void
+      sgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+              int, int, int*, void *, int, int *, int *,
+              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      extern void
       sCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, float *,
                              int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
       extern void
@@ -119,6 +128,15 @@ namespace SLU {
              SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       dgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+              int, int, int*, void *, int, int *, int *,
+              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      extern void
+      dgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+             char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             double *, double *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      extern void
+      dgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
               SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
       extern void
@@ -155,6 +173,15 @@ namespace SLU {
               int, int, int*, void *, int, int *, int *,
               SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
       extern void
+      cgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+             char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             float *, float *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      extern void
+      cgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+              int, int, int*, void *, int, int *, int *,
+              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      extern void
       cCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
                              int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
       extern void
@@ -184,6 +211,15 @@ namespace SLU {
              SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
       extern void
       zgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+              int, int, int*, void *, int, int *, int *,
+              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      extern void
+      zgsisx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+             char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+             double *, double *, SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      extern void
+      zgsitrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
               int, int, int*, void *, int, int *, int *,
               SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
       extern void
@@ -262,6 +298,17 @@ namespace Amesos2 {
 		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
+    static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
+		      float* rcond, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::S::sgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
+		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+    }
+
     /**
      * \brief Computes an LU factorization of a general m-by-n matrix
      *
@@ -288,6 +335,15 @@ namespace Amesos2 {
     {
       SLU::S::sgstrf(options, AC, relax, panel_size, etree,
 		     work, lwork, perm_c, perm_r, L, U, stat, info);
+    }
+
+    static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		      int relax, int panel_size, int* etree, void* work,
+		      int lwork, int* perm_c, int* perm_r, SLU::SuperMatrix* L,
+		      SLU::SuperMatrix* U, SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::S::sgsitrf(options, AC, relax, panel_size, etree,
+		      work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
     /**
@@ -384,6 +440,26 @@ namespace Amesos2 {
 		     work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
+    static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
+		      double* rcond, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::D::dgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
+		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+    }
+
+    static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		       int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
+		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		       SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::D::dgsitrf(options, AC, relax, panel_size, etree,
+		      work, lwork, perm_c, perm_r, L, U, stat, info);
+    }
+
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, 
 				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
 				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
@@ -450,6 +526,26 @@ namespace Amesos2 {
 		     work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
+    static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
+		      float* rcond, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::C::cgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
+		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+    }
+
+    static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		       int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
+		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		       SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::C::cgsitrf(options, AC, relax, panel_size, etree,
+		      work, lwork, perm_c, perm_r, L, U, stat, info);
+    }
+
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
 				      SLU::C::complex* nzval, int* rowind, int* colptr,
 				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
@@ -508,6 +604,26 @@ namespace Amesos2 {
     {
       SLU::Z::zgstrf(options, AC, relax, panel_size, etree,
 		     work, lwork, perm_c, perm_r, L, U, stat, info);
+    }
+
+    static void gsisx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
+		      double* rcond, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::Z::zgsisx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
+		     lwork, B, X, recip_pivot_growth, rcond, mem_usage, stat, info);
+    }
+
+    static void gsitrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		       int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
+		       int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		       SLU::SuperLUStat_t* stat, int* info)
+    {
+      SLU::Z::zgsitrf(options, AC, relax, panel_size, etree,
+		      work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
     static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,

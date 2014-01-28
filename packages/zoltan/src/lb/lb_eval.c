@@ -441,12 +441,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
   if (num_edges){
 
-    if (num_edges > 10000){
-      hashTableSize = 10000;
-    }
-    else{
-      hashTableSize = num_edges;
-    }
+    hashTableSize = Zoltan_Recommended_Hash_Size(num_edges);
 
     /*  
      * For calculation of each part's number of neighbors,

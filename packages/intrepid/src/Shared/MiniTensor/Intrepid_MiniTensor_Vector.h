@@ -318,6 +318,16 @@ Vector<T, N>
 unit(Vector<T, N> const & u);
 
 ///
+/// Compute Householder vector
+/// See algorithm 5.1.1, Matrix Computations 3rd ed, Golub - Van Loan
+/// \f$ Px = |X|e_1, P := I - \beta v v^T\f$
+/// \return v, beta
+///
+template<typename T, Index N>
+std::pair<Vector<T, N>, T>
+house(Vector<T, N> const & x);
+
+///
 /// Vector input
 /// \param u vector
 /// \param is input stream

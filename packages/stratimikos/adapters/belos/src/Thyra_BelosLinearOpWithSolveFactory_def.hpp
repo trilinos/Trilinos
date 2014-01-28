@@ -49,6 +49,7 @@
 #include "Thyra_BelosLinearOpWithSolveFactory_decl.hpp"
 #include "Thyra_BelosLinearOpWithSolve.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
+
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
@@ -57,6 +58,8 @@
 #include "BelosGCRODRSolMgr.hpp"
 #include "BelosRCGSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
+
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -93,6 +96,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::RCG_name = "RCG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::MINRES_name = "MINRES";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::TFQMR_name = "TFQMR";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
 
@@ -382,7 +387,8 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "Pseudo Block Stochastic CG",
         "GCRODR",
         "RCG",
-        "MINRES"
+        "MINRES",
+        "TFQMR"
         ),
       tuple<std::string>(
         "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
@@ -411,16 +417,19 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "to amortize global communication costs.  Individual linear systems are "
         "deflated out as they are solved. [EXPERIMENTAL]",
 
-        "GMRES solver for nonsymmetric linear systems, that performs subspace "
-        "recycling to accelerate convergence for sequences of related linear "
-        "systems.",
+        "Variant of GMRES that performs subspace recycling to accelerate "
+        "convergence for sequences of solves with related linear systems.  "
+	"Individual linear systems are deflated out as they are solved.  "
+	"The current implementation only supports real-valued Scalar types.",
 
         "CG solver for symmetric (Hermitian in complex arithmetic) positive "
         "definite linear systems, that performs subspace recycling to "
         "accelerate convergence for sequences of related linear systems.",
 
         "MINRES solver for symmetric indefinite linear systems.  It performs "
-        "single-right-hand-side solves on multiple right-hand sides sequentially."
+        "single-right-hand-side solves on multiple right-hand sides sequentially.",
+
+        "TFQMR (Transpose-Free QMR) solver for nonsymmetric linear systems."
         ),
       tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
@@ -430,7 +439,8 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
         SOLVER_TYPE_GCRODR,
         SOLVER_TYPE_RCG,
-        SOLVER_TYPE_MINRES
+        SOLVER_TYPE_MINRES,
+        SOLVER_TYPE_TFQMR
         ),
       &*validParamList
       );
@@ -484,6 +494,12 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     {
       Belos::MinresSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(MINRES_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::TFQMRSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(TFQMR_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -819,6 +835,25 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       else {
         iterativeSolver = rcp(new Belos::MinresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
+    case SOLVER_TYPE_TFQMR:
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(TFQMR_name);
+        solverPL = Teuchos::rcp( &minresPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      }
+      else {
+        iterativeSolver = rcp(new Belos::TFQMRSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
       }
       break;
     }

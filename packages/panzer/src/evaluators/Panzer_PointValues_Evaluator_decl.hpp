@@ -59,13 +59,22 @@ PHX_EVALUATOR_CLASS(PointValues_Evaluator)
  
   Intrepid::FieldContainer<double> refPointArray;
 
+  bool useBasisValuesRefArray; // if true then basis is non-null
+  Teuchos::RCP<const panzer::PureBasis> basis;
+  std::size_t basis_index;
+
   //! Initialization method to unify the constructors.
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Intrepid::FieldContainer<double> & userArray);
+                  const Teuchos::Ptr<const Intrepid::FieldContainer<double> > & userArray,
+                  const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
 
 public:
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                         const Intrepid::FieldContainer<double> & userArray);
+
+  //! This builds a point rule from the basis function reference points in the workset
+  PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
+                        const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
 
 PHX_EVALUATOR_CLASS_END
 

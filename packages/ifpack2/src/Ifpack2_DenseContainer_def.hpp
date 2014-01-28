@@ -151,7 +151,6 @@ void DenseContainer<MatrixType, LocalScalarType>::initialize ()
 {
   using Teuchos::null;
   using Teuchos::rcp;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   // We assume that if you called this method, you intend to recompute
   // everything.

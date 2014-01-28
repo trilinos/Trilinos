@@ -129,10 +129,12 @@ restrict_comm (Teuchos::RCP<Epetra_MultiVector> input_mv)
   else {
     proc_is_active = true;
   }
-  
-  int Nrows = InMap->NumGlobalElements ();
-      
-  if (proc_is_active) {      
+
+  if (proc_is_active) {
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(InMap->GlobalIndicesInt()) {
+    int Nrows = InMap->NumGlobalElements ();
     RestrictedComm_ = new Epetra_MpiComm (MPI_SubComm_);
     
     // Build the restricted Maps
@@ -140,6 +142,24 @@ restrict_comm (Teuchos::RCP<Epetra_MultiVector> input_mv)
 				   InMap->MyGlobalElements(),
 				   InMap->ElementSizeList(),
 				   InMap->IndexBase(), *RestrictedComm_);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(InMap->GlobalIndicesLongLong()) {
+    long long Nrows = InMap->NumGlobalElements64 ();
+    RestrictedComm_ = new Epetra_MpiComm (MPI_SubComm_);
+    
+    // Build the restricted Maps
+    ResMap_ = new Epetra_BlockMap (Nrows, InMap->NumMyElements(), 
+				   InMap->MyGlobalElements64(),
+				   InMap->ElementSizeList(),
+				   InMap->IndexBase64(), *RestrictedComm_);
+  }
+  else
+#endif
+    throw "EpetraExt::RestrictedMultiVectorWrapper::restrict_comm ERROR: GlobalIndices type unknown";
+
     // Allocate the restricted matrix
     double *A; 
     int LDA;

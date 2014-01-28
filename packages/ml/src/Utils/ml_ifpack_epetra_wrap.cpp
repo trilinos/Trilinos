@@ -6,6 +6,7 @@
 #include "ml_config.h"
 #include "ml_include.h"
 #if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA)
+#include "Ifpack_config.h"
 #include "ml_epetra_utils.h"
 #include "Epetra_Map.h" 
 #include "Epetra_Vector.h"
@@ -15,7 +16,6 @@
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
 #include "ml_ifpack_wrap.h"
-#include "Ifpack.h"
 #include "Ifpack_Chebyshev.h"
 #ifdef rst_dump
 #include "ml_Ifpack_ML.h"
@@ -23,7 +23,11 @@
 // converter from ML_Operator to Epetra_RowMatrix (only wraps)
 #include "ml_RowMatrix.h"
 // IFPACK factory class
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+#include "Ifpack_DynamicFactory.h"
+#else
 #include "Ifpack.h"
+#endif
 #include "Ifpack_Chebyshev.h"
 
 using namespace ML_Epetra;
@@ -188,7 +192,11 @@ namespace ML_Epetra{
 	   << Sweeps << ",omega=" << omega <<  ")" <<std::endl;
     }
     	
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory Factory;
+#else
     Ifpack Factory;
+#endif
     SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
@@ -219,7 +227,11 @@ namespace ML_Epetra{
 	   << Sweeps << ",omega=" << omega << ")" <<std::endl;
     }
 
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory Factory;
+#else
     Ifpack Factory;
+#endif
     SmootherP_ = Factory.Create(MyIfpackType,const_cast<Epetra_CrsMatrix*>(Acrs),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
@@ -266,7 +278,11 @@ namespace ML_Epetra{
 	   << ",abs. threshold=" << MyIfpackAT << std::endl;
     }
 
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory Factory;
+#else
     Ifpack Factory;
+#endif
     SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);
@@ -289,7 +305,11 @@ namespace ML_Epetra{
       if(IFPACKList.get("sora: use global damping",false))
 	std::cout << printMsg << "global damping enabled"<<std::endl;
     }
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory Factory;
+#else
     Ifpack Factory;
+#endif
     SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);
     if (SmootherP_ == 0) return 0;
     SmootherP_->SetParameters(IFPACKList);

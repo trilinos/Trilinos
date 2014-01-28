@@ -62,7 +62,7 @@ class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   // need this so that MultiVector::operator() can call Vector's private view constructor
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
-  
+
 public:
   //! @name Constructor/Destructor Methods
   //@{
@@ -156,6 +156,115 @@ public:
   Scalar meanValue() const;
 
   //@}
+  /// \name Methods to get a row subset view of a Vector (as a Vector).
+  ///
+  /// These methods hide those of the same names in MultiVector.  This
+  /// is necessary because users who use Vectors would very much like
+  /// a view of a Vector to be a Vector, rather than a MultiVector.
+  /// Not only do these methods in MultiVector return MultiVector
+  /// pointers, those pointers can't even be dynamic_cast to Vector,
+  /// because the returned objects are not Vectors.
+  ///
+  /// There are two options to make this work:
+  /// <ol>
+  /// <li> Make these methods virtual, and override them in Vector. </li>
+  /// <li> Hide these methods in MultiVector (that return MultiVector)
+  ///      with methods in Vector that return Vector. </li>
+  /// </ol>
+  /// The first option only solves the dynamic_cast problem mentioned
+  /// above.  The methods still would have to return MultiVector
+  /// pointers.  Thus, we prefer the second option.  Even though the
+  /// methods in Vector must therefore hide those in MultiVector,
+  /// Vector is a MultiVector, so the returned objects from the Vector
+  /// methods are still compatible with MultiVector operations.
+  //@{
+
+  /// \brief Return a const view of a subset of rows.
+  ///
+  /// Return a const (nonmodifiable) view of this Vector consisting of
+  /// a subset of the rows, as specified by an offset and a subset Map
+  /// of this Vector's current row Map.  If you want X1 or X2 to be
+  /// nonconst (modifiable) views, use offsetViewNonConst() with the
+  /// same arguments.  "View" means "alias": if the original (this)
+  /// MultiVector's data change, the view will see the changed data.
+  ///
+  /// \param subMap [in] The row Map for the new Vector.
+  ///   This must be a subset Map of this MultiVector's row Map.
+  /// \param offset [in] The local row offset at which to start the view.
+  ///
+  /// Suppose that you have a Vector X, and you want to view X, on all
+  /// processes in X's (MPI) communicator, as split into two row
+  /// blocks X1 and X2.  One could express this in Matlab notation as
+  /// X = [X1; X2], except that here, X1 and X2 are views into X,
+  /// rather than copies of X's data.  This method assumes that the
+  /// <i>local</i> indices of X1 and X2 are each contiguous, and that
+  /// the local indices of X2 follow those of X1.  If that is not the
+  /// case, you cannot use views to divide X into blocks like this;
+  /// you must instead use the Import or Export functionality, which
+  /// copies the relevant rows of X.
+  ///
+  /// Here is how you would construct the views X1 and X2.
+  /// \code
+  /// using Teuchos::RCP;
+  /// typedef Tpetra::Map<LO, GO, Node> map_type;
+  /// typedef Tpetra::Vector<Scalar, LO, GO, Node> V;
+  ///
+  /// V X (...); // the input Vector
+  /// // ... fill X with data ...
+  ///
+  /// // Map that on each process in X's communicator,
+  /// // contains the global indices of the rows of X1.
+  /// RCP<const map_type> map1 (new map_type (...));
+  /// // Map that on each process in X's communicator,
+  /// // contains the global indices of the rows of X2.
+  /// RCP<const map_type> map2 (new map_type (...));
+  ///
+  /// // Create the first view X1.  The second argument, the offset,
+  /// // is the index of the local row at which to start the view.
+  /// // X1 is the topmost block of X, so the offset is zero.
+  /// RCP<const V> X1 = X.offsetView (map1, 0);
+  ///
+  /// // Create the second view X2.  X2 is directly below X1 in X,
+  /// // so the offset is the local number of rows in X1.  This is
+  /// // the same as the local number of entries in map1.
+  /// RCP<const V> X2 = X.offsetView (map2, X1->getLocalLength ());
+  /// \endcode
+  ///
+  /// It is legal, in the above example, for X1 or X2 to have zero
+  /// local rows on any or all process(es).  In that case, the
+  /// corresponding Map must have zero local entries on that / those
+  /// process(es).  In particular, if X2 has zero local rows on a
+  /// process, then the corresponding offset on that process would be
+  /// the number of local rows in X (and therefore in X1) on that
+  /// process.  This is the only case in which the sum of the local
+  /// number of entries in \c subMap (in this case, zero) and the \c
+  /// offset may equal the number of local entries in <tt>*this</tt>.
+  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+              size_t offset) const;
+
+  /// \brief Return a nonconst view of a subset of rows.
+  ///
+  /// Return a nonconst (modifiable) view of this Vector consisting of
+  /// a subset of the rows, as specified by an offset and a subset Map
+  /// of this Vector's current row Map.  If you want X1 or X2 to be
+  /// const (nonmodifiable) views, use offsetView() with the same
+  /// arguments.  "View" means "alias": if the original (this)
+  /// Vector's data change, the view will see the changed data, and if
+  /// the view's data change, the original Vector will see the changed
+  /// data.
+  ///
+  /// \param subMap [in] The row Map for the new Vector.  This must be
+  ///   a subset Map of this Vector's row Map.
+  /// \param offset [in] The local row offset at which to start the view.
+  ///
+  /// See the documentation of offsetView() for a code example and
+  /// an explanation of edge cases.
+  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
+                      size_t offset);
+
+  //@}
   //! @name Implementation of the Teuchos::Describable interface
   //@{
 
@@ -239,6 +348,14 @@ Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2
         return clonedV;
   }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+  createCopy( const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
 } // namespace Tpetra
+
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_Vector_decl.hpp"
+#endif
 
 #endif // TPETRA_VECTOR_DECL_HPP

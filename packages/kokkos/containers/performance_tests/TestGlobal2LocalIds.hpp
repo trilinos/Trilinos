@@ -13,7 +13,7 @@
 namespace Performance {
 
 static const unsigned begin_id_size = 256u;
-static const unsigned end_id_size = 1u << 25;
+static const unsigned end_id_size = 1u << 22;
 static const unsigned id_step = 2u;
 
 union helper
@@ -66,7 +66,7 @@ struct fill_map
 {
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
+  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
   typedef Kokkos::UnorderedMap<uint32_t,size_type,device_type> global_id_view;
 
   global_id_view global_2_local;
@@ -91,9 +91,8 @@ struct find_test
 {
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
+  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
   typedef Kokkos::UnorderedMap<const uint32_t, const size_type,device_type> global_id_view;
-  typedef typename global_id_view::const_pointer const_pointer;
 
   global_id_view global_2_local;
   local_id_view local_2_global;
@@ -117,10 +116,9 @@ struct find_test
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type i, value_type & num_errors) const
   {
-    const_pointer ptr = global_2_local.find( local_2_global[i] );
+    uint32_t index = global_2_local.find( local_2_global[i] );
 
-    if (ptr->first != local_2_global[i] || ptr->second != i)
-      ++num_errors;
+    if ( global_2_local.value_at(index) != i) ++num_errors;
   }
 
 };
@@ -153,7 +151,7 @@ void test_global_to_local_ids(unsigned num_ids)
   {
     generate_ids<Device> gen(local_2_global);
   }
-
+  Device::fence();
   // generate
   elasped_time = timer.seconds();
   std::cout << elasped_time << ", ";
@@ -162,6 +160,7 @@ void test_global_to_local_ids(unsigned num_ids)
   {
     fill_map<Device> fill(global_2_local, local_2_global);
   }
+  Device::fence();
 
   // fill
   elasped_time = timer.seconds();
@@ -174,6 +173,7 @@ void test_global_to_local_ids(unsigned num_ids)
   {
     find_test<Device> find(global_2_local, local_2_global,num_errors);
   }
+  Device::fence();
 
   // find
   elasped_time = timer.seconds();

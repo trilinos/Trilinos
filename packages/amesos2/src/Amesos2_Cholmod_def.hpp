@@ -78,7 +78,9 @@ Cholmod<Matrix,Vector>::Cholmod(
 {
   CHOL::cholmod_start(&data_.c);
   (&data_.c)->nmethods=9;
-  //(&data_.c)->method[0].ordering=CHOLMOD_AMD;
+  (&data_.c)->quick_return_if_not_posdef=1;
+
+  //(&data_.c)->method[0].ordering=CHOLMOD_NATURAL;
   //(&data_.c)->print=5;
   data_.Y = NULL;
   data_.E = NULL;
@@ -104,6 +106,9 @@ Cholmod<Matrix,Vector>::preOrdering_impl()
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
     data_.L = CHOL::cholmod_analyze (&data_.A, &(data_.c));
+    //data_.L->is_super=1;
+    data_.L->is_ll=1;
+
     skip_symfact = true;
   
   return(0);

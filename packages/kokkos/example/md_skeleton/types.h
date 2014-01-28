@@ -80,7 +80,7 @@
 typedef Kokkos::View<double*[3], Kokkos::LayoutRight, device_type>                                   t_x_array ;
 typedef t_x_array::HostMirror                                                                        t_x_array_host ;
 typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, device_type>                             t_x_array_const ;
-typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, device_type, Kokkos::MemoryRandomRead >  t_x_array_randomread ;
+typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, device_type, Kokkos::MemoryRandomAccess >  t_x_array_randomread ;
 
 //Force array
 typedef Kokkos::View<double*[3],  device_type>                                                       t_f_array ;

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -129,37 +129,76 @@ namespace Xpetra {
       RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
       return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs, exporter, domainMap, rangeMap, params)));
     }
+  };
+#define XPETRA_MATRIXFACTORY_SHORT
 
 #ifdef HAVE_XPETRA_EXPERIMENTAL
-    static RCP<Matrix> BuildCopy(const RCP<const Matrix> A) {
-        RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
-        if (oldOp == Teuchos::null)
-          throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+  class MatrixFactory2 {
+#undef XPETRA_MATRIXFACTORY2_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
-        RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
+  public:
+    static RCP<Matrix> BuildCopy(const RCP<const Matrix> A) {
+      RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
+      if (oldOp == Teuchos::null)
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+      RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
+
+      UnderlyingLib lib = A->getRowMap()->lib();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(lib != UseEpetra && lib != UseTpetra, Exceptions::RuntimeError,
+                                 "Not Epetra or Tpetra matrix");
 
 #ifdef HAVE_XPETRA_EPETRA
-        RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
-        if (oldECrsOp != Teuchos::null)
-          throw Exceptions::RuntimeError("Xpetra::BuildCopy(): cannot conver this templated matrix to Epetra");
+      if (lib == UseEpetra) {
+        // NOTE: The proper Epetra conversion in Xpetra_MatrixFactory.cpp
+        throw Exceptions::RuntimeError("Xpetra::BuildCopy(): matrix templates are incompatible with Epetra");
+      }
 #endif
 
 #ifdef HAVE_XPETRA_TPETRA
+      if (lib == UseTpetra) {
         // Underlying matrix is Tpetra
         RCP<const TpetraCrsMatrix> oldTCrsOp = Teuchos::rcp_dynamic_cast<const TpetraCrsMatrix>(oldCrsOp);
-        RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
-        RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(newTCrsOp));
 
-        return newOp;
-#else
-        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::EpetraCrsMatrix or Xpetra::TpetraCrsMatrix failed");
-        return Teuchos::null;  // make compiler happy
+        if (oldTCrsOp != Teuchos::null) {
+          RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
+          RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(newTCrsOp));
+
+          return newOp;
+        } else {
+          throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::TpetraCrsMatrix failed");
+        }
+      }
 #endif
+
+      return Teuchos::null;
     }
-#endif // ifdef HAVE_XPETRA_EXPERIMENTAL
   };
+#define XPETRA_MATRIXFACTORY2_SHORT
+
+  template<>
+  class MatrixFactory2<double,int,int> {
+    typedef double                                                             Scalar;
+    typedef int                                                                LocalOrdinal;
+    typedef int                                                                GlobalOrdinal;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                        Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+#undef XPETRA_MATRIXFACTORY2_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  public:
+    static RCP<Matrix> BuildCopy(const RCP<const Matrix> A);
+  };
+
+#define XPETRA_MATRIXFACTORY2_SHORT
+
+#endif // ifdef HAVE_XPETRA_EXPERIMENTAL
 
 }
 
 #define XPETRA_MATRIXFACTORY_SHORT
+#define XPETRA_MATRIXFACTORY2_SHORT
 #endif

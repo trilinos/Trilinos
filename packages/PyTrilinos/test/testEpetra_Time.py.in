@@ -62,9 +62,10 @@ class EpetraTimeTestCase(unittest.TestCase):
     # Implement our own assertGreaterEqual() method for older Python versions
     # that do not support it
     def assertGreaterEqual(self, first, second, msg=None):
+        print
+        print "P%d: first = %g, second = %g" % (self.comm.MyPID(), first, second)
         pythonVersion = sys.version_info[0] + sys.version_info[1]/10.0
-        #if pythonVersion >= 2.7:
-        if False:
+        if pythonVersion >= 2.7:
             return unittest.TestCase.assertGreaterEqual(self, first, second, msg)
         else:
             return unittest.TestCase.assertTrue(self, first >= second, msg)

@@ -9,9 +9,15 @@
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
 #include "Teuchos_ReductionOp.hpp"
-#include "Zoltan2_XpetraMultiVectorInput.hpp"
-#include "Teuchos_DefaultMpiComm.hpp"
+#include "Zoltan2_XpetraMultiVectorAdapter.hpp"
 
+#include "Teuchos_ConfigDefs.hpp" // define HAVE_MPI
+#include "Teuchos_Comm.hpp"
+#ifdef HAVE_MPI
+#  include "Teuchos_DefaultMpiComm.hpp"
+#else
+#  include "Teuchos_DefaultSerialComm.hpp"
+#endif // HAVE_MPI
 
 //#define gnuPlot
 
@@ -584,7 +590,7 @@ void fillContinousArray(T *arr, size_t arrSize, T *val){
 
 /*! \brief CommunicationModel Base Class that performs mapping between the coordinate partitioning result.
  */
-template <typename procId_t>
+template <typename procId_t, typename pcoord_t>
 class CommunicationModel{
 protected:
     double commCost;
@@ -604,8 +610,8 @@ public:
     procId_t getNTasks()const{
         return this->no_tasks;
     }
-
-    void calculateCommunicationCost(
+    /*
+    void calculateCommunicationCost2(
             procId_t *task_to_proc,
             procId_t *task_communication_xadj,
             procId_t *task_communication_adj){
@@ -629,13 +635,54 @@ public:
                 //cout << "neighborTask :" << neighborTask  << endl;
                 int neighborProc = task_to_proc[neighborTask];
                 double distance = getProcDistance(assigned_proc, neighborProc);
-                //cout << "assigned_proc:" << assigned_proc << " neighborProc:" << neighborProc << " d:" << distance << endl;
+                cout << assigned_proc << " " << neighborProc << " " << distance << endl;
 
                 totalCost += distance ;
             }
         }
 
-        this->commCost = totalCost;//#/ commCount;
+        this->commCost = totalCost;// commCount;
+    }
+    */
+
+    void calculateCommunicationCost(
+            procId_t *task_to_proc,
+            procId_t *task_communication_xadj,
+            procId_t *task_communication_adj,
+            pcoord_t *task_communication_edge_weight){
+
+        double totalCost = 0;
+
+        procId_t commCount = 0;
+        for (procId_t task = 0; task < this->no_tasks; ++task){
+            int assigned_proc = task_to_proc[task];
+            procId_t task_adj_begin = 0;
+            //cout << "task:" << task << endl;
+            procId_t task_adj_end = task_communication_xadj[task];
+            if (task > 0) task_adj_begin = task_communication_xadj[task - 1];
+
+            commCount += task_adj_end - task_adj_begin;
+            //cout << "task:" << task << " proc:" << assigned_proc << endl;
+            for (procId_t task2 = task_adj_begin; task2 < task_adj_end; ++task2){
+
+                //cout << "task2:" << task2 << endl;
+                procId_t neighborTask = task_communication_adj[task2];
+                //cout << "neighborTask :" << neighborTask  << endl;
+                int neighborProc = task_to_proc[neighborTask];
+                double distance = getProcDistance(assigned_proc, neighborProc);
+                //cout << "assigned_proc:" << assigned_proc << " neighborProc:" << neighborProc << " d:" << distance << endl;
+  
+
+                if (task_communication_edge_weight == NULL){
+                  totalCost += distance ;
+                } 
+                else {
+                  totalCost += distance * task_communication_edge_weight[task2];
+                }
+            }
+        }
+
+        this->commCost = totalCost;// commCount;
     }
 
     double getCommunicationCostMetric(){
@@ -662,7 +709,7 @@ public:
  * base on the coordinate results and mpi physical coordinates.
  */
 template <typename pcoord_t,  typename tcoord_t, typename procId_t>
-class CoordinateCommunicationModel:public CommunicationModel<procId_t> {
+class CoordinateCommunicationModel:public CommunicationModel<procId_t, pcoord_t> {
 public:
     //private:
     int proc_coord_dim; //dimension of the processors
@@ -674,7 +721,7 @@ public:
 
     //public:
     CoordinateCommunicationModel():
-        CommunicationModel<procId_t>(),
+        CommunicationModel<procId_t, pcoord_t>(),
         proc_coord_dim(0),
         proc_coords(0),
         task_coord_dim(0),
@@ -700,7 +747,7 @@ public:
             procId_t no_procs_,
             procId_t no_tasks_
             ):
-                CommunicationModel<procId_t>(no_procs_, no_tasks_),
+                CommunicationModel<procId_t, pcoord_t>(no_procs_, no_tasks_),
                 proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
                 task_coord_dim(tcoord_dim_), task_coords(tcoords_),
                 partArraySize(min(tcoord_dim_, pcoord_dim_)),
@@ -876,7 +923,8 @@ public:
         int myProcPerm=  myPermutation % procPerm; // the index of the proc permutation
         int myTaskPerm  = myPermutation / procPerm; // the index of the task permutation
 
-        int *permutation = allocMemory<int> (taskPerm);
+        int *permutation = allocMemory<int> ((this->proc_coord_dim > this->task_coord_dim) 
+                                                   ? this->proc_coord_dim : this->task_coord_dim);
 
         //get the permutation order from the proc permutation index.
         ithPermutation<int>(this->proc_coord_dim, myProcPerm, permutation);
@@ -1068,7 +1116,7 @@ public:
             task_communication_xadj(0),
             task_communication_adj(0){
 
-
+        pcoord_t *task_communication_edge_weight_ = NULL;
         //if mapping type is 0 then it is coordinate mapping
         int procDim = machine_->getProcDim();
         this->nprocs = machine_->getNumProcs();
@@ -1222,8 +1270,11 @@ public:
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
                 task_communication_xadj.getRawPtr(),
-                task_communication_adj.getRawPtr()
+                task_communication_adj.getRawPtr(),
+                task_communication_edge_weight_
         );
+
+        //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 
         envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Cost");
 
@@ -1260,7 +1311,8 @@ public:
             const Zoltan2::PartitioningSolution<Adapter> *soln_,
             const Environment *envConst_,
             ArrayRCP<procId_t>task_communication_xadj_,
-            ArrayRCP<procId_t>task_communication_adj_
+            ArrayRCP<procId_t>task_communication_adj_,
+            pcoord_t *task_communication_edge_weight_
     ):  PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst_),
             proc_to_task_xadj(0),
             proc_to_task_adj(0),
@@ -1312,8 +1364,10 @@ public:
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
                 task_communication_xadj.getRawPtr(),
-                task_communication_adj.getRawPtr()
+                task_communication_adj.getRawPtr(),
+                task_communication_edge_weight_
                 );
+
 
         //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 
@@ -1351,6 +1405,7 @@ public:
             const Environment *envConst_,
             ArrayRCP<procId_t>task_communication_xadj_,
             ArrayRCP<procId_t>task_communication_adj_,
+            pcoord_t *task_communication_edge_weight_,
             int partArraySize,
             procId_t *partNoArray
     ):  PartitionMapping<Adapter>(comm_, NULL, NULL, NULL, envConst_),
@@ -1393,13 +1448,27 @@ public:
 #ifdef gnuPlot
         this->writeMapping2(myRank);
 #endif
+
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
                 task_communication_xadj.getRawPtr(),
-                task_communication_adj.getRawPtr()
+                task_communication_adj.getRawPtr(),
+                task_communication_edge_weight_
                 );
+        //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 
         this->getBestMapping();
+	/*
+	if (myRank == 0){
+        	this->proc_task_comm->calculateCommunicationCost2(
+                	task_to_proc.getRawPtr(),
+               		task_communication_xadj.getRawPtr(),
+	                task_communication_adj.getRawPtr()
+                );
+	}
+	*/
+
+
 #ifdef gnuPlot
         if(comm_->getRank() == 0)
         this->writeMapping2(-1);
@@ -1549,8 +1618,7 @@ public:
         globalCost[1] = globalCost[0] = std::numeric_limits<double>::max();
         Teuchos::Zoltan2_ReduceBestMapping<int,double> reduceBest;
         reduceAll<int, double>(*subComm, reduceBest,
-                2, localCost, globalCost
-        );
+                2, localCost, globalCost);
 
         int sender = int(globalCost[1]);
 
@@ -1888,6 +1956,9 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
             procId_t gap = rightSideProcCoord - leftSideProcCoord;
             procId_t gapProc = rightSideProcCount + leftSideProcCount;
 
+            /* Pick the largest gap in this dimension. Use fewer process on either side
+               of the largest gap to break the tie. An easy addition to this would
+               be to weight the gap by the number of processes. */
             if (gap > biggestGap || (gap == biggestGap && biggestGapProc > gapProc)){
                 shiftBorderCoordinate = rightSideProcCoord;
                 biggestGapProc = gapProc;
@@ -1898,7 +1969,7 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
         }
 
 
-        if (!(biggestGap > firstLastGap || (biggestGap == firstLastGap && biggestGap < firstLastGapProc))){
+        if (!(biggestGap > firstLastGap || (biggestGap == firstLastGap && biggestGapProc < firstLastGapProc))){
             shiftBorderCoordinate = -1;
         }
 
@@ -1927,12 +1998,15 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
             //cout << "I:" << i << "j:" << j << " coord:" << coords[j] << " now:" << result_machine_coords[i][j] << endl;
         }
         delete [] machineCounts;
+        delete [] filledCoordinates;
     }
 
     return result_machine_coords;
 
 }
 
+// KDDKDD TODO:  This interface should go away or move to MiniGhost;
+// KDDKDD TODO:  it is only a convenience for the MiniGhost experiments.
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface(
   RCP<const Teuchos::Comm<int> > comm_,
@@ -1944,6 +2018,7 @@ void coordinateTaskMapperInterface(
   tcoord_t **task_coords,
   procId_t *task_communication_xadj_,
   procId_t *task_communication_adj_,
+  pcoord_t *task_communication_edge_weight_, /*float-like, same size with task_communication_adj_ weight of the corresponding edge.*/
   procId_t *proc_to_task_xadj, /*output*/
   procId_t *proc_to_task_adj, /*output*/
   int partArraySize,
@@ -1962,7 +2037,7 @@ void coordinateTaskMapperInterface(
     //cout << "numProcessors:" << numProcessors << endl;
     //cout << "task_communication_xadj_[numProcessors]:" << task_communication_xadj_[numProcessors - 1] << endl;
     Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_communication_xadj_, 0, numProcessors, false);
-    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1], false);
+    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
     /*
     int machine_dimensions[3];
     machine_dimensions[0] = 17;
@@ -1979,7 +2054,7 @@ void coordinateTaskMapperInterface(
                             numProcessors,
                             machine_coords_);
     }
-    CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t>(
+    CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t>(
                 comm_.getRawPtr(),
                 procDim,
                 numProcessors,
@@ -1992,6 +2067,7 @@ void coordinateTaskMapperInterface(
                 envConst_,
                 task_communication_xadj,
                 task_communication_adj,
+                task_communication_edge_weight_,
                 partArraySize,
                 partNoArray
         );
@@ -2024,6 +2100,8 @@ void coordinateTaskMapperInterface(
 }
 
 
+// KDDKDD TODO:  This interface should go away or move to MiniGhost;
+// KDDKDD TODO:  it is only a convenience for the MiniGhost experiments.
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface_Fortran(
   int *comm_World,
@@ -2051,7 +2129,7 @@ void coordinateTaskMapperInterface_Fortran(
 #endif
   coordinateTaskMapperInterface<procId_t, pcoord_t, tcoord_t>(
             tcomm,
-            procDim,
+	    procDim,
             numProcessors,
             machine_coords_,
             taskDim,
@@ -2059,6 +2137,7 @@ void coordinateTaskMapperInterface_Fortran(
             task_coords,
             task_communication_xadj_,
             task_communication_adj_,
+            (pcoord_t *) NULL,
             proc_to_task_xadj, /*output*/
             proc_to_task_adj, /*output*/
             partArraySize,

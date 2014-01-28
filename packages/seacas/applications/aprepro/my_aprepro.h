@@ -41,6 +41,8 @@
 #include <math.h>
 #include <errno.h>
 
+#include "ap_array.h"
+
 #ifndef EXIT_FAILURE
 # define EXIT_FAILURE 1
 # define EXIT_SUCCESS 0
@@ -59,7 +61,7 @@ extern FILE *yyout;       /* Output file */
 /* Global options */
 struct aprepro_options
 {
-  char comment;
+  char *comment;
   char *include_path;
   
   int end_on_exit;
@@ -89,6 +91,8 @@ struct symrec
     double (*fnctptr)();
     char *svar;
     char *(*strfnct)();
+    array *avar; /* Array Variable */
+    array *(*arrfnct)();
   } value;
   struct symrec *next;
 };

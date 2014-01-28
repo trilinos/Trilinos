@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -77,57 +77,48 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FactoryManager(const RCP<const FactoryBase> PFact, const RCP<const FactoryBase> RFact, const RCP<const FactoryBase> AcFact)
-  {
-    if (PFact  != Teuchos::null) SetFactory("P", PFact);
-    if (RFact  != Teuchos::null) SetFactory("R", RFact);
-    if (AcFact != Teuchos::null) SetFactory("A", AcFact);
-
-    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~FactoryManager() { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
-    if (IsAvailable(varName, factoryTable_)) // TODO: too much warnings (for smoothers)
-      GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for " << varName << std::endl;
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+    if (factoryTable_.count(varName))
+      GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
 
     factoryTable_[varName] = factory;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFactory(const std::string & varName) const {
-    if (FactoryManager::IsAvailable(varName, factoryTable_))
-      return factoryTable_.find(varName)->second; // == factoryTable_[varName] (operator std::map[] is not const)
-    else
-      return GetDefaultFactory(varName);
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFactory(const std::string& varName) const {
+    if (factoryTable_.count(varName)) {
+      // Search user provided factories
+      return factoryTable_.find(varName)->second;
+    }
+
+    // Search/create default factory for this name
+    return GetDefaultFactory(varName);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDefaultFactory(const std::string & varName) const {
-    if (IsAvailable(varName, defaultFactoryTable_)) {
-
-      return defaultFactoryTable_[varName];
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDefaultFactory(const std::string& varName) const {
+    if (defaultFactoryTable_.count(varName)) {
+      // The factory for this name was already created (possibly, for previous level, if we reuse factory manager)
+      return defaultFactoryTable_.find(varName)->second;
 
     } else {
-
+      // No factory was created for this name, but we may know which one to create
       if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "RAP Pattern")                     return GetFactory("A");
       if (varName == "AP Pattern")                      return GetFactory("A");
       if (varName == "Ptent")                           return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
       if (varName == "P") {
+        // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory = rcp(new SaPFactory());
-        factory->SetFactory("P", GetFactory("Ptent"));          // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        factory->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
       if (varName == "Nullspace") {
+        // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory = rcp(new NullspaceFactory());
-        factory->SetFactory("Nullspace", GetFactory("Ptent"));  // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
-
 
       if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -166,27 +157,21 @@ namespace MueLu {
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;
         smootherParamList.set("relaxation: type",           "Symmetric Gauss-Seidel");
-        smootherParamList.set("relaxation: sweeps",         (LO) 1);
-        smootherParamList.set("relaxation: damping factor", (Scalar) 1.0); //FIXME once Ifpack2's parameter list validator is fixed, change this back to Scalar
-        return SetAndReturnDefaultFactory(varName, rcp( new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
+        smootherParamList.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
+        smootherParamList.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
+        return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
-      if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()),Teuchos::null)));
+      if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null)));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '" + varName + "'.");
     }
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clean() const { defaultFactoryTable_.clear(); }
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
-
-    GetOStream(Warnings1,  0) << "Attention: No factory has been specified for building '" << varName << "'." << std::endl;
-    GetOStream(Warnings00, 0) << "           Using default factory ";
-    { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel());}
+    GetOStream(Warnings1, 0) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
 
     defaultFactoryTable_[varName] = factory;
 
@@ -194,8 +179,18 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable) {
-    return factoryTable.find(varName) != factoryTable.end();
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Print() const {
+    std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
+
+    Teuchos::FancyOStream& fancy = GetOStream(Debug, 0);
+
+    fancy << "Users factory table (factoryTable_):" << std::endl;
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
+      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+
+    fancy << "Default factory table (defaultFactoryTable_):" << std::endl;
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
+      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
   }
 
 } // namespace MueLu

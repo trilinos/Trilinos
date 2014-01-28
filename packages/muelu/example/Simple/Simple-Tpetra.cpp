@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -58,7 +58,6 @@
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
 #include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
-#include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -69,6 +68,7 @@
 #endif
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp; //

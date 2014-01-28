@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -105,7 +105,6 @@
 #endif
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
@@ -117,6 +116,8 @@
 
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -410,7 +411,7 @@ int main(int argc, char *argv[]) {
     xLsg->putScalar( (SC) 0.0);
 
     // calculate initial (absolute) residual
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     xRhs->norm2(norms);
     *out << "||x_0|| = " << norms[0] << std::endl;
 

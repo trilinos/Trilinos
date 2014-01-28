@@ -43,13 +43,12 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 using namespace Teuchos;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
 using Tpetra::Map;
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   using std::cout;
   using std::endl;
@@ -68,8 +67,8 @@ int main(int argc, char *argv[])
   int MyPID = 0;
   int NumImages = 1;
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
   MyPID = rank(*comm);
   NumImages = size(*comm);
@@ -108,7 +107,7 @@ int main(int argc, char *argv[])
   int dim = ROWS_PER_PROC * NumImages;
 
   // create map
-  Map<int> map(dim,0,comm);
+  RCP<const Map<int> > map = rcp (new Map<int> (dim, 0, comm));
   RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,4));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
@@ -131,7 +130,7 @@ int main(int argc, char *argv[])
 
   // Create initial vectors
   RCP<MV> ivec = rcp( new MV(map,blockSize) );
-  ivec->random();
+  ivec->randomize ();
 
   // Create eigenproblem
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =

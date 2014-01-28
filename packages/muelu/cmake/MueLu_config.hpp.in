@@ -15,6 +15,8 @@
 
 #cmakedefine HAVE_MUELU_EXPERIMENTAL
 
+#cmakedefine HAVE_MUELU_BOOST_FOR_REAL
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS

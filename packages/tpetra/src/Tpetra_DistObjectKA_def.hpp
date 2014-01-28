@@ -426,29 +426,39 @@ namespace Tpetra {
       // There is at least one GID to copy or permute.
       copyAndPermute (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
+
     // The method may return zero even if the implementation actually
     // does have a constant number of packets per LID.  However, if it
     // returns nonzero, we may use this information to avoid
     // (re)allocating num{Ex,Im}portPacketsPerLID_.  packAndPrepare()
     // will set this to its final value.
+    //
+    // We only need this if CM != ZERO, but it has to be lifted out of
+    // that scope because there are multiple tests for CM != ZERO.
     size_t constantNumPackets = this->constantNumberOfPackets ();
 
-    if (constantNumPackets == 0) {
-      Kokkos::Compat::realloc (numExportPacketsPerLID_, exportLIDs.size ());
-      Kokkos::Compat::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
-    }
+    // We only need to pack communication buffers if the combine mode
+    // is not ZERO. A "ZERO combine mode" means that the results are
+    // the same as if we had received all zeros, and added them to the
+    // existing values. That means we don't need to communicate.
+    if (CM != ZERO) {
+      if (constantNumPackets == 0) {
+        Kokkos::Compat::realloc (numExportPacketsPerLID_, exportLIDs.size ());
+        Kokkos::Compat::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+      }
 
-    {
+      {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-      Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
+        Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-      // Ask the source to pack data.  Also ask it whether there are a
-      // constant number of packets per element (constantNumPackets is
-      // an output argument).  If there are, constantNumPackets will
-      // come back nonzero.  Otherwise, the source will fill the
-      // numExportPacketsPerLID_ array.
-      packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_,
-                      constantNumPackets, distor);
+        // Ask the source to pack data.  Also ask it whether there are a
+        // constant number of packets per element (constantNumPackets is
+        // an output argument).  If there are, constantNumPackets will
+        // come back nonzero.  Otherwise, the source will fill the
+        // numExportPacketsPerLID_ array.
+        packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_,
+                        constantNumPackets, distor);
+      }
     }
 
     // We don't need the source's data anymore, so it can let go of
@@ -459,108 +469,106 @@ namespace Tpetra {
       srcDistObj->releaseViews ();
     }
 
-    if (constantNumPackets != 0) {
-      // There are a constant number of packets per element.  We
-      // already know (from the number of "remote" (incoming)
-      // elements) how many incoming elements we expect, so we can
-      // resize the buffer accordingly.
-      const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-      if (as<size_t> (imports_.size()) != rbufLen) {
-        Kokkos::Compat::realloc (imports_, rbufLen);
+    // We only need to send data if the combine mode is not ZERO.
+    if (CM != ZERO) {
+      if (constantNumPackets != 0) {
+        // There are a constant number of packets per element.  We
+        // already know (from the number of "remote" (incoming)
+        // elements) how many incoming elements we expect, so we can
+        // resize the buffer accordingly.
+        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
+        if (as<size_t> (imports_.size()) != rbufLen) {
+          Kokkos::Compat::realloc (imports_, rbufLen);
+        }
       }
-    }
 
-    // Create mirror views of [import|export]PacketsPerLID
-    typename Kokkos::View<size_t*,device_type>::HostMirror host_numExportPacketsPerLID = Kokkos::create_mirror_view (numExportPacketsPerLID_);
-    typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID = Kokkos::create_mirror_view (numImportPacketsPerLID_);
+      // Create mirror views of [import|export]PacketsPerLID
+      typename Kokkos::View<size_t*,device_type>::HostMirror host_numExportPacketsPerLID = Kokkos::create_mirror_view (numExportPacketsPerLID_);
+      typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID = Kokkos::create_mirror_view (numImportPacketsPerLID_);
 
-    // Copy numExportPacketsPerLID to host
-    Kokkos::deep_copy (host_numExportPacketsPerLID, numExportPacketsPerLID_);
+      // Copy numExportPacketsPerLID to host
+      Kokkos::deep_copy (host_numExportPacketsPerLID, numExportPacketsPerLID_);
 
-    // Do we need to do communication (via doPostsAndWaits)?
-    bool needCommunication = true;
-    if (revOp == DoReverse && ! isDistributed ()) {
-      needCommunication = false;
-    }
-    // FIXME (mfh 30 Jun 2013): Checking whether the source object is
-    // distributed requires a cast to DistObject.  If it's not a
-    // DistObject, then I'm not quite sure what to do.  Perhaps it
-    // would be more appropriate for SrcDistObject to have an
-    // isDistributed() method.  For now, I'll just assume that we need
-    // to do communication unless the cast succeeds and the source is
-    // not distributed.
-    else if (revOp == DoForward && srcDistObj != NULL &&
-             ! srcDistObj->isDistributed ()) {
-      needCommunication = false;
-    }
+      // Do we need to do communication (via doPostsAndWaits)?
+      bool needCommunication = true;
+      if (revOp == DoReverse && ! isDistributed ()) {
+        needCommunication = false;
+      }
+      // FIXME (mfh 30 Jun 2013): Checking whether the source object
+      // is distributed requires a cast to DistObject.  If it's not a
+      // DistObject, then I'm not quite sure what to do.  Perhaps it
+      // would be more appropriate for SrcDistObject to have an
+      // isDistributed() method.  For now, I'll just assume that we
+      // need to do communication unless the cast succeeds and the
+      // source is not distributed.
+      else if (revOp == DoForward && srcDistObj != NULL &&
+               ! srcDistObj->isDistributed ()) {
+        needCommunication = false;
+      }
 
-    if (needCommunication) {
-      if (revOp == DoReverse) {
+      if (needCommunication) {
+        if (revOp == DoReverse) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-        if (constantNumPackets == 0) { //variable num-packets-per-LID:
-          distor.doReversePostsAndWaits (
-            create_const_view(host_numExportPacketsPerLID),
-            1,
-            host_numImportPacketsPerLID);
-          size_t totalImportPackets = 0;
-          for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-            totalImportPackets += host_numImportPacketsPerLID[i];
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doReversePostsAndWaits (create_const_view (host_numExportPacketsPerLID),
+                                           1,
+                                           host_numImportPacketsPerLID);
+            size_t totalImportPackets = 0;
+            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += host_numImportPacketsPerLID[i];
+            }
+            Kokkos::Compat::realloc (imports_, totalImportPackets);
+            distor.doReversePostsAndWaits (create_const_view (exports_),
+                                           getArrayView (host_numExportPacketsPerLID),
+                                           imports_,
+                                           getArrayView (host_numImportPacketsPerLID));
           }
-          Kokkos::Compat::realloc (imports_, totalImportPackets);
-          distor.doReversePostsAndWaits (
-            create_const_view(exports_),
-            getArrayView(host_numExportPacketsPerLID),
-            imports_,
-            getArrayView(host_numImportPacketsPerLID));
-        }
-        else {
-          distor.doReversePostsAndWaits (
-            create_const_view(exports_),
-            constantNumPackets,
-            imports_);
-        }
-      }
-      else { // revOp == DoForward
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-        if (constantNumPackets == 0) { //variable num-packets-per-LID:
-          distor.doPostsAndWaits (
-            create_const_view(host_numExportPacketsPerLID), 1,
-            host_numImportPacketsPerLID);
-          size_t totalImportPackets = 0;
-          for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-            totalImportPackets += host_numImportPacketsPerLID[i];
+          else {
+            distor.doReversePostsAndWaits (create_const_view (exports_),
+                                           constantNumPackets,
+                                           imports_);
           }
-          Kokkos::Compat::realloc (imports_, totalImportPackets);
-          distor.doPostsAndWaits (
-            create_const_view(exports_),
-            getArrayView(host_numExportPacketsPerLID),
-            imports_,
-            getArrayView(host_numImportPacketsPerLID));
         }
-        else {
-          distor.doPostsAndWaits (
-            create_const_view(exports_),
-            constantNumPackets,
-            imports_);
-        }
-      }
-
-      // Copy numImportPacketsPerLID to device
-      Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID);
-
-      {
+        else { // revOp == DoForward
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-        unpackAndCombine (remoteLIDs, imports_, numImportPacketsPerLID_,
-                          constantNumPackets, distor, CM);
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID), 1,
+                                    host_numImportPacketsPerLID);
+            size_t totalImportPackets = 0;
+            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += host_numImportPacketsPerLID[i];
+            }
+            Kokkos::Compat::realloc (imports_, totalImportPackets);
+            distor.doPostsAndWaits (create_const_view (exports_),
+                                    getArrayView (host_numExportPacketsPerLID),
+                                    imports_,
+                                    getArrayView (host_numImportPacketsPerLID));
+          }
+          else {
+            distor.doPostsAndWaits (create_const_view (exports_),
+                                    constantNumPackets,
+                                    imports_);
+          }
+        }
+
+        // Copy numImportPacketsPerLID to device
+        Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID);
+
+        {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          unpackAndCombine (remoteLIDs, imports_, numImportPacketsPerLID_,
+                            constantNumPackets, distor, CM);
+        }
       }
-    }
-    this->releaseViews();
+    } // if (CM != ZERO)
+
+    this->releaseViews ();
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

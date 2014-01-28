@@ -190,6 +190,21 @@ namespace Tpetra {
             const RCP<Teuchos::FancyOStream>& out,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+    /// \brief Construct an Import from the source and target Maps.
+    ///
+    /// \param source [in] The source distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param remotePIDs [in] Owning PIDs corresponding to the remoteGIDs.
+    /// If this information is available one can reduce the cost of the Import 
+    /// constructor.
+    Import (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+	    Teuchos::Array<int> & remotePIDs);
+
     /// \brief Copy constructor.
     ///
     /// \note Currently this only makes a shallow copy of the Import's
@@ -348,12 +363,19 @@ namespace Tpetra {
     /// \param target [in] The target distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
     ///
+    /// \param useRemotePIDs [in] True if the remotePIDs parameter is non-empty
+    /// on at least some processors.
+    ///
+    /// \param remotePIDs [in/out] Owning PIDs corresponding to the remoteGIDs.
+    ///
     /// \param plist [in/out] List of parameters.  Currently passed
     ///   directly to the Distributor that implements communication.
     ///   If this is Teuchos::null, it is not used.
     void
     init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+	  bool useRemotePIDs,
+	  Teuchos::Array<int> & remotePIDs,
           const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute the necessary receives for the Import.
@@ -397,6 +419,10 @@ namespace Tpetra {
     /// this routine completes, the <tt>remoteGIDs</tt> array is no
     /// longer needed.
     ///
+    /// The remotePIDs argument is optional.  If the remotePIDs array is of
+    /// size zero, then it will be computed via a call to getRemoteIndexList.
+    /// If it isn't zero, it must match the initial size of the remoteGIDs.
+    ///
     /// Algorithm:
     ///
     /// 1. Identify which GIDs are in the target Map but not in the
@@ -414,7 +440,7 @@ namespace Tpetra {
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
     /// <tt>ImportData_</tt>.
     void
-    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs);
+    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
     //@}
 
 

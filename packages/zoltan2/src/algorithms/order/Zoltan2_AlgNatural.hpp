@@ -49,46 +49,56 @@
 #include <Zoltan2_OrderingSolution.hpp>
 
 
+namespace Zoltan2{
+
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgNatural.hpp
 //! \brief Natural ordering == identity permutation.
-
-
-namespace Zoltan2{
+//! \brief Mainly useful for testing "no ordering"
 
 template <typename Adapter>
-int AlgNatural(
-  const RCP<IdentifierModel<Adapter> > &model, 
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<Teuchos::Comm<int> > &comm
-) 
+class AlgNatural
 {
-  typedef typename Adapter::lno_t lno_t;
+  public:
 
-  int ierr= 0;
-
-  HELLO;
-
-  // Local permutation only for now.
-
-  // Set identity permutation.
-  const size_t n = model->getLocalNumIdentifiers();
-  lno_t *perm;
-  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
-  if (perm){
-    for (size_t i=0; i<n; i++){
-      perm[i] = i;
-    }
+  AlgNatural()
+  {
   }
-  else
-    // TODO: throw exception?
-    ierr = -1;
 
-  return ierr;
+  int order(
+    const RCP<IdentifierModel<Adapter> > &model, 
+    const RCP<OrderingSolution<typename Adapter::gid_t,
+                               typename Adapter::lno_t> > &solution,
+    const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Teuchos::Comm<int> > &comm
+  ) 
+  {
+    typedef typename Adapter::lno_t lno_t;
 
-}
+    int ierr= 0;
 
+    HELLO;
+
+    // Local permutation only for now.
+
+    // Set identity permutation.
+    const size_t n = model->getLocalNumIdentifiers();
+    lno_t *perm;
+    perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+    if (perm){
+      for (size_t i=0; i<n; i++){
+        perm[i] = i;
+      }
+    }
+    else
+      // TODO: throw exception?
+      ierr = -1;
+
+    solution->setHavePerm(true);
+    return ierr;
+
+  }
+
+};
 }
 #endif

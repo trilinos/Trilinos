@@ -49,18 +49,6 @@
 
 #include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_Error.hpp>
-#include <impl/Kokkos_MemoryTracking.hpp>
-
-/*--------------------------------------------------------------------------*/
-// If compiled with OpenMP check if in parallel region.
-
-#if defined( _OPENMP )
-#include <omp.h>
-#else
-namespace {
-int omp_in_parallel() { return 0 ; }
-}
-#endif
 
 /*--------------------------------------------------------------------------*/
 
@@ -100,6 +88,11 @@ Impl::MemoryTracking & host_space_singleton()
 }
 
 } // namespace <blank>
+namespace NEVEREVERUSEMEIWILLFINDYOU {
+Impl::MemoryTracking & host_space_singleton_wrapper() {
+  return host_space_singleton();
+}
+}
 } // namespade Kokkos
 
 /*--------------------------------------------------------------------------*/
@@ -185,8 +178,8 @@ static const int QUERY_DEVICE_IN_PARALLEL_MAX = 16 ;
 
 typedef int (* QueryDeviceInParallelPtr )();
 
-QueryDeviceInParallelPtr s_in_parallel_query[ QUERY_DEVICE_IN_PARALLEL_MAX ] = { omp_in_parallel };
-int s_in_parallel_query_count = 1 ;
+QueryDeviceInParallelPtr s_in_parallel_query[ QUERY_DEVICE_IN_PARALLEL_MAX ] ;
+int s_in_parallel_query_count = 0 ;
 
 } // namespace <empty>
 

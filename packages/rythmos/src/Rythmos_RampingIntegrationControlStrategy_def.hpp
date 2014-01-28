@@ -326,7 +326,7 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
   current_dt_ = std::min(max_dt_, current_dt_);
   current_dt_ = std::max(min_dt_, current_dt_);
 
-  num_step_failures_ = std::min(num_step_failures_--,0);
+  num_step_failures_ = std::min(num_step_failures_-1,0);
 
   trialStepCtrlInfo.stepSize = current_dt_;
   if (take_variable_steps_) {

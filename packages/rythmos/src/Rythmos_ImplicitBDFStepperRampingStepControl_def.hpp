@@ -382,6 +382,18 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(
         "developers. Aborting run!");
     }
 
+    if (restrictStepSizeByNumberOfNonlinearIterations_) {
+      const Rythmos::ImplicitBDFStepper<Scalar>* ibdfStepper =
+	dynamic_cast<const Rythmos::ImplicitBDFStepper<Scalar>* >(&stepper);
+      TEUCHOS_ASSERT(ibdfStepper != NULL);
+      TEUCHOS_ASSERT(nonnull(ibdfStepper->getNonlinearSolveStatus().extraParameters));
+      int numberOfNonlinearIterations = ibdfStepper->getNonlinearSolveStatus().extraParameters->template get<int>("Number of Iterations");
+      if (numberOfNonlinearIterations >= numberOfNonlinearIterationsForStepSizeRestriction_) {
+	nextStepSize_ = currentStepSize_;
+      }
+    }
+
+
   } // if (countOfConstantStepsAfterFailure_ > 0)
 
   setStepControlState_(READY_FOR_NEXT_STEP);
@@ -522,6 +534,14 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setParameterList(
       "Please set this flag to \"FALSE\" for now.");
   }
 
+  if (p.get<std::string>("Restrict Step Size Increase by Number of Nonlinear Iterations") == "TRUE")
+    restrictStepSizeByNumberOfNonlinearIterations_ = true;
+  else if (p.get<std::string>("Restrict Step Size Increase by Number of Nonlinear Iterations") == "FALSE") 
+    restrictStepSizeByNumberOfNonlinearIterations_ = false;
+    
+  numberOfNonlinearIterationsForStepSizeRestriction_ = 
+    p.get<int>("Number of Nonlinear Iterations for Step Size Restriction");
+
   if ( doOutput_(Teuchos::VERB_HIGH) ) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"setParameterList");
@@ -577,6 +597,19 @@ ImplicitBDFStepperRampingStepControl<Scalar>::getValidParameters() const
       "to Nonlinear solver converging.",
       Teuchos::tuple<std::string>("TRUE","FALSE"),
       p.get());
+    Teuchos::setStringToIntegralParameter<int>(
+      "Restrict Step Size Increase by Number of Nonlinear Iterations",
+      "FALSE",
+      "If set to TRUE, then the step size will not be allowed to increase "
+      "if the number of nonlinear iterations was greater than or equal to the "
+      "specified value.",
+      Teuchos::tuple<std::string>("TRUE","FALSE"),
+      p.get());
+    p->set<int>("Number of Nonlinear Iterations for Step Size Restriction",
+		2,
+		"If \" Restrct Step Size Increase by Number of Nonlinear Iterations\" is "
+                "true, the step size will not be allowed to increase if the number of nonlinear "
+		"iterations was greater than or equal to the specified value.");
   }
 
   return (p);

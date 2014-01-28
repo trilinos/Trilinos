@@ -171,14 +171,14 @@ public:
      */
    virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockID) const = 0;
 
-   /** Get the local element IDs for all "neighbor" elements that reside in a paricular element
+   /** Get the local element IDs for all "neighbor" elements that reside in a particular element
      * block (An element is a neighbor if it is in the one ring of owned elements).
      *
      * \param[in] blockID Block ID
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const {}
+   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const = 0;
 };
 
 }

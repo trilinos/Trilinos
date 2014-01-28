@@ -60,18 +60,16 @@ protected:
   {
     std::cout << std::setprecision(5) << std::scientific;
 
-    std::pair<unsigned, unsigned> team_league(1,4);
+    unsigned team_count = 1 ;
+    unsigned threads_per_team = 4 ;
     if (Kokkos::hwloc::available()) {
-      const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
-     // const unsigned num_hyper_threads =  Kokkos::hwloc::get_core_capacity();
-      const unsigned num_hyper_threads = 1;
-      team_league.first  = core_top.first ;
-      team_league.second = core_top.second * num_hyper_threads;
+      team_count       = Kokkos::hwloc::get_available_numa_count();
+      threads_per_team = Kokkos::hwloc::get_available_cores_per_numa();
     }
 
-    std::cout << "Threads: " << team_league.first << "x" << team_league.second << std::endl;
+    std::cout << "Threads: " << team_count << "x" << threads_per_team << std::endl;
 
-    Kokkos::Threads::initialize( team_league );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
   }
 
   static void TearDownTestCase()

@@ -51,7 +51,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_GIDTypeVector.h"
 #include "Epetra_Import.h"
+#include <limits>
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiDistributor.h"
@@ -158,7 +160,7 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
-  return Sort<int>(SortAscending, NumKeys, Keys, 
+  Sort<int>(SortAscending, NumKeys, Keys, 
            NumDoubleCompanions, DoubleCompanions, 
            NumIntCompanions, IntCompanions,
            NumLongLongCompanions, LongLongCompanions);
@@ -169,7 +171,7 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
-  return Sort<long long>(SortAscending, NumKeys, Keys, 
+  Sort<long long>(SortAscending, NumKeys, Keys, 
            NumDoubleCompanions, DoubleCompanions, 
            NumIntCompanions, IntCompanions,
            NumLongLongCompanions, LongLongCompanions);
@@ -262,10 +264,9 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
 }
 #endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 //----------------------------------------------------------------------------
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
-// FIXME long long
-Epetra_Map
-Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
+
+template<typename int_type>
+static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
          int root)
 {
   int numProc = usermap.Comm().NumProc();
@@ -297,8 +298,10 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   // Linear map: Simple case, just put all GIDs linearly on root processor
   if (usermap.LinearMap() && root!=-1) {
     int numMyElements = 0;
-    if (isRoot) numMyElements = usermap.MaxAllGID64()+1; // FIXME long long
-    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm); // CJ TODO FIXME long long
+    if(usermap.MaxAllGID64()+1 > std::numeric_limits<int>::max())
+      throw "Epetra_Util::Create_Root_Map: cannot fit all gids in int";
+    if (isRoot) numMyElements = (int)(usermap.MaxAllGID64()+1);
+    Epetra_Map newmap((int_type) -1, numMyElements, (int_type)usermap.IndexBase64(), comm);
     return(newmap);
   }
 
@@ -309,34 +312,54 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
 
   // Build IntVector of the GIDs, then ship them to root processor
   int numMyElements = usermap.NumMyElements();
-  Epetra_Map allGidsMap(-1, numMyElements, 0, comm);
-  Epetra_IntVector allGids(allGidsMap);
-  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i); // CJ TODO FIXME long long
+  Epetra_Map allGidsMap((int_type) -1, numMyElements, (int_type) 0, comm);
+  typename Epetra_GIDTypeVector<int_type>::impl allGids(allGidsMap);
+  for (int i=0; i<numMyElements; i++) allGids[i] = (int_type) usermap.GID64(i);
   
-  int numGlobalElements = usermap.NumGlobalElements64(); // CJ TODO FIXME long long
+  if(usermap.MaxAllGID64() > std::numeric_limits<int>::max())
+    throw "Epetra_Util::Create_Root_Map: cannot fit all gids in int";
+  int numGlobalElements = (int) usermap.NumGlobalElements64();
   if (root!=-1) {
     int n1 = 0; if (isRoot) n1 = numGlobalElements;
-    Epetra_Map allGidsOnRootMap(-1, n1, 0, comm);
+    Epetra_Map allGidsOnRootMap((int_type) -1, n1, (int_type) 0, comm);
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
-    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    typename Epetra_GIDTypeVector<int_type>::impl allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
+    Epetra_Map rootMap((int_type)-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), (int_type)usermap.IndexBase64(), comm);
     return(rootMap);
   }
   else {
     int n1 = numGlobalElements;
-    Epetra_LocalMap allGidsOnRootMap(n1, 0, comm);
+    Epetra_LocalMap allGidsOnRootMap((int_type) n1, (int_type) 0, comm);
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
-    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    typename Epetra_GIDTypeVector<int_type>::impl allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
+    Epetra_Map rootMap((int_type) -1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), (int_type)usermap.IndexBase64(), comm);
 
     return(rootMap);
   }
 }
-#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
+
+Epetra_Map Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
+         int root)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(usermap.GlobalIndicesInt()) {
+	  return TCreate_Root_Map<int>(usermap, root);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(usermap.GlobalIndicesLongLong()) {
+	  return TCreate_Root_Map<long long>(usermap, root);
+  }
+  else
+#endif
+    throw "Epetra_Util::Create_Root_Map: GlobalIndices type unknown";
+}
+
 //----------------------------------------------------------------------------
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
 // FIXME long long
@@ -397,8 +420,11 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from  Epetra_CrsMatrix::SortEntries() 
+  int nnz = CRS_rowptr[NumRows];
+
   for(int i = 0; i < NumRows; i++){
     int start=CRS_rowptr[i];
+    if(start >= nnz) continue;
 
     double* locValues = &CRS_vals[start];
     int NumEntries    = CRS_rowptr[i+1] - start;
@@ -432,7 +458,7 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std::pair<int,int> > & gpids, bool use_minus_one_for_local){
   // Put the (PID,GID) pair in member of Importer.TargetMap() in gpids.  If use_minus_one_for_local==true, put in -1 instead of MyPID.
-  // This only works if we have an MpiDistributor in our Importer.  Otheriwise return an error.
+  // This only works if we have an MpiDistributor in our Importer.  Otherwise return an error.
 #ifdef HAVE_MPI
   Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
   if(!D) EPETRA_CHK_ERR(-2);
@@ -563,7 +589,40 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
 #endif
 }
 
+//----------------------------------------------------------------------------
+int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> &RemotePIDs){
+#ifdef HAVE_MPI
+  Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+  if(!D) {
+    RemotePIDs.resize(0); 
+    return 0;
+  }
 
+  int i,j,k;
+
+  // Get the distributor's data
+  int NumReceives        = D->NumReceives();
+  const int *ProcsFrom   = D->ProcsFrom();
+  const int *LengthsFrom = D->LengthsFrom();
+  
+  // Resize the outgoing data structure
+  RemotePIDs.resize(Importer.NumRemoteIDs());
+
+  // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+  // MpiDistributor so it ought to duplicate that effect.
+  for(i=0,j=0;i<NumReceives;i++){
+    int pid=ProcsFrom[i];    
+    for(k=0;k<LengthsFrom[i];k++){
+      RemotePIDs[j]=pid;
+      j++;
+    }    
+  }
+  return 0;
+#else
+  RemotePIDs.resize(0);
+  return 0;
+#endif
+}
 
 //----------------------------------------------------------------------------
 template<typename T>
@@ -724,3 +783,10 @@ int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
+
+// Explicitly instantiate these two even though a call to them is made.
+// Possible fix for a bug reported by Kenneth Belcourt.
+template void Epetra_Util::Sort<int>      (bool, int, int *,       int, double **, int, int **, int, long long **);
+template void Epetra_Util::Sort<long long>(bool, int, long long *, int, double **, int, int **, int, long long **);
+
+

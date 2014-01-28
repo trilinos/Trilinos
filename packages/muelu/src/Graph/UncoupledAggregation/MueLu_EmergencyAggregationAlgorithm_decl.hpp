@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -59,7 +59,6 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
@@ -79,7 +78,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    EmergencyAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
+    EmergencyAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
 
     //! Destructor.
     virtual ~EmergencyAggregationAlgorithm() { }
@@ -92,8 +91,10 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
+    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
+
+    std::string description() const { return "Phase 3 (emergency)"; }
 
   }; //class MaxLinkAggregationAlgorithm
 

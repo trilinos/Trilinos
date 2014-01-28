@@ -44,6 +44,7 @@
 
 #include <vector>
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_RowMatrix.h>
 
@@ -61,7 +62,12 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const int*  RowIndices, int num_indices, const Epetra_Comm & GlobalComm, int Offset = 0 );
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const long long*  RowIndices, int num_indices, const Epetra_Comm & GlobalComm, long long Offset = 0 );
+#endif
 
   /*! Creates a BlockMap object
     
@@ -70,7 +76,12 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm, int Offset = 0 );
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const std::vector<long long> & RowIndices, const Epetra_Comm & GlobalComm, long long Offset = 0 );
+#endif
 
   /*! Creates a BlockMap object
     
@@ -91,20 +102,59 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<long long> > & RowStencil, const std::vector<long long> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
 
   // Nearly identical version yet using RowMatrix interface instead of CrsGraph
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<long long> > & RowStencil, const std::vector<long long> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
 
   //! Generate global block graph using base graph and local block graph
   static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const Epetra_CrsGraph& LocalBlockGraph, const Epetra_Comm & GlobalComm );
 
   //! Generate stencil arrays from a local block graph
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   static void GenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph, std::vector<int> RowIndices, std::vector< std::vector<int> >& RowStencil);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  static void GenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph, std::vector<long long> RowIndices, std::vector< std::vector<long long> >& RowStencil);
+#endif
 
   //! Routine for calculating Offset for creating unique global IDs for Block representation
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   static int CalculateOffset(const Epetra_BlockMap & BaseMap);
-  
+#endif
+
+  static long long CalculateOffset64(const Epetra_BlockMap & BaseMap);
+
+private:
+
+  template<typename int_type>
+  static int_type TCalculateOffset(const Epetra_BlockMap & BaseMap);
+
+  template<typename int_type>
+  static Epetra_Map * TGenerateBlockMap( const Epetra_BlockMap & BaseMap, const int_type*  RowIndices, int num_indices, const Epetra_Comm & GlobalComm, int_type Offset = 0);
+
+  template<typename int_type>
+  static Epetra_CrsGraph * TGenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<int_type> > & RowStencil, const std::vector<int_type> & RowIndices, const Epetra_Comm & GlobalComm );
+
+  template<typename int_type>
+  static Epetra_CrsGraph * TGenerateBlockGraph( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<int_type> > & RowStencil, const std::vector<int_type> & RowIndices, const Epetra_Comm & GlobalComm );
+
+  template<typename int_type>
+  static Epetra_CrsGraph * TGenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const Epetra_CrsGraph& LocalBlockGraph, const Epetra_Comm & GlobalComm );
+
+  template<typename int_type>
+  static void TGenerateRowStencil(const Epetra_CrsGraph& LocalBlockGraph, std::vector<int_type> RowIndices, std::vector< std::vector<int_type> >& RowStencil);
 };
 
 } //namespace EpetraExt

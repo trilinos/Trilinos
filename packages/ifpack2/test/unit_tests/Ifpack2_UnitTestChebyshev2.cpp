@@ -490,7 +490,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Create the operators: Ifpack2, textbook Chebyshev, and custom CG.
   prec_type ifpack2Cheby (A);
-  Ifpack2::Details::Chebyshev<ST, MV, crs_matrix_type> myCheby (A);
+  Ifpack2::Details::Chebyshev<ST, MV> myCheby (A);
   CG<ST, MV, crs_matrix_type> cg (A);
 
   // Residual 2-norms for comparison.

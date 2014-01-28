@@ -74,7 +74,7 @@ namespace panzer {
   #endif
   class EpetraLinearObjContainer;
   class SGEpetraLinearObjContainer;
-  class GlobalData;
+  struct GlobalData;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
@@ -210,6 +210,15 @@ namespace panzer {
     { responseLibrary_->buildResponseEvaluators(physicsBlocks,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
 
     //@}
+
+    /** This function is intended for experts only, it allows for a beta to be set for the
+      * dirichlet conditions only. This allows the dirichlet condition to be propagated to
+      * the mass matrix. The reason it is one time only is that it breaks encapsulation,
+      * and should be only used if absolutely neccessary.
+      *
+      * \param[in] beta Value of beta to use.
+      */
+    void setOneTimeDirichletBeta(const double & beta) const;
 
     /** Apply the dirichlet boundary conditions to the vector "f" using the 
       * "x" values as the current solution.
@@ -349,6 +358,9 @@ namespace panzer {
     #endif
 
     Teuchos::RCP<Teuchos::AbstractFactory<Epetra_Operator> > epetraOperatorFactory_;
+
+    mutable bool oneTimeDirichletBeta_on_;
+    mutable double oneTimeDirichletBeta_;
   };
 
   // Inline definition of the add response (its template on the builder type)

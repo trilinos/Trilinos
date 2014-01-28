@@ -85,6 +85,7 @@ struct UndefinedScalarTraits
  * 
  * </ol>
 */
+
 template <typename T>
 struct ScalarTraits
 {

@@ -1,14 +1,12 @@
-// $Id$
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -46,31 +44,35 @@
 
 #include "Stokhos_DynArrayTraits.hpp"
 
+#include "Sacado_Traits.hpp"
+#include "Stokhos_KokkosTraits.hpp"
+#include <sstream>
+
 namespace Stokhos {
 
   //! Dynamically allocated storage class with striding
-  template <typename ordinal_t, typename value_t, typename node_t>
+  template <typename ordinal_t, typename value_t, typename device_t>
   class DynamicThreadedStorage {
   public:
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::DynArrayTraits<value_type,node_type> ds;
+    typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
     //! Turn DynamicThreadedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t = value_t, typename dev_t = device_t>
     struct apply {
-      typedef DynamicThreadedStorage<ord_t,val_t,node_type> type;
+      typedef DynamicThreadedStorage<ord_t,val_t,dev_t> type;
     };
 
     //! Constructor
     DynamicThreadedStorage(const ordinal_type& sz,
-		  const value_type& x = value_type(0.0));
+                  const value_type& x = value_type(0.0));
 
     //! Copy constructor
     DynamicThreadedStorage(const DynamicThreadedStorage& s);
@@ -94,8 +96,8 @@ namespace Stokhos {
     void resize(const ordinal_type& sz);
 
     //! Reset storage to given array, size, and stride
-    void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned);
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned);
 
     //! Return size
     static ordinal_type size();
@@ -114,6 +116,22 @@ namespace Stokhos {
 
   };
 
+}
+
+namespace Sacado {
+  template <typename ordinal_t, typename value_t, typename device_t>
+  struct StringName< Stokhos::DynamicThreadedStorage<ordinal_t,
+                                                     value_t,
+                                                     device_t> > {
+    static std::string eval() {
+      std::stringstream ss;
+      ss << "Stokhos::DynamicThreadedStorage<"
+         << StringName<ordinal_t>::eval() << ","
+         << StringName<value_t>::eval() << ","
+         << StringName<device_t>::eval() << ">";
+      return ss.str();
+    }
+  };
 }
 
 // No Host specialization
