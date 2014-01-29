@@ -1059,7 +1059,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
     FieldMetaData field_meta_data = {NULL, 0};
 
     const FieldBase  & field = * field_set[i];
-    if (field.entity_rank() == rank)
+    if (static_cast<unsigned>(field.entity_rank()) == rank)
     {
         unsigned num_bytes_per_entity = 0;
 
@@ -1093,7 +1093,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
     size_t current_field_offset = 0;
     for ( int i = 0; i < m_num_fields; ++i ) {
       const FieldBase  & field = * field_set[i];
-      if (field.entity_rank() == rank)
+      if (static_cast<unsigned>(field.entity_rank()) == rank)
       {
           FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field().back());
 
@@ -1134,7 +1134,8 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
 
   const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
   for (int i = 0; i < m_num_fields; ++i) {
-    if (field_set[i]->entity_rank() == src_rank && field_set[i]->entity_rank() == dst_rank)
+    if (static_cast<unsigned>(field_set[i]->entity_rank()) == src_rank &&
+        static_cast<unsigned>(field_set[i]->entity_rank()) == dst_rank)
     {
         const int src_size        = field_set[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
         if (src_size == 0) {
@@ -1168,7 +1169,7 @@ void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucke
   const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
   for ( int i = 0; i < m_num_fields; ++i) {
     const FieldBase  & field      = *field_set[i];
-    if (field.entity_rank() == rank)
+    if (static_cast<unsigned>(field.entity_rank()) == rank)
     {
         FieldMetaData field_meta_data = field_set[i]->get_meta_data_for_field()[bucket_id];
         const int num_bytes_per_entity = field_meta_data.m_bytes_per_entity;
@@ -1221,7 +1222,7 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
   if (m_field_raw_data[rank][bucket_id] != NULL) {
     size_t bytes_to_delete = 0;
     for (unsigned int i = 0; i < field_set.size(); ++i) {
-      if(field_set[i] == NULL || field_set[i]->entity_rank() != rank) continue;
+      if(field_set[i] == NULL || static_cast<unsigned>(field_set[i]->entity_rank()) != rank) continue;
       FieldMetaData& field_data = field_set[i]->get_meta_data_for_field()[bucket_id];
       if (field_data.m_data != NULL) {
         bytes_to_delete += field_data.m_bytes_per_entity * capacity;
@@ -1281,7 +1282,7 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
 
   const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
   for ( int i = 0 ; i < m_num_fields ; ++i ) {
-    if (field_set[i]->entity_rank() == rank)
+    if (static_cast<unsigned>(field_set[i]->entity_rank()) == rank)
     {
         FieldMetaDataVector new_fields(id_map.size());
         for ( unsigned m = 0, e = id_map.size(); m < e; ++m ) {
@@ -1339,7 +1340,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         if (m_num_fields > 0) {
           BOOST_FOREACH(FieldBase* field, all_fields) {
 
-            if(field->entity_rank() != bucket->entity_rank()) continue;
+            if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
 
             FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
 

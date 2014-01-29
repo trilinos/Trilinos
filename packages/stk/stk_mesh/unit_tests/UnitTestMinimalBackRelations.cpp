@@ -116,7 +116,7 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
           }
 
           // Check that all downward rels are the same
-          for (EntityRank irank = stk::topology::NODE_RANK; irank < rank; ++irank) {
+          for (EntityRank irank = static_cast<unsigned>(stk::topology::NODE_RANK); irank < static_cast<unsigned>(rank); ++irank) {
             STKUNIT_EXPECT_EQ(bucket_full_conn.num_connectivity(ord, irank), bucket_min_conn.num_connectivity(ord, irank));
           }
         }

@@ -62,7 +62,7 @@ BucketRepository::~BucketRepository()
 
 size_t BucketRepository::total_field_data_footprint(const FieldBase& f, EntityRank rank) const
 {
-  if (rank > m_partitions.size() || f.entity_rank() != rank)
+  if (rank > m_partitions.size() || static_cast<unsigned>(f.entity_rank()) != rank)
   {
     return 0;
   }

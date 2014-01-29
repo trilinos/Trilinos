@@ -127,7 +127,7 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
   for(size_t i=0; i<entity_comm_list.size(); ++i) {
     stk::mesh::Entity node = entity_comm_list[i].entity;
 
-    const double* field_1_ptr = field_1.entity_rank()==bulk_data.entity_rank(node) ? stk::mesh::field_data(field_1, node) : NULL;
+    const double* field_1_ptr = static_cast<unsigned>(field_1.entity_rank())==bulk_data.entity_rank(node) ? stk::mesh::field_data(field_1, node) : NULL;
 
     stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
     if (field_1_ptr != NULL && entity_comm.size() > 0) {
@@ -256,7 +256,7 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
   for ( size_t i=0; i<node_buckets.size(); ++i) {
     stk::mesh::Bucket & b = *node_buckets[i];
 
-    if (b.entity_rank() == field_1.entity_rank())
+    if (b.entity_rank() == static_cast<unsigned>(field_1.entity_rank()))
     {
         double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
         double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));

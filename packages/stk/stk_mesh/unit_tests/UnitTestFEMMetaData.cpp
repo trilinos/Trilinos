@@ -22,7 +22,7 @@ STKUNIT_UNIT_TEST ( UnitTestMetaData, create )
   STKUNIT_EXPECT_TRUE ( true );
   STKUNIT_EXPECT_FALSE( fem_meta.is_initialized() );
   STKUNIT_EXPECT_EQUAL( fem_meta.spatial_dimension(), 0u );
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), stk::topology::INVALID_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), static_cast<unsigned>(stk::topology::INVALID_RANK) );
 
   // Verify throws/etc for FEM calls prior to initialization:
   stk::mesh::CellTopology invalid_cell_topology( NULL );
@@ -55,7 +55,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, entity_ranks_1 )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 1;
   fem_meta.initialize(spatial_dimension);
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), stk::topology::NODE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), static_cast<unsigned>(stk::topology::NODE_RANK) );
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, entity_ranks_2 )
@@ -63,7 +63,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, entity_ranks_2 )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 2;
   fem_meta.initialize(spatial_dimension);
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), stk::topology::EDGE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), static_cast<unsigned>(stk::topology::EDGE_RANK) );
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, entity_ranks_3 )
@@ -71,7 +71,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, entity_ranks_3 )
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 3;
   fem_meta.initialize(spatial_dimension);
-  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), stk::topology::FACE_RANK );
+  STKUNIT_EXPECT_EQUAL( fem_meta.side_rank(), static_cast<unsigned>(stk::topology::FACE_RANK) );
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, get_cell_topology_trivial )

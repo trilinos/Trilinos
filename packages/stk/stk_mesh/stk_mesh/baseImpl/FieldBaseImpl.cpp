@@ -263,7 +263,7 @@ unsigned FieldBaseImpl::max_size( unsigned ent_rank ) const
   const FieldRestrictionVector::const_iterator ie = rMap.end() ;
         FieldRestrictionVector::const_iterator i = rMap.begin();
 
-  if(entity_rank() == ent_rank)
+  if(static_cast<unsigned>(entity_rank()) == ent_rank)
   {
       for ( ; i != ie ; ++i ) {
           const unsigned len = m_field_rank ? i->num_scalars_per_entity() : 1 ;
