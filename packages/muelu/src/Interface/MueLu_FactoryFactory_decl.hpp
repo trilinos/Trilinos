@@ -473,18 +473,9 @@ namespace MueLu {
 
     template <class T> // T must implement the Factory interface
     RCP<FactoryBase> BuildBlockedSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      //TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedGaussSeidelSmoother", Exceptions::RuntimeError, "");
-      int bs_sweeps=1;          if(paramList.isParameter("sweeps"))       bs_sweeps = paramList.get<int>        ("sweeps");
-      double bs_omega=1.0;      if(paramList.isParameter("omega"))        bs_omega  = paramList.get<double>     ("omega");
 
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
-
-      // create a new block smoother
-      RCP<T> bs = rcp(new T(bs_sweeps,bs_omega));
-
-      // important: set block factory for A here! TODO think about this in more detail
-      bs->SetFactory("A", MueLu::NoFactory::getRCP());
 
       // internal vector of factory managers
       std::vector<RCP<FactoryManager> > facManagers;
@@ -530,13 +521,15 @@ namespace MueLu {
 
       }
 
+      // create a new blocked smoother
+      RCP<T> bs = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
+      // important: set block factory for A here! TODO think about this in more detail
+      bs->SetFactory("A", MueLu::NoFactory::getRCP());
 
       for (int i = 0; i<Teuchos::as<int>(facManagers.size()); i++) {
         bs->AddFactoryManager(facManagers[i],i);
       }
-
-
 
       return rcp(new SmootherFactory(bs));
     }

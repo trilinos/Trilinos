@@ -125,7 +125,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BlockedGaussSeidelSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0);
+    BlockedGaussSeidelSmoother();
 
     //! Destructor
     virtual ~BlockedGaussSeidelSmoother();
@@ -189,10 +189,6 @@ namespace MueLu {
 
     //! vector of smoother/solver factories
     std::vector<Teuchos::RCP<const SmootherBase> > Inverse_;
-
-    //! BGS parameters
-    //const LocalOrdinal nSweeps_;       // < ! BGS sweeps
-    //const Scalar omega_;               // < ! relaxation parameter
 
     //! A Factory
     RCP<FactoryBase> AFact_;

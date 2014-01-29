@@ -36,12 +36,12 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother(LocalOrdinal sweeps, Scalar omega, bool SIMPLEC)
-    : type_("SIMPLE"), /*bSIMPLEC_(SIMPLEC),*//* nSweeps_(sweeps), omega_(omega),*/ A_(Teuchos::null)
+  SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother()
+    : type_("SIMPLE"), A_(Teuchos::null)
   {
-    Factory::SetParameter("Sweeps", Teuchos::ParameterEntry(sweeps));
-    Factory::SetParameter("Damping factor",Teuchos::ParameterEntry(omega));
-    Factory::SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(SIMPLEC));
+    //Factory::SetParameter("Sweeps", Teuchos::ParameterEntry(sweeps));
+    //Factory::SetParameter("Damping factor",Teuchos::ParameterEntry(omega));
+    //Factory::SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(SIMPLEC));
 
 #if 0
     // when declaring default factories without overwriting them leads to a multipleCallCheck exception

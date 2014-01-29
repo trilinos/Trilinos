@@ -270,7 +270,10 @@ int main(int argc, char *argv[]) {
 
   // define SIMPLE Smoother with SIMPLE_nSweeps and SIMPLE_omega as scaling factor
   // AFact_ = Teuchos::null (= default) for the 2x2 blocked operator
-  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother(SIMPLE_nSweeps,SIMPLE_omega,useSIMPLEC) );
+  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother() );
+  SimpleSm->SetParameter("Sweeps", Teuchos::ParameterEntry(SIMPLE_nSweeps));
+  SimpleSm->SetParameter("Damping factor", Teuchos::ParameterEntry(SIMPLE_omega));
+  if(useSIMPLEC==1) SimpleSm->SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(true));
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(SimpleSm) );
 

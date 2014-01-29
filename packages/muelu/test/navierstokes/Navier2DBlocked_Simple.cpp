@@ -468,7 +468,10 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////////////////////
   // create smoother prototype
 
-  RCP<SimpleSmoother> smootherPrototype     = rcp( new SimpleSmoother(3,0.6) );
+  RCP<SimpleSmoother> smootherPrototype     = rcp( new SimpleSmoother() );
+  smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
+  smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(0.6));
+
   smootherPrototype->AddFactoryManager(MPredict,0);    // set temporary factory manager for prediction step
   smootherPrototype->AddFactoryManager(MSchur,1);      // set temporary factory manager for correction step
   smootherPrototype->SetFactory("A", MueLu::NoFactory::getRCP());

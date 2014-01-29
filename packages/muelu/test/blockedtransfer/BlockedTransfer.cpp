@@ -340,7 +340,9 @@ int main(int argc, char *argv[]) {
   RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
 
   // Smoothers
-  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(2,1.0) );
+  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother() );
+  smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(2));
+  smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(1.0));
   smootherPrototype->AddFactoryManager(M11,0);
   smootherPrototype->AddFactoryManager(M22,1);
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );

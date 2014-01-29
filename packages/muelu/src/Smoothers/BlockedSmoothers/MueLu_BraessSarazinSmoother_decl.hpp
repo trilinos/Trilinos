@@ -98,7 +98,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BraessSarazinSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0);
+    BraessSarazinSmoother();
 
     //! Destructor
     virtual ~BraessSarazinSmoother();
@@ -149,11 +149,6 @@ namespace MueLu {
 
     //! smoother type
     std::string type_;
-
-    //const LocalOrdinal                    nSweeps_;         //!< number of Braess Sarazin sweeps
-    //const Scalar                          omega_;           //!< damping/scaling factor
-
-
 
     RCP<const FactoryBase>                AFact_;           //!< A Factory
     RCP<const FactoryManagerBase>         FactManager_;     //!< Factory manager for creating the Schur Complement

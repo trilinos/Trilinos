@@ -72,8 +72,8 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedGaussSeidelSmoother(LocalOrdinal sweeps, Scalar omega)
-    : type_("blocked GaussSeidel"),/* nSweeps_(sweeps), omega_(omega),*/ A_(Teuchos::null)
+  BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedGaussSeidelSmoother()
+    : type_("blocked GaussSeidel"), A_(Teuchos::null)
   {
     FactManager_.reserve(10);
   }

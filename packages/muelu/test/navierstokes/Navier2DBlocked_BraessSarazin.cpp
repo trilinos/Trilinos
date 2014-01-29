@@ -453,11 +453,15 @@ int main(int argc, char *argv[]) {
     smoProtoSC->SetFactory("A", SFact);
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega) );
+    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
+    smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
+    smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
-  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega) );
+  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother() );
+  coarseSolverPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
+  coarseSolverPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
 
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, null) );
 

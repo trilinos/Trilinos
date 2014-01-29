@@ -275,7 +275,9 @@ int main(int argc, char *argv[]) {
 
   // define BraessSarazin Smoother with BS_nSweeps and BS_omega as scaling factor
   // AFact_ = null (= default) for the 2x2 blocked operator
-  RCP<BraessSarazinSmoother> BraessSarazinSm = rcp( new BraessSarazinSmoother(BS_nSweeps,BS_omega) );
+  RCP<BraessSarazinSmoother> BraessSarazinSm = rcp( new BraessSarazinSmoother() );
+  BraessSarazinSm->SetParameter("Sweeps", Teuchos::ParameterEntry(BS_nSweeps));
+  BraessSarazinSm->SetParameter("Damping factor", Teuchos::ParameterEntry(BS_omega));
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(BraessSarazinSm) );
 

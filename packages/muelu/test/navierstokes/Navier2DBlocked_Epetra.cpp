@@ -482,13 +482,17 @@ int main(int argc, char *argv[]) {
 
   //////////////////////////////////////////////////////////////////////
   // Smoothers
-  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(BGS_nSweeps,BGS_omega) );
+  RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother() );
+  smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(BGS_nSweeps));
+  smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(BGS_omega));
   smootherPrototype->AddFactoryManager(M11,0);
   smootherPrototype->AddFactoryManager(M22,1);
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction
-  RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother(BGS_nSweeps,BGS_omega) );
+  RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother() );
+  coarseSolverPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(BGS_nSweeps));
+  coarseSolverPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(BGS_omega));
   coarseSolverPrototype->AddFactoryManager(M11,0);
   coarseSolverPrototype->AddFactoryManager(M22,1);
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, null) );
