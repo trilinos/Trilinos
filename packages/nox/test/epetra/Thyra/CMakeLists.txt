@@ -78,17 +78,17 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     )
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Thyra_Rosenbrock_UserLimitingLineSearch
+    Thyra_Rosenbrock_SafeguardedStepLineSearch
     SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
-    Thyra_Rosenbrock_UserLimitingLineSearch.cpp
+    Thyra_Rosenbrock_SafeguardedStepLineSearch.cpp
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Thyra_Rosenbrock_UserDirectionChangeLineSearch
+    Thyra_Rosenbrock_SafeguardedDirectionLineSearch
     SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
-    Thyra_Rosenbrock_UserDirectionChangeLineSearch.cpp
+    Thyra_Rosenbrock_SafeguardedDirectionLineSearch.cpp
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )

@@ -1,9 +1,9 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,30 +35,48 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_MultiVector.hpp"
+#ifndef PANZER_COORDINATESEVALUTOR_IMPL_HPP
+#define PANZER_COORDINATESEVALUTOR_IMPL_HPP
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+namespace panzer {
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_KokkosRefactor_MultiVector_def.hpp"
+//**********************************************************************
+PHX_EVALUATOR_CTOR(CoordinatesEvaluator,p) :
+  dimension(p.get<int>("Dimension")),
+  coordinate( p.get<std::string>("Field Name"), 
+	      p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{
+  this->addEvaluatedField(coordinate);
+  
+  std::string n = "CoordinatesEvaluator: " + coordinate.fieldTag().name();
+  this->setName(n);
+}
 
-namespace Tpetra {
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(CoordinatesEvaluator,worksets,fm)
+{
+  using namespace PHX;
+  this->utils.setFieldData(coordinate,fm);
+}
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+//**********************************************************************
+PHX_EVALUATE_FIELDS(CoordinatesEvaluator,d)
+{ 
+  const Intrepid::FieldContainer<double> & coords = d.cell_vertex_coordinates;
 
-  // ETP 12/16/13:
-  // Tpetra_KokkosRefactor_MultiVector_def.hpp is now included in
-  // Tpetra_MultiVector_def.hpp, and thus should be instantiated by
-  // Tpetra_MultiVector.cpp, thus I don't think we need to do any
-  // instantiation here.
-  //TPETRA_INSTANTIATE_VECTOR(TPETRA_MULTIVECTOR_INSTANT)
+  // copy coordinates directly into the field
+  for(std::size_t i=0;i<d.num_cells;i++)
+    for(int j=0;j<coords.dimension(1);j++)
+      coordinate(i,j) = coords(i,j,dimension);       
+}
 
-} // namespace Tpetra
+//**********************************************************************
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+}
+
+#endif

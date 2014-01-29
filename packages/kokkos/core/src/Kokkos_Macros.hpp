@@ -125,6 +125,13 @@ class CudaSpace ;
   #define KOKKOS_DEVICE_COMPILER_VERSION KOKKOS_COMPILER_VERSION
 #endif
 
+#if (defined(KOKKOS_COMPILER_INTEL) || (defined(KOKKOS_COMPILER_NVCC) && defined(__CUDA_ARCH__)))
+#define KOKKOS_HAVE_UNROLL 1
+#endif
+
+#if (defined(KOKKOS_COMPILER_INTEL) )
+#define KOKKOS_HAVE_IVDEP 1
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

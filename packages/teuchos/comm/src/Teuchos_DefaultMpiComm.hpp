@@ -494,7 +494,7 @@ public:
   /// MpiComm:
   /// \code
   /// // Suppose that you've already created this MpiComm.
-  /// RCP<const MpiComm<int> > comm = ...; 
+  /// RCP<const MpiComm<int> > comm = ...;
   ///
   /// // Wrap the error handler.
   /// RCP<const OpaqueWrapper<MPI_Errhandler> > errHandler =
@@ -934,6 +934,8 @@ MpiComm<Ordinal>::gather (const Ordinal sendBytes,
                           char recvBuffer[],
                           const int root) const
 {
+  (void) recvBytes; // silence compile warning for "unused parameter"
+
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::gather(...)"
     );

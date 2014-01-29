@@ -1,9 +1,9 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,54 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
-*/
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
+// @HEADER
 
-#ifndef KOKKOS_EXAMPLE_FENL_HPP
-#define KOKKOS_EXAMPLE_FENL_HPP
+#include "Panzer_config.hpp"
 
-#include <stdlib.h>
-#include <BoxElemPart.hpp>
-#include <WrapMPI.hpp>
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-namespace Kokkos {
-namespace Example {
-namespace FENL {
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-struct Perf {
-  size_t global_elem_count ;
-  size_t global_node_count ;
-  size_t newton_iter_count ;
-  size_t cg_iter_count ;
-  double map_ratio ;
-  double fill_node_set ;
-  double scan_node_count ;
-  double fill_graph_entries ;
-  double sort_graph_entries ;
-  double fill_element_graph ;
-  double create_sparse_matrix ;
-  double fill_time ;
-  double bc_time ;
-  double cg_time ;
-  double newton_residual ;
-  double error_max ;
+#include "Panzer_CoordinatesEvaluator.hpp"
+#include "Panzer_CoordinatesEvaluator_impl.hpp"
 
-};
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::CoordinatesEvaluator)
 
-template < class Device , BoxElemPart::ElemOrder ElemOrder >
-Perf fenl(
-  MPI_Comm comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
-
-} /* namespace FENL */
-} /* namespace Example */
-} /* namespace Kokkos */
-
-#endif /* #ifndef KOKKOS_EXAMPLE_FENL_HPP */
-
+#endif

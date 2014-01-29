@@ -775,10 +775,31 @@ namespace panzer_stk {
 
 	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
 	const std::vector<panzer::StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
+	const std::vector<std::vector<std::string> > & coordinateDOFs = pb->getCoordinateDOFs(); 
+          // these are treated specially
 
 	// insert all fields into a set
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp> fieldNames;
 	fieldNames.insert(blockFields.begin(),blockFields.end());
+
+        // Now we will set up the coordinate fields (make sure to remove
+        // the DOF fields)
+        {
+          std::set<std::string> fields_to_remove;
+
+          // add mesh coordinate fields, setup their removal from fieldNames 
+          // set to prevent duplication
+          for(std::size_t i=0;i<coordinateDOFs.size();i++) {
+            mesh.addMeshCoordFields(pb->elementBlockID(),coordinateDOFs[i],"DISPL");
+            for(std::size_t j=0;j<coordinateDOFs[i].size();j++)
+              fields_to_remove.insert(coordinateDOFs[i][j]);
+          }
+
+          // remove the already added coordinate fields
+	  std::set<std::string>::const_iterator rmItr;
+  	  for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
+            fieldNames.erase(fieldNames.find(panzer::StrPureBasisPair(*rmItr,Teuchos::null)));
+        }
 
 	// add basis to DOF manager: block specific
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;

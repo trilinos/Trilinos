@@ -1,9 +1,9 @@
 /*
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,54 +35,35 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
-//@HEADER
+// @HEADER
 */
 
-#ifndef KOKKOS_EXAMPLE_FENL_HPP
-#define KOKKOS_EXAMPLE_FENL_HPP
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
 
-#include <stdlib.h>
-#include <BoxElemPart.hpp>
-#include <WrapMPI.hpp>
+// Don't bother compiling anything, or even including anything else,
+// unless KokkosOpenMPWrapperNode is enabled.
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#  include "Tpetra_MultiVector.hpp"
 
-namespace Kokkos {
-namespace Example {
-namespace FENL {
+#  ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-struct Perf {
-  size_t global_elem_count ;
-  size_t global_node_count ;
-  size_t newton_iter_count ;
-  size_t cg_iter_count ;
-  double map_ratio ;
-  double fill_node_set ;
-  double scan_node_count ;
-  double fill_graph_entries ;
-  double sort_graph_entries ;
-  double fill_element_graph ;
-  double create_sparse_matrix ;
-  double fill_time ;
-  double bc_time ;
-  double cg_time ;
-  double newton_residual ;
-  double error_max ;
+#    include "Tpetra_ETIHelperMacros.h"
+#    include "Tpetra_MultiVector_def.hpp"
 
-};
+#    define TPETRA_MULTIVECTOR_KOKKOSCUDAWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosCudaWrapperNode )
 
-template < class Device , BoxElemPart::ElemOrder ElemOrder >
-Perf fenl(
-  MPI_Comm comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
+namespace Tpetra {
 
-} /* namespace FENL */
-} /* namespace Example */
-} /* namespace Kokkos */
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#endif /* #ifndef KOKKOS_EXAMPLE_FENL_HPP */
+  TPETRA_INSTANTIATE_SLG(TPETRA_MULTIVECTOR_KOKKOSCUDAWRAPPERNODE_INSTANT)
 
+} // namespace Tpetra
+
+#  endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_KOKKOS_CUDA

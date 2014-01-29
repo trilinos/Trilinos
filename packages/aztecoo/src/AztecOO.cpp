@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <climits>
 #include "AztecOO.h"
 #include "Epetra_ConfigDefs.h"
 #ifdef AZTEC_MPI

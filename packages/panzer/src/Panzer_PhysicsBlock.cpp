@@ -224,6 +224,10 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
 
     }
 
+    // add coordinate dofs to physics block
+    const std::vector<std::vector<std::string> > & coord_dofs = eq_set->begin()->getCoordinateDOFs();
+    m_coordinate_dofs.insert(m_coordinate_dofs.begin(),coord_dofs.begin(),coord_dofs.end());
+
     // Get a unique list of point rules.  NOTE: This assumes that the
     // same point rules are used for all evaluation types.  In the
     // future we could easily change this by adding another level here
@@ -465,6 +469,12 @@ const std::vector<std::string>& panzer::PhysicsBlock::getDOFNames() const
 const std::vector<panzer::StrPureBasisPair>& panzer::PhysicsBlock::getProvidedDOFs() const
 {
   return m_provided_dofs;
+}
+
+// *******************************************************************
+const std::vector<std::vector<std::string> >& panzer::PhysicsBlock::getCoordinateDOFs() const
+{
+  return m_coordinate_dofs;
 }
 
 // *******************************************************************

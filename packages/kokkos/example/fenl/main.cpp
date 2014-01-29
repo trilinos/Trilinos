@@ -5,8 +5,10 @@
 
 #include <utility>
 #include <string>
+#include <vector>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 #include <KokkosCore_config.h>
 #include <Kokkos_hwloc.hpp>
@@ -87,18 +89,25 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   s << std::endl ;
 }
 
-void print_perf_value( std::ostream & s , const Kokkos::Example::FENL::Perf & perf )
+void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  const Kokkos::Example::FENL::Perf & perf )
 {
-  s << perf.global_elem_count << " , "
-    << perf.global_node_count << " , "
-    << perf.newton_iter_count << " , "
-    << perf.cg_iter_count << " , "
-    << ( perf.graph_time * 1000.0 ) / perf.global_node_count << " , "
-    << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " , "
-    << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " , "
-    << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " , "
-    << perf.error_max
-    << std::endl ;
+  int i=0;
+  s << std::setw(widths[i++]) << perf.global_elem_count << " ,";
+  s << std::setw(widths[i++]) << perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << perf.newton_iter_count << " ,";
+  s << std::setw(widths[i++]) << perf.cg_iter_count << " ,";
+  s << std::setw(widths[i++]) << perf.map_ratio << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_node_set * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.scan_node_count * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_graph_entries * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.sort_graph_entries * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_element_graph * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.create_sparse_matrix * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i])   << perf.error_max;
+  s << std::endl ;
 }
 
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
@@ -113,9 +122,42 @@ void run( MPI_Comm comm , const int cmd[] )
 
   if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
 
+  std::vector< std::pair<std::string,std::string> > headers;
+
+
+  headers.push_back(std::make_pair("ELEMS","count"));
+  headers.push_back(std::make_pair("NODES","count"));
+  headers.push_back(std::make_pair("NEWTON","iter"));
+  headers.push_back(std::make_pair("CG","iter"));
+  headers.push_back(std::make_pair("MAP_RATIO","ratio"));
+  headers.push_back(std::make_pair("SET_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("SCAN/NODE","millisec"));
+  headers.push_back(std::make_pair("GRAPH_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("SORT/NODE","millisec"));
+  headers.push_back(std::make_pair("ELEM_GRAPH_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("MATRIX_CREATE/NODE","millisec"));
+  headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
+  headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
+  headers.push_back(std::make_pair("ERROR","ratio"));
+
+  // find print widths
+  size_t min_width = 10;
+  std::vector< size_t > widths(headers.size());
+  for (size_t i=0, ie=headers.size(); i<ie; ++i)
+    widths[i] = std::max(min_width, headers[i].first.size()+1);
+
+  // print column headers
   std::cout << std::endl ;
-  std::cout << "ELEMS , NODES , NEWTON , CG   , GRAPH/NODE , FILL/NODE , BOUNDARY/NODE , CG/ITER/ROW , ERROR" << std::endl ;
-  std::cout << "count , count , iter   , iter , millisec ,   millisec  , millisec      , millisec    , ratio" << std::endl ;
+  for (size_t i=0; i<headers.size(); ++i)
+    std::cout << std::setw(widths[i]) << headers[i].first << " ,";
+  std::cout << "\b\b  " << std::endl;
+  for (size_t i=0; i<headers.size(); ++i)
+    std::cout << std::setw(widths[i]) << headers[i].second << " ,";
+  std::cout << "\b\b  " << std::endl;
+
+  std::cout << std::scientific;
+  std::cout.precision(3);
 
   if ( cmd[ CMD_USE_FIXTURE_BEGIN ] ) {
     for ( int i = cmd[CMD_USE_FIXTURE_BEGIN] ; i < cmd[CMD_USE_FIXTURE_END] * 2 ; i *= 2 ) {
@@ -132,7 +174,7 @@ void run( MPI_Comm comm , const int cmd[] )
             ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         ;
 
-      print_perf_value( std::cout , perf );
+      print_perf_value( std::cout , widths, perf );
     }
   }
   else {
@@ -148,7 +190,7 @@ void run( MPI_Comm comm , const int cmd[] )
           ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       ;
 
-    print_perf_value( std::cout , perf );
+    print_perf_value( std::cout , widths, perf );
   }
 }
 
