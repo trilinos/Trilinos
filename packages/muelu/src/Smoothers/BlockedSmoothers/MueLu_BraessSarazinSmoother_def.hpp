@@ -81,8 +81,11 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega)
-    : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
+    : type_("Braess Sarazin"), A_(Teuchos::null)
   {
+    Factory::SetParameter("Sweeps", Teuchos::ParameterEntry(sweeps));
+    Factory::SetParameter("Damping factor",Teuchos::ParameterEntry(omega));
+
 #if 0
     // when declaring default factories without overwriting them leads to a multipleCallCheck exception
     // TODO: debug into this
@@ -116,6 +119,17 @@ namespace MueLu {
   void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
     TEUCHOS_TEST_FOR_EXCEPTION(pos != 0, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::AddFactoryManager: parameter \'pos\' must be zero! error.");
     FactManager_ = FactManager;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< Scalar >                ("Damping factor",     1.0, "Damping/Scaling factor in BraessSarazin (usually has to be chosen > 1, default = 1.0)");
+    validParamList->set< LocalOrdinal >          ("Sweeps",             1, "Number of BraessSarazin sweeps (default = 1)");
+
+    return validParamList;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -221,7 +235,13 @@ namespace MueLu {
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
-    for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
+    // extract parameters from internal parameter list
+    const ParameterList & pL = Factory::GetParameterList();
+    LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
+    Scalar omega = pL.get<Scalar>("Damping factor");
+    Scalar omegainv = 1.0/omega; // performance optimization
+
+    for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // Calculate residual
       // note: A_ is the full blocked operator
       // r = B - A*X
@@ -239,7 +259,7 @@ namespace MueLu {
       // Calculate qrhs = rpre - D * vtemp (equation 8.14)
       RCP<MultiVector> qrhs = MultiVectorFactory::Build(Z_->getRowMap(),1);
       vtemp->putScalar(0.0);
-      vtemp->elementWiseMultiply(1.0/omega_,*diagFinv_,*rvel,0.0); // vtemp = 1/omega*Fhatinv * rvel (equation 8.13)
+      vtemp->elementWiseMultiply(omegainv,*diagFinv_,*rvel,0.0); // vtemp = 1/omega*Fhatinv * rvel (equation 8.13)
 
       D_->apply(*vtemp,*qrhs); // qrhs = D*vtemp (intermediate step)
       qrhs->update(1.0,*rpre,-1.0); // qrhs = rpre - D*vtemp
@@ -255,7 +275,7 @@ namespace MueLu {
       vtemp->update(1.0,*rvel,-1.0); //velres - G*q
 
       RCP<MultiVector> vx = MultiVectorFactory::Build(F_->getRowMap(),1);
-      vx->elementWiseMultiply(1.0/omega_,*diagFinv_,*vtemp,1.0);
+      vx->elementWiseMultiply(omegainv,*diagFinv_,*vtemp,1.0);
 
       // update with values
       tXvel->update(1.0,*vx,1.0);

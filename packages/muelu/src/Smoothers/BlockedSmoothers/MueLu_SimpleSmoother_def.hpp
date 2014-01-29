@@ -37,8 +37,12 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother(LocalOrdinal sweeps, Scalar omega, bool SIMPLEC)
-    : type_("SIMPLE"), bSIMPLEC_(SIMPLEC), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
+    : type_("SIMPLE"), /*bSIMPLEC_(SIMPLEC),*//* nSweeps_(sweeps), omega_(omega),*/ A_(Teuchos::null)
   {
+    Factory::SetParameter("Sweeps", Teuchos::ParameterEntry(sweeps));
+    Factory::SetParameter("Damping factor",Teuchos::ParameterEntry(omega));
+    Factory::SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(SIMPLEC));
+
 #if 0
     // when declaring default factories without overwriting them leads to a multipleCallCheck exception
     // TODO: debug into this
@@ -84,6 +88,18 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SimpleSmoother() {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< Scalar >                ("Damping factor",     1.0, "Damping/Scaling factor in SIMPLE");
+    validParamList->set< LocalOrdinal >          ("Sweeps",             1, "Number of SIMPLE sweeps (default = 1)");
+    validParamList->set< bool >                  ("UseSIMPLEC",         false, "Use SIMPLEC instead of SIMPLE (default = false)");
+
+    return validParamList;
+  }
 
   //! Add a factory manager at a specific position
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -181,9 +197,12 @@ namespace MueLu {
     D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
     Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
 
+    const ParameterList & pL = Factory::GetParameterList();
+    bool bSIMPLEC = pL.get<bool>("UseSIMPLEC");
+
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
-    if(!bSIMPLEC_) {
+    if(!bSIMPLEC) {
       F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
       diagFVector->reciprocal(*diagFVector);    // build reciprocal
     } else {
@@ -229,6 +248,11 @@ namespace MueLu {
 
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
+    // extract parameters from internal parameter list
+    const ParameterList & pL = Factory::GetParameterList();
+    LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
+    Scalar omega = pL.get<Scalar>("Damping factor");
+
     // wrap current solution vector in RCP
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
@@ -237,7 +261,7 @@ namespace MueLu {
     RCP<MultiVector> residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
 
     // incrementally improve solution vector X
-    for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
+    for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // 1) calculate current residual
       residual->update(one,B,zero); // residual = B
       A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
@@ -267,13 +291,13 @@ namespace MueLu {
       // 5) scale xtilde2 with omega
       //    store this in xhat2
       RCP<MultiVector> xhat2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-      xhat2->update(omega_,*xtilde2,zero);
+      xhat2->update(omega,*xtilde2,zero);
 
       // 6) calculate xhat1
       RCP<MultiVector> xhat1      = MultiVectorFactory::Build(F_->getRowMap(),1);
       RCP<MultiVector> xhat1_temp = MultiVectorFactory::Build(F_->getRowMap(),1);
       G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
-      xhat1->elementWiseMultiply(one/omega_,*diagFinv_,*xhat1_temp,zero);
+      xhat1->elementWiseMultiply(one/omega,*diagFinv_,*xhat1_temp,zero);
       xhat1->update(one,*xtilde1,-one);
 
       // 7) extract parts of solution vector X
@@ -283,7 +307,7 @@ namespace MueLu {
       // 8) update solution vector with increments xhat1 and xhat2
       //    rescale increment for x2 with omega_
       x1->update(one,*xhat1,one);    // x1 = x1_old + xhat1
-      x2->update(omega_,*xhat2,one); // x2 = x2_old + omega xhat2
+      x2->update(omega,*xhat2,one); // x2 = x2_old + omega xhat2
 
       // write back solution in global vector X
       domainMapExtractor_->InsertVector(x1, 0, rcpX);

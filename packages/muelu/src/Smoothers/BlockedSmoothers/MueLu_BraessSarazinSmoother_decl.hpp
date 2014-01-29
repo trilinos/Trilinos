@@ -107,6 +107,8 @@ namespace MueLu {
     //! Input
     //@{
 
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     void DeclareInput(Level &currentLevel) const;
 
     //! Add a factory manager for BraessSarazin internal SchurComplement handling
@@ -148,8 +150,8 @@ namespace MueLu {
     //! smoother type
     std::string type_;
 
-    const LocalOrdinal                    nSweeps_;         //!< number of Braess Sarazin sweeps
-    const Scalar                          omega_;           //!< damping/scaling factor
+    //const LocalOrdinal                    nSweeps_;         //!< number of Braess Sarazin sweeps
+    //const Scalar                          omega_;           //!< damping/scaling factor
 
 
 

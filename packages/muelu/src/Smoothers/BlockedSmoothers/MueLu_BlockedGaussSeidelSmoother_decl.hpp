@@ -133,9 +133,9 @@ namespace MueLu {
 
     //! Input
     //@{
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     void DeclareInput(Level &currentLevel) const;
-
 
     //! Add a factory manager
     //void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
@@ -191,8 +191,8 @@ namespace MueLu {
     std::vector<Teuchos::RCP<const SmootherBase> > Inverse_;
 
     //! BGS parameters
-    const LocalOrdinal nSweeps_;       // < ! BGS sweeps
-    const Scalar omega_;               // < ! relaxation parameter
+    //const LocalOrdinal nSweeps_;       // < ! BGS sweeps
+    //const Scalar omega_;               // < ! relaxation parameter
 
     //! A Factory
     RCP<FactoryBase> AFact_;

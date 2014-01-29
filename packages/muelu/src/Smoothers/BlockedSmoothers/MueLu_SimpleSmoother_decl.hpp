@@ -65,6 +65,8 @@ namespace MueLu {
     //! Input
     //@{
 
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     void DeclareInput(Level &currentLevel) const;
 
     //! Set factory manager for internal velocity prediction
@@ -114,9 +116,9 @@ namespace MueLu {
     //! smoother type
     std::string type_;
 
-    const bool                            bSIMPLEC_;        //!< use SIMPLEC instead of SIMPLE (i.e. with absolute row sum approximation for A00 instead of plain diagonal)
-    const LocalOrdinal                    nSweeps_;         //!< number of Braess Sarazin sweeps
-    const Scalar                          omega_;           //!< damping/scaling factor
+    //const bool                            bSIMPLEC_;        //!< use SIMPLEC instead of SIMPLE (i.e. with absolute row sum approximation for A00 instead of plain diagonal)
+    //const LocalOrdinal                    nSweeps_;         //!< number of Braess Sarazin sweeps
+    //const Scalar                          omega_;           //!< damping/scaling factor
 
 
 
