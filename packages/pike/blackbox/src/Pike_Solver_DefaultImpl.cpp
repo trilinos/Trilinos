@@ -5,6 +5,7 @@
 #include "Pike_DataTransfer.hpp"
 #include "Pike_Observer.hpp"
 #include "Teuchos_Assert.hpp"
+#include <sstream>
 
 namespace pike {
 
@@ -17,7 +18,7 @@ namespace pike {
     validParameters_->set("Print Begin Solve Status",true, "If set to true the status tests will print current status at the beginning of the solve.");
     validParameters_->set("Print Step Status",true, "If set to true the status tests will print current status at the end of each step.");
     validParameters_->set("Print End Solve Status",true,"If set to true the status tests will print current status at the end of the solve.");
-    validParameters_->set("Name","pike::Solver","A unique identifier chosen by the user for this solver. Used mainly for distinguishing nodes in a hierarchic problem.");
+    validParameters_->set("Name","","A unique identifier chosen by the user for this solver. Used mainly for distinguishing nodes in a hierarchic problem.");
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
 
@@ -56,13 +57,17 @@ namespace pike {
       if ((*m)->name() == name)
 	return *m;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the ModelEvaluator named \"" << name << "\" in the solver.");
+    std::ostringstream os;
+    for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
+       os << "  " << (*m)->name() << std::endl;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the ModelEvaluator named \"" << name << "\" in the solver.  Valid models are:\n" << os.str() << std::endl);
     return Teuchos::null;
   }
 
   const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > SolverDefaultImpl::getModelEvaluators() const
   {
-    std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > constModels;
+    std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > constModels(models_.size());
     std::copy(models_.begin(),models_.end(),constModels.begin());
     return constModels;
   }
@@ -95,7 +100,11 @@ namespace pike {
     
     if (printStepStatus_) {
       Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
-      *os << "\n** Step " << this->getNumberOfIterations() << " Status **" << std::endl;
+      *os << "\n** ";
+      if (name_ != "")
+	*os << name_ << ": ";
+      *os << "Step " << this->getNumberOfIterations() 
+	  << " Status **" << std::endl;
       os->pushTab(defaultIndentation);
       *os << *statusTests_;
       os->popTab();
@@ -113,23 +122,29 @@ namespace pike {
 
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeBeginSolve(*this);
+
+    status_ = statusTests_->checkStatus(*this);
     
     if (printBeginSolveStatus_) {
       Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
-      *os << "\n** Begin Solve Status **" << std::endl;
+      *os << "\n** ";
+      if (name_ != "")
+	*os << name_ << ": ";
+      *os << "Begin Solve Status **" << std::endl;
       os->pushTab(defaultIndentation);
       *os << *statusTests_;
       os->popTab();
     }
-
-    status_ = statusTests_->checkStatus(*this);
 
     while ( (status_ != CONVERGED) && (status_ != FAILED) )
       this->step();
     
     if (printEndSolveStatus_) {
       Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
-      *os << "\n** End Solve Status **" << std::endl;
+      *os << "\n** ";
+      if (name_ != "")
+	*os << name_ << ": ";
+      *os << "End Solve Status **" << std::endl;
       os->pushTab(defaultIndentation);
       *os << *statusTests_;
       os->popTab();
@@ -153,6 +168,7 @@ namespace pike {
   {
     numberOfIterations_ = 0;
     status_ = pike::UNCHECKED;
+    statusTests_->reset();
   }
   
   pike::SolveStatus SolverDefaultImpl::getStatus() const

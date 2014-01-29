@@ -13,7 +13,7 @@ namespace pike {
   class Response;
 
   //! Decorator to represent a pike::Solver as a BlackBoxModelEvaluator for hierarchical solves.
-  class SolverAdapterModelEvaluator : pike::BlackBoxModelEvaluator {
+  class SolverAdapterModelEvaluator : public pike::BlackBoxModelEvaluator {
 
   public:
 

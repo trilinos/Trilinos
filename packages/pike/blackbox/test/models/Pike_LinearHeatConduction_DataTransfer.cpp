@@ -66,6 +66,16 @@ namespace pike_test {
       TEUCHOS_ASSERT(targets_.size() == 1);
   }
 
+  void LinearHeatConductionDataTransfer::addTarget(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& target,
+						   const std::string& overrideTargetModelName)
+  {
+    targets_.push_back(target);
+    targetNames_.push_back(overrideTargetModelName);
+    
+    if (mode_ == TRANSFER_T)
+      TEUCHOS_ASSERT(targets_.size() == 1);    
+  }
+
   // non-member ctor
   Teuchos::RCP<pike_test::LinearHeatConductionDataTransfer> 
   linearHeatConductionDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,

@@ -55,6 +55,10 @@ namespace pike_test {
     void setSource(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& source);
 
     void addTarget(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& target);
+    
+    //! Allows for override of target model name for hierarchic solves. 
+    void addTarget(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& target,
+		   const std::string& overrideTargetModelName);
 
   private:
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
