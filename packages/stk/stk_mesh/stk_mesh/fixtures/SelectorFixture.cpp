@@ -42,7 +42,7 @@ void SelectorFixture::generate_mesh()
 {
   const unsigned entity_count = 5 ;
 
-  stk::mesh::EntityRank ent_type = 0; // rank
+  stk::mesh::EntityRank ent_type = stk::topology::NODE_RANK;
 
   // Create Entities and assign to parts:
   stk::mesh::EntityId ent_id =
@@ -92,7 +92,7 @@ VariableSelectorFixture::VariableSelectorFixture(int NumParts)
 {
   // Create Parts and commit:
   std::string myPartName;
-  stk::mesh::EntityRank myRank = 0;
+  stk::mesh::EntityRank myRank = stk::topology::NODE_RANK;
 
   std::string partName = "Part_";
   for (int part_i=0 ; part_i<NumParts; ++part_i) {
@@ -109,7 +109,7 @@ VariableSelectorFixture::VariableSelectorFixture(int NumParts)
 
   m_BulkData.modification_begin();
 
-  stk::mesh::EntityRank ent_type = 0; // rank
+  stk::mesh::EntityRank ent_type = stk::topology::NODE_RANK;
   stk::mesh::EntityId ent_id =
     1 + NumParts * m_BulkData.parallel_rank(); // Unique ID
 

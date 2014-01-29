@@ -27,7 +27,7 @@ struct EntitySubcellComponent {
   public:
     EntitySubcellComponent()
       : entity()
-      , subcell_rank(0)
+      , subcell_rank(stk::topology::BEGIN_RANK)
       , subcell_id(0)
   {}
 

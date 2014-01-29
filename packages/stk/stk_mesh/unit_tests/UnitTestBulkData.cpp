@@ -209,16 +209,16 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
 
   STKUNIT_ASSERT( bulk.modification_begin() );
   for ( size_t i = 0 ; i < 5 ; ++i ) {
-    e[i] = bulk.declare_entity(  i , id , no_parts );
+    e[i] = bulk.declare_entity(  static_cast<EntityRank>(i) , id , no_parts );
   }
   STKUNIT_ASSERT( bulk.modification_end() );
 
   for ( size_t i = 0 ; i < 5 ; ++i ) {
-    STKUNIT_ASSERT( e[i] == bulk.get_entity( i , id ) );
+    STKUNIT_ASSERT( e[i] == bulk.get_entity( static_cast<EntityRank>(i) , id ) );
   }
 
   STKUNIT_ASSERT( bulk.modification_begin() );
-  STKUNIT_ASSERT_THROW( bulk.declare_entity( 11 , id , no_parts ),
+  STKUNIT_ASSERT_THROW( bulk.declare_entity( static_cast<EntityRank>(11) , id , no_parts ),
                         std::logic_error );
   STKUNIT_ASSERT( bulk.modification_end() );
 
@@ -1127,7 +1127,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
       change.push_back(eproc);
     }
 
-    const stk::mesh::EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+    const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
     {
       stk::mesh::Entity const *to_i = mesh.begin(changing_elem, irank);
@@ -1203,7 +1203,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
-  const EntityRank family_tree_rank = stk::topology::ELEMENT_RANK + 1;
+  const EntityRank family_tree_rank = static_cast<EntityRank>(stk::topology::ELEMENT_RANK + 1);
   const EntityId my_family_tree_id = p_rank+1;
 
   // We're just going to add everything to the universal part

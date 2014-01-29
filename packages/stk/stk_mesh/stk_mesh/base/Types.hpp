@@ -214,8 +214,8 @@ typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
  *  a stencil function returns a non-negative integer;
  *  otherwise a stencil function returns a negative value.
  */
-typedef int ( * relation_stencil_ptr )( unsigned  from_type ,
-                                        unsigned  to_type ,
+typedef int ( * relation_stencil_ptr )( EntityRank  from_type ,
+                                        EntityRank  to_type ,
                                         unsigned  identifier );
 
 //----------------------------------------------------------------------

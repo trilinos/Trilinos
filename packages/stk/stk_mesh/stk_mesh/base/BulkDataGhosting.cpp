@@ -675,11 +675,11 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
     send.push_back( entry );
 
     // There may be even higher-ranking entities that need to be ghosted, so we must recurse
-    const EntityRank end_rank = bulk_data.mesh_meta_data().entity_rank_count();
+    const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
     EntityVector temp_entities;
     Entity const* rels = NULL;
     int num_rels = 0;
-    for (EntityRank irank = rel_entity_rank + 1; irank < end_rank; ++irank)
+    for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
     {
       if (bulk_data.connectivity_map().valid(rel_entity_rank, irank)) {
         num_rels = bulk_data.num_connectivity(rel_entity, irank);
@@ -714,7 +714,7 @@ void BulkData::internal_regenerate_shared_aura()
 
   std::vector<EntityProc> send ;
 
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
 
   // Iterate over all entities with communication info, get the sharing
   // comm info for each entity, and ensure that upwardly related
@@ -725,7 +725,7 @@ void BulkData::internal_regenerate_shared_aura()
   for ( EntityCommListInfoVector::const_iterator
       i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
 
-    const unsigned erank = i->key.rank();
+    const EntityRank erank = static_cast<EntityRank>(i->key.rank());
 
     const PairIterEntityComm sharing = entity_comm_sharing(i->key);
 
@@ -733,7 +733,7 @@ void BulkData::internal_regenerate_shared_aura()
 
       const int share_proc = sharing[j].proc ;
 
-      for (EntityRank k_rank = erank + 1; k_rank < end_rank; ++k_rank)
+      for (EntityRank k_rank = static_cast<EntityRank>(erank + 1); k_rank < end_rank; ++k_rank)
       {
         if (connectivity_map().valid(erank, k_rank)) {
           num_rels = num_connectivity(i->entity, k_rank);

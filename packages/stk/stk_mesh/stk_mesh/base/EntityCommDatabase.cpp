@@ -39,7 +39,7 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
   buf.pack<unsigned>( tot_rel );
 
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
-  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {

@@ -114,7 +114,7 @@ void BucketRepository::optimize_buckets()
 ////
 
 Partition *BucketRepository::get_or_create_partition(
-  const unsigned arg_entity_rank ,
+  const EntityRank arg_entity_rank ,
   const PartVector &parts)
 {
   enum { KEY_TMP_BUFFER_SIZE = 64 };
@@ -175,7 +175,7 @@ Partition *BucketRepository::get_or_create_partition(
 }
 
 Partition *BucketRepository::get_or_create_partition(
-  const unsigned arg_entity_rank ,
+  const EntityRank arg_entity_rank ,
   const OrdinalVector &parts)
 {
   enum { KEY_TMP_BUFFER_SIZE = 64 };

@@ -270,11 +270,11 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
 {
   EntityRank entity_rank = mesh.entity_rank(entity);
 
-  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
   EntityVector temp_entities;
   Entity const* rels = NULL;
   int num_rels = 0;
-  for (EntityRank irank = end_rank - 1; irank > entity_rank; --irank)
+  for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > entity_rank; --irank)
   {
     if (mesh.connectivity_map().valid(entity_rank, irank)) {
       num_rels = mesh.num_connectivity(entity, irank);

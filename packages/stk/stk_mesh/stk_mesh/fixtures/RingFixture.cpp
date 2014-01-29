@@ -104,7 +104,7 @@ void RingFixture::fixup_node_ownership()
 
   if ( 1 < p_size ) {
     std::vector<EntityProc> change ;
-    Entity const e_node_0 = m_bulk_data.get_entity( 0 , m_node_ids[id_begin] );
+    Entity const e_node_0 = m_bulk_data.get_entity( stk::topology::NODE_RANK , m_node_ids[id_begin] );
     if ( p_rank == m_bulk_data.parallel_owner_rank(e_node_0) ) {
       EntityProc entry ;
       entry.first = e_node_0 ;

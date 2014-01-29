@@ -61,11 +61,11 @@ convert_entity_keys_to_spans( const MetaData & meta )
   const EntityId  min_id = 1 ;
   const EntityId  max_id = invalid_key.id();
 
-  const size_t rank_count = meta.entity_rank_count();
+  const EntityRank rank_count = static_cast<EntityRank>(meta.entity_rank_count());
 
   parallel::DistributedIndex::KeySpanVector spans( rank_count );
 
-  for ( size_t rank = 0 ; rank < rank_count ; ++rank ) {
+  for ( EntityRank rank = stk::topology::NODE_RANK ; rank < rank_count ; ++rank ) {
     EntityKey key_min( rank , min_id );
     EntityKey key_max( rank , max_id );
     spans[rank].first  = key_min;
@@ -459,7 +459,7 @@ void BulkData::modified(Entity entity)
   Entity const* rels_i = NULL;
   int num_rels = 0;
   EntityRank rank_of_original_entity = entity_rank(entity);
-  for (EntityRank irank = m_mesh_meta_data.entity_rank_count() - 1;
+  for (EntityRank irank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count() - 1);
         irank > rank_of_original_entity;
         --irank)
   {
@@ -486,7 +486,7 @@ size_t BulkData::count_relations(Entity entity) const
 {
   const MeshIndex &mesh_idx = mesh_index(entity);
 
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   size_t count = 0;
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
@@ -499,7 +499,7 @@ bool BulkData::has_no_relations(Entity entity) const
 {
   const MeshIndex &mesh_idx = mesh_index(entity);
 
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
     if (mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, irank) > 0)
@@ -537,7 +537,7 @@ unsigned BulkData::count_valid_connectivity(Entity entity, EntityRank rank) cons
 unsigned BulkData::count_valid_connectivity(Entity entity) const
 {
   unsigned count = 0;
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
     count += count_valid_connectivity(entity, irank);
@@ -727,8 +727,8 @@ bool BulkData::destroy_entity( Entity entity )
   }
 
   const EntityRank erank = entity_rank(entity);
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
-  for (EntityRank irank = erank + 1; irank != end_rank; ++irank) {
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+  for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank != end_rank; ++irank) {
     if (num_connectivity(entity, irank) > 0) {
       m_check_invalid_rels = true;
       return false;
@@ -1306,7 +1306,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
   // Iterate all buckets for all ranks...
   const std::vector<std::string> & rank_names = m_mesh_meta_data.entity_rank_names();
   for (size_t i = 0, e = rank_names.size(); i < e; ++i) {
-    EntityRank rank = i;
+    EntityRank rank = static_cast<EntityRank>(i);
     out << "  All " << rank_names[i] << " entities:" << std::endl;
 
     const std::vector<Bucket*>& buckets = this->buckets(rank);
@@ -1324,8 +1324,8 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() << ")" << std::endl;
 
         // Print connectivity
-        for (size_t r = 0, re = rank_names.size(); r < re; ++r) {
-          if (connectivity_map().valid(rank, r)) {
+        for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
+          if (connectivity_map().valid(static_cast<EntityRank>(rank), r)) {
             out << "        Connectivity to " << rank_names[r] << std::endl;
             Entity const* entities = bucket->begin(b_ord, r);
             ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);

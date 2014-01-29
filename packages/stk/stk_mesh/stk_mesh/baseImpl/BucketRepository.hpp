@@ -87,10 +87,10 @@ public:
   friend class Partition;
   friend struct stk::mesh::utest::SyncToPartitions;
 
-  Partition *get_or_create_partition(const unsigned arg_entity_rank ,
+  Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
                                      const PartVector &parts);
 
-  Partition *get_or_create_partition(const unsigned arg_entity_rank ,
+  Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
                                      const OrdinalVector &parts);
 
   // For use by BulkData::internal_modification_end().

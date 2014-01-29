@@ -30,8 +30,8 @@ bool comm_mesh_counts( const BulkData & M ,
   // Count locally owned entities
 
   const MetaData & S = MetaData::get(M);
-  const unsigned entity_rank_count = S.entity_rank_count();
-  const size_t   comm_count        = entity_rank_count + 1 ;
+  const EntityRank entity_rank_count = static_cast<EntityRank>(S.entity_rank_count());
+  const size_t     comm_count        = entity_rank_count + 1 ;
 
   std::vector<size_t> local(  comm_count , zero );
   std::vector<size_t> global( comm_count , zero );
@@ -39,7 +39,7 @@ bool comm_mesh_counts( const BulkData & M ,
   ParallelMachine comm = M.parallel();
   Part & owns = S.locally_owned_part();
 
-  for ( unsigned i = 0 ; i < entity_rank_count ; ++i ) {
+  for ( EntityRank i = stk::topology::NODE_RANK ; i < entity_rank_count ; ++i ) {
     const std::vector<Bucket*> & ks = M.buckets( i );
 
     std::vector<Bucket*>::const_iterator ik ;

@@ -1610,7 +1610,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
     const mesh::FieldBase *f = *I ; ++I ;
     const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
-      const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, 0, *part);
+      const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, stk::topology::NODE_RANK, *part);
       if (res.num_scalars_per_entity() > 0) {
         stk::io::field_data_to_ioss(bulk, f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
       }

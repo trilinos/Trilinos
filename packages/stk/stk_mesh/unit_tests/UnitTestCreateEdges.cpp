@@ -186,10 +186,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , Hex_3x1x1 )
 
 STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
 {
-  const size_t elem_rank = stk::topology::ELEMENT_RANK;
-  const size_t face_rank = stk::topology::FACE_RANK;
-  const size_t edge_rank = stk::topology::EDGE_RANK;
-  const size_t node_rank = stk::topology::NODE_RANK;
+  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+  const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
+  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
 
   const size_t NX = 3;
   const size_t NY = 3;
@@ -264,10 +264,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
 
 STKUNIT_UNIT_TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )
 {
-  const size_t elem_rank = stk::topology::ELEMENT_RANK;
-  const size_t face_rank = stk::topology::FACE_RANK;
-  const size_t edge_rank = stk::topology::EDGE_RANK;
-  const size_t node_rank = stk::topology::NODE_RANK;
+  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+  const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
+  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
 
   const size_t NX = 3;
   const size_t NY = 3;
@@ -345,9 +345,9 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )
 
 STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3 )
 {
-  const size_t elem_rank = stk::topology::ELEMENT_RANK;
-  const size_t edge_rank = stk::topology::EDGE_RANK;
-  const size_t node_rank = stk::topology::NODE_RANK;
+  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
 
   const size_t NX = 3;
   const size_t NY = 3;

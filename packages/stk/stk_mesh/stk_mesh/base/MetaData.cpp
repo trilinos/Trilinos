@@ -145,8 +145,8 @@ std::ostream &
 print_entity_key( std::ostream & os , const MetaData & meta_data ,
                   const EntityKey & key )
 {
-  const unsigned type   = key.rank();
-  const EntityId id = key.id();
+  const EntityRank type   = key.rank();
+  const EntityId   id     = key.id();
   return print_entity_id( os , meta_data , type , id );
 }
 
