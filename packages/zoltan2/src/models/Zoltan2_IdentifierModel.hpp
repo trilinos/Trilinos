@@ -129,15 +129,9 @@ public:
   // The Model interface.
   ////////////////////////////////////////////////////
 
-  inline size_t getLocalNumObjects() const
-  {
-    return getLocalNumIdentifiers();
-  }
+  inline size_t getLocalNumObjects() const {return getLocalNumIdentifiers();}
 
-  inline size_t getGlobalNumObjects() const
-  {
-    return getGlobalNumIdentifiers();
-  }
+  inline size_t getGlobalNumObjects() const {return getGlobalNumIdentifiers();}
 
 private:
 
@@ -213,7 +207,7 @@ template <typename Adapter>
 
   this->setWeightArrayLengths(weightArrayLengths, *comm_);
 
-  // TODO:  I don't little reason for idMap in IdentifierModel.
+  // TODO:  Why does an IdentifierModel need an IdentifierMap?
   // TODO:  Currently is useful only if gid_t is not Teuchos::Ordinal
   RCP<const idmap_t> idMap;
   try{

@@ -250,6 +250,8 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////
+
 template <typename Adapter>
 void CoordinateModel<Adapter>::sharedConstructor(
     const VectorAdapter<typename Adapter::userCoord_t> *ia,
@@ -325,6 +327,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
   this->setWeightArrayLengths(arrayLengths, *comm_);
 
   // Create identifier map.
+  // TODO:  Why do coordinate models need an IdentifierMap?
 
   RCP<const idmap_t> idMap;
 
