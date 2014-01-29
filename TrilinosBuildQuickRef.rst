@@ -955,11 +955,12 @@ To turn on a set a given set of tests by test category, set::
 
   -D Trilinos_TEST_CATEGORIES:STRING="<CATEGORY1>;<CATEGORY2>;..." 
 
-Valid categories include BASIC, CONTINUOUS, NIGHTLY, and PERFORMANCE.  BASIC
-tests get built and run for pre-push testing, CI testing, and nightly testing.
-CONTINUOUS tests are for post-posh testing and nightly testing.  NIGHTLY tests
-are for nightly testing only.  PERFORMANCE tests are for performance testing
-only.
+Valid categories include BASIC, CONTINUOUS, NIGHTLY, WEEKLY and PERFORMANCE.
+BASIC tests get built and run for pre-push testing, CI testing, and nightly
+testing.  CONTINUOUS tests are for post-posh testing and nightly testing.
+NIGHTLY tests are for nightly testing only.  WEEKLY tests are for more
+expensive tests that are run approximately weekly.  PERFORMANCE tests are for
+performance testing only.
 
 
 Enabling support for coverage testing
