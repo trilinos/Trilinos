@@ -134,7 +134,7 @@ MetaData & MetaData::get( const Ghosting & ghost) {
 
 std::ostream &
 print_entity_id( std::ostream & os , const MetaData & meta_data ,
-                  unsigned type , EntityId id )
+                  EntityRank type , EntityId id )
 {
   const std::string & name = meta_data.entity_rank_name( type );
   return os << name << "[" << id << "]" ;
@@ -269,7 +269,7 @@ EntityRank MetaData::entity_rank( const std::string &name ) const
 
   for (size_t i = 0; i < m_entity_rank_names.size(); ++i)
     if (equal_case(name, m_entity_rank_names[i])) {
-      entity_rank = i;
+      entity_rank = static_cast<EntityRank>(i);
       break;
     }
   return entity_rank;
@@ -567,7 +567,7 @@ void MetaData::register_cell_topology(const CellTopology cell_topology, EntityRa
   CellTopologyPartEntityRankMap::const_iterator it = m_cellTopologyPartEntityRankMap.find(cell_topology);
 
   const bool       duplicate     = it != m_cellTopologyPartEntityRankMap.end();
-  const EntityRank existing_rank = duplicate ? (*it).second.second : 0;
+  const EntityRank existing_rank = duplicate ? (*it).second.second : stk::topology::NODE_RANK;
 
   ThrowErrorMsgIf(duplicate && existing_rank != entity_rank,
     "For args: cell_topolgy " << cell_topology.getName() << " and entity_rank " << entity_rank << ", " <<

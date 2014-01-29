@@ -57,7 +57,7 @@ struct EntityKey
   }
 
   EntityId   id() const   { return m_value & ID_MASK; }
-  EntityRank rank() const { return m_value >> RANK_SHIFT; }
+  EntityRank rank() const { return static_cast<EntityRank>(m_value >> RANK_SHIFT); }
 
   bool is_valid() const { return m_value != INVALID; }
 

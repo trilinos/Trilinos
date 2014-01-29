@@ -122,6 +122,7 @@ struct MeshIndex {
 
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
+//typedef stk::topology::rank_t EntityRank ;
 typedef Ordinal EntityRank ;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
@@ -133,7 +134,7 @@ typedef uint64_t EntityId ;
 // Base Entity Rank
 // Note:  This BaseEntityRank can be considered the leaf of a tree and it
 // represents the furthest out you can go in downward relations.
-static const EntityRank BaseEntityRank = 0;
+static const EntityRank BaseEntityRank = stk::topology::BEGIN_RANK;
 static const EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
 static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
 static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;

@@ -53,9 +53,9 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   for ( int i = 1 ; i < NPARTS-1 ; ++i ) {
     std::ostringstream name ;
     name << "Part_" << i ;
-    parts[i] =  partRepo.declare_part( name.str() , 0 );
+    parts[i] =  partRepo.declare_part( name.str() , stk::topology::NODE_RANK );
   }
-  parts[99] =  partRepo.declare_part( "Part_99" , 1 );
+  parts[99] =  partRepo.declare_part( "Part_99" , stk::topology::EDGE_RANK );
 
   STKUNIT_ASSERT(  universal.supersets().empty() );
   STKUNIT_ASSERT( NPARTS ==  partRepo.get_all_parts().size() );
@@ -106,12 +106,12 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
   MetaData m(spatial_dimension);
   PartRepository partRepo(&m);
 
-  Part * const pa =  partRepo.declare_part( std::string("a") , 0 );
-  Part * const pb =  partRepo.declare_part( std::string("b") , 0 );
-  Part * const pc =  partRepo.declare_part( std::string("c") , 0 );
-  Part * const pd =  partRepo.declare_part( std::string("d") , 0 );
-  Part * const pe =  partRepo.declare_part( std::string("e") , 0 );
-  Part * const pf =  partRepo.declare_part( std::string("f") , 0 );
+  Part * const pa =  partRepo.declare_part( std::string("a") , stk::topology::NODE_RANK );
+  Part * const pb =  partRepo.declare_part( std::string("b") , stk::topology::NODE_RANK );
+  Part * const pc =  partRepo.declare_part( std::string("c") , stk::topology::NODE_RANK );
+  Part * const pd =  partRepo.declare_part( std::string("d") , stk::topology::NODE_RANK );
+  Part * const pe =  partRepo.declare_part( std::string("e") , stk::topology::NODE_RANK );
+  Part * const pf =  partRepo.declare_part( std::string("f") , stk::topology::NODE_RANK );
 
   STKUNIT_ASSERT( ! intersect( *pa , *pb ) );
   STKUNIT_ASSERT( ! intersect( *pb , *pc ) );
@@ -157,9 +157,9 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
   STKUNIT_ASSERT_EQUAL( size_t(0) , intersect_size );
   STKUNIT_ASSERT_EQUAL( size_t(0) , vresult.size() );
 
-  Part * const pabc =  partRepo.declare_part( std::string("abc") , 0 );
-  Part * const pbcd =  partRepo.declare_part( std::string("bcd") , 0 );
-  Part * const pdef =  partRepo.declare_part( std::string("def") , 0 );
+  Part * const pabc =  partRepo.declare_part( std::string("abc") , stk::topology::NODE_RANK );
+  Part * const pbcd =  partRepo.declare_part( std::string("bcd") , stk::topology::NODE_RANK );
+  Part * const pdef =  partRepo.declare_part( std::string("def") , stk::topology::NODE_RANK );
 
   partRepo.declare_subset( * pabc, *pa );
   partRepo.declare_subset( * pabc, *pb );

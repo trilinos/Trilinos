@@ -159,7 +159,7 @@ void boundary_analysis(const BulkData& bulk_data,
       continue;
     }
 
-    unsigned subcell_rank = closure_rank == stk::topology::ELEMENT_RANK ? bulk_data.mesh_meta_data().side_rank() : closure_rank - 1;
+    EntityRank subcell_rank = closure_rank == stk::topology::ELEMENT_RANK ? bulk_data.mesh_meta_data().side_rank() : static_cast<EntityRank>(closure_rank - 1);
 
     // iterate over the subcells of the current entity
     for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {

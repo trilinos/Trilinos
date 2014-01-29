@@ -51,16 +51,16 @@ struct TestBoxFixture : public stk::mesh::fixtures::BoxFixture
                  unsigned block_size = 1000) :
     BoxFixture(pm, block_size),
     m_test_part ( m_fem_meta.declare_part ( "Test Part" ) ),
-    m_cell_part ( m_fem_meta.declare_part ( "Cell list" , 3 /*max rank*/ ) ),
-    m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", 0 ) ),
-    m_part_A_1 ( m_fem_meta.declare_part ( "Part A 1", 1 ) ),
-    m_part_A_2 ( m_fem_meta.declare_part ( "Part A 2", 2 ) ),
-    m_part_A_3 ( m_fem_meta.declare_part ( "Part A 3", 3 ) ),
+    m_cell_part ( m_fem_meta.declare_part ( "Cell list" , stk::topology::ELEM_RANK ) ),
+    m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", stk::topology::NODE_RANK ) ),
+    m_part_A_1 ( m_fem_meta.declare_part ( "Part A 1", stk::topology::EDGE_RANK ) ),
+    m_part_A_2 ( m_fem_meta.declare_part ( "Part A 2", stk::topology::FACE_RANK ) ),
+    m_part_A_3 ( m_fem_meta.declare_part ( "Part A 3", stk::topology::ELEM_RANK ) ),
     m_part_A_superset ( m_fem_meta.declare_part ( "Part A superset" ) ),
-    m_part_B_0 ( m_fem_meta.declare_part ( "Part B 0", 0 ) ),
-    m_part_B_1 ( m_fem_meta.declare_part ( "Part B 1", 1 ) ),
-    m_part_B_2 ( m_fem_meta.declare_part ( "Part B 2", 2 ) ),
-    m_part_B_3 ( m_fem_meta.declare_part ( "Part B 3", 3 ) ),
+    m_part_B_0 ( m_fem_meta.declare_part ( "Part B 0", stk::topology::NODE_RANK ) ),
+    m_part_B_1 ( m_fem_meta.declare_part ( "Part B 1", stk::topology::EDGE_RANK ) ),
+    m_part_B_2 ( m_fem_meta.declare_part ( "Part B 2", stk::topology::FACE_RANK ) ),
+    m_part_B_3 ( m_fem_meta.declare_part ( "Part B 3", stk::topology::ELEM_RANK ) ),
     m_part_B_superset ( m_fem_meta.declare_part ( "Part B superset" ) )
   {
     m_fem_meta.declare_part_subset ( m_part_A_superset , m_part_A_0 );
@@ -117,8 +117,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 
   // Find a cell owned by this process
   stk::mesh::Entity cell_to_delete = stk::mesh::Entity();
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
-  while ( cur_bucket != bulk.buckets(3).end() )
+  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
     stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
@@ -149,8 +149,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsBadKey )
   stk::mesh::PartVector        add_part, empty_vector;
   add_part.push_back ( &new_part );
 
-  stk::mesh::EntityKey bad_key1 ( 45 , 1 );  // Bad entity rank
-  stk::mesh::EntityKey bad_key2 ( 1 , 0 );   // Bad id
+  stk::mesh::EntityKey bad_key1 ( static_cast<stk::mesh::EntityRank>(45) , 1 );  // Bad entity rank
+  stk::mesh::EntityKey bad_key2 ( stk::topology::EDGE_RANK , 0 );   // Bad id
 
   STKUNIT_ASSERT_THROW ( bulk.declare_entity(bad_key1.rank(),
                                              bad_key1.id(),
@@ -253,7 +253,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
   stk::mesh::BulkData            &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
-  stk::mesh::Entity new_cell = fixture.get_new_entity ( 3 , 1 );
+  stk::mesh::Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
   bulk.modification_end();
 
   STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
@@ -273,7 +273,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
   add_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
-  stk::mesh::Entity new_cell = fixture.get_new_entity ( 3 , 1 );
+  stk::mesh::Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
@@ -354,8 +354,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
   bulk.modification_begin();
 
-  stk::mesh::Entity node = fixture.get_new_entity ( 0 , 1 );
-  stk::mesh::Entity cell = fixture.get_new_entity ( 3 , 1 );
+  stk::mesh::Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  stk::mesh::Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
 
   bulk.modification_begin();
 
@@ -441,12 +441,12 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
 
   // Find a cell owned by this process
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
+  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
   int send_rank = 0;
 
   std::vector<stk::mesh::EntityProc>  to_send;
   std::vector<stk::mesh::EntityKey>   empty_vector;
-  while ( cur_bucket != bulk.buckets(3).end() )
+  while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
     stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
@@ -519,9 +519,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 
   std::vector<stk::mesh::EntityProc>  to_send;
   std::vector<stk::mesh::EntityKey>   empty_vector;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk1.buckets(3).begin();
+  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk1.buckets(stk::topology::ELEM_RANK).begin();
   int send_rank = 0;
-  while ( cur_bucket != bulk1.buckets(3).end() )
+  while ( cur_bucket != bulk1.buckets(stk::topology::ELEM_RANK).end() )
   {
     stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
@@ -567,9 +567,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
   std::vector<stk::mesh::EntityProc>  empty_send;
   std::vector<stk::mesh::EntityKey>   to_remove_not_ghosted;
   std::vector<stk::mesh::EntityKey>   empty_remove;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
+  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
   int send_rank = 0;
-  while ( cur_bucket != bulk.buckets(3).end() )
+  while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
     stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
@@ -759,7 +759,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   std::vector<stk::mesh::EntityProc>  add_send;
 
-  const std::vector<stk::mesh::Bucket*> & buckets = bulk.buckets( 0 );
+  const std::vector<stk::mesh::Bucket*> & buckets = bulk.buckets( stk::topology::NODE_RANK );
 
   std::vector<stk::mesh::Bucket*>::const_iterator cur_bucket;
 

@@ -66,7 +66,7 @@ public:
     //if we're using an unordered map.
 #else
     const_iterator begin_rank(EntityRank ent_rank) const { return m_entities.lower_bound(EntityKey(ent_rank, 0)); }
-    const_iterator end_rank(EntityRank ent_rank) const { return m_entities.upper_bound(EntityKey(ent_rank+1, 0)); }
+    const_iterator end_rank(EntityRank ent_rank) const { return m_entities.upper_bound(EntityKey(static_cast<EntityRank>(ent_rank+1), 0)); }
 #endif
 
     // Return a pair: the relevant entity, and whether it had to be created

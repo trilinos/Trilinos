@@ -638,7 +638,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::mesh::put_field(coord_field, meta.universal_part(),
                        meta.spatial_dimension());
-  stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), 0);
+  stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), stk::topology::NODE_RANK);
 }
 
 template <typename INT>

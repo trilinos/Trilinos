@@ -152,7 +152,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
   size_t comm_count = 0 ;
 
   for ( size_t itype = 0 ; itype < EntityRankEnd ; ++itype ) {
-    const std::vector< Bucket * > & all_buckets = M.buckets( itype );
+    const std::vector< Bucket * > & all_buckets = M.buckets( static_cast<EntityRank>(itype) );
 
     const std::vector<Bucket*>::const_iterator i_end = all_buckets.end();
           std::vector<Bucket*>::const_iterator i     = all_buckets.begin();
@@ -461,7 +461,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   const PartVector & mesh_parts  = meta.get_parts();
   const int               p_rank = mesh.parallel_rank();
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();
-  const EntityRank      end_rank = meta.entity_rank_count();
+  const EntityRank      end_rank = static_cast<EntityRank>(meta.entity_rank_count());
 
 #if (defined(DEBUG_PRINT_COMM_LIST)  && defined(DEBUG_PRINT_COMM_LIST_UNPACK))
   par_verify_print_comm_list(mesh, true, "unpack_not_owned_verify");

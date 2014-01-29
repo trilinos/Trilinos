@@ -176,7 +176,7 @@ bool BulkData::destroy_relation( Entity e_from ,
 
   require_valid_relation( "destroy" , *this , e_from , e_to );
 
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   const EntityRank e_to_entity_rank = entity_rank(e_to);
   const EntityRank e_from_entity_rank = entity_rank(e_from);
 
@@ -206,7 +206,7 @@ bool BulkData::destroy_relation( Entity e_from ,
       Entity const* rel_entities = NULL;
       ConnectivityOrdinal const* rel_ordinals = NULL;
       int num_rels = 0;
-      for (EntityRank irank = e_to_entity_rank + 1; irank < end_rank; ++irank) {
+      for (EntityRank irank = static_cast<EntityRank>(e_to_entity_rank + 1); irank < end_rank; ++irank) {
         if (connectivity_map().valid(e_to_entity_rank, irank)) {
           num_rels     = num_connectivity(e_to, irank);
           rel_entities = begin(e_to, irank);

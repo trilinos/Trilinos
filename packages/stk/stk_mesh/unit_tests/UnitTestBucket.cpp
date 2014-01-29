@@ -108,7 +108,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
        gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} )";
     else
        gold1 = "Bucket( EntityRank0 : {UNIVERSAL} )";
-    Bucket *b1 = bulk.buckets(0)[0];
+    Bucket *b1 = bulk.buckets(stk::topology::NODE_RANK)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);
     bool equal = (gold1 == out1_str.str());
@@ -128,10 +128,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
     PartVector tmp(2) ;
     tmp[0] = & meta.universal_part();
     tmp[1] = & meta.locally_owned_part();
-    STKUNIT_ASSERT_EQUAL ( has_superset ( *bulk.buckets(0)[0] , tmp ) , bulk.parallel_size() == 1 );
-    STKUNIT_ASSERT ( bulk.buckets(0)[0]->member_any ( tmp ) );
-    STKUNIT_ASSERT_EQUAL ( bulk.buckets(0)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
-    STKUNIT_ASSERT ( bulk.buckets(0)[0]->member ( **meta.get_parts().begin() ) );
+    STKUNIT_ASSERT_EQUAL ( has_superset ( *bulk.buckets(stk::topology::NODE_RANK)[0] , tmp ) , bulk.parallel_size() == 1 );
+    STKUNIT_ASSERT ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_any ( tmp ) );
+    STKUNIT_ASSERT_EQUAL ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
+    STKUNIT_ASSERT ( bulk.buckets(stk::topology::NODE_RANK)[0]->member ( **meta.get_parts().begin() ) );
   }
 }
 

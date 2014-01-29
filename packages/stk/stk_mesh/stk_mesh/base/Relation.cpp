@@ -116,7 +116,7 @@ void get_entities_through_relations(
 
     const Bucket &ibucket = mesh.bucket(*i);
     const Ordinal &ibordinal = mesh.bucket_ordinal(*i);
-    const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+    const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
     std::vector<Entity>::const_iterator next_i = i + 1;
     EntityVector temp_entities;
@@ -142,7 +142,7 @@ void get_entities_through_relations(
 void get_entities_through_relations(
   const BulkData& mesh,
   const std::vector<Entity> & entities ,
-        unsigned              entities_related_rank ,
+        EntityRank              entities_related_rank ,
         std::vector<Entity> & entities_related )
 {
   entities_related.clear();
@@ -172,8 +172,8 @@ void get_entities_through_relations(
 //----------------------------------------------------------------------
 
 void induced_part_membership( const Part & part ,
-                              unsigned entity_rank_from ,
-                              unsigned entity_rank_to ,
+                              EntityRank entity_rank_from ,
+                              EntityRank entity_rank_to ,
                               OrdinalVector & induced_parts,
                               bool include_supersets)
 {
@@ -191,13 +191,13 @@ void induced_part_membership( const Part & part ,
 void induced_part_membership(const BulkData& mesh,
                              const Entity entity_from ,
                              const OrdinalVector       & omit ,
-                                   unsigned           entity_rank_to ,
+                                   EntityRank            entity_rank_to ,
                                    OrdinalVector       & induced_parts,
                                    bool include_supersets)
 {
   const Bucket   & bucket_from    = mesh.bucket(entity_from);
   const int      local_proc_rank  = mesh.parallel_rank();
-  const unsigned entity_rank_from = bucket_from.entity_rank();
+  const EntityRank entity_rank_from = bucket_from.entity_rank();
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
   ThrowAssert(entity_rank_from > entity_rank_to);
 
@@ -231,20 +231,21 @@ void induced_part_membership(const BulkData& mesh,
 
 //----------------------------------------------------------------------
 
-void induced_part_membership(const BulkData& mesh, const Entity entity ,
-                              const OrdinalVector & omit ,
-                                    OrdinalVector & induced_parts,
-                                    bool include_supersets)
+void induced_part_membership(const BulkData& mesh,
+                             const Entity entity ,
+                             const OrdinalVector & omit ,
+                                   OrdinalVector & induced_parts,
+                             bool  include_supersets)
 {
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
 
   const EntityRank e_rank = mesh.entity_rank(entity);
-  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
   EntityVector temp_entities;
   Entity const* rels = NULL;
   int num_rels = 0;
-  for (EntityRank irank = e_rank + 1; irank < end_rank; ++irank)
+  for (EntityRank irank = static_cast<EntityRank>(e_rank + 1); irank < end_rank; ++irank)
   {
     if (mesh.connectivity_map().valid(e_rank, irank)) {
       num_rels = mesh.num_connectivity(entity, irank);

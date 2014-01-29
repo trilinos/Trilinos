@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <algorithm>
 
-static const size_t NODE_RANK = stk::topology::NODE_RANK;
+static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
 
@@ -146,7 +146,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   for (unsigned i = 0;
        i < sizeof(ids_of_entities_in_closure)/sizeof(stk::mesh::EntityId);
        ++i) {
-    stk::mesh::EntityRank rank_of_entity=0;
+    stk::mesh::EntityRank rank_of_entity=stk::topology::NODE_RANK;
     if (i < num_elems_in_closure) {
       rank_of_entity = element_rank;
     }

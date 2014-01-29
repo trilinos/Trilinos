@@ -33,7 +33,6 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
   MetaData meta_data(spatial_dimension);
   MetaData meta_data2(spatial_dimension);
   unsigned size = 0;
-  unsigned EntityRank = 0;
 
   Property<int> & pi = meta_data.declare_property<int>("my_i");
   Property<double> & pf = meta_data.declare_property<double>("my_d");
@@ -50,8 +49,8 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
   Property<double> & pProp = meta_data.declare_property<double>("string_correct_new_double", pb.size());
   Part & part_not_equal_to_pi2 =  meta_data2.declare_part( "part_not_equal_to_pi2" );
   Part & part_not_equal_to_pi = meta_data2.declare_part( "part_not_equal_to_pi");
-  Part & part_not_equal_to_pi2_2 = meta_data2.declare_part( "part_not_equal_to_pi2_2", EntityRank );
-  Part & part = meta_data.declare_part( "part", EntityRank );
+  Part & part_not_equal_to_pi2_2 = meta_data2.declare_part( "part_not_equal_to_pi2_2", stk::topology::NODE_RANK );
+  Part & part = meta_data.declare_part( "part", stk::topology::NODE_RANK );
 
   meta_data.commit();
   meta_data2.commit();

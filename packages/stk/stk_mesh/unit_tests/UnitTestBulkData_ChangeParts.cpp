@@ -63,13 +63,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   Part & part_owns   = meta.locally_owned_part();
   Part & part_shared = meta.globally_shared_part();
 
-  Part & part_A_0 = meta.declare_part(std::string("A_0"), 0 /*entity_rank*/);
-  Part & part_A_1 = meta.declare_part(std::string("A_1"), 1 /*entity_rank*/);
-  Part & part_A_2 = meta.declare_part(std::string("A_2"), 2 /*entity_rank*/);
-  Part & part_A_3 = meta.declare_part(std::string("A_3"), 3 /*entity_rank*/);
+  Part & part_A_0 = meta.declare_part(std::string("A_0"), stk::topology::NODE_RANK);
+  Part & part_A_1 = meta.declare_part(std::string("A_1"), stk::topology::EDGE_RANK);
+  Part & part_A_2 = meta.declare_part(std::string("A_2"), stk::topology::FACE_RANK);
+  Part & part_A_3 = meta.declare_part(std::string("A_3"), stk::topology::ELEM_RANK);
 
-  Part & part_B_0 = meta.declare_part(std::string("B_0"), 0 /*entity_rank*/);
-  Part & part_B_2 = meta.declare_part(std::string("B_2"), 2 /*entity_rank*/);
+  Part & part_B_0 = meta.declare_part(std::string("B_0"), stk::topology::NODE_RANK);
+  Part & part_B_2 = meta.declare_part(std::string("B_2"), stk::topology::FACE_RANK);
 
   meta.commit();
   bulk.modification_begin();
@@ -82,7 +82,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // call that entity the closure_entity because all the other entities
   // will be in it's closure.
 
-  Entity closure_entity = bulk.declare_entity(4 /*entity rank*/,
+  Entity closure_entity = bulk.declare_entity(static_cast<stk::mesh::EntityRank>(4),
                                               p_rank+1 /*id*/,
                                               no_parts);
 

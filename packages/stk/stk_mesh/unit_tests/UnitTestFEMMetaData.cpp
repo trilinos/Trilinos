@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -116,7 +117,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, cell_topology_subsetting )
 {
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 3;
-  const stk::mesh::EntityRank element_rank = spatial_dimension;
+  const stk::mesh::EntityRank element_rank = static_cast<stk::mesh::EntityRank>(spatial_dimension);
   fem_meta.initialize(spatial_dimension);
   stk::mesh::Part & element_part = fem_meta.declare_part("element part", element_rank );
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
@@ -472,7 +473,7 @@ STKUNIT_UNIT_TEST( MetaData, register_cell_topology_duplicate_with_invalid_rank 
   stk::mesh::MetaData fem_meta;
   const size_t spatial_dimension = 2;
   fem_meta.initialize(spatial_dimension);
-  const stk::mesh::EntityRank invalid_rank = 4;
+  const stk::mesh::EntityRank invalid_rank = static_cast<stk::mesh::EntityRank>(4);
 
   STKUNIT_ASSERT_THROW( fem_meta.register_cell_topology( shards::getCellTopologyData<shards::Hexahedron<8> >(), invalid_rank ), std::logic_error );
 }

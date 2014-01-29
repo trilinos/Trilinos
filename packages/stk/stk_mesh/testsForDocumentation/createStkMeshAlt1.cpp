@@ -43,7 +43,7 @@ TEST(StkMesh, CreateStkMesh)
 
     // Test if the STK Mesh has 256 elements. Other examples will discuss details below.
     stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
-    std::vector<stk::mesh::EntityRank> entityCounts;
+    std::vector<unsigned> entityCounts;
     stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
     EXPECT_EQ(256u, entityCounts[stk::topology::ELEMENT_RANK]);
 }

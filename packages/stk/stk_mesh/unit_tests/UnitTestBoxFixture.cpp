@@ -150,7 +150,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   for ( int k = local_box[2][0] ; k <= local_box[2][1] ; ++k ) {
   for ( int j = local_box[1][0] ; j <= local_box[1][1] ; ++j ) {
   for ( int i = local_box[0][0] ; i <= local_box[0][1] ; ++i ) {
-    EntityRank node_type = 0;
+    EntityRank node_type = stk::topology::NODE_RANK;
     EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
     Entity const node = bulk.get_entity( node_type , node_id );
     STKUNIT_ASSERT( bulk.is_valid(node) );
@@ -180,7 +180,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
             for ( int i = p_box[p][0][0] ; i <= p_box[p][0][1] ; ++i )
               if ( local_box[0][0] <= i && i <= local_box[0][1] ) {
 
-                EntityRank node_type = 0;
+                EntityRank node_type = stk::topology::NODE_RANK;
                 EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
                 Entity const node = bulk.get_entity( node_type , node_id );
                 STKUNIT_ASSERT( bulk.is_valid(node) );

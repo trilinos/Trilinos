@@ -99,7 +99,7 @@ void get_selected_entities( const Selector & selector ,
 void count_entities(
   const Selector & selector ,
   const BulkData & mesh ,
-  std::vector< EntityRank > & count )
+  std::vector< unsigned > & count )
 {
   const size_t nranks = MetaData::get(mesh).entity_rank_count();
 
@@ -108,7 +108,7 @@ void count_entities(
   for ( size_t i = 0 ; i < nranks ; ++i ) {
     count[i] = 0 ;
 
-    const std::vector<Bucket*> & ks = mesh.buckets( i );
+    const std::vector<Bucket*> & ks = mesh.buckets( static_cast<EntityRank>(i) );
 
     std::vector<Bucket*>::const_iterator ik ;
 

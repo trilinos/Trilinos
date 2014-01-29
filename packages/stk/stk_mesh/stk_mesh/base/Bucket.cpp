@@ -589,7 +589,7 @@ void Bucket::reset_entity_location(Entity entity, size_type to_ordinal)
 {
   Bucket & from_bucket = mesh().bucket(entity);
   const Bucket::size_type from_ordinal = mesh().bucket_ordinal(entity);
-  const EntityRank owner_rank = mesh().parallel_owner_rank(entity);
+  const int owner_rank = mesh().parallel_owner_rank(entity);
 
   m_entities[to_ordinal]    = entity;
   m_owner_ranks[to_ordinal] = owner_rank;

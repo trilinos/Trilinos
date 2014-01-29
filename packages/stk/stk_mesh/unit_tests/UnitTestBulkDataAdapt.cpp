@@ -48,7 +48,7 @@ const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 void printBuckets(std::ostringstream& msg, BulkData& mesh)
 {
-  const std::vector<Bucket*> & buckets = mesh.buckets(0);
+  const std::vector<Bucket*> & buckets = mesh.buckets(NODE_RANK);
   for (unsigned i=0; i < buckets.size(); i++)
     {
       const Bucket& bucket = *buckets[i];
@@ -63,7 +63,7 @@ void printBuckets(std::ostringstream& msg, BulkData& mesh)
 
 static void checkBuckets( BulkData& mesh)
 {
-  const std::vector<Bucket*> & buckets = mesh.buckets(0);
+  const std::vector<Bucket*> & buckets = mesh.buckets(NODE_RANK);
   for (unsigned i=0; i < buckets.size(); i++)
     {
       Bucket* bucket = buckets[i];

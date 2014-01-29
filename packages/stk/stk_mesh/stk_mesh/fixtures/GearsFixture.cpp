@@ -92,7 +92,7 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gea
       m_gears[i] = new Gear (
           meta_data,
           bulk_data,
-          meta_data.declare_part(oss.str(),SpatialDimension),
+          meta_data.declare_part(oss.str(),static_cast<EntityRank>(SpatialDimension)),
           cylindrical_coord_part,
           hex_part,
           wedge_part,

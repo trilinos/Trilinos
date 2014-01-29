@@ -185,23 +185,24 @@ Entity declare_element_side(
   ThrowErrorMsgIf( elem_top == NULL,
       "Element[" << mesh.identifier(elem) << "] has no defined topology");
 
-  const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
+  const CellTopologyData * const shards_side_top = elem_top->side[ local_side_id ].topology;
+  const stk::topology side_top = get_topology(shards_side_top);
 
-  ThrowErrorMsgIf( side_top == NULL,
+  ThrowErrorMsgIf( shards_side_top == NULL,
 		   "Element[" << mesh.identifier(elem) << "], local_side_id = " <<
 		   local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
   Entity side;
   if (check_pre_existing) {
-    side = mesh.get_entity( side_top->dimension, global_side_id);
+    side = mesh.get_entity( side_top.rank(), global_side_id);
     if (!mesh.is_valid(side)) {
-      side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
+      side = mesh.declare_entity( side_top.rank() , global_side_id, empty_parts );
       declare_element_side(mesh, elem, side, local_side_id, part);
     }
   }
   else {
-    side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
+    side = mesh.declare_entity( side_top.rank() , global_side_id, empty_parts );
     declare_element_side(mesh, elem, side, local_side_id, part);
   }
   return side;
@@ -223,23 +224,24 @@ Entity declare_element_edge(
       "Element[" << mesh.identifier(elem) << "] has no defined topology");
 
 
-  const CellTopologyData * const edge_top = elem_top->edge[ local_edge_id ].topology;
+  const CellTopologyData * const shards_edge_top = elem_top->edge[ local_edge_id ].topology;
+  const stk::topology edge_top = get_topology(shards_edge_top);
 
-  ThrowErrorMsgIf( edge_top == NULL,
+  ThrowErrorMsgIf( shards_edge_top == NULL,
       "Element[" << mesh.identifier(elem) << "], local_edge_id = " <<
       local_edge_id << ", edge has no defined topology" );
 
   PartVector empty_parts ;
   Entity edge;
   if (check_pre_existing) {
-    edge = mesh.get_entity(edge_top->dimension, global_edge_id);
+    edge = mesh.get_entity(edge_top.rank(), global_edge_id);
     if (!mesh.is_valid(edge)) {
-      edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
+      edge = mesh.declare_entity( edge_top.rank() , global_edge_id, empty_parts );
       declare_element_edge(mesh, elem, edge, local_edge_id, part);
     }
   }
   else {
-    edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
+    edge = mesh.declare_entity( edge_top.rank() , global_edge_id, empty_parts );
     declare_element_edge(mesh, elem, edge, local_edge_id, part);
   }
   return edge;

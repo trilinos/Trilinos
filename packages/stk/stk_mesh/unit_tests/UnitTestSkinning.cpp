@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <algorithm>
 
-static const size_t NODE_RANK = stk::topology::NODE_RANK;
+static const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
 
@@ -101,10 +101,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
   }
 
   {
-    const unsigned mesh_rank = element_rank;
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk_data);
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
-    const std::vector<stk::mesh::Bucket*>& buckets = bulk_data.buckets( mesh_rank -1);
+    const std::vector<stk::mesh::Bucket*>& buckets = bulk_data.buckets( static_cast<stk::mesh::EntityRank>(element_rank-1));
     int num_skin_entities = stk::mesh::count_selected_entities( select_skin, buckets);
 
 

@@ -239,7 +239,7 @@ void BulkData::internal_change_entity_parts(
 
     // update downward connectivity closure count
     if (k_old) {
-      for (unsigned rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
+      for (EntityRank rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
         unsigned num = num_connectivity(entity,rank);
         Entity const * entities = begin(entity,rank);
         for (unsigned i =0; i<num; ++i) {
@@ -255,7 +255,7 @@ void BulkData::internal_change_entity_parts(
 
     // update downward connectivity closure count
     if (k_old) {
-      for (unsigned rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
+      for (EntityRank rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
         unsigned num = num_connectivity(entity,rank);
         Entity const * entities = begin(entity,rank);
         for (unsigned i =0; i<num; ++i) {
@@ -365,8 +365,8 @@ void BulkData::internal_propagate_part_changes(
 
   m_check_invalid_rels = false;
 
-  const unsigned erank = entity_rank(entity);
-  const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
+  const EntityRank erank = entity_rank(entity);
+  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
 
   OrdinalVector to_del , to_add , empty ;
   EntityVector temp_entities;
@@ -404,7 +404,7 @@ void BulkData::internal_propagate_part_changes(
 
           Entity const* back_rel_entities = NULL;
           int num_back_rels = 0;
-          for (EntityRank to_rel_rank_i = e_to_rank + 1; to_rel_rank_i < end_rank; ++to_rel_rank_i)
+          for (EntityRank to_rel_rank_i = static_cast<EntityRank>(e_to_rank + 1); to_rel_rank_i < end_rank; ++to_rel_rank_i)
           {
             if (connectivity_map().valid(e_to_rank, to_rel_rank_i)) {
               num_back_rels     = num_connectivity(e_to, to_rel_rank_i);

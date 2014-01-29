@@ -76,14 +76,14 @@ void insert_transitive_ghost(const BulkData& mesh, Entity const entity ,
   // If this entity is a member of another entity's closure
   // then that other entity is part of the traversal.
 
-  const unsigned erank = mesh.entity_rank(entity);
+  const EntityRank erank = mesh.entity_rank(entity);
 
   // Recurse over upward relations
-  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
   EntityVector temp_entities;
   Entity const* rels = NULL;
   int num_rels = 0;
-  for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
+  for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank < end_rank; ++irank)
   {
     if (mesh.connectivity_map().valid(erank, irank)) {
       num_rels = mesh.num_connectivity(entity, irank);
@@ -146,14 +146,14 @@ bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_
     return true;
   }
 
-  const unsigned erank = mesh.entity_rank(e);
-  const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  const EntityRank erank = mesh.entity_rank(e);
+  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
   // Any higher ranking entities locally owned?
   EntityVector temp_entities;
   Entity const* rels = NULL;
   int num_rels = 0;
-  for (EntityRank irank = end_rank - 1; irank > erank; --irank)
+  for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > erank; --irank)
   {
     if (mesh.connectivity_map().valid(erank, irank)) {
       num_rels = mesh.num_connectivity(e, irank);

@@ -55,30 +55,30 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
 
   std::vector<Entity> entities;
   for(size_t i=0; i<nranks; ++i) {
-    EntityRank rank = i;
-    total_bytes += mem_usage.entity_counts[rank]*sizeof(Entity);
+    EntityRank rank_i = static_cast<EntityRank>(i);
+    total_bytes += mem_usage.entity_counts[rank_i]*sizeof(Entity);
 
-    get_entities(bulk, rank, entities);
+    get_entities(bulk, rank_i, entities);
 
     for(size_t n=0; n<entities.size(); ++n) {
       Entity entity = entities[n];
-      for(EntityRank r=0; r<i; ++r) {
+      for(EntityRank r=stk::topology::NODE_RANK; r<rank_i; ++r) {
         unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.downward_relation_counts[r] += num_rels;
         ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
-      for(EntityRank r=i+1; r<nranks; ++r) {
+      for(EntityRank r=static_cast<EntityRank>(rank_i+1); r<nranks; ++r) {
         unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.upward_relation_counts[r] += num_rels;
         ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
     }
 
-    const std::vector<Bucket*>& buckets = bulk.buckets(rank);
-    mem_usage.bucket_counts[rank] = buckets.size();
+    const std::vector<Bucket*>& buckets = bulk.buckets(rank_i);
+    mem_usage.bucket_counts[rank_i] = buckets.size();
     for(size_t b=0; b<buckets.size(); ++b) {
       Bucket& bucket = *buckets[b];
-      mem_usage.bucket_bytes[rank] += bucket.allocation_size();
+      mem_usage.bucket_bytes[rank_i] += bucket.allocation_size();
       total_bytes += bucket.allocation_size();
     }
   }

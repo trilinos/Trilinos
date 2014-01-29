@@ -266,8 +266,8 @@ void get_entities_through_relations(
  *          between entities. Insert the result into 'induced_parts'.
  */
 void induced_part_membership( const Part & part ,
-                              unsigned entity_rank_from ,
-                              unsigned entity_rank_to ,
+                              EntityRank entity_rank_from ,
+                              EntityRank entity_rank_to ,
                               OrdinalVector & induced_parts,
                               bool include_supersets=true);
 
@@ -276,7 +276,7 @@ void induced_part_membership( const Part & part ,
  */
 void induced_part_membership(const BulkData& mesh, const Entity entity_from ,
                               const OrdinalVector       & omit ,
-                                    unsigned           entity_rank_to ,
+                                    EntityRank            entity_rank_to ,
                                     OrdinalVector       & induced_parts,
                                     bool include_supersets=true);
 

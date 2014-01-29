@@ -229,7 +229,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     // First have to destroy attached elements.
     // One will be owned and the other ghosted
 
-    const stk::mesh::EntityRank end_rank = bulk.mesh_meta_data().entity_rank_count();
+    const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
@@ -294,7 +294,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     // This process' first node in the loop is shared, destroy it
     // First have to destroy attached elements.
     // One will be owned and the other ghosted
-    const stk::mesh::EntityRank end_rank = bulk.mesh_meta_data().entity_rank_count();
+    const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;

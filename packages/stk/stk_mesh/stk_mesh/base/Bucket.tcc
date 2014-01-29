@@ -164,7 +164,7 @@ public:
   BulkData & mesh() const { return m_mesh ; }
 
   /** \brief  Type of entities in this bucket */
-  unsigned entity_rank() const { return m_entity_rank ; }
+  EntityRank entity_rank() const { return m_entity_rank ; }
 
   unsigned bucket_id() const { return m_bucket_id; }
 

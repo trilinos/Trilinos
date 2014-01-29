@@ -147,7 +147,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   meta_data.declare_field_restriction(*nodeField , pB , stride[nodeField->field_array_rank()], stride[1] );
 
-  STKUNIT_ASSERT_EQUAL( nodeField->max_size( 0 ) , 20u );
+  STKUNIT_ASSERT_EQUAL( nodeField->max_size( stk::topology::NODE_RANK ) , 20u );
 
   //------------------------------
   // Check for error detection of bad stride:

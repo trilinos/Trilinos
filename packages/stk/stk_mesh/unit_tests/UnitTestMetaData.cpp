@@ -78,13 +78,12 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, rankHigherThanDefined )
   const int spatial_dimension = 3;
   const std::vector<std::string> & rank_names = stk::mesh::entity_rank_names();
   MetaData metadata(spatial_dimension, rank_names);
-  int i = 2;
 
-  const std::string& i_name2 =  metadata.entity_rank_name( i );
+  const std::string& i_name2 =  metadata.entity_rank_name( stk::topology::EDGE_RANK );
 
-  STKUNIT_ASSERT( i_name2 == rank_names[i] );
+  STKUNIT_ASSERT( i_name2 == rank_names[stk::topology::EDGE_RANK] );
 
-  EntityRank one_rank_higher_than_defined = rank_names.size();
+  EntityRank one_rank_higher_than_defined = static_cast<EntityRank>(rank_names.size());
 
   STKUNIT_ASSERT_THROW(
     metadata.entity_rank_name( one_rank_higher_than_defined ),
@@ -145,9 +144,9 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
 
   //Checking internal_create_entity.
   //   Hey, this doesn't seem to test much! -- PGX
-  e.internal_create_entity( stk::mesh::EntityKey( 3, 2 ));
-  e.internal_create_entity( stk::mesh::EntityKey( 3, 5 ));
-  e.internal_create_entity( stk::mesh::EntityKey( 3, 7 ));
+  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 2 ));
+  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 5 ));
+  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 7 ));
 
   //Checking get_entity with invalid key - no rank or id
   {
@@ -187,11 +186,11 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, declare_part_with_rank )
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
   metadata.declare_part("foo");
-  STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
-  STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
+  STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",stk::topology::EDGE_RANK));
+  STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",stk::topology::EDGE_RANK));
 
   // Should throw because we're trying to change rank
-  STKUNIT_ASSERT_THROW(metadata.declare_part("foo",2),std::runtime_error);
+  STKUNIT_ASSERT_THROW(metadata.declare_part("foo",stk::topology::FACE_RANK),std::runtime_error);
 
   // Should not throw since we did not provide rank
   metadata.declare_part("foo");
@@ -203,7 +202,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, declare_attribute_no_delete )
   const CellTopologyData * singleton = NULL;
   const int spatial_dimension = 3;
   MetaData metadata(spatial_dimension);
-  Part &pa = metadata.declare_part( std::string("a") , 0 );
+  Part &pa = metadata.declare_part( std::string("a") , stk::topology::NODE_RANK );
   metadata.declare_attribute_no_delete( pa, singleton);
   metadata.commit();
 }

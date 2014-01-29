@@ -39,7 +39,7 @@ public:
    *   nodes of those elements are also members of an element part.
    *   Return InvalidEntityRank if no primary entity type.
    */
-  unsigned primary_entity_rank() const { return m_entity_rank; }
+  EntityRank primary_entity_rank() const { return m_entity_rank; }
 
   stk::topology topology() const { return m_topology; }
 
