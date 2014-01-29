@@ -64,15 +64,15 @@ class Epetra_CrsMatrix;
 
 //! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of for Epetra_RowMatrix's.
 
-/*! 
+/*!
   The Ifpack_PointRelaxation class enables the construction of point
   relaxation
-  preconditioners of an Epetra_RowMatrix. Ifpack_PointRelaxation 
-  is derived from 
+  preconditioners of an Epetra_RowMatrix. Ifpack_PointRelaxation
+  is derived from
   the Ifpack_Preconditioner class, which is itself derived from Epetra_Operator.
   Therefore this object can be used as preconditioner everywhere an
   ApplyInverse() method is required in the preconditioning step.
- 
+
 This class enables the construction of the following simple preconditioners:
 - Jacobi;
 - Gauss-Seidel;
@@ -125,7 +125,7 @@ Ifpack_GaussSeidel does not consider backward Gauss-Seidel methods.
 \author Marzio Sala, SNL 9214.
 
 \date Last modified on 22-Jan-05.
-  
+
 */
 class Ifpack_PointRelaxation : public Ifpack_Preconditioner {
 
@@ -146,9 +146,9 @@ public:
   //@}
 
   /*! This flag can be used to apply the preconditioner to the transpose of
-   * the input operator. 
-   * 
-   * \return Integer error code, set to 0 if successful.  
+   * the input operator.
+   *
+   * \return Integer error code, set to 0 if successful.
    * Set to -1 if this implementation does not support transpose.
     */
   virtual inline int SetUseTranspose(bool UseTranspose_in)
@@ -162,10 +162,10 @@ public:
   //@{ \name Mathematical functions.
 
   //! Applies the matrix to an Epetra_MultiVector.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
@@ -183,7 +183,7 @@ public:
   }
 
   //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
+  /*!
     \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
     \param
@@ -231,7 +231,7 @@ public:
   virtual const Epetra_Map & OperatorRangeMap() const;
 
   virtual int Initialize();
-  
+
   virtual bool IsInitialized() const
   {
     return(IsInitialized_);
@@ -247,10 +247,10 @@ public:
   virtual int Compute();
 
   //@}
- 
+
   //@{ \name Miscellaneous
 
-  virtual const Epetra_RowMatrix& Matrix() const 
+  virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
@@ -334,62 +334,62 @@ public:
   // @}
 
 private:
- 
+
   // @{ Application of the preconditioner
-  
+
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseJacobi(const Epetra_MultiVector& X, 
+  virtual int ApplyInverseJacobi(const Epetra_MultiVector& X,
                                  Epetra_MultiVector& Y) const;
 
   //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseGS(const Epetra_MultiVector& X, 
+  virtual int ApplyInverseGS(const Epetra_MultiVector& X,
                               Epetra_MultiVector& Y) const;
 
-  virtual int ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, 
+  virtual int ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X,
                                         Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A,
-                                        const Epetra_MultiVector& X, 
+                                        const Epetra_MultiVector& X,
                                         Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A,
-                                            const Epetra_MultiVector& X, 
+                                            const Epetra_MultiVector& X,
                                             Epetra_MultiVector& Y) const;
   virtual int ApplyInverseGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A,
-                                            const Epetra_MultiVector& X, 
+                                            const Epetra_MultiVector& X,
                                             Epetra_MultiVector& Y) const;
 
   //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
+  virtual int ApplyInverseSGS(const Epetra_MultiVector& X,
                               Epetra_MultiVector& Y) const;
 
-  virtual int ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, 
+  virtual int ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X,
                                         Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A,
-                                        const Epetra_MultiVector& X, 
+                                        const Epetra_MultiVector& X,
                                         Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A,
-                                            const Epetra_MultiVector& X, 
+                                            const Epetra_MultiVector& X,
                                             Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverseSGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A,
-                                            const Epetra_MultiVector& X, 
+                                            const Epetra_MultiVector& X,
                                             Epetra_MultiVector& Y) const;
 
 
   //@}
 
 private:
-  
+
   //! Sets the label.
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
   Ifpack_PointRelaxation(const Ifpack_PointRelaxation& rhs)
   {}
-  
+
   //! operator = (PRIVATE, should not be used)
   Ifpack_PointRelaxation& operator=(const Ifpack_PointRelaxation& rhs)
   {
@@ -457,21 +457,21 @@ private:
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
-  //! Backward-Mode Gauss Seidel 
+  //! Backward-Mode Gauss Seidel
   bool DoBackwardGS_;
   //! Do L1 Jacobi/GS/SGS
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   double L1Eta_;
 
-  //! Number of (local) unknowns for local smoothing 
+  //! Number of (local) unknowns for local smoothing
   int NumLocalSmoothingIndices_;
   //! List of (local) unknowns for local smoothing (if any)
   int * LocalSmoothingIndices_;
-  
+
   // @}
 
-  
+
 
 };
 
