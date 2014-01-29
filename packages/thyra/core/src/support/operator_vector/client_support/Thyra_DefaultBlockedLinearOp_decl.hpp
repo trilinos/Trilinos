@@ -46,6 +46,7 @@
 
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 
@@ -84,6 +85,7 @@ template<class Scalar> class DefaultProductVectorSpace;
 template<class Scalar>
 class DefaultBlockedLinearOp
   : virtual public PhysicallyBlockedLinearOpBase<Scalar>
+  , virtual public RowStatLinearOpBase<Scalar>
 
 {
 public:
@@ -207,6 +209,21 @@ protected:
     ) const;
  
   //@}
+
+  /** @name Overridden from RowStatLinearOpBase */
+  //@{
+
+  /** \brief . */
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+ 	
+  /** \brief . */
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat, 
+    const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const;
+
+  //@}
+
 
 private:
 
