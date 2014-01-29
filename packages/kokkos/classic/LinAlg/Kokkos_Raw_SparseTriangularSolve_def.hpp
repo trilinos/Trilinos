@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -119,7 +119,7 @@ lowerTriSolveCsrColMajor (
     for (Ordinal j = 0; j < numVecs; ++j) {
       X[r + j*colStrideX] = Y[r + j*colStrideY];
     }
-    // This assumes that the diagonal entry is last in the row.  
+    // This assumes that the diagonal entry is last in the row.
     // This will break if the row is empty, but that's bad for
     // non-unit-diagonal triangular solve anyway.
     const MatrixScalar A_rr = val[ptr[r+1]-1];
@@ -127,7 +127,7 @@ lowerTriSolveCsrColMajor (
       const MatrixScalar A_rc = val[k];
       const Ordinal c = ind[k];
       for (Ordinal j = 0; j < numVecs; ++j) {
-	X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
       }
     } // for each entry A_rc in the current row r
     for (Ordinal j = 0; j < numVecs; ++j) {
@@ -135,6 +135,8 @@ lowerTriSolveCsrColMajor (
     }
   } // for each row r
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -216,6 +218,8 @@ lowerTriSolveCsrRowMajor (
   } // for each row r
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -281,6 +285,8 @@ lowerTriSolveCsrColMajorUnitDiag (
   } // for each row r
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -345,6 +351,8 @@ lowerTriSolveCsrRowMajorUnitDiag (
     } // for each entry A_rc in the current row r
   } // for each row r
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -426,6 +434,8 @@ upperTriSolveCsrColMajor (
   } // for each row r
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -506,6 +516,8 @@ upperTriSolveCsrRowMajor (
   } // for each row r
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -570,6 +582,8 @@ upperTriSolveCsrColMajorUnitDiag (
     } // for each entry A_rc in the current row r
   } // for each row r
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -636,6 +650,8 @@ upperTriSolveCsrRowMajorUnitDiag (
   } // for each row r
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -670,6 +686,8 @@ lowerTriSolveCscColMajorInPlace (
     }
   } // for each column c
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -706,6 +724,8 @@ lowerTriSolveCscRowMajorInPlace (
   } // for each column c
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -731,6 +751,8 @@ lowerTriSolveCscColMajorUnitDiagInPlace (
   } // for each column c
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -755,6 +777,8 @@ lowerTriSolveCscRowMajorUnitDiagInPlace (
     } // for each entry A_rc in the current column c
   } // for each column c
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -791,6 +815,8 @@ upperTriSolveCscColMajorInPlace (
   } // for each column c
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -826,6 +852,8 @@ upperTriSolveCscRowMajorInPlace (
   } // for each column c
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -851,6 +879,8 @@ upperTriSolveCscColMajorUnitDiagInPlace (
   } // for each column c
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -875,6 +905,8 @@ upperTriSolveCscRowMajorUnitDiagInPlace (
     } // for each entry A_rc in the current column c
   } // for each column c
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -958,6 +990,8 @@ lowerTriSolveCsrColMajorConj (
   } // for each row r
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -1040,6 +1074,8 @@ lowerTriSolveCsrRowMajorConj (
   } // for each row r
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -1109,6 +1145,8 @@ lowerTriSolveCsrColMajorUnitDiagConj (
   } // for each row r
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -1177,6 +1215,8 @@ lowerTriSolveCsrRowMajorUnitDiagConj (
     } // for each entry A_rc in the current row r
   } // for each row r
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -1260,6 +1300,8 @@ upperTriSolveCsrColMajorConj (
   } // for each row r
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -1342,6 +1384,8 @@ upperTriSolveCsrRowMajorConj (
   } // for each row r
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -1410,6 +1454,8 @@ upperTriSolveCsrColMajorUnitDiagConj (
     } // for each entry A_rc in the current row r
   } // for each row r
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -1480,6 +1526,8 @@ upperTriSolveCsrRowMajorUnitDiagConj (
   } // for each row r
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -1514,6 +1562,8 @@ lowerTriSolveCscColMajorInPlaceConj (
     }
   } // for each column c
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -1550,6 +1600,8 @@ lowerTriSolveCscRowMajorInPlaceConj (
   } // for each column c
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -1577,6 +1629,8 @@ lowerTriSolveCscColMajorUnitDiagInPlaceConj (
   } // for each column c
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -1603,6 +1657,8 @@ lowerTriSolveCscRowMajorUnitDiagInPlaceConj (
     } // for each entry A_rc in the current column c
   } // for each column c
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -1639,6 +1695,8 @@ upperTriSolveCscColMajorInPlaceConj (
   } // for each column c
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -1674,6 +1732,8 @@ upperTriSolveCscRowMajorInPlaceConj (
   } // for each column c
 }
 
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -1701,6 +1761,8 @@ upperTriSolveCscColMajorUnitDiagInPlaceConj (
   } // for each column c
 }
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class RangeScalar>
@@ -1727,6 +1789,8 @@ upperTriSolveCscRowMajorUnitDiagInPlaceConj (
     } // for each entry A_rc in the current column c
   } // for each column c
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 } // namespace Raw
 } // namespace KokkosClassic
