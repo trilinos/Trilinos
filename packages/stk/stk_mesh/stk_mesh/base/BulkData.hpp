@@ -1930,7 +1930,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 
   inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
     ThrowAssert(&f.get_mesh() == &b.mesh());
-    return(b.entity_rank() == f.entity_rank());    
+    return(b.entity_rank() == static_cast<unsigned>(f.entity_rank()));
   }
 
   inline bool is_matching_rank(const FieldBase& f, Entity e) {
@@ -1965,7 +1965,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
     ThrowAssert(&b.mesh() == &f.get_mesh());
      //return true if field and bucket have the same rank and the field is associated with the bucket
-     return (f.entity_rank() == b.entity_rank()) && (0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
+     return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
   }
 
   template<class FieldType>
