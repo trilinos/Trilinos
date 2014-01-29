@@ -654,11 +654,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
     }
   }
   
-  FieldMetaDataVector const* default_val = NULL;
-  std::vector<FieldMetaDataVector const*> x_field_meta(num_fields_per_chunk, default_val);
-  std::vector<FieldMetaDataVector const*> y_field_meta(num_fields_per_chunk, default_val);
-  std::vector<FieldMetaDataVector const*> z_field_meta(num_fields_per_chunk, default_val);
-  
   const int num_iterations = 100;
   size_t dummy = 0;
    for (int i = 0; i < num_iterations; ++i) {
@@ -668,12 +663,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
         std::vector<SimpleField*> const& y_fields = fields[1][y];
         for (int z = 0; z < z_chunks; ++z) {
           std::vector<SimpleField*> const& z_fields = fields[2][z];
-
-          for (int f = 0; f < num_fields_per_chunk; ++f) {
-            x_field_meta[f] =  &x_fields[f]->get_meta_data_for_field();
-            y_field_meta[f] =  &y_fields[f]->get_meta_data_for_field();
-            z_field_meta[f] =  &z_fields[f]->get_meta_data_for_field();
-          }
 
           BucketVector const& chunk_buckets = bucket_map[x][y][z];
           for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
@@ -693,10 +682,9 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
 
 	      for (int f = 0; f < num_fields_per_chunk; ++f) {
 
-                const double* x_field_data = reinterpret_cast<const double*>((*x_field_meta[f])[bucket_id].m_data) + bucket_ord;
-                const double* y_field_data = reinterpret_cast<const double*>((*y_field_meta[f])[bucket_id].m_data) + bucket_ord;
-                const double* z_field_data = reinterpret_cast<const double*>((*z_field_meta[f])[bucket_id].m_data) + bucket_ord;
-
+                const double* x_field_data = stk::mesh::field_data(*x_fields[f], bucket_id, bucket_ord, sizeof(double));
+                const double* y_field_data = stk::mesh::field_data(*y_fields[f], bucket_id, bucket_ord, sizeof(double));
+                const double* z_field_data = stk::mesh::field_data(*z_fields[f], bucket_id, bucket_ord, sizeof(double));
 
                 if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
                   ++dummy;

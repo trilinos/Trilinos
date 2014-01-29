@@ -150,21 +150,18 @@ class FieldBase
   stk::mesh::BulkData& get_mesh() const
   { return *m_mesh; }
 
+  // This should only be accessed by the stk::mesh::BulkData class
+  inline const FieldMetaDataVector& get_meta_data_for_field() const {
+    return m_field_meta_data;
+  }
 
-  //
-  //  NKC, don't like that this is non-const.  Bulk data needs to modify this, but no other classes should, maybe 
-  //  this should be private and have BulkData as friend?  Or maybe restructure in a different way so that bucket
-  //  changes are cleanly propogated to field.
-  //
+private:
+
+  // This should only be accessed by the stk::mesh::BulkData class
   inline FieldMetaDataVector& get_meta_data_for_field() {
     return m_field_meta_data;
   }
-  inline const FieldMetaDataVector& get_meta_data_for_field() const{
-    return m_field_meta_data;
-  }
 
-
-private:
 
   //  Associate this field with a bulk data.
   //    Note, a field can be assocaited with one and only one bulk data object
@@ -176,8 +173,10 @@ private:
   MetaData & meta_data() const { return m_impl.meta_data(); }
 
   friend class ::stk::mesh::MetaData ;
+  friend class ::stk::mesh::BulkData;
   friend class ::stk::mesh::impl::FieldRepository;
   friend class ::stk::mesh::impl::FieldBaseImpl ;
+
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
