@@ -5,6 +5,8 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
 #include <map>
 #include <vector>
 #include <string>
@@ -19,7 +21,8 @@ namespace pike {
       distributor on all processes of the global comm but do not have
       to actually exist on all processes of the global comm.
    */
-  class MultiphysicsDistributor {
+  class MultiphysicsDistributor : public Teuchos::Describable,
+				  public Teuchos::VerboseObject<pike::MultiphysicsDistributor> {
 
   public:
 
