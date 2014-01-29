@@ -238,8 +238,6 @@ public:
    */
   virtual bool useNumNonzerosAsRowWeight(int idx) const { return 0; }
 
-
-
   /*! \brief Indicates whether the MatrixAdapter implements a view of the
              matrix in compressed sparse column (CCS) format.
              All matrix adapters must implement either getCRSView or

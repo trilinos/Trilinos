@@ -165,8 +165,8 @@ public:
       \param adjIds on return will point to the array of adjacent vertices for
          for each vertex.
    */
-  virtual void getEdgeView(const lno_t *&offsets,
-                           const gid_t *&adjIds) const = 0;
+  virtual void getEdgesView(const lno_t *&offsets,
+                            const gid_t *&adjIds) const = 0;
        
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
@@ -187,6 +187,12 @@ public:
     stride = 0;
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
+
+
+  /*! \brief Indicate whether vertex weight with index idx should be the
+   *         global degree of the vertex
+   */
+  virtual bool useDegreeAsVertexWeight(int idx) const { return 0; }
 
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */

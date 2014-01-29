@@ -109,6 +109,20 @@ public:
   XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
                          int numWeightsPerRow=0);
 
+  /*! \brief Specify a weight for each entity of the primaryEntityType.
+   *    \param weightVal A pointer to the weights for this dimension.
+   *    \stride          A stride to be used in reading the values.  The
+   *        dimension \c dim weight for entity \k should be found at
+   *        <tt>weightVal[k*stride]</tt>.
+   *    \param dim  A value between zero and one less that the \c weightDim 
+   *                  argument to the constructor.
+   *
+   * The order of weights should correspond to the order of the primary 
+   * entity type; see, e.g.,  setRowWeights below.
+   */
+
+  void setPrimaryWeights(const scalar_t *weightVal, int stride, int idx = 0);
+
   /*! \brief Specify a weight for each row.
    *    \param weightVal A pointer to the weights for this dimension.
    *    \stride          A stride to be used in reading the values.  The
@@ -126,10 +140,17 @@ public:
 
   void setRowWeights(const scalar_t *weightVal, int stride, int idx = 0);
 
-  /*! \brief Specify whether or not row weights for an index should be
-              the count of row non zeros.
-   *    \param idx If true, Zoltan2 will automatically use the number of
-   *         non zeros in an row as the row's weight for index \c idx.
+  /*! \brief Specify an index for which the weight should be
+              the degree of the entity
+   *    \param idx Zoltan2 will use the entity's 
+   *         degree as the entity weight for index \c idx.
+   */
+  void setPrimaryWeightIsDegree(int idx);
+
+  /*! \brief Specify an index for which the row weight should be
+              the global number of nonzeros in the row
+   *    \param idx Zoltan2 will use the global number of nonzeros in a row
+   *         as the row weight for index \c idx.
    */
   void setRowWeightIsNumberOfNonZeros(int idx);
 
@@ -172,10 +193,7 @@ public:
   }
 
 
-  int getNumWeightsPerRow() const
-  {
-    return weightDim_;
-  }
+  int getNumWeightsPerRow() const { return weightDim_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
@@ -264,6 +282,25 @@ template <typename User, typename UserCoord>
   }
 }
 
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setPrimaryWeights(
+    const scalar_t *weightVal, int stride, int idx)
+{
+  if (this->getPrimaryEntityType() == MATRIX_ROW)
+    setRowWeights(weightVal, stride, idx);
+  else {
+    // TODO:  Need to allow weights for columns and/or nonzeros
+    std::ostringstream emsg;
+    emsg << __FILE__ << "," << __LINE__
+         << " error:  setPrimaryWeights not yet supported for"
+         << " columns or nonzeros."
+         << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
   void XpetraCrsMatrixAdapter<User,UserCoord>::setRowWeights(
     const scalar_t *weightVal, int stride, int idx)
@@ -277,16 +314,36 @@ template <typename User, typename UserCoord>
   rowWeights_[idx] = input_t(weightV, stride);
 }
 
+////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraCrsMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(int dim)
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setPrimaryWeightIsDegree(
+    int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight dimension",
-    dim >= 0 && dim < weightDim_, BASIC_ASSERTION);
-
-  numNzWeight_[dim] = true;
+  if (this->getPrimaryEntityType() == MATRIX_ROW)
+    setRowWeightIsNumberOfNonZeros(idx);
+  else {
+    // TODO:  Need to allow weights for columns and/or nonzeros
+    std::ostringstream emsg;
+    emsg << __FILE__ << "," << __LINE__
+         << " error:  setPrimaryWeightIsNumberOfNonZeros not yet supported for"
+         << " columns" << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
 }
 
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
+    int idx)
+{
+  env_->localInputAssertion(__FILE__, __LINE__,
+    "invalid row weight index",
+    idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
+
+  numNzWeight_[idx] = true;
+}
+
+////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
   template <typename Adapter>
     void XpetraCrsMatrixAdapter<User,UserCoord>::applyPartitioningSolution(

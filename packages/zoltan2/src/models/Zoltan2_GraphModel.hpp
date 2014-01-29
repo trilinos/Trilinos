@@ -996,19 +996,19 @@ template <typename User, typename UserCoord>
   size_t GraphModel<MatrixAdapter<User,UserCoord> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
-  {
-    size_t nv = gids_.size();
+{
+  size_t nv = gids_.size();
 
-    if (gnosAreGids_)
-      Ids = gids_.view(0, nv);
-    else
-      Ids = gnosConst_.view(0, nv);
+  if (gnosAreGids_)
+    Ids = gids_.view(0, nv);
+  else
+    Ids = gnosConst_.view(0, nv);
 
-    xyz = vCoords_.view(0, vCoordDim_);
-    wgts = vWeights_.view(0, vWeightDim_);
+  xyz = vCoords_.view(0, vCoordDim_);
+  wgts = vWeights_.view(0, vWeightDim_);
 
-    return nv;
-  }
+  return nv;
+}
 
 template <typename User, typename UserCoord>
   size_t GraphModel<MatrixAdapter<User,UserCoord> >::getEdgeList(
@@ -1103,9 +1103,9 @@ public:
         localGraphEdgeLnos_, localGraphEdgeOffsets_, localGraphEdgeWeights_);
     }
 
-    edgeIds = localGraphEdgeLnos_;
-    offsets = localGraphEdgeOffsets_;
-    wgts = localGraphEdgeWeights_;
+    edgeIds = localGraphEdgeLnos_();
+    offsets = localGraphEdgeOffsets_();
+    wgts = localGraphEdgeWeights_();
 
     return numLocalGraphEdges_;
   }
@@ -1204,7 +1204,8 @@ template <typename User, typename UserCoord>
   lno_t const  *offsets=NULL;
   try{
     numLocalVertices_ = ia->getLocalNumVertices();
-    ia->getVertexIDsView(vtxIds, offsets, nborIds);
+    ia->getVertexIDsView(vtxIds);
+    ia->getEdgesView(offsets, nborIds);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -1214,7 +1215,7 @@ template <typename User, typename UserCoord>
   edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-  eWeightDim_ = ia->getNumWeightPerEdge();
+  eWeightDim_ = ia->getNumWeightsPerEdge();
 
   if (eWeightDim_ > 0){
     input_t *wgts = new input_t [eWeightDim_];
@@ -1404,27 +1405,40 @@ template <typename User, typename UserCoord>
   numLocalGraphEdges_ = 0;
   int *pids = procArray.getRawPtr();
   int me = comm_->getRank();
-  for (lno_t i=0; i < numLocalEdges_; i++)
+  for (size_t i=0; i < numLocalEdges_; i++)
     if (pids[i] == me) numLocalGraphEdges_++;
 
   // Vertex weights
 
-  vWeightDim_ = ia->getNumWeightsPerVertex();
+  vWeightDim_ = ia->getNumWeightsPerID();
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];
     env_->localMemoryAssertion(__FILE__, __LINE__, vWeightDim_, weightInfo);
 
     for (int idx=0; idx < vWeightDim_; idx++){
-      const scalar_t *weights=NULL;
-      int stride=0;
-      ia->getVertexWeightsView(weights, stride, idx);
-      // If weights is NULL, user wants to use uniform weights
-      if (weights != NULL){
-        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
-                                                 stride*numLocalVertices_,
-                                                 false);
-        weightInfo[idx] = input_t(wgtArray, stride);
+      bool useNumNZ = ia->useDegreeAsVertexWeight(idx); //TODO assuming vertices == rows
+      if (useNumNZ){
+        scalar_t *wgts = new scalar_t [numLocalVertices_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
+        ArrayRCP<const scalar_t> wgtArray =
+          arcp(wgts, 0, numLocalVertices_, true);
+        for (size_t i=0; i < numLocalVertices_; i++){
+          wgts[i] = offsets_[i+1] - offsets_[i];
+        }
+        weightInfo[idx] = input_t(wgtArray, 1);
+      }
+      else{
+        const scalar_t *weights=NULL;
+        int stride=0;
+        ia->getWeightsView(weights, stride, idx);
+        // If weights is NULL, user wants to use uniform weights
+        if (weights != NULL){
+          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                   stride*numLocalVertices_,
+                                                   false);
+          weightInfo[idx] = input_t(wgtArray, stride);
+        }
       }
     }
 
@@ -1441,21 +1455,25 @@ template <typename User, typename UserCoord>
 
   // Vertex coordinates
 
-  vCoordDim_ = ia->getDimensionOf(ia->getPrimaryEntityType());
+  if (ia->coordinatesAvailable()) {
+    vCoordDim_ = ia->getCoordinateInput()->getNumEntriesPerID();
 
-  if (vCoordDim_ > 0){
-    input_t *coordInfo = new input_t [vCoordDim_];
-    env_->localMemoryAssertion(__FILE__, __LINE__, vCoordDim_, coordInfo);
+    if (vCoordDim_ > 0){
+      input_t *coordInfo = new input_t [vCoordDim_];
+      env_->localMemoryAssertion(__FILE__, __LINE__, vCoordDim_, coordInfo);
 
-    for (int dim=0; dim < vCoordDim_; dim++){
-      const scalar_t *coords=NULL;
-      int stride=0;
-      ia->getVertexCoordinatesView(coords, stride, dim);
-      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, stride*numLocalVertices_, false);
-      coordInfo[dim] = input_t(coordArray, stride);
+      for (int dim=0; dim < vCoordDim_; dim++){
+        const scalar_t *coords=NULL;
+        int stride=0;
+        ia->getCoordinateInput()->getEntriesView(coords, stride, dim);
+        ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
+                                                   stride*numLocalVertices_,
+                                                   false);
+        coordInfo[dim] = input_t(coordArray, stride);
+      }
+
+      vCoords_ = arcp<input_t>(coordInfo, 0, vCoordDim_, true);
     }
-
-    vCoords_ = arcp<input_t>(coordInfo, 0, vCoordDim_, true);
   }
 
   reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 1,
@@ -1468,19 +1486,19 @@ template <typename User, typename UserCoord>
   size_t GraphModel<GraphAdapter<User,UserCoord> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
-  {
-    size_t nv = gids_.size();
+{
+  size_t nv = gids_.size();
 
-    if (gnosAreGids_)
-      Ids = gids_.view(0, nv);
-    else
-      Ids = gnosConst_.view(0, nv);
+  if (gnosAreGids_)
+    Ids = gids_.view(0, nv);
+  else
+    Ids = gnosConst_.view(0, nv);
 
-    xyz = vCoords_.view(0, vCoordDim_);
-    wgts = vWeights_.view(0, vWeightDim_);
+  xyz = vCoords_.view(0, vCoordDim_);
+  wgts = vWeights_.view(0, vWeightDim_);
 
-    return nv;
-  }
+  return nv;
+}
 
 template <typename User, typename UserCoord>
   size_t GraphModel<GraphAdapter<User,UserCoord> >::getEdgeList(
