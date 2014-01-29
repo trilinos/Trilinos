@@ -670,21 +670,21 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
             int bid = bucket.bucket_id();
 
             std::vector<unsigned int  >& bucket_indZ = bucket_ind[bid]; 
-            std::vector<unsigned short>& bucket_ordZ = bucket_ord[bid]; 
+            std::vector<unsigned short>& bucket_ord_vec = bucket_ord[bid]; 
 
 
             for (size_t e = 0, ee = bucket_indZ.size(); e < ee; ++e) {
               unsigned int bucket_id = bucket_indZ[e];
-              unsigned short bucket_ord = bucket_ordZ[e];
+              unsigned short bucket_ord_val = bucket_ord_vec[e];
 
               // We are intentionally not using the much-faster style of accessing
               // fields by bucket instead of by entity.
 
 	      for (int f = 0; f < num_fields_per_chunk; ++f) {
 
-                const double* x_field_data = stk::mesh::field_data(*x_fields[f], bucket_id, bucket_ord, sizeof(double));
-                const double* y_field_data = stk::mesh::field_data(*y_fields[f], bucket_id, bucket_ord, sizeof(double));
-                const double* z_field_data = stk::mesh::field_data(*z_fields[f], bucket_id, bucket_ord, sizeof(double));
+                const double* x_field_data = stk::mesh::field_data(*x_fields[f], bucket_id, bucket_ord_val, sizeof(double));
+                const double* y_field_data = stk::mesh::field_data(*y_fields[f], bucket_id, bucket_ord_val, sizeof(double));
+                const double* z_field_data = stk::mesh::field_data(*z_fields[f], bucket_id, bucket_ord_val, sizeof(double));
 
                 if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
                   ++dummy;

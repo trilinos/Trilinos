@@ -212,9 +212,9 @@ void move_detached_wedges(
   {
     stk::mesh::Bucket & b = **b_itr;
 
-    const typename stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
-    typename stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
-    typename stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
+    const stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
+    stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
+    stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
     int ndim = fixture.meta_data.spatial_dimension();
 
     for (size_t i = 0; i < b.size(); ++i) {
