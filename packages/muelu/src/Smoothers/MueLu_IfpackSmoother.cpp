@@ -189,27 +189,35 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack
-    Teuchos::ParameterList  paramList;
-    if (type_ == "Chebyshev")
+    Teuchos::ParameterList paramList;
+    bool supportInitialGuess = false;
+    if (type_ == "Chebyshev") {
       paramList.set("chebyshev: zero starting solution",  InitialGuessIsZero);
+      supportInitialGuess = true;
 
-    else if (type_ == "point relaxation stand-alone")
+    } else if (type_ == "point relaxation stand-alone") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      supportInitialGuess = true;
+    }
 
     SetPrecParameters(paramList);
 
     // Apply
-    if (InitialGuessIsZero) {
+    if (InitialGuessIsZero || supportInitialGuess) {
       Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(X);
       const Epetra_MultiVector& epB = Utils::MV2EpetraMV(B);
+
       prec_->ApplyInverse(epB, epX);
 
     } else {
-      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
+
       Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(*Correction);
       const Epetra_MultiVector& epB = Utils::MV2EpetraMV(*Residual);
+
       prec_->ApplyInverse(epB, epX);
+
       X.update(1.0, *Correction, 1.0);
     }
   }
