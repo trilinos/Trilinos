@@ -49,12 +49,13 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Ifpack2_Details_Amesos2Wrapper_def.hpp"
 
-#if defined(HAVE_IFPACK2_AMESOS2)
+#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_STOKHOS_AMESOS2)
+
+#include "Stokhos_Amesos2_MP_Vector.hpp"
 
 #define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
   template class Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
-// Don't instantiate this class yet.  It requires Amesos2
 #include "Stokhos_Ifpack2_ETI_Helpers_MP_Vector.hpp"
 
 #endif

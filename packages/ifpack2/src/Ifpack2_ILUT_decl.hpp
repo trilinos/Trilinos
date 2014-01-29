@@ -58,8 +58,7 @@
 
 
 namespace Teuchos {
-  // forward declaration
-  class ParameterList;
+  class ParameterList; // forward declaration
 }
 
 namespace Ifpack2 {

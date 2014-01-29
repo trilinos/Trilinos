@@ -41,19 +41,29 @@
 // @HEADER
 */
 
-#include "Tpetra_MultiVector.hpp"
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// Don't bother compiling anything, or even including anything else,
+// unless TBBNode is enabled.
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+#  include "Tpetra_MultiVector.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_MultiVector_def.hpp"
+#  ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+
+#    include "Tpetra_ETIHelperMacros.h"
+#    include "Tpetra_MultiVector_def.hpp"
+
+#    define TPETRA_MULTIVECTOR_TBBNODE_INSTANT( SCALAR, LO, GO ) \
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::TBBNode )
 
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_VECTOR(TPETRA_MULTIVECTOR_INSTANT)
+  TPETRA_INSTANTIATE_SLG(TPETRA_MULTIVECTOR_TBBNODE_INSTANT)
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#  endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_KOKKOSCLASSIC_TBB

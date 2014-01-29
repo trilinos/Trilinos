@@ -2061,6 +2061,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   }
 
   perm_mat = ML_Operator_Create(comm);
+  ML_Operator_Set_Label(perm_mat,"Rebalancing matrix");
   ML_Operator_Transpose_byrow(*permt, perm_mat);
   ML_Operator_ChangeToChar(perm_mat);
 
@@ -2386,6 +2387,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
         if (ag->P_tentative[coarse] != 0)
         {
           newP = ML_Operator_Create(Pmat->comm);
+          ML_Operator_Set_Label(ag->P_tentative[coarse],"rebalance Ptentative");
           ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
           ML_Operator_Destroy(&(ag->P_tentative[coarse]));
           ag->P_tentative[coarse] = newP;
@@ -2410,6 +2412,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     }
     else if (Rmat->getrow->post_comm == NULL) {
       newR = ML_Operator_Create(Rmat->comm);
+      ML_Operator_Set_Label(perm,"rebalance R");
       ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
       ML_Operator_Copy_Statistics(Rmat,newR);
       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);

@@ -45,9 +45,10 @@
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO) && defined(HAVE_STOKHOS_AMESOS2)
 
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_Amesos2_MP_Vector.hpp"
 
 #include "Tpetra_ETIHelperMacros.h"
 #include "MueLu_Amesos2Smoother_def.hpp"

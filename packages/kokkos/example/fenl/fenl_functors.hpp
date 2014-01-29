@@ -55,6 +55,8 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 
+#include <impl/Kokkos_Timer.hpp>
+
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
 
@@ -88,6 +90,7 @@ private:
                    SORT_GRAPH_ENTRIES ,
                    FILL_ELEMENT_GRAPH };
 
+  const unsigned        node_count ;
   const ElemNodeIdView  elem_node_id ;
   UnsignedValue         row_total ;
   RowMapType            row_count ;
@@ -100,23 +103,41 @@ public:
   CrsGraphType          graph ;
   ElemGraphType         elem_graph ;
 
+  struct Times
+  {
+    double ratio;
+    double fill_node_set;
+    double scan_node_count;
+    double fill_graph_entries;
+    double sort_graph_entries;
+    double fill_element_graph;
+  };
+
   NodeNodeGraph( const ElemNodeIdView & arg_elem_node_id ,
-                 const unsigned         arg_node_count )
-    : elem_node_id( arg_elem_node_id )
+                 const unsigned         arg_node_count,
+                 Times & results
+               )
+    : node_count(arg_node_count)
+    , elem_node_id( arg_elem_node_id )
     , row_total( "row_total" )
-    , row_count(AllocateWithoutInitializing(), "row_count" , arg_node_count ) // will deep_copy to 0 inside loop
-    , row_map( "graph_row_map" , arg_node_count + 1 )
+    , row_count(AllocateWithoutInitializing(), "row_count" , node_count ) // will deep_copy to 0 inside loop
+    , row_map( "graph_row_map" , node_count + 1 )
     , node_node_set()
     , phase( FILL_NODE_SET )
     , graph()
     , elem_graph()
-    {
+   {
       //--------------------------------
       // Guess at capacity required for the map:
 
+      Kokkos::Impl::Timer wall_clock ;
+
+      wall_clock.reset();
       phase = FILL_NODE_SET ;
-      //unsigned set_capacity = 2 * arg_elem_node_id.dimension_0() * arg_elem_node_id.dimension_1();
-      unsigned set_capacity = (27 * arg_node_count) / 2;
+
+      // upper bound on the capacity
+      size_t set_capacity = (((28ull * node_count) / 2ull)*134ull)/100ull;
+
 
       // Increase capacity until the (node,node) map is successfully filled.
       do {
@@ -134,14 +155,18 @@ public:
 
       } while ( node_node_set.failed_inserts() );
 
+      device_type::fence();
+      results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
+      results.fill_node_set = wall_clock.seconds();
       //--------------------------------
 
+      wall_clock.reset();
       phase = SCAN_NODE_COUNT ;
 
       // Exclusive scan of row_count into row_map
-      // including the final total in the 'arg_node_count + 1' position.
+      // including the final total in the 'node_count + 1' position.
       // Zero the 'row_count' values.
-      Kokkos::parallel_scan( arg_node_count , *this );
+      Kokkos::parallel_scan( node_count , *this );
 
       // Zero the row count for the fill:
       Kokkos::deep_copy( row_count , 0u );
@@ -157,13 +182,20 @@ public:
       //--------------------------------
       // Fill graph's entries from the (node,node) set.
 
+      device_type::fence();
+      results.scan_node_count = wall_clock.seconds();
+
+      wall_clock.reset();
       phase = FILL_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_node_set.capacity() , *this );
 
       device_type::fence();
+      results.fill_graph_entries = wall_clock.seconds();
 
       //--------------------------------
       // Done with the temporary sets and arrays
+      wall_clock.reset();
+      phase = SORT_GRAPH_ENTRIES ;
 
       row_total = UnsignedValue();
       row_count = RowMapType();
@@ -172,16 +204,20 @@ public:
 
       //--------------------------------
 
-      phase = SORT_GRAPH_ENTRIES ;
-      Kokkos::parallel_for( arg_node_count , *this );
+      Kokkos::parallel_for( node_count , *this );
+
+      device_type::fence();
+      results.sort_graph_entries = wall_clock.seconds();
 
       //--------------------------------
       // Element-to-graph mapping:
+      wall_clock.reset();
       phase = FILL_ELEMENT_GRAPH ;
       elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
       Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
 
       device_type::fence();
+      results.fill_element_graph = wall_clock.seconds();
     }
 
   //------------------------------------
@@ -436,7 +472,7 @@ public:
       phase = SCAN_NODE_COUNT ;
 
       // Exclusive scan of row_count into row_map
-      // including the final total in the 'arg_node_count + 1' position.
+      // including the final total in the 'node_count + 1' position.
       // Zero the 'row_count' values.
       Kokkos::parallel_scan( residual.dimension_0() , *this );
 

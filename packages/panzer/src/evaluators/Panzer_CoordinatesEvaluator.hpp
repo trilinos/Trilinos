@@ -1,9 +1,9 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,30 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_Vector.hpp"
+#ifndef PANZER_COORDINATESEVALUTOR_HPP
+#define PANZER_COORDINATESEVALUTOR_HPP
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Panzer_config.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_KokkosRefactor_Vector_def.hpp"
+#include "Phalanx_Evaluator_Macros.hpp"
+#include "Phalanx_Field.hpp"
 
-namespace Tpetra {
+namespace panzer {
+    
+PHX_EVALUATOR_CLASS(CoordinatesEvaluator)
+  
+  int dimension;
+  
+  PHX::MDField<ScalarT,Cell,BASIS> coordinate;
+  
+PHX_EVALUATOR_CLASS_END
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+}
 
-  // ETP 12/16/13:
-  // Tpetra_KokkosRefactor_Vector_def.hpp is now included in
-  // Tpetra_Vector_def.hpp, and thus should be instantiated by
-  // Tpetra_Vector.cpp, thus I don't think we need to do any
-  // instantiation here.
-  //TPETRA_INSTANTIATE_VECTOR(TPETRA_VECTOR_INSTANT)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif

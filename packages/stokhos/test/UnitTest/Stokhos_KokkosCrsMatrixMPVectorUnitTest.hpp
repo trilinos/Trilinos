@@ -199,7 +199,7 @@ template <typename MatrixType>
 struct ReplaceDiagonalValuesKernel {
   typedef typename MatrixType::device_type device_type;
   typedef typename MatrixType::size_type size_type;
-  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
 
   const MatrixType m_matrix;
@@ -210,7 +210,7 @@ struct ReplaceDiagonalValuesKernel {
   void operator() (const size_type i) const {
     const ordinal_type row = i;
     const ordinal_type col = i;
-    scalar_type val = scalar_type(row);
+    value_type val = value_type(row);
     m_matrix.replaceValues(row, &col, 1, &val, true);
   }
 
@@ -232,8 +232,8 @@ struct ReplaceDiagonalValuesKernel {
     for (ordinal_type row=0; row<nrow; ++row) {
       bool s = compareVecs(host_matrix_values(row),
                            "matrix_values(row)",
-                           scalar_type(row),
-                           "scalar_type(row)",
+                           value_type(row),
+                           "value_type(row)",
                            0.0, 0.0, out);
       success = success && s;
     }
@@ -246,7 +246,7 @@ template <typename MatrixType>
 struct AddDiagonalValuesKernel {
   typedef typename MatrixType::device_type device_type;
   typedef typename MatrixType::size_type size_type;
-  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
 
   const MatrixType m_matrix;
@@ -257,7 +257,7 @@ struct AddDiagonalValuesKernel {
   void operator() (const size_type i) const {
     const ordinal_type row = i;
     const ordinal_type col = i;
-    scalar_type val = scalar_type(row);
+    value_type val = value_type(row);
     m_matrix.sumIntoValues(row, &col, 1, &val, true);
   }
 
@@ -279,8 +279,8 @@ struct AddDiagonalValuesKernel {
     for (ordinal_type row=0; row<nrow; ++row) {
       bool s = compareVecs(host_matrix_values(row),
                            "matrix_values(row)",
-                           scalar_type(row),
-                           "scalar_type(row)",
+                           value_type(row),
+                           "value_type(row)",
                            0.0, 0.0, out);
       success = success && s;
     }
@@ -294,7 +294,7 @@ template <typename MatrixType>
 struct AddDiagonalValuesAtomicKernel {
   typedef typename MatrixType::device_type device_type;
   typedef typename MatrixType::size_type size_type;
-  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
 
   const MatrixType m_matrix;
@@ -305,7 +305,7 @@ struct AddDiagonalValuesAtomicKernel {
   void operator() (const size_type i) const {
     const ordinal_type row = 0;
     const ordinal_type col = 0;
-    scalar_type val = scalar_type(i);
+    value_type val = value_type(i);
     m_matrix.sumIntoValues(row, &col, 1, &val, true);
   }
 
@@ -325,11 +325,11 @@ struct AddDiagonalValuesAtomicKernel {
     const ordinal_type nrow = matrix.numRows();
     bool success = true;
     for (ordinal_type row=0; row<nrow; ++row) {
-      scalar_type val;
+      value_type val;
       if (row == 0)
-        val = scalar_type( nrow*(nrow-1)/2 );
+        val = value_type( nrow*(nrow-1)/2 );
       else
-        val = scalar_type(0.0);
+        val = value_type(0.0);
       bool s = compareVecs(host_matrix_values(row),
                            "matrix_values(row)",
                            val,

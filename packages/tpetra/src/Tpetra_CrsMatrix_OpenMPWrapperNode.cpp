@@ -45,7 +45,7 @@
 #include "Kokkos_DefaultNode.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless OpenMPNode is enabled.
+// unless KokkosOpenMPWrapperNode is enabled.
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 #include "Tpetra_CrsMatrix.hpp"
 

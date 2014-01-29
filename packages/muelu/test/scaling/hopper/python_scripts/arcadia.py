@@ -30,15 +30,17 @@ def controller():
     # env arguments
     p.add_option('-e', '--exec',       dest="binary",       default="MueLu_ScalingTestParamList.exe")   # executable
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
-    p.add_option('-p', '--petra',      dest="petra",        default='both')
+    p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
+    p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
     p.add_option('-s',                 dest="nscale",       default="8", type='int')                    # number of weak scaling runs
     p.add_option('-t', '--template',   dest="template",     default="petra.pbs.template")               # template pbs file for all runs
+    p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
 
     # run arguments
-    p.add_option(      "--cmds",       dest="cmds",         default="")
-    p.add_option('-m', '--matrixType', dest="matrix",       default="Laplace3D")
-    p.add_option('-n', '--nx',         dest="nx",           default="134", type="int")
-    p.add_option('-x', '--xml',        dest="xmlfile",      default="")
+    p.add_option(      "--cmds",       dest="cmds",         default="")                                 # additional args for the command
+    p.add_option('-m', '--matrixType', dest="matrix",       default="Laplace3D")                        # matrix
+    p.add_option('-n', '--nx',         dest="nx",           default="134", type="int")                  # number of nodes in any direction
+    p.add_option('-x', '--xml',        dest="xmlfile",      default="")                                 # xml file with hierarchy configuration
 
     # parse
     options, arguments = p.parse_args()
@@ -67,6 +69,8 @@ def controller():
                 print("Please provide at least one of:\n"
                       " - xmlfile           ['-x'/'--xml']\n"
                       " - command arguments ['--cmds']")
+                return
+
             else:
                 datafiles.append(options.xmlfile)
                 cmds.append("--xml=" + options.xmlfile)
@@ -96,13 +100,24 @@ def controller():
 
             datafiles.append(xmlfile)
 
-        # main loop [weak scaling study]
-        # start with a problem on one node and problem size NxN (or NxNxN), then increase nodes quadratically (cubically)
-        # and each dimension linearly (so that the problem also increases quadratically (cubically))
-        for i in range(1, options.nscale+1):
-            nnodes = i**dim                                 # number of nodes
-            nx     = i * options.nx                         # single dimension of the problem
-            build(nnodes=nnodes, nx=nx, binary=options.binary, petra=petra, matrix=options.matrix,
+        nnodes = []         # number of nodes
+        nx     = []         # single dimension of the problem
+        if options.nnodes == "":
+            # main loop [weak scaling study]
+            # start with a problem on one node and problem size NxN (or NxNxN), then increase nodes quadratically (cubically)
+            # and each dimension linearly (so that the problem also increases quadratically (cubically))
+            for i in range(1, options.nscale+1):
+              nnodes.append(i**dim)
+              nx.append(i * options.nx)
+
+        else:
+            # custom number of nodes
+            for i in re.split(',', options.nnodes):
+                nnodes.append(int(i))
+                nx.append(int(options.nx * pow(int(i), 1./dim)))
+
+        for i in range(0, len(nnodes)):
+            build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
                 datafiles=datafiles, cmds=cmds, template=options.template, output=options.output)
 
     elif options.action == 'run':
@@ -114,7 +129,14 @@ def controller():
             clean()
 
     elif options.action == 'analyze':
-        r = analyze(petra, analysis_run=options.output)
+        if (options.ltmodule == ""):
+          labels = LABELS
+          timelines = TIMELINES
+        else:
+          labels    = import_from(options.ltmodule, "LABELS")
+          timelines = import_from(options.ltmodule, "TIMELINES")
+
+        r = analyze(petra, analysis_run = options.output, labels=labels, timelines=timelines)
         if r : print(r)
 
     else:
@@ -123,7 +145,7 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze(petra, analysis_run):
+def analyze(petra, analysis_run, labels, timelines):
     # test which of [et]petra is being run
     has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
     has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
@@ -142,7 +164,7 @@ def analyze(petra, analysis_run):
 
     print(analysis_run_string)
     header = "                    :"
-    for name in LABELS:
+    for name in labels:
         if has_epetra:
             header = header + "  " + name + "-etime      eff"
         if has_tpetra:
@@ -150,17 +172,17 @@ def analyze(petra, analysis_run):
     print(header)
 
     # initialize lists
-    time_epetra     = list2dict(TIMELINES)
-    eff_epetra      = list2dict(TIMELINES)
-    time_tpetra     = list2dict(TIMELINES)
-    eff_tpetra      = list2dict(TIMELINES)
-    basetime_epetra = list2dict(TIMELINES)
-    basetime_tpetra = list2dict(TIMELINES)
+    time_epetra     = list2dict(timelines)
+    eff_epetra      = list2dict(timelines)
+    time_tpetra     = list2dict(timelines)
+    eff_tpetra      = list2dict(timelines)
+    basetime_epetra = list2dict(timelines)
+    basetime_tpetra = list2dict(timelines)
 
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         os.chdir(dir)
 
-        nnodes = int(dir.replace(DIR_PREFIX, ''))
+        nnodes = dir.replace(DIR_PREFIX, '')
 
         fullstr = "%20s:" % dir
 
@@ -174,22 +196,37 @@ def analyze(petra, analysis_run):
             os.chdir("..")
             continue
 
-        for s in TIMELINES:
+        for s in timelines:
             if has_epetra:
-                r = commands.getstatusoutput("grep \"" + s + "\" " + analysis_run + ".epetra | cut -f3 -d')' | cut -f1 -d'('")
+                epetra_file = analysis_run + ".epetra"
+
+                r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
                 if r[0] != 0:
                     return "Error reading \"" + analysis_run + ".epetra"
-                time_epetra[s] = float(r[1])
-                if nnodes == BASECASE:
+
+                try:
+                  time_epetra[s] = float(r[1])
+                except (RuntimeError, ValueError):
+                    print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, epetra_file))
+
+                if nnodes == str(BASECASE):
                     basetime_epetra[s] = time_epetra[s]
                 eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
                 fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
+
             if has_tpetra:
-                r = commands.getstatusoutput("grep \"" + s + "\" " + analysis_run + ".tpetra | cut -f3 -d')' | cut -f1 -d'('")
+                tpetra_file = analysis_run + ".tpetra"
+
+                r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
                 if r[0] != 0:
                     return "Error reading \"" + analysis_run + ".tpetra"
+                try:
+                  time_tpetra[s] = float(r[1])
+                except (RuntimeError, ValueError):
+                  print("Problem converting \"%s\" to float for timeline \"%s\" in %s" % (r[1], s, tpetra_file))
+
                 time_tpetra[s] = float(r[1])
-                if nnodes == BASECASE:
+                if nnodes == str(BASECASE):
                     basetime_tpetra[s] = time_tpetra[s]
                 eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
                 fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
@@ -247,8 +284,13 @@ def sort_nicely(l):
 def ensure_dir(d):
     if not os.path.exists(d):
         os.makedirs(d)
+
 def list2dict(l):
     return dict(zip(l, [0]*len(l)))
+
+def import_from(module, name):
+    module = __import__(module, fromlist=[name])
+    return getattr(module, name)
 # ========================= main =========================
 def main():
     controller()

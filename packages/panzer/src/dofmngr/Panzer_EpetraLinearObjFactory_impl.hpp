@@ -53,6 +53,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
 
+#include "EpetraExt_VectorOut.h"
+#include "EpetraExt_VectorIn.h"
+
 using Teuchos::RCP;
 
 namespace panzer {
@@ -120,6 +123,88 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::~EpetraLinearObjFactory()
 
 // LinearObjectFactory functions 
 /////////////////////////////////////////////////////////////////////
+
+template <typename Traits,typename LocalOrdinalT>
+void 
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+readVector(const std::string & identifier,LinearObjContainer & loc,int id) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::dyn_cast;
+
+  EpetraLinearObjContainer & eloc = dyn_cast<EpetraLinearObjContainer>(loc);
+
+   // extract the vector from linear object container
+  RCP<Thyra::VectorBase<double> > vec;
+  switch(id) {
+  case LinearObjContainer::X:
+    vec = eloc.get_x_th();
+    break;
+  case LinearObjContainer::DxDt:
+    vec = eloc.get_dxdt_th();
+    break;
+  case LinearObjContainer::F:
+    vec = eloc.get_f_th();
+    break;
+  default:
+    TEUCHOS_ASSERT(false);
+    break;
+  };
+
+  // convert to Epetra then read in from a file
+  RCP<Epetra_Vector> ex = Thyra::get_Epetra_Vector(*getMap(),vec);
+
+  // build the file name from the identifier
+  std::stringstream ss;
+  ss << identifier << ".mm";
+
+  // read in vector (wow the MM to Vector is a poorly designed interface!)
+  Epetra_Vector * ptr_ex = 0;
+  TEUCHOS_ASSERT(0==EpetraExt::MatrixMarketFileToVector(ss.str().c_str(),*getMap(),ptr_ex));
+
+  *ex = *ptr_ex;
+  delete ptr_ex;
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void 
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::dyn_cast;
+
+  const EpetraLinearObjContainer & eloc = dyn_cast<const EpetraLinearObjContainer>(loc);
+
+   // extract the vector from linear object container
+  RCP<const Thyra::VectorBase<double> > vec;
+  switch(id) {
+  case LinearObjContainer::X:
+    vec = eloc.get_x_th();
+    break;
+  case LinearObjContainer::DxDt:
+    vec = eloc.get_dxdt_th();
+    break;
+  case LinearObjContainer::F:
+    vec = eloc.get_f_th();
+    break;
+  default:
+    TEUCHOS_ASSERT(false);
+    break;
+  };
+
+  // convert to Epetra then write out to a file
+  RCP<const Epetra_Vector> ex = Thyra::get_Epetra_Vector(*getMap(),vec);
+
+  // build the file name from the identifier
+  std::stringstream ss;
+  ss << identifier << ".mm";
+
+  // write out vector
+  TEUCHOS_ASSERT(0==EpetraExt::VectorToMatrixMarketFile(ss.str().c_str(),*ex));
+}
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
