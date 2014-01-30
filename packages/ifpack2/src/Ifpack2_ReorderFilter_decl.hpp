@@ -104,7 +104,7 @@ public:
   //! Constructor.
 
 #ifdef HAVE_IFPACK2_ZOLTAN2
-  explicit ReorderFilter (const Teuchos::RCP<const row_matrix_type> & Matrix,
+  explicit ReorderFilter (const Teuchos::RCP<const row_matrix_type>& Matrix,
                           const Teuchos::RCP<const Zoltan2::OrderingSolution<global_ordinal_type,local_ordinal_type> > & Reordering);
 #endif // HAVE_IFPACK2_ZOLTAN2
 

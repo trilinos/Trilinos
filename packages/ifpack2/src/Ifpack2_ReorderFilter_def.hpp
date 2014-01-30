@@ -63,7 +63,7 @@ ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
   : A_ (A)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null, std::invalid_argument,
+    A_.is_null (), std::invalid_argument,
     "Ifpack2::ReorderFilter: The input matrix is null.");
 
   // use this filter only on serial matrices
