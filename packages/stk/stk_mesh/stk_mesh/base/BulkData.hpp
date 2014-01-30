@@ -61,10 +61,6 @@ class EntityRepository;
 
 }
 
-
-
-
-
 struct EntityCommListInfo
 {
   EntityKey key;
@@ -1194,8 +1190,10 @@ private:
   //
 
 #ifdef GATHER_GET_BUCKETS_METRICS
-  void gather_and_print_get_buckets_metrics();
+  void gather_and_print_get_buckets_metrics() const;
 #endif
+
+  void gather_and_print_mesh_partitioning() const;
 
   // Field callbacks
 
@@ -1915,93 +1913,88 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 //  Field free access methods
 //
 
-  inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(&f.get_mesh() == &b.mesh());
-    return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity;
-  }
-  inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {  
-    BulkData& bulk(f.get_mesh());
-    ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
-    return field_bytes_per_entity(f, bulk.bucket(e));
-  }
+inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity;
+}
+inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
+  BulkData& bulk(f.get_mesh());
+  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  return field_bytes_per_entity(f, bulk.bucket(e));
+}
 
+inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  return(b.entity_rank() == static_cast<unsigned>(f.entity_rank()));
+}
 
+inline bool is_matching_rank(const FieldBase& f, Entity e) {
+  return is_matching_rank(f, f.get_mesh().bucket(e));
+}
 
-  inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
-    ThrowAssert(&f.get_mesh() == &b.mesh());
-    return(b.entity_rank() == static_cast<unsigned>(f.entity_rank()));
-  }
-
-  inline bool is_matching_rank(const FieldBase& f, Entity e) {
-    return is_matching_rank(f, f.get_mesh().bucket(e));
-  }
-
-
-  
 //
-//  Optimized field data access, here the size of the field data is passed in rather than looked up. 
+//  Optimized field data access, here the size of the field data is passed in rather than looked up.
 //  This accessor can be used if the field is known to exist everywhere and known to have the same
 //  size everywhere.
 //
 
-  template<class FieldType>
-  inline
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
-    ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity == knownSize);
-    ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
-  }
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
+field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
+  ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity == knownSize);
+  ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
+}
 
-  template<class FieldType>
-  inline
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const unsigned bucket_id) {
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data);
-  }
-  
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
+field_data(const FieldType & f, const unsigned bucket_id) {
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data);
+}
 
-  inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
-    ThrowAssert(&b.mesh() == &f.get_mesh());
-     //return true if field and bucket have the same rank and the field is associated with the bucket
-     return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
-  }
 
-  template<class FieldType>
-  inline
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(&f.get_mesh() == &b.mesh());
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
-  }
+inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
+  ThrowAssert(&b.mesh() == &f.get_mesh());
+  //return true if field and bucket have the same rank and the field is associated with the bucket
+  return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
+}
 
-  template<class FieldType>
-  inline
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const Bucket& b) 
-  {
-    ThrowAssert(f.entity_rank() == b.entity_rank());
-    ThrowAssert(&b.mesh() == &f.get_mesh());
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
-  }
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
+field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
+}
 
-  template<class FieldType>
-  inline
-  typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, Entity e) 
-  {
-    const MeshIndex& mi           = f.get_mesh().mesh_index(e);
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
+field_data(const FieldType & f, const Bucket& b)
+{
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&b.mesh() == &f.get_mesh());
+  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
+}
 
-    ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
-    ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
-    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
-  }
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
+field_data(const FieldType & f, Entity e)
+{
+  const MeshIndex& mi           = f.get_mesh().mesh_index(e);
 
+  ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
+  ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
+  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
+}
 
 } // namespace mesh
 } // namespace stk

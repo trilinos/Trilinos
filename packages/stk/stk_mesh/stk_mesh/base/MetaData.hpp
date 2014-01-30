@@ -214,7 +214,11 @@ public:
   }
 
   void force_no_induce(Part& part)
-  { declare_part( part.name(), part.primary_entity_rank(), true /*force no induce*/); }
+  {
+    if (part.primary_entity_rank() != InvalidEntityRank) {
+      declare_part( part.name(), part.primary_entity_rank(), true /*force no induce*/);
+    }
+  }
 
   void set_part_id(Part& part, int64_t lid)
   { part.m_partImpl.set_id(lid); }

@@ -428,14 +428,14 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
   m_mesh.reorder_buckets_callback(entity_rank, id_map);
 }
 
-std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank)
+std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
 {
   if (m_mesh.synchronized_state() != BulkData::SYNCHRONIZED)
   {
     std::vector<Partition *>();
   }
   std::vector<Partition *> retval;
-  std::vector<Partition *> &bf_vec = m_partitions[rank];
+  std::vector<Partition *> const& bf_vec = m_partitions[rank];
   for (size_t i = 0; i < bf_vec.size(); ++i)
   {
     retval.push_back(bf_vec[i]);

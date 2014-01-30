@@ -146,7 +146,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 }
 
 #ifdef GATHER_GET_BUCKETS_METRICS
-void BulkData::gather_and_print_get_buckets_metrics()
+void BulkData::gather_and_print_get_buckets_metrics() const
 {
   ParallelMachine world = MPI_COMM_WORLD; // HACK, but necessary to work with Fmwk
   CommAll comm_all(world);
@@ -169,7 +169,7 @@ void BulkData::gather_and_print_get_buckets_metrics()
 
     proc_0_buff.pack<size_t>(m_selector_to_count_map.size());
     for (SelectorCountMap::const_iterator itr = m_selector_to_count_map.begin(), end = m_selector_to_count_map.end(); itr != end; ++itr) {
-      const EntityRank field_array_rank = itr->first.first;
+      const EntityRank rank = itr->first.first;
       const size_t cache_hits = itr->second.first;
       const size_t bucket_trav_saved = itr->second.second;
 
@@ -177,7 +177,7 @@ void BulkData::gather_and_print_get_buckets_metrics()
       out << itr->first.second;
       const std::string sel_str = out.str();
 
-      proc_0_buff.pack<EntityRank>(field_array_rank);
+      proc_0_buff.pack<EntityRank>(rank);
       proc_0_buff.pack<size_t>(sel_str.size() + 1);
       proc_0_buff.pack<char>(sel_str.c_str(), sel_str.size() + 1);
       proc_0_buff.pack<size_t>(cache_hits);
@@ -242,12 +242,12 @@ void BulkData::gather_and_print_get_buckets_metrics()
       global_num_non_memoized_get_buckets_calls_sum += num_non_memoized_get_buckets_calls;
 
       for (size_t i = 0; i < map_size; ++i) {
-        EntityRank field_array_rank = 0;
+        EntityRank rank = 0;
         size_t str_size = 0;
         size_t cache_hits = 0;
         size_t bucket_trav_saved = 0;
 
-        buf.unpack<EntityRank>(field_array_rank);
+        buf.unpack<EntityRank>(rank);
         buf.unpack<size_t>(str_size);
         ThrowRequire(str_size < MAX_TEXT_LEN);
         buf.unpack<char>(sel_text, str_size);
@@ -258,7 +258,7 @@ void BulkData::gather_and_print_get_buckets_metrics()
         global_num_bucket_trav_saved += bucket_trav_saved;
 
         const std::string sel_str = sel_text;
-        std::pair<EntityRank, std::string> search_key = std::make_pair(field_array_rank, sel_str);
+        std::pair<EntityRank, std::string> search_key = std::make_pair(rank, sel_str);
         GlobalUsageMap::iterator f_itr = global_usage_map.find(search_key);
         if (f_itr == global_usage_map.end()) {
           global_usage_map[search_key] = std::make_pair(cache_hits, bucket_trav_saved);
@@ -293,10 +293,102 @@ void BulkData::gather_and_print_get_buckets_metrics()
 }
 #endif
 
+void BulkData::gather_and_print_mesh_partitioning() const
+{
+  ParallelMachine world = MPI_COMM_WORLD; // HACK, but necessary to work with Fmwk
+  CommAll comm_all(world);
+
+  int real_rank = parallel_machine_rank(world);
+  int real_size = parallel_machine_size(world);
+
+  for (int phase = 0; phase < 2; ++phase) {
+    CommBuffer& proc_0_buff = comm_all.send_buffer(0); // everything to rank 0
+
+    const EntityRank rank_count = m_mesh_meta_data.entity_rank_count();
+
+    for (EntityRank r = 0; r < rank_count; ++r) {
+      std::vector<impl::Partition*> partitions = m_bucket_repository.get_partitions(r);
+      proc_0_buff.pack<size_t>(partitions.size());
+
+      for (size_t p = 0, pe = partitions.size(); p < pe; ++p) {
+        const std::vector<PartOrdinal> & parts = partitions[p]->get_legacy_partition_id();
+        proc_0_buff.pack<size_t>(partitions[p]->size());
+
+        std::ostringstream out;
+        for (size_t i = 1, ie = parts.size() - 1; i < ie; ++i) {
+          Part& part = m_mesh_meta_data.get_part(parts[i]);
+          out << part.name() << "[" << part.primary_entity_rank() << "] ";
+        }
+
+        const std::string partition_str = out.str();
+
+        proc_0_buff.pack<size_t>(partition_str.size() + 1);
+        proc_0_buff.pack<char>(partition_str.c_str(), partition_str.size() + 1);
+      }
+    }
+
+    if (phase == 0) { //allocation phase
+      comm_all.allocate_buffers( m_parallel_size / 4 );
+    }
+    else { // communication phase
+      comm_all.communicate();
+    }
+  }
+
+  if (real_rank == 0) {
+    std::ostringstream out;
+    out << "mesh partitioning data:\n";
+
+    typedef std::map< std::pair<EntityRank, std::string>, size_t> GlobalPartitionMap;
+    GlobalPartitionMap global_partition_map;
+
+    const size_t MAX_TEXT_LEN = 32768;
+    char partition_text[ MAX_TEXT_LEN ];
+
+    for ( int p = 0 ; p < real_size ; ++p ) {
+      CommBuffer & buf = comm_all.recv_buffer(p);
+
+      const EntityRank rank_count = m_mesh_meta_data.entity_rank_count();
+
+      for (EntityRank r = 0; r < rank_count; ++r) {
+        size_t num_partitions_for_this_rank = 0;
+        buf.unpack<size_t>(num_partitions_for_this_rank);
+
+        for (size_t p = 0; p < num_partitions_for_this_rank; ++p) {
+          size_t num_entities_in_partition = 0;
+          buf.unpack<size_t>(num_entities_in_partition);
+
+          size_t str_size = 0;
+          buf.unpack<size_t>(str_size);
+          ThrowRequire(str_size < MAX_TEXT_LEN);
+          buf.unpack<char>(partition_text, str_size);
+
+          const std::string partition_str = partition_text;
+          std::pair<EntityRank, std::string> search_key = std::make_pair(r, partition_str);
+          GlobalPartitionMap::iterator f_itr = global_partition_map.find(search_key);
+          if (f_itr == global_partition_map.end()) {
+            global_partition_map[search_key] = num_entities_in_partition;
+          }
+          else {
+            f_itr->second += num_entities_in_partition;
+          }
+        }
+      }
+    }
+
+    for (GlobalPartitionMap::const_iterator itr = global_partition_map.begin(), end = global_partition_map.end(); itr != end; ++itr) {
+      out << "  (" << itr->first.first << ", " << itr->first.second << ") -> " << itr->second << "\n";
+    }
+    std::cout << out.str() << std::endl;
+  }
+}
+
 BulkData::~BulkData()
 {
 #ifdef STK_PROFILE_MEMORY
-  print_max_stk_memory_usage(parallel(), parallel_rank(), std::cout);
+  ParallelMachine world = MPI_COMM_WORLD; // HACK, but necessary to work with Fmwk
+  const int real_rank = parallel_machine_rank(world);
+  print_max_stk_memory_usage(world, real_rank, std::cout);
 #endif
 #ifdef STK_MESH_ANALYZE_DYN_CONN
   print_dynamic_connectivity_profile(parallel(), parallel_rank(), std::cout);
@@ -310,6 +402,10 @@ BulkData::~BulkData()
 
 #ifdef GATHER_GET_BUCKETS_METRICS
   gather_and_print_get_buckets_metrics();
+#endif
+
+#ifdef PRINT_MESH_PARTITIONING
+  gather_and_print_mesh_partitioning();
 #endif
 
   while ( ! m_ghosting.empty() ) {
@@ -1598,7 +1694,7 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
 #ifdef GATHER_GET_BUCKETS_METRICS
     std::pair<size_t, size_t> & data = m_selector_to_count_map[search_item];
     ++data.first;
-    data.second += buckets(field_array_rank).size();
+    data.second += buckets(rank).size();
 #endif
     TrackedBucketVector const& rv = fitr->second;
     return reinterpret_cast<BucketVector const&>(rv);

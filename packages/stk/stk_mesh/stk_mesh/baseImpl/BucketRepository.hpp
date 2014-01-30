@@ -82,7 +82,7 @@ public:
 
   ////
   //// Partitions are now the primary location of buckets.
-  ////c
+  ////
 
   friend class Partition;
   friend struct stk::mesh::utest::SyncToPartitions;
@@ -101,7 +101,7 @@ public:
   void sync_from_partitions(EntityRank rank);
 
   // Used in unit tests.  Returns the current partitions.
-  std::vector<Partition *> get_partitions(EntityRank rank);
+  std::vector<Partition *> get_partitions(EntityRank rank) const;
 
   const ConnectivityMap& connectivity_map() const { return m_connectivity_map; }
 
