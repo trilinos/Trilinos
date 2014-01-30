@@ -371,7 +371,7 @@ namespace Tpetra {
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
     const size_t numCols = this->getNumVectors ();
-    const size_t stride = MVT::getStride (lclMV_);
+    //const size_t stride = MVT::getStride (lclMV_);
 
     // TODO (mfh 15 Sep 2013) When we replace
     // KokkosClassic::MultiVector with a Kokkos::View, there are two
@@ -606,7 +606,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (numVecs > 0 && importLIDs.size () > 0) {
-      const size_t myStride = MVT::getStride (lclMV_);
+      //const size_t myStride = MVT::getStride (lclMV_);
 
       // NOTE (mfh 10 Mar 2012) If you want to implement custom
       // combine modes, start editing here.  Also, if you trust
