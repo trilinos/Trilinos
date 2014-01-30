@@ -53,14 +53,14 @@
 
 namespace Ifpack2 {
 
-//==========================================================================
-
-#ifdef HAVE_IFPACK2_ZOLTAN2
 template<class MatrixType>
 ReorderFilter<MatrixType>::
 ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
-               const Teuchos::RCP<const Zoltan2::OrderingSolution<global_ordinal_type,local_ordinal_type> >& Reordering)
-  : A_ (A)
+               const Teuchos::ArrayRCP<local_ordinal_type>& perm,
+               const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm)
+  : A_ (A),
+    perm_ (perm),
+    reverseperm_ (reverseperm)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::invalid_argument,
@@ -78,30 +78,23 @@ ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
     std::invalid_argument,
     "Ifpack2::ReorderFilter: The input matrix is not square.");
 
-  // perm_[i]         gives the where OLD index i shows up in the NEW ordering
-  // reverseperm_[i]  gives the where NEW index i shows up in the OLD ordering
-  // Note perm_ is actually the "inverse permutation" in Zoltan2 terminology
-  perm_=       Reordering->getPermutationRCPConst(true);
-  reverseperm_=Reordering->getPermutationRCPConst();
-
   // Temp arrays for apply
-  Indices_.resize(A_->getNodeMaxNumRowEntries());
-  Values_.resize(A_->getNodeMaxNumRowEntries());
+  Indices_.resize (A_->getNodeMaxNumRowEntries ());
+  Values_.resize (A_->getNodeMaxNumRowEntries ());
 }
-#endif
 
-//=========================================================================
+
 template<class MatrixType>
-ReorderFilter<MatrixType>::~ReorderFilter() { }
+ReorderFilter<MatrixType>::~ReorderFilter() {}
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> > ReorderFilter<MatrixType>::getComm() const
 {
   return A_->getComm();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<typename ReorderFilter<MatrixType>::node_type>
 ReorderFilter<MatrixType>::getNode () const
@@ -109,7 +102,7 @@ ReorderFilter<MatrixType>::getNode () const
   return A_->getNode ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename ReorderFilter<MatrixType>::map_type>
 ReorderFilter<MatrixType>::getRowMap() const
@@ -121,7 +114,7 @@ ReorderFilter<MatrixType>::getRowMap() const
   return A_->getRowMap ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename ReorderFilter<MatrixType>::map_type>
 ReorderFilter<MatrixType>::getColMap() const
@@ -133,7 +126,7 @@ ReorderFilter<MatrixType>::getColMap() const
   return A_->getColMap();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename ReorderFilter<MatrixType>::map_type>
 ReorderFilter<MatrixType>::getDomainMap() const
@@ -145,7 +138,7 @@ ReorderFilter<MatrixType>::getDomainMap() const
   return A_->getDomainMap();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename ReorderFilter<MatrixType>::map_type>
 ReorderFilter<MatrixType>::getRangeMap() const
@@ -157,7 +150,7 @@ ReorderFilter<MatrixType>::getRangeMap() const
   return A_->getRangeMap();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                     typename MatrixType::global_ordinal_type,
@@ -167,28 +160,27 @@ ReorderFilter<MatrixType>::getGraph() const
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGraph.");
 }
 
-//==========================================================================
+
 template<class MatrixType>
 global_size_t ReorderFilter<MatrixType>::getGlobalNumRows() const
 {
   return A_->getGlobalNumRows();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 global_size_t ReorderFilter<MatrixType>::getGlobalNumCols() const
 {
   return A_->getGlobalNumCols();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getNodeNumRows() const
 {
   return A_->getNodeNumRows();
 }
 
-//==========================================================================
 
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getNodeNumCols() const
@@ -196,28 +188,28 @@ size_t ReorderFilter<MatrixType>::getNodeNumCols() const
   return A_->getNodeNumCols();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 typename MatrixType::global_ordinal_type ReorderFilter<MatrixType>::getIndexBase() const
 {
   return A_->getIndexBase();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 global_size_t ReorderFilter<MatrixType>::getGlobalNumEntries() const
 {
   return A_->getGlobalNumEntries();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getNodeNumEntries() const
 {
   return A_->getNodeNumEntries();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
 getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
@@ -233,7 +225,7 @@ getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
 getNumEntriesInLocalRow (local_ordinal_type localRow) const
@@ -249,77 +241,77 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 global_size_t ReorderFilter<MatrixType>::getGlobalNumDiags() const
 {
   return A_->getGlobalNumDiags();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getNodeNumDiags() const
 {
   return A_->getNodeNumDiags();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return A_->getGlobalMaxNumRowEntries();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getNodeMaxNumRowEntries() const
 {
   return A_->getNodeMaxNumRowEntries();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::hasColMap() const
 {
   return true;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::isLowerTriangular() const
 {
   return A_->isLowerTriangular();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::isUpperTriangular() const
 {
   return A_->isUpperTriangular();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::isLocallyIndexed() const
 {
   return A_->isLocallyIndexed();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::isGloballyIndexed() const
 {
   return A_->isGloballyIndexed();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::isFillComplete() const
 {
   return A_->isFillComplete();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getGlobalRowCopy (global_ordinal_type globalRow,
@@ -367,7 +359,7 @@ getGlobalRowCopy (global_ordinal_type globalRow,
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getLocalRowCopy (local_ordinal_type LocalRow,
@@ -404,7 +396,7 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getGlobalRowView (global_ordinal_type GlobalRow,
@@ -414,38 +406,40 @@ getGlobalRowView (global_ordinal_type GlobalRow,
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void ReorderFilter<MatrixType>::getLocalRowView(local_ordinal_type LocalRow,
-                                                 Teuchos::ArrayView<const local_ordinal_type> &indices,
-                                                 Teuchos::ArrayView<const scalar_type> &values) const
+void ReorderFilter<MatrixType>::
+getLocalRowView (local_ordinal_type LocalRow,
+                 Teuchos::ArrayView<const local_ordinal_type> &indices,
+                 Teuchos::ArrayView<const scalar_type> &values) const
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void ReorderFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const
+void ReorderFilter<MatrixType>::
+getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const
 {
   // This is somewhat dubious as to how the maps match.
   return A_->getLocalDiagCopy(diag);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::leftScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
 {
   throw std::runtime_error("Ifpack2::ReorderFilter does not support leftScale.");
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::rightScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
 {
   throw std::runtime_error("Ifpack2::ReorderFilter does not support rightScale.");
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
@@ -498,38 +492,37 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 }
 
 
-//==========================================================================
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::hasTransposeApply() const
 {
   return true;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool ReorderFilter<MatrixType>::supportsRowViews() const
 {
   return false;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType ReorderFilter<MatrixType>::getFrobeniusNorm() const
 {
-  throw std::runtime_error("Ifpack2::ReorderFilter does not implement getFrobeniusNorm.");
+  // Reordering doesn't change the Frobenius norm.
+  return A_->getFrobeniusNorm ();
 }
 
-//==========================================================================
-//! Permute multivector: original-to-reordered
+
 template<class MatrixType>
-void ReorderFilter<MatrixType>::permuteOriginalToReordered(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &originalX,
-                                                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &reorderedY) const
+void ReorderFilter<MatrixType>::
+permuteOriginalToReordered (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &originalX,
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &reorderedY) const
 {
   this->template permuteOriginalToReorderedTempl<scalar_type,scalar_type>(originalX, reorderedY);
 }
 
-//==========================================================================
-//! Permute multivector: original-to-reordered
+
 template<class MatrixType>
 template<class DomainScalar, class RangeScalar>
 void ReorderFilter<MatrixType>::permuteOriginalToReorderedTempl(const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &originalX,
@@ -546,8 +539,7 @@ void ReorderFilter<MatrixType>::permuteOriginalToReorderedTempl(const Tpetra::Mu
       y_ptr[k][perm_[i]] = (RangeScalar)x_ptr[k][i];
 }
 
-//==========================================================================
-//! Permute multivector: reordered-to-original
+
 template<class MatrixType>
 void ReorderFilter<MatrixType>::permuteReorderedToOriginal(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &reorderedX,
                                                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &originalY) const
@@ -555,8 +547,7 @@ void ReorderFilter<MatrixType>::permuteReorderedToOriginal(const Tpetra::MultiVe
   this->template permuteReorderedToOriginalTempl<scalar_type,scalar_type>(reorderedX, originalY);
 }
 
-//==========================================================================
-//! Permute multivector: reordered-to-original
+
 template<class MatrixType>
 template<class DomainScalar, class RangeScalar>
 void ReorderFilter<MatrixType>::
@@ -579,7 +570,7 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 TPETRA_DEPRECATED void
 ReorderFilter<MatrixType>::
@@ -590,7 +581,7 @@ getGlobalRowView (global_ordinal_type GlobalRow,
   throw std::runtime_error("Ifpack2::ReorderFilter does not implement getGlobalRowView.");
 }
 
-//==========================================================================
+
 template<class MatrixType>
 TPETRA_DEPRECATED void
 ReorderFilter<MatrixType>::
@@ -601,6 +592,6 @@ getLocalRowView (local_ordinal_type LocalRow,
   throw std::runtime_error("Ifpack2::ReorderFilter does not implement getLocalRowView.");
 }
 
-}// namespace Ifpack2
+} // namespace Ifpack2
 
 #endif

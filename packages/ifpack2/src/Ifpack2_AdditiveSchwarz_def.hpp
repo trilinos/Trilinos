@@ -1210,6 +1210,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 #ifdef HAVE_MPI
   using Teuchos::MpiComm;
 #endif // HAVE_MPI
+  using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -1308,12 +1309,25 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     MyOrderingProblem.solve ();
 
     // Now create the reordered matrix & mark it as active
+    {
+      typedef ReorderFilter<row_matrix_type> reorder_filter_type;
+      typedef Zoltan2::OrderingSolution<global_ordinal_type,
+        local_ordinal_type> ordering_solution_type;
 
-    typedef ReorderFilter<row_matrix_type> reorder_filter_type;
-    typedef Zoltan2::OrderingSolution<global_ordinal_type, local_ordinal_type> ordering_solution_type;
-    ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, rcp (new ordering_solution_type (*MyOrderingProblem.getSolution ()))));
+      ordering_solution_type sol (*MyOrderingProblem.getSolution ());
 
-    ActiveMatrix = ReorderedLocalizedMatrix_;
+      // perm[i] gives the where OLD index i shows up in the NEW
+      // ordering.  revperm[i] gives the where NEW index i shows
+      // up in the OLD ordering.  Note that perm is actually the
+      // "inverse permutation," in Zoltan2 terms.
+      ArrayRCP<local_ordinal_type> perm = sol.getPermutationRCPConst (true);
+      ArrayRCP<local_ordinal_type> revperm = sol.getPermutationRCPConst ();
+
+      ReorderedLocalizedMatrix_ =
+        rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
+
+      ActiveMatrix = ReorderedLocalizedMatrix_;
+    }
 #else
     // This is a logic_error, not a runtime_error, because
     // setParameters() should have excluded this case already.

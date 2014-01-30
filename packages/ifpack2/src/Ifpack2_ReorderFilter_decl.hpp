@@ -44,40 +44,26 @@
 #define IFPACK2_REORDERFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-
-#ifdef HAVE_IFPACK2_ZOLTAN2
-#include "Zoltan2_config.h"
-#include "Zoltan2_OrderingSolution.hpp"
-#endif
 
 
 namespace Ifpack2 {
-//! Ifpack2::ReorderFilter: a class for light-weight reorder of local rows and columns of an Tpetra::RowMatrix.
 
 /*!
-Class Ifpack2::ReorderFilter enables a light-weight construction of
-reordered matrices.
+\class ReorderFilter
+\brief Wraps a Tpetra::RowMatrix in a filter that reorders local rows and columns.
 
-This class is used in Ifpack2::AdditiveSchwarz to reorder (if required
-by the user) the localized matrix. As the localized matrix is defined
-on a serial communicator only, all maps are trivial (as all elements
-reside on the same process). This class does not attemp to define
-properly reordered maps, hence it should not be used for distributed
-matrices.
+This class is used in AdditiveSchwarz to reorder (if required by the
+user) the localized matrix.  As the localized matrix is defined on a
+serial communicator only, all maps are trivial (as all elements reside
+on the same process).  This class does not attemp to define properly
+reordered maps, hence it should not be used for distributed matrices.
 
 To improve the performance of Ifpack2::AdditiveSchwarz, some
-operations are not performed in the construction phase (like
-for instance the computation of the 1-norm and infinite-norm,
-of check whether the reordered matrix is lower/upper triangular or not).
-
-\date Last modified: Sep-12.
-
+operations are not performed in the construction phase (like for
+instance the computation of the 1-norm and infinite-norm, of check
+whether the reordered matrix is lower/upper triangular or not).
 */
-
 template<class MatrixType>
 class ReorderFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
@@ -101,38 +87,48 @@ public:
   //! \name Constructor & destructor methods
   //@{
 
-  //! Constructor.
-
-#ifdef HAVE_IFPACK2_ZOLTAN2
-  explicit ReorderFilter (const Teuchos::RCP<const row_matrix_type>& Matrix,
-                          const Teuchos::RCP<const Zoltan2::OrderingSolution<global_ordinal_type,local_ordinal_type> > & Reordering);
-#endif // HAVE_IFPACK2_ZOLTAN2
-
+  /// \brief Constructor.
+  ///
+  /// \param A [in] The matrix to which to apply the filter.
+  /// \param perm [in] Forward permutation of A's rows and columns.
+  /// \param reverseperm [in] Reverse permutation of A's rows and columns.
+  ///
+  /// It must make sense to apply the given permutation to both the
+  /// rows and columns.  This means that the row and column Maps must
+  /// have the same numbers of entries on all processes, and must have
+  /// the same order of GIDs on all processes.
+  ///
+  /// perm[i] gives the where OLD index i shows up in the NEW
+  /// ordering.  revperm[i] gives the where NEW index i shows up in
+  /// the OLD ordering.  Note that perm is actually the "inverse
+  /// permutation," in Zoltan2 terms.
+  ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
+                 const Teuchos::ArrayRCP<local_ordinal_type>& perm,
+                 const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm);
 
   //! Destructor.
-  virtual ~ReorderFilter();
+  virtual ~ReorderFilter ();
 
   //@}
-
-  //! \name Matrix Query Methods
+  //! \name Matrix query methods
   //@{
 
-  //! Returns the communicator.
+  //! The matrix's communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-  //! Returns the underlying node.
+  //! The matrix's Kokkos Node object.
   virtual Teuchos::RCP<node_type> getNode () const;
 
   //! Returns the Map that describes the row distribution in this matrix.
   virtual Teuchos::RCP<const map_type> getRowMap() const;
 
-  //! \brief Returns the Map that describes the column distribution in this matrix.
+  //! Returns the Map that describes the column distribution in this matrix.
   virtual Teuchos::RCP<const map_type> getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
   virtual Teuchos::RCP<const map_type> getDomainMap() const;
 
-  //! \brief Returns the Map that describes the range distribution in this matrix.
+  //! Returns the Map that describes the range distribution in this matrix.
   virtual Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix.
