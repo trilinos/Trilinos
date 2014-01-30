@@ -9,7 +9,7 @@ import glob
 import re
 
 # ========================= constants =========================
-CPN          = 24                                               # cores per node
+CPN          = 24                                               # number of physical cores per node (hopper has 24)
 NUM_RUNS     = 2                                                # number of same runs (for reproducibility)
 BASECASE     = 1                                                # number of nodes in the smallest run
 DIR_PREFIX   = 'run_'                                           # directory prefix for runs (run with 2 nodes is stores in ${DIR_PREFIX}_2 (shell notation)
@@ -32,14 +32,15 @@ def controller():
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
     p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
     p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
-    p.add_option('-s',                 dest="nscale",       default="8", type='int')                    # number of weak scaling runs
+    p.add_option('-s',                 dest="nscale",       default=8, type='int')                      # number of weak scaling runs
     p.add_option('-t', '--template',   dest="template",     default="petra.pbs.template")               # template pbs file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
+    p.add_option(      '--cpn',        dest="cpn",          default=CPN, type='int')                    # cores per node
 
     # run arguments
-    p.add_option(      "--cmds",       dest="cmds",         default="")                                 # additional args for the command
+    p.add_option(      '--cmds',       dest="cmds",         default="")                                 # additional args for the command
     p.add_option('-m', '--matrixType', dest="matrix",       default="Laplace3D")                        # matrix
-    p.add_option('-n', '--nx',         dest="nx",           default="134", type="int")                  # number of nodes in any direction
+    p.add_option('-n', '--nx',         dest="nx",           default=134, type='int')                    # number of nodes in any direction
     p.add_option('-x', '--xml',        dest="xmlfile",      default="")                                 # xml file with hierarchy configuration
 
     # parse
@@ -114,11 +115,15 @@ def controller():
             # custom number of nodes
             for i in re.split(',', options.nnodes):
                 nnodes.append(int(i))
-                nx.append(int(options.nx * pow(int(i), 1./dim)))
+
+        cpn = options.cpn
+        for i in range(0, len(nnodes)):
+            nx.append(int(options.nx * pow(nnodes[i] * cpn/CPN, 1./dim)))
+
 
         for i in range(0, len(nnodes)):
             build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                datafiles=datafiles, cmds=cmds, template=options.template, output=options.output)
+                datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn)
 
     elif options.action == 'run':
         run()
@@ -235,7 +240,7 @@ def analyze(petra, analysis_run, labels, timelines):
 
         os.chdir("..")
 
-def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output):
+def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn):
     dir = DIR_PREFIX + str(nnodes)
     print("Building %s..." % dir)
 
@@ -244,16 +249,23 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output):
     for afile in datafiles:                                 # copy all xml files
         shutil.copy(afile, dir)
 
+    aprun_args  = "-ss"                                     # Demands strict memory containment per NUMA node
+    aprun_args += " -cc numa_node"                          # Controls how tasks are bound to cores and NUMA nodes
+    aprun_args += " -N " + str(cpn)                         # Number of tasks per node
+    if cpn % 4 == 0:
+      aprun_args += " -S " + str(cpn/4)                     # Nnumber of tasks per NUMA node (note: hopper has 4 NUMA nodes)
+
     # construct PBS script from template
     os_cmd = "cat " + template
-    os_cmd += (" | sed \"s/_NODES_/"    + str(nnodes)               + "/g\"" +
-               " | sed \"s/_CORES_/"    + str(nnodes*CPN)           + "/g\"" +
-               " | sed \"s/_MTYPE_/"    + matrix                    + "/g\"" +
-               " | sed \"s/_NX_/"       + str(nx)                   + "/g\"" +
-               " | sed \"s/_EPETRA_/"   + str(petra & 1)            + "/g\"" +
-               " | sed \"s/_TPETRA_/"   + str(petra & 2)            + "/g\"" +
-               " | sed \"s/_NUM_RUNS_/" + str(NUM_RUNS)             + "/g\"" +
-               " | sed \"s/_NUM_CMDS_/" + str(len(cmds))            + "/g\"")
+    os_cmd += (" | sed \"s/_APRUN_ARGS_/" + aprun_args                + "/g\"" +
+               " | sed \"s/_WIDTH_/"      + str(nnodes*CPN)           + "/g\"" +
+               " | sed \"s/_CORES_/"      + str(nnodes*cpn)           + "/g\"" +
+               " | sed \"s/_MTYPE_/"      + matrix                    + "/g\"" +
+               " | sed \"s/_NX_/"         + str(nx)                   + "/g\"" +
+               " | sed \"s/_EPETRA_/"     + str(petra & 1)            + "/g\"" +
+               " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/g\"" +
+               " | sed \"s/_NUM_RUNS_/"   + str(NUM_RUNS)             + "/g\"" +
+               " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/g\"")
     for i in range(len(cmds)):
         os_cmd += " | sed \"s/_CMD" + str(i+1) + "_/" + cmds[i] + "/g\""
     os_cmd += " > " + dir + "/" + PETRA_PREFIX + str(nnodes) + ".pbs"
