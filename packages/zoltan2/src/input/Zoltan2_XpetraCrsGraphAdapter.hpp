@@ -125,7 +125,7 @@ public:
    *  entities appear in the input data structure.
    */
 
-  void setPrimaryWeights(const scalar_t *val, int stride, int idx);
+  void setWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Provide a pointer to one dimension of the vertex weights.
    *    \param val A pointer to the weights for dimension \c dim.
@@ -149,7 +149,7 @@ public:
    *    \param idx Zoltan2 will use the entity's 
    *         degree as the entity weight for index \c idx.
    */
-  void setPrimaryWeightIsDegree(int idx);
+  void setWeightIsDegree(int idx);
 
   /*! \brief Specify an index for which the vertex weight should be
               the degree of the vertex
@@ -232,10 +232,7 @@ public:
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useDegreeAsVertexWeight(int idx) const
-  {
-    return vertexDegreeWeight_[idx];
-  }
+  bool useDegreeAsVertexWeight(int idx) const {return vertexDegreeWeight_[idx];}
 
   int getNumWeightsPerEdge() const { return edgeWeightDim_;}
 
@@ -337,7 +334,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraCrsGraphAdapter<User,UserCoord>::setPrimaryWeights(
+  void XpetraCrsGraphAdapter<User,UserCoord>::setWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   if (this->getPrimaryEntityType() == GRAPH_VERTEX)
@@ -361,7 +358,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraCrsGraphAdapter<User,UserCoord>::setPrimaryWeightIsDegree(
+  void XpetraCrsGraphAdapter<User,UserCoord>::setWeightIsDegree(
     int idx)
 {
   if (this->getPrimaryEntityType() == GRAPH_VERTEX)
@@ -369,7 +366,7 @@ template <typename User, typename UserCoord>
   else {
     std::ostringstream emsg;
     emsg << __FILE__ << "," << __LINE__
-         << " error:  setPrimaryWeightIsNumberOfNonZeros is supported only for"
+         << " error:  setWeightIsNumberOfNonZeros is supported only for"
          << " vertices" << std::endl;
     throw std::runtime_error(emsg.str());
   }

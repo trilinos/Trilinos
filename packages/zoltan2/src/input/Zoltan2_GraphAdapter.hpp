@@ -192,7 +192,10 @@ public:
   /*! \brief Indicate whether vertex weight with index idx should be the
    *         global degree of the vertex
    */
-  virtual bool useDegreeAsVertexWeight(int idx) const { return 0; }
+  virtual bool useDegreeAsVertexWeight(int idx) const
+  { 
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
@@ -342,6 +345,19 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
            << " error:  getWeightsView not yet supported for graph edges." 
+           << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+  }
+
+  bool useDegreeAsWeight(int idx) const
+  {
+    if (this->getPrimaryEntityType() == GRAPH_VERTEX)
+      return useDegreeAsVertexWeight(idx);
+    else {
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  useDegreeAsWeight is supported only for vertices"
            << std::endl;
       throw std::runtime_error(emsg.str());
     }

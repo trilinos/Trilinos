@@ -121,7 +121,7 @@ public:
    * entity type; see, e.g.,  setRowWeights below.
    */
 
-  void setPrimaryWeights(const scalar_t *weightVal, int stride, int idx = 0);
+  void setWeights(const scalar_t *weightVal, int stride, int idx = 0);
 
   /*! \brief Specify a weight for each row.
    *    \param weightVal A pointer to the weights for this dimension.
@@ -145,7 +145,7 @@ public:
    *    \param idx Zoltan2 will use the entity's 
    *         degree as the entity weight for index \c idx.
    */
-  void setPrimaryWeightIsDegree(int idx);
+  void setWeightIsDegree(int idx);
 
   /*! \brief Specify an index for which the row weight should be
               the global number of nonzeros in the row
@@ -284,7 +284,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraCrsMatrixAdapter<User,UserCoord>::setPrimaryWeights(
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   if (this->getPrimaryEntityType() == MATRIX_ROW)
@@ -293,7 +293,7 @@ template <typename User, typename UserCoord>
     // TODO:  Need to allow weights for columns and/or nonzeros
     std::ostringstream emsg;
     emsg << __FILE__ << "," << __LINE__
-         << " error:  setPrimaryWeights not yet supported for"
+         << " error:  setWeights not yet supported for"
          << " columns or nonzeros."
          << std::endl;
     throw std::runtime_error(emsg.str());
@@ -316,7 +316,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraCrsMatrixAdapter<User,UserCoord>::setPrimaryWeightIsDegree(
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setWeightIsDegree(
     int idx)
 {
   if (this->getPrimaryEntityType() == MATRIX_ROW)
@@ -325,7 +325,7 @@ template <typename User, typename UserCoord>
     // TODO:  Need to allow weights for columns and/or nonzeros
     std::ostringstream emsg;
     emsg << __FILE__ << "," << __LINE__
-         << " error:  setPrimaryWeightIsNumberOfNonZeros not yet supported for"
+         << " error:  setWeightIsNumberOfNonZeros not yet supported for"
          << " columns" << std::endl;
     throw std::runtime_error(emsg.str());
   }

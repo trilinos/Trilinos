@@ -236,7 +236,10 @@ public:
   /*! \brief Indicate whether row weight with index idx should be the
    *         global number of nonzeros in the row.
    */
-  virtual bool useNumNonzerosAsRowWeight(int idx) const { return 0; }
+  virtual bool useNumNonzerosAsRowWeight(int idx) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
   /*! \brief Indicates whether the MatrixAdapter implements a view of the
              matrix in compressed sparse column (CCS) format.
@@ -472,6 +475,19 @@ public:
       }
     default:   // Shouldn't reach default; just making compiler happy
       break;
+    }
+  }
+
+  bool useDegreeAsWeight(int idx) const
+  {
+    if (this->getPrimaryEntityType() == MATRIX_ROW)
+      return useNumNonzerosAsRowWeight(idx);
+    else {
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  useDegreeAsWeight is currently supported only for rows"
+           << std::endl;
+      throw std::runtime_error(emsg.str());
     }
   }
 };

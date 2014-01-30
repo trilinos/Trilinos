@@ -212,9 +212,9 @@ void testAdapter(
 
   for (int i=0; i < rowWeightDim; i++){
     if (nnzDim == i)
-      tmi.setPrimaryWeightIsDegree(i);
+      tmi.setWeightIsDegree(i);
     else
-      tmi.setPrimaryWeights(rowWeights[i], 1, i);
+      tmi.setWeights(rowWeights[i], 1, i);
   }
 
   gno_t *gids = NULL;
@@ -278,7 +278,7 @@ void testAdapter(
 
   try{
     model = new Zoltan2::GraphModel<BaseAdapter>(baseTmi, env, 
-      comm, modelFlags);
+                                                 comm, modelFlags);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
