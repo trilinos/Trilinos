@@ -108,9 +108,9 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosFramework     cmake                             PS # Only tests, no libraries/capabilities!
   Teuchos               packages/teuchos                  PS
   ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
-  Sacado                packages/sacado                   PS
   RTOp                  packages/rtop                     PS
   Kokkos                packages/kokkos                   PS
+  Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
   Zoltan                packages/zoltan                   PS
   Shards                packages/shards                   PS
