@@ -253,8 +253,8 @@ template <typename User, typename UserCoord>
   offset_.resize(nrows+1, 0);
   columnIds_.resize(nnz);
   values_.resize(nnz);
-  ArrayRCP<const lno_t> indices(maxnumentries); // Diff from CrsMatrix
-  ArrayRCP<const scalar_t> nzs(maxnumentries);  // Diff from CrsMatrix
+  ArrayRCP<lno_t> indices(maxnumentries); // Diff from CrsMatrix
+  ArrayRCP<scalar_t> nzs(maxnumentries);  // Diff from CrsMatrix
   lno_t next = 0;
   for (size_t i=0; i < nrows; i++){
     lno_t row = i + base_;
