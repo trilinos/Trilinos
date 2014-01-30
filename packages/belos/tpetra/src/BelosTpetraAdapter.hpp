@@ -76,6 +76,8 @@
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Operator.hpp>
+#include <Kokkos_DefaultNode.hpp>
+
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -87,6 +89,8 @@
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
 
+
+
 #ifdef HAVE_BELOS_TSQR
 #  include <Tpetra_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
@@ -94,13 +98,43 @@
 
 namespace Belos {
 
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Implementation of Belos::MultiVecTraits for Tpetra::MultiVector.
-  //
-  ////////////////////////////////////////////////////////////////////
+namespace { // anonymous
+  template<class S, class LO, class GO, class Node>
+  Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, Node> >
+  TpetraMultiVectorCloneCopy (const Tpetra::MultiVector<S, LO, GO, Node>& X)
+  {
+    typedef Tpetra::MultiVector<S, LO, GO, Node> MV;
 
-  /// \brief Partial specialization of MultiVecTraits for MV = Tpetra::MultiVector.
+    // mfh 29 Jan 2014: This will only be correct if the
+    // specialization of MultiVector for the given Node type does a
+    // deep copy in its copy constructor.  This is not true of the new
+    // Kokkos Device wrapper Node types, hence the partial
+    // specialization below.
+    return Teuchos::rcp (new MV (X));
+  }
+
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  template<class S, class LO, class GO, class Device>
+  Teuchos::RCP<Tpetra::MultiVector<S, LO, GO,
+                                   Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
+  TpetraMultiVectorCloneCopy (const Tpetra::MultiVector<S, LO, GO,
+                              Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& X)
+  {
+    typedef Tpetra::MultiVector<S, LO, GO, Node> MV;
+
+    // mfh 29 Jan 2014: If the specialization of MultiVector for Node
+    // does a deep copy in its copy constructor, then this will
+    // double-copy, since createCopy() returns MV, not RCP<MV>.
+    // However, the Kokkos::Compat wrapper Nodes do NOT do a deep copy
+    // in their copy constructor, so this is fine to use there (and
+    // indeed is the preferred mode).
+    return Teuchos::rcp (new MV (Tpetra::createCopy (mv)));
+  }
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+
+} // namespace (anonymous)
+
+  /// \brief Specialization of MultiVecTraits for MV = Tpetra::MultiVector.
   ///
   /// This interface lets Belos' solvers work directly with
   /// Tpetra::MultiVector objects as the multivector type
@@ -128,7 +162,7 @@ namespace Belos {
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
     CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
-      return Teuchos::rcp (new MV (mv));
+      return TpetraMultiVectorCloneCopy<Scalar, LO, GO, Node> (mv);
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
@@ -589,6 +623,8 @@ namespace Belos {
               const std::vector<int>& index,
               Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
+      using Teuchos::Range1D;
+      using Teuchos::RCP;
       typedef std::vector<int>::size_type size_type;
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -600,14 +636,13 @@ namespace Belos {
         "index.size() = " << index.size () << " != A.getNumVectors() = "
         << A.getNumVectors () << ".");
 #endif
-      Teuchos::RCP<MV> mvsub = CloneViewNonConst (mv, index);
+      RCP<MV> mvsub = CloneViewNonConst (mv, index);
       if (static_cast<size_type> (A.getNumVectors ()) > index.size ()) {
-        Teuchos::RCP<const MV> Asub =
-          A.subView (Teuchos::Range1D (0, index.size () - 1));
-        (*mvsub) = (*Asub);
+        RCP<const MV> Asub = A.subView (Range1D (0, index.size () - 1));
+        Tpetra::deep_copy (*mvsub, *Asub);
       }
       else {
-        (*mvsub) = A;
+        Tpetra::deep_copy (*mvsub, A);
       }
       mvsub = Teuchos::null;
     }
@@ -684,19 +719,14 @@ namespace Belos {
         A_view = CloneView (A, Teuchos::Range1D (0, index.size () - 1));
       }
 
-      // Assignment of Tpetra::MultiVector objects via operator=()
-      // assumes that both arguments have compatible Maps.  If
-      // HAVE_TPETRA_DEBUG is defined at compile time, operator=()
-      // will throw an std::runtime_error if the Maps are
-      // incompatible.
-      *mv_view = *A_view;
+      Tpetra::deep_copy (*mv_view, *A_view);
     }
 
     static void
     Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
             Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
-      const char[] errPrefix = "Belos::MultiVecTraits::Assign(A, mv): ";
+      const char errPrefix[] = "Belos::MultiVecTraits::Assign(A, mv): ";
 
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of Tpetra::MultiVector is a deep copy.
@@ -734,11 +764,11 @@ namespace Belos {
       // HAVE_TPETRA_DEBUG is defined at compile time, operator= may
       // throw an std::runtime_error if the Maps are incompatible.
       if (numColsA == numColsMv) {
-        mv = A;
+        Tpetra::deep_copy (mv, A);
       } else {
         Teuchos::RCP<MV> mv_view =
           CloneViewNonConst (mv, Teuchos::Range1D (0, numColsA-1));
-        *mv_view = A;
+        Tpetra::deep_copy (*mv_view, A);
       }
     }
 
@@ -769,13 +799,7 @@ namespace Belos {
 #endif // HAVE_BELOS_TSQR
   };
 
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Implementation of the Belos::OperatorTraits for Tpetra::Operator.
-  //
-  ////////////////////////////////////////////////////////////////////
-
-  /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
+  //! Partial specialization of OperatorTraits for Tpetra objects.
   template <class Scalar, class LO, class GO, class Node>
   class OperatorTraits <Scalar,
                         Tpetra::MultiVector<Scalar,LO,GO,Node>,
