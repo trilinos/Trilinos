@@ -211,8 +211,8 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraRowMatrixAdapter<User>::XpetraRowMatrixAdapter(
+template <typename User, typename UserCoord>
+  XpetraRowMatrixAdapter<User,UserCoord>::XpetraRowMatrixAdapter(
     const RCP<const User> &inmatrix, int weightDim):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
@@ -257,8 +257,8 @@ template <typename User>
   }
 }
 
-template <typename User>
-  void XpetraRowMatrixAdapter<User>::setRowWeights(
+template <typename User, typename UserCoord>
+  void XpetraRowMatrixAdapter<User, UserCoord>::setRowWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -270,8 +270,8 @@ template <typename User>
   rowWeights_[idx] = input_t(weightV, stride);
 }
 
-template <typename User>
-  void XpetraRowMatrixAdapter<User>::setRowWeightIsNumberOfNonZeros(int dim)
+template <typename User, typename UserCoord>
+  void XpetraRowMatrixAdapter<User, UserCoord>::setRowWeightIsNumberOfNonZeros(int dim)
 {
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight dimension",
@@ -279,9 +279,9 @@ template <typename User>
   numNzWeight_[dim] = true;
 }
 
-template <typename User>
+template <typename User, typename UserCoord>
   template <typename Adapter>
-    void XpetraRowMatrixAdapter<User>::applyPartitioningSolution(
+    void XpetraRowMatrixAdapter<User, UserCoord>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 
