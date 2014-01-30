@@ -98,6 +98,12 @@ namespace KokkosClassic {
     inline void sync() const {}
   };
 
+  /// \brief Return the name of the node type
+  /// See \ref kokkos_node_api "Kokkos Node API"
+  static std::string name() {
+    return std::string("Serial");
+  }
+
   template <> class ArrayOfViewsHelper<SerialNode> : 
     public ArrayOfViewsHelperTrivialImpl<SerialNode> {};
 

@@ -107,6 +107,12 @@ namespace KokkosClassic {
     ///   should use.  Ignored if -1 or 0.
     void init(int numThreads);
 
+    /// \brief Return the name of the node type
+    /// See \ref kokkos_node_api "Kokkos Node API"
+    static std::string name() {
+      return std::string("OpenMP");
+    }
+
     //! Perform a parallel for loop on the given half-exclusive index range.
     template <class WDP>
     static void parallel_for(int beg, int end, WDP wd) {

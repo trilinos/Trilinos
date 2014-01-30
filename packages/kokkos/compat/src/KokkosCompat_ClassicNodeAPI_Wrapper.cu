@@ -43,6 +43,11 @@ namespace Kokkos {
       if(!Kokkos::Cuda::is_initialized())
         Kokkos::Cuda::initialize(select_device);
     }
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Cuda>::name() {
+      return std::string("Cuda/Wrapper");
+    }
+
 #endif
   }
 }

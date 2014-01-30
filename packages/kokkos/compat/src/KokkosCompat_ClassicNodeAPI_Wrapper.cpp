@@ -38,6 +38,10 @@ namespace Kokkos {
       if(!Kokkos::Threads::is_initialized())
         Kokkos::Threads::initialize(NumTeams*NumThreads);
     }
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Threads>::name() {
+      return std::string("Threads/Wrapper");
+    }
 #endif
 
 #ifdef KOKKOS_HAVE_OPENMP
@@ -56,6 +60,10 @@ namespace Kokkos {
     void KokkosDeviceWrapperNode<Kokkos::OpenMP>::init(int NumTeams, int NumThreads, int Device) {
       if(!Kokkos::OpenMP::is_initialized())
         Kokkos::OpenMP::initialize(NumTeams*NumThreads);
+    }
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::OpenMP>::name() {
+      return std::string("OpenMP/Wrapper");
     }
 #endif
 

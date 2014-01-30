@@ -146,6 +146,12 @@ namespace KokkosClassic {
     //! \begin No-op for TBBNode.
     inline void sync() const {};
 
+    /// \brief Return the name of the node type
+    /// See \ref kokkos_node_api "Kokkos Node API"
+    static std::string name() {
+      return std::string("TBB");
+    }
+
   private:
     bool alreadyInit_;
     tbb::task_scheduler_init tsi_;

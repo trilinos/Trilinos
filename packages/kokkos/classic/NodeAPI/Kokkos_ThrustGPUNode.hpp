@@ -98,6 +98,11 @@ public:
   //! \begin Block until all node work is complete. Aids in accurate timing of multiple kernels.
   void sync() const;
 
+  /// \brief Return the name of the node type
+  /// See \ref kokkos_node_api "Kokkos Node API"
+  static std::string name() {
+    return std::string("ThrustGPU");
+  }
   //@} 
 
 private:

@@ -284,6 +284,9 @@ namespace Kokkos {
         (void)ncBuffers;
       }
 
+      /// \brief Return the name of the node type
+      /// See \ref kokkos_node_api "Kokkos Node API"
+      static std::string name();
 
       //@}
   };
