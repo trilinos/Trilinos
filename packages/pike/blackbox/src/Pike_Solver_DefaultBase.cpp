@@ -1,4 +1,4 @@
-#include "Pike_Solver_DefaultImpl.hpp"
+#include "Pike_Solver_DefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Pike_BlackBoxModelEvaluator.hpp"
@@ -9,7 +9,7 @@
 
 namespace pike {
 
-  SolverDefaultImpl::SolverDefaultImpl() :
+  SolverDefaultBase::SolverDefaultBase() :
     numberOfIterations_(0),
     status_(pike::UNCHECKED),
     registrationComplete_(false)
@@ -22,9 +22,9 @@ namespace pike {
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
 
-  SolverDefaultImpl::~SolverDefaultImpl() {}
+  SolverDefaultBase::~SolverDefaultBase() {}
 
-  void SolverDefaultImpl::registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me)
+  void SolverDefaultBase::registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(registrationComplete_,
 			       std::logic_error,
@@ -32,7 +32,7 @@ namespace pike {
     models_.push_back(me);
   }
   
-  void SolverDefaultImpl::registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt)
+  void SolverDefaultBase::registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(registrationComplete_,
 			       std::logic_error,
@@ -40,7 +40,7 @@ namespace pike {
     transfers_.push_back(dt);
   }
   
-  void SolverDefaultImpl::completeRegistration()
+  void SolverDefaultBase::completeRegistration()
   {
     // Set the defaults so the user doesn't have to set the parameter list
     if (is_null(this->getMyParamList())) {
@@ -51,7 +51,7 @@ namespace pike {
     registrationComplete_ = true;
   }
 
-  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImpl::getModelEvaluator(const std::string& meName) const
+  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultBase::getModelEvaluator(const std::string& meName) const
   {
     for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
       if ((*m)->name() == meName)
@@ -65,14 +65,14 @@ namespace pike {
     return Teuchos::null;
   }
 
-  const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > SolverDefaultImpl::getModelEvaluators() const
+  const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > SolverDefaultBase::getModelEvaluators() const
   {
     std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > constModels(models_.size());
     std::copy(models_.begin(),models_.end(),constModels.begin());
     return constModels;
   }
 
-  Teuchos::RCP<const pike::DataTransfer> SolverDefaultImpl::getDataTransfer(const std::string& dtName) const
+  Teuchos::RCP<const pike::DataTransfer> SolverDefaultBase::getDataTransfer(const std::string& dtName) const
   {
     for (TransferConstIterator t = transfers_.begin(); t != transfers_.end(); ++t)
       if ((*t)->name() == dtName)
@@ -82,13 +82,13 @@ namespace pike {
     return Teuchos::null;
   }
 
-  const std::vector<Teuchos::RCP<const pike::DataTransfer> > SolverDefaultImpl::getDataTransfers() const
+  const std::vector<Teuchos::RCP<const pike::DataTransfer> > SolverDefaultBase::getDataTransfers() const
   { std::vector<Teuchos::RCP<const pike::DataTransfer> > constTransfers;
     std::copy(transfers_.begin(),transfers_.end(),constTransfers.begin());
     return constTransfers;
   }
 
-  pike::SolveStatus SolverDefaultImpl::step()
+  pike::SolveStatus SolverDefaultBase::step()
   {
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeBeginStep(*this);
@@ -116,7 +116,7 @@ namespace pike {
     return status_;
   }
   
-  pike::SolveStatus SolverDefaultImpl::solve()
+  pike::SolveStatus SolverDefaultBase::solve()
   {
     TEUCHOS_ASSERT(registrationComplete_);
 
@@ -164,20 +164,20 @@ namespace pike {
     return status_;
   }
 
-  void SolverDefaultImpl::reset()
+  void SolverDefaultBase::reset()
   {
     numberOfIterations_ = 0;
     status_ = pike::UNCHECKED;
     statusTests_->reset();
   }
   
-  pike::SolveStatus SolverDefaultImpl::getStatus() const
+  pike::SolveStatus SolverDefaultBase::getStatus() const
   { return status_; }
 
-  int SolverDefaultImpl::getNumberOfIterations() const
+  int SolverDefaultBase::getNumberOfIterations() const
   { return numberOfIterations_; }
   
-  void SolverDefaultImpl::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
+  void SolverDefaultBase::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
     printBeginSolveStatus_ = paramList->get<bool>("Print Begin Solve Status");
@@ -187,33 +187,33 @@ namespace pike {
     this->setMyParamList(paramList);
   }
   
-  Teuchos::RCP<const Teuchos::ParameterList> SolverDefaultImpl::getValidParameters() const
+  Teuchos::RCP<const Teuchos::ParameterList> SolverDefaultBase::getValidParameters() const
   { return validParameters_; }
 
-  Teuchos::RCP<Teuchos::ParameterList> SolverDefaultImpl::getNonconstValidParameters()
+  Teuchos::RCP<Teuchos::ParameterList> SolverDefaultBase::getNonconstValidParameters()
   { return validParameters_; }
 
-  void SolverDefaultImpl::addObserver(const Teuchos::RCP<pike::Observer>& observer)
+  void SolverDefaultBase::addObserver(const Teuchos::RCP<pike::Observer>& observer)
   {
     observers_.push_back(observer);
   }
 
-  std::vector<Teuchos::RCP<pike::Observer> > SolverDefaultImpl::getObservers() const
+  std::vector<Teuchos::RCP<pike::Observer> > SolverDefaultBase::getObservers() const
   {
     return observers_;
   }
 
-  void SolverDefaultImpl::setStatusTests(const Teuchos::RCP<pike::StatusTest>& statusTests)
+  void SolverDefaultBase::setStatusTests(const Teuchos::RCP<pike::StatusTest>& statusTests)
   {
     statusTests_ = statusTests;
   }
 
-  Teuchos::RCP<const pike::StatusTest> SolverDefaultImpl::getStatusTests() const
+  Teuchos::RCP<const pike::StatusTest> SolverDefaultBase::getStatusTests() const
   {
     return statusTests_;
   }
   
-  std::string SolverDefaultImpl::name() const
+  std::string SolverDefaultBase::name() const
   {
     return name_;
   }

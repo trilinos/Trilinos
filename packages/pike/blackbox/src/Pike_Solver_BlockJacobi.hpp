@@ -1,11 +1,11 @@
 #ifndef PIKE_SOLVER_BLOCK_JACOBI_HPP
 #define PIKE_SOLVER_BLOCK_JACOBI_HPP
 
-#include "Pike_Solver_DefaultImpl.hpp"
+#include "Pike_Solver_DefaultBase.hpp"
 
 namespace pike {
 
-  class BlockJacobi : public pike::SolverDefaultImpl {
+  class BlockJacobi : public pike::SolverDefaultBase {
     
   public:
 

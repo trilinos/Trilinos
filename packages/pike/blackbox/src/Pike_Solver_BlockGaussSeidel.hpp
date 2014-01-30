@@ -1,14 +1,14 @@
 #ifndef PIKE_SOLVER_BLOCK_GAUSS_SEIDEL_HPP
 #define PIKE_SOLVER_BLOCK_GAUSS_SEIDEL_HPP
 
-#include "Pike_Solver_DefaultImpl.hpp"
+#include "Pike_Solver_DefaultBase.hpp"
 #include <vector>
 #include <map>
 #include <utility>
 
 namespace pike {
 
-  class BlockGaussSeidel : public pike::SolverDefaultImpl {
+  class BlockGaussSeidel : public pike::SolverDefaultBase {
     
   public:
 

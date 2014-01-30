@@ -1,5 +1,5 @@
-#ifndef PIKE_SOLVER_DEFAULT_IMPL_HPP
-#define PIKE_SOLVER_DEFAULT_IMPL_HPP
+#ifndef PIKE_SOLVER_DEFAULT_BASE_HPP
+#define PIKE_SOLVER_DEFAULT_BASE_HPP
 
 #include "Pike_Solver.hpp"
 #include "Teuchos_RCP.hpp"
@@ -11,14 +11,14 @@ namespace Teuchos {
 
 namespace pike {
 
-  class SolverDefaultImpl : public pike::Solver,
+  class SolverDefaultBase : public pike::Solver,
 			    public Teuchos::ParameterListAcceptorDefaultBase {
 
   public:
 
-    SolverDefaultImpl();
+    SolverDefaultBase();
 
-    virtual ~SolverDefaultImpl();
+    virtual ~SolverDefaultBase();
 
     virtual void registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me);
 
