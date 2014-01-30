@@ -1600,14 +1600,14 @@ struct MV_MultiplyFunctor {
 #pragma unroll
 #endif
           for (size_type k = 0; k < n; ++k) {
-            atomic_add(&m_y(ind,k), alpha(k) * val * m_x(iRow, k));
+            atomic_add(&m_y(ind,k), value_type(alpha(k) * val * m_x(iRow, k)));
           }
         } else {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
           for (size_type k = 0; k < n; ++k) {
-            atomic_add(&m_y(ind,k), val * m_x(iRow, k));
+            atomic_add(&m_y(ind,k), value_type(val * m_x(iRow, k)));
           }
         }
       }
@@ -1649,9 +1649,9 @@ struct MV_MultiplyFunctor {
         const size_type ind = row.colidx(iEntry);
 
         if(doalpha!=1) {
-          atomic_add(&m_y(ind), alpha(0) * val * m_x(iRow));
+          atomic_add(&m_y(ind), value_type(alpha(0) * val * m_x(iRow)));
         } else {
-          atomic_add(&m_y(ind), val * m_x(iRow));
+          atomic_add(&m_y(ind), value_type(val * m_x(iRow)));
         }
       }
     }
