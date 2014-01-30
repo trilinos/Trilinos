@@ -5,10 +5,10 @@
 namespace pike_test {
   
   LinearHeatConductionModelEvaluator::LinearHeatConductionModelEvaluator(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-									 const std::string& name,
+									 const std::string& myName,
 									 const Mode mode)
     : comm_(comm),
-      name_(name),
+      name_(myName),
       mode_(mode),
       k_(1.0),
       q_(1.0),
@@ -64,23 +64,23 @@ namespace pike_test {
     return Teuchos::ArrayView<const double>(responseValues_[i]);
   }
   
-  int LinearHeatConductionModelEvaluator::getResponseIndex(const std::string& name) const
+  int LinearHeatConductionModelEvaluator::getResponseIndex(const std::string& rName) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(responseMap_.find(name) == responseMap_.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(responseMap_.find(rName) == responseMap_.end(),
 			       std::logic_error,
-			       "Response name \"" << name << "\"is not valid!");
-    return responseMap_.find(name)->second;
+			       "Response name \"" << rName << "\"is not valid!");
+    return responseMap_.find(rName)->second;
   }
   
   std::string LinearHeatConductionModelEvaluator::getResponseName(const int i) const
   {
-    TEUCHOS_ASSERT( (i>=0) && (i<responseNames_.size()) );
+    TEUCHOS_ASSERT( (i>=0) && (i<Teuchos::as<int>(responseNames_.size())) );
     return responseNames_[i];
   }
 
-  bool LinearHeatConductionModelEvaluator::supportsResponse(const std::string& name) const
+  bool LinearHeatConductionModelEvaluator::supportsResponse(const std::string& rName) const
   {
-    return (responseMap_.find(name) != responseMap_.end());
+    return (responseMap_.find(rName) != responseMap_.end());
   }
   
   int LinearHeatConductionModelEvaluator::getNumberOfResponses() const

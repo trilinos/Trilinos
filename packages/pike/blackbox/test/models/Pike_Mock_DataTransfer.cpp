@@ -6,11 +6,11 @@
 namespace pike_test {
   
   MockDataTransfer::MockDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-					 const std::string& name,
+					 const std::string& myName,
 					 const std::vector<std::string>& sourceModelNames,
 					 const std::vector<std::string>& targetModelNames)
     : comm_(comm),
-      name_(name),
+      name_(myName),
       sourceModelNames_(sourceModelNames),
       targetModelNames_(targetModelNames)
   { }

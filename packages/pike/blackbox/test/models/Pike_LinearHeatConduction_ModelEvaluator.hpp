@@ -41,7 +41,7 @@ namespace pike_test {
     };
 
     LinearHeatConductionModelEvaluator(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-				       const std::string& name,
+				       const std::string& myName,
 				       const Mode mode);
 
     //@{ BlackBoxModelEvaluator derived methods
@@ -56,11 +56,11 @@ namespace pike_test {
 
     Teuchos::ArrayView<const double> getResponse(const int i) const;
 
-    int getResponseIndex(const std::string& name) const;
+    int getResponseIndex(const std::string& rName) const;
 
     std::string getResponseName(const int i) const;
 
-    bool supportsResponse(const std::string& name) const;
+    bool supportsResponse(const std::string& rName) const;
 
     int getNumberOfResponses() const;
 

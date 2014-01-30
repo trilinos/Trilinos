@@ -3,7 +3,7 @@
 
 namespace pike {
 
-  SolverAdapterModelEvaluator::SolverAdapterModelEvaluator(const std::string& name) : name_(name) {}
+  SolverAdapterModelEvaluator::SolverAdapterModelEvaluator(const std::string& myName) : name_(myName) {}
 
   void SolverAdapterModelEvaluator::setSolver(const Teuchos::RCP<pike::Solver>& solver)
   {
@@ -15,8 +15,7 @@ namespace pike {
     parameterNames_.clear();
     parameterNameToIndex_.clear();
     parameterIndexToModelIndices_.clear();
-    typedef std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> >::const_iterator it;
-    for (int m = 0; m < models.size(); ++m) {
+    for (std::size_t m = 0; m < models.size(); ++m) {
       for (int p=0; p < models[m]->getNumberOfParameters(); ++p) {
 	parameterNameToIndex_[models[m]->getParameterName(p)] = parameterNames_.size();
 	parameterNames_.push_back(models[m]->getParameterName(p));
@@ -27,8 +26,7 @@ namespace pike {
     responseNames_.clear();
     responseNameToIndex_.clear();
     responseIndexToModelIndices_.clear();
-    typedef std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> >::const_iterator it;
-    for (int m = 0; m < models.size(); ++m) {
+    for (std::size_t m = 0; m < models.size(); ++m) {
       for (int r=0; r < models[m]->getNumberOfResponses(); ++r) {
 	responseNameToIndex_[models[m]->getResponseName(r)] = responseNames_.size();
 	responseNames_.push_back(models[m]->getResponseName(r));
@@ -60,9 +58,9 @@ namespace pike {
   bool SolverAdapterModelEvaluator::isGloballyConverged() const
   { return true; }
 
-  bool SolverAdapterModelEvaluator::supportsParameter(const std::string& name) const
+  bool SolverAdapterModelEvaluator::supportsParameter(const std::string& pName) const
   {
-    return (parameterNameToIndex_.find(name) !=  parameterNameToIndex_.end());    
+    return (parameterNameToIndex_.find(pName) !=  parameterNameToIndex_.end());    
   }
 
   int SolverAdapterModelEvaluator::getNumberOfParameters() const
@@ -75,12 +73,12 @@ namespace pike {
     return parameterNames_[l];
   }
   
-  int SolverAdapterModelEvaluator::getParameterIndex(const std::string& name) const
+  int SolverAdapterModelEvaluator::getParameterIndex(const std::string& pName) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(parameterNameToIndex_.find(name) == parameterNameToIndex_.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(parameterNameToIndex_.find(pName) == parameterNameToIndex_.end(),
 			       std::logic_error,
-			       "The parameter name \"" << name << "\" does not exist!");
-    return parameterNameToIndex_.find(name)->second;
+			       "The parameter name \"" << pName << "\" does not exist!");
+    return parameterNameToIndex_.find(pName)->second;
   }
 
   void SolverAdapterModelEvaluator::setParameter(const int l, const Teuchos::ArrayView<const double>& p)
@@ -91,9 +89,9 @@ namespace pike {
     const_cast<pike::BlackBoxModelEvaluator&>(*(solver_->getModelEvaluators()[responseIndexToModelIndices_[l].first])).setParameter(responseIndexToModelIndices_[l].second,p);
   }
 
-  bool SolverAdapterModelEvaluator::supportsResponse(const std::string& name) const
+  bool SolverAdapterModelEvaluator::supportsResponse(const std::string& rName) const
   {
-    return (responseNameToIndex_.find(name) !=  responseNameToIndex_.end());
+    return (responseNameToIndex_.find(rName) !=  responseNameToIndex_.end());
   }
   
   int SolverAdapterModelEvaluator::getNumberOfResponses() const
@@ -106,12 +104,12 @@ namespace pike {
     return responseNames_[i];
   }
 
-  int SolverAdapterModelEvaluator::getResponseIndex(const std::string& name) const
+  int SolverAdapterModelEvaluator::getResponseIndex(const std::string& rName) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(responseNameToIndex_.find(name) == responseNameToIndex_.end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(responseNameToIndex_.find(rName) == responseNameToIndex_.end(),
 			       std::logic_error,
-			       "The response name \"" << name << "\" does not exist!");
-    return responseNameToIndex_.find(name)->second;
+			       "The response name \"" << rName << "\" does not exist!");
+    return responseNameToIndex_.find(rName)->second;
   }
 
   Teuchos::ArrayView<const double> SolverAdapterModelEvaluator::getResponse(const int i) const

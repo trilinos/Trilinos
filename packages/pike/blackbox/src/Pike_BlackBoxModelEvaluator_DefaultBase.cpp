@@ -4,7 +4,7 @@ namespace pike {
 
   BlackBoxModelEvaluatorDefaultBase::~BlackBoxModelEvaluatorDefaultBase() {}
 
-  bool BlackBoxModelEvaluatorDefaultBase::supportsParameter(const std::string& name) const
+  bool BlackBoxModelEvaluatorDefaultBase::supportsParameter(const std::string& pName) const
   {
     return false;
   }
@@ -22,7 +22,7 @@ namespace pike {
     return "";
   }
   
-  int BlackBoxModelEvaluatorDefaultBase::getParameterIndex(const std::string& name) const
+  int BlackBoxModelEvaluatorDefaultBase::getParameterIndex(const std::string& pName) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error: BlackBoxModelEvaluatorDefaultBase::getParameterIndex(name) "
 			       << "The BlackBoxModelEvaluator named \"" << this->name() 
@@ -38,7 +38,7 @@ namespace pike {
 			       << "\" does not support parameters!");
   }
   
-  bool BlackBoxModelEvaluatorDefaultBase::supportsResponse(const std::string& name) const
+  bool BlackBoxModelEvaluatorDefaultBase::supportsResponse(const std::string& rName) const
   {
     return false;
   }
@@ -56,7 +56,7 @@ namespace pike {
     return "";
   }
   
-  int BlackBoxModelEvaluatorDefaultBase::getResponseIndex(const std::string& name) const
+  int BlackBoxModelEvaluatorDefaultBase::getResponseIndex(const std::string& rName) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error: BlackBoxModelEvaluatorDefaultBase::getResponseIndex(name) "
 			       << "The BlackBoxModelEvaluator named \"" << this->name() 

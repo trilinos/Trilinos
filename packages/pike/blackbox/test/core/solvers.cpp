@@ -406,19 +406,21 @@ namespace pike_test {
     // this in the future just to autmate things for users.  But for
     // now it is not needed.
 
-    // Model Connectivity Graph
-    //
-    //       S_outer
-    //       /     \
-    //    Left    S_inner
-    //            /     \
-    //         Middle   Right
-
-    // Model Transfer Graph (4 transfers)
-    //
-    //    Left  <->  S_inner
-    //               /     \
-    //          Middle <-> Right
+    /* 
+       Model Connectivity Graph:
+      
+             S_outer
+             /     \
+          Left    S_inner
+                  /     \
+               Middle   Right
+    
+       Model Transfer Graph (4 transfers)
+      
+          Left  <->  S_inner
+                     /     \
+                Middle <-> Right
+    */
 
     RCP<LinearHeatConductionDataTransfer> transferQRightToLeft = 
       linearHeatConductionDataTransfer(globalComm,"tranfers q: right->left",pike_test::LinearHeatConductionDataTransfer::TRANSFER_Q);

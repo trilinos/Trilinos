@@ -35,7 +35,7 @@ namespace pike_test {
     };
 
     LinearHeatConductionDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-				     const std::string& name,
+				     const std::string& myName,
 				     const Mode mode);
 
     //@{ DataTransfer derived methods

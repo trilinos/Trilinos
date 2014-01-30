@@ -19,7 +19,7 @@ namespace pike_test {
   public:
 
     MockDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-		     const std::string& name,
+		     const std::string& myName,
 		     const std::vector<std::string>& sourceModelNames,
 		     const std::vector<std::string>& targetModelNames);
     

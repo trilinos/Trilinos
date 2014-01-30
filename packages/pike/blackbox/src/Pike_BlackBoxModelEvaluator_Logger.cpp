@@ -51,9 +51,9 @@ namespace pike {
     return model_->getResponse(i);
   }
   
-  int ModelEvaluatorLogger::getResponseIndex(const std::string& name) const
+  int ModelEvaluatorLogger::getResponseIndex(const std::string& rName) const
   {
-    return model_->getResponseIndex(name);
+    return model_->getResponseIndex(rName);
   }
 
   std::string ModelEvaluatorLogger::getResponseName(const int i) const
@@ -61,9 +61,9 @@ namespace pike {
     return model_->getResponseName(i);
   }
 
-  bool ModelEvaluatorLogger::supportsResponse(const std::string& name) const
+  bool ModelEvaluatorLogger::supportsResponse(const std::string& rName) const
   {
-    return model_->supportsResponse(name);
+    return model_->supportsResponse(rName);
   }
 
   int ModelEvaluatorLogger::getNumberOfResponses() const
@@ -71,9 +71,9 @@ namespace pike {
     return model_->getNumberOfResponses();
   }
 
-  bool ModelEvaluatorLogger::supportsParameter(const std::string& name) const
+  bool ModelEvaluatorLogger::supportsParameter(const std::string& pName) const
   {
-    return model_->supportsParameter(name);
+    return model_->supportsParameter(pName);
   }
 
   int ModelEvaluatorLogger::getNumberOfParameters() const
@@ -86,9 +86,9 @@ namespace pike {
     return model_->getParameterName(l);
   }
 
-  int ModelEvaluatorLogger::getParameterIndex(const std::string& name) const
+  int ModelEvaluatorLogger::getParameterIndex(const std::string& pName) const
   {
-    return model_->getParameterIndex(name);
+    return model_->getParameterIndex(pName);
   }
 
   void ModelEvaluatorLogger::setParameter(const int l, const Teuchos::ArrayView<const double>& p)

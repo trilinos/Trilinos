@@ -51,17 +51,17 @@ namespace pike {
     registrationComplete_ = true;
   }
 
-  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImpl::getModelEvaluator(const std::string& name) const
+  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImpl::getModelEvaluator(const std::string& meName) const
   {
     for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
-      if ((*m)->name() == name)
+      if ((*m)->name() == meName)
 	return *m;
 
     std::ostringstream os;
     for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
        os << "  " << (*m)->name() << std::endl;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the ModelEvaluator named \"" << name << "\" in the solver.  Valid models are:\n" << os.str() << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the ModelEvaluator named \"" << meName << "\" in the solver.  Valid models are:\n" << os.str() << std::endl);
     return Teuchos::null;
   }
 
@@ -72,13 +72,13 @@ namespace pike {
     return constModels;
   }
 
-  Teuchos::RCP<const pike::DataTransfer> SolverDefaultImpl::getDataTransfer(const std::string& name) const
+  Teuchos::RCP<const pike::DataTransfer> SolverDefaultImpl::getDataTransfer(const std::string& dtName) const
   {
     for (TransferConstIterator t = transfers_.begin(); t != transfers_.end(); ++t)
-      if ((*t)->name() == name)
+      if ((*t)->name() == dtName)
 	return *t;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the DataTransfer named \"" << name << "\" in the solver.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the DataTransfer named \"" << dtName << "\" in the solver.");
     return Teuchos::null;
   }
 
