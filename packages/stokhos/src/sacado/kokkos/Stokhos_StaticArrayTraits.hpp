@@ -69,6 +69,30 @@ namespace Stokhos {
     //! Copy array from \c src to \c dest of length \c sz
     static
     KOKKOS_INLINE_FUNCTION
+    void copy(const volatile T* src, volatile T*  dest, std::size_t sz) {
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
+    void copy(const volatile T* src, T*  dest, std::size_t sz) {
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
+    void copy(const T* src, volatile T*  dest, std::size_t sz) {
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = *(src++);
@@ -82,10 +106,26 @@ namespace Stokhos {
         *(dest++) = T(0.);
     }
 
+    //! Zero out array \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
+    void zero(volatile T* dest, std::size_t sz) {
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = T(0.);
+    }
+
     //! Fill array \c dest of length \c sz with value \c v
     static
     KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = v;
+    }
+
+    //! Fill array \c dest of length \c sz with value \c v
+    static
+    KOKKOS_INLINE_FUNCTION
+    void fill(volatile T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = v;
     }
@@ -105,6 +145,36 @@ namespace Stokhos {
     //! Copy array from \c src to \c dest of length \c sz
     static
     KOKKOS_INLINE_FUNCTION
+    void copy(const volatile T* src, volatile T* dest, std::size_t sz) {
+      // if (sz > 0)
+      //   std::memcpy(const_cast<const T*>(dest),const_cast<T*>(src),sz*sizeof(T));
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
+    void copy(const volatile T* src, T* dest, std::size_t sz) {
+      // if (sz > 0)
+      //   std::memcpy(dest,const_cast<const T*>(src),sz*sizeof(T));
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
+    void copy(const T* src, volatile T* dest, std::size_t sz) {
+      // if (sz > 0)
+      //   std::memcpy(const_cast<T*>(dest),src,sz*sizeof(T));
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = *(src++);
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
       if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
     }
@@ -116,10 +186,28 @@ namespace Stokhos {
       if (sz > 0) std::memset(dest,0,sz*sizeof(T));
     }
 
+    //! Zero out array \c dest of length \c sz
+    static
+    KOKKOS_INLINE_FUNCTION
+    void zero(volatile T* dest, std::size_t sz) {
+      // if (sz > 0) std::memset(const_cast<T*>(dest),0,sz*sizeof(T));
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = T(0.);
+    }
+
     //! Fill array \c dest of length \c sz with value \c v
     static
     KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, T v) {
+      //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
+      for (std::size_t i=0; i<sz; ++i)
+        *(dest++) = v;
+    }
+
+    //! Fill array \c dest of length \c sz with value \c v
+    static
+    KOKKOS_INLINE_FUNCTION
+    void fill(volatile T* dest, std::size_t sz, T v) {
       //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
       for (std::size_t i=0; i<sz; ++i)
         *(dest++) = v;
