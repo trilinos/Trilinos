@@ -50,14 +50,17 @@
  *
  *  \todo test all methods of GraphModel
  *  \todo test with GraphAdapter: add testGraphAdapter which is 
-           like testMatrixAdapter except is uses GraphAdapter
+           like testAdapter except is uses GraphAdapter
            queries and it may have edges weights.
  *  \todo Address the TODOs in the code below.
  */
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
+#include <Zoltan2_InputTraits.hpp>
 
 #include <string>
 #include <vector>
@@ -75,13 +78,26 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
-typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
-typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
+typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> simpleUser_t;
+
+typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>      tcrsMatrix_t;
+typedef Tpetra::CrsGraph<lno_t, gno_t, node_t>                 tcrsGraph_t;
+typedef Tpetra::Map<lno_t, gno_t, node_t>                      tmap_t;
+
+typedef Zoltan2::StridedData<lno_t, scalar_t>                  input_t;
+
+typedef Zoltan2::BasicVectorAdapter<simpleUser_t>              simpleVAdapter_t;
+
+typedef Zoltan2::MatrixAdapter<tcrsMatrix_t,simpleUser_t>      baseMAdapter_t;
+typedef Zoltan2::GraphAdapter<tcrsGraph_t,simpleUser_t>        baseGAdapter_t;
+
+typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t,simpleUser_t> xMAdapter_t;
+typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t,simpleUser_t>   xGAdapter_t;
 
 using std::string;
 using std::vector;
 
+/////////////////////////////////////////////////////////////////////////////
 void printGraph(lno_t nrows, const gno_t *v,
     const lno_t *elid, const gno_t *egid,
     const int *owner, const lno_t *idx,
@@ -132,10 +148,14 @@ void printGraph(lno_t nrows, const gno_t *v,
   comm->barrier();
 }
 
-void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
+/////////////////////////////////////////////////////////////////////////////
+template <typename BaseAdapter, typename Adapter, typename MatrixOrGraph>
+void testAdapter(
+    RCP<const MatrixOrGraph> &M,
+    RCP<const Tpetra::CrsGraph<lno_t, gno_t> > &Mgraph,
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
-    int rowWeightDim, int nnzDim, int coordDim,
+    int rowWeightDim, int edgeWeightDim, int nnzDim, int coordDim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int fail=0;
@@ -148,17 +168,13 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   gno_t nGlobalRows =  M->getGlobalNumRows();
   gno_t nGlobalNZ = M->getGlobalNumEntries();
 
-  // Create a matrix input adapter.
-
-  typedef Zoltan2::MatrixAdapter<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> adapter_t;
-
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
     modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   if (removeSelfEdges)
     modelFlags.set(Zoltan2::SELF_EDGES_MUST_BE_REMOVED);
 
+  // Set up some fake input
   scalar_t **coords=NULL;
   scalar_t **rowWeights=NULL;
 
@@ -186,17 +202,34 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
 
-  adapter_t tmi(M, rowWeightDim, coordDim);
+  if (edgeWeightDim > 0){
+    printf("TODO:  STILL NEED TO TEST EDGE WEIGHTS!\n");
+  }
+
+  // Create a matrix or graph input adapter.
+
+  Adapter tmi(M, rowWeightDim);
 
   for (int i=0; i < rowWeightDim; i++){
     if (nnzDim == i)
-      tmi.setRowWeightIsNumberOfNonZeros(i);
+      tmi.setWeightIsDegree(i);
     else
-      tmi.setRowWeights(rowWeights[i], 1, i);
+      tmi.setWeights(rowWeights[i], 1, i);
   }
 
-  for (int i=0; i < coordDim; i++){
-    tmi.setRowCoordinates(coords[i], 1, i);
+  gno_t *gids = NULL;
+
+  simpleVAdapter_t *via = NULL;
+
+  if (coordDim > 0) {
+    gids = new gno_t[nLocalRows];
+    for (lno_t i = 0; i < nLocalRows; i++)
+      gids[i] = M->getRowMap()->getGlobalElement(i);
+    via = new simpleVAdapter_t(nLocalRows, gids, coords[0],
+                                           (coordDim > 1 ? coords[1] : NULL), 
+                                           (coordDim > 2 ? coords[2] : NULL),
+                                            1,1,1);
+    tmi.setCoordinateInput(via);
   }
 
   int numLocalDiags = M->getNodeNumDiags();
@@ -216,8 +249,7 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     numLocalNbors[i] = 0;
     haveDiag[i] = false;
     ArrayView<const lno_t> idx;
-    ArrayView<const scalar_t> val;
-    M->getLocalRowView(i, idx, val);
+    Mgraph->getLocalRowView(i, idx);
     numNbors[i] = idx.size();
 
     for (lno_t j=0; j < idx.size(); j++){
@@ -241,12 +273,12 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   // Create a GraphModel based on this input data.
 
   if (rank == 0) std::cout << "        Creating GraphModel" << std::endl;
-  Zoltan2::GraphModel<base_adapter_t> *model = NULL;
-  const base_adapter_t *baseTmi = &tmi;
+  Zoltan2::GraphModel<BaseAdapter> *model = NULL;
+  const BaseAdapter *baseTmi = dynamic_cast<BaseAdapter *>(&tmi);
 
   try{
-    model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, env, 
-      comm, modelFlags);
+    model = new Zoltan2::GraphModel<BaseAdapter>(baseTmi, env, 
+                                                 comm, modelFlags);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -510,6 +542,8 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
 
     if (coordDim > 0){
+      delete via;
+      delete [] gids;
       for (int i=0; i < coordDim; i++){
         if (coords[i])
           delete [] coords[i];
@@ -521,6 +555,7 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   if (rank==0) std::cout << "    OK" << std::endl;
 }
 
+/////////////////////////////////////////////////////////////////////////////
 void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     const RCP<const Comm<int> > &comm,
     int rowWeightDim, int nnzDim, int coordDim,
@@ -569,18 +604,24 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with consecutive IDs");
 
-  if (rank == 0) std::cout << "   TEST with Consecutive IDs" << std::endl;
+  if (rank == 0) 
+    std::cout << "   TEST MatrixAdapter with Consecutive IDs" << std::endl;
   bool idsAreConsecutive = true;
 
-  testMatrixAdapter(Mconsec, comm,  idsAreConsecutive,
-    rowWeightDim, nnzDim, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
-
-#if 0
-  testGraphAdapter(Mconsec, comm, idsAreConsecutive,
-    rowWeightDim, nnzDim, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
-#endif
+  testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mconsec, graph, comm,
+                                                       idsAreConsecutive,
+                                                       rowWeightDim, 0, 
+                                                       nnzDim, coordDim,
+                                                       consecutiveIdsRequested,
+                                                       removeSelfEdges);
+  if (rank == 0) 
+    std::cout << "   TEST GraphAdapter with Consecutive IDs" << std::endl;
+  testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
+                                                      idsAreConsecutive,
+                                                      rowWeightDim, 1, 
+                                                      nnzDim, coordDim,
+                                                      consecutiveIdsRequested,
+                                                      removeSelfEdges);
 
   // Do a round robin migration so that global IDs are not consecutive.
 
@@ -598,23 +639,30 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with non-consecutive IDs");
 
-  if (rank == 0) std::cout << "   TEST with Round-Robin IDs" << std::endl;
+  if (rank == 0)
+    std::cout << "   TEST MatrixAdapter with Round-Robin IDs" << std::endl;
   idsAreConsecutive = false;
 
-  testMatrixAdapter(Mnonconsec, comm, idsAreConsecutive,
-    rowWeightDim, nnzDim, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+  testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mnonconsec, graph, comm,
+                                                       idsAreConsecutive,
+                                                       rowWeightDim, 0, 
+                                                       nnzDim, coordDim,
+                                                       consecutiveIdsRequested,
+                                                       removeSelfEdges);
 
-#if 0
-  testGraphAdapter(Mnonconsec, comm, idsAreConsecutive,
-     rowWeightDim, nnzDim, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
-#endif
-
+  if (rank == 0)
+    std::cout << "   TEST GraphAdapter with Round-Robin IDs" << std::endl;
+  testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
+                                                      idsAreConsecutive,
+                                                      rowWeightDim, 0, 
+                                                      nnzDim, coordDim,
+                                                      consecutiveIdsRequested,
+                                                      removeSelfEdges);
 
   delete input;
 }
 
+/////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);

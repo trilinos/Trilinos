@@ -146,7 +146,7 @@ function execute_loadbalance {
 
     # See if Sierra launch command is in path; if it is, use
     # otherwise, run nem_slice directly...
-    LAUNCH=`command -v launchx`
+    LAUNCH=`command -v launch`
     if [ ! -z "$LAUNCH" ]
     then
 	LAUNCH="$LAUNCH -n 1"

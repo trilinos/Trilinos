@@ -80,8 +80,8 @@ namespace Zoltan2 {
     the second template parameter to \c double.
 */
 
-template <typename User>
-  class XpetraCrsGraphAdapter : public GraphAdapter<User> {
+template <typename User, typename UserCoord=User>
+  class XpetraCrsGraphAdapter : public GraphAdapter<User,UserCoord> {
 
 public:
 
@@ -92,8 +92,9 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef GraphAdapter<User> base_adapter_t;
+  typedef GraphAdapter<User,UserCoord> base_adapter_t;
   typedef User user_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   /*! \brief Destructor
@@ -102,107 +103,29 @@ public:
 
   /*! \brief Constructor for graph with no weights or coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
+   *  \param numVtxWeights  the number of weights per vertex (default = 0)
+   *  \param numEdgeWeights the number of weights per edge  (default = 0)
    *
    * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphAdapter(const RCP<const User> &ingraph);
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph, 
+                        int nVtxWeights=0, int nEdgeWeights=0);
 
-  /*! \brief Constructor for graph with weights but no coordinates.
-   *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
-   *  \param vWeights  a list of pointers to vertex weights.
-   *      The number of weights per graph vertex is assumed to be
-   *      \c vWeights.size().
-   *  \param vWeightStrides  a list of strides for the \c vWeights.
-   *     The weight for weight dimension \c n for vertex \c k should be
-   *     found at <tt>vWeights[n][vWeightStrides[n] * k]</tt>.
-   *     If \c vWeightStrides.size() is zero, it is assumed all strides are one.
-   *  \param eWeights  a list of pointers to edge weights.
-   *      The number of weights per edge is assumed to be
-   *      \c eWeights.size().
-   *  \param eWeightStrides  a list of strides for the \c eWeights.
-   *     The weight for weight dimension \c n for edge \c k should be
-   *     found at <tt>eWeights[n][eWeightStrides[n] * k]</tt>.
-   *     If \c eWeightStrides.size() is zero, it is assumed all strides are one.
+  /*! \brief Provide a pointer to weights for the primary entity type.
+   *    \param val A pointer to the weights for index \c idx.
+   *    \param stride    A stride for the \c val array.  If \stride is
+   *             \c k, then val[n * k] is the weight for the
+   *             \c n th entity for index \idx.
+   *    \param idx A number from 0 to one less than 
+   *          weight idx specified in the constructor.
    *
-   *  The order of the vertex weights should match the order that
-   *  vertices appear in the input data structure.
-   *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
-   *     \endcode
-   *
-   *  The order of the edge weights should follow the order that the
-   *  the vertices and edges appear in the input data structure.
-   *
-   *  By vertex:
-   *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
-   *     \endcode
-   *
-   *  Then by vertex neighbor:
-   *     \code
-   *       TheGraph->getLocalRowView(vertexNum, neighborList);
-   *     \endcode
-   *
-   * Most adapters do not have RCPs in their interface.  This
-   * one does because the user is obviously a Trilinos user.
+   *  The order of the weights should match the order that
+   *  entities appear in the input data structure.
    */
 
-  XpetraCrsGraphAdapter(const RCP<const User> &ingraph,
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides);
-
-  /*! \brief Constructor for graph with weights and vertex coordinates.
-   *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
-   *  \param vWeights  a list of pointers to vertex weights.
-   *      The number of weights per graph vertex is assumed to be
-   *      \c vWeights.size().
-   *  \param vWeightStrides  a list of strides for the \c vWeights.
-   *     The weight for weight dimension \c n for vertex \c k should be
-   *     found at <tt>vWeights[n][vWeightStrides[n] * k]</tt>.
-   *     If \c vWeightStrides.size() is zero, it is assumed all strides are one.
-   *  \param eWeights  a list of pointers to edge weights.
-   *      The number of weights per edge is assumed to be
-   *      \c eWeights.size().
-   *  \param eWeightStrides  a list of strides for the \c eWeights.
-   *     The weight for weight dimension \c n for edge \c k should be
-   *     found at <tt>eWeights[n][eWeightStrides[n] * k]</tt>.
-   *     If \c eWeightStrides.size() is zero, it is assumed all strides are one.
-   *  \param coords  a list of pointers to vertex coordinates.
-   *      The coordinate dimension is assumed to be \c coords.size().
-   *  \param coordStrides  a list of strides for the \c coords.
-   *     The coordinate for dimension \c n for vertex \c k should be
-   *     found at <tt>coords[n][coordStrides[n] * k]</tt>.
-   *     If \c coordStrides.size() is zero, it is assumed all strides are one.
-   *
-   *  The order of the vertex weights and coordinates should coorespond to
-   *  the order that vertices appear in the input data structure.
-   *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
-   *     \endcode
-   *
-   *  The order of the edge weights should follow the order that the
-   *  the vertices and edges appear in the input data structure.
-   *
-   *  By vertex:
-   *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
-   *     \endcode
-   *
-   *  Then by vertex neighbor:
-   *     \code
-   *       TheGraph->getLocalRowView(vertexNum, neighborList);
-   *     \endcode
-   *
-   * Most adapters do not have RCPs in their interface.  This
-   * one does because the user is obviously a Trilinos user.
-   */
-
-  XpetraCrsGraphAdapter(const RCP<const User> &ingraph,
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const scalar_t *> &coords,  vector<int> &coordStrides);
+  void setWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Provide a pointer to one dimension of the vertex weights.
    *    \param val A pointer to the weights for dimension \c dim.
@@ -220,6 +143,20 @@ public:
    */
 
   void setVertexWeights(const scalar_t *val, int stride, int idx);
+
+  /*! \brief Specify an index for which the weight should be
+              the degree of the entity
+   *    \param idx Zoltan2 will use the entity's 
+   *         degree as the entity weight for index \c idx.
+   */
+  void setWeightIsDegree(int idx);
+
+  /*! \brief Specify an index for which the vertex weight should be
+              the degree of the vertex
+   *    \param idx Zoltan2 will use the vertex's 
+   *         degree as the vertex weight for index \c idx.
+   */
+  void setVertexWeightIsDegree(int idx);
 
   /*! \brief Provide a pointer to one dimension of the edge weights.
    *    \param val A pointer to the weights for dimension \c dim.
@@ -245,36 +182,13 @@ public:
 
   void setEdgeWeights(const scalar_t *val, int stride, int idx);
 
-  /*! \brief Provide a pointer to one dimension of the vertex coordinates.
-   *    \param dim A number from 0 to one less than 
-   *          vertex coordinate dimension specified in the constructor.
-   *    \param val A pointer to the coordinates for dimension \c dim.
-   *    \param stride    A stride for the \c val array.  If \stride is
-   *             \c k, then val[n * k] is the coordinate for the
-   *             \c n th vertex.
-   *
-   *  The order of the vertex coordinates should coorespond to the order that
-   *  vertices appear in the input data structure.
-   *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
-   *     \endcode
-   */
-
-  void setVertexCoordinates(int dim, const scalar_t *val, int stride);
-
   /*! \brief Access to Xpetra-wrapped user's graph.
    */ 
-  RCP<const xgraph_t> getXpetraGraph() const
-  {
-    return graph_;
-  }
+  RCP<const xgraph_t> getXpetraGraph() const { return graph_; }
 
   /*! \brief Access to user's graph 
    */ 
-  RCP<const User> getUserGraph() const
-  {
-    return ingraph_;
-  }
+  RCP<const User> getUserGraph() const { return ingraph_; }
 
   ////////////////////////////////////////////////////
   // The Adapter interface.
@@ -297,13 +211,13 @@ public:
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  void getEdgeView(const lno_t *&offsets, const gid_t *&adjIds) const
+  void getEdgesView(const lno_t *&offsets, const gid_t *&adjIds) const
   {
     adjIds = NULL;
     offsets = NULL;
     if (getLocalNumVertices()) {
       offsets = offs_.getRawPtr();
-      adjIds = adjids_.getRawPtr();
+      if (getLocalNumEdges()) adjIds = adjids_.getRawPtr();
     }
   }
 
@@ -318,6 +232,7 @@ public:
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
+  bool useDegreeAsVertexWeight(int idx) const {return vertexDegreeWeight_[idx];}
 
   int getNumWeightsPerEdge() const { return edgeWeightDim_;}
 
@@ -330,28 +245,11 @@ public:
   }
 
 
-  int getCoordinateDimension() const { return coordinateDim_; }
-
-  void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
-                                int idx) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, 
-      "invalid coordinate dimension",
-      idx >= 0 && idx < coordinateDim_, BASIC_ASSERTION);
-    size_t length;
-    coords_[idx].getStridedList(length, coords, stride);
-  }
-
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const;
 
 private:
-
-  void initializeData(
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const scalar_t *> &coords,  vector<int> &coordStrides);
 
   RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
@@ -362,6 +260,7 @@ private:
 
   int vertexWeightDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > vertexWeights_;
+  ArrayRCP<bool> vertexDegreeWeight_;
 
   int edgeWeightDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > edgeWeights_;
@@ -379,80 +278,16 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
-    const RCP<const User> &ingraph):
+template <typename User, typename UserCoord>
+  XpetraCrsGraphAdapter<User,UserCoord>::XpetraCrsGraphAdapter(
+    const RCP<const User> &ingraph, int nVtxWgts, int nEdgeWgts):
       ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
-      vertexWeightDim_(0), vertexWeights_(),
-      edgeWeightDim_(0), edgeWeights_(),
+      vertexWeightDim_(nVtxWgts), vertexWeights_(), vertexDegreeWeight_(),
+      edgeWeightDim_(nEdgeWgts), edgeWeights_(),
       coordinateDim_(0), coords_(),
       env_(rcp(new Environment))
 {
-  vector<const scalar_t *> emptyValues;
-  vector<int> emptyStrides;
-
-  initializeData(emptyValues, emptyStrides, emptyValues, emptyStrides,
-    emptyValues, emptyStrides);
-}
-
-template <typename User>
-  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
-  const RCP<const User> &ingraph,
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
-      vertexWeightDim_(vWeights.size()), vertexWeights_(),
-      edgeWeightDim_(eWeights.size()), edgeWeights_(),
-      coordinateDim_(0), coords_(),
-      env_(rcp(new Environment))
-{
-  vector<const scalar_t *> emptyValues;
-  vector<int> emptyStrides;
-
-  initializeData(vWeights, vWeightStrides, eWeights, eWeightStrides,
-    emptyValues, emptyStrides);
-}
-
-template <typename User>
-  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
-    const RCP<const User> &ingraph,
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const scalar_t *> &coords,  vector<int> &coordStrides):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
-      vertexWeightDim_(vWeights.size()), vertexWeights_(),
-      edgeWeightDim_(eWeights.size()), edgeWeights_(),
-      coordinateDim_(coords.size()), coords_(),
-      env_(rcp(new Environment))
-{
-  initializeData(vWeights, vWeightStrides, eWeights, eWeightStrides,
-    coords, coordStrides);
-}
-
-template <typename User>
-  void XpetraCrsGraphAdapter<User>::initializeData(
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const scalar_t *> &coords,  vector<int> &coordStrides)
-{
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "invalid number of dimensions", 
-    vertexWeightDim_ >= 0 && edgeWeightDim_ >= 0 && coordinateDim_ >= 0, 
-    BASIC_ASSERTION);
-
   typedef StridedData<lno_t,scalar_t> input_t;
-
-  if (vertexWeightDim_)
-    vertexWeights_ = 
-      arcp(new input_t [vertexWeightDim_], 0, vertexWeightDim_, true);
-
-  if (edgeWeightDim_)
-    edgeWeights_ = 
-      arcp(new input_t [edgeWeightDim_], 0, edgeWeightDim_, true);
-
-  if (coordinateDim_)
-    coords_ = 
-      arcp(new input_t [coordinateDim_], 0, coordinateDim_, true);
 
   graph_ = XpetraTraits<User>::convertToXpetra(ingraph_);
   comm_ = graph_->getComm();
@@ -484,34 +319,87 @@ template <typename User>
   offs_ = arcp(offs, 0, n, true);
   adjids_ = arcp(adjids, 0, nedges, true);
 
-  int stride = 1;
-  for (int dim=0; dim < coordinateDim_; dim++){
-    if (coordStrides.size())
-      stride = coordStrides[dim];
-    ArrayRCP<const scalar_t> coordV(coords[dim], 0, nvtx, false);
-    coords_[dim] = input_t(coordV, stride);
+  if (vertexWeightDim_ > 0) {
+    vertexWeights_ = 
+          arcp(new input_t[vertexWeightDim_], 0, vertexWeightDim_, true);
+    vertexDegreeWeight_ =
+          arcp(new bool[vertexWeightDim_], 0, vertexWeightDim_, true);
+    for (int i=0; i < vertexWeightDim_; i++)
+      vertexDegreeWeight_[i] = false;
   }
 
-  stride = 1;
-  for (int dim=0; dim < vertexWeightDim_; dim++){
-    if (vWeightStrides.size())
-      stride = vWeightStrides[dim];
-    ArrayRCP<const scalar_t> wgtV(vWeights[dim], 0, nvtx, false);
-    vertexWeights_[dim] = input_t(wgtV, stride);
-  }
+  if (edgeWeightDim_ > 0)
+    edgeWeights_ = arcp(new input_t[edgeWeightDim_], 0, edgeWeightDim_, true);
+}
 
-  stride = 1;
-  for (int dim=0; dim < edgeWeightDim_; dim++){
-    if (eWeightStrides.size())
-      stride = eWeightStrides[dim];
-    ArrayRCP<const scalar_t> ewgtV(eWeights[dim], 0, nedges, false);
-    edgeWeights_[dim] = input_t(ewgtV, stride);
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsGraphAdapter<User,UserCoord>::setWeights(
+    const scalar_t *weightVal, int stride, int idx)
+{
+  if (this->getPrimaryEntityType() == GRAPH_VERTEX)
+    setVertexWeights(weightVal, stride, idx);
+  else 
+    setEdgeWeights(weightVal, stride, idx);
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsGraphAdapter<User,UserCoord>::setVertexWeights(
+    const scalar_t *weightVal, int stride, int idx)
+{
+  typedef StridedData<lno_t,scalar_t> input_t;
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
+    idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
+  size_t nvtx = getLocalNumVertices();
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
+  vertexWeights_[idx] = input_t(weightV, stride);
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsGraphAdapter<User,UserCoord>::setWeightIsDegree(
+    int idx)
+{
+  if (this->getPrimaryEntityType() == GRAPH_VERTEX)
+    setVertexWeightIsDegree(idx);
+  else {
+    std::ostringstream emsg;
+    emsg << __FILE__ << "," << __LINE__
+         << " error:  setWeightIsNumberOfNonZeros is supported only for"
+         << " vertices" << std::endl;
+    throw std::runtime_error(emsg.str());
   }
 }
 
-template <typename User>
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsGraphAdapter<User,UserCoord>::setVertexWeightIsDegree(
+    int idx)
+{
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
+    idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
+
+  vertexDegreeWeight_[idx] = true;
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsGraphAdapter<User,UserCoord>::setEdgeWeights(
+    const scalar_t *weightVal, int stride, int idx)
+{
+  typedef StridedData<lno_t,scalar_t> input_t;
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid edge weight index",
+    idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
+  size_t nedges = getLocalNumEdges();
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nedges*stride, false);
+  edgeWeights_[idx] = input_t(weightV, stride);
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
   template<typename Adapter>
-    void XpetraCrsGraphAdapter<User>::applyPartitioningSolution(
+    void XpetraCrsGraphAdapter<User,UserCoord>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {
