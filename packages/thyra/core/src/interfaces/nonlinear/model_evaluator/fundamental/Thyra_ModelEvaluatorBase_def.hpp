@@ -652,7 +652,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_f( 
-  const RCP<VectorBase<Scalar> > &f
+  const Evaluation<VectorBase<Scalar> > &f
   )
 {
   assert_supports(OUT_ARG_f);
@@ -661,7 +661,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::set_f(
 
 
 template<class Scalar>
-RCP<VectorBase<Scalar> >
+ModelEvaluatorBase::Evaluation<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 {
   assert_supports(OUT_ARG_f);
@@ -671,7 +671,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_g(
-  int j, const RCP<VectorBase<Scalar> > &g_j
+  int j, const Evaluation<VectorBase<Scalar> > &g_j
   )
 {
   assert_j(j);
@@ -680,7 +680,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::set_g(
 
 
 template<class Scalar>
-RCP<VectorBase<Scalar> >
+ModelEvaluatorBase::Evaluation<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
 { 
   assert_j(j);

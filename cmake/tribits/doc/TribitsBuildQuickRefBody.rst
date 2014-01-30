@@ -596,11 +596,21 @@ c) **Setting up to run MPI programs:**
 
   ::
 
-    -D MPI_EXEC_MAX_NUMPROCS:STRING=4
+    -D MPI_EXEC_DEFAULT_NUMPROCS:STRING=4
 
-  (The maximum number of processes to allow when setting up and running
+  (The default number of processes to use when setting up and running
   MPI test and example executables.  The default is set to '4' and only
   needs to be changed when needed or desired.)
+
+  ::
+
+    -D MPI_EXEC_MAX_NUMPROCS:STRING=4
+
+  (The maximum number of processes to allow when setting up and running MPI
+  test and example executables.  The default is set to '4' but should be set
+  to the largest number that can be tolerated for the given machine.  Tests
+  with more processes than this are excluded from the test suite at configure
+  time.)
 
   ::
 

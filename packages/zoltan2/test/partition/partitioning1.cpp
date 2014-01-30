@@ -281,6 +281,10 @@ int main(int narg, char** arg)
   SparseMatrix *redistribMatrix;
   adapter.applyPartitioningSolution(*origMatrix, redistribMatrix,
                                     problem.getSolution());
+  if (redistribMatrix->getGlobalNumRows() < 40) {
+    Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
+    redistribMatrix->describe(out, Teuchos::VERB_EXTREME);
+  }
 
   if (me == 0) cout << "Redistributing vectors..." << endl;
   Vector *redistribVector;

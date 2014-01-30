@@ -68,7 +68,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_JFNK
-    SOURCES  ${UNIT_TEST_DRIVER} ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_2Dsim_JFNK.C
+    SOURCES  ${UNIT_TEST_DRIVER} ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_2Dsim_JFNK.C ModelEvaluator_LoggerDecorator.hpp
     NUM_MPI_PROCS 1
     )
   

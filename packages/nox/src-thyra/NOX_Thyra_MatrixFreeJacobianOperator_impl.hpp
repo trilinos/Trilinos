@@ -50,6 +50,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Thyra_ModelEvaluatorBase.hpp"
 
 template<typename Scalar>
 MatrixFreeJacobianOperator<Scalar>::
@@ -257,7 +258,7 @@ MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
   if (is_null(out_args_))
     out_args_ = Teuchos::rcp(new ::Thyra::ModelEvaluatorBase::OutArgs<Scalar>(model_->createOutArgs()));
 
-  out_args_->set_f(f_perturb_);
+  out_args_->set_f( ::Thyra::ModelEvaluatorBase::Evaluation< ::Thyra::VectorBase<Scalar> >(f_perturb_, ::Thyra::ModelEvaluatorBase::EVAL_TYPE_APPROX_DERIV) );
 
   // f_p = f(delta * y + x)
   model_->evalModel(*in_args_,*out_args_);
