@@ -25,48 +25,29 @@
 // (etphipp@sandia.gov).
 //
 // ***********************************************************************
-//
-// The forward-mode AD classes in Sacado are a derivative work of the
-// expression template classes in the Fad package by Nicolas Di Cesare.
-// The following banner is included in the original Fad source code:
-//
-// ************ DO NOT REMOVE THIS BANNER ****************
-//
-//  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
-//  http://www.ann.jussieu.fr/~dicesare
-//
-//            CEMRACS 98 : C++ courses,
-//         templates : new C++ techniques
-//            for scientific computing
-//
-//********************************************************
-//
-//  A short implementation ( not all operators and
-//  functions are overloaded ) of 1st order Automatic
-//  Differentiation in forward mode (FAD) using
-//  EXPRESSION TEMPLATES.
-//
-//********************************************************
 // @HEADER
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#ifndef SACADO_FAD_EXPRESSION_HPP
-#define SACADO_FAD_EXPRESSION_HPP
+#include "Fad_KokkosTests.hpp"
 
-#include "Sacado_Traits.hpp"
+#include "Kokkos_Serial.hpp"
 
-namespace Sacado {
+// Instantiate tests for Serial device
+using Kokkos::Serial;
+VIEW_FAD_TESTS_D( Serial )
 
-  namespace Fad {
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-    //! Wrapper for a generic expression template
-    /*!
-     * This template class serves as a wrapper for all Fad expression
-     * template classes.
-     */
-    template <typename ExprT> class Expr {};
+  // Initialize serial
+  Kokkos::Serial::initialize();
 
-  } // namespace Fad
+  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-} // namespace Sacado
+  // Finalize serial
+  Kokkos::Serial::finalize();
 
-#endif // SACADO_FAD_EXPRESSION_HPP
+  return res;
+}
