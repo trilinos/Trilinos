@@ -121,10 +121,10 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize threads
-  size_t num_cores =
+  num_cores =
     Kokkos::hwloc::get_available_numa_count() *
     Kokkos::hwloc::get_available_cores_per_numa();
-  size_t num_hyper_threads =
+  num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
   Kokkos::Threads::initialize(num_cores * num_hyper_threads);
   Kokkos::Threads::print_configuration(std::cout);

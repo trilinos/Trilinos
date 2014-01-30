@@ -386,15 +386,16 @@ public:
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0) {
       if (is_cuda)
-        threads_per_vector = x.dimension_1();
+        threads_per_vector = x.static_storage_size();
       else
         threads_per_vector = 1;
     }
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = x.static_storage_size() / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != x.static_storage_size(),
+      std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // By default, use a block size of 256 for GPU and number of hyperthreads
@@ -626,15 +627,16 @@ public:
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0) {
       if (is_cuda)
-        threads_per_vector = x.dimension_1();
+        threads_per_vector = x.static_storage_size();
       else
         threads_per_vector = 1;
     }
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = x.static_storage_size() / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != x.static_storage_size(),
+      std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // By default, use a block size of 256 for GPU and number of hyperthreads
