@@ -482,15 +482,26 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
+      # IF (Stokhos_ENABLE_Tpetra  AND
+      #     NOT Tpetra_ENABLE_Kokkos_DistObject AND
+      #     NOT Tpetra_ENABLE_Kokkos_Refactor)
       IF (Stokhos_ENABLE_Tpetra  AND
-          NOT Tpetra_ENABLE_Kokkos_DistObject AND
-          NOT Tpetra_ENABLE_Kokkos_Refactor)
+          NOT Tpetra_ENABLE_Kokkos_DistObject)
+
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          TpetraCrsMatrixMPVectorUnitTest_Serial
+          SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
+                  Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          DEPLIBS stokhos kokkoscore kokkoslinalg
+          )
 
         IF (Kokkos_ENABLE_Pthread)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
-            TpetraCrsMatrixMPVectorUnitTest_Serial
+            TpetraCrsMatrixMPVectorUnitTest_Threads
             SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
-                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
+                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_Threads.cpp
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             DEPLIBS stokhos kokkoscore kokkoslinalg
