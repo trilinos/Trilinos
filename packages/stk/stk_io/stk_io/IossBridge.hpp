@@ -10,7 +10,8 @@
 #define stk_io_IossBridge_hpp
 
 #include <string>
-#include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_topology/topology.hpp>
 #include <Ioss_Field.h>
 #include <Ioss_DBUsage.h>
@@ -30,6 +31,7 @@ namespace stk {
     class BulkData;
     class Selector;
     class MetaData;
+    class FieldRestriction;
   }
 
 /**

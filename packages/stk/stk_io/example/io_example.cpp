@@ -19,6 +19,7 @@
 #include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_topology/topology.hpp>
 
 #include <stk_io/IossBridge.hpp>
 
@@ -435,11 +436,6 @@ namespace stk_example_io {
 	stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
 				  *part,
                                   part_rank);
-
-	const CellTopologyData* cell_topo = meta.get_cell_topology(*part).getCellTopologyData();
-	std::string cell_topo_name = "UNKNOWN";
-	if (cell_topo != NULL)
-	  cell_topo_name = cell_topo->name;
       }
     }
   }
@@ -598,11 +594,11 @@ namespace stk_example_io {
         stk::mesh::Part* const part = meta.get_part(name);
         assert(part != NULL);
 
-        const CellTopologyData* cell_topo = meta.get_cell_topology(*part).getCellTopologyData();
-        if (cell_topo == NULL) {
-          std::ostringstream msg ;
-          msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
-          throw std::runtime_error( msg.str() );
+        const stk::topology topo = part->topology();
+        if (topo == stk::topology::INVALID_TOPOLOGY) {
+	  std::ostringstream msg ;
+	  msg << " INTERNAL_ERROR: Part " << part->name() << " returned INVALID from get_topology()";
+	  throw std::runtime_error( msg.str() );
         }
 
         std::vector<int> elem_ids ;
@@ -615,7 +611,7 @@ namespace stk_example_io {
         std::copy(connectivity.begin(), connectivity.end(), std::back_inserter(connectivity2));
 
         size_t element_count = elem_ids.size();
-        int nodes_per_elem = cell_topo->node_count ;
+        int nodes_per_elem = topo.num_nodes();
 
         std::vector<stk::mesh::Entity> elements(element_count);
         for(size_t i=0; i<element_count; ++i) {
