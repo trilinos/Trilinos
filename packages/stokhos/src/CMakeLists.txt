@@ -384,13 +384,15 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
+    # IF (Stokhos_ENABLE_Tpetra AND
+    #     NOT Tpetra_ENABLE_Kokkos_DistObject AND
+    #     NOT Tpetra_ENABLE_Kokkos_Refactor)
     IF (Stokhos_ENABLE_Tpetra AND
-        NOT Tpetra_ENABLE_Kokkos_DistObject AND
-        NOT Tpetra_ENABLE_Kokkos_Refactor)
+        NOT Tpetra_ENABLE_Kokkos_DistObject)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
-      APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
       IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
         SET(TPETRA_ETI_CLASSES
           MultiVector
           Vector
@@ -432,8 +434,8 @@ IF (Stokhos_ENABLE_Sacado)
       IF (Stokhos_ENABLE_Ifpack2)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
         APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
-        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
+          APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           SET(IFPACK2_ETI_CRS_ROW_CLASSES
             Chebyshev
             Diagonal
@@ -471,7 +473,9 @@ IF (Stokhos_ENABLE_Sacado)
       IF (Stokhos_ENABLE_MueLu)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
         APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
-        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
+        IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
+          APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
+        ENDIF()
       ENDIF()
 
       IF (Stokhos_ENABLE_Amesos2)
