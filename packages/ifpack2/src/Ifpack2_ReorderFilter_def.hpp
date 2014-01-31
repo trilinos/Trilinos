@@ -325,7 +325,6 @@ getGlobalRowCopy (global_ordinal_type globalRow,
   typedef local_ordinal_type LO;
   typedef global_ordinal_type GO;
   typedef Teuchos::OrdinalTraits<LO> OTLO;
-  typedef Tpetra::Map<LO, GO, node_type> map_type;
 
   const map_type& rowMap = * (A_->getRowMap ());
   const local_ordinal_type localRow = rowMap.getLocalElement (globalRow);
