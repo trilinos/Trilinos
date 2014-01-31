@@ -49,6 +49,7 @@ def controller():
     if   options.petra == 'epetra': petra = 1
     elif options.petra == 'tpetra': petra = 2
     elif options.petra == 'both'  : petra = 3
+    elif options.petra == 'ml'    : petra = 4
     else:
         print("Unknown petra type %s" % options.petra)
         return
@@ -137,11 +138,16 @@ def controller():
         if (options.ltmodule == ""):
           labels = LABELS
           timelines = TIMELINES
+          parsefunc = ""
         else:
           labels    = import_from(options.ltmodule, "LABELS")
           timelines = import_from(options.ltmodule, "TIMELINES")
+          try:
+            parsefunc  = import_from(options.ltmodule, "PARSEFUNC")
+          except(AttributeError):
+            parsefunc = ""
 
-        r = analyze(petra, analysis_run = options.output, labels=labels, timelines=timelines)
+        r = analyze(petra, analysis_run = options.output, labels=labels, timelines=timelines, parsefunc=parsefunc)
         if r : print(r)
 
     else:
@@ -150,17 +156,20 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze(petra, analysis_run, labels, timelines):
+def analyze(petra, analysis_run, labels, timelines, parsefunc):
     # test which of [et]petra is being run
     has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
     has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
+    has_ml     = (len(glob.glob(DIR_PREFIX + "**/*.ml")) > 0)     and (petra & 4)
 
-    if has_epetra == False and has_tpetra == False:
+    if has_epetra == False and has_tpetra == False and has_ml == False:
         return "Cannot find any of *.[et]petra files"
 
     # construct header
     analysis_run_string = "Analysis is performed for " + analysis_run
-    if   (petra == 3):
+    if   (petra == 4):
+      analysis_run_string += ".ml"
+    elif   (petra == 3):
       analysis_run_string += ".[et]petra"
     elif (petra == 1):
       analysis_run_string += ".epetra"
@@ -174,15 +183,20 @@ def analyze(petra, analysis_run, labels, timelines):
             header = header + "  " + name + "-etime      eff"
         if has_tpetra:
             header = header + "  " + name + "-ttime      eff"
+        if has_ml:
+            header = header + "  " + name + "-mltime     eff"
     print(header)
 
     # initialize lists
     time_epetra     = list2dict(timelines)
-    eff_epetra      = list2dict(timelines)
+    time_ml         = list2dict(timelines)
     time_tpetra     = list2dict(timelines)
+    eff_epetra      = list2dict(timelines)
     eff_tpetra      = list2dict(timelines)
+    eff_ml          = list2dict(timelines)
     basetime_epetra = list2dict(timelines)
     basetime_tpetra = list2dict(timelines)
+    basetime_ml     = list2dict(timelines)
 
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         os.chdir(dir)
@@ -193,7 +207,7 @@ def analyze(petra, analysis_run, labels, timelines):
 
         # test if there is anything to analyze
         if len(glob.glob("screen.out.*.*")) == 0:
-            if (has_epetra and os.path.exists(analysis_run + ".epetra")) or (has_tpetra and os.path.exists(analysis_run + ".tpetra")):
+            if (has_epetra and os.path.exists(analysis_run + ".epetra")) or (has_tpetra and os.path.exists(analysis_run + ".tpetra")) or (has_ml and os.path.exists(analysis_run + ".ml")):
                 fullstr += " running now?"
             else:
                 fullstr += " not run"
@@ -218,6 +232,23 @@ def analyze(petra, analysis_run, labels, timelines):
                     basetime_epetra[s] = time_epetra[s]
                 eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
                 fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
+
+            if has_ml:
+                ml_file = analysis_run + ".ml"
+                if (parsefunc == ""):
+                  return "Error: no parsing function provided"
+                else:
+                  theCommand = parsefunc(ml_file,s)
+                r = commands.getstatusoutput(theCommand)
+                # handle multiple timers w/ same name.  This splits last entry in tuple by line breaks into
+                # an array of strings.  The string array is then converted ("mapped") into an array of floats.
+                tt = map(float,r[-1].split())
+                time_ml[s] = sum(tt)
+
+                if nnodes == str(BASECASE):
+                    basetime_ml[s] = time_ml[s]
+                eff_ml[s] = 100 * basetime_ml[s] / time_ml[s]
+                fullstr += "%13.2f %7.2f%%" % (time_ml[s], eff_ml[s])
 
             if has_tpetra:
                 tpetra_file = analysis_run + ".tpetra"
@@ -303,6 +334,7 @@ def list2dict(l):
 def import_from(module, name):
     module = __import__(module, fromlist=[name])
     return getattr(module, name)
+
 # ========================= main =========================
 def main():
     controller()
