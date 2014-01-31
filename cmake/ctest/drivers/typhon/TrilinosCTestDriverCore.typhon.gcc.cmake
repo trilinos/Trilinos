@@ -104,6 +104,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
          "-DTPL_ENABLE_MPI:BOOL=ON"
          "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7"
        )
+
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
   ENDIF()
 
   TRILINOS_CTEST_DRIVER()
