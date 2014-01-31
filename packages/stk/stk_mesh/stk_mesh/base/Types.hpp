@@ -92,7 +92,7 @@ typedef Property< void > PropertyBase ;
 
 class BulkData ; // Bulk-data of a mesh
 class Bucket ;   // Homogeneous collection of mesh entitities and their field data
-union Entity ;   // Individual entity within the mesh
+struct Entity ;   // Individual entity within the mesh
 struct EntityKey ;
 class Relation ; // Relation pair of local mesh entities
 class Ghosting ;

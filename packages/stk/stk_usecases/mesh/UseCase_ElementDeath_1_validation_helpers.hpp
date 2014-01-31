@@ -16,7 +16,7 @@
 namespace stk {
 namespace mesh {
 
-union Entity;
+struct Entity;
 class BulkData;
 
 namespace fixtures {

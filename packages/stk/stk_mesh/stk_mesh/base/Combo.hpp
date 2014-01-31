@@ -9,6 +9,7 @@
 #ifndef stk_mesh_base_Combo_hpp
 #define stk_mesh_base_Combo_hpp
 
+#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Trace.hpp>
@@ -42,8 +43,6 @@ typedef boost::iterator_range<RelationIterator> RelationRange;
 }
 }
 #endif // SIERRA_MIGRATION
-
-#include <stk_mesh/base/Entity.tcc> //only place where this file should be included
 
 #include <stk_mesh/base/Relation.tcc> //only place where this file should be included
 
@@ -91,14 +90,6 @@ void Relation::setMeshObj(Entity object, EntityRank object_rank )
 
 #endif
 
-//
-// Entity
-//
-
-inline
-size_t hash_value( Entity entity) {
-  return boost::hash_value(entity.local_offset());
-}
 
 //
 // BucketConnectivity
@@ -181,7 +172,53 @@ bool impl::HigherConnectivityRankSensitiveCompare<BulkData>::operator()(Entity f
          std::make_pair(second_ordinal, second_entity.is_local_offset_valid() ? second_entity.local_offset() : Entity::MaxEntity);
 }
 
+
+
+
 } // namespace mesh
 } // namespace stk
+
+
+#ifdef SIERRA_MIGRATION
+
+namespace stk {
+namespace mesh {
+struct Entity;
+class BulkData;
+}
+}
+
+namespace sierra {
+namespace Fmwk {
+
+class MeshObjRoster;
+class MeshObjSharedAttr;
+class MeshBulkData;
+
+namespace detail {
+bool set_attributes( MeshBulkData& meshbulk, stk::mesh::Entity , const int , const MeshObjSharedAttr*, const int);
+bool set_attributes( MeshBulkData& meshbulk, stk::mesh::Entity , const MeshObjSharedAttr*, const int);
+bool update_relation( stk::mesh::Entity, const stk::mesh::RelationIterator ir, const bool back_rel_flag, MeshBulkData& bulk);
+}
+
+namespace roster_only {
+void destroy_meshobj(stk::mesh::Entity, MeshBulkData& meshbulk );
+}
+
+const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity mesh_obj, const stk::mesh::BulkData& meshbulk);
+bool insert_relation( stk::mesh::Entity , const stk::mesh::RelationType,  stk::mesh::Entity , const unsigned, const unsigned, const bool, MeshBulkData &);
+bool remove_relation(stk::mesh::Entity , const stk::mesh::RelationIterator, MeshBulkData &);
+}
+}
+
+namespace sierra {
+  namespace Fmwk {
+extern const stk::mesh::RelationIterator INVALID_RELATION_ITR;
+  }
+}
+
+
+#endif
+
 
 #endif /* stk_mesh_Combo_hpp */

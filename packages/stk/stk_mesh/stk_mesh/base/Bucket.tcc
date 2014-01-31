@@ -79,7 +79,7 @@ private:
   friend class impl::Partition;
   friend struct impl::OverwriteEntityFunctor;
   friend class BulkData;                // Replacement friend.
-  friend union Entity;
+  friend struct Entity;
   friend struct utest::ReversePartition;
   friend struct utest::SyncToPartitions;
 
