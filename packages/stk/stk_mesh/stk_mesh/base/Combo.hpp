@@ -11,6 +11,7 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Relation.hpp>
+#include <stk_mesh/base/BucketConnectivity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Trace.hpp>
@@ -44,8 +45,6 @@ typedef boost::iterator_range<RelationIterator> RelationRange;
 }
 }
 #endif // SIERRA_MIGRATION
-
-#include <stk_mesh/base/BucketConnectivity.tcc> //only place where this file should be included
 
 #include <stk_mesh/base/Bucket.tcc> //only place where this file should be included
 

@@ -1,3 +1,6 @@
+#ifndef STK_MESH_BUCKET_CONNECTIVITY_HPP
+#define STK_MESH_BUCKET_CONNECTIVITY_HPP
+
 #include <stk_util/util/TrackingAllocator.hpp>
 
 namespace stk {
@@ -1327,3 +1330,5 @@ private:
 };
 
 }}} //namespace stk::mesh::impl
+
+#endif
