@@ -54,6 +54,7 @@
 #include <BelosPseudoBlockStochasticCGSolMgr.hpp>
 #include <BelosLSQRSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
+#include <BelosGmresPolySolMgr.hpp>
 #include <BelosRCGSolMgr.hpp>
 #include <BelosTFQMRSolMgr.hpp>
 
@@ -100,7 +101,8 @@ enum EBelosSolverType {
   SOLVER_TYPE_MINRES,
   SOLVER_TYPE_LSQR,
   SOLVER_TYPE_STOCHASTIC_CG,
-  SOLVER_TYPE_TFQMR
+  SOLVER_TYPE_TFQMR,
+  SOLVER_TYPE_GMRES_POLY
 };
 
 } // namespace details
@@ -458,10 +460,15 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef TFQMRSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
+  case SOLVER_TYPE_GMRES_POLY: {
+    typedef GmresPolySolMgr<Scalar, MV, OP> impl_type;
+    return makeSolverManagerTmpl<base_type, impl_type> (params);
+  }
   default: // Fall through; let the code below handle it.
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Invalid EBelosSolverType enum value " << solverType
-      << ".  Please report this bug to the Belos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Belos::SolverFactory: Invalid EBelosSolverType "
+      "enum value " << solverType << ".  Please report this bug to the Belos "
+      "developers.");
   }
 
   // Compiler guard.  This may result in a warning on some compilers
@@ -512,13 +519,17 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   // parameter, or may have forgotten.
   aliasToCanonicalName_["Flexible GMRES"] = "Block GMRES";
   aliasToCanonicalName_["CG"] = "Pseudoblock CG";
+  aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
   aliasToCanonicalName_["Stochastic CG"] = "Pseudoblock Stochastic CG";
   aliasToCanonicalName_["Recycling CG"] = "RCG";
   aliasToCanonicalName_["Recycling GMRES"] = "GCRODR";
   // For compatibility with Stratimikos' Belos adapter.
   aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";
+  aliasToCanonicalName_["PseudoBlockGmres"] = "Pseudoblock GMRES";
   aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
+  aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
   aliasToCanonicalName_["Transpose-Free QMR"] = "TFQMR";
+  aliasToCanonicalName_["GmresPoly"] = "Hybrid Block GMRES";
 
   // Mapping from canonical solver name (a string) to its
   // corresponding enum value.  This mapping is one-to-one.
@@ -532,6 +543,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
   canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
   canonicalNameToEnum_["TFQMR"] = details::SOLVER_TYPE_TFQMR;
+  canonicalNameToEnum_["Hybrid Block GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
 }
 
 
