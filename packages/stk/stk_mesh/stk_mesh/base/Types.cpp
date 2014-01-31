@@ -1,11 +1,11 @@
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Combo.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/AllocatorMemoryUsage.hpp>
 #include <stk_util/util/memory_util.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 
 #include <sstream>
 #include <iomanip>

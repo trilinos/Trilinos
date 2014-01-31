@@ -419,6 +419,35 @@ bool internal_is_handled_generically(const RelationType relation_type)
 
 #endif // SIERRA_MIGRATION
 
+inline
+Entity Relation::entity() const
+{
+  return m_target_entity;
+}
+
+
+#ifdef SIERRA_MIGRATION
+
+inline
+Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
+  :
+      m_raw_relation( Relation::raw_relation_id(rel_rank, ordinal )),
+      m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
+      m_target_entity(obj)
+{
+  ThrowAssertMsg( orient <= fmwk_orientation_mask,
+      "orientation " << orient << " exceeds maximum allowed value");
+}
+
+inline
+void Relation::setMeshObj(Entity object, EntityRank object_rank )
+{
+  m_raw_relation = Relation::raw_relation_id( object_rank, relation_ordinal() );
+  m_target_entity = object;
+}
+
+#endif
+
 } // namespace mesh
 } // namespace stk
 #endif
