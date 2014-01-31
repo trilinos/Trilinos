@@ -113,13 +113,13 @@ void ValueTolerance::from_string(const std::string& valtol_str) {
   }
 }
 
-  XMLTestNode::XMLTestNode():XMLObject() {};
+  XMLTestNode::XMLTestNode():XMLObject() {}
 
-  XMLTestNode::XMLTestNode(const std::string &tag):XMLObject(tag) {};
+  XMLTestNode::XMLTestNode(const std::string &tag):XMLObject(tag) {}
 
-  XMLTestNode::XMLTestNode(XMLObjectImplem *ptr):XMLObject(ptr) {};
+  XMLTestNode::XMLTestNode(XMLObjectImplem *ptr):XMLObject(ptr) {}
 
-  XMLTestNode::XMLTestNode(XMLObject obj):XMLObject(obj) {};
+  XMLTestNode::XMLTestNode(XMLObject obj):XMLObject(obj) {}
 
   void  XMLTestNode::addDouble (const std::string &name, double val) {
     addAttribute<double>(name,val);

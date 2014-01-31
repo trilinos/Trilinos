@@ -235,13 +235,13 @@ enum PerfTestResult {PerfTestFailed, PerfTestPassed,
  * @param[in] ext_hostname   An optional hostname to be used instead of the one provided by the OS.
  *
  * \result The function returns whether a matching test is found or if it was added to an archive:
- * \retval <PerfTestFailed> {Matching configuration found, but results are deviating more than the allowed tolerance}
- * \retval <PerfTestPassed> {Matching configuration found, results are within tolerances.}
- * \retval <PerfTestNewMachine> {The test archive didn't contain an entry with the same machine name. A new entry is generated.}
- * \retval <PerfTestNewConfiguration> {No matching machine configuration was found. A new entry is generated.}
- * \retval <PerfTestNewTest> {No matching testname was found. A new entry is generated.{
- * \retval <PerfTestNewTestConfiguration> {A matching testname was found, but different parameters were used. A new entry is generated.}
- * \retval <PerfTestUpdatedTest> {A matching test is found but more result values are give then previously found. The entry is updated.
+ * \retval PerfTestFailed {Matching configuration found, but results are deviating more than the allowed tolerance}
+ * \retval PerfTestPassed {Matching configuration found, results are within tolerances.}
+ * \retval PerfTestNewMachine {The test archive didn't contain an entry with the same machine name. A new entry is generated.}
+ * \retval PerfTestNewConfiguration {No matching machine configuration was found. A new entry is generated.}
+ * \retval PerfTestNewTest {No matching testname was found. A new entry is generated.{
+ * \retval PerfTestNewTestConfiguration {A matching testname was found, but different parameters were used. A new entry is generated.}
+ * \retval PerfTestUpdatedTest {A matching test is found but more result values are give then previously found. The entry is updated.
  *                This will only happen if all the old result values are present in the new ones, and are within their
  *                respective tolerances.}
  *
