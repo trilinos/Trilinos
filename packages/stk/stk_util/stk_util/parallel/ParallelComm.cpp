@@ -125,66 +125,59 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
     //------------------------------
     // Sync to allow ready sends and for a potential error
 
-    int local_error = MPI_SUCCESS == result ? 0 : 1 ;
-    int global_error = 0 ;
+    const bool local_error = MPI_SUCCESS != result;
 
-    result = MPI_Allreduce( & local_error , & global_error ,
-                            1 , MPI_INT , MPI_SUM , p_comm );
+    if (local_error) {
+      std::cerr << msg << std::endl;
+      MPI_Abort(p_comm, -1);
+    }
+
+    // Everything is local from here on out, no more syncs
+
+    //------------------------------
+    // Ready-send the buffers, rotate the send processor
+    // in a simple attempt to smooth out the communication traffic.
+
+    for ( int i = 0 ; MPI_SUCCESS == result && i < p_size ; ++i ) {
+      const int dst = ( i + p_rank ) % p_size ;
+      const unsigned send_size = send[dst].capacity();
+      void * const   send_buf  = send[dst].buffer();
+      if ( send_size ) {
+        result = MPI_Rsend( send_buf , send_size , MPI_BYTE ,
+                            dst , mpi_tag , p_comm );
+      }
+    }
 
     if ( MPI_SUCCESS != result ) {
-      msg << method << " GLOBAL ERROR: " << result << " == MPI_Allreduce" ;
-    }
-    else if ( global_error ) {
-      result = MPI_ERR_UNKNOWN ;
+      msg << method << " LOCAL ERROR: " << result << " == MPI_Rsend , " ;
     }
     else {
-      // Everything is local from here on out, no more syncs
+      MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
+      MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
 
-      //------------------------------
-      // Ready-send the buffers, rotate the send processor
-      // in a simple attempt to smooth out the communication traffic.
+      result = MPI_Waitall( num_recv , p_request , p_status );
+    }
 
-      for ( int i = 0 ; MPI_SUCCESS == result && i < p_size ; ++i ) {
-        const int dst = ( i + p_rank ) % p_size ;
-        const unsigned send_size = send[dst].capacity();
-        void * const   send_buf  = send[dst].buffer();
-        if ( send_size ) {
-          result = MPI_Rsend( send_buf , send_size , MPI_BYTE ,
-                              dst , mpi_tag , p_comm );
-        }
-      }
+    if ( MPI_SUCCESS != result ) {
+      msg << method << " LOCAL[" << p_rank << "] ERROR: "
+          << result << " == MPI_Waitall , " ;
+    }
+    else {
 
-      if ( MPI_SUCCESS != result ) {
-        msg << method << " LOCAL ERROR: " << result << " == MPI_Rsend , " ;
-      }
-      else {
-        MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
-        MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
+      for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+        MPI_Status * const recv_status = & status[i] ;
+        const int recv_proc = recv_status->MPI_SOURCE ;
+        const int recv_tag  = recv_status->MPI_TAG ;
+        const int recv_plan = recv[recv_proc].capacity();
+        int recv_count = 0 ;
 
-        result = MPI_Waitall( num_recv , p_request , p_status );
-      }
+        MPI_Get_count( recv_status , MPI_BYTE , & recv_count );
 
-      if ( MPI_SUCCESS != result ) {
-        msg << method << " LOCAL[" << p_rank << "] ERROR: "
-            << result << " == MPI_Waitall , " ;
-      }
-      else {
-
-        for ( unsigned i = 0 ; i < num_recv ; ++i ) {
-          MPI_Status * const recv_status = & status[i] ;
-          const int recv_proc = recv_status->MPI_SOURCE ;
-          const int recv_tag  = recv_status->MPI_TAG ;
-          const int recv_plan = recv[recv_proc].capacity();
-          int recv_count = 0 ;
-
-          MPI_Get_count( recv_status , MPI_BYTE , & recv_count );
-
-          if ( recv_tag != mpi_tag || recv_count != recv_plan ) {
-            msg << method << " LOCAL[" << p_rank << "] ERROR: Recv["
-                << recv_proc << "] Size( "
-                << recv_count << " != " << recv_plan << " ) , " ;
-            result = MPI_ERR_UNKNOWN ;
-          }
+        if ( recv_tag != mpi_tag || recv_count != recv_plan ) {
+          msg << method << " LOCAL[" << p_rank << "] ERROR: Recv["
+              << recv_proc << "] Size( "
+              << recv_count << " != " << recv_plan << " ) , " ;
+          result = MPI_ERR_UNKNOWN ;
         }
       }
     }
@@ -425,6 +418,10 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
   static const char method[] = "stk::CommAll::allocate_buffers" ;
   const unsigned uzero = 0 ;
 
+  if (send_size == recv_size) {
+    return allocate_symmetric_buffers(comm, send_size);
+  }
+
   CommBuffer::deallocate( m_size , m_send );
   CommBuffer::deallocate( m_size , m_recv );
 
@@ -536,6 +533,23 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
   }
 
   return global_flag ;
+}
+
+bool CommAll::allocate_symmetric_buffers( ParallelMachine comm ,
+                                          unsigned const* const buf_sizes )
+{
+  CommBuffer::deallocate( m_size , m_send );
+  CommBuffer::deallocate( m_size , m_recv );
+
+  m_comm = comm ;
+  m_size = parallel_machine_size( comm );
+  m_rank = parallel_machine_rank( comm );
+  m_bound = ~0u; // force sparse
+
+  m_send = CommBuffer::allocate( m_size, buf_sizes );
+  m_recv = CommBuffer::allocate( m_size, buf_sizes );
+
+  return true;
 }
 
 //----------------------------------------------------------------------

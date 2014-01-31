@@ -167,6 +167,14 @@ public:
                          const unsigned * const recv_size ,
                          const bool local_flag = false );
 
+
+  /**
+   * Allocate symmetric buffers, no communication required. buf_sizes should
+   * have lenth = parallel_size(comm).
+   */
+  bool allocate_symmetric_buffers( ParallelMachine comm ,
+                                   const unsigned * const buf_sizes );
+
   //----------------------------------------
   /** Construct for a to-be-sized communication.
    *  Allocate surrogate send buffers to enable
