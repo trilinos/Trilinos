@@ -304,9 +304,9 @@ void BulkData::gather_and_print_mesh_partitioning() const
   for (int phase = 0; phase < 2; ++phase) {
     CommBuffer& proc_0_buff = comm_all.send_buffer(0); // everything to rank 0
 
-    const EntityRank rank_count = m_mesh_meta_data.entity_rank_count();
+    const EntityRank rank_count = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
 
-    for (EntityRank r = 0; r < rank_count; ++r) {
+    for (EntityRank r = stk::topology::NODE_RANK; r < rank_count; ++r) {
       std::vector<impl::Partition*> partitions = m_bucket_repository.get_partitions(r);
       proc_0_buff.pack<size_t>(partitions.size());
 
@@ -348,9 +348,9 @@ void BulkData::gather_and_print_mesh_partitioning() const
     for ( int p = 0 ; p < real_size ; ++p ) {
       CommBuffer & buf = comm_all.recv_buffer(p);
 
-      const EntityRank rank_count = m_mesh_meta_data.entity_rank_count();
+      const EntityRank rank_count = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
 
-      for (EntityRank r = 0; r < rank_count; ++r) {
+      for (EntityRank r = stk::topology::NODE_RANK; r < rank_count; ++r) {
         size_t num_partitions_for_this_rank = 0;
         buf.unpack<size_t>(num_partitions_for_this_rank);
 
