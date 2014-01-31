@@ -46,15 +46,16 @@
 #include <BelosOutputManager.hpp>
 #include <BelosSolverManager.hpp>
 
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockStochasticCGSolMgr.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
 #include <BelosGCRODRSolMgr.hpp>
-#include <BelosRCGSolMgr.hpp>
-#include <BelosMinresSolMgr.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockStochasticCGSolMgr.hpp>
 #include <BelosLSQRSolMgr.hpp>
+#include <BelosMinresSolMgr.hpp>
+#include <BelosRCGSolMgr.hpp>
+#include <BelosTFQMRSolMgr.hpp>
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Describable.hpp>
@@ -98,7 +99,8 @@ enum EBelosSolverType {
   SOLVER_TYPE_RCG,
   SOLVER_TYPE_MINRES,
   SOLVER_TYPE_LSQR,
-  SOLVER_TYPE_STOCHASTIC_CG
+  SOLVER_TYPE_STOCHASTIC_CG,
+  SOLVER_TYPE_TFQMR
 };
 
 } // namespace details
@@ -336,6 +338,28 @@ private:
 };
 
 
+namespace { // anonymous
+
+//! Print the given array of strings, in YAML format, to \c out.
+void
+printStringArray (std::ostream& out,
+                  const Teuchos::ArrayView<const std::string>& array)
+{
+  typedef Teuchos::ArrayView<std::string>::const_iterator iter_type;
+
+  out << "[";
+  for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
+    out << "\"" << *iter << "\"";
+    if (iter + 1 != array.end()) {
+      out << ", ";
+    }
+  }
+  out << "]";
+}
+
+} // namespace (anonymous)
+
+
 namespace details {
 
 /// \fn makeSolverManagerTmpl
@@ -430,6 +454,10 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef PseudoBlockStochasticCGSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
+  case SOLVER_TYPE_TFQMR: {
+    typedef TFQMRSolMgr<Scalar, MV, OP> impl_type;
+    return makeSolverManagerTmpl<base_type, impl_type> (params);
+  }
   default: // Fall through; let the code below handle it.
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "Invalid EBelosSolverType enum value " << solverType
@@ -457,14 +485,14 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // is null, replace it with the solver's default parameters.
   RCP<ParameterList> pl;
   if (params.is_null()) {
-    pl = parameterList (*solver->getValidParameters());
+    pl = parameterList (*solver->getValidParameters ());
   } else {
     pl = params;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(pl.is_null(), std::logic_error,
-                             "ParameterList to pass to solver is null.  This "
-                             "should never happen.  Please report this bug to "
-                             "the Belos developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    pl.is_null(), std::logic_error,
+    "Belos::SolverFactory: ParameterList to pass to solver is null.  This "
+    "should never happen.  Please report this bug to the Belos developers.");
   solver->setParameters (pl);
   return solver;
 }
@@ -490,6 +518,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   // For compatibility with Stratimikos' Belos adapter.
   aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";
   aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
+  aliasToCanonicalName_["Transpose-Free QMR"] = "TFQMR";
 
   // Mapping from canonical solver name (a string) to its
   // corresponding enum value.  This mapping is one-to-one.
@@ -502,6 +531,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["RCG"] = details::SOLVER_TYPE_RCG;
   canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
   canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
+  canonicalNameToEnum_["TFQMR"] = details::SOLVER_TYPE_TFQMR;
 }
 
 
@@ -573,14 +603,19 @@ std::string
 SolverFactory<Scalar, MV, OP>::description() const
 {
   using Teuchos::TypeNameTraits;
-  std::ostringstream os;
-  os << "Belos::SolverFactory<" << TypeNameTraits<Scalar>::name()
-     << ", " << TypeNameTraits<Scalar>::name()
-     << ", " << TypeNameTraits<MV>::name()
-     << ", " << TypeNameTraits<OP>::name()
-     << ">";
-  return os.str();
+
+  std::ostringstream out;
+  out << "\"Belos::SolverFactory\": {";
+  if (this->getObjectLabel () != "") {
+    out << "Label: " << this->getObjectLabel () << ", ";
+  }
+  out << "Scalar: " << TypeNameTraits<Scalar>::name ()
+      << ", MV: " << TypeNameTraits<MV>::name ()
+      << ", OP: " << TypeNameTraits<OP>::name ()
+      << "}";
+  return out.str ();
 }
+
 
 template<class Scalar, class MV, class OP>
 void
@@ -588,38 +623,46 @@ SolverFactory<Scalar, MV, OP>::
 describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
+  using Teuchos::TypeNameTraits;
   using std::endl;
-  typedef Teuchos::Array<std::string>::const_iterator iter_type;
 
-  Teuchos::OSTab tab1 (out);
-  out << this->description();
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+
+  if (vl == Teuchos::VERB_NONE) {
+    return;
+  }
+
+  // By convention, describe() always begins with a tab.
+  Teuchos::OSTab tab0 (out);
+  // The description prints in YAML format.  The class name needs to
+  // be protected with quotes, so that YAML doesn't get confused
+  // between the colons in the class name and the colon separating
+  // (key,value) pairs.
+  out << "\"Belos::SolverFactory\":" << endl;
+  if (this->getObjectLabel () != "") {
+    out << "Label: " << this->getObjectLabel () << endl;
+  }
+  {
+    out << "Template parameters:" << endl;
+    Teuchos::OSTab tab1 (out);
+    out << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
+        << "MV: " << TypeNameTraits<MV>::name () << endl
+        << "OP: " << TypeNameTraits<OP>::name () << endl;
+  }
 
   // At higher verbosity levels, print out the list of supported solvers.
-  if (static_cast<int> (verbLevel) > static_cast<int> (Teuchos::VERB_LOW)) {
-    out << ":" << endl;
-    Teuchos::OSTab tab2 (out);
-    out << "Number of supported solvers: " << numSupportedSolvers()
+  if (vl > Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab1 (out);
+    out << "Number of solvers: " << numSupportedSolvers ()
         << endl;
-    out << "Supported canonical solver names:";
-    {
-      Teuchos::Array<std::string> names = canonicalSolverNames();
-      for (iter_type iter = names.begin(); iter != names.end(); ++iter) {
-        out << *iter;
-        if (iter + 1 != names.end()) {
-          out << ", ";
-        }
-      }
-    }
-    out << "Supported aliases to canonical names:";
-    {
-      Teuchos::Array<std::string> names = solverNameAliases();
-      for (iter_type iter = names.begin(); iter != names.end(); ++iter) {
-        out << *iter;
-        if (iter + 1 != names.end()) {
-          out << ", ";
-        }
-      }
-    }
+    out << "Canonical solver names: ";
+    printStringArray (out, canonicalSolverNames ());
+    out << endl;
+
+    out << "Aliases to canonical names: ";
+    printStringArray (out, solverNameAliases ());
+    out << endl;
   }
 }
 
