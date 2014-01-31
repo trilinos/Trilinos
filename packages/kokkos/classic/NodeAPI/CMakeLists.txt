@@ -70,6 +70,7 @@ APPEND_SET(HEADERS
     Kokkos_StandardNodeMemoryModel.hpp
   )
 APPEND_SET(SOURCES
+    Kokkos_SerialNode.cpp
     Kokkos_DefaultNode.cpp
     Kokkos_NodeAPIVersion.cpp
   )

@@ -39,72 +39,23 @@
 // ************************************************************************
 //@HEADER
 
-#include "Kokkos_TBBNode.hpp"
-#include <Teuchos_ParameterList.hpp>
-#include <iostream>
-
-// tbb::task_scheduler_init KokkosClassic::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
+#include "Kokkos_SerialNode.hpp"
 
 namespace KokkosClassic {
 
-  TBBNode::TBBNode () :
-    tsi_ (tbb::task_scheduler_init::deferred),
-    alreadyInit_ (false)
-  {
-    Teuchos::ParameterList params = getDefaultParameters ();
-    const int numThreads = params.get<int> ("Num Threads");
-    const int verbose = params.get<int> ("Verbose");
-    if (numThreads >= 0) {
-      if (verbose) {
-        std::cout << "TBBNode initializing with numThreads == " << numThreads
-                  << std::endl;
-      }
-      init (numThreads);
-    }
+  SerialNode::SerialNode () {}
+
+  SerialNode::SerialNode (Teuchos::ParameterList& pl) {
+    (void) pl;
   }
 
-
-  TBBNode::TBBNode (Teuchos::ParameterList &pl) :
-    tsi_ (tbb::task_scheduler_init::deferred),
-    alreadyInit_ (false)
-  {
-    Teuchos::ParameterList params = getDefaultParameters ();
-    params.setParameters (pl);
-    const int numThreads = params.get<int> ("Num Threads");
-    const int verbose = params.get<int> ("Verbose");
-    if (numThreads >= 0) {
-      if (verbose) {
-        std::cout << "TBBNode initializing with numThreads == " << numThreads
-                  << std::endl;
-      }
-      init (numThreads);
-    }
-  }
-
-  Teuchos::ParameterList TBBNode::getDefaultParameters () {
+  Teuchos::ParameterList SerialNode::getDefaultParameters () {
     Teuchos::ParameterList params;
-    params.set ("Verbose"    , 0);
-    params.set ("Num Threads",-1);
     return params;
   }
 
-  void TBBNode::init (const int numThreads) {
-    if (alreadyInit_) {
-      tsi_.terminate ();
-    }
-    //
-    if (numThreads >= 1) {
-      tsi_.initialize (numThreads);
-    }
-    else {
-      tsi_.initialize (tbb::task_scheduler_init::automatic);
-    }
-  }
-
-  TBBNode::~TBBNode () {}
-
-  std::string TBBNode::name () {
-    return "TBB";
+  std::string SerialNode::name () {
+    return "Serial";
   }
 
 } // namespace KokkosClassic
