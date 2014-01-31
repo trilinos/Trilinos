@@ -966,7 +966,7 @@ namespace Iopx {
       // See if the "last_written_time" attribute exists and if it
       // does, check that it matches the largest time in 'tsteps'.
       Iopx::Internals data(get_file_pointer(), maximumNameLength, util());
-      exists = data.read_last_time_attribute(&last_time);
+      data.read_last_time_attribute(&last_time);
     }
 
     // Only add states that are less than or equal to the
@@ -1101,7 +1101,6 @@ namespace Iopx {
           // Clear out the vector...
           Ioss::MapContainer().swap(entity_map.map);
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          map_read = false;
         }
 
         // Check for sequential node map.
@@ -2754,6 +2753,8 @@ namespace Iopx {
 
         } else if (field.get_name() == "distribution_factors") {
           ierr = decomp->get_set_mesh_double(get_file_pointer(), EX_NODE_SET, id, field, static_cast<double*>(data));
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
         }
       } else if (role == Ioss::Field::ATTRIBUTE) {
         num_to_get = read_attribute_field(type, field, ns, data);
