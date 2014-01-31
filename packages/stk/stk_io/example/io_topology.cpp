@@ -1,3 +1,4 @@
+#include <iostream>
 #include <iomanip>
 #include <stk_topology/topology.hpp>
 #include <stk_io/IossBridge.hpp>
