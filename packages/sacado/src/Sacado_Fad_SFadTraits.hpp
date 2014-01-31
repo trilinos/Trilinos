@@ -161,6 +161,12 @@ namespace Sacado {
     static const bool value = true;
   };
 
+  //! Specialization of %StaticSize to SFad types
+  template <typename ValueT, int Num>
+  struct StaticSize< Fad::SFad<ValueT,Num> > {
+    static const unsigned value = Num;
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes

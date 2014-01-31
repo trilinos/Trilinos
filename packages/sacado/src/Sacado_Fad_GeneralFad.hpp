@@ -113,6 +113,10 @@ namespace Sacado {
         this->fastAccessDx(i)=1.;
       }
 
+      //! Constructor with supplied storage \c s
+      KOKKOS_INLINE_FUNCTION
+      GeneralFad(const Storage& s) : Storage(s), update_val_(true) {}
+
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const GeneralFad& x) :

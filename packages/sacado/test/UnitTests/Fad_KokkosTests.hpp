@@ -32,6 +32,8 @@
 #include "Kokkos_Parallel.hpp"
 #include "Sacado.hpp"
 
+#include "Kokkos_View_Fad.hpp"
+
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,
                Teuchos::FancyOStream& out)
@@ -127,7 +129,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
 
   // Create and fill view
-  ViewType v("view", num_rows, num_cols);
+  ViewType v("view", num_rows, num_cols, fad_size+1);
   host_view_type h_v = Kokkos::create_mirror_view(v);
   for (size_type i=0; i<num_rows; ++i)
     for (size_type j=0; j<num_cols; ++j)
@@ -159,7 +161,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
 
   // Create and fill views
-  ViewType v1("view1", num_rows), v2("view2", num_rows);
+  ViewType v1("view1", num_rows, fad_size+1), v2("view2", num_rows, fad_size+1);
   host_view_type h_v1 = Kokkos::create_mirror_view(v1);
   host_view_type h_v2 = Kokkos::create_mirror_view(v2);
   for (size_type i=0; i<num_rows; ++i) {
@@ -172,7 +174,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(v2, h_v2);
 
   // Launch kernel
-  ViewType v3("view3", num_rows);
+  ViewType v3("view3", num_rows, fad_size+1);
   MultiplyKernel<ViewType>::apply(v1,v2,v3);
 
   // Copy back
@@ -206,6 +208,14 @@ typedef Sacado::Fad::DFad<double> DFadType;
 typedef Sacado::Fad::SLFad<double,2*global_fad_size> SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> SFadType;
 
+// We can't use DFad unless we use the View specialization
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 #define VIEW_FAD_TESTS_D( D )                   \
-  VIEW_FAD_TESTS_FD( SFadType, D )          \
+  VIEW_FAD_TESTS_FD( SFadType, D )              \
+  VIEW_FAD_TESTS_FD( SLFadType, D )             \
+  VIEW_FAD_TESTS_FD( DFadType, D )
+#else
+#define VIEW_FAD_TESTS_D( D )                   \
+  VIEW_FAD_TESTS_FD( SFadType, D )              \
   VIEW_FAD_TESTS_FD( SLFadType, D )
+#endif

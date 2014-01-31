@@ -78,6 +78,11 @@ namespace Sacado {
       Expr(const int sz, const int i, const T & x) :
         GeneralFad<T,Storage>(sz,i,x) {}
 
+      //! Constructor with supplied storage \c s
+      KOKKOS_INLINE_FUNCTION
+      Expr(const Storage& s) :
+        GeneralFad<T,Storage>(s) {}
+
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       Expr(const Expr& x) :

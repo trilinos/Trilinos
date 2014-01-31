@@ -152,6 +152,11 @@ namespace Sacado {
   //! Base template specification for testing whether type is statically sized
   template <typename T> struct IsStaticallySized {};
 
+  //! Base template specification for static size
+  template <typename T> struct StaticSize {
+    static const unsigned value = 0;
+  };
+
   //! Specialization of above classes to builtin types
 #define SACADO_BUILTIN_SPECIALIZATION(t,NAME)             \
   template <> struct ScalarType< t > {                    \

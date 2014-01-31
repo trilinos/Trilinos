@@ -167,4 +167,70 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
+// Classes needed for Kokkos::View< DFad<...> ... > specializations
+//
+// Users can disable these view specializations either at configure time or
+// by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
+//
+
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+
+#include "impl/Kokkos_AnalyzeShape.hpp"
+#include "Sacado_Fad_ViewFad.hpp"
+
+namespace Kokkos {
+namespace Impl {
+
+// Forward declarations
+struct ViewSpecializeSacadoFad;
+template <typename T,unsigned,unsigned> struct ViewFadType;
+
+//! The View Fad type associated with this type
+template< class ValueType, unsigned length, unsigned stride >
+struct ViewFadType< Sacado::Fad::DFad< ValueType >, length, stride > {
+  typedef Sacado::Fad::ViewFad<ValueType,length,stride> type;
+};
+
+/** \brief  Analyze the array shape of a Sacado::Fad::DFad<T>.
+ *
+ *  This specialization is required so that the array shape of
+ *  Kokkos::View< Sacado::Fad::DFad<T>, ... >
+ *  can be determined at compile-time.
+ *
+ *  For View purposes, DFad is treated as a dynamic dimension.
+ */
+template< class ValueType >
+struct AnalyzeShape< Sacado::Fad::DFad< ValueType > >
+  : ShapeInsert< typename AnalyzeShape< ValueType >::shape , 0 >::type
+{
+private:
+
+  typedef AnalyzeShape< ValueType > nested ;
+
+public:
+
+  typedef ViewSpecializeSacadoFad specialize ;
+
+  typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
+
+  typedef typename nested::array_type *        array_type ;
+  typedef typename nested::const_array_type *  const_array_type ;
+
+  typedef array_type non_const_array_type ;
+
+  typedef       Sacado::Fad::DFad< ValueType >  type ;
+  typedef const Sacado::Fad::DFad< ValueType >  const_type ;
+  typedef       Sacado::Fad::DFad< ValueType >  non_const_type ;
+
+  typedef       Sacado::Fad::DFad< ValueType >  value_type ;
+  typedef const Sacado::Fad::DFad< ValueType >  const_value_type ;
+  typedef       Sacado::Fad::DFad< ValueType >  non_const_value_type ;
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif
+
 #endif // SACADO_FAD_DFAD_HPP
