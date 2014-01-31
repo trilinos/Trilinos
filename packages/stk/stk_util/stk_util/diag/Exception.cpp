@@ -53,7 +53,7 @@ ParallelThrowRegistry::Registry::~Registry()
   // Truely sick.  Each is registered twice, once for the parallel version of the
   // exception and once for the <stdexcept> base class version.  The double increment
   // keeps from deleting it twice.  See ParallelThrowRegistry::registerException.
-  for (iterator it = begin(); it != end(); ++it, ++it)
+  for (std::vector<std::pair<const std::type_info *, ExParallel *> >::iterator it = m_dataVec.begin(); it != m_dataVec.end(); ++it, ++it)
     delete (*it).second;
 }
 
@@ -64,7 +64,7 @@ ParallelThrowRegistry::register_exception_a(
   ExParallel *			exception)
 {
   if (!findException(exception_type)) {
-    m_registry.push_back(Registry::value_type(&exception_type, exception));
+    m_registry.m_dataVec.push_back(std::vector<std::pair<const std::type_info *, ExParallel *> >::value_type(&exception_type, exception));
     mpih::Add_Handle(*exception);
   }
   return *exception;
@@ -74,7 +74,7 @@ ExParallel *
 ParallelThrowRegistry::findException(
   const std::type_info &		exception_type)
 {
-  for (Registry::iterator it = m_registry.begin(); it != m_registry.end(); ++it)
+  for (std::vector<std::pair<const std::type_info *, ExParallel *> >::iterator it = m_registry.m_dataVec.begin(); it != m_registry.m_dataVec.end(); ++it)
     if (*(*it).first == exception_type)
       return (*it).second;
 

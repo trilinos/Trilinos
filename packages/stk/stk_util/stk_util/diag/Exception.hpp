@@ -195,7 +195,7 @@ public:
    *
    */
   static bool areExceptionsRegistered() {
-    return !ParallelThrowRegistry::instance().m_registry.empty();
+    return !ParallelThrowRegistry::instance().m_registry.m_dataVec.empty();
   }
 
   /**
@@ -246,12 +246,15 @@ private:
    * to its registered parallel throw exception to be cloned.
    *
    */
-  class Registry : public std::vector<std::pair<const std::type_info *, ExParallel *> > 
+  class Registry
   {
   public:
-    Registry();
+
+   Registry();
 
     ~Registry();
+
+    std::vector<std::pair<const std::type_info *, ExParallel *> > m_dataVec;
   };
 
   Registry		m_registry;			///< Registry of exceptions
