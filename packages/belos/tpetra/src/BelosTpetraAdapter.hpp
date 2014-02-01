@@ -120,6 +120,7 @@ namespace { // anonymous
   TpetraMultiVectorCloneCopy (const Tpetra::MultiVector<S, LO, GO,
                               Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& X)
   {
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<S, LO, GO, Node> MV;
 
     // mfh 29 Jan 2014: If the specialization of MultiVector for Node
@@ -128,7 +129,7 @@ namespace { // anonymous
     // However, the Kokkos::Compat wrapper Nodes do NOT do a deep copy
     // in their copy constructor, so this is fine to use there (and
     // indeed is the preferred mode).
-    return Teuchos::rcp (new MV (Tpetra::createCopy (mv)));
+    return Teuchos::rcp (new MV (Tpetra::createCopy (X)));
   }
 #endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
 
