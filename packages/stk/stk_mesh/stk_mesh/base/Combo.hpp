@@ -37,14 +37,6 @@
 
 #include <boost/functional/hash.hpp>
 
-#ifdef SIERRA_MIGRATION
-namespace stk {
-namespace mesh {
-typedef RelationVector::const_iterator   RelationIterator;
-typedef boost::iterator_range<RelationIterator> RelationRange;
-}
-}
-#endif // SIERRA_MIGRATION
 
 #include <stk_mesh/base/Bucket.tcc> //only place where this file should be included
 
@@ -75,7 +67,6 @@ namespace roster_only {
 void destroy_meshobj(stk::mesh::Entity, MeshBulkData& meshbulk );
 }
 
-const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity mesh_obj, const stk::mesh::BulkData& meshbulk);
 bool insert_relation( stk::mesh::Entity , const stk::mesh::RelationType,  stk::mesh::Entity , const unsigned, const unsigned, const bool, MeshBulkData &);
 bool remove_relation(stk::mesh::Entity , const stk::mesh::RelationIterator, MeshBulkData &);
 }

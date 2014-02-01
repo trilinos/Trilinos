@@ -25,6 +25,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_topology/topology.hpp>
+#include <boost/range.hpp>
 
 namespace stk {
 namespace mesh {
@@ -229,6 +230,11 @@ typedef int ( * relation_stencil_ptr )( EntityRank  from_type ,
 typedef std::vector<Relation, tracking_allocator<Relation,AuxRelationTag> > RelationVector;
 
 typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
+
+#ifdef SIERRA_MIGRATION
+typedef RelationVector::const_iterator   RelationIterator;
+typedef boost::iterator_range<RelationIterator> RelationRange;
+#endif // SIERRA_MIGRATION
 
 enum ConnectivityType
 {
