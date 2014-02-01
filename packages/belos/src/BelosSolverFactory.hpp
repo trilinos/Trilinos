@@ -55,6 +55,7 @@
 #include <BelosLSQRSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
 #include <BelosGmresPolySolMgr.hpp>
+#include <BelosPCPGSolMgr.hpp>
 #include <BelosRCGSolMgr.hpp>
 #include <BelosTFQMRSolMgr.hpp>
 
@@ -102,7 +103,8 @@ enum EBelosSolverType {
   SOLVER_TYPE_LSQR,
   SOLVER_TYPE_STOCHASTIC_CG,
   SOLVER_TYPE_TFQMR,
-  SOLVER_TYPE_GMRES_POLY
+  SOLVER_TYPE_GMRES_POLY,
+  SOLVER_TYPE_PCPG
 };
 
 } // namespace details
@@ -464,6 +466,10 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef GmresPolySolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
+  case SOLVER_TYPE_PCPG: {
+    typedef PCPGSolMgr<Scalar, MV, OP> impl_type;
+    return makeSolverManagerTmpl<base_type, impl_type> (params);
+  }
   default: // Fall through; let the code below handle it.
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Belos::SolverFactory: Invalid EBelosSolverType "
@@ -530,6 +536,9 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
   aliasToCanonicalName_["Transpose-Free QMR"] = "TFQMR";
   aliasToCanonicalName_["GmresPoly"] = "Hybrid Block GMRES";
+  aliasToCanonicalName_["Seed GMRES"] = "Hybrid Block GMRES";
+  aliasToCanonicalName_["CGPoly"] = "PCPG";
+  aliasToCanonicalName_["Seed CG"] = "PCPG";
 
   // Mapping from canonical solver name (a string) to its
   // corresponding enum value.  This mapping is one-to-one.
@@ -544,6 +553,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
   canonicalNameToEnum_["TFQMR"] = details::SOLVER_TYPE_TFQMR;
   canonicalNameToEnum_["Hybrid Block GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
+  canonicalNameToEnum_["PCPG"] = details::SOLVER_TYPE_PCPG;
 }
 
 

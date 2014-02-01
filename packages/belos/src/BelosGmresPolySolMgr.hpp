@@ -120,6 +120,10 @@ class GmresPolySolMgrOrthoFailure : public BelosError {public:
 /// GMRES.  However, the resulting polynomial is not necessarily as
 /// effective as the equivalent number of GMRES iterations.
 ///
+/// We call solvers that take this approach "seed solvers."  Belos
+/// implements both a Block GMRES seed solver (this class) and a
+/// CG-based seed solver (Belos::PCPGSolMgr).
+///
 /// Here is a list of all the parameters that this solver accepts:
 ///   - "Convergence Tolerance" (\c MagnitudeType): The level that
 ///     residual norms must reach to decide convergence. Default:
