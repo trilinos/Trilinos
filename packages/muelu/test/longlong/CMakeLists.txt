@@ -38,7 +38,7 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE
     TwoBillionTest
     NAME "TwoBillionTest"
     NUM_MPI_PROCS 4
-    COMM serial mpi
+    COMM mpi
     )
 
   MESSAGE("just before copy")
