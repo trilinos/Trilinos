@@ -105,8 +105,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
          "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7"
        )
 
-    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_typhon_mpich2_1.4.1p1.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS "--suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_typhon_mpich2_1.4.1p1.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
 
   ENDIF()
 
