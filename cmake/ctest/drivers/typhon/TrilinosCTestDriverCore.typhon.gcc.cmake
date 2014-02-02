@@ -106,7 +106,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
        )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+        "--suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_typhon_mpich2_1.4.1p1.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+
   ENDIF()
 
   TRILINOS_CTEST_DRIVER()
