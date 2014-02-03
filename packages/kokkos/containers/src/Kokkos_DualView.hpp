@@ -273,7 +273,7 @@ public:
   }
 
   template< typename iType>
-  void stride(iType* stride_) {
+  void stride(iType* stride_) const {
     d_view.stride(stride_);
   }
 
