@@ -1997,7 +1997,4 @@ field_data(const FieldType & f, Entity e)
 } // namespace mesh
 } // namespace stk
 
-#include <stk_mesh/baseImpl/Partition.hpp>
-#include <stk_mesh/base/BulkDataPartOperations.tcc>
-
 #endif //  stk_mesh_BulkData_hpp

@@ -30,6 +30,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Trace.hpp>
+#include <stk_mesh/base/BulkDataPartOperations.tcc>
 
 //----------------------------------------------------------------------
 

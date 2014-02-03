@@ -6,8 +6,11 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_mesh/baseImpl/Partition.hpp>
+
 namespace stk {
 namespace mesh {
+
 
 namespace impl {
 

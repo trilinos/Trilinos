@@ -32,6 +32,9 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 
 #include <boost/foreach.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
+#include <stk_mesh/base/BulkDataPartOperations.tcc>
+
 
 namespace stk {
 namespace mesh {

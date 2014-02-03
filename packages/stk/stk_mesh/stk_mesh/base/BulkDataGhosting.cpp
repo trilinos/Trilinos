@@ -26,7 +26,7 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Trace.hpp>
-
+#include <stk_mesh/base/BulkDataPartOperations.tcc>
 using std::strcmp;
 
 namespace stk {
