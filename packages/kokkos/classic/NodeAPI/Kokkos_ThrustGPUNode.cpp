@@ -59,7 +59,7 @@ namespace KokkosClassic {
     using std::endl;
 
     Teuchos::ParameterList params = getDefaultParameters();
-    const int device = params.get<int>("Device Number");
+    int device = params.get<int>("Device Number");
     const int verbose = params.get<int>("Verbose");
 
     // set device
@@ -115,7 +115,7 @@ namespace KokkosClassic {
     // get node parameters
     Teuchos::ParameterList params = getDefaultParameters ();
     params.setParameters (pl);
-    const int device = params.get<int>("Device Number");
+    int device = params.get<int>("Device Number");
     const int verbose = params.get<int>("Verbose");
 
     // set device
