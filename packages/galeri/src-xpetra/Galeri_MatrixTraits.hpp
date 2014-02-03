@@ -64,17 +64,17 @@
 #endif
 
 namespace Galeri {
-  
+
   namespace Xpetra {
-    
+
     /* Default traits */
     /* These traits work for the following couples of (Map,Matrix):
-       - Map = Tpetra::Map<...>,       and Matrix = Tpetra::CrsMatrix<...>  
+       - Map = Tpetra::Map<...>,       and Matrix = Tpetra::CrsMatrix<...>
        - Map = Xpetra::TpetraMap<...> and Matrix = Xpetra::TpetraCrsMatrix<...>
        - Map = Xpetra::EpetraMap,     and Matrix = Xpetra::EpetraCrsMatrix
     */
     template <class Map, class Matrix>
-    class MatrixTraits 
+    class MatrixTraits
     {
     public:
       static Teuchos::RCP<Matrix> Build(const Teuchos::RCP<const Map> &rowMap, size_t maxNumEntriesPerRow) // TODO: pftype

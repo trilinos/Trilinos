@@ -86,10 +86,10 @@ namespace Galeri {
 	PMLx_left    = list.get("PMLx_left",  0);
 	PMLx_right   = list.get("PMLx_right", 0);
 	PMLy_left    = list.get("PMLy_left",  0);
-	PMLy_right   = list.get("PMLy_right", 0);	
+	PMLy_right   = list.get("PMLy_right", 0);
 	PMLz_left    = list.get("PMLz_left",  0);
-	PMLz_right   = list.get("PMLz_right", 0);	
-	
+	PMLz_right   = list.get("PMLz_right", 0);
+
 	// calculate info
 	Dx_    = hx_*nx_;
 	Dy_    = hy_*ny_;
@@ -144,7 +144,7 @@ namespace Galeri {
 
       // Helmholtz/PML parameters
       double   hx_, hy_, hz_, shift_, delta_, omega_;
-      int      PMLx_left, PMLx_right; 
+      int      PMLx_left, PMLx_right;
       int      PMLy_left, PMLy_right;
       int      PMLz_left, PMLz_right;
       double   Dx_, Dy_, Dz_;
@@ -190,7 +190,7 @@ namespace Galeri {
 
       // iterate over elements
       for (size_t i = 0; i < elements.size(); i++) {
-	
+
         SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
 
 	// element domain is [shiftx,shiftx+hx] x [shifty,shifty+hy] x [shiftz,shiftz+hz]
@@ -273,7 +273,7 @@ namespace Galeri {
 
       // iterate over elements
       for (size_t i = 0; i < elements.size(); i++) {
-	
+
         SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
         SerialDenseMatrix<LO,SC> ME(numDofPerElem, numDofPerElem);
 
@@ -368,7 +368,7 @@ namespace Galeri {
       nodes        .resize((nx+1)*(ny+1)*(nz+1));
       local2Global_.resize((nx+1)*(ny+1)*(nz+1));
       elements     .resize(nx*ny*nz);
-      
+
 #define NODE(i,j,k) ((k)*(ny+1)*(nx+1) + (j)*(nx+1) + (i))
 #define CELL(i,j,k) ((k)*ny*nx         + (j)*nx     + (i))
       for (int k = 0; k <= nz; k++)
@@ -446,7 +446,7 @@ namespace Galeri {
       double valy2=y/hy_;         double dy2=1/hy_;
       double valz1=(hz_-z)/hz_;   double dz1=-1/hz_;
       double valz2=z/hz_;         double dz2=1/hz_;
-      // linear function values, derivatives in x, y, and z directions   
+      // linear function values, derivatives in x, y, and z directions
       vals[0]=valx1*valy1*valz1;  dxs[0]=dx1*valy1*valz1;  dys[0]=valx1*dy1*valz1;  dzs[0]=valx1*valy1*dz1;
       vals[1]=valx2*valy1*valz1;  dxs[1]=dx2*valy1*valz1;  dys[1]=valx2*dy1*valz1;  dzs[1]=valx2*valy1*dz1;
       vals[2]=valx1*valy2*valz1;  dxs[2]=dx1*valy2*valz1;  dys[2]=valx1*dy2*valz1;  dzs[2]=valx1*valy2*dz1;

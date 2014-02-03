@@ -82,8 +82,8 @@ namespace Galeri {
 	PMLx_left    = list.get("PMLx_left",  0);
 	PMLx_right   = list.get("PMLx_right", 0);
 	PMLy_left    = list.get("PMLy_left",  0);
-	PMLy_right   = list.get("PMLy_right", 0);	
-	
+	PMLy_right   = list.get("PMLy_right", 0);
+
 	// calculate info
 	Dx_    = hx_*nx_;
 	Dy_    = hy_*ny_;
@@ -132,7 +132,7 @@ namespace Galeri {
 
       // Helmholtz/PML parameters
       double   hx_, hy_, hz_, shift_, delta_, omega_;
-      int      PMLx_left, PMLx_right; 
+      int      PMLx_left, PMLx_right;
       int      PMLy_left, PMLy_right;
       int      PMLz_left, PMLz_right;
       double   Dx_, Dy_, Dz_;
@@ -177,7 +177,7 @@ namespace Galeri {
 
       // iterate over elements
       for (size_t i = 0; i < elements.size(); i++) {
-	
+
         SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
 
 	// element domain is [shiftx,shiftx+hx] x [shifty,shifty+hy]
@@ -212,7 +212,7 @@ namespace Galeri {
 	  elemDofs[j] = local2Global_[elemNodes[j]];
 	  if(local2Global_[elemNodes[j]]>9999) {
 	    std::cout<<"index "<<local2Global_[elemNodes[j]]<<std::endl;
-	  }	    
+	  }
 	}
 
         // Insert KE into the global matrix
@@ -258,7 +258,7 @@ namespace Galeri {
 
       // iterate over elements
       for (size_t i = 0; i < elements.size(); i++) {
-	
+
         SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
         SerialDenseMatrix<LO,SC> ME(numDofPerElem, numDofPerElem);
 
@@ -295,7 +295,7 @@ namespace Galeri {
 	  elemDofs[j] = local2Global_[elemNodes[j]];
 	  if(local2Global_[elemNodes[j]]>9999) {
 	    std::cout<<"index "<<local2Global_[elemNodes[j]]<<std::endl;
-	  }	    
+	  }
 	}
 
         // Insert KE and ME into the global matrices

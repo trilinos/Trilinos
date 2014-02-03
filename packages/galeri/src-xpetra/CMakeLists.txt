@@ -25,7 +25,7 @@ APPEND_SET(HEADERS
   Galeri_MatrixTraits.hpp
   Galeri_MapTraits.hpp
   Galeri_MultiVectorTraits.hpp
-  
+
   Galeri_XpetraUtils.hpp
   Galeri_Problem.hpp
 
