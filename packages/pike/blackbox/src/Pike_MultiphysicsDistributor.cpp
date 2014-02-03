@@ -206,7 +206,7 @@ namespace pike {
   {
 
     {
-      out_ = this->getOStream();
+      out_ = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       out_->setOutputToRootOnly(this->mapRankToCommWorldRank(0,*globalComm_));
       out_->pushLinePrefix(myName_);
       out_->setShowLinePrefix(true);
@@ -214,7 +214,7 @@ namespace pike {
 
     aout_.resize(applications_.size());
     for (std::size_t a = 0; a < applications_.size(); ++a) {
-      aout_[a] = this->getOStream();
+      aout_[a] = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       aout_[a]->pushLinePrefix(applications_[a].name);
       aout_[a]->setOutputToRootOnly(this->mapRankToCommWorldRank(applications_[a].startProcess,*globalComm_));
       aout_[a]->setShowLinePrefix(true);
@@ -222,7 +222,7 @@ namespace pike {
     }
 
     {
-      pout_ = this->getOStream();
+      pout_ = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       for (std::size_t a = 0; a < applications_.size(); ++a) {
 	if (this->appExistsOnProcess(a)) {
 	  pout_->pushLinePrefix(applications_[a].name);
