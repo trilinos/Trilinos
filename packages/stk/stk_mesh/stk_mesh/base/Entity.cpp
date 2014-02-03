@@ -19,20 +19,6 @@
 
 #include <boost/mpl/assert.hpp>
 
-#ifdef SIERRA_MIGRATION
-namespace {
-static const stk::mesh::RelationVector dummy_vector;
-}
-
-namespace sierra {
-namespace Fmwk {
-
-  //const unsigned int INVALID_LOCAL_ID = stk::mesh::GetInvalidLocalId();
-const stk::mesh::RelationIterator INVALID_RELATION_ITR = dummy_vector.end(); // Some STL implementation use POD for iterators
-
-} // namespace Fmwk
-} // namespace Sierra
-#endif
 
 namespace stk {
 namespace mesh {

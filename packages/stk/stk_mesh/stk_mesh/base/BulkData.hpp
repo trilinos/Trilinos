@@ -658,8 +658,6 @@ public:
     return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
   }
 
-  RelationIterator find_aux_relation(Entity entity, const Relation& relation) const;
-
   size_t count_relations(Entity entity) const;
 
   bool has_no_relations(Entity entity) const;

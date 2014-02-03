@@ -1455,32 +1455,6 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
   }
 }
 
-RelationIterator BulkData::find_aux_relation(Entity entity, const Relation& relation) const
-{
-  // Extremely hacky: It would be better to set up the < operator for relations so that lower_bound
-  // can return the desired iterator, but any sane definition would probably force a change in
-  // relation ordering and that's more than I'm willing to take on now.
-  //
-  // The current semantics for relation-searching is as follows:
-  // Ordered based on derived_type, relation_type, and ordinal in descending precedence
-  //   If multiple relations have the same derived_type, relation_type, and ordinal, a linear
-  //   scan takes place looking for a matching meshobj. If no such meshobj was found, then
-  //   we are left with an iterator pointing to the first relation with a different derived_type,
-  //   relation_type, or ordinal. To sum up, the result of the search can either be equivalent to
-  //   lower_bound OR upper_bound depending upon the state of the relations... YUCK!
-
-  ThrowAssert(!impl::internal_is_handled_generically(relation.getRelationType()));
-  const RelationVector& aux_rels = aux_relations(entity);
-
-  for (RelationIterator rel = aux_rels.begin(); rel != aux_rels.end(); ++rel) {
-    if (same_specification(*rel, relation) && rel->entity() != relation.entity()) {
-      return rel;
-    }
-  }
-
-  return sierra::Fmwk::INVALID_RELATION_ITR;
-}
-
 void BulkData::set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation)
 {
   const EntityRank from_rank = entity_rank(from);
