@@ -322,7 +322,7 @@ exp:	  NUM			{ $$ = $1; 				}
 				  $$ = (double)($2 < 0 ? -floor(-($2)): floor($2) );
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }
-        | bool '?' exp ':' exp   { $$ = ($1) ? ($3) : ($5);              }
+        | bool QUEST exp COLON exp   { $$ = ($1) ? ($3) : ($5);              }
         | AVAR LBRACK exp COMMA exp RBRACK { array *arr = $1->value.avar;
                                       int cols = arr->cols;
                                       int rows = arr->rows;
