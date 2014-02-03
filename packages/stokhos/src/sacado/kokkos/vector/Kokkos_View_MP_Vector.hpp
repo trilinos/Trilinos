@@ -39,8 +39,6 @@
 // ***********************************************************************
 // @HEADER
 
-#if 0
-
 #ifndef KOKKOS_VIEW_MP_VECTOR_HPP
 #define KOKKOS_VIEW_MP_VECTOR_HPP
 
@@ -2268,5 +2266,3 @@ struct LocalMPVectorView<ViewType, LocalSize, 1, false> {
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef KOKKOS_VIEW_MP_VECTOR_HPP */
-
-#endif

@@ -357,7 +357,6 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
-      sacado/kokkos/Stokhos_LocalStorage.hpp
       sacado/kokkos/Stokhos_StaticStorage.hpp
       sacado/kokkos/Stokhos_StaticFixedStorage.hpp
       sacado/kokkos/Stokhos_DynamicStorage.hpp
@@ -365,7 +364,6 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Stokhos_ViewStorage.hpp
-      sacado/kokkos/Stokhos_ViewStridedStorage.hpp
       sacado/kokkos/vector/Sacado_MP_Vector.hpp
       sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp

@@ -441,15 +441,6 @@ namespace StaticFixedVecTest {
   VECTOR_UNIT_TESTS(StaticFixedVector)
 }
 
-namespace LocalVecTest {
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
-  VECTOR_UNIT_TESTS(LocalVector)
-}
-
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
