@@ -127,91 +127,13 @@ void parallel_reduce( const BulkData & mesh ,
 
 //----------------------------------------------------------------------
 
-/** Sum (assemble) field-data for the specified fields on shared entities such that each shared entity
+/** Sum/Max/Min (assemble) field-data for the specified fields on shared entities such that each shared entity
  * will have the same field values on each sharing proc.
  */
-inline
-void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields)
-{
-  if (fields.empty()) return;
+void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields);
+void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields);
+void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 
-  const FieldBase *const* fieldsPtr = &fields[0];
-  CommAll sparse;
-  communicate_field_data(mesh, fields.size(), fieldsPtr, sparse);
-
-  for(size_t i=0; i<fields.size(); ++i) {
-      if (fields[i]->type_is<double>()) {
-        sum<double>(*fields[i])(mesh, sparse);
-      }
-      else if (fields[i]->type_is<float>()) {
-        sum<float>(*fields[i])(mesh, sparse);
-      }
-      else if (fields[i]->type_is<int>()) {
-        sum<int>(*fields[i])(mesh, sparse);
-      }
-      else {
-        ThrowRequireMsg(false, "Error, parallel_sum only operates on fields of type double, float or int.");
-      }
-  }
-}
-
-/** Communicate and take the maximum value of field-data for the specified fields
- * on shared entities such that each shared entity
- * will have the same (maximum) field values on each sharing proc.
- */
-inline
-void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields)
-{
-  if (fields.empty()) return;
-
-  const FieldBase *const* fieldsPtr = &fields[0];
-  CommAll sparse;
-  communicate_field_data(mesh, fields.size(), fieldsPtr, sparse);
-
-  for(size_t i=0; i<fields.size(); ++i) {
-      if (fields[i]->type_is<double>()) {
-        max<double>(*fields[i])(mesh, sparse);
-      }
-      else if (fields[i]->type_is<float>()) {
-        max<float>(*fields[i])(mesh, sparse);
-      }
-      else if (fields[i]->type_is<int>()) {
-        max<int>(*fields[i])(mesh, sparse);
-      }
-      else {
-        ThrowRequireMsg(false, "Error, parallel_max only operates on fields of type double, float or int.");
-      }
-  }
-}
-
-/** Communicate and take the minimum value of field-data for the specified fields
- * on shared entities such that each shared entity
- * will have the same (minimum) field values on each sharing proc.
- */
-inline
-void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields)
-{
-  if (fields.empty()) return;
-
-  const FieldBase *const* fieldsPtr = &fields[0];
-  CommAll sparse;
-  communicate_field_data(mesh, fields.size(), fieldsPtr, sparse);
-
-  for(size_t i=0; i<fields.size(); ++i) {
-      if (fields[i]->type_is<double>()) {
-        min<double>(*fields[i])(mesh, sparse);
-      }
-      else if (fields[i]->type_is<float>()) {
-        min<float>(*fields[i])(mesh, sparse);
-      }
-      else if (fields[i]->type_is<int>()) {
-        min<int>(*fields[i])(mesh, sparse);
-      }
-      else {
-        ThrowRequireMsg(false, "Error, parallel_min only operates on fields of type double, float or int.");
-      }
-  }
-}
 
 } // namespace mesh
 } // namespace stk
