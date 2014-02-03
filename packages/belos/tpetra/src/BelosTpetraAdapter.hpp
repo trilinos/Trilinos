@@ -163,7 +163,7 @@ namespace { // anonymous
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
     CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
-      return TpetraMultiVectorCloneCopy<Scalar, LO, GO, Node> (mv);
+      return TpetraMultiVectorCloneCopy (mv);
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
