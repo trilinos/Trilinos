@@ -252,8 +252,8 @@ NOTES:
     the inner CMake/CTest used by individual builds.
 (*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
     want to process the exact packages set with <Project>_PACKAGES
-(*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE after a first round of builds
-    to speed up subsequent builds.
+(*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE after a first round of
+    builds to speed up subsequent builds.
 
 Work out any kinks you may have in your environment and your scripts
 by running this over and over again.
