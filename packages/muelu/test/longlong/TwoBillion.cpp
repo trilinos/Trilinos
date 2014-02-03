@@ -273,7 +273,6 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
-    bool flag;
     if (solver->getNumIters() > 6) {
        if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
       return(EXIT_FAILURE);
