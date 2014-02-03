@@ -384,6 +384,74 @@ public:
     }
 
   //------------------------------------
+  // Assign unmanaged View to portion of Device shared memory
+
+  typedef Impl::if_c< ! traits::is_managed ,
+                      typename traits::device_type ,
+                      Impl::ViewError::device_shmem_constructor_requires_unmanaged >
+      if_device_shmem_constructor ;
+
+  explicit KOKKOS_INLINE_FUNCTION
+  View( typename if_device_shmem_constructor::type & dev ,
+        const unsigned n0 = 0 ,
+        const unsigned n1 = 0 ,
+        const unsigned n2 = 0 ,
+        const unsigned n3 = 0 ,
+        const unsigned n4 = 0 ,
+        const unsigned n5 = 0 ,
+        const unsigned n6 = 0 ,
+        const unsigned n7 = 0 )
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::shape_type   shape_type ;
+      typedef typename fad_type::value_type scalar_type ;
+
+      enum { align = 8 };
+      enum { mask  = align - 1 };
+
+      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      stride_type::assign_no_padding( m_stride , m_shape );
+
+      typedef Impl::if_c< ! traits::is_managed ,
+                          scalar_type * ,
+                          Impl::ViewError::device_shmem_constructor_requires_unmanaged >
+        if_device_shmem_pointer ;
+
+      verify_dimension_storage_static_size();
+
+      m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
+
+      // Select the first argument:
+      m_ptr_on_device = if_device_shmem_pointer::select(
+        (scalar_type *) dev.get_shmem( shmem_size(n0,n1,n2,n3,n4,n5,n6,n7) ) );
+    }
+
+  static inline
+  unsigned shmem_size( const unsigned n0 = 0 ,
+                       const unsigned n1 = 0 ,
+                       const unsigned n2 = 0 ,
+                       const unsigned n3 = 0 ,
+                       const unsigned n4 = 0 ,
+                       const unsigned n5 = 0 ,
+                       const unsigned n6 = 0 ,
+                       const unsigned n7 = 0 )
+  {
+    enum { align = 8 };
+    enum { mask  = align - 1 };
+
+    typedef typename traits::shape_type   shape_type ;
+    typedef typename fad_type::value_type scalar_type ;
+
+    shape_type  shape ;
+    stride_type stride ;
+
+    traits::shape_type::assign( shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+    stride_type::assign_no_padding( stride , shape );
+
+    return unsigned( sizeof(scalar_type) * Impl::capacity( shape , stride ) + unsigned(mask) ) & ~unsigned(mask) ;
+  }
+
+  //------------------------------------
   // Is not allocated
 
   KOKKOS_FORCEINLINE_FUNCTION

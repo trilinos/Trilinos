@@ -243,10 +243,59 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, ShmemSize, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType**,Layout,Device>::type ViewType;
+  typedef typename FadType::value_type value_type;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Compute shared memory size for View
+  const size_type shmem_size =
+    ViewType::shmem_size(num_rows, num_cols, fad_size+1);
+
+  // Check
+  static const size_type align = 8;
+  static const size_type mask  = align - 1;
+  const size_type shmem_size_expected =
+    ( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) +
+      mask ) & ~mask;
+  TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
+}
+#else
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, ShmemSize, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType**,Layout,Device>::type ViewType;
+  typedef typename FadType::value_type value_type;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+
+  // Compute shared memory size for View
+  const size_type shmem_size =
+    ViewType::shmem_size(num_rows, num_cols);
+
+  // Check
+  static const size_type align = 8;
+  static const size_type mask  = align - 1;
+  const size_type shmem_size_expected =
+    ( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask;
+  TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
+}
+#endif
+
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Multiply, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
   using Kokkos::LayoutLeft;                                             \
