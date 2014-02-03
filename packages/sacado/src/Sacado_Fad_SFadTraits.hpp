@@ -161,9 +161,21 @@ namespace Sacado {
     static const bool value = true;
   };
 
+  //! Specialization of %IsStaticallySized to SFad types
+  template <typename ValueT, int Num>
+  struct IsStaticallySized< const Fad::SFad<ValueT,Num> > {
+    static const bool value = true;
+  };
+
   //! Specialization of %StaticSize to SFad types
   template <typename ValueT, int Num>
   struct StaticSize< Fad::SFad<ValueT,Num> > {
+    static const unsigned value = Num;
+  };
+
+  //! Specialization of %StaticSize to SFad types
+  template <typename ValueT, int Num>
+  struct StaticSize< const Fad::SFad<ValueT,Num> > {
     static const unsigned value = Num;
   };
 

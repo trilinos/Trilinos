@@ -139,7 +139,13 @@ namespace Sacado {
   //! Specialization of %IsStaticallySized to SLFad types
   template <typename ValueT, int Num>
   struct IsStaticallySized< Fad::SLFad<ValueT,Num> > {
-    static const bool value = true;
+    static const bool value = false;
+  };
+
+  //! Specialization of %IsStaticallySized to SLFad types
+  template <typename ValueT, int Num>
+  struct IsStaticallySized< const Fad::SLFad<ValueT,Num> > {
+    static const bool value = false;
   };
 
 } // namespace Sacado

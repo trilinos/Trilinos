@@ -156,9 +156,6 @@ public:
   // This needs to be public so that we know what the return type of () is
   typedef typename Impl::ViewFadType<fad_type, FadStaticDimension, FadStaticStride>::type fad_view_type ;
 
-  // Whether the storage type is statically sized
-  static const bool is_static = Sacado::IsStaticallySized<fad_type>::value;
-
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
