@@ -16,6 +16,9 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
+
+#include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
 #include <sstream>
 #include <valgrind/callgrind.h>
@@ -626,15 +629,13 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   std::vector<std::vector<std::vector<BucketVector> > > bucket_map; // bucket_map[x_chunk][y_chunk][z_chunk]
   fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, chunk_span);
 
-
-
   CALLGRIND_TOGGLE_COLLECT;
 
   //
   // Model caching of the bucket index and ordinals
   //
-  std::vector<std::vector<unsigned int  > >bucket_ind; 
-  std::vector<std::vector<unsigned short> >bucket_ord; 
+  std::vector<std::vector<unsigned int  > >bucket_ind;
+  std::vector<std::vector<unsigned short> >bucket_ord;
   bucket_ind.resize(345);
   bucket_ord.resize(345);
   for (int x = 0; x < x_chunks; ++x) {
@@ -653,7 +654,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
       }
     }
   }
-  
+
   const int num_iterations = 100;
   size_t dummy = 0;
    for (int i = 0; i < num_iterations; ++i) {
@@ -669,8 +670,8 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
             Bucket& bucket = *bucket_map[x][y][z][b];
             int bid = bucket.bucket_id();
 
-            std::vector<unsigned int  >& bucket_indZ = bucket_ind[bid]; 
-            std::vector<unsigned short>& bucket_ord_vec = bucket_ord[bid]; 
+            std::vector<unsigned int  >& bucket_indZ = bucket_ind[bid];
+            std::vector<unsigned short>& bucket_ord_vec = bucket_ord[bid];
 
 
             for (size_t e = 0, ee = bucket_indZ.size(); e < ee; ++e) {
@@ -705,6 +706,89 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   PERFORMANCE_TEST_POSTAMBLE();
 
   delete mesh;
+}
+
+// Copied from Fperf_parallel_sum.C
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, parallel_sum )
+{
+  PERFORMANCE_TEST_PREAMBLE(16 /*num procs*/);
+
+  typedef Field<double> ScalarField;
+
+  //vector of mesh-dimensions holds the number of elements in each dimension.
+  //Hard-wired to 3. This test can run with spatial-dimension less than 3,
+  //(if generated-mesh can do that) but not greater than 3.
+
+  const int parallel_size = stk::parallel_machine_size(pm);
+  const int parallel_rank = stk::parallel_machine_rank(pm);
+
+  const int x_dim = 64; //num_elems_x
+  const int y_dim = 64; //num_elems_y
+  const int z_dim = parallel_size; //num_elems_z
+
+  const int num_fields = 1;
+
+  const int num_iters = 10;
+  std::ostringstream oss;
+  oss << x_dim << "x" << y_dim << "x" << z_dim;
+
+  stk::io::util::Gmesh_STKmesh_Fixture fixture(pm, oss.str());
+  MetaData& meta = fixture.getMetaData();
+
+  std::vector<FieldBase*> fields(num_fields);
+  for (int i = 0; i < num_fields; ++i) {
+    std::ostringstream oss;
+    oss << "field_" << i;
+    fields[i] = &meta.declare_field<ScalarField>(stk::topology::NODE_RANK, oss.str());
+    stk::mesh::put_field(*fields[i], meta.universal_part());
+  }
+
+  PartVector hex_topo(1, &meta.declare_part<shards::Hexahedron<8> >("hex_part"));
+
+  fixture.commit();
+  BulkData& bulk = fixture.getBulkData();
+
+  // populate field data
+  stk::mesh::Selector shared_sel = meta.globally_shared_part();
+  stk::mesh::BucketVector const& node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, shared_sel);
+  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
+    stk::mesh::Bucket const& bucket = *node_buckets[b];
+    for (int i = 0; i < num_fields; ++i) {
+      ScalarField& field = dynamic_cast<ScalarField&>(*fields[i]);
+      double* data = stk::mesh::field_data(field, bucket);
+      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
+        data[n] = static_cast<double>(i);
+      }
+    }
+  }
+
+  CALLGRIND_TOGGLE_COLLECT;
+
+  for (int t = 0; t < num_iters; ++t) {
+    stk::mesh::parallel_sum(bulk, fields);
+  }
+
+  CALLGRIND_TOGGLE_COLLECT;
+  CALLGRIND_STOP_INSTRUMENTATION;
+
+  // Sanity check
+  size_t num_shared_nodes = 0;
+  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
+    stk::mesh::Bucket const& bucket = *node_buckets[b];
+    num_shared_nodes += bucket.size();
+    for (int f = 0; f < num_fields; ++f) {
+      ScalarField& field = dynamic_cast<ScalarField&>(*fields[f]);
+      double* data = stk::mesh::field_data(field, bucket);
+      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
+        EXPECT_EQ(static_cast<double>(f) * (1 << num_iters), data[n]);
+      }
+    }
+  }
+
+  const size_t expected_num_shared_nodes = (parallel_rank == 0 || parallel_rank == parallel_size - 1) ? (x_dim+1) * (y_dim+1) : (x_dim+1) * (y_dim+1) * 2;
+  EXPECT_EQ(expected_num_shared_nodes, num_shared_nodes);
+
+  PERFORMANCE_TEST_POSTAMBLE();
 }
 
 }
