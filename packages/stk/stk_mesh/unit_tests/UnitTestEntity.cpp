@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stdexcept>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
