@@ -590,23 +590,17 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(startLevel < 0 || endLevel >= Levels_.size(), Exceptions::RuntimeError, "MueLu::Hierarchy::Write bad start or end level");
 
-    for (LO i = startLevel; i < endLevel+1; ++i) {
-      std::ostringstream buf; buf << i;
-      std::string fileName = "A_" + buf.str() + ".m";
-      Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("A")) );
+    for (LO i = startLevel; i < endLevel + 1; i++) {
+      Utils::Write("A_" + toString(i) + ".m", *(Levels_[i]-> template Get< RCP< Matrix> >("A")));
 
-      if (i>0) {
-        fileName = "P_" + buf.str() + ".m";
-        Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("P")) );
+      if (i > 0) {
+        Utils::Write("P_" + toString(i) + ".m", *(Levels_[i]-> template Get< RCP< Matrix> >("P")));
 
-        if (!implicitTranspose_) {
-          fileName = "R_" + buf.str() + ".m";
-          Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("R")) );
-        }
+        if (!implicitTranspose_)
+          Utils::Write("R_" + toString(i) + ".m", *(Levels_[i]-> template Get< RCP< Matrix> >("R")));
       }
     }
-
-  } //Write()
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Keep(const std::string & ename, const FactoryBase* factory) {

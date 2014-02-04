@@ -261,8 +261,8 @@ namespace Galeri {
           vals[n++] = z;
         }
 
-        for (int i = 0; i < n; i++)
-          inds[i] += indexBase;
+        for (int j = 0; j < n; j++)
+          inds[j] += indexBase;
 
         Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
         Teuchos::ArrayView<Scalar>        av(&vals[0], n);
@@ -342,8 +342,8 @@ namespace Galeri {
           vals[n++] = z;
         }
 
-        for (int i = 0; i < n; i++)
-          inds[i] += indexBase;
+        for (int j = 0; j < n; j++)
+          inds[j] += indexBase;
 
         Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
         Teuchos::ArrayView<Scalar>        av(&vals[0], n);
@@ -430,8 +430,8 @@ namespace Galeri {
           vals[n++] = z;
         }
 
-        for (int i = 0; i < n; i++)
-          inds[i] += indexBase;
+        for (int j = 0; j < n; j++)
+          inds[j] += indexBase;
 
         Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
         Teuchos::ArrayView<Scalar>        av(&vals[0], n);
@@ -512,8 +512,8 @@ namespace Galeri {
           vals[n++] = z;
         }
 
-        for (int i = 0; i < n; i++)
-          inds[i] += indexBase;
+        for (int j = 0; j < n; j++)
+          inds[j] += indexBase;
 
         Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
         Teuchos::ArrayView<Scalar>        av(&vals[0], n);
@@ -619,8 +619,8 @@ namespace Galeri {
           vals[n++] = z;
         }
 
-        for (int i = 0; i < n; i++)
-          inds[i] += indexBase;
+        for (int j = 0; j < n; j++)
+          inds[j] += indexBase;
 
         Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
         Teuchos::ArrayView<Scalar>        av(&vals[0], n);
