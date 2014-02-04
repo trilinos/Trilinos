@@ -53,7 +53,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef device_t device_type;
+    typedef Kokkos::Cuda device_type;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
