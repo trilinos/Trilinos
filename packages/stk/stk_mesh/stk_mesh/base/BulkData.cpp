@@ -4874,6 +4874,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   // ------------------------------
 
   m_bucket_repository.internal_modification_end();
+
+  internal_update_fast_comm_maps();
+
   m_sync_state = SYNCHRONIZED ;
 
   update_deleted_entities_container();
@@ -5236,13 +5239,45 @@ void BulkData::internal_resolve_shared_membership()
           }
         }
 
-//        std::cout << "P" << p_rank
-//                  << " irsm calling internal_change_entity_parts(..) on entity "
-//                  << entity << " to obey owner" << std::endl;
-
         internal_change_entity_parts( entity , owner_parts , remove_parts );
       }
     }
+  }
+}
+
+void BulkData::internal_update_fast_comm_maps()
+{
+  if (parallel_size() > 1) {
+    EntityCommListInfoVector const& all_comm = comm_list();
+
+    // Flush previous map
+    const EntityRank num_ranks = m_mesh_meta_data.entity_rank_count();
+    m_volatile_fast_shared_comm_map.resize(num_ranks);
+    for (EntityRank r = 0; r < num_ranks; ++r) {
+      m_volatile_fast_shared_comm_map[r].resize(parallel_size());
+      for (int prank = 0; prank < parallel_size(); ++prank) {
+        m_volatile_fast_shared_comm_map[r][prank].clear();
+      }
+    }
+
+    // Assemble map, find all shared entities and pack into volatile fast map
+    for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
+      Entity const e        = all_comm[i].entity;
+      EntityKey const key   = all_comm[i].key;
+      MeshIndex const& idx  = mesh_index(e);
+      EntityRank const rank = key.rank();
+
+      FastMeshIndex fast_idx;
+      fast_idx.bucket_id  = idx.bucket->bucket_id();
+      fast_idx.bucket_ord = idx.bucket_ordinal;
+
+      PairIterEntityComm ec = entity_comm(key);
+      for (; !ec.empty() && ec->ghost_id == 0; ++ec) {
+        m_volatile_fast_shared_comm_map[rank][ec->proc].push_back(fast_idx);
+      }
+    }
+
+    // Need to shrink-to-fit these vectors?
   }
 }
 

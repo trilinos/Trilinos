@@ -46,11 +46,11 @@ public:
   typedef std::pair<KeyType,KeyType>  KeySpan ;
   typedef std::pair<KeyType,ProcType> KeyProc ;
 
-  typedef std::vector<unsigned long, tracking_allocator<unsigned long, DistributedIndex> > UnsignedVector;
-  typedef std::vector<long, tracking_allocator<long, DistributedIndex> > LongVector;
-  typedef std::vector<KeySpan, tracking_allocator<KeySpan, DistributedIndex> > KeySpanVector;
-  typedef std::vector<KeyType, tracking_allocator<KeyType, DistributedIndex> > KeyTypeVector;
-  typedef std::vector<KeyProc, tracking_allocator<KeyProc, DistributedIndex> > KeyProcVector;
+  typedef TrackedVectorMetaFunc<unsigned long, DistributedIndex>::type UnsignedVector;
+  typedef TrackedVectorMetaFunc<long,          DistributedIndex>::type LongVector;
+  typedef TrackedVectorMetaFunc<KeySpan,       DistributedIndex>::type KeySpanVector;
+  typedef TrackedVectorMetaFunc<KeyType,       DistributedIndex>::type KeyTypeVector;
+  typedef TrackedVectorMetaFunc<KeyProc,       DistributedIndex>::type KeyProcVector;
 
   /*----------------------------------------*/
 

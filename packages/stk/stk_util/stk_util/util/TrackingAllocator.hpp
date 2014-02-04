@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <limits>
+#include <vector>
 
 #include <boost/type_traits/is_same.hpp>
 
@@ -94,6 +95,12 @@ inline bool operator==(const tracking_allocator<T1,Tag1>&, const tracking_alloca
 template <typename T1, typename T2, typename Tag1, typename Tag2>
 inline bool operator!=(const tracking_allocator<T1,Tag1>&, const tracking_allocator<T2,Tag2>&)
 { return !boost::is_same<Tag1,Tag2>::value; }
+
+template <typename T, typename Tag>
+struct TrackedVectorMetaFunc
+{
+  typedef std::vector<T, tracking_allocator<T, Tag> > type;
+};
 
 } // namespace stk
 

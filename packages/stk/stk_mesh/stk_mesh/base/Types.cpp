@@ -182,6 +182,8 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
   // DeletedEntity
   assemble_data<DeletedEntityTag>(names, memory, "Deleted Entities");
 
+  assemble_data<VolatileFastSharedCommMapTag>(names, memory, "Volatile Fast Shared Comm Map");
+
   std::vector<size_t> max_memory(memory.size()*parallel_machine_size(parallel),0);
 
   MPI_Gather(static_cast<void*>(&memory[0]), memory.size(), MPI_LONG_LONG,

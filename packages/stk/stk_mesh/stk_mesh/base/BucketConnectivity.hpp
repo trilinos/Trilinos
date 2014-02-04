@@ -72,9 +72,9 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = FIXED_CONNECTIVITY;
 
-  typedef std::vector<Entity,              tracking_allocator<Entity, BucketRelationTag> >              EntityVector;
-  typedef std::vector<ConnectivityOrdinal, tracking_allocator<ConnectivityOrdinal, BucketRelationTag> > ConnectivityOrdinalVector;
-  typedef std::vector<Permutation,         tracking_allocator<Permutation, BucketRelationTag> >         PermutationVector;
+  typedef TrackedVectorMetaFunc<Entity, BucketRelationTag>::type              EntityVector;
+  typedef TrackedVectorMetaFunc<ConnectivityOrdinal, BucketRelationTag>::type ConnectivityOrdinalVector;
+  typedef TrackedVectorMetaFunc<Permutation, BucketRelationTag>::type         PermutationVector;
 
   BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
     : m_num_connectivity(0u)
@@ -524,11 +524,11 @@ public:
 
   typedef typename DynamicConnectivityTagSelector<TargetRank>::type TagType;
 
-  typedef std::vector<Entity,              tracking_allocator<Entity, TagType> >              EntityVector;
-  typedef std::vector<ConnectivityOrdinal, tracking_allocator<ConnectivityOrdinal, TagType> > ConnectivityOrdinalVector;
-  typedef std::vector<Permutation,         tracking_allocator<Permutation, TagType> >         PermutationVector;
-  typedef std::vector<uint32_t,            tracking_allocator<uint32_t, TagType> >            UInt32Vector;
-  typedef std::vector<uint16_t,            tracking_allocator<uint16_t, TagType> >            UInt16Vector;
+  typedef typename TrackedVectorMetaFunc<Entity,              TagType>::type              EntityVector;
+  typedef typename TrackedVectorMetaFunc<ConnectivityOrdinal, TagType>::type ConnectivityOrdinalVector;
+  typedef typename TrackedVectorMetaFunc<Permutation,         TagType>::type         PermutationVector;
+  typedef typename TrackedVectorMetaFunc<uint32_t,            TagType>::type              UInt32Vector;
+  typedef typename TrackedVectorMetaFunc<uint16_t,            TagType>::type              UInt16Vector;
 
   static const unsigned chunk_size = 1u;
 

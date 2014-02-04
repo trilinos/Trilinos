@@ -29,30 +29,20 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class UnitTestFieldImpl; } }
 namespace stk { namespace mesh { namespace impl { class FieldRepository; } } }
 
-
-
-
-
-
 namespace stk {
 namespace mesh {
 
+struct FieldMetaData
+{
+  unsigned char* m_data;
+  int m_bytes_per_entity;                                           // num bytes per entity, 0 means bucket does not have this field
+};
 
-namespace impl {
-
-
-}
-
-  struct FieldMetaData
-  {
-    unsigned char* m_data;
-    int m_bytes_per_entity;                                           // num bytes per entity, 0 means bucket does not have this field
-  };
 #ifdef __IBMCPP__
-  // The IBM compiler is easily confused by complex template types...
-  typedef std::vector<FieldMetaData>                                     FieldMetaDataVector;
+// The IBM compiler is easily confused by complex template types...
+typedef std::vector<FieldMetaData>                               FieldMetaDataVector;
 #else
-  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
+typedef TrackedVectorMetaFunc<FieldMetaData, FieldDataTag>::type FieldMetaDataVector;
 #endif
 
 //----------------------------------------------------------------------
@@ -273,6 +263,11 @@ inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
   ThrowAssert(&f.get_mesh() == &b.mesh());
   return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity;
 }
+
+inline unsigned field_bytes_per_entity(const FieldBase& f, unsigned bucket_id) {
+  return f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity;
+}
+
 inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
   BulkData& bulk(f.get_mesh());
   ThrowAssert(f.entity_rank() == bulk.entity_rank(e));

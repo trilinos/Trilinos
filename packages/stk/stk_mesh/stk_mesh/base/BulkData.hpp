@@ -46,25 +46,16 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+
 namespace sierra { namespace Fmwk { class MeshBulkData; } }
 namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-
-
-
 //----------------------------------------------------------------------
 
 // Use macro below to enable metric gathering for get_buckets memoization
 //#define GATHER_GET_BUCKETS_METRICS
-
-#ifdef SIERRA_MIGRATION
-
-namespace sierra { namespace Fmwk {
-}}
-
-#endif // SIERRA_MIGRATION
 
 namespace stk {
 namespace mesh {
@@ -82,7 +73,15 @@ struct EntityCommListInfo
   int  owner;
 };
 
-typedef std::vector<EntityCommListInfo, tracking_allocator<EntityCommListInfo, EntityCommTag> >  EntityCommListInfoVector;
+typedef TrackedVectorMetaFunc<EntityCommListInfo, EntityCommTag>::type EntityCommListInfoVector;
+
+#ifdef __IBMCPP__
+typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
+#else
+typedef TrackedVectorMetaFunc<
+  TrackedVectorMetaFunc<FastMeshIndex, VolatileFastSharedCommMapTag>::type,
+  VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMapOneRank;
+#endif
 
 inline
 bool operator<(const EntityKey& key, const EntityCommListInfo& comm)
@@ -144,19 +143,21 @@ public:
   inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
   typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
+
+  typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...
   typedef BucketVector                                                   TrackedBucketVector;
   typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector> SelectorBucketMap;
+  typedef std::vector<VolatileFastSharedCommMapOneRank>                  VolatileFastSharedCommMap;
 #else
-  typedef std::vector<Bucket*, tracking_allocator<Bucket*, SelectorMapTag> >                       TrackedBucketVector;
+  typedef TrackedVectorMetaFunc<Bucket*, SelectorMapTag>::type  TrackedBucketVector;
   typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
                    std::less<std::pair<EntityRank, Selector> >,
                    tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
-  typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
+  typedef TrackedVectorMetaFunc<VolatileFastSharedCommMapOneRank, VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMap;
 
 #endif
-
 
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
@@ -576,7 +577,15 @@ public:
   //------------------------------------
   /** \brief  All entities with communication information. */
   const EntityCommListInfoVector & comm_list() const
-    { return m_entity_comm_list; }
+  { return m_entity_comm_list; }
+
+  VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const
+  {
+    // TODO - Change to asserts
+    ThrowRequire(synchronized_state() == SYNCHRONIZED);
+    ThrowRequireMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
+    return m_volatile_fast_shared_comm_map[rank];
+  }
 
   //------------------------------------
   /** \brief  Query the shared-entity aura.
@@ -1125,6 +1134,14 @@ private:
   // Simply a list of data for entities that are being communicated
   EntityCommListInfoVector            m_entity_comm_list;
 
+  // The full database of comm info for all communicated entities.
+  EntityCommDatabase m_entity_comm_map;
+
+  // Only works outside of modification cycles.
+  // m_volatile_fast_shared_comm_map[entity_rank][parallel_rank] -> FastMeshIndexes
+  //   Means that the entities represented by FastMeshIndexes are shared with proc parallel_rank
+  VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
+
   std::vector<Ghosting*>              m_ghosting; /**< Aura is [1] */
 
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities;
@@ -1151,8 +1168,6 @@ private:
   int m_num_fields;
   bool m_keep_fields_updated;
 
-  // The full database of comm info for all communicated entities.
-  EntityCommDatabase m_entity_comm_map;
 
   // Arrays of Entity member-data indexed by entity.local_offset():
   std::vector<MeshIndex> m_mesh_indexes;
@@ -1273,7 +1288,6 @@ private:
   void internal_resolve_ghosted_modify_delete();
   void internal_resolve_parallel_create();
   void internal_resolve_shared_membership();
-
   void internal_update_distributed_index( std::vector<Entity> & shared_new );
 
   /** \brief  Regenerate the shared-entity aura,
@@ -1309,6 +1323,8 @@ private:
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
 
   void internal_sync_comm_list_owners();
+
+  void internal_update_fast_comm_maps();
 
   //------------------------------------
 
@@ -1918,9 +1934,6 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   }
 #endif
 }
-
-
-
 
 } // namespace mesh
 } // namespace stk

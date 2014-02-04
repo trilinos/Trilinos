@@ -39,6 +39,7 @@
 #include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/CSet.hpp"       // for CSet
+
 namespace shards { class ArrayDimTag; }
 namespace shards { class CellTopologyManagedData; }
 namespace stk { namespace mesh { class Bucket; } }
@@ -46,16 +47,8 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class MetaData; } }
 
-
-
-
-
-namespace shards {
-}
-
 namespace stk {
 namespace mesh {
-
 
 /** \addtogroup stk_mesh_module
  *  \{

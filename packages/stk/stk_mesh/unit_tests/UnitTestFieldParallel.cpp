@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stddef.h>                     // for size_t, NULL
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data, etc
@@ -23,297 +22,250 @@
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for PairIterEntityComm, etc
+#include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_mesh/fixtures/HexFixture.hpp"
+
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }
 
-
-
-
-
-using stk::mesh::MetaData;
-
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
-void setup_simple_mesh(stk::mesh::BulkData& bulk_data)
+enum Operation
 {
-    stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+  SUM,
+  MIN,
+  MAX
+};
 
-    stk::mesh::Field<double>  & field_1 = meta_data.declare_field< stk::mesh::Field<double> >( stk::topology::NODE_RANK, "field_1" );
-    stk::mesh::Field<double>  & field_2 = meta_data.declare_field< stk::mesh::Field<double> >( stk::topology::NODE_RANK, "field_2" );
-    stk::mesh::Field<double>  & field_3 = meta_data.declare_field< stk::mesh::Field<double> >( stk::topology::NODE_RANK, "field_3" );
+template <typename T>
+T do_operation(T lhs, T rhs, Operation op)
+{
+  switch(op) {
+  case SUM:
+    return lhs + rhs;
+  case MIN:
+    return std::min(lhs, rhs);
+  case MAX:
+    return std::max(lhs, rhs);
+  default:
+    ThrowRequire(false);
+    return 0;
+  }
+}
 
-    stk::mesh::put_field( field_1 , meta_data.universal_part() );
-    stk::mesh::put_field( field_2 , meta_data.universal_part() );
-    stk::mesh::put_field( field_3 , meta_data.universal_part() );
+using namespace stk::mesh;
+using stk::mesh::fixtures::HexFixture;
 
-    stk::mesh::Part& block_1 = meta_data.declare_part<shards::Hexahedron<8> >("block_1");
+typedef Field<double> ScalarField;
+typedef Field<double, Cartesian> CartesianField;
+typedef Field<int> IntField;
 
-    meta_data.commit();
+// Client needs to delete
+void do_parallel_assemble(Operation op)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-    bulk_data.modification_begin();
+  int p_rank = stk::parallel_machine_rank(pm);
+  int p_size = stk::parallel_machine_size(pm);
 
-    // Declare 8 nodes on each proc
-    const int num_nodes_per_proc = 8;
-    int this_proc = bulk_data.parallel_rank();
-    stk::mesh::EntityId my_first_id = this_proc*4 + 1;
-    std::vector<stk::mesh::Entity> nodes;
+  if (p_size == 1) {
+    return;
+  }
 
-    int end_id = my_first_id + num_nodes_per_proc;
-    for ( int id = my_first_id ; id < end_id ; ++id ) {
-      nodes.push_back(bulk_data.declare_entity( NODE_RANK , id));
+  const unsigned NX = 3;
+  const unsigned NY = 3;
+  const unsigned NZ = p_size;
+
+  HexFixture fixture(pm, NX, NY, NZ);
+
+  MetaData& meta = fixture.m_meta;
+  BulkData& bulk = fixture.m_bulk_data;
+
+  ScalarField& universal_scalar_node_field       = meta.declare_field< ScalarField >( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
+  ScalarField& non_universal_scalar_node_field   = meta.declare_field< ScalarField >( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
+  CartesianField& universal_cartesian_node_field = meta.declare_field< CartesianField >( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
+  IntField& universal_scalar_int_node_field      = meta.declare_field< IntField >( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
+  ScalarField& universal_scalar_edge_field       = meta.declare_field< ScalarField >( stk::topology::EDGE_RANK,    "universal_scalar_edge_field" );
+
+  Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
+
+  put_field( universal_scalar_node_field , meta.universal_part() );
+  put_field( universal_cartesian_node_field , meta.universal_part() );
+  put_field( universal_scalar_int_node_field , meta.universal_part() );
+  put_field( universal_scalar_edge_field , meta.universal_part() );
+  put_field( non_universal_scalar_node_field, center_part);
+
+  // TODO - Need a field that gets shared between more than 2 procs.
+
+  meta.commit();
+
+  fixture.generate_mesh();
+
+  // Generate edges
+
+  create_edges(bulk);
+
+  Selector shared_sel = meta.globally_shared_part();
+
+  std::vector<unsigned> counts;
+  count_entities( shared_sel, bulk, counts );
+
+  int multiplier = (p_rank == 0 || p_rank == p_size - 1) ? 1 : 2;
+  STKUNIT_EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[0]); // nodes
+  STKUNIT_EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[1]); // edges
+
+  // Move center nodes into center part
+  Entity center_element = fixture.elem(NX / 2, NY / 2, p_rank);
+
+  bulk.modification_begin();
+
+  Entity const* nodes = bulk.begin_nodes(center_element);
+  EXPECT_EQ(bulk.num_nodes(center_element), 8u);
+  PartVector add_center_part(1, &center_part);
+  for (int i = 0; i < 8; ++i) {
+    if (bulk.parallel_owner_rank(nodes[i]) == p_rank) {
+      bulk.change_entity_parts(nodes[i], add_center_part);
     }
+  }
 
-    stk::mesh::EntityId elem_id = this_proc+1;
-    stk::mesh::Entity elem = bulk_data.declare_entity(stk::topology::ELEMENT_RANK, elem_id, block_1);
-    const int num_nodes_per_elem = 8;
-    STKUNIT_ASSERT_EQUAL(num_nodes_per_elem, static_cast<int>(nodes.size()));
+  bulk.modification_end();
 
-    for(int i=0; i<num_nodes_per_elem; ++i) {
-      bulk_data.declare_relation(elem, nodes[i], i);
+  // Fill field data
+
+  BucketVector const& all_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, shared_sel);
+  for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
+    Bucket& bucket = *all_node_buckets[b];
+    for (size_t n = 0, ne = bucket.size(); n < ne; ++n) {
+      Entity node = bucket[n];
+      EntityId node_id = bulk.identifier(node);
+
+      *field_data(universal_scalar_node_field, node) = p_rank + 1.0 + node_id;
+
+      double* data = field_data(universal_cartesian_node_field, node);
+      for (int d = 0; d < 3; ++d) {
+        data[d] = p_rank + (2.0*d) + node_id;
+      }
+
+      *field_data(universal_scalar_int_node_field, node) = p_rank + 3 + node_id;
+
+      if (bucket.member(center_part)) {
+        *field_data(non_universal_scalar_node_field, node) = p_rank + 4.0 + node_id;
+      }
     }
+  }
 
-    bulk_data.modification_end();
+  BucketVector const& all_edge_buckets = bulk.get_buckets(stk::topology::EDGE_RANK, shared_sel);
+  for (size_t b = 0, be = all_edge_buckets.size(); b < be; ++b) {
+    Bucket& bucket = *all_edge_buckets[b];
+    for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
+      Entity edge = bucket[e];
+      EntityId edge_id = bulk.identifier(edge);
+
+      *field_data(universal_scalar_edge_field, edge) = p_rank + 5.0 + edge_id;
+    }
+  }
+
+  std::vector<FieldBase*> double_field_vector;
+  double_field_vector.push_back(&universal_scalar_node_field);
+  double_field_vector.push_back(&non_universal_scalar_node_field);
+  double_field_vector.push_back(&universal_cartesian_node_field);
+  double_field_vector.push_back(&universal_scalar_edge_field);
+
+  switch(op) {
+  case SUM:
+    parallel_sum(bulk, double_field_vector);
+    break;
+  case MIN:
+    parallel_min(bulk, double_field_vector);
+    break;
+  case MAX:
+    parallel_max(bulk, double_field_vector);
+    break;
+  default:
+    ThrowRequire(false);
+  }
+
+  std::vector<FieldBase*> int_field_vector(1, &universal_scalar_int_node_field);
+
+  switch(op) {
+  case SUM:
+    parallel_sum(bulk, int_field_vector);
+    break;
+  case MIN:
+    parallel_min(bulk, int_field_vector);
+    break;
+  case MAX:
+    parallel_max(bulk, int_field_vector);
+    break;
+  default:
+    ThrowRequire(false);
+  }
+
+  // Check field values
+
+  for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
+    Bucket& bucket = *all_node_buckets[b];
+    for (size_t n = 0, ne = bucket.size(); n < ne; ++n) {
+      Entity node = bucket[n];
+      EntityId node_id = bulk.identifier(node);
+
+      bool is_left_node = bulk.in_shared(bulk.entity_key(node), p_rank - 1);
+
+      int sharing_rank = is_left_node ? p_rank - 1 : p_rank + 1;
+      int field_id = 1;
+
+      EXPECT_EQ( *field_data(universal_scalar_node_field, node),
+                 do_operation<double>(p_rank + field_id + node_id, sharing_rank + field_id + node_id, op) );
+      ++field_id;
+
+      double* data = field_data(universal_cartesian_node_field, node);
+      for (int d = 0; d < 3; ++d) {
+        EXPECT_EQ( data[d], do_operation<double>(p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id, op) );
+      }
+      ++field_id;
+
+      EXPECT_EQ( *field_data(universal_scalar_int_node_field, node),
+                 do_operation<int>(p_rank + field_id + node_id, sharing_rank + field_id + node_id, op) );
+      ++field_id;
+
+      if (bucket.member(center_part)) {
+        EXPECT_EQ( *field_data(non_universal_scalar_node_field, node),
+                   do_operation<double>(p_rank + field_id + node_id, sharing_rank + field_id + node_id, op) );
+      }
+    }
+  }
+
+  for (size_t b = 0, be = all_edge_buckets.size(); b < be; ++b) {
+    Bucket& bucket = *all_edge_buckets[b];
+    for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
+      Entity edge = bucket[e];
+      EntityId edge_id = bulk.identifier(edge);
+
+      bool is_left_edge = bulk.in_shared(bulk.entity_key(edge), p_rank - 1);
+
+      int sharing_rank = is_left_edge ? p_rank - 1 : p_rank + 1;
+      int field_id = 5;
+
+      EXPECT_EQ( *field_data(universal_scalar_edge_field, edge),
+                 do_operation<double>(p_rank + field_id + edge_id, sharing_rank + field_id + edge_id, op) );
+    }
+  }
 }
 
 STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-  const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( spatial_dimension );
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-
-  if (bulk_data.parallel_size() != 2) {
-      return;
-  }
-
-  setup_simple_mesh(bulk_data);
-
-  stk::mesh::Field<double>  & field_1 = *meta_data.get_field< stk::mesh::Field<double> >( "field_1" );
-  stk::mesh::Field<double>  & field_2 = *meta_data.get_field< stk::mesh::Field<double> >( "field_2" );
-  stk::mesh::Field<double>  & field_3 = *meta_data.get_field< stk::mesh::Field<double> >( "field_3" );
-
-  //first, insist that we have 4 shared nodes.
-  stk::mesh::Selector shared = meta_data.globally_shared_part();
-  unsigned num_shared_nodes = stk::mesh::count_selected_entities(shared, bulk_data.buckets(NODE_RANK));
-  STKUNIT_ASSERT_EQUAL(num_shared_nodes, 4u);
-
-  // Go through node_buckets and initialize the fields
-  const std::vector< stk::mesh::Bucket *> & node_buckets =
-    bulk_data.buckets( NODE_RANK );
-
-  const double one = 1.0;
-  const int this_proc = bulk_data.parallel_rank();
-
-  for ( size_t i=0; i<node_buckets.size(); ++i) {
-    stk::mesh::Bucket & b = *node_buckets[i];
-
-    double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
-    double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));
-    double* field_3_ptr = reinterpret_cast<double*>(b.field_data_location(field_3));
-
-    for(size_t j=0; j<b.size(); ++j) {
-      field_1_ptr[j] = one;
-      field_2_ptr[j] = this_proc;
-      field_3_ptr[j] = this_proc;
-    }
-  }
-
-  std::vector<stk::mesh::FieldBase*> field_vector;
-  field_vector.push_back(&field_1);
-  field_vector.push_back(&field_2);
-  field_vector.push_back(&field_3);
-
-  stk::mesh::parallel_sum(bulk_data, field_vector);
-
-  //now go through the comm nodes and confirm that the field-data values
-  //for field_1 are equal to the number of procs that know about the node.
-
-  const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
-  for(size_t i=0; i<entity_comm_list.size(); ++i) {
-    stk::mesh::Entity node = entity_comm_list[i].entity;
-
-    const double* field_1_ptr = static_cast<unsigned>(field_1.entity_rank())==bulk_data.entity_rank(node) ? stk::mesh::field_data(field_1, node) : NULL;
-
-    stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
-    if (field_1_ptr != NULL && entity_comm.size() > 0) {
-      const double num_sharing_procs = entity_comm.size() + 1;
-      std::cout<<"sum: proc "<<this_proc<<", node "<<bulk_data.identifier(node)<<", num-sharing-procs: "<<num_sharing_procs<<std::endl;
-      STKUNIT_ASSERT_EQUAL(field_1_ptr[0], num_sharing_procs);
-    }
-    else {
-        std::cout<<"sum: proc "<<this_proc<<" skipping non-shared node "<<bulk_data.identifier(node)<<std::endl;
-    }
-  }
-}
-
-STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
-{
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-  const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( spatial_dimension );
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-
-  if (bulk_data.parallel_size() != 2) {
-      return;
-  }
-
-  setup_simple_mesh(bulk_data);
-
-  stk::mesh::Field<double>  & field_1 = *meta_data.get_field< stk::mesh::Field<double> >( "field_1" );
-  stk::mesh::Field<double>  & field_2 = *meta_data.get_field< stk::mesh::Field<double> >( "field_2" );
-  stk::mesh::Field<double>  & field_3 = *meta_data.get_field< stk::mesh::Field<double> >( "field_3" );
-
-  //first, insist that we have 4 shared nodes.
-  stk::mesh::Selector shared = meta_data.globally_shared_part();
-  unsigned num_shared_nodes = stk::mesh::count_selected_entities(shared, bulk_data.buckets(NODE_RANK));
-  STKUNIT_ASSERT_EQUAL(num_shared_nodes, 4u);
-
-  // Go through node_buckets and initialize the fields
-  const std::vector< stk::mesh::Bucket *> & node_buckets =
-    bulk_data.buckets( NODE_RANK );
-
-  const double one = 1.0;
-  const int this_proc = bulk_data.parallel_rank();
-
-  for ( size_t i=0; i<node_buckets.size(); ++i) {
-    stk::mesh::Bucket & b = *node_buckets[i];
-
-
-
-    double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
-    double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));
-    double* field_3_ptr = reinterpret_cast<double*>(b.field_data_location(field_3));
-
-    for(size_t j=0; j<b.size(); ++j) {
-      field_1_ptr[j] = one;
-      field_2_ptr[j] = this_proc;
-      field_3_ptr[j] = this_proc;
-    }
-  }
-
-  std::vector<stk::mesh::FieldBase*> field_vector;
-  field_vector.push_back(&field_1);
-  field_vector.push_back(&field_2);
-  field_vector.push_back(&field_3);
-
-  stk::mesh::parallel_max(bulk_data, field_vector);
-
-  //now go through the comm nodes and confirm that the field-data values
-  //for field_1 are equal to 1.0, and values for field_2 and field_3 are equal to max-proc.
-
-  const double max_proc = bulk_data.parallel_size()-1;
-
-  const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
-  for(size_t i=0; i<entity_comm_list.size(); ++i) {
-    stk::mesh::Entity node = entity_comm_list[i].entity;
-
-    if(!is_matching_rank(field_1, node)) continue;
-
-    const double* field_1_ptr = stk::mesh::field_data(field_1, node);
-    const double* field_2_ptr = stk::mesh::field_data(field_2, node);
-    const double* field_3_ptr = stk::mesh::field_data(field_3, node);
-
-    stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
-    if (field_1_ptr != NULL && field_2_ptr != NULL && field_3_ptr != NULL && entity_comm.size() > 0) {
-      const double num_sharing_procs = entity_comm.size() + 1;
-      std::cout<<"max: proc "<<this_proc<<", node "<<bulk_data.identifier(node)<<", num-sharing-procs: "<<num_sharing_procs<<std::endl;
-      STKUNIT_ASSERT_EQUAL(field_1_ptr[0], one);
-      STKUNIT_ASSERT_EQUAL(field_2_ptr[0], max_proc);
-      STKUNIT_ASSERT_EQUAL(field_3_ptr[0], max_proc);
-    }
-    else {
-      std::cout<<"max: proc "<<this_proc<<" skipping non-shared node "<<bulk_data.identifier(node)<<std::endl;
-    }
-  }
+  do_parallel_assemble(SUM);
 }
 
 STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-  const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( spatial_dimension );
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-
-  if (bulk_data.parallel_size() != 2) {
-      return;
-  }
-
-  setup_simple_mesh(bulk_data);
-
-  stk::mesh::Field<double>  & field_1 = *meta_data.get_field< stk::mesh::Field<double> >( "field_1" );
-  stk::mesh::Field<double>  & field_2 = *meta_data.get_field< stk::mesh::Field<double> >( "field_2" );
-  stk::mesh::Field<double>  & field_3 = *meta_data.get_field< stk::mesh::Field<double> >( "field_3" );
-
-  //first, insist that we have 4 shared nodes.
-  stk::mesh::Selector shared = meta_data.globally_shared_part();
-  unsigned num_shared_nodes = stk::mesh::count_selected_entities(shared, bulk_data.buckets(NODE_RANK));
-  STKUNIT_ASSERT_EQUAL(num_shared_nodes, 4u);
-
-  // Go through node_buckets and initialize the fields
-  const std::vector< stk::mesh::Bucket *> & node_buckets =
-    bulk_data.buckets( NODE_RANK );
-
-  const double one = 1.0;
-  const int this_proc = bulk_data.parallel_rank();
-
-  for ( size_t i=0; i<node_buckets.size(); ++i) {
-    stk::mesh::Bucket & b = *node_buckets[i];
-
-    if (b.entity_rank() == static_cast<unsigned>(field_1.entity_rank()))
-    {
-        double* field_1_ptr = reinterpret_cast<double*>(b.field_data_location(field_1));
-        double* field_2_ptr = reinterpret_cast<double*>(b.field_data_location(field_2));
-        double* field_3_ptr = reinterpret_cast<double*>(b.field_data_location(field_3));
-
-        for(size_t j=0; j<b.size(); ++j) {
-          field_1_ptr[j] = one;
-          field_2_ptr[j] = this_proc;
-          field_3_ptr[j] = this_proc;
-        }
-    }
-  }
-
-  std::vector<stk::mesh::FieldBase*> field_vector;
-  field_vector.push_back(&field_1);
-  field_vector.push_back(&field_2);
-  field_vector.push_back(&field_3);
-
-  stk::mesh::parallel_min(bulk_data, field_vector);
-
-  //now go through the comm nodes and confirm that the field-data values
-  //for field_1 are equal to 1.0, and values for field_2 and field_3 are equal to min-proc == 0.
-
-  const double min_proc = 0;
-
-  const stk::mesh::EntityCommListInfoVector& entity_comm_list = bulk_data.comm_list();
-  for(size_t i=0; i<entity_comm_list.size(); ++i) {
-    stk::mesh::Entity node = entity_comm_list[i].entity;
-
-    if(!is_matching_rank(field_1, node)) continue;
-
-    const double* field_1_ptr = stk::mesh::field_data(field_1, node);
-    const double* field_2_ptr = stk::mesh::field_data(field_2, node);
-    const double* field_3_ptr = stk::mesh::field_data(field_3, node);
-    stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm_sharing(bulk_data.entity_key(node));
-    if (entity_comm.size() > 0) {
-      const double num_sharing_procs = entity_comm.size() + 1;
-      std::cout<<"min: proc "<<this_proc<<", node "<<bulk_data.identifier(node)<<", num-sharing-procs: "<<num_sharing_procs<<std::endl;
-      STKUNIT_ASSERT_EQUAL(field_1_ptr[0], one);
-      STKUNIT_ASSERT_EQUAL(field_2_ptr[0], min_proc);
-      STKUNIT_ASSERT_EQUAL(field_3_ptr[0], min_proc);
-    }
-    else {
-      stk::mesh::PairIterEntityComm ent_comm = bulk_data.entity_comm(bulk_data.entity_key(node));
-      const int num_procs = ent_comm.size()+1;
-      std::cout<<"min: proc "<<this_proc<<" skipping non-shared ghost node "<<bulk_data.identifier(node)<<", num-procs: "<<num_procs<<std::endl;
-    }
-  }
+  do_parallel_assemble(MIN);
 }
-} //namespace <anonymous>
 
+STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
+{
+  do_parallel_assemble(MAX);
+}
+
+} //namespace <anonymous>

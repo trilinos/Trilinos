@@ -29,7 +29,6 @@ STKUNIT_UNIT_TEST( block_vector, basic )
     ASSERT_TRUE(v.empty());
   }
 
-
   {
     // test constructor
     bvector v(block_size*2+1, 1u);
@@ -347,9 +346,6 @@ void run_performance_test(std::string const& type, size_t size, size_t stride, s
   std::cout << std::endl;
 
 }
-
-
-
 
 } // namespace
 

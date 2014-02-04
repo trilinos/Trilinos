@@ -21,10 +21,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+
 namespace stk { namespace mesh { struct ConnectivityMap; } }
-
-
-
 
 namespace stk {
 namespace mesh {
@@ -36,7 +34,6 @@ const double PI     = 3.14159265358979;
 const double TWO_PI = 2 * PI;
 
 } // namespace
-
 
 /**
  * A mapping for the coordinates as a function of the node indices
@@ -93,8 +90,6 @@ private:
   Scalar m_radius;
   Scalar m_theta;
   unsigned m_numTheta;
-
-
 };
 
 /**

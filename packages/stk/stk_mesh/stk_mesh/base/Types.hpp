@@ -23,16 +23,13 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "boost/range/iterator_range_core.hpp"  // for iterator_range
+
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { struct EntityKey; } }
 namespace stk { namespace mesh { template <typename DataType = void> class Property; } }
-
-
-
-
 
 namespace stk {
 namespace mesh {
@@ -52,6 +49,7 @@ struct DynamicBucketElementRelationTag {};
 struct DynamicBucketOtherRelationTag {};
 struct AuxRelationTag {};
 struct DeletedEntityTag {};
+struct VolatileFastSharedCommMapTag {};
 
 void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_rank, std::ostream & out);
 
@@ -117,9 +115,18 @@ template< class FieldType > struct FieldTraits ;
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
 //and the offset (ordinal) into that bucket.
 //Ultimately we want this struct to contain two ints rather than a pointer and an int...
-struct MeshIndex {
+struct MeshIndex
+{
   Bucket* bucket;
   size_t bucket_ordinal;
+};
+
+// Smaller than MeshIndex and replaces bucket pointer with bucket_id to
+// remove hop.
+struct FastMeshIndex
+{
+  unsigned bucket_id;
+  unsigned bucket_ord;
 };
 
 typedef unsigned Ordinal;
