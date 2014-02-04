@@ -1,15 +1,15 @@
-#ifndef PIKE_OBSERVER_DEFAULT_IMPL_HPP
-#define PIKE_OBSERVER_DEFAULT_IMPL_HPP
+#ifndef PIKE_OBSERVER_DEFAULT_BASE_HPP
+#define PIKE_OBSERVER_DEFAULT_BASE_HPP
 
 #include "Pike_Observer.hpp"
 
 namespace pike {
 
-  class ObserverDefaultImpl : public pike::Observer {
+  class ObserverDefaultBase : public pike::Observer {
 
   public:
 
-    virtual ~ObserverDefaultImpl() {}
+    virtual ~ObserverDefaultBase() {}
 
     virtual void observeBeginSolve(const Solver& solver);
 
