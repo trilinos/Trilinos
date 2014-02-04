@@ -307,20 +307,30 @@ private:
       // 2-D distribution of threads: num_vector_threads x num_row_threads
       // where the x-dimension are vector threads and the y dimension are
       // row threads
+      //
+      // Note:  The actual team size granted by Kokkos may not match the
+      // request, which we need to handle in the kernel launch
+      // (because this kernel is effectively templated on the team size).
+      // Currently Kokkos doesn't make this easy.
       const size_type num_vector_threads = m_A.dev_config.block_dim.x ;
       const size_type num_row_threads    = m_A.dev_config.block_dim.y ;
       const size_type row_rank = dev.team_rank() / num_vector_threads ;
+      const size_type vec_rank = dev.team_rank() % num_vector_threads ;
 
       // Create local views with corresponding offset into the vector
       // dimension based on vector_rank and reduced number of vector entries
 
-      // Partition Sacado::MP::Vector as [ NumPerThread * rank .. NumPerThread * ( rank + 1 ) )
-      const Sacado::MP::VectorPartition part( NumPerThread * dev.team_rank() ,
-                                              NumPerThread * ( dev.team_rank() + 1 ) );
+      // Partition Sacado::MP::Vector as
+      // [ NumPerThread * rank .. NumPerThread * ( rank + 1 ) )
+      const Sacado::MP::VectorPartition part( NumPerThread * vec_rank ,
+                                              NumPerThread * (vec_rank + 1 ) );
 
-      const matrix_local_view_type A = Kokkos::subview<matrix_local_view_type>( m_A.values, part );
-      const input_local_view_type  x = Kokkos::subview<input_local_view_type>(  m_x , part );
-      const output_local_view_type y = Kokkos::subview<output_local_view_type>( m_y , part );
+      const matrix_local_view_type A =
+        Kokkos::subview<matrix_local_view_type>( m_A.values, part );
+      const input_local_view_type  x =
+        Kokkos::subview<input_local_view_type>(  m_x , part );
+      const output_local_view_type y =
+        Kokkos::subview<output_local_view_type>( m_y , part );
 
       // const matrix_values_type A(m_A.values);
       // const input_vector_type x(m_x);
@@ -541,6 +551,11 @@ private:
       // 2-D distribution of threads: num_vector_threads x num_row_threads
       // where the x-dimension are vector threads and the y dimension are
       // row threads
+      //
+      // Note:  The actual team size granted by Kokkos may not match the
+      // request, which we need to handle in the kernel launch
+      // (because this kernel is effectively templated on the team size).
+      // Currently Kokkos doesn't make this easy.
       const size_type num_vector_threads = m_A.dev_config.block_dim.x;
       const size_type num_row_threads = m_A.dev_config.block_dim.y;
       const size_type vector_rank = dev.team_rank() % num_vector_threads;
