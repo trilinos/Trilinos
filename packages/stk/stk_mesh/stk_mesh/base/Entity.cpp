@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <ostream>
 #include <stk_mesh/base/Entity.hpp>
 
 
