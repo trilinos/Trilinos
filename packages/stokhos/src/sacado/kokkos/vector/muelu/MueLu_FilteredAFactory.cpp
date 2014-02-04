@@ -48,6 +48,7 @@
 #if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_MueLu_MP_Vector.hpp"
 
 #include "Tpetra_ETIHelperMacros.h"
 #include "MueLu_FilteredAFactory_def.hpp"

@@ -993,7 +993,7 @@ namespace Sacado {
 
     template <typename Storage>
     std::istream&
-    operator >> (std::istream& is, volatile Vector<Storage>& a)
+    operator >> (std::istream& is, Vector<Storage>& a)
     {
       typedef typename Vector<Storage>::ordinal_type ordinal_type;
       typedef typename Vector<Storage>::value_type value_type;

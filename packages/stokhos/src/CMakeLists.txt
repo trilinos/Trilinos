@@ -375,6 +375,7 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       SET(HEADERS ${HEADERS}
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
+        sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
         )
       IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
         SET(HEADERS ${HEADERS}

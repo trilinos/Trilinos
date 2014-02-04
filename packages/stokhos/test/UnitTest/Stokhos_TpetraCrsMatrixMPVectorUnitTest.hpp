@@ -42,10 +42,9 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
-#include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
-
 // Tpetra
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
@@ -71,169 +70,20 @@
 // Ifpack2 preconditioner
 #ifdef HAVE_STOKHOS_IFPACK2
 #include "Stokhos_Ifpack2_MP_Vector.hpp"
+#include "Ifpack2_Factory.hpp"
 #endif
 
 // MueLu preconditioner
 #ifdef HAVE_STOKHOS_MUELU
+#include "Stokhos_MueLu_MP_Vector.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #endif
 
 // Amesos2 solver
 #ifdef HAVE_STOKHOS_AMESOS2
 #include "Stokhos_Amesos2_MP_Vector.hpp"
+#include "Amesos2_Factory.hpp"
 #endif
-
-namespace Kokkos {
-namespace Details {
-
-template <typename S>
-class ArithTraits< Sacado::MP::Vector<S> > {
-public:
-  typedef Sacado::MP::Vector<S> val_type;
-
-  typedef typename val_type::value_type base_value_type;
-  typedef typename val_type::ordinal_type ordinal_type;
-  typedef ArithTraits<base_value_type> BAT;
-  typedef typename BAT::mag_type base_mag_type;
-
-  typedef typename Sacado::mpl::apply<S,ordinal_type,base_mag_type>::type mag_storage;
-  typedef Sacado::MP::Vector<mag_storage> mag_type; // for now
-
-  static const bool is_specialized = true;
-  static const bool is_signed = BAT::is_signed;
-  static const bool is_integer = BAT::is_integer;
-  static const bool is_exact = BAT::is_exact;
-  static const bool is_complex = BAT::is_complex;
-
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
-    bool res = false;
-    for (ordinal_type i=0; i<x.size(); ++i)
-      res = res || BAT::isInf(x.fastAccessCoeff(i));
-    return res;
-  }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
-   bool res = false;
-    for (ordinal_type i=0; i<x.size(); ++i)
-      res = res || BAT::isInf(x.fastAccessCoeff(i));
-    return res;
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
-    return std::fabs (x);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
-    return val_type(0.0);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
-    return val_type(1.0);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
-    return BAT::min();
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return BAT::max();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
-    const ordinal_type sz = x.size();
-    val_type y(sz, base_value_type(0.0));
-    for (ordinal_type i=0; i<sz; ++i)
-      y.fastAccessCoeff(i) = BAT::real(x.fastAccessCoeff(i));
-    return y;
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
-    const ordinal_type sz = x.size();
-    val_type y(sz, base_value_type(0.0));
-    for (ordinal_type i=0; i<sz; ++i)
-      y.fastAccessCoeff(i) = BAT::imag(x.fastAccessCoeff(i));
-    return y;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
-    const ordinal_type sz = x.size();
-    val_type y(sz, base_value_type(0.0));
-    for (ordinal_type i=0; i<sz; ++i)
-      y.fastAccessCoeff(i) = BAT::conj(x.fastAccessCoeff(i));
-    return y;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type pow (const val_type x,
-                                              const val_type y) {
-    return std::pow(x, y);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
-    return std::sqrt(x);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
-    return std::log(x);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
-    return std::log10(x);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type nan () {
-    return BAT::nan();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
-    return BAT::epsilon();
-  }
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef mag_type magnitudeType;
-  typedef typename BAT::halfPrecision base_half_precision;
-  typedef typename BAT::doublePrecision base_double_precision;
-  typedef typename Sacado::mpl::apply<S,ordinal_type,base_half_precision>::type half_storage;
-  typedef typename Sacado::mpl::apply<S,ordinal_type,base_double_precision>::type double_storage;
-  typedef Sacado::MP::Vector<half_storage> halfPrecision;
-  typedef Sacado::MP::Vector<double_storage> doublePrecision;
-  static const bool isComplex = is_complex;
-  static const bool isOrdinal = is_integer;
-  static const bool isComparable = BAT::isComparable;
-  static const bool hasMachineParameters = BAT::hasMachineParameters;
-  static bool isnaninf (const val_type& x) {
-    return isNan (x) || isInf (x);
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type magnitude (const val_type x) {
-    return abs (x);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
-    return conj (x);
-  }
-  static std::string name () {
-    return Sacado::StringName<val_type>::eval();
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
-    return sqrt (x);
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type eps () {
-    return epsilon ();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type sfmin () {
-    return BAT::sfmin();
-  }
-  static KOKKOS_DEVICE_FUNCTION int base () {
-    return BAT::base();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type prec () {
-    return BAT::prec();
-  }
-  static KOKKOS_DEVICE_FUNCTION int t () {
-    return BAT::t();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type rnd () {
-    return BAT::rnd();
-  }
-  static KOKKOS_DEVICE_FUNCTION int emin () {
-    return BAT::emin();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type rmin () {
-    return BAT::rmin();
-  }
-  static KOKKOS_DEVICE_FUNCTION int emax () {
-    return BAT::emax();
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type rmax () {
-    return BAT::rmax();
-  }
-};
-
-}
-}
 
 template <typename scalar, typename ordinal>
 inline
@@ -264,16 +114,6 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
   //return 1.0;
 }
 
-// Currently only using Kokkos::Serial device for every node
-template <typename Node>
-struct DeviceForNode {
-  typedef Kokkos::Serial type;
-};
-template <typename Device>
-struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
-  typedef Device type;
-};
-
 //
 // Tests
 //
@@ -291,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -375,7 +215,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -459,7 +299,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -552,7 +392,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -647,7 +487,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -750,7 +590,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -874,7 +714,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -1005,7 +845,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_MP, Flatten, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
 {
-#if 0
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
@@ -1013,7 +852,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -1123,10 +962,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       TEST_EQUALITY( y_view[i].fastAccessCoeff(j),
                      y2_view[i].fastAccessCoeff(j) );
   }
-#endif
 }
 
-#if 0 && defined(HAVE_STOKHOS_BELOS)
+#if  defined(HAVE_STOKHOS_BELOS)
 
 //
 // Test Belos GMRES solve for a simple banded upper-triangular matrix
@@ -1142,7 +980,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -1389,7 +1227,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val = Scalar(0.5);
   for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
+    // const GlobalOrdinal row = myGIDs[i];
     // if (row % 2) {
     //   val = Scalar(0.5);
     // }
@@ -1407,7 +1245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if 0 && defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2)
+#if  defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2)
 
 //
 // Test Belos GMRES solve with Ifpack2 RILUK preconditioning for a
@@ -1424,7 +1262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -1568,7 +1406,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if 0 && defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
+#if  defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
 
 //
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -1585,7 +1423,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -1673,10 +1511,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Create preconditioner
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  // RCP<ParameterList> muelu_params =
-  //   getParametersFromXmlFile("muelu_cheby.xml");
+  RCP<ParameterList> muelu_params =
+    getParametersFromXmlFile("muelu_cheby.xml");
   // RCP<OP> M =
-  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, muelu_params);
+  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+  RCP<OP> M =
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
   // typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
   // Ifpack2::Factory factory;
   // RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", matrix);
@@ -1704,10 +1544,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   belosParams->set("Output Frequency", 1);
   belosParams->set("Output Stream", out.getOStream());
   //belosParams->set("Orthogonalization", "TSQR");
-  // RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
-  //   rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
   RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
-    rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  // RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
+  //   rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP>(problem, belosParams));
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
 
@@ -1749,7 +1589,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if 0 && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+#if  defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
 
 //
 // Test Amesos2 solve for a 1-D Laplacian matrix
@@ -1765,7 +1605,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
