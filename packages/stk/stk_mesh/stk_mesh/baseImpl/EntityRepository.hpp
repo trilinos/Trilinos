@@ -9,22 +9,13 @@
 #ifndef stk_mesh_baseImpl_EntityRepository_hpp
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
-#include <stk_mesh/base/Trace.hpp>
-
-// We will use tr1 if we can (not on PGI or pathscale); otherwise, fall back to std map.
-#if defined(__PGI) || defined(__PATHSCALE__)
-  #define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 0
-#else
-  #define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 0
-#endif
-
-#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
-  #include <tr1/unordered_map>
-#else
-  #include <map>
-#endif
-
-#include <stk_mesh/base/Entity.hpp>
+#include <map>                          // for map, map<>::value_compare
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <utility>                      // for pair
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk {
 namespace mesh {
@@ -34,19 +25,7 @@ class EntityRepository {
 
 public:
 
-#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
-  struct stk_entity_rep_hash : public std::unary_function< EntityKey, std::size_t >
-  {
-    std::size_t operator()(const EntityKey& x) const
-    {
-      return (std::size_t)(x);
-    }
-  };
-
-  typedef std::tr1::unordered_map<EntityKey, Entity , stk_entity_rep_hash, std::equal_to<EntityKey> > EntityMap;
-#else
   typedef std::map<EntityKey,Entity> EntityMap;
-#endif
 
     typedef EntityMap::const_iterator const_iterator;
     typedef EntityMap::iterator iterator;
@@ -61,13 +40,8 @@ public:
     const_iterator begin() const { return m_entities.begin(); }
     const_iterator end() const { return m_entities.end(); }
 
-#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
-    //The following begin_rank/end_rank methods use std::map::lower_bound, which won't work
-    //if we're using an unordered map.
-#else
     const_iterator begin_rank(EntityRank ent_rank) const { return m_entities.lower_bound(EntityKey(ent_rank, 0)); }
     const_iterator end_rank(EntityRank ent_rank) const { return m_entities.upper_bound(EntityKey(static_cast<EntityRank>(ent_rank+1), 0)); }
-#endif
 
     // Return a pair: the relevant entity, and whether it had to be created
     // or not. If there was already an active entity with the specified key, the second item in the pair

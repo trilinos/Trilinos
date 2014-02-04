@@ -7,19 +7,18 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for NULL
+#include <stdexcept>                    // for logic_error, runtime_error
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Property.hpp>   // for property_data
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string
+#include "stk_mesh/base/PropertyBase.hpp"  // for Property, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Property.hpp>
-#include <stk_mesh/baseImpl/PartRepository.hpp>
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
+
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;

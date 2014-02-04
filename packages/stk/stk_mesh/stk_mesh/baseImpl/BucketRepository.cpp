@@ -6,15 +6,24 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <cstdlib>
-#include <stdexcept>
-
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
-#include <stk_mesh/baseImpl/Partition.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Trace.hpp>
+#include <algorithm>                    // for copy, remove_if
+#include <new>                          // for operator new
+#include <sstream>                      // for operator<<, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Trace.hpp>      // for TraceIf
+#include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
+#include "boost/array.hpp"              // for array
+#include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
+
 
 namespace stk {
 namespace mesh {

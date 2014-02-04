@@ -10,15 +10,14 @@
  * @author H. Carter Edwards
  */
 
-#include <stdlib.h>
-
-#include <sstream>
-#include <stdexcept>
-
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_mesh/base/CoordinateSystems.hpp>
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <stk_util/util/string_case_compare.hpp>  // for not_equal_case
+#include "Shards_Array.hpp"             // for ArrayDimTag::size_type, etc
+
+
+
 
 namespace stk {
 namespace mesh {

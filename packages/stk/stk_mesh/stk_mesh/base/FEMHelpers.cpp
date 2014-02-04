@@ -1,14 +1,17 @@
+
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <sstream>                      // for operator<<, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId, etc
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/MetaData.hpp"   // for get_cell_topology, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.hpp"    // for topology::rank
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 
-#include <Shards_CellTopologyTraits.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
-
-#include <sstream>
-#include <stdexcept>
 
 namespace stk {
 namespace mesh {

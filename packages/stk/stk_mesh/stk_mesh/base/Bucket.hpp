@@ -9,44 +9,27 @@
 #ifndef stk_mesh_base_Bucket_hpp
 #define stk_mesh_base_Bucket_hpp
 
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Relation.hpp>
-#include <stk_mesh/base/BucketConnectivity.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
+#include <stddef.h>                     // for size_t, NULL
+#include <algorithm>                    // for lower_bound
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Trace.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/ConnectivityMap.hpp>
-
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/environment/OutputLog.hpp>
-#include <stk_util/util/PairIter.hpp>
-
-#include <boost/static_assert.hpp>
-#include <boost/range.hpp>
-#include <boost/type_traits/is_pod.hpp>
-
-#include <stk_topology/topology.hpp>
-
-#include <utility>
-#include <vector>
-#include <iosfwd>
-#include <string>
-#include <algorithm>
-
-#include <boost/functional/hash.hpp>
-
-
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssert, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }  // lines 61-61
+namespace stk { namespace mesh { namespace impl { class Partition; } } }  // lines 60-60
+namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor; } } }  // lines 62-62
+namespace stk { namespace mesh { namespace utest { struct ReversePartition; } } }  // lines 55-55
+namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }  // lines 56-56
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {
 namespace mesh {

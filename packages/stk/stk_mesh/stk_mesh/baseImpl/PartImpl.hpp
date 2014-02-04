@@ -11,12 +11,15 @@
 
 //----------------------------------------------------------------------
 
-#include <iosfwd>
-#include <string>
-#include <vector>
+#include <stddef.h>                     // for size_t
+#include <sys/types.h>                  // for int64_t
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
+#include <stk_util/util/CSet.hpp>       // for CSet
+#include <string>                       // for string
+#include "stk_topology/topology.hpp"    // for topology
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/util/CSet.hpp>
-#include <stk_mesh/base/Types.hpp>
 
 //----------------------------------------------------------------------
 

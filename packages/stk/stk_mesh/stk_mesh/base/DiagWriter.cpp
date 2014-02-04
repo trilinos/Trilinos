@@ -6,14 +6,15 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stk_util/util/Bootstrap.hpp>
-
-#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/DiagWriter.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/Types.hpp>      // for EntityProc, EntityState
+#include <string>                       // for string
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_util/diag/Writer.hpp"     // for operator<<, Writer
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+
 
 namespace stk {
 namespace mesh {

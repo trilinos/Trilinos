@@ -9,7 +9,8 @@
 #ifndef stk_mesh_CreateAdjacentEntities_hpp
 #define stk_mesh_CreateAdjacentEntities_hpp
 
-#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk {
 namespace mesh {

@@ -8,19 +8,18 @@
 
 
 //----------------------------------------------------------------------
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-
-#include <stk_util/util/string_case_compare.hpp>
-
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Trace.hpp>
-#include <stk_mesh/base/Entity.hpp>
-
 #include <stk_mesh/baseImpl/PartImpl.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Part.hpp>       // for insert
+#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, operator<<, etc
+#include "stk_topology/topology.hpp"    // for topology::rank
+namespace stk { namespace mesh { class MetaData; } }
+
+
+
 
 //----------------------------------------------------------------------
 

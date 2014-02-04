@@ -9,11 +9,10 @@
 #ifndef STK_MESH_FIXTURES_GRID_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_GRID_MESH_FIXTURE_HPP
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {

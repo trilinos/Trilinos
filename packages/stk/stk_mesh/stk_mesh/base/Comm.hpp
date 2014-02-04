@@ -9,9 +9,9 @@
 #ifndef stk_mesh_Comm_hpp
 #define stk_mesh_Comm_hpp
 
-#include <vector>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <stddef.h>                     // for size_t
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
 
 //----------------------------------------------------------------------
 

@@ -6,25 +6,54 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <string.h>
-#include <iostream>
-#include <complex>
-
-#include <Ioss_SubSystem.h>
-#include <Ioss_NullEntity.h>
-
-#include <stk_util/util/tokenize.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <Ioss_NullEntity.h>            // for NullEntity
+#include <assert.h>                     // for assert
+#include <stdint.h>                     // for int64_t
+#include <Shards_Array.hpp>             // for ArrayDimension
+#include <algorithm>                    // for sort
+#include <complex>                      // for complex
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData, etc
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, Matrix, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
+#include <stk_util/util/tokenize.hpp>   // for tokenize
+#include "Ioss_CommSet.h"               // for CommSet
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_ElementTopology.h"       // for ElementTopology
+#include "Ioss_EntityBlock.h"           // for EntityBlock
+#include "Ioss_EntityType.h"            // for EntityType::ELEMENTBLOCK, etc
+#include "Ioss_Field.h"                 // for Field, Field::RoleType, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, SideSetContainer, etc
+#include "Ioss_SideBlock.h"             // for SideBlock
+#include "Ioss_SideSet.h"               // for SideSet, SideBlockContainer
+#include "Ioss_State.h"                 // for State::STATE_DEFINE_MODEL, etc
+#include "Ioss_Utils.h"                 // for Utils
+#include "Ioss_VariableType.h"          // for NameList, VariableType
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Relation.hpp"
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator&, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.hpp"    // for topology::num_nodes
+#include "stk_util/diag/StringUtil.hpp"  // for make_lower
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire, etc
+#include "stk_util/util/PairIter.hpp"   // for PairIter
 
-#include <stk_mesh/base/FindRestriction.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_topology/topology.hpp>
-#include <Shards_Array.hpp>
+
+
 
 namespace {
 

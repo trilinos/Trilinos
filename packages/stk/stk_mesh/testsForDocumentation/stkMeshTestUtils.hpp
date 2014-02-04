@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_topology/topology.hpp>
 
 void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatureField, double prescribedTemperatureValue, const std::set<stk::mesh::EntityId> &boundaryNodeIds)

@@ -7,25 +7,22 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <sstream>
-#include <stdexcept>
-#include <map>
-
+#include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
+namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
+namespace stk { namespace mesh { struct Entity; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Ghosting.hpp>
-#include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
+
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;

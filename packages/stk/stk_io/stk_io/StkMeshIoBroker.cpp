@@ -7,24 +7,63 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <assert.h>                     // for assert
+#include <init/Ionit_Initializer.h>     // for Initializer
+#include <stdint.h>                     // for int64_t
+#include <stdlib.h>                     // for exit, EXIT_FAILURE
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <iterator>                     // for back_insert_iterator, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_io/IossBridge.hpp>        // for FieldAndName, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element_edge, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <stk_util/diag/FileUtils.hpp>  // for filename_substitution
+#include <utility>                      // for pair, make_pair
+#include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_ElementTopology.h"       // for ElementTopology
+#include "Ioss_EntityType.h"            // for EntityType::SIDESET, etc
+#include "Ioss_Field.h"                 // for Field, Field::BasicType, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_ParallelUtils.h"         // for ParallelUtils
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_PropertyManager.h"       // for PropertyManager
+#include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
+#include "Ioss_SideBlock.h"             // for SideBlock
+#include "Ioss_SideSet.h"               // for SideSet, SideBlockContainer
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"          // for NameList, VariableType
+#include "Teuchos_Ptr.hpp"              // for Ptr::get
+#include "Teuchos_PtrDecl.hpp"          // for Ptr
+#include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
+#include "boost/any.hpp"                // for any_cast, any
+#include "boost/cstdint.hpp"            // for int64_t
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator&
+#include "stk_mesh/base/TopologyDimensions.hpp"  // for ElementNode
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.hpp"    // for topology::num_nodes
+#include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/FindRestriction.hpp>
 
-#include <stk_io/IossBridge.hpp>
-#include <stk_util/diag/FileUtils.hpp>
 
-#include <Ioss_SubSystem.h>
-#include <init/Ionit_Initializer.h>
 
-#include <iostream>
-#include <assert.h>
 
 namespace {
 

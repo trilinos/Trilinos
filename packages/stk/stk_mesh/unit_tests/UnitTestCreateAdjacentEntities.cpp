@@ -1,28 +1,24 @@
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/Comm.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector, vector<>::iterator
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
+#include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 
-#include <stk_mesh/fixtures/HexFixture.hpp>
-#include <stk_mesh/fixtures/QuadFixture.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <Shards_BasicTopologies.hpp>
 
-#include <iomanip>
-#include <algorithm>
-#include <sstream>
+
+
 
 using stk::mesh::MetaData;
 

@@ -7,28 +7,47 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for exit
+#include <exception>                    // for exception
+#include <iostream>                     // for ostringstream, etc
+#include <iterator>                     // for distance
+#include <map>                          // for _Rb_tree_const_iterator
+#include <stdexcept>                    // for logic_error, runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
+#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
+#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/Comm.hpp>
-
-#include <stk_mesh/base/FieldParallel.hpp>
-
-#include <stk_mesh/fixtures/BoxFixture.hpp>
-#include <stk_mesh/fixtures/QuadFixture.hpp>
-#include <stk_mesh/fixtures/RingFixture.hpp>
-#include <stk_mesh/fixtures/HexFixture.hpp>
-
+#include <string>                       // for string, basic_string, etc
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
-#include <unit_tests/UnitTestRingFixture.hpp>
+#include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Relation.hpp"
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/PairIter.hpp"   // for PairIter
+namespace stk { namespace mesh { class FieldBase; } }
+
+
+
+
+
+
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;

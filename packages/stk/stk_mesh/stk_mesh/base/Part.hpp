@@ -11,14 +11,18 @@
 
 //----------------------------------------------------------------------
 
-#include <iosfwd>
-#include <string>
-#include <vector>
-#include <algorithm>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <algorithm>                    // for sort, unique
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for PartVector, OrdinalVector, etc
+#include <stk_mesh/baseImpl/PartImpl.hpp>  // for PartImpl
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector, vector<>::iterator
+#include "stk_topology/topology.hpp"    // for topology
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
 
-#include <stk_util/util/CSet.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/baseImpl/PartImpl.hpp>
 
 //----------------------------------------------------------------------
 
@@ -26,7 +30,6 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
-class PartRepository;
 } // namespace impl
 
 /** \addtogroup stk_mesh_module

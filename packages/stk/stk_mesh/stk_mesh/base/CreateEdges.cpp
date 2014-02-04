@@ -1,25 +1,29 @@
-#include <map>
-#include <set>
-#include <algorithm>
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Relation.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/CellTopology.hpp>
-#include <stk_mesh/base/CreateAdjacentEntities.hpp>
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
-
-#include <stk_util/parallel/ParallelComm.hpp>
-
-#include <boost/array.hpp>
-#include <boost/unordered_map.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for swap, lower_bound, max, etc
+#include <boost/array.hpp>              // for array
+#include <functional>                   // for equal_to
+#include <iterator>                     // for back_insert_iterator, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
+#include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
+#include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
+#include <vector>                       // for vector, etc
+#include "boost/functional/hash/extensions.hpp"  // for hash
+#include "boost/tuple/detail/tuple_basic.hpp"  // for get
+#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
+#include "boost/unordered/unordered_map.hpp"
+#include "boost/utility/enable_if.hpp"  // for enable_if_c
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.tcc"    // for topology::num_nodes
+#include "stk_topology/topology_type.tcc"  // for topology::topology_type
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
+#include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 
 namespace stk {
 namespace mesh {

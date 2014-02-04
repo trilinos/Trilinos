@@ -6,17 +6,22 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <set>
-#include <stdexcept>
-#include <sstream>
-
-#include <stk_util/parallel/ParallelComm.hpp>
-
 #include <stk_mesh/base/BulkModification.hpp>
+#include <stddef.h>                     // for size_t
+#include <set>                          // for _Rb_tree_const_iterator, etc
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData, etc
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <utility>                      // for pair
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityKeyProc, EntityVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/PairIter.hpp"   // for PairIter
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
+
+
 
 namespace stk {
 namespace mesh {

@@ -9,15 +9,16 @@
 #ifndef STK_MESH_FIXTURES_GEAR_HPP
 #define STK_MESH_FIXTURES_GEAR_HPP
 
-#include <vector>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityVector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 namespace {
 

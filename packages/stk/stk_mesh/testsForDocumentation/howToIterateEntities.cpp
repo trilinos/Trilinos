@@ -1,13 +1,20 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_topology/topology.hpp>
+#include <gtest/gtest.h>                // for TEST
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <set>                          // for set
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <string>                       // for string
 #include "stkMeshTestUtils.hpp"
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector, etc
+namespace stk { namespace mesh { class Part; } }
 
 namespace
 {

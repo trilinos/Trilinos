@@ -6,30 +6,34 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
+#include <map>                          // for map, operator==, etc
+#include <set>                          // for set, operator==
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Selector.hpp>   // for Selector, operator&
+#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
+#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Bucket; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_mesh/fixtures/GridFixture.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <Shards_BasicTopologies.hpp>
 
-#include <iomanip>
-#include <algorithm>
 
 static const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 

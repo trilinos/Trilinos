@@ -10,11 +10,13 @@
 #ifndef stk_mesh_Ghosting_hpp
 #define stk_mesh_Ghosting_hpp
 
-#include <vector>
-#include <string>
-#include <iosfwd>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
+#include <stddef.h>                     // for size_t
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for EntityProc
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { struct EntityKey; } }
 
 namespace stk {
 namespace mesh {

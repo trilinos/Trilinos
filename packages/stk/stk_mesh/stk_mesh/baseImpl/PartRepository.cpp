@@ -6,20 +6,21 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <sstream>
-
-#include <stk_util/environment/ReportHandler.hpp>
-
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Trace.hpp>
-
 #include <stk_mesh/baseImpl/PartRepository.hpp>
+#include <stddef.h>                     // for NULL, size_t
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Part.hpp>       // for Part, contain, etc
+#include <stk_mesh/base/Trace.hpp>      // for TraceIf
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <vector>                       // for vector, etc
+#include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stdlib.h>
 
-#include <iostream>
+
+
+
 
 namespace stk {
 namespace mesh {

@@ -6,31 +6,23 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for NULL
+#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
+#include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology, MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Ghosting.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
-
-#include <Shards_BasicTopologies.hpp>
+#include "Shards_CellTopologyData.h"    // for CellTopologyData
+#include "gtest/gtest.h"                // for AssertHelper
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { struct EntitySideComponent; } }
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;

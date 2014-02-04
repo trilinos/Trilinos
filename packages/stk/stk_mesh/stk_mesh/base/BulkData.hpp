@@ -11,31 +11,48 @@
 
 //----------------------------------------------------------------------
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/parallel/DistributedIndex.hpp>
-#include <stk_util/util/TrackingAllocator.hpp>
+#include <stddef.h>                     // for size_t, NULL
+#include <stdint.h>                     // for uint16_t
+#include <functional>                   // for less
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <iterator>                     // for distance
+#include <list>                         // for list
+#include <map>                          // for map, map<>::value_compare
+#include <stk_mesh/base/Entity.hpp>     // for Entity, etc
+#include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
+#include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
+#include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
+#include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
+#include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
+#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
+#include <stk_util/parallel/DistributedIndex.hpp>  // for DistributedIndex
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/PageAlignedAllocator.hpp>
+#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
+#include <string>                       // for char_traits, operator<<, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "Shards_CellTopologyData.h"    // for CellTopologyData, etc
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type
+#include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
+#include "stk_mesh/base/FieldTraits.hpp"  // for FieldMetaData, FieldBase, etc
+#include "stk_mesh/base/Part.hpp"       // for Part (ptr only), etc
+#include "stk_mesh/base/Relation.hpp"   // for Relation, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+namespace sierra { namespace Fmwk { class MeshBulkData; } }
+namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
+namespace stk { namespace mesh { namespace impl { class Partition; } } }
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Ghosting.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Trace.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/ConnectivityMap.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/baseImpl/BucketRepository.hpp>
 
-#include <algorithm>
-#include <map>
-#include <limits>
-#include <list>
-#include <memory>
 
 //----------------------------------------------------------------------
 
@@ -45,8 +62,6 @@
 #ifdef SIERRA_MIGRATION
 
 namespace sierra { namespace Fmwk {
-class MeshBulkData;
-class MeshObjSharedAttr;
 }}
 
 #endif // SIERRA_MIGRATION
@@ -56,7 +71,6 @@ namespace mesh {
 
 namespace impl {
 
-class Partition;
 class EntityRepository;
 
 }

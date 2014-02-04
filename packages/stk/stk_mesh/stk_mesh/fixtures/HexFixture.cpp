@@ -6,19 +6,23 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <algorithm>
-
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_mesh/fixtures/HexFixture.hpp>
+#include <algorithm>                    // for sort, unique
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityId
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include "Shards_BasicTopologies.hpp"   // for Hexahedron
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, field_data
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
 
-#include <stk_mesh/base/Stencils.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
+
+
 
 namespace stk {
 namespace mesh {

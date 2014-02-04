@@ -7,22 +7,29 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for NULL
+#include <iostream>                     // for ostream, operator<<, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Shards_Array.hpp"
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateOld, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <stk_mesh/baseImpl/PartRepository.hpp>
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/FindRestriction.hpp>
 
-#include <Shards_BasicTopologies.hpp>
+
 
 namespace stk {
 namespace mesh {

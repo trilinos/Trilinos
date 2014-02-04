@@ -11,37 +11,51 @@
 
 //----------------------------------------------------------------------
 
-#include <iosfwd>
+#include <stddef.h>                     // for NULL, size_t
+#include <string.h>                     // for strlen
+#include <sys/types.h>                  // for int64_t
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <map>                          // for map, map<>::value_compare
+#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
+#include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/PropertyBase.hpp>  // for Property
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, PropertyBase, etc
+#include <stk_mesh/baseImpl/FieldRepository.hpp>  // for FieldRepository, etc
+#include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
+#include <stk_topology/topology.hpp>    // for topology, topology::rank_t, etc
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include <string>                       // for string, char_traits
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for pair
+#include <vector>                       // for vector, vector<>::size_type
+#include "Shards_CellTopology.hpp"      // for operator<, CellTopology
+#include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits (ptr only), etc
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
+#include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/CSet.hpp"       // for CSet
+namespace shards { class ArrayDimTag; }
+namespace shards { class CellTopologyManagedData; }
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Ghosting; } }
+namespace stk { namespace mesh { class MetaData; } }
 
-#include <stk_util/util/SameType.hpp>
-#include <stk_util/util/StaticAssert.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/util/string_case_compare.hpp>
 
-#include <stk_mesh/base/FieldTraits.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/PropertyBase.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/CellTopology.hpp>
-#include <stk_mesh/base/Trace.hpp>
 
-#include <stk_mesh/baseImpl/PartRepository.hpp>
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
-#include <stk_mesh/baseImpl/FieldRepository.hpp>
 
-#include <stk_topology/topology.hpp>
 
 namespace shards {
-  class CellTopologyManagedData;
 }
 
 namespace stk {
 namespace mesh {
 
-class BulkData;
 
 /** \addtogroup stk_mesh_module
  *  \{

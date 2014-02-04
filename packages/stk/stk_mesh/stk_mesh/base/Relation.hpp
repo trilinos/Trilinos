@@ -1,10 +1,16 @@
 #ifndef STK_MESH_RELATION_HPP
 #define STK_MESH_RELATION_HPP
 
-#include<boost/range.hpp>
-#include<stk_util/environment/ReportHandler.hpp>
-#include<stk_mesh/base/Entity.hpp>
-#include<stk_mesh/base/Types.hpp>
+#include <stdint.h>                     // for uint32_t
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/Types.hpp>      // for RelationType, EntityRank, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
+#include <vector>                       // for vector
+#include "boost/range/begin.hpp"        // for const_begin
+#include "boost/range/end.hpp"          // for const_end
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {

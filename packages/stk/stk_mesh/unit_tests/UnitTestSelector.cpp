@@ -6,19 +6,21 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
+#include <iostream>                     // for ostringstream, ostream, etc
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for basic_string, operator==, etc
+#include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+namespace stk { namespace mesh { class Bucket; } }
 
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_util/environment/WallTime.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/fixtures/SelectorFixture.hpp>
 
 // Unit test the Selector in isolation
 

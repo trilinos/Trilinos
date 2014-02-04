@@ -9,13 +9,12 @@
 #ifndef stk_mesh_SkinMesh_hpp
 #define stk_mesh_SkinMesh_hpp
 
-#include <vector>
-#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Selector; } }
 
 namespace stk { namespace mesh {
 
-class BulkData;
-class Selector;
 
 /**
  * Skin the entire mesh.

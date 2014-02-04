@@ -5,6 +5,7 @@
 #include <fieldNameTestUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Field.hpp>
 
 namespace
 {

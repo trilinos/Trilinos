@@ -6,25 +6,31 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <string.h>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CellTopology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-
-#include <stk_mesh/baseImpl/FieldRepository.hpp>
+#include <string.h>                     // for strcmp, strncmp
 #include <Shards_CellTopologyManagedData.hpp>
-
-#include <boost/foreach.hpp>
+#include <boost/foreach.hpp>            // for auto_any_base, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <set>                          // for set
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
+#include <stk_mesh/baseImpl/FieldRepository.hpp>  // for FieldVector, etc
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceMin, etc
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Part.hpp"       // for Part, etc
+#include "stk_mesh/base/PropertyBase.hpp"  // for Property
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Trace.hpp"      // for DiagIfWatching, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
+#include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.tcc"    // for topology::num_nodes, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 namespace stk {
 namespace mesh {

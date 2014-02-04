@@ -6,25 +6,29 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
+#include <algorithm>                    // for sort
+#include <stk_mesh/base/BoundaryAnalysis.hpp>  // for EntitySideComponent, etc
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <Shards_BasicTopologies.hpp>
+#include <utility>                      // for pair, operator==
+#include <vector>                       // for vector, vector<>::iterator
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_mesh/fixtures/GridFixture.hpp>
 
-#include <iomanip>
-#include <algorithm>
 
 static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 

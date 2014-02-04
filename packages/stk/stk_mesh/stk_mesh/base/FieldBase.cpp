@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
-
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include "Shards_Array.hpp"             // for ArrayDimTag
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+namespace stk { namespace mesh { class BulkData; } }
+
 
 namespace stk {
 namespace mesh {

@@ -10,14 +10,14 @@
 #ifndef STK_MESH_DATA_TRAITS_HPP
 #define STK_MESH_DATA_TRAITS_HPP
 
-#include <cstddef>
-#include <iosfwd>
-#include <typeinfo>
-#include <vector>
-#include <string>
-#include <complex>
-
-#include <stk_util/parallel/ParallelComm.hpp>
+#include <complex>                      // for complex
+#include <cstddef>                      // for size_t
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
+namespace stk { class CommBuffer; }
+namespace stk { namespace mesh { class DataTraits; } }  // lines 25-25
 
 namespace stk {
 namespace mesh {

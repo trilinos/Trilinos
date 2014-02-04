@@ -7,20 +7,29 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdexcept>
-#include <sstream>
-
+#include <stddef.h>                     // for size_t, NULL
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data, etc
+#include <stk_mesh/base/FieldParallel.hpp>  // for parallel_max, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector
+#include "Shards_BasicTopologies.hpp"   // for Hexahedron
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for PairIterEntityComm, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
+
 
 using stk::mesh::MetaData;
 

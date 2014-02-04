@@ -7,25 +7,32 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, unique
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
+#include <stk_mesh/base/BulkModification.hpp>  // for find_closure
+#include <stk_mesh/base/Entity.hpp>     // for Entity, EntityEqual
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Selector.hpp>   // for operator|, Selector
+#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <Shards_BasicTopologies.hpp>
+#include <vector>                       // for vector, vector<>::iterator, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, BucketIterator
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBroadcast, etc
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <stk_mesh/fixtures/RingFixture.hpp>
 
-#include <algorithm>
-#include <stdexcept>
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

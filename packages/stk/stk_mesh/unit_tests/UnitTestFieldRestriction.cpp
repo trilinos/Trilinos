@@ -7,14 +7,13 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdexcept>
-#include <sstream>
-
+#include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator<<
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldRestriction.hpp>
-#include <stk_mesh/base/Types.hpp>
+
 
 namespace {
 

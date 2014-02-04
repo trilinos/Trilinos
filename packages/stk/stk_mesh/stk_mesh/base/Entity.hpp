@@ -1,8 +1,10 @@
 #ifndef STK_MESH_ENTIY_HPP
 #define STK_MESH_ENTIY_HPP
 
-#include <stdint.h>
-#include <boost/functional/hash.hpp>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for uint64_t
+#include <iosfwd>                       // for ostream
+#include "boost/functional/hash/hash.hpp"  // for hash_value
 
 //----------------------------------------------------------------------
 

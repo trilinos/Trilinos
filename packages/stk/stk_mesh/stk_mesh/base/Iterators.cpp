@@ -1,4 +1,6 @@
 #include <stk_mesh/base/Iterators.hpp>
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+namespace stk { namespace mesh { class Bucket; } }
 
 namespace stk {
 namespace mesh {

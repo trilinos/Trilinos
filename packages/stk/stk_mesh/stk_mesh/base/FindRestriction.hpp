@@ -10,10 +10,9 @@
 #ifndef stk_mesh_base_FindRestriction_hpp
 #define stk_mesh_base_FindRestriction_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/FieldRestriction.hpp>
-#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {

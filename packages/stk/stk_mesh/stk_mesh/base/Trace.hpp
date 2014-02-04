@@ -52,9 +52,7 @@
 
 #include <stk_mesh/base/DiagWriter.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
-
 #include <stk_util/diag/WriterExt.hpp>
-
 #include <string>
 #include <typeinfo>
 #include <vector>

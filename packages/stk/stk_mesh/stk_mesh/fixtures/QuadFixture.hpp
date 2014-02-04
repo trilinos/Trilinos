@@ -9,19 +9,21 @@
 #ifndef STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
 
-#include <Shards_BasicTopologies.hpp>
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityId
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {

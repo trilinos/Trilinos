@@ -7,33 +7,28 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for size_t
+#include <sstream>                      // for ostringstream, etc
+#include <stk_mesh/base/Bucket.hpp>     // for has_superset, Bucket, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/GetBuckets.hpp>  // for get_involved_parts
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Ghosting.hpp>
-
-#include <stk_mesh/base/FEMHelpers.hpp>
-
-#include <stk_mesh/fixtures/BoxFixture.hpp>
-
-#include <Shards_BasicTopologies.hpp>
+#include <string>                       // for string, basic_string, etc
+#include <vector>                       // for vector, etc
+#include "gtest/gtest.h"                // for AssertHelper
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { struct Entity; } }
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

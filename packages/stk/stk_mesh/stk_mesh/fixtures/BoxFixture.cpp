@@ -8,18 +8,13 @@
 
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stdexcept>
 
 namespace stk {
 namespace mesh {

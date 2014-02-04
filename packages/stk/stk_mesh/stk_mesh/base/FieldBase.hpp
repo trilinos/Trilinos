@@ -9,31 +9,34 @@
 #ifndef stk_mesh_base_FieldBase_hpp
 #define stk_mesh_base_FieldBase_hpp
 
-#include <iosfwd>
-#include <string>
-#include <vector>
+#include <stddef.h>                     // for NULL
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction, etc
+#include <stk_mesh/base/FieldState.hpp>  // for FieldState
+#include <stk_mesh/base/Types.hpp>      // for EntityRank
+#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>  // for FieldBaseImpl
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
+#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
+namespace shards { class ArrayDimTag; }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class DataTraits; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class UnitTestFieldImpl; } }
+namespace stk { namespace mesh { namespace impl { class FieldRepository; } } }
 
-#include <Shards_Array.hpp>
 
-#include <stk_util/util/SimpleArrayOps.hpp>
-#include <stk_util/util/CSet.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/base/FieldState.hpp>
 
-#include <stk_mesh/base/FieldRestriction.hpp>
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
 namespace stk {
 namespace mesh {
 
-class UnitTestFieldImpl;
 
 namespace impl {
 
-class FieldRepository;
 
 }
 

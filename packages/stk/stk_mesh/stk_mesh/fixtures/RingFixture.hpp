@@ -9,19 +9,16 @@
 #ifndef STK_MESH_FIXTURES_RING_FIXTURE_HPP
 #define STK_MESH_FIXTURES_RING_FIXTURE_HPP
 
-#include <stk_util/parallel/Parallel.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
-#include <Shards_BasicTopologies.hpp>
 
 namespace stk {
 namespace mesh {

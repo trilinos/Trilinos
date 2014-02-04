@@ -7,15 +7,23 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Selector.hpp>   // for Selector, operator|
+#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector, etc
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Relation.hpp"
+#include "stk_mesh/base/Types.hpp"      // for EntityId, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+#include "stk_util/util/PairIter.hpp"   // for PairIter
 
-#include <stk_mesh/fixtures/BoxFixture.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

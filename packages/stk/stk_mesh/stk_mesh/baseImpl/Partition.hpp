@@ -5,18 +5,27 @@
 #ifndef STK_MESH_IMPL_PARTITION_HPP_
 #define STK_MESH_IMPL_PARTITION_HPP_
 
-#include <stk_mesh/base/Types.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for lower_bound
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for PartOrdinal, EntityRank
+#include <string>                       // for string
+#include <vector>                       // for vector, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
+namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
+namespace stk { namespace mesh { struct Entity; } }
 
 namespace stk {
 namespace mesh {
 
 namespace utest {
-struct SyncToPartitions;
 }
 
 namespace impl {
 
-class BucketRepository;
 
 class Partition
 {

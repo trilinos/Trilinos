@@ -9,17 +9,19 @@
 #ifndef STK_MESH_ENTITYKEY_HPP
 #define STK_MESH_ENTITYKEY_HPP
 
-#include <iosfwd>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for uint64_t
+#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
+#include <boost/type_traits/is_same.hpp>  // for is_same
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
+#include "boost/functional/hash/hash.hpp"  // for hash_value
+#include "boost/mpl/bool.hpp"           // for bool_<>::value
 
-#include <stdint.h>
 
-#include <stk_mesh/base/Types.hpp>
 
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/functional/hash.hpp>
 
-#include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk {
 namespace mesh {

@@ -6,28 +6,27 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
+#include <iostream>                     // for cout, endl
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
+#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <Shards_BasicTopologies.hpp>
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
 
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
 
-#include <stk_mesh/fixtures/GridFixture.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <iomanip>
-#include <algorithm>
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;

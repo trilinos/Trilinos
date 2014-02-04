@@ -1,13 +1,23 @@
 #include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, set_intersection
+#include <iostream>                     // for operator<<, cerr, ostream
+#include <iterator>                     // for back_insert_iterator, etc
+#include <set>                          // for _Rb_tree_const_iterator, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Selector.hpp>   // for Selector, operator&
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
 #include <boost/tuple/tuple.hpp>
-#include <algorithm>
-#include <vector>
-#include <set>
-#include <iterator>
+#include "boost/tuple/detail/tuple_basic.hpp"  // for tie, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, get_cell_topology
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.tcc"    // for topology::num_nodes, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
+namespace stk { namespace mesh { class Part; } }
 
 
 namespace stk { namespace mesh {

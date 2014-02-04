@@ -12,7 +12,8 @@
 
 //----------------------------------------------------------------------
 
-#include <Shards_Array.hpp>
+#include <Shards_Array.hpp>             // for ArrayDimTag::size_type, etc
+#include <string>                       // for string
 
 namespace stk {
 namespace mesh {

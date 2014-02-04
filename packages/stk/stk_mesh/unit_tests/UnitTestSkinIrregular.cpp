@@ -6,32 +6,33 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <algorithm>
-#include <stdexcept>
-
+#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
+#include <algorithm>                    // for max
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
+#include <stk_mesh/base/Types.hpp>      // for EntityId, etc
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <Shards_BasicTopologies.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <iostream>
+
 
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;

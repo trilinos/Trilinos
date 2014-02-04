@@ -12,11 +12,12 @@
 
 //----------------------------------------------------------------------
 
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Iterators.hpp>
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <vector>                       // for vector
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { struct Entity; } }
 
 //----------------------------------------------------------------------
 

@@ -7,14 +7,13 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <cstddef>
-#include <stdexcept>
-
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_mesh/base/DataTraits.hpp>
-#include <stk_mesh/base/DataTraitsEnum.hpp>
-#include <stk_mesh/base/DataTraitsClass.hpp>
+#include <cstddef>                      // for size_t, NULL
+#include <ostream>                      // for operator<<, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsg
+#include <stk_util/parallel/ParallelComm.hpp>
+
+
 
 namespace stk {
 namespace mesh {

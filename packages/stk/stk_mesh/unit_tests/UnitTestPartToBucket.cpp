@@ -1,12 +1,16 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_topology/topology.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <mpi.h>                        // for MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <string>                       // for string
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId
 
 namespace
 {

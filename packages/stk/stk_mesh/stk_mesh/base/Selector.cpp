@@ -7,15 +7,16 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
-
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <iostream>                     // for operator<<
+#include <stk_mesh/base/Bucket.hpp>     // for has_superset
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <string>                       // for operator<<
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/FieldRestriction.hpp"
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+
 
 namespace stk {
 namespace mesh {

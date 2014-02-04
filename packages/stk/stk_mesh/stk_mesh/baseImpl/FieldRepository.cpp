@@ -6,15 +6,22 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_mesh/base/Trace.hpp>
-
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
+#include <cstring>                      // for NULL, strlen
+#include <iosfwd>                       // for ostringstream
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Trace.hpp>      // for TraceIf
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include "Shards_Array.hpp"             // for ArrayDimTag
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
+#include "stk_mesh/baseImpl/FieldBaseImpl.hpp"  // for FieldBaseImpl
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/util/string_case_compare.hpp>
 
-#include <cstring>
-#include <sstream>
-#include <stdexcept>
+
 
 namespace stk {
 namespace mesh {

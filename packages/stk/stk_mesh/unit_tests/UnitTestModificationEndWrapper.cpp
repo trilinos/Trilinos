@@ -1,5 +1,6 @@
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 
 namespace stk {
 namespace mesh {

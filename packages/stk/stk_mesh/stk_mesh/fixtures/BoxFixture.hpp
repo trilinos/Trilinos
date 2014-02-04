@@ -9,11 +9,16 @@
 #ifndef Stk_Mesh_Fixtures_BoxFixture_hpp
 #define Stk_Mesh_Fixtures_BoxFixture_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/MetaData.hpp>   // for entity_rank_names, MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
-#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {

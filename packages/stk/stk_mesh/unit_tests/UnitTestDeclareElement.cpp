@@ -8,19 +8,21 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <Shards_BasicTopologies.hpp>   // for ShellQuadrilateral
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityId
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
 
-#include <Shards_BasicTopologies.hpp>
 
-#include <stk_mesh/fixtures/HexFixture.hpp>
 
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
 STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 {

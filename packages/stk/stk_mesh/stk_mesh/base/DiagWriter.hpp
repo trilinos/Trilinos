@@ -1,13 +1,11 @@
 #ifndef stk_mesh_DiagWriter_h
 #define stk_mesh_DiagWriter_h
 
-#include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterOStream.hpp>
-#include <stk_util/diag/WriterParser.hpp>
+#include <stk_mesh/base/Types.hpp>      // for EntityProc
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+namespace stk { namespace diag { class Writer; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/DiagWriter_fwd.hpp>
 
 // Note, this classes/functions in this header are for internal use only.
 // The API for tracing is defined in Trace.hpp

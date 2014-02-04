@@ -9,11 +9,8 @@
 #ifndef stk_mesh_GetBucket_hpp
 #define stk_mesh_GetBucket_hpp
 
-#include <iosfwd>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Iterators.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+namespace stk { namespace mesh { class Bucket; } }
 
 namespace stk {
 namespace mesh {

@@ -6,21 +6,25 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-#include <iostream>
-
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian2d, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for operator!=
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace shards { struct Node; }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
+
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;

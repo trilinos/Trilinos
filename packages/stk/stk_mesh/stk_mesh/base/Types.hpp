@@ -11,21 +11,28 @@
 
 //----------------------------------------------------------------------
 
-#include <stdint.h>
-#include <limits>
-#include <utility>
-#include <vector>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for uint64_t
+#include <iosfwd>                       // for ostream
+#include <limits>                       // for numeric_limits
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
+#include <stk_util/util/PairIter.hpp>   // for PairIter
+#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
+#include "boost/range/iterator_range_core.hpp"  // for iterator_range
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Relation; } }
+namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { struct EntityKey; } }
+namespace stk { namespace mesh { template <typename DataType = void> class Property; } }
 
-#include <stk_topology/topology.hpp>
 
-#include <stk_util/util/PairIter.hpp>
-#include <stk_util/util/NamedPair.hpp>
-#include <stk_util/util/TrackingAllocator.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_topology/topology.hpp>
-#include <boost/range.hpp>
 
 namespace stk {
 namespace mesh {
@@ -56,7 +63,6 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
  */
 
 class MetaData ;  // Meta-data description of a mesh
-class Part ;      // Defined subset of the mesh
 
 /** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
  *          maintained as a vector of Part pointers.
@@ -80,7 +86,6 @@ template< typename Scalar = void ,
  */
 enum { MaximumFieldDimension = 7 };
 
-template< typename DataType = void > class Property ;
 
 typedef Property< void > PropertyBase ;
 
@@ -92,10 +97,6 @@ typedef Property< void > PropertyBase ;
  */
 
 class BulkData ; // Bulk-data of a mesh
-class Bucket ;   // Homogeneous collection of mesh entitities and their field data
-struct Entity ;   // Individual entity within the mesh
-struct EntityKey ;
-class Relation ; // Relation pair of local mesh entities
 class Ghosting ;
 
 typedef std::vector<Bucket *> BucketVector;

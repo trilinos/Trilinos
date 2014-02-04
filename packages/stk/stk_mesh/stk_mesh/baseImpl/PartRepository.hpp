@@ -9,14 +9,14 @@
 #ifndef stk_mesh_PartRepository_hpp
 #define stk_mesh_PartRepository_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/baseImpl/PartImpl.hpp>
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
+#include <string>                       // for string
+namespace stk { namespace mesh { class MetaData; } }
 
 namespace stk {
 namespace mesh {
 
-class MetaData;
 
 namespace impl {
 

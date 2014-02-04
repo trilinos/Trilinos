@@ -1,8 +1,8 @@
-#include <stk_mesh/base/FieldRestriction.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <sstream>
+#include <stk_mesh/base/FieldRestriction.hpp>
+#include <sstream>                      // for operator<<, etc
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator<<
+#include "stk_mesh/base/Types.hpp"      // for FieldArrayRank
 
 namespace stk {
 namespace mesh {

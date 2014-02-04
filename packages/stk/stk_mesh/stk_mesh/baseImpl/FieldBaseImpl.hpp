@@ -8,20 +8,27 @@
 #ifndef stk_mesh_baseImpl_FieldBaseImpl_hpp
 #define stk_mesh_baseImpl_FieldBaseImpl_hpp
 
-#include <vector>
-#include <Shards_Array.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
-
-#include <stk_mesh/base/FieldState.hpp>
+#include <stddef.h>                     // for NULL
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/DataTraits.hpp>  // for DataTraits
 #include <stk_mesh/base/FieldRestriction.hpp>
+#include <stk_mesh/base/FieldState.hpp>  // for FieldState, etc
+#include <stk_util/util/CSet.hpp>       // for CSet
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for ::MaximumFieldDimension
+#include "stk_topology/topology.hpp"    // for topology, topology::rank_t
+namespace shards { class ArrayDimTag; }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/util/CSet.hpp>
+
 
 namespace stk {
 namespace mesh {
 
-class FieldBase;
-class MetaData;
 
 namespace impl {
 

@@ -2,13 +2,20 @@
  * Partition.cpp
  *
  */
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
-#include <stk_util/environment/OutputLog.hpp>
-#include <stk_util/diag/Env.hpp>
-#include <stk_topology/topology.hpp>
+#include <iostream>                     // for operator<<, ostream, etc
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData, etc
+#include <stk_topology/topology.hpp>    // for operator<<, topology, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Trace.hpp"      // for DiagIf, DiagIfWatching, etc
+#include "stk_mesh/base/Types.hpp"      // for PartOrdinal, etc
+#include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
+namespace stk { namespace mesh { class FieldBase; } }
 
-#include <iostream>
 
 // Testing this!
 #define PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION

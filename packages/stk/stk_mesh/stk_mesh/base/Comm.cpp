@@ -6,17 +6,18 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <sstream>
-#include <algorithm>
-
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Bucket.hpp"     // for has_superset, Bucket
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
+
+
 
 namespace stk {
 namespace mesh {

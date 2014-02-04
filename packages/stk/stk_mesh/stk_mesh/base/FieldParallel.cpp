@@ -6,15 +6,20 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <sstream>
-#include <algorithm>
-
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
+#include <sstream>                      // for basic_ostream::operator<<, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
+#include <utility>                      // for pair
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
+#include "stk_mesh/base/Types.hpp"      // for PairIterEntityComm, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
+#include "stk_util/util/PairIter.hpp"   // for PairIter
+
+
 
 namespace stk {
 namespace mesh {

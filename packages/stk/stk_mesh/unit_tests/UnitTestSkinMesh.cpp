@@ -1,10 +1,18 @@
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/fixtures/HexFixture.hpp>
-#include <stk_mesh/fixtures/QuadFixture.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for operator&
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 
 STKUNIT_UNIT_TEST( SkinMesh, SimpleHex)

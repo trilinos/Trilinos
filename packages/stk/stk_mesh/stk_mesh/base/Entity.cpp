@@ -6,18 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stddef.h>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
 
-#include <boost/mpl/assert.hpp>
+
 
 
 namespace stk {

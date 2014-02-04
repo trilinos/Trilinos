@@ -9,9 +9,13 @@
 #ifndef stk_mesh_fixture_SelectorFixture_hpp
 #define stk_mesh_fixture_SelectorFixture_hpp
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <vector>                       // for vector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Field.hpp"      // for Field
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {

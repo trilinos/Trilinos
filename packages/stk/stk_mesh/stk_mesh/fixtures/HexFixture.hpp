@@ -9,19 +9,22 @@
 #ifndef STK_MESH_FIXTURES_HEX_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_HEX_MESH_FIXTURE_HPP
 
-#include <Shards_BasicTopologies.hpp>
+#include <math.h>                       // for cos, sin
+#include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <vector>                       // for vector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 namespace stk {
 namespace mesh {

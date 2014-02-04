@@ -7,20 +7,23 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+#include <algorithm>                    // for lower_bound, sort, unique
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching
+#include <stk_mesh/base/Types.hpp>      // for ::MaximumFieldDimension
+#include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
+#include <vector>                       // for vector, etc
+#include "Shards_Array.hpp"             // for ArrayDimTag
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/FieldRestriction.hpp"
+#include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 
-#include <cstring>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
 
-#include <stk_util/util/SimpleArrayOps.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Trace.hpp>
 
 namespace stk {
 namespace mesh {

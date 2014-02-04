@@ -12,16 +12,18 @@
 
 //----------------------------------------------------------------------
 
-#include <stk_util/util/SimpleArrayOps.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-
+#include <stddef.h>                     // for size_t
 #include <stk_mesh/base/FieldParallel_helpers.hpp>
+#include <stk_mesh/base/Types.hpp>      // for EntityProc
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
+#include <vector>                       // for vector
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Ghosting; } }
+
+
 
 namespace stk {
 namespace mesh {

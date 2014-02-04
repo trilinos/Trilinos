@@ -10,12 +10,15 @@
  * @author H. Carter Edwards
  */
 
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for EntityLess, BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+
 
 namespace stk {
 namespace mesh {

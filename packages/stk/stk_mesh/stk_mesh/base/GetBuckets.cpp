@@ -8,13 +8,15 @@
 
 //----------------------------------------------------------------------
 
-#include <algorithm>
-#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Part.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, unique
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
 
 //----------------------------------------------------------------------
 

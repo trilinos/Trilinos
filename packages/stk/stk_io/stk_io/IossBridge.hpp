@@ -9,29 +9,34 @@
 #ifndef stk_io_IossBridge_hpp
 #define stk_io_IossBridge_hpp
 
-#include <string>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_topology/topology.hpp>
-#include <Ioss_Field.h>
-#include <Ioss_DBUsage.h>
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_Field.h>                 // for Field, Field::RoleType, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/base/Types.hpp>      // for EntityRank
+#include <stk_topology/topology.hpp>    // for topology
+#include <string>                       // for string, basic_string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class EntityBlock; }
+namespace Ioss { class GroupingEntity; }
+namespace Ioss { class Region; }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class FieldRestriction; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { struct Entity; } }
 
 namespace Ioss {
-class Region;
-class GroupingEntity;
-class EntityBlock;
 class SideSet;
 class Field;
-class ElementTopology;
 }
 
 namespace stk {
   namespace mesh {
-    class Part;
-    class BulkData;
-    class Selector;
-    class MetaData;
-    class FieldRestriction;
   }
 
 /**

@@ -7,8 +7,9 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <ostream>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include "stk_topology/topology.hpp"    // for operator<<, topology, etc
 
 namespace stk { namespace mesh {
 

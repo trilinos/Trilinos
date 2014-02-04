@@ -6,31 +6,31 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cmath>
-#include <sstream>
-#include <stdexcept>
-#include <limits>
-#include <iostream>
-#include <set>
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-
 #include <stk_mesh/fixtures/GearsFixture.hpp>
-#include <stk_mesh/fixtures/Gear.hpp>
+#include <Shards_BasicTopologies.hpp>   // for Hexahedron, Wedge
+#include <algorithm>                    // for min
+#include <cmath>                        // for fabs, floor
+#include <iostream>                     // for ostringstream, etc
+#include <set>                          // for set
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
+#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/Types.hpp>      // for BucketVector, EntityProcVec, etc
+#include <stk_mesh/fixtures/Gear.hpp>   // for Gear, TWO_PI
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class FieldBase; } }
 
-#include <stk_mesh/base/Stencils.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
 
-#include <Shards_BasicTopologies.hpp>
+
+
 
 namespace {
 

@@ -7,20 +7,18 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/fixtures/RingFixture.hpp>
+#include <ostream>                      // for ostringstream, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityProc, EntityId, etc
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
-#include <Shards_BasicTopologies.hpp>
 
 namespace stk {
 namespace mesh {

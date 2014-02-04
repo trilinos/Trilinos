@@ -9,19 +9,19 @@
 #ifndef stk_mesh_BoundaryAnalysis_hpp
 #define stk_mesh_BoundaryAnalysis_hpp
 
-#include <vector>
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Entity.hpp>
-
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, EntityVector
 #include <stk_util/util/NamedPair.hpp>
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
+
+
 
 struct CellTopologyData;
 
 namespace stk {
 namespace mesh {
 
-class BulkData;
 
 /**
  * A pair of Entity and a local side id (defined a part of a side)

@@ -7,8 +7,11 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/base/Ghosting.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <ostream>                      // for operator<<, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, etc
+#include "stk_util/util/PairIter.hpp"   // for PairIter
 
 namespace stk {
 namespace mesh {

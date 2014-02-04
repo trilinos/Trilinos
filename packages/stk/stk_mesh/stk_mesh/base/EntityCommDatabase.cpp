@@ -6,14 +6,21 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iterator>
-#include <stdexcept>
-#include <sstream>
-
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/Relation.hpp>
+#include <sstream>                      // for operator<<, basic_ostream
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Relation.hpp>   // for Relation
+#include <string>                       // for operator<<
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssertMsg
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+
 
 namespace stk {
 namespace mesh {

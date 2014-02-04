@@ -9,14 +9,17 @@
 #ifndef stk_mesh_Selector_hpp
 #define stk_mesh_Selector_hpp
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stddef.h>                     // for NULL
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssert
+#include <vector>                       // for vector, operator!=, etc
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/base/Types.hpp>
 
-#include <boost/type_traits.hpp>
-#include <boost/variant.hpp>
 
-#include <iosfwd>
 
 namespace stk { namespace mesh {
 

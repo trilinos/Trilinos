@@ -10,13 +10,13 @@
 #ifndef stk_mesh_baseImpl_FieldRestriction_hpp
 #define stk_mesh_baseImpl_FieldRestriction_hpp
 
-#include <vector>
-#include <Shards_Array.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
-#include <stk_mesh/base/Selector.hpp>
+#include <Shards_Array.hpp>             // for int_t
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/Types.hpp>      // for FieldArrayRank
+#include <string>                       // for string
+#include <vector>                       // for vector
 
-#include <stk_util/util/SimpleArrayOps.hpp>
 
 namespace stk {
 namespace mesh {

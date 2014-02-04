@@ -1,6 +1,9 @@
 #ifndef STK_MESH_BUCKET_CONNECTIVITY_HPP
 #define STK_MESH_BUCKET_CONNECTIVITY_HPP
 
+#include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include "stk_util/environment/ReportHandler.hpp"
 #include <stk_util/util/TrackingAllocator.hpp>
 
 namespace stk {

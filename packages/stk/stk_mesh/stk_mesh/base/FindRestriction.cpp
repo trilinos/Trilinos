@@ -7,8 +7,17 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
+#include <stddef.h>                     // for size_t
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <string>                       // for operator<<, char_traits
+#include <vector>                       // for vector, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase::Restriction, etc
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
 
 namespace stk {
 namespace mesh {

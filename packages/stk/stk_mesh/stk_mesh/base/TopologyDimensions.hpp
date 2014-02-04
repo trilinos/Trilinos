@@ -14,12 +14,13 @@
 #ifndef stk_mesh_TopologyDimensions_hpp
 #define stk_mesh_TopologyDimensions_hpp
 
-#include <Shards_Array.hpp>
+#include <Shards_Array.hpp>             // for ArrayDimTag
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <string>                       // for string
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <stk_mesh/base/Stencils.hpp>
 
 namespace stk {
 namespace mesh {

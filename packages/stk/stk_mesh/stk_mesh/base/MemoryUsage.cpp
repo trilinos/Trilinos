@@ -8,9 +8,22 @@
 
 
 #include <stk_mesh/base/MemoryUsage.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Relation.hpp"   // for Relation
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
 
-#include <iostream>
 
 namespace stk {
 namespace mesh {

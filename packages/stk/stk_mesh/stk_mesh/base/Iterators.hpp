@@ -1,14 +1,13 @@
 #ifndef Toolkit_Iterators_hpp
 #define Toolkit_Iterators_hpp
 
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Selector.hpp>
+#include <iterator>                     // for iterator_traits, etc
+#include <stk_mesh/base/Bucket.hpp>     // for BucketIterator
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <utility>                      // for pair
+#include <vector>                       // for vector<>::const_iterator, etc
 
-#include <boost/iterator/filter_iterator.hpp>
 
-#include <vector>
-#include <algorithm>
-#include <iterator>
 
 namespace stk {
 namespace mesh {

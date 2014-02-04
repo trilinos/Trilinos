@@ -8,33 +8,38 @@
 
 #ifndef STK_IO_STKMESHIOBROKER_HPP
 #define STK_IO_STKMESHIOBROKER_HPP
-#include <string>
-#include <vector>
-#include <boost/any.hpp>
+#include <Ioss_Field.h>                 // for Field, Field::BasicType
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <stddef.h>                     // for size_t, NULL
+#include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
+#include <algorithm>                    // for swap
+#include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
+#include <stk_io/IossBridge.hpp>        // for FieldAndName, etc
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_util/util/ParameterList.hpp>  // for Type
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "mpi.h"                        // for MPI_Comm, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire, etc
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class Property; }
+namespace Ioss { class Region; }
+namespace boost { class any; }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <Ioss_PropertyManager.h>
-#include <Ioss_Field.h>
-#include <Teuchos_RCP.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/util/ParameterList.hpp>
 
-#include <stk_mesh/base/Selector.hpp>
 
-#include <stk_io/IossBridge.hpp>
-#include <stk_io/DatabasePurpose.hpp>
 
 namespace Ioss {
-  class DatabaseIO;
-  class Region;
 }
 
 namespace stk {
   namespace mesh {
-    class BulkData;
-    class MetaData;
-    class FieldBase;
-    struct ConnectivityMap;
   }
   namespace io {
     static std::string CoordinateFieldName("coordinates");

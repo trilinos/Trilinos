@@ -9,8 +9,9 @@
 #ifndef STK_MESH_BASE_BULK_MODIFICATION_HPP
 #define STK_MESH_BASE_BULK_MODIFICATION_HPP
 
-#include <vector>
-#include <stk_mesh/base/Types.hpp>
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { struct Entity; } }
 
 namespace stk {
 namespace mesh {

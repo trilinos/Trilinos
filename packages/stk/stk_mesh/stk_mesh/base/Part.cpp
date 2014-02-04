@@ -6,14 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_util/util/string_case_compare.hpp>
+#include <algorithm>                    // for lower_bound, sort, unique
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_util/util/string_case_compare.hpp>  // for not_equal_case
 
-#include <algorithm>
-#include <ostream>
-#include <sstream>
 
 namespace stk {
 namespace mesh {

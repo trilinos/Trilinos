@@ -6,15 +6,24 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_mesh/fixtures/RingFixture.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
+#include <vector>                       // for vector, etc
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+
+
+
 
 using stk::mesh::MetaData;
 using stk::mesh::MetaData;

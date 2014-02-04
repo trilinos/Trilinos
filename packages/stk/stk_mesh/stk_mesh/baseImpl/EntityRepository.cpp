@@ -6,13 +6,15 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stddef.h>                     // for NULL
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity, etc
+#include "stk_mesh/base/Trace.hpp"      // for TraceIfWatching, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+
 
 namespace stk {
 namespace mesh {

@@ -6,19 +6,19 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for size_t
+#include <sstream>                      // for ostringstream, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Part.hpp>       // for intersect, Part, contain, etc
+#include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string, char_traits
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/baseImpl/PartRepository.hpp>
+
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;

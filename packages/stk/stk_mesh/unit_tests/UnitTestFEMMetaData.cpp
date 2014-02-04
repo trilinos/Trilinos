@@ -6,12 +6,19 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <algorithm>
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stddef.h>                     // for size_t, NULL
+#include <algorithm>                    // for count
+#include <stdexcept>                    // for runtime_error, logic_error
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector
+#include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
+#include "Shards_CellTopology.hpp"      // for operator==, CellTopology
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_topology/topology.hpp"    // for topology, etc
+
 
 using stk::mesh::MetaData;
 

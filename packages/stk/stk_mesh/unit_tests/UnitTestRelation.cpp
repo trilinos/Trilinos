@@ -6,30 +6,33 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-#include <iostream>
-
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/Ghosting.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-
-#include <stk_mesh/fixtures/HexFixture.hpp>
-#include <stk_mesh/fixtures/BoxFixture.hpp>
-#include <stk_mesh/fixtures/RingFixture.hpp>
-
+#include <string>                       // for string
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
+#include <vector>                       // for vector, vector<>::iterator
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
+#include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Ghosting; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Relation; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
 
-#include <Shards_BasicTopologies.hpp>
+
+
+
+
+
+
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;

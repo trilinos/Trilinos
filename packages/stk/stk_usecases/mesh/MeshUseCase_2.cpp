@@ -19,6 +19,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
+#include <stk_util/util/SimpleArrayOps.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_util/environment/ReportHandler.hpp>

@@ -7,18 +7,20 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
+#include <Shards_BasicTopologies.hpp>   // for Quadrilateral
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <vector>                       // for vector
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <Shards_BasicTopologies.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 
 /*
 The following fixture creates the mesh below

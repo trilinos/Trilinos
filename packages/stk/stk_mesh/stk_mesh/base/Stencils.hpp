@@ -9,11 +9,11 @@
 #ifndef stk_mesh_Stencils_hpp
 #define stk_mesh_Stencils_hpp
 
-#include <stk_util/util/StaticAssert.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stk_mesh/base/Types.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {

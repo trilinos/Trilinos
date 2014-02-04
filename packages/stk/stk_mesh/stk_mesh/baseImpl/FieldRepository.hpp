@@ -8,17 +8,18 @@
 #ifndef stk_mesh_baseImpl_FieldRepository_hpp
 #define stk_mesh_baseImpl_FieldRepository_hpp
 
-#include <iosfwd>
-#include <stk_util/util/SameType.hpp>
-#include <stk_util/util/StaticAssert.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/PropertyBase.hpp>
-#include <stk_mesh/baseImpl/PartRepository.hpp>
+#include <stddef.h>                     // for NULL
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>  // for FieldBaseImpl
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+namespace shards { class ArrayDimTag; }
+namespace stk { namespace mesh { class DataTraits; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
 namespace stk {
 namespace mesh {

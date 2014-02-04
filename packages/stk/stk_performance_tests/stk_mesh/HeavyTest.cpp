@@ -1,5 +1,6 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>

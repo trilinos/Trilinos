@@ -6,24 +6,31 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for NULL, size_t
+#include <exception>                    // for exception
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
+#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string, operator==, etc
+#include <vector>                       // for vector
+#include "Shards_CellTopologyData.h"    // for CellTopologyData
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/NamedPair.hpp"
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/baseImpl/PartRepository.hpp>
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-#include <stk_mesh/base/Stencils.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
+
 
 using stk::mesh::MetaData;
 using stk::mesh::Part;

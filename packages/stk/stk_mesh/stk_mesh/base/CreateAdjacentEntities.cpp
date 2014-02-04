@@ -1,22 +1,22 @@
-#include <map>
-#include <set>
-#include <algorithm>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Relation.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/CellTopology.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
-#include <stk_mesh/base/BoundaryAnalysis.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for reverse
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for get_subcell_nodes, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
+#include <stk_mesh/base/Relation.hpp>
+#include <stk_mesh/base/Selector.hpp>   // for Selector, operator|
+#include <stk_mesh/base/Types.hpp>      // for EntityVector, EntityRank, etc
+#include <vector>                       // for vector, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+struct CellTopologyData;
 
-#include <stk_util/parallel/ParallelComm.hpp>
 
 namespace stk {
 namespace mesh {

@@ -6,22 +6,28 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-
+#include <stddef.h>                     // for size_t
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string, char_traits
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityId, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
+namespace stk { namespace mesh { struct EntityKey; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/fixtures/BoxFixture.hpp>
 
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
+
 
 using stk::mesh::Part;
 using stk::mesh::Bucket;

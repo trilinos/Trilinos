@@ -9,14 +9,19 @@
 #ifndef stk_mesh_FEMHelpers_hpp
 #define stk_mesh_FEMHelpers_hpp
 
-#include <stk_mesh/base/Types.hpp>
+#include <stddef.h>                     // for NULL
+#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId, etc
+#include <string>                       // for string
+#include <vector>                       // for vector, etc
+#include "Shards_CellTopologyData.h"    // for CellTopologyData
+#include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CellTopology.hpp>
 // This is needed for ElementNode class
-#include <stk_mesh/base/TopologyDimensions.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace mesh {

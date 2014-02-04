@@ -1,12 +1,18 @@
-#include <iostream>
-#include <sstream>
-
-#include <stdexcept>
-
+#include <stddef.h>                     // for NULL
+#include <stdint.h>                     // for uint64_t
+#include <algorithm>                    // for copy
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper, TEST
 
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+// CRW: this should be in BucketConnectivity.hpp, but circular dependency for now
+#include "stk_mesh/base/BulkData.hpp"
+
+#include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
+#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
+#include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class BulkData; } }
 
 using namespace stk::mesh;
 

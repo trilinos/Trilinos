@@ -7,17 +7,22 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stddef.h>
-#include <stdexcept>
-#include <sstream>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/DataTraits.hpp>
-#include <stk_mesh/base/DataTraitsEnum.hpp>
-#include <stk_mesh/base/DataTraitsClass.hpp>
-
+#include <stddef.h>                     // for NULL, size_t
+#include <iostream>                     // for ostringstream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/DataTraits.hpp>  // for DataTraits, etc
+#include <stk_mesh/base/DataTraitsClass.hpp>  // for data_traits, etc
+#include <stk_mesh/base/DataTraitsEnum.hpp>  // for data_traits, etc
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for operator==, string, etc
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommAll
+
+
+
 
 using stk::mesh::DataTraits;
 using stk::mesh::data_traits;
