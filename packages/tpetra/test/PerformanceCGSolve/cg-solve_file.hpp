@@ -52,9 +52,7 @@
 #include <Teuchos_XMLPerfTestArchive.hpp>
 #include <Teuchos_Array.hpp>
 
-// I/O for Harwell-Boeing files
 #include <Kokkos_DefaultNode.hpp>
-#include <Tpetra_MatrixIO.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"

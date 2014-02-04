@@ -42,11 +42,11 @@
 */
 
 #include "cg-solve_file.hpp"
-/*
-#ifdef KOKKOSCLASSIC_HAVE_TPINODE
+
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 int run_tpi(int& argc, char* argv[]) {
   typedef KokkosClassic::TPINode                Node;
   std::cout << "Running: KokkosClassic::TPINode" << std::endl;
   return run<Node>(argc,argv);
 }
-#endif*/
+#endif

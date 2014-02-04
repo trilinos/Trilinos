@@ -1,5 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -7,8 +8,7 @@ SET(SOURCES "")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-#APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-APPEND_GLOB(SOURCES ${DIR}/*wrapper.cpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 # With the new Kokkos, it is impossible to separate CUDA code from regular
 # source code to be compiled with NVCC.  Therefore we compile everything
@@ -34,17 +34,21 @@ IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
   CUDA_COMPILE(CUDA_OBJECTS ${CUDA_SOURCES})
 ENDIF()
 
-message("Sources: ${BSOURCES}")
+# The performance test currently depends on KokkosCore for its timers.
+# Otherwise, it does not use anything else in KokkosCore directly.
+IF (Trilinos_ENABLE_KokkosCore)
+  TRIBITS_ADD_EXECUTABLE(
+    Performance-CGSolve
+    SOURCES
+      ${SOURCES} ${CUDA_OBJECTS}
+    COMM mpi
+  )
 
-# mfh 31 Jan 2014: I am temporarily disabling building this test,
-# in order to avoid build errors.  Please re-enable when build errors
-# are fixed.  Thanks!
-
-# TRIBITS_ADD_EXECUTABLE(
-#   Performance-CGSolve
-#   SOURCES
-#     cg_solve_file.cpp ${SOURCES} ${CUDA_OBJECTS}
-#   COMM mpi
-# )
+#  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlForTpetraPerfCgSolve
+#    SOURCE_DIR ${Tpetra_SOURCE_DIR}/test/
+#    SOURCE_FILES Tpetra_PerformanceTests.xml
+#    EXEDEPS Performance-CGSolve
+#  )
+ENDIF ()
 
 

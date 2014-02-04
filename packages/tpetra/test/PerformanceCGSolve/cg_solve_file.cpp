@@ -42,18 +42,17 @@
 */
 
 #include "cg-solve_file.hpp"
-#ifndef USE_KOKKOS_CLASSIC
-  #ifdef KOKKOS_HAVE_CUDA
-    int run_cudawrapper(int& argc, char* argv[]);
-  #endif
-  #ifdef KOKKOS_HAVE_OPENMP
-    int run_openmpwrapper(int& argc, char* argv[]);
-  #endif
-  #ifdef KOKKOS_HAVE_PTHREAD
-    int run_threadswrapper(int& argc, char* argv[]);
-  #endif
-#else
-  int run_tpi(int argc, char* argv[]);
+#ifdef KOKKOS_HAVE_CUDA
+  int run_cudawrapper(int& argc, char* argv[]);
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+  int run_openmpwrapper(int& argc, char* argv[]);
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+  int run_threadswrapper(int& argc, char* argv[]);
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  int run_tpi(int& argc, char* argv[]);
 #endif
 
 int main(int argc, char *argv[]) {
@@ -64,18 +63,21 @@ int main(int argc, char *argv[]) {
   // Specify types used in this example
   //
 
-#ifndef USE_KOKKOS_CLASSIC
-  #ifdef KOKKOS_HAVE_CUDA
-    run_cudawrapper(argc,argv);
-  #endif
-  #ifdef KOKKOS_HAVE_OPENMP
-    run_openmpwrapper(argc,argv);
-  #endif
-  #ifdef KOKKOS_HAVE_PTHREAD
-    run_threadswrapper(argc,argv);
-  #endif
-#else
-    run_tpi(argc,argv);
+#ifdef KOKKOS_HAVE_CUDA
+  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
+  run_cudawrapper(argc,argv);
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
+  run_openmpwrapper(argc,argv);
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
+  run_threadswrapper(argc,argv);
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
+  run_tpi(argc,argv);
 #endif
   return 0;
 }
