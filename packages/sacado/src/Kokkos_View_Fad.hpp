@@ -36,6 +36,9 @@
 
 #include "Kokkos_View.hpp"
 #include "impl/Kokkos_Error.hpp"
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+#include "Cuda/Kokkos_Cuda_abort.hpp"
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -225,7 +228,11 @@ private:
           << ") must be a multiple of StorageType::static_size ("
           << FadStaticDimension+1
           << ")" ;
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort( msg.str().c_str() );
+#else
       Impl::throw_runtime_exception( msg.str() );
+#endif
     }
   }
 
@@ -426,7 +433,7 @@ public:
         (scalar_type *) dev.get_shmem( shmem_size(n0,n1,n2,n3,n4,n5,n6,n7) ) );
     }
 
-  static inline
+  static KOKKOS_INLINE_FUNCTION
   unsigned shmem_size( const unsigned n0 = 0 ,
                        const unsigned n1 = 0 ,
                        const unsigned n2 = 0 ,
