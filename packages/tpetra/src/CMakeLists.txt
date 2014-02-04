@@ -69,6 +69,7 @@ IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
   # clear SOURCES
   SET(SOURCES "")
 ENDIF()
+message("Sources: ${SOURCES}")
 
 # CUDA library
 IF (KokkosClassic_ENABLE_Thrust OR
@@ -81,3 +82,6 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+  
+SET_PROPERTY(TARGET tpetra APPEND PROPERTY LINKER_LANGUAGE CXX)
+
