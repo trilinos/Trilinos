@@ -2089,6 +2089,53 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
     }
   }
+
+  //------------------------------------
+  /** \brief  Extract rank-2 from rank-2 array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  const std::pair<iType,iType> & range0 ,
+                  ALL ,
+                  typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank == 2
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
+                  ) >::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = 0 ;
+    dst.m_shape.N1      = 0 ;
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range0.first < range0.second ) {
+      assert_shape_bounds( src.m_shape , 2 , range0.first , 0 );
+      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , src.m_shape.N1 - 1 );
+
+      dst.m_shape.N0 = range0.second - range0.first ;
+      dst.m_shape.N1 = src.m_shape.N1 ;
+      dst.m_stride   = src.m_stride ;
+
+      // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
+      dst.m_ptr_on_device = src.m_ptr_on_device + range0.first ;
+
+      // LayoutRight won't work with how we are currently using the stride
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
 };
 
 

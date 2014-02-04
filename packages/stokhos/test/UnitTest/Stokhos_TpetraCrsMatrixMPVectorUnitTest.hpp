@@ -845,6 +845,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_MP, Flatten, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
 {
+#if 0
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
@@ -962,6 +963,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       TEST_EQUALITY( y_view[i].fastAccessCoeff(j),
                      y2_view[i].fastAccessCoeff(j) );
   }
+#endif
 }
 
 #if  defined(HAVE_STOKHOS_BELOS)
@@ -1156,10 +1158,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     const GlobalOrdinal row = myGIDs[i];
     columnIndices[0] = row;
     size_t ncol = 1;
-    // if (row != nrow-1) {
-    //   columnIndices[1] = row+1;
-    //   ncol = 2;
-    // }
+    if (row != nrow-1) {
+      columnIndices[1] = row+1;
+      ncol = 2;
+    }
     graph->insertGlobalIndices(row, columnIndices(0,ncol));
   }
   graph->fillComplete();
@@ -1173,11 +1175,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     vals[0] = Scalar(2.0);
     size_t ncol = 1;
 
-    // if (row != nrow-1) {
-    //   columnIndices[1] = row+1;
-    //   vals[1] = Scalar(2.0);
-    //   ncol = 2;
-    // }
+    if (row != nrow-1) {
+      columnIndices[1] = row+1;
+      vals[1] = Scalar(2.0);
+      ncol = 2;
+    }
     matrix->replaceGlobalValues(row, columnIndices(0,ncol), vals(0,ncol));
   }
   matrix->fillComplete();
@@ -1227,13 +1229,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val = Scalar(0.5);
   for (size_t i=0; i<num_my_row; ++i) {
-    // const GlobalOrdinal row = myGIDs[i];
-    // if (row % 2) {
-    //   val = Scalar(0.5);
-    // }
-    // else
-    //   val = Scalar(0.0);
-    TEST_FLOATING_EQUALITY(x_view[i], val, tol);
+    const GlobalOrdinal row = myGIDs[i];
+    if (row % 2) {
+      val = Scalar(0.5);
+    }
+    else
+      val = Scalar(0.0);
+
+    // Set small values to zero
+    Scalar v = x_view[i];
+    if (ST::magnitude(v) < tol)
+      v = Scalar(0.0);
+
+    TEST_FLOATING_EQUALITY(v, val, tol);
   }
 }
 
@@ -1245,7 +1253,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if  defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2)
+#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2)
 
 //
 // Test Belos GMRES solve with Ifpack2 RILUK preconditioning for a
@@ -1284,7 +1292,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(2));
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -1406,7 +1415,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if  defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
+#if 0 && defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
 
 //
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -1589,7 +1598,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if  defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+#if 0 && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
 
 //
 // Test Amesos2 solve for a 1-D Laplacian matrix
