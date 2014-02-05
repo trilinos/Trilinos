@@ -103,7 +103,7 @@ class FieldBase
    */
   unsigned field_array_rank() const { return m_impl.field_array_rank(); }
 
-  stk::topology::rank_t entity_rank() const { return m_impl.entity_rank(); }
+  EntityRank entity_rank() const { return m_impl.entity_rank(); }
 
   /** \brief  Multi-dimensional
    *          \ref shards::ArrayDimTag "array dimension tags"

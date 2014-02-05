@@ -104,7 +104,7 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
   BulkData& mesh_min_conn  = fixture_with_min_conn->m_bulk_data;
 
   {
-    for (stk::topology::rank_t rank = stk::topology::NODE_RANK; rank < stk::topology::ELEMENT_RANK; ++rank) {
+    for (EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEMENT_RANK; ++rank) {
       const BucketVector & buckets_full_conn = mesh_full_conn.buckets(rank);
       const BucketVector & buckets_min_conn  = mesh_min_conn.buckets(rank);
       STKUNIT_ASSERT_EQ(buckets_full_conn.size(), buckets_min_conn.size());
