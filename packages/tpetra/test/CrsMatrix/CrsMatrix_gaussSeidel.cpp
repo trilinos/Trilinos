@@ -202,12 +202,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // Number of rows in the matrix owned by each process.
   const LO numLocalRows = numLocalPoints * numGlobalPoints;
 
+  //CrT: 4Feb14: the void trick does not seem to work, I get warnings
   // Number of (global) rows and columns in the matrix.
-  const GO numGlobalRows = numGlobalPoints * numGlobalPoints;
-  const GO numGlobalCols = numGlobalRows;
+  //const GO numGlobalRows = numGlobalPoints * numGlobalPoints;
+  //const GO numGlobalCols = numGlobalRows;
   // Prevent compile warning for unused variable.
   // (It's not really "variable" if it's const, but oh well.)
-  (void) numGlobalCols;
+  //(void) numGlobalCols;
 
   if (myRank == 0) {
     out << "Creating contiguous row Map" << endl;
@@ -581,12 +582,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
   // Number of rows in the matrix owned by each process.
   const LO numLocalRows = numLocalPoints * numGlobalPoints;
 
+  //CrT: 4Feb14: the void trick does not seem to work, I get warnings
   // Number of (global) rows and columns in the matrix.
-  const GO numGlobalRows = numGlobalPoints * numGlobalPoints;
-  const GO numGlobalCols = numGlobalRows;
+  //const GO numGlobalRows = numGlobalPoints * numGlobalPoints;
+  //const GO numGlobalCols = numGlobalRows;
   // Prevent compile warning for unused variable.
   // (It's not really "variable" if it's const, but oh well.)
-  (void) numGlobalCols;
+  //(void) numGlobalCols;
 
   if (myRank == 0) {
     out << "Creating contiguous row Map" << endl;

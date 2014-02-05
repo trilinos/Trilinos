@@ -117,12 +117,11 @@ namespace KokkosClassic {
     typedef typename WDP::ReductionType ReductionType;
 
     const WDPPlusRange<WDP>* wdp_wrapper = static_cast<const WDPPlusRange<WDP>*>(work->info);
-    WDP wdp = wdp_wrapper->wdp;
 
     ReductionType& work_reduce = *(static_cast<ReductionType*>(work->reduce));
     const ReductionType& src_reduce  = *(static_cast<const ReductionType*>(src));
 
-    work_reduce = wdp.reduce(work_reduce, src_reduce);
+    work_reduce = wdp_wrapper->wdp.reduce(work_reduce, src_reduce);
   }
 
   template<class WDP>
