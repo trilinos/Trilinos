@@ -1,16 +1,16 @@
-#ifndef PIKE_OBSERVER_HPP
-#define PIKE_OBSERVER_HPP
+#ifndef PIKE_SOLVER_OBSERVER_HPP
+#define PIKE_SOLVER_OBSERVER_HPP
 
 namespace pike {
 
   class Solver;
 
   /** \brief Observer design pattern for monitoring pike::Solver methods */ 
-  class Observer {
+  class SolverObserver {
     
   public:
 
-    virtual ~Observer() {}
+    virtual ~SolverObserver() {}
 
     virtual void observeBeginSolve(const pike::Solver& solver) = 0;
 

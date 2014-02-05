@@ -11,7 +11,7 @@ namespace pike {
 
   class BlackBoxModelEvaluator;
   class DataTransfer;
-  class Observer;
+  class SolverObserver;
 
 
   /** \brief Pure virtual base class (strategy design pattern) for iterative solvers */
@@ -72,10 +72,10 @@ namespace pike {
     virtual int getNumberOfIterations() const = 0;
 
     //! Register an observer with the solver.
-    virtual void addObserver(const Teuchos::RCP<pike::Observer>& observer) = 0;
+    virtual void addObserver(const Teuchos::RCP<pike::SolverObserver>& observer) = 0;
 
     //! Returns the observers registered with the solver.
-    virtual std::vector<Teuchos::RCP<pike::Observer> > getObservers() const = 0;
+    virtual std::vector<Teuchos::RCP<pike::SolverObserver> > getObservers() const = 0;
 
     /** \brief Sets/overrides the status test to use with the solver.
 

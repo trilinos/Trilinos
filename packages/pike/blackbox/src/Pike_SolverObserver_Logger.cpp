@@ -1,4 +1,4 @@
-#include "Pike_Observer_Logger.hpp"
+#include "Pike_SolverObserver_Logger.hpp"
 #include "Pike_Solver.hpp"
 
 namespace pike {

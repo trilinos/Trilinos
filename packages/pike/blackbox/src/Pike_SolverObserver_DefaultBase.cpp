@@ -1,4 +1,4 @@
-#include "Pike_Observer_DefaultBase.hpp"
+#include "Pike_SolverObserver_DefaultBase.hpp"
 
 namespace pike {
 

@@ -1,11 +1,11 @@
 #ifndef PIKE_OBSERVER_DEFAULT_BASE_HPP
 #define PIKE_OBSERVER_DEFAULT_BASE_HPP
 
-#include "Pike_Observer.hpp"
+#include "Pike_SolverObserver.hpp"
 
 namespace pike {
 
-  class ObserverDefaultBase : public pike::Observer {
+  class ObserverDefaultBase : public pike::SolverObserver {
 
   public:
 

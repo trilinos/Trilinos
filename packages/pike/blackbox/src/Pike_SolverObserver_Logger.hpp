@@ -1,14 +1,14 @@
 #ifndef PIKE_OBSERVER_LOGGER_HPP
 #define PIKE_OBSERVER_LOGGER_HPP
 
-#include "Pike_Observer.hpp"
+#include "Pike_SolverObserver.hpp"
 #include "Teuchos_RCP.hpp"
 #include <vector>
 #include <string>
 
 namespace pike {
 
-  class LoggerObserver : public pike::Observer {
+  class LoggerObserver : public pike::SolverObserver {
 
   public:
     

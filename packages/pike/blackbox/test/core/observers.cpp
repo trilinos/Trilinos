@@ -13,7 +13,7 @@
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 
 // Observers
-#include "Pike_Observer_Logger.hpp"
+#include "Pike_SolverObserver_Logger.hpp"
 
 namespace pike {
 

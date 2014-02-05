@@ -3,7 +3,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Pike_DataTransfer.hpp"
-#include "Pike_Observer.hpp"
+#include "Pike_SolverObserver.hpp"
 #include "Teuchos_Assert.hpp"
 #include <sstream>
 
@@ -193,12 +193,12 @@ namespace pike {
   Teuchos::RCP<Teuchos::ParameterList> SolverDefaultBase::getNonconstValidParameters()
   { return validParameters_; }
 
-  void SolverDefaultBase::addObserver(const Teuchos::RCP<pike::Observer>& observer)
+  void SolverDefaultBase::addObserver(const Teuchos::RCP<pike::SolverObserver>& observer)
   {
     observers_.push_back(observer);
   }
 
-  std::vector<Teuchos::RCP<pike::Observer> > SolverDefaultBase::getObservers() const
+  std::vector<Teuchos::RCP<pike::SolverObserver> > SolverDefaultBase::getObservers() const
   {
     return observers_;
   }

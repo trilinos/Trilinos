@@ -14,7 +14,7 @@
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 
 // Observers and decorators
-#include "Pike_Observer_Logger.hpp"
+#include "Pike_SolverObserver_Logger.hpp"
 #include "Pike_BlackBoxModelEvaluator_Logger.hpp"
 #include "Pike_DataTransfer_Logger.hpp"
 

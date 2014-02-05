@@ -54,9 +54,9 @@ namespace pike {
 
     Teuchos::RCP<Teuchos::ParameterList> getNonconstValidParameters();
 
-    virtual void addObserver(const Teuchos::RCP<pike::Observer>& observer);
+    virtual void addObserver(const Teuchos::RCP<pike::SolverObserver>& observer);
 
-    virtual std::vector<Teuchos::RCP<pike::Observer> > getObservers() const;
+    virtual std::vector<Teuchos::RCP<pike::SolverObserver> > getObservers() const;
 
     virtual void setStatusTests(const Teuchos::RCP<pike::StatusTest>& statusTests);
 
@@ -66,7 +66,7 @@ namespace pike {
 
   protected:
 
-    typedef std::vector<Teuchos::RCP<Observer> >::iterator ObserverIterator;
+    typedef std::vector<Teuchos::RCP<SolverObserver> >::iterator ObserverIterator;
     typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::iterator ModelIterator;
     typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::const_iterator ModelConstIterator;
     typedef std::vector<Teuchos::RCP<pike::DataTransfer> >::iterator TransferIterator;
@@ -75,7 +75,7 @@ namespace pike {
     int numberOfIterations_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;
     Teuchos::RCP<pike::StatusTest> statusTests_;
-    std::vector<Teuchos::RCP<Observer> > observers_;
+    std::vector<Teuchos::RCP<SolverObserver> > observers_;
     pike::SolveStatus status_;
     std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> > models_;
     std::vector<Teuchos::RCP<pike::DataTransfer> > transfers_;
