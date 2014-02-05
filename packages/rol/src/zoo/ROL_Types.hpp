@@ -422,7 +422,8 @@ namespace ROL {
       \arg    BRENTS          describe
    */
   enum ELineSearch{
-    LINESEARCH_BACKTRACKING = 0,
+    LINESEARCH_ITERATIONSCALING = 0,
+    LINESEARCH_BACKTRACKING,
     LINESEARCH_BISECTION,
     LINESEARCH_GOLDENSECTION,
     LINESEARCH_CUBICINTERP,
@@ -433,13 +434,14 @@ namespace ROL {
   inline std::string ELineSearchToString(ELineSearch ls) {
     std::string retString;
     switch(ls) {
-      case LINESEARCH_BACKTRACKING:   retString = "Backtracking";        break;
-      case LINESEARCH_BISECTION:      retString = "Bisection";           break;
-      case LINESEARCH_GOLDENSECTION:  retString = "Golden Section";      break;
-      case LINESEARCH_CUBICINTERP:    retString = "Cubic Interpolation"; break;
-      case LINESEARCH_BRENTS:         retString = "Brents";              break;
-      case LINESEARCH_LAST:           retString = "Last Type (Dummy)";   break;
-      default:                        retString = "INVALID ELineSearch";
+      case LINESEARCH_ITERATIONSCALING: retString = "Iteration Scaling";   break;
+      case LINESEARCH_BACKTRACKING:     retString = "Backtracking";        break;
+      case LINESEARCH_BISECTION:        retString = "Bisection";           break;
+      case LINESEARCH_GOLDENSECTION:    retString = "Golden Section";      break;
+      case LINESEARCH_CUBICINTERP:      retString = "Cubic Interpolation"; break;
+      case LINESEARCH_BRENTS:           retString = "Brents";              break;
+      case LINESEARCH_LAST:             retString = "Last Type (Dummy)";   break;
+      default:                          retString = "INVALID ELineSearch";
     }
     return retString;
   }
@@ -450,10 +452,11 @@ namespace ROL {
       \return 1 if the argument is a valid linesearch; 0 otherwise.
     */
   inline int isValidLineSearch(ELineSearch ls){
-    return( (ls == LINESEARCH_BACKTRACKING)  ||
-            (ls == LINESEARCH_BISECTION)     ||
-            (ls == LINESEARCH_GOLDENSECTION) ||
-            (ls == LINESEARCH_CUBICINTERP)   ||
+    return( (ls == LINESEARCH_BACKTRACKING)     ||
+            (ls == LINESEARCH_ITERATIONSCALING) ||
+            (ls == LINESEARCH_BISECTION)        ||
+            (ls == LINESEARCH_GOLDENSECTION)    ||
+            (ls == LINESEARCH_CUBICINTERP)      ||
             (ls == LINESEARCH_BRENTS)
           );
   }
@@ -480,12 +483,12 @@ namespace ROL {
 
   inline ELineSearch StringToELineSearch(std::string s) {
     s = removeStringFormat(s);
-    for ( ELineSearch ls = LINESEARCH_BACKTRACKING; ls < LINESEARCH_LAST; ls++ ) {
+    for ( ELineSearch ls = LINESEARCH_ITERATIONSCALING; ls < LINESEARCH_LAST; ls++ ) {
       if ( !s.compare(removeStringFormat(ELineSearchToString(ls))) ) {
         return ls;
       }
     }
-    return LINESEARCH_BACKTRACKING;
+    return LINESEARCH_ITERATIONSCALING;
   }
 
   /** \enum   ROL::ECurvatureCondition

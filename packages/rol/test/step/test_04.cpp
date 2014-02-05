@@ -113,10 +113,10 @@ int main(int argc, char *argv[]) {
       parlist->set("Maximum Number of Krylov Iterations", 2*dim);
 
       // Check Derivatives
-      Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
-      ROL::StdVector<RealT> d(d_rcp);
-      obj->checkGradient(x0,d);
-      obj->checkHessVec(x0,d);
+      //Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
+      //ROL::StdVector<RealT> d(d_rcp);
+      //obj->checkGradient(x0,d);
+      //obj->checkHessVec(x0,d);
 
       // Iteration Vector
       Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -129,6 +129,8 @@ int main(int argc, char *argv[]) {
       e.zero();
 
       //ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; 
+      //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOGLEG; 
+      //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOUBLEDOGLEG; 
       ROL::ETrustRegion tr = ROL::TRUSTREGION_TRUNCATEDCG; 
       parlist->set("Trust-Region Subproblem Solver Type", ROL::ETrustRegionToString(tr));
       *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";

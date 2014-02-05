@@ -66,6 +66,7 @@ private:
   Real rho_;
   Real alpha0_;
   bool useralpha_;
+  int algo_iter_;
 
   void updateIterate(Vector<Real> &xnew, const Vector<Real> &x, const Vector<Real> &s, Real alpha, 
                      Constraints<Real> &con ) {
@@ -95,6 +96,7 @@ public:
     rho_       = parlist.get("Backtracking Rate",                                 0.5);
     alpha0_    = parlist.get("Initial Linesearch Parameter",                      1.0);
     useralpha_ = parlist.get("User Defined Linesearch Parameter",                 false);
+    algo_iter_ = 0;
 
     if ( c1_ < 0.0 ) {
       c1_ = 1.e-4;
@@ -195,7 +197,7 @@ public:
             Objective<Real> &obj, Constraints<Real> &con ) {
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     // Determine Initial Step Length
-    if (this->useralpha_) {
+    if (this->useralpha_ || this->els_ == LINESEARCH_ITERATIONSCALING) {
       alpha = this->alpha0_;
     }
     else if ( this->edesc_ == DESCENT_STEEPEST || this->edesc_ == DESCENT_NONLINEARCG ) {
@@ -221,21 +223,40 @@ public:
     // Run Linesearch
     ls_neval = 0;
     ls_ngrad = 0;
-    if ( this->els_ == LINESEARCH_BACKTRACKING ) {
-      simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+    if ( this->els_ == LINESEARCH_ITERATIONSCALING ) {
+      this->iterationscaling( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con );
+    }
+    else if ( this->els_ == LINESEARCH_BACKTRACKING ) {
+      this->simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_CUBICINTERP ) {
-      backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+      this->backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_BRENTS ) {
-      brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+      this->brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_BISECTION ) {
-      bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+      this->bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_GOLDENSECTION ) {
-      goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+      this->goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
+  }
+
+  void iterationscaling( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
+                         const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                         Objective<Real> &obj, Constraints<Real> &con ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
+    this->algo_iter_++;
+    alpha /= this->algo_iter_;
+
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    this->updateIterate(*xnew,x,s,alpha,con);
+
+    obj.update(*xnew);
+    fval = obj.value(*xnew,tol);
+    ls_neval++;
   }
 
   void simplebacktracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
