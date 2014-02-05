@@ -43,8 +43,10 @@ namespace
 
     {
       stk::io::StkMeshIoBroker stkIo(communicator);
-      generateMetaData(stkIo);
-      stkIo.populate_bulk_data();
+      const std::string exodusFileName = "generated:1x1x8";
+      size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+      stkIo.create_input_mesh(index);
+      stkIo.populate_bulk_data(index);
 
       // ============================================================
       //+ EXAMPLE
@@ -76,18 +78,18 @@ namespace
       //+ EXAMPLE
       //+ Read parameters from file...
       stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.open_mesh_database(file_name, stk::io::READ_MESH);
-      stkIo.create_input_mesh();
-      stkIo.populate_bulk_data();
+      size_t index = stkIo.add_mesh_database(file_name, stk::io::READ_MESH);
+      stkIo.create_input_mesh(index);
+      stkIo.populate_bulk_data(index);
 
-      stkIo.read_defined_input_fields(0.0);
+      stkIo.read_defined_input_fields(index, 0.0);
 
       stk::util::ParameterMapType::const_iterator i = params.begin();
       stk::util::ParameterMapType::const_iterator ie = params.end();
       for (; i != ie; ++i) {
 	const std::string parameterName = (*i).first;
 	stk::util::Parameter &param = params.get_param(parameterName);
-	stkIo.get_global(parameterName, param.value, param.type);
+	stkIo.get_global(index, parameterName, param.value, param.type);
       }
 
       // ============================================================
@@ -103,7 +105,7 @@ namespace
       }
 
       std::vector<std::string> globalNamesOnFile;
-      stkIo.get_global_variable_names(globalNamesOnFile);
+      stkIo.get_global_variable_names(index, globalNamesOnFile);
       ASSERT_EQ(param_count, globalNamesOnFile.size());
     }
     // ============================================================

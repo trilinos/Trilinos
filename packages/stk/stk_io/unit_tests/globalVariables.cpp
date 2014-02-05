@@ -24,30 +24,23 @@ Ioss::Field::BasicType iossBasicType(int)
     return Ioss::Field::INTEGER;
 }
 
-void generateMetaData(stk::io::StkMeshIoBroker &stkIo)
-{
-    const std::string exodusFileName = "generated:1x1x8";
-    stkIo.open_mesh_database(exodusFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-}
-
 template <typename DataType>
 void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber, const std::vector<std::string> &goldGlobalVarName,
                          const std::vector<DataType> goldGlobalVarValue, DataType goldGlobalScale, MPI_Comm comm)
 {
     stk::io::StkMeshIoBroker stkIo(comm);
-    stkIo.open_mesh_database(outputFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
-    stkIo.read_defined_input_fields(stepNumber);
+    size_t index = stkIo.add_mesh_database(outputFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh(index);
+    stkIo.populate_bulk_data(index);
+    stkIo.read_defined_input_fields(index, stepNumber);
     std::vector<std::string> globalVarNames;
-    stkIo.get_global_variable_names(globalVarNames);
+    stkIo.get_global_variable_names(index, globalVarNames);
     ASSERT_EQ(goldGlobalVarName.size(), globalVarNames.size());
     for(size_t i=0; i<goldGlobalVarName.size(); i++)
     {
         EXPECT_STRCASEEQ(goldGlobalVarName[i].c_str(), globalVarNames[i].c_str());
         std::vector<DataType> globalVar;
-        ASSERT_TRUE(stkIo.get_global(globalVarNames[i], globalVar));
+        ASSERT_TRUE(stkIo.get_global(index, globalVarNames[i], globalVar));
         for(size_t j=0; j<globalVar.size(); j++)
         {
             EXPECT_NEAR(goldGlobalVarValue[i]+goldGlobalScale*j, globalVar[j], tolerance);
@@ -82,8 +75,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
@@ -113,8 +108,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, InvalidGlobalRequest)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
@@ -131,18 +128,18 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, InvalidGlobalRequest)
     {
       double global_value = 0.0;
       stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.open_mesh_database(outputFileName, stk::io::READ_MESH);
-      stkIo.create_input_mesh();
-      stkIo.populate_bulk_data();
+      size_t index = stkIo.add_mesh_database(outputFileName, stk::io::READ_MESH);
+      stkIo.create_input_mesh(index);
+      stkIo.populate_bulk_data(index);
 
       bool abort_if_not_exist = true;
-      EXPECT_THROW(stkIo.get_global("does_not_exist", global_value), std::exception);
-      EXPECT_THROW(stkIo.get_global("does_not_exist", global_value, abort_if_not_exist), std::exception);
-      ASSERT_TRUE(stkIo.get_global(globalVarName, global_value, abort_if_not_exist));
+      EXPECT_THROW(stkIo.get_global(index, "does_not_exist", global_value), std::exception);
+      EXPECT_THROW(stkIo.get_global(index, "does_not_exist", global_value, abort_if_not_exist), std::exception);
+      ASSERT_TRUE(stkIo.get_global(index, globalVarName, global_value, abort_if_not_exist));
 
       abort_if_not_exist = false;
-      ASSERT_FALSE(stkIo.get_global("does_not_exist", global_value, abort_if_not_exist));
-      ASSERT_TRUE(stkIo.get_global(globalVarName, global_value, abort_if_not_exist));
+      ASSERT_FALSE(stkIo.get_global(index, "does_not_exist", global_value, abort_if_not_exist));
+      ASSERT_TRUE(stkIo.get_global(index, globalVarName, global_value, abort_if_not_exist));
     }
     unlink(outputFileName.c_str());
 }
@@ -160,8 +157,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
@@ -194,8 +193,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
@@ -228,8 +229,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
@@ -258,8 +261,10 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
     globalVarValues.push_back(14);
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t resultOuputIndex = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
@@ -337,11 +342,13 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
 
         stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);
 
-        stkIo.populate_bulk_data();
+        stkIo.populate_bulk_data(index);
 
         putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
@@ -386,8 +393,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t fileIndex = stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
 
@@ -402,16 +411,16 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
 
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(restartFileName, stk::io::READ_RESTART);
-        stkIo.create_input_mesh();
-        stkIo.populate_bulk_data();
-        stkIo.read_defined_input_fields(time);
+        size_t index = stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
+        stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
+        stkIo.read_defined_input_fields(index, time);
         std::vector<std::string> globalVarNames;
-        stkIo.get_global_variable_names(globalVarNames);
+        stkIo.get_global_variable_names(index, globalVarNames);
         ASSERT_EQ(1u, globalVarNames.size());
         EXPECT_STRCASEEQ(globalVarName.c_str(), globalVarNames[0].c_str());
         double globalVar = 0.0;
-	ASSERT_TRUE(stkIo.get_global(globalVarNames[0], globalVar));
+	ASSERT_TRUE(stkIo.get_global(index, globalVarNames[0], globalVar));
         EXPECT_NEAR(globalVarValue, globalVar, tolerance);
     }
     const int stepNumber = 1;
@@ -433,11 +442,13 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
 
         stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);
 
-        stkIo.populate_bulk_data();
+        stkIo.populate_bulk_data(index);
 
         putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 

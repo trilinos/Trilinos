@@ -25,11 +25,10 @@ namespace {
                                    s_elems_per_edge + "|shell:xyzXYZ";
 
       stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.open_mesh_database(input_filename, "generated",
-			       stk::io::READ_MESH);
-      stkIo.create_input_mesh();
-
-      stkIo.populate_bulk_data();
+      size_t index = stkIo.add_mesh_database(input_filename, "generated",
+					     stk::io::READ_MESH);
+      stkIo.create_input_mesh(index);
+      stkIo.populate_bulk_data(index);
 
       stk::mesh::MetaData &meta_data = stkIo.meta_data();
       const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();

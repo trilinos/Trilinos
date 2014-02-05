@@ -19,8 +19,10 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
     //Write restart file with time step size as a global variable
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
         size_t fileIndex =
 	  stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
@@ -33,30 +35,30 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
     //Read restart file with time step size as a global variable
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(restartFileName, stk::io::READ_RESTART);
-        stkIo.create_input_mesh();
-        stkIo.populate_bulk_data();
-        stkIo.read_defined_input_fields(currentTime);
+        size_t index = stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
+        stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
+        stkIo.read_defined_input_fields(index, currentTime);
         std::vector<std::string> globalNamesOnFile;
-        stkIo.get_global_variable_names(globalNamesOnFile);
+        stkIo.get_global_variable_names(index, globalNamesOnFile);
 
         ASSERT_EQ(1u, globalNamesOnFile.size());
         EXPECT_STRCASEEQ(timeStepVarName.c_str(),
                          globalNamesOnFile[0].c_str());
         double timeStepSizeReadFromFile = 0.0;
-	stkIo.get_global(globalNamesOnFile[0], timeStepSizeReadFromFile);
+	stkIo.get_global(index, globalNamesOnFile[0], timeStepSizeReadFromFile);
         const double tolerance = 1e-16;
         EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, tolerance);
 
 	// If try to get a global that does not exist, will throw
 	// an exception by default...
 	double value = 0.0;
-	EXPECT_THROW(stkIo.get_global("does_not_exist", value),std::exception);
+	EXPECT_THROW(stkIo.get_global(index, "does_not_exist", value),std::exception);
 	
 	// If the application wants to handle the error instead (without a try/catch),
 	// can pass in an optional boolean:
 	bool abort_if_not_found = false;
-	bool found = stkIo.get_global("does_not_exist", value, abort_if_not_found);
+	bool found = stkIo.get_global(index, "does_not_exist", value, abort_if_not_found);
 	ASSERT_FALSE(found);
     }
 

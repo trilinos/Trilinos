@@ -15,13 +15,13 @@ STKUNIT_UNIT_TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
 
     stk::io::StkMeshIoBroker stkIo(communicator);
     const std::string exodusFileName = "generated:1x1x8";
-    stkIo.open_mesh_database(exodusFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
+    size_t input_index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh(input_index);
 
     stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "displacement", 1);
     stk::mesh::put_field(field0, stkMeshMetaData.universal_part());
-    stkIo.populate_bulk_data();
+    stkIo.populate_bulk_data(input_index);
 
     {
       size_t results_output_index = stkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);

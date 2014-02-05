@@ -43,8 +43,10 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
     // Write output file with all parameters in params list...
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
-        stkIo.populate_bulk_data();
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t input_index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(input_index);
+        stkIo.populate_bulk_data(input_index);
 
         size_t idx = stkIo.create_output_mesh(file_name,
 					      stk::io::WRITE_RESTART);
@@ -69,11 +71,11 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
     // Read params from file...
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(file_name, stk::io::READ_MESH);
-        stkIo.create_input_mesh();
-        stkIo.populate_bulk_data();
+        size_t index = stkIo.add_mesh_database(file_name, stk::io::READ_MESH);
+        stkIo.create_input_mesh(index);
+        stkIo.populate_bulk_data(index);
 
-        stkIo.read_defined_input_fields(0.0);
+        stkIo.read_defined_input_fields(index, 0.0);
 
 	size_t param_count = 0;
 	stk::util::ParameterMapType::const_iterator i = params.begin();
@@ -84,12 +86,12 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
 	  stk::util::Parameter &param = params.get_param(paramName);
 	  stk::util::Parameter &gold_param
 	    = gold_params.get_param(paramName);
-	  stkIo.get_global(paramName, param.value, param.type);
+	  stkIo.get_global(index, paramName, param.value, param.type);
 	  validate_parameters_equal_value(param, gold_param);
 	}
 
         std::vector<std::string> globalNamesOnFile;
-        stkIo.get_global_variable_names(globalNamesOnFile);
+        stkIo.get_global_variable_names(index, globalNamesOnFile);
         ASSERT_EQ(param_count, globalNamesOnFile.size());
 
     }

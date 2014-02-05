@@ -18,10 +18,13 @@ namespace {
     MPI_Comm comm = MPI_COMM_WORLD;
 
     stk::io::StkMeshIoBroker stkIo(comm);
+    const std::string exodusFileName = "generated:1x1x8";
+    size_t ifh = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh(ifh);
       
-    stk::mesh::MetaData &meta = generateMetaData(stkIo);
+    stk::mesh::MetaData &meta = stkIo.meta_data();
     stk::mesh::FieldBase *field = declareTriStateNodalField(meta, "disp");
-    stkIo.populate_bulk_data();
+    stkIo.populate_bulk_data(ifh);
 
     putDataOnTriStateField(stkIo.bulk_data(), field, 1.0, 2.0, 3.0);
 

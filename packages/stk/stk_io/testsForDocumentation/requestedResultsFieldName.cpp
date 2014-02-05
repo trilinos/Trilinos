@@ -13,7 +13,11 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stk::mesh::MetaData &stkMeshMetaData = generateMetaData(stkIo);
+    const std::string exodusFileName = "generated:1x1x8";
+    size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh(index);
+
+    stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
 
     // describe nodal 'displacement' field
     const int numberOfStates = 1;
@@ -29,7 +33,7 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
     stkIo.add_field(resultsOutputIndex, nodalDisplacement, alternateFieldName);
 
     // field descriptions done, fill field data (done with mesh input)
-    stkIo.populate_bulk_data();
+    stkIo.populate_bulk_data(index);
 
     EXPECT_TRUE( fieldWithNameChangedIsOutput(stkIo, communicator, resultsOutputIndex, alternateFieldName) );
     unlink(outputFileName.c_str());

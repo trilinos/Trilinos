@@ -46,7 +46,6 @@
 #include "Teuchos_PtrDecl.hpp"          // for Ptr
 #include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
 #include "boost/any.hpp"                // for any_cast, any
-#include "boost/cstdint.hpp"            // for int64_t
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
@@ -672,9 +671,8 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 template <typename INT>
-void process_nodeblocks(stk::io::StkMeshIoBroker &mesh, INT /*dummy*/)
+void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
 {
-  stk::mesh::BulkData &bulk = mesh.bulk_data();
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
   // not part of the analysis mesh due to subsetting of the element
@@ -686,7 +684,7 @@ void process_nodeblocks(stk::io::StkMeshIoBroker &mesh, INT /*dummy*/)
   // However, if we only define nodes that are connected to elements,
   // then we risk missing "free" nodes that the user may want to have
   // existing in the model.
-  const Ioss::NodeBlockContainer& node_blocks = mesh.get_input_io_region()->get_node_blocks();
+  const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
@@ -701,9 +699,8 @@ void process_nodeblocks(stk::io::StkMeshIoBroker &mesh, INT /*dummy*/)
 }
 
 template <typename INT>
-void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*dummy*/)
+void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
 {
-  stk::mesh::BulkData &bulk = mesh.bulk_data();
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
   // not part of the analysis mesh due to subsetting of the element
@@ -715,7 +712,7 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   // However, if we only define nodes that are connected to elements,
   // then we risk missing "free" nodes that the user may want to have
   // existing in the model.
-  const Ioss::NodeBlockContainer& node_blocks = mesh.get_input_io_region()->get_node_blocks();
+  const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
@@ -738,13 +735,14 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   // instead of the "global" ids. If there exists a stk-field with the
   // name "implicit_node_ids", then populate the field with the correct
   // data.
-  stk::mesh::FieldBase *implicit_node_id_field = mesh.meta_data().get_field<stk::mesh::FieldBase> ("implicit_node_ids");
+  const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+  stk::mesh::FieldBase *implicit_node_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_node_ids");
   if (implicit_node_id_field) {
     stk::io::field_data_from_ioss(bulk, implicit_node_id_field, nodes, nb, "implicit_ids");
   }
 
 
-  stk::mesh::FieldBase const*coord_field = &mesh.get_coordinate_field();
+  stk::mesh::FieldBase const* coord_field = meta.coordinate_field();
   stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
 
   // Add all attributes as fields.
@@ -755,7 +753,7 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
     if(*I == "attribute" && names.size() > 1)
       continue;
-    stk::mesh::FieldBase *field = mesh.meta_data().get_field<stk::mesh::FieldBase> (*I);
+    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
     if (field)
       stk::io::field_data_from_ioss(bulk, field, nodes, nb, *I);
   }
@@ -1158,16 +1156,13 @@ namespace stk {
   namespace io {
 
     StkMeshIoBroker::StkMeshIoBroker()
-      : m_communicator(MPI_COMM_NULL), m_connectivity_map(NULL),
-        m_db_purpose(stk::io::PURPOSE_UNKNOWN)
+      : m_communicator(MPI_COMM_NULL), m_connectivity_map(NULL)        
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
     StkMeshIoBroker::StkMeshIoBroker(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
-      : m_communicator(comm),
-        m_connectivity_map(connectivity_map),
-        m_db_purpose(stk::io::PURPOSE_UNKNOWN)
+      : m_communicator(comm), m_connectivity_map(connectivity_map)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1192,11 +1187,17 @@ namespace stk {
       return * coord_field;
     }
 
-    void StkMeshIoBroker::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
+    void StkMeshIoBroker::set_input_io_region(size_t input_index, Teuchos::RCP<Ioss::Region> ioss_input_region)
     {
-      ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
+      validate_input_file_index(input_index);
+      m_input_files[input_index]->set_input_io_region(ioss_input_region);
+    }
+
+    void InputFile::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
+    {
+      ThrowErrorMsgIf(!Teuchos::is_null(m_region),
                       "This StkMeshIoBroker already has an Ioss::Region associated with it.");
-      m_input_region = ioss_input_region;
+      m_region = ioss_input_region;
     }
 
     void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
@@ -1212,7 +1213,7 @@ namespace stk {
       m_communicator = m_bulk_data->parallel();
     }
 
-    bool StkMeshIoBroker::open_mesh_database(std::string filename, DatabasePurpose purpose)
+    size_t StkMeshIoBroker::add_mesh_database(std::string filename, DatabasePurpose purpose)
     {
       std::string type = "exodus";
 
@@ -1227,48 +1228,64 @@ namespace stk {
         type = filename.substr(0, colon);
         filename = filename.substr(colon+1);
       }
-      return open_mesh_database(filename, type, purpose);
+      return add_mesh_database(filename, type, purpose);
     }
 
 
-    bool StkMeshIoBroker::open_mesh_database(std::string mesh_filename,
-                                             const std::string &mesh_type,
-                                             DatabasePurpose purpose)
+    size_t StkMeshIoBroker::add_mesh_database(const std::string &filename,
+					      const std::string &type,
+					      DatabasePurpose purpose)
     {
-      ThrowErrorMsgIf(!Teuchos::is_null(m_input_database),
+      Teuchos::RCP<InputFile> input_file = Teuchos::rcp(new InputFile(filename, m_communicator,
+								      type, purpose, m_property_manager));
+      m_input_files.push_back(input_file);
+
+      size_t index_of_input_file = m_input_files.size()-1;
+      return index_of_input_file;
+    }
+    
+    InputFile::InputFile(std::string mesh_filename,
+			 MPI_Comm communicator, 
+			 const std::string &mesh_type,
+			 DatabasePurpose purpose,
+			 Ioss::PropertyManager &properties)
+      : m_db_purpose(purpose)
+    {
+      ThrowErrorMsgIf(!Teuchos::is_null(m_database),
                       "This StkMeshIoBroker already has an Ioss::DatabaseIO associated with it.");
-      ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
+      ThrowErrorMsgIf(!Teuchos::is_null(m_region),
                       "This StkMeshIoBroker already has an Ioss::Region associated with it.");
 
-      m_db_purpose = purpose;
-      
       Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
       if (m_db_purpose == stk::io::READ_RESTART)
         db_usage = Ioss::READ_RESTART;
         
       stk::util::filename_substitution(mesh_filename);
-      m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
-                                                              db_usage, m_communicator,
-                                                              m_property_manager));
-      if (Teuchos::is_null(m_input_database) || !m_input_database->ok(true)) {
-        std::cerr  << "ERROR: Could not open database '" << mesh_filename
-                   << "' of type '" << mesh_type << "'\n";
-        return false;
-      }
-      return true;
+      m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
+							db_usage, communicator,
+							properties));
+      ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
+		      "ERROR: Could not open database '" << mesh_filename
+		      << "' of type '" << mesh_type << "'");
     }
 
 
-    void StkMeshIoBroker::create_ioss_region()
+    void StkMeshIoBroker::create_ioss_region(size_t input_file_index)
     {
-      // If the m_input_region is null, try to create it from
+      validate_input_file_index(input_file_index);
+      m_input_files[input_file_index]->create_ioss_region();
+    }
+    
+    void InputFile::create_ioss_region()
+    {
+      // If the m_region is null, try to create it from
       // the m_input_database. If that is null, throw an error.
-      if (Teuchos::is_null(m_input_region)) {
-        ThrowErrorMsgIf(Teuchos::is_null(m_input_database),
+      if (Teuchos::is_null(m_region)) {
+        ThrowErrorMsgIf(Teuchos::is_null(m_database),
                         "There is no input mesh database associated with this StkMeshIoBroker. Please call open_mesh_database() first.");
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
-        m_input_region = Teuchos::rcp(new Ioss::Region(m_input_database.release().get(), "input_model"));
+        m_region = Teuchos::rcp(new Ioss::Region(m_database.release().get(), "input_model"));
       }
     }
 
@@ -1282,28 +1299,33 @@ namespace stk {
       std::copy(rank_names.begin(), rank_names.end(), std::back_inserter(m_rank_names));
     }
 
-    void StkMeshIoBroker::create_input_mesh()
+    void StkMeshIoBroker::create_input_mesh(size_t input_file_index)
     {
-      if (Teuchos::is_null(m_input_region)) {
-        create_ioss_region();
+      validate_input_file_index(input_file_index);
+      if (Teuchos::is_null(m_input_files[input_file_index]->get_input_io_region())) {
+        m_input_files[input_file_index]->create_ioss_region();
       }
+
+      Ioss::Region *region = m_input_files[input_file_index]->get_input_io_region().get();
+      ThrowErrorMsgIf (region==NULL,
+                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
       // See if meta data is null, if so, create a new one...
       if (Teuchos::is_null(m_meta_data)) {
         m_meta_data = Teuchos::rcp(new stk::mesh::MetaData());
       }
 
-      size_t spatial_dimension = m_input_region->get_property("spatial_dimension").get_int();
+      size_t spatial_dimension = region->get_property("spatial_dimension").get_int();
       if (m_rank_names.empty()) {
         initialize_spatial_dimension(meta_data(), spatial_dimension, stk::mesh::entity_rank_names());
       } else {
         initialize_spatial_dimension(meta_data(), spatial_dimension, m_rank_names);
       }
 
-      process_nodeblocks(*m_input_region.get(),    meta_data());
-      process_elementblocks(*m_input_region.get(), meta_data());
-      process_sidesets(*m_input_region.get(),      meta_data());
-      process_nodesets(*m_input_region.get(),      meta_data());
+      process_nodeblocks(*region,    meta_data());
+      process_elementblocks(*region, meta_data());
+      process_sidesets(*region,      meta_data());
+      process_nodesets(*region,      meta_data());
     }
 
 
@@ -1318,8 +1340,9 @@ namespace stk {
     {
       std::string out_filename = filename;
       stk::util::filename_substitution(out_filename);
+      Teuchos::RCP<Ioss::Region> input_region = get_input_io_region(0);
       Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
-                                                                         properties, m_input_region.get()));
+                                                                         properties, input_region.get()));
       m_output_files.push_back(output_file);
 
       size_t index_of_output_file = m_output_files.size()-1;
@@ -1355,18 +1378,22 @@ namespace stk {
 
     void StkMeshIoBroker::end_output_step(size_t output_file_index)
     {
+        validate_output_file_index(output_file_index);
         m_output_files[output_file_index]->end_output_step();
     }
 
-    void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
+    void StkMeshIoBroker::populate_mesh(size_t input_file_index, bool delay_field_data_allocation)
     {
+      validate_input_file_index(input_file_index);
+
       if (!meta_data().is_commit())
         meta_data().commit();
 
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+
+      ThrowErrorMsgIf (Teuchos::is_null(m_input_files[input_file_index]->get_input_io_region()),
                        "There is no Input mesh region associated with this Mesh Data.");
 
-      Ioss::Region *region = m_input_region.get();
+      Ioss::Region *region = m_input_files[input_file_index]->get_input_io_region().get();
       ThrowErrorMsgIf (region==NULL,
                        "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
@@ -1390,13 +1417,13 @@ namespace stk {
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
         int64_t zero = 0;
-        process_nodeblocks(*this, zero);
+        process_nodeblocks(*region,    bulk_data(), zero);
         process_elementblocks(*region, bulk_data(), zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       } else {
         int zero = 0;
-        process_nodeblocks(*this, zero);
+        process_nodeblocks(*region,    bulk_data(), zero);
         process_elementblocks(*region, bulk_data(), zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
@@ -1411,27 +1438,29 @@ namespace stk {
       }
     }
 
-    void StkMeshIoBroker::populate_field_data()
+    void StkMeshIoBroker::populate_field_data(size_t input_file_index)
     {
+      validate_input_file_index(input_file_index);
+
       //if field-data has already been allocated, then the allocate_field_data() method
       //is a harmless no-op.
       bulk_data().allocate_field_data();
 
-      Ioss::Region *region = m_input_region.get();
+      Ioss::Region *region = m_input_files[input_file_index]->get_input_io_region().get();
       ThrowErrorMsgIf (region==NULL,
                        "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
 
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
           int64_t zero = 0;
-          process_node_coords_and_attributes(*this, zero);
+          process_node_coords_and_attributes(*region, bulk_data(), zero);
           process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
           process_nodesets_df(*region,      bulk_data(), zero);
           process_sidesets_df(*region,      bulk_data());
       }
       else {
           int zero = 0;
-          process_node_coords_and_attributes(*this, zero);
+          process_node_coords_and_attributes(*region, bulk_data(), zero);
           process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
           process_nodesets_df(*region,      bulk_data(), zero);
           process_sidesets_df(*region,      bulk_data());
@@ -1439,47 +1468,34 @@ namespace stk {
     }
 
     // ========================================================================
-    void StkMeshIoBroker::populate_bulk_data()
+    void StkMeshIoBroker::populate_bulk_data(size_t input_file_index)
     {
-      if (!meta_data().is_commit())
-        meta_data().commit();
+      validate_input_file_index(input_file_index);
 
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-                       "There is no Input mesh region associated with this Mesh Data.");
-
-      Ioss::Region *region = m_input_region.get();
-      ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
-
-      // Check if bulk_data is null; if so, create a new one...
-      if (Teuchos::is_null(m_bulk_data)) {
-        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
-                                                             , region->get_database()->util().communicator()
-#ifdef SIERRA_MIGRATION
-                                                             , false
-#endif
-                                                             , m_connectivity_map
-                                                           )));
-      }
-
-      //to preserve behavior for callers of this method, don't do the
-      //delay-field-data-allocation optimization.
-      //Folks who want the optimization can call the population_mesh/populate_field_data methods separately.
+      // to preserve behavior for callers of this method, don't do the
+      // delay-field-data-allocation optimization.
+      // If want the optimization, call the population_mesh/populate_field_data methods separately.
       bool delay_field_data_allocation = false;
-      bulk_data().modification_begin();
-      populate_mesh(delay_field_data_allocation);
-      populate_field_data();
-      bulk_data().modification_end();
+
+      populate_mesh(input_file_index, delay_field_data_allocation);
+      populate_field_data(input_file_index);
+    }
+    
+    void StkMeshIoBroker::add_input_field(size_t input_file_index,
+					  stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+      validate_input_file_index(input_file_index);
+      m_input_files[input_file_index]->add_input_field(field, db_name);
     }
 
-    void StkMeshIoBroker::add_input_field(stk::mesh::FieldBase &field, const std::string &db_name)
+    void InputFile::add_input_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
       std::string name = pickFieldName(field, db_name);
       
       bool fieldAlreadyExists=false;
-      for (size_t i=0; i <m_input_fields.size(); i++) {
-        if (&field == m_input_fields[i].field()) {
-          m_input_fields[i].set_db_name(name);
+      for (size_t i=0; i <m_fields.size(); i++) {
+        if (&field == m_fields[i].field()) {
+          m_fields[i].set_db_name(name);
           fieldAlreadyExists = true;
           break;
         }
@@ -1487,7 +1503,7 @@ namespace stk {
 
       if (!fieldAlreadyExists) {
         stk::io::FieldAndName inputField(&field, name);
-        m_input_fields.push_back(inputField);
+        m_fields.push_back(inputField);
         stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
       }
     }
@@ -1495,10 +1511,18 @@ namespace stk {
     void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
     {
       ThrowErrorMsgIf(m_output_files.empty() || output_file_index >= m_output_files.size(),
-        "MeshReadWriteUtils::validate_output_file_index: invalid output file index of " << output_file_index << ".");
+		      "StkMeshIoBroker::validate_output_file_index: invalid output file index of "
+		      << output_file_index << ".");
       
       ThrowErrorMsgIf (Teuchos::is_null(m_output_files[output_file_index]->get_output_io_region()),
-        "MeshReadWriteUtils::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
+        "StkMeshIoBroker::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
+    }
+
+    void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
+    {
+      ThrowErrorMsgIf(m_input_files.empty() || input_file_index >= m_input_files.size(),
+		      "StkMeshIoBroker::validate_input_file_index: invalid input file index of "
+		      << input_file_index << ".");
     }
 
     void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field)
@@ -1512,45 +1536,66 @@ namespace stk {
         m_output_files[output_file_index]->add_field(field, alternate_name);
     }
 
-    void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
+    void StkMeshIoBroker::get_global_variable_names(size_t input_file_index,
+						    std::vector<std::string> &names)
     {
-        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-                         "Attempt to read global variables before restart initialized.");
-        m_input_region->field_describe(Ioss::Field::TRANSIENT, &names);
+      validate_input_file_index(input_file_index);
+      m_input_files[input_file_index]->get_global_variable_names(names);
     }
 
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName,
+    void InputFile::get_global_variable_names(std::vector<std::string> &names)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_region),
+                         "Attempt to read global variables before restart initialized.");
+        m_region->field_describe(Ioss::Field::TRANSIENT, &names);
+    }
+
+    bool StkMeshIoBroker::get_global(size_t input_file_index, const std::string &globalVarName,
                                      boost::any &value, stk::util::ParameterType::Type type,
                                      bool abort_if_not_found)
     {
-      return internal_read_parameter(m_input_region, globalVarName, value, type, abort_if_not_found);
+      validate_input_file_index(input_file_index);
+      Teuchos::RCP<Ioss::Region> region = m_input_files[input_file_index]->get_input_io_region();
+      return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
     }
 
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar,
+    bool StkMeshIoBroker::get_global(size_t input_file_index,
+				     const std::string &globalVarName, std::vector<double> &globalVar,
                                      bool abort_if_not_found)
     {
-      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL,
+      validate_input_file_index(input_file_index);
+      Teuchos::RCP<Ioss::Region> region = m_input_files[input_file_index]->get_input_io_region();
+      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                   abort_if_not_found);
     }
 
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<int> &globalVar,
+    bool StkMeshIoBroker::get_global(size_t input_file_index,
+				     const std::string &globalVarName, std::vector<int> &globalVar,
                                      bool abort_if_not_found)
     {
-      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::INTEGER,
+      validate_input_file_index(input_file_index);
+      Teuchos::RCP<Ioss::Region> region = m_input_files[input_file_index]->get_input_io_region();
+      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
                                   abort_if_not_found);
     }
 
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVar,
+    bool StkMeshIoBroker::get_global(size_t input_file_index,
+				     const std::string &globalVarName, int &globalVar,
                                      bool abort_if_not_found)
     {
-      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::INTEGER,
+      validate_input_file_index(input_file_index);
+      Teuchos::RCP<Ioss::Region> region = m_input_files[input_file_index]->get_input_io_region();
+      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
                                   abort_if_not_found);
     }
 
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar,
+    bool StkMeshIoBroker::get_global(size_t input_file_index,
+				     const std::string &globalVarName, double &globalVar,
                                      bool abort_if_not_found)
     {
-      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL,
+      validate_input_file_index(input_file_index);
+      Teuchos::RCP<Ioss::Region> region = m_input_files[input_file_index]->get_input_io_region();
+      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                   abort_if_not_found);
     }
 
@@ -1618,46 +1663,69 @@ namespace stk {
     }
 
 
-    void StkMeshIoBroker::add_all_mesh_fields_as_input_fields()
+    void StkMeshIoBroker::add_all_mesh_fields_as_input_fields(size_t input_file_index)
     {
-      stk::io::define_input_fields(*m_input_region.get(),  meta_data());
+      validate_input_file_index(input_file_index);
+      m_input_files[input_file_index]->add_all_mesh_fields_as_input_fields(meta_data());
+    }
+
+    void InputFile::add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta)
+    {
+      stk::io::define_input_fields(*m_region.get(),  meta);
 
       // Iterate all fields and set them as input fields...
-      const stk::mesh::FieldVector &fields = meta_data().get_fields();
+      const stk::mesh::FieldVector &fields = meta.get_fields();
       for (size_t i=0; i < fields.size(); i++) {
         const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
         if ( role && *role == Ioss::Field::TRANSIENT ) {
-            add_input_field(*fields[i]); // input
-          }
+	  add_input_field(*fields[i], fields[i]->name()); // input
+	}
       }
     }
 
-    double StkMeshIoBroker::read_defined_input_fields(double time,
+    double StkMeshIoBroker::read_defined_input_fields(size_t input_file_index,
+						      double time,
                                                       std::vector<stk::io::FieldAndName> *missing)
     {
-      // Find the step on the database with time closest to the requested time...
-      Ioss::Region *region = m_input_region.get();
-      
-      int step = find_closest_step(region, time);
-      return read_defined_input_fields(step, missing);
+      validate_input_file_index(input_file_index);
+      return m_input_files[input_file_index]->read_defined_input_fields(time, missing, bulk_data());
     }
 
-    double StkMeshIoBroker::read_defined_input_fields(int step,
+    double InputFile::read_defined_input_fields(double time,
+						std::vector<stk::io::FieldAndName> *missing,
+						stk::mesh::BulkData &bulk)
+    {
+      // Find the step on the database with time closest to the requested time...
+      Ioss::Region *region = m_region.get();
+      
+      int step = find_closest_step(region, time);
+      return read_defined_input_fields(step, missing, bulk);
+    }
+
+    double StkMeshIoBroker::read_defined_input_fields(size_t input_file_index, int step,
                                                       std::vector<stk::io::FieldAndName> *missing)
+    {
+      validate_input_file_index(input_file_index);
+      return m_input_files[input_file_index]->read_defined_input_fields(step, missing, bulk_data());
+    }
+
+    double InputFile::read_defined_input_fields(int step,
+						std::vector<stk::io::FieldAndName> *missing,
+						stk::mesh::BulkData &bulk)
     {
       if (step <= 0)
         return 0;
 
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+      ThrowErrorMsgIf (Teuchos::is_null(m_region),
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
-      Ioss::Region *region = m_input_region.get();
+      Ioss::Region *region = m_region.get();
 
-      std::sort(m_input_fields.begin(), m_input_fields.end(), fieldOrdinalSort);
+      std::sort(m_fields.begin(), m_fields.end(), fieldOrdinalSort);
 
       {
-        std::vector<stk::io::FieldAndName>::iterator I = m_input_fields.begin();
-        while (I != m_input_fields.end()) {
+        std::vector<stk::io::FieldAndName>::iterator I = m_fields.begin();
+        while (I != m_fields.end()) {
           (*I).m_wasFound = false; ++I;
         }
       }
@@ -1666,12 +1734,13 @@ namespace stk {
       region->begin_state(step);
 
       // Special processing for nodeblock (all nodes in model)...
-      ioss_restore_input_fields(m_input_fields, bulk_data(), meta_data().universal_part(),
+      const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+      ioss_restore_input_fields(m_fields, bulk, meta.universal_part(),
                                 stk::topology::NODE_RANK,
                                 region->get_node_blocks()[0], m_db_purpose);
 
       // Now handle all non-nodeblock parts...
-      const stk::mesh::PartVector &all_parts = meta_data().get_parts();
+      const stk::mesh::PartVector &all_parts = meta.get_parts();
       for ( stk::mesh::PartVector::const_iterator
               ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
@@ -1683,7 +1752,7 @@ namespace stk {
           // Get Ioss::GroupingEntity corresponding to this part...
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && entity->type() != Ioss::SIDESET) {
-            ioss_restore_input_fields(m_input_fields, bulk_data(), *part, rank, entity,
+            ioss_restore_input_fields(m_fields, bulk, *part, rank, entity,
                                       m_db_purpose);
           }
 
@@ -1698,7 +1767,7 @@ namespace stk {
               node_entity = region->get_entity("nodeblock_1");
             }
             if (node_entity != NULL) {
-              ioss_restore_input_fields(m_input_fields, bulk_data(), *part,
+              ioss_restore_input_fields(m_fields, bulk, *part,
                                         stk::topology::NODE_RANK, node_entity,
                                         m_db_purpose);
             }
@@ -1708,8 +1777,8 @@ namespace stk {
 
       size_t missing_fields = 0;
       std::ostringstream msg ;
-      std::vector<stk::io::FieldAndName>::iterator I = m_input_fields.begin();
-      while (I != m_input_fields.end()) {
+      std::vector<stk::io::FieldAndName>::iterator I = m_fields.begin();
+      while (I != m_fields.end()) {
         if (!(*I).m_wasFound) {
           ++missing_fields;
           if (missing) {

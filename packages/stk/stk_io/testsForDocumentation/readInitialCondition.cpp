@@ -23,13 +23,13 @@ namespace {
       stk::io::StkMeshIoBroker stkIo(communicator);
 
       const std::string generatedFileName = "generated:8x8x8";
-      stkIo.open_mesh_database(generatedFileName, stk::io::READ_MESH);
-      stkIo.create_input_mesh();
+      size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+      stkIo.create_input_mesh(index);
 
       stk::mesh::Field<double> &temperature =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
-      stkIo.populate_bulk_data();
+      stkIo.populate_bulk_data(index);
 
       size_t fh = stkIo.create_output_mesh(ic_name, stk::io::WRITE_RESULTS);
 
@@ -63,20 +63,20 @@ namespace {
       //+ Read the value of the "temp" field at step 2 and populate
       //+ the nodal field "temperature" for use as an initial condition
       stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.open_mesh_database(ic_name, stk::io::READ_MESH);
-      stkIo.create_input_mesh();
+      size_t index = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
+      stkIo.create_input_mesh(index);
 
       stk::mesh::Field<double> &temperature =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
 	                                            (stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
-      stkIo.populate_bulk_data();
+      stkIo.populate_bulk_data(index);
 
       //+ The name of the field on the database is "temp"
-      stkIo.add_input_field(temperature, "temp");
+      stkIo.add_input_field(index, temperature, "temp");
 
       //+ Read the field values from the database at time 2.0
-      stkIo.read_defined_input_fields(2.0);
+      stkIo.read_defined_input_fields(index, 2.0);
 
       // ============================================================
       //+ VERIFICATION

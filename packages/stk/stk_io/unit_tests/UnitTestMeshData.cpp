@@ -56,13 +56,8 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
-  EXPECT_TRUE(success);
-
-  if (!success)
-    return;
- 
-  fixture.create_input_mesh();
+  size_t index = fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
+  fixture.create_input_mesh(index);
 
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
@@ -70,7 +65,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
-  fixture.populate_bulk_data();
+  fixture.populate_bulk_data(index);
 
   // exodus file creation
   std::string output_base_filename = "unit_test_output.e";
@@ -94,13 +89,9 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
-  EXPECT_TRUE(success);
+  size_t input_index = fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
 
-  if (!success)
-    return;
-
-  fixture.create_input_mesh();
+  fixture.create_input_mesh(input_index);
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
@@ -108,7 +99,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
-  fixture.populate_bulk_data();
+  fixture.populate_bulk_data(input_index);
 
   // Put some entities into the "active" part...
   // This will be used to test the I/O filtering via a selector...
@@ -139,13 +130,9 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
 
   std::string input_base_filename = "unit_test.g";
 
-  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
-  EXPECT_TRUE(success);
-
-  if (!success)
-    return;
+  size_t input_index = fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
   
-  fixture.create_input_mesh();
+  fixture.create_input_mesh(input_index);
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
@@ -153,7 +140,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
-  fixture.populate_bulk_data();
+  fixture.populate_bulk_data(input_index);
 
   // Put some entities into the "active" part...
   // This will be used to test the I/O filtering via a selector...
@@ -198,20 +185,16 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
   std::string input_base_filename = "1mCube_20x20x20.g";
 
   // Initialize meta data from exodus file
-  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
-  EXPECT_TRUE(success);
+  size_t input_index = fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
 
-  if (!success)
-    return;
-
-  fixture.create_input_mesh();
+  fixture.create_input_mesh(input_index);
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Commit
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
-  fixture.populate_bulk_data();
+  fixture.populate_bulk_data(input_index);
   stk::mesh::BulkData &bulk_data = fixture.bulk_data();
 
   const std::vector< stk::mesh::Bucket * > & element_buckets

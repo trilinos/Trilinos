@@ -11,13 +11,6 @@
 #include <stk_mesh/base/Field.hpp>
 namespace {
 
-void generateMetaData(stk::io::StkMeshIoBroker &stkIo)
-{
-    const std::string exodusFileName = "generated:1x1x8";
-    stkIo.open_mesh_database(exodusFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-}
-
 void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::string &internalClientFieldName)
 {
     const int numberOfStates = 1;
@@ -43,11 +36,13 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
     std::string requestedFieldNameForResultsOutput("NotjeSSe");
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-        stkIo.populate_bulk_data();
+        stkIo.populate_bulk_data(index);
 
         size_t results_output_index = stkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);
 
@@ -74,11 +69,13 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
     const std::string internalClientFieldName = "Field0";
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
         
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-        stkIo.populate_bulk_data();
+        stkIo.populate_bulk_data(index);
         
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
 
@@ -108,11 +105,13 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
     const std::string internalClientFieldName = "Field0";
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        generateMetaData(stkIo);
+	const std::string exodusFileName = "generated:1x1x8";
+	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+	stkIo.create_input_mesh(index);
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-        stkIo.populate_bulk_data();
+        stkIo.populate_bulk_data(index);
 
         size_t results_output_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
