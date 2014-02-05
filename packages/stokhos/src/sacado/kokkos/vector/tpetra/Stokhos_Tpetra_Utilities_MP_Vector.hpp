@@ -355,6 +355,103 @@ namespace Stokhos {
     return create_flat_vector_view(vec, const_flat_map);
   }
 
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
+  // Create a flattened vector by unrolling the MP::Vector scalar type.  The
+  // returned vector is a view of the original
+  template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
+            typename Device>
+  Teuchos::RCP< const Tpetra::MultiVector<typename Storage::value_type,
+                                          LocalOrdinal,GlobalOrdinal,
+                                          Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
+  create_flat_vector_view(
+    const Tpetra::MultiVector<Sacado::MP::Vector<Storage>,
+                              LocalOrdinal,GlobalOrdinal,
+                              Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& vec_const,
+    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
+                                          Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef typename Storage::value_type BaseScalar;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+    typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
+    typedef typename Vector::view_type view_type;
+    typedef typename FlatVector::view_type flat_view_type;
+
+    // Cast-away const since resulting vector is a view and we can't create
+    // a const-vector directly
+    Vector& vec = const_cast<Vector&>(vec_const);
+
+    // Get data
+    view_type vec_vals = vec.getLocalView();
+    //typename view_type::array_type vec_vals_array = vec_vals;
+
+    // MP size
+    const LocalOrdinal mp_size = vec_vals.d_view.static_storage_size();
+
+    // Create view of data
+    // How do I create an unmanaged dual view????
+    flat_view_type flat_vec_vals("flat_vals",
+                                 vec_vals.dimension_0()*mp_size,
+                                 vec_vals.dimension_1());
+
+    // Create flat vector
+    RCP<FlatVector> flat_vec =
+      rcp(new FlatVector(flat_map, flat_vec_vals));
+
+    return flat_vec;
+  }
+
+  // Create a flattened vector by unrolling the MP::Vector scalar type.  The
+  // returned vector is a view of the original
+  template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
+            typename Device>
+  Teuchos::RCP< Tpetra::MultiVector<typename Storage::value_type,
+                                    LocalOrdinal,GlobalOrdinal,
+                                    Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
+  create_flat_vector_view(
+    Tpetra::MultiVector<Sacado::MP::Vector<Storage>,
+                        LocalOrdinal,GlobalOrdinal,
+                        Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& vec,
+    const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
+                                          Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef typename Storage::value_type BaseScalar;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+    typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
+    typedef typename Vector::view_type view_type;
+    typedef typename FlatVector::view_type flat_view_type;
+
+    // Get data
+    view_type vec_vals = vec.getLocalView();
+    //typename view_type::array_type vec_vals_array = vec_vals;
+
+    // MP size
+    const LocalOrdinal mp_size = vec_vals.d_view.static_storage_size();
+
+    // Create view of data
+    // How do I create an unmanaged dual view????
+    flat_view_type flat_vec_vals("flat_vals",
+                                 vec_vals.dimension_0()*mp_size,
+                                 vec_vals.dimension_1());
+
+    // Create flat vector
+    RCP<FlatVector> flat_vec =
+      rcp(new FlatVector(flat_map, flat_vec_vals));
+
+    return flat_vec;
+  }
+
+#endif
+
   // Create a flattened matrix by unrolling the MP::Vector scalar type.  The
   // returned matrix is NOT a view of the original (and can't be)
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,

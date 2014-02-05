@@ -966,7 +966,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #endif
 }
 
-#if  defined(HAVE_STOKHOS_BELOS)
+#if defined(HAVE_STOKHOS_BELOS)
 
 //
 // Test Belos GMRES solve for a simple banded upper-triangular matrix
@@ -1077,8 +1077,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
 
-  x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-              Teuchos::VERB_EXTREME);
+  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
 
   // Check -- Correct answer is:
   //     [ 0, 0,   ..., 0            ]
@@ -1217,8 +1217,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
 
-  x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-              Teuchos::VERB_EXTREME);
+  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
 
   // Check -- Correct answer is:
   //     [ 0, 0,   ..., 0            ]
@@ -1415,7 +1415,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if 0 && defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
+#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
 
 //
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -1522,10 +1522,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
-  // RCP<OP> M =
-  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
   RCP<OP> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+  // RCP<OP> M =
+  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
   // typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
   // Ifpack2::Factory factory;
   // RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", matrix);
@@ -1541,7 +1541,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
-  //problem->setRightPrec(M);
+  problem->setRightPrec(M);
   problem->setProblem();
   RCP<ParameterList> belosParams = rcp(new ParameterList);
   typename ST::magnitudeType tol = 1e-12;

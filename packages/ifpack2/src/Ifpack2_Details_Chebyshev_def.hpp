@@ -329,7 +329,7 @@ setParameters (Teuchos::ParameterList& plist)
   // this class uses the existence of those parameters to determine
   // whether it should do eigenanalysis.
   if (plist.isParameter ("chebyshev: max eigenvalue")) {
-    lambdaMax = plist.get<ST> ("chebyshev: max eigenvalue");
+    lambdaMax = plist.get<double> ("chebyshev: max eigenvalue");
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (lambdaMax), std::invalid_argument,
       "Ifpack2::Chebyshev::setParameters: \"chebyshev: max eigenvalue\" "
@@ -337,7 +337,7 @@ setParameters (Teuchos::ParameterList& plist)
       "choose to supply it, it must have a finite value.");
   }
   if (plist.isParameter ("chebyshev: min eigenvalue")) {
-    lambdaMin = plist.get<ST> ("chebyshev: min eigenvalue");
+    lambdaMin = plist.get<double> ("chebyshev: min eigenvalue");
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (lambdaMin), std::invalid_argument,
       "Ifpack2::Chebyshev::setParameters: \"chebyshev: min eigenvalue\" "
@@ -347,7 +347,7 @@ setParameters (Teuchos::ParameterList& plist)
 
   // Only fill in Ifpack2's name for the default parameter, not ML's.
   if (plist.isParameter ("smoother: Chebyshev alpha")) { // ML compatibility
-    eigRatio = plist.get<ST> ("smoother: Chebyshev alpha");
+    eigRatio = plist.get<double> ("smoother: Chebyshev alpha");
   }
   // Ifpack2's name overrides ML's name.
   eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
