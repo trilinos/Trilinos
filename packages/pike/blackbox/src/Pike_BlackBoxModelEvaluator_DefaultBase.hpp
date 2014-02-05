@@ -24,7 +24,7 @@ namespace pike {
 
 	@return Returns true if the local solve is successful.
      */
-    virtual bool solve() = 0;
+    virtual void solve() = 0;
 
     /** \brief Returns true if the last call to solve() was
      *  successful.  Note that this does NOT imply convergence of the

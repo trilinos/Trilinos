@@ -26,7 +26,7 @@ namespace pike {
 
     std::string name() const;
 
-    bool solve();
+    void solve();
 
     bool isLocallyConverged() const;
 

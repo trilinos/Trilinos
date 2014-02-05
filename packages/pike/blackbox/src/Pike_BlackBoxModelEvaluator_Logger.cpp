@@ -29,10 +29,10 @@ namespace pike {
     return model_->name();
   }
 
-  bool ModelEvaluatorLogger::solve()
+  void ModelEvaluatorLogger::solve()
   {
     log_->push_back(this->name()+": solve()");
-    return model_->solve();
+    model_->solve();
   }
 
   bool ModelEvaluatorLogger::isLocallyConverged() const

@@ -22,11 +22,8 @@ namespace pike {
     //! Unique name for this model evaluator.
     virtual std::string name() const = 0;
 
-    /** \brief Perform a complete solve of this physics.
-
-	@return Returns true if the local solve is successful.
-     */
-    virtual bool solve() = 0;
+    /** \brief Perform a complete solve of this physics. */
+    virtual void solve() = 0;
 
     /** \brief Returns true if the last call to solve() was
      *  successful.  Note that this does NOT imply convergence of the

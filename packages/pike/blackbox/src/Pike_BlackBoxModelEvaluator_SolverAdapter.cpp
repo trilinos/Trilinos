@@ -44,10 +44,10 @@ namespace pike {
   std::string SolverAdapterModelEvaluator::name() const
   {return name_; }
 
-  bool SolverAdapterModelEvaluator::solve()
+  void SolverAdapterModelEvaluator::solve()
   {
     solver_->reset();
-    return (solver_->solve() == pike::CONVERGED);
+    solver_->solve();
   }
 
   bool SolverAdapterModelEvaluator::isLocallyConverged() const

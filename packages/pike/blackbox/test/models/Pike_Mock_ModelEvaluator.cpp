@@ -27,7 +27,7 @@ namespace pike_test {
   std::string MockModelEvaluator::name() const
   { return name_; }
   
-  bool MockModelEvaluator::solve()
+  void MockModelEvaluator::solve()
   {
     TEUCHOS_ASSERT(nonnull(solver_));
 
@@ -36,12 +36,6 @@ namespace pike_test {
     }
     else
       responseValues_[0][0] += 1.0;
-
-    if (iterationTrigger_ == (solver_->getNumberOfIterations()+1) )
-      if (mode_ == LOCAL_FAILURE)
-	return false;
-    
-    return true;
   }
   
   bool MockModelEvaluator::isLocallyConverged() const

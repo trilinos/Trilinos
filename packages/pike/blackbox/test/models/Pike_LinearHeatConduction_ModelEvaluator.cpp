@@ -38,7 +38,7 @@ namespace pike_test {
   std::string LinearHeatConductionModelEvaluator::name() const
   { return name_; }
   
-  bool LinearHeatConductionModelEvaluator::solve()
+  void LinearHeatConductionModelEvaluator::solve()
   {
     // solution: T_left - T_right = q / k
     
@@ -50,7 +50,6 @@ namespace pike_test {
       q_ = (T_left_ - T_right_) * k_;
       responseValues_[0][0] = q_;
     }
-    return true;
   }
   
   bool LinearHeatConductionModelEvaluator::isLocallyConverged() const

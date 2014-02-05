@@ -27,7 +27,7 @@ namespace pike {
 
     // Derived from base
     std::string name() const;
-    bool solve();
+    void solve();
     bool isLocallyConverged() const;
     bool isGloballyConverged() const;
     bool supportsParameter(const std::string& pName) const;
