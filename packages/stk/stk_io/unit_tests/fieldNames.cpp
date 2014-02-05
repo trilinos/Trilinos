@@ -38,11 +38,12 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
 	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-	stkIo.create_input_mesh(index);
+	stkIo.set_active_mesh(index);
+	stkIo.create_input_mesh();
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-        stkIo.populate_bulk_data(index);
+        stkIo.populate_bulk_data();
 
         size_t results_output_index = stkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);
 
@@ -71,11 +72,12 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
 	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-	stkIo.create_input_mesh(index);
+	stkIo.set_active_mesh(index);
+	stkIo.create_input_mesh();
         
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-        stkIo.populate_bulk_data(index);
+        stkIo.populate_bulk_data();
         
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
 
@@ -107,11 +109,12 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
 	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-	stkIo.create_input_mesh(index);
+	stkIo.set_active_mesh(index);
+	stkIo.create_input_mesh();
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-        stkIo.populate_bulk_data(index);
+        stkIo.populate_bulk_data();
 
         size_t results_output_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);

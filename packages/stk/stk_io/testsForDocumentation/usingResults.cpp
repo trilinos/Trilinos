@@ -27,13 +27,14 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
 	const std::string exodusFileName = "generated:1x1x8";
         stk::io::StkMeshIoBroker stkIo(communicator);
 	size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-	stkIo.create_input_mesh(index);
+	stkIo.set_active_mesh(index);
+	stkIo.create_input_mesh();
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
 	// Declare a multi-state field
         stk::mesh::FieldBase *triStateField =
 	  declareNodalField(stkMeshMetaData, fieldName, 3);
 
-        stkIo.populate_bulk_data(index);
+        stkIo.populate_bulk_data();
 
         putDataOnTriStateField(stkIo.bulk_data(), triStateField,
                 stateNp1Value, stateNValue, stateNm1Value);

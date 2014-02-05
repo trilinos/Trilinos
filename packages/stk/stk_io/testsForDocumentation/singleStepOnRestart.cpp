@@ -19,12 +19,12 @@ namespace {
 
     stk::io::StkMeshIoBroker stkIo(comm);
     const std::string exodusFileName = "generated:1x1x8";
-    size_t ifh = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh(ifh);
+    stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh();
       
     stk::mesh::MetaData &meta = stkIo.meta_data();
     stk::mesh::FieldBase *field = declareTriStateNodalField(meta, "disp");
-    stkIo.populate_bulk_data(ifh);
+    stkIo.populate_bulk_data();
 
     putDataOnTriStateField(stkIo.bulk_data(), field, 1.0, 2.0, 3.0);
 

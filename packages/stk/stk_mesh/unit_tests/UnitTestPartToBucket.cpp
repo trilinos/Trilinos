@@ -39,7 +39,7 @@ TEST(PartToBucket, hex)
     }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     const std::string generatedMeshSpecification = "generated:1x1x1";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
     stkMeshIoBroker.populate_bulk_data();
@@ -89,7 +89,7 @@ TEST(PartToBucket, hexWithSingleSideset)
     }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     const std::string generatedMeshSpecification = "generated:1x1x1|sideset:X";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
     stkMeshIoBroker.populate_bulk_data();
@@ -151,7 +151,7 @@ TEST(PartToBucket, hexWithTwoSidesets)
     }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XY";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
     stkMeshIoBroker.populate_bulk_data();
@@ -216,7 +216,7 @@ TEST(PartToBucket, twoHex)
     }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     const std::string generatedMeshSpecification = "generated:1x1x2";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
 
@@ -366,7 +366,7 @@ void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification,
         return;
     }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
 
@@ -460,7 +460,7 @@ TEST(PartToBucket, hexWithThreeSidesets)
     //and the IO system will create corresponding stk::mesh::Parts named 'surface_1',
     //'surface_2' and 'surface_3', respectively, which are referenced in code below.
     const std::string generatedMeshSpecification = "generated:1x1x1|sideset:xYz";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
 

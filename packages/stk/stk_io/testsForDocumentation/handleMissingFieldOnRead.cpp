@@ -24,12 +24,13 @@ namespace {
 
       const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
       size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-      stkIo.create_input_mesh(index);
+      stkIo.set_active_mesh(index);
+      stkIo.create_input_mesh();
 
       stk::mesh::Field<double> &temperature =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
-      stkIo.populate_bulk_data(index);
+      stkIo.populate_bulk_data();
 
       size_t fh = stkIo.create_output_mesh(ic_name, stk::io::WRITE_RESULTS);
 
@@ -68,7 +69,8 @@ namespace {
       //+ does not exist.
       stk::io::StkMeshIoBroker stkIo(communicator);
       size_t index = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
-      stkIo.create_input_mesh(index);
+      stkIo.set_active_mesh(index);
+      stkIo.create_input_mesh();
 
       stk::mesh::Field<double> &temperature =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
@@ -79,27 +81,27 @@ namespace {
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
 	                                            (stk::topology::NODE_RANK, "displacement", 1);
       stk::mesh::put_field(displacement, stkIo.meta_data().universal_part());
-      stkIo.populate_bulk_data(index);
+      stkIo.populate_bulk_data();
 
       // The name of the field on the database is "temp"
       // This field does exist and should be read correctly
-      stkIo.add_input_field(index, temperature, "temp");
+      stkIo.add_input_field(temperature, "temp");
 
       //+ The name of the field on the database is "disp"
       //+ This field does not exist and will not be found.
-      stkIo.add_input_field(index, displacement, "disp");
+      stkIo.add_input_field(displacement, "disp");
 
       
       //+ Read the field values from the database at time 2.0
       //+ The 'missing_fields' vector will contain the names of
       //+ any fields that were not found.
       std::vector<stk::io::FieldAndName> missing_fields;
-      stkIo.read_defined_input_fields(index, 2.0, &missing_fields);
+      stkIo.read_defined_input_fields(2.0, &missing_fields);
 
       //+ If read the fields, but don't pass in the 'missing_fields'
       //+ vector, the code will print an error message and throw an
       //+ exception if it doesn't find all of the requested fields.
-      EXPECT_THROW(stkIo.read_defined_input_fields(index, 2.0), std::exception);
+      EXPECT_THROW(stkIo.read_defined_input_fields(2.0), std::exception);
       
       // ============================================================
       //+ VERIFICATION

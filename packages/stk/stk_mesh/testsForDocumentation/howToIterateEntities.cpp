@@ -26,7 +26,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
     // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
     // this part is given the name 'surface_1' when it is created [create_input_mesh()]
     const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
@@ -64,7 +64,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
     // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
     // this part is given the name 'surface_1' when it is created [create_input_mesh()]
     const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();

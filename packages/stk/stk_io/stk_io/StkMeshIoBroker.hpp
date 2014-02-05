@@ -152,6 +152,8 @@ namespace stk {
 		const std::string &type,
 		DatabasePurpose db_type,
 		Ioss::PropertyManager& property_manager);
+      InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region) {}
+
       ~InputFile()
       {}
 
@@ -254,7 +256,7 @@ namespace stk {
       // The use-case is adding new parts to a mesh]
       void set_input_io_region(size_t input_file_index, Teuchos::RCP<Ioss::Region> ioss_input_region);
 
-      Teuchos::RCP<Ioss::Region> get_input_io_region(size_t input_file_index);
+      Teuchos::RCP<Ioss::Region> get_input_io_region();
       Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index);
 
       // The default entity rank names are "NODE", "EDGE", "FACE",
@@ -327,6 +329,9 @@ namespace stk {
 			       const std::string &type,
 			       DatabasePurpose purpose);
 
+      size_t set_active_mesh(size_t input_file_index);
+      size_t get_active_mesh() const {return m_active_mesh_index;}
+      
       // Create Ioss::DatabaseIO associated with the specified
       // filename using the default filetype (typically "exodus"). If
       // the filename is prepended with a type followed by a colon
@@ -357,7 +362,7 @@ namespace stk {
       // The meta_data will not be committed by this function, so the
       // caller will need to call meta_data.commit() after the
       // function returns.
-      void create_input_mesh(size_t input_file_index);
+      void create_input_mesh();
 
       // Read/Generate the bulk data for the mesh.  This function will
       // create all stk mesh entities (nodes, elements) with the
@@ -368,7 +373,7 @@ namespace stk {
       // Note: this function internally calls the two methods
       // 'populate_mesh()' and 'populate_field_data()', declared below,
       // and does NOT do the delayed field-data allocation optimization.
-      void populate_bulk_data(size_t input_file_index);
+      void populate_bulk_data();
 
       // Read/generate the bulk data for the mesh, delaying (by default)
       // the allocation of any field-data such as coordinates, attributes
@@ -377,13 +382,13 @@ namespace stk {
       // 'populate_field_data()' method declared below.
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
-      void populate_mesh(size_t input_file_index, bool delay_field_data_allocation = true);
+      void populate_mesh(bool delay_field_data_allocation = true);
 
       // Read/generate the field-data for the mesh, including
       // coordinates, attributes and distribution factors.
       // Note that this call should be preceded by a call to
       // the above-declared 'populate_mesh()' method.
-      void populate_field_data(size_t input_file_index);
+      void populate_field_data();
 
       // For all transient fields on the mesh database:
       // - declare a stk_field of the same name,
@@ -395,7 +400,7 @@ namespace stk {
       //
       // NOTE: This should only be called if you want *ALL* transient
       // fields on the input mesh to be defined as stk fields and read.
-      void add_all_mesh_fields_as_input_fields(size_t input_file_index);
+      void add_all_mesh_fields_as_input_fields();
 
       // For all transient input fields defined, read the data at the
       // specified database step 'step' (1-based) and populate the stk
@@ -404,8 +409,7 @@ namespace stk {
       // on the input database will be put on the vector.  If 'missing'
       // is NULL, then an exception will be thrown if any fields are
       // not found.
-      double read_defined_input_fields(size_t input_file_index,
-				       int step,
+      double read_defined_input_fields(int step,
 				       std::vector<stk::io::FieldAndName> *missing=NULL);
 
       // For all transient input fields defined, read the data at the
@@ -416,36 +420,28 @@ namespace stk {
       // on the input database will be put on the vector.  If 'missing'
       // is NULL, then an exception will be thrown if any fields are
       // not found.
-      double read_defined_input_fields(size_t input_file_index,
-				       double time,
+      double read_defined_input_fields(double time,
 				       std::vector<stk::io::FieldAndName> *missing=NULL);
 
-      void get_global_variable_names(size_t input_file_index,
-				     std::vector<std::string> &names);
-      bool get_global(size_t input_file_index,
-		      const std::string &variableName,
+      void get_global_variable_names(std::vector<std::string> &names);
+      bool get_global(const std::string &variableName,
 		      boost::any &value,
 		      stk::util::ParameterType::Type type,
 		      bool abort_if_not_found=true);
-      bool get_global(size_t input_file_index,
-		      const std::string &variableName,
+      bool get_global(const std::string &variableName,
 		      int &globalVar,
 		      bool abort_if_not_found=true);
-      bool get_global(size_t input_file_index,
-		      const std::string &variableName,
+      bool get_global(const std::string &variableName,
 		      double &globalVar,
 		      bool abort_if_not_found=true);
-      bool get_global(size_t input_file_index,
-		      const std::string &variableName,
+      bool get_global(const std::string &variableName,
 		      std::vector<double> &globalVar,
 		      bool abort_if_not_found=true);
-      bool get_global(size_t input_file_index,
-		      const std::string &variableName,
+      bool get_global(const std::string &variableName,
 		      std::vector<int> &globalVar,
 		      bool abort_if_not_found=true);
 
-      void add_input_field(size_t input_file_index,
-			   stk::mesh::FieldBase &field,
+      void add_input_field(stk::mesh::FieldBase &field,
 			   const std::string &db_name = std::string());
 
       // Create an exodus mesh database with the specified
@@ -590,7 +586,7 @@ namespace stk {
 
       //-END
     private:
-      void create_ioss_region(size_t input_file_index);
+      void create_ioss_region();
       void validate_output_file_index(size_t output_file_index) const;
       void validate_input_file_index(size_t input_file_index) const;
 
@@ -628,12 +624,25 @@ namespace stk {
 
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
+      size_t m_active_mesh_index;
     };
 
-    inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region(size_t input_file_index)
+    inline size_t StkMeshIoBroker::set_active_mesh(size_t input_file_index)
     {
       validate_input_file_index(input_file_index);
-      return m_input_files[input_file_index]->get_input_io_region();
+      size_t old = m_active_mesh_index;
+      m_active_mesh_index = input_file_index;
+      return old;
+    }
+
+    inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region()
+    {
+      if (m_input_files.empty()) {
+	return Teuchos::RCP<Ioss::Region>();
+      } else {
+	validate_input_file_index(m_active_mesh_index);
+	return m_input_files[m_active_mesh_index]->get_input_io_region();
+      }
     }
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {

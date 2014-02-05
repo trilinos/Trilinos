@@ -20,7 +20,7 @@ TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
     MPI_Comm communicator = MPI_COMM_WORLD;
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     const std::string generatedMeshSpecification = "generated:1x1x1"; // syntax creates a 1x1x1 cube
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
 
@@ -43,7 +43,7 @@ TEST(StkMeshHowTo, makeSureYouAreNotIntersectingNothingSelector)
     // of a 1x1x1 cube, these parts are given the names: 'surface_1', 'surface_2', and 'surface_3'
     // automagically when it is created [create_input_mesh()]
     const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XYZ";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
 

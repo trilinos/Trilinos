@@ -38,8 +38,9 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       stk::io::StkMeshIoBroker mesh_data(communicator);
       size_t ifh = mesh_data.add_mesh_database("9x9x9|shell:xyzXYZ", "generated",
 					       stk::io::READ_MESH);
-      mesh_data.create_input_mesh(ifh);
-      mesh_data.populate_bulk_data(ifh);
+      mesh_data.set_active_mesh(ifh);
+      mesh_data.create_input_mesh();
+      mesh_data.populate_bulk_data();
 
       // Output...
       size_t fh = mesh_data.create_output_mesh(filename,

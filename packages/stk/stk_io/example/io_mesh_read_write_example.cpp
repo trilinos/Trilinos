@@ -42,13 +42,14 @@ namespace {
     file += filename;
 
     size_t input_index = mesh_data.add_mesh_database(file, type, stk::io::READ_MESH);
-    mesh_data.create_input_mesh(input_index);
+    mesh_data.set_active_mesh(input_index);
+    mesh_data.create_input_mesh();
 
     // This is done just to define some fields in stk
     // that can be used later for reading restart data.
-    mesh_data.add_all_mesh_fields_as_input_fields(input_index);
+    mesh_data.add_all_mesh_fields_as_input_fields();
 
-    mesh_data.populate_bulk_data(input_index);
+    mesh_data.populate_bulk_data();
 
     // ========================================================================
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
@@ -82,7 +83,7 @@ namespace {
     // mesh. These will be used below to define the same fields on the
     // restart and results output databases.
     std::vector<std::string> global_fields;
-    mesh_data.get_global_variable_names(input_index, global_fields);
+    mesh_data.get_global_variable_names(global_fields);
 
     stk::util::ParameterList parameters;
     
@@ -93,7 +94,7 @@ namespace {
     }
 
     for (size_t i=0; i < global_fields.size(); i++) {
-      const Ioss::Field &input_field = mesh_data.get_input_io_region(input_index)->get_fieldref(global_fields[i]);
+      const Ioss::Field &input_field = mesh_data.get_input_io_region()->get_fieldref(global_fields[i]);
       std::cout << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
 
       if (input_field.raw_storage()->component_count() == 1) {
@@ -119,21 +120,21 @@ namespace {
     // to the results and restart output databases...
 
     // Determine number of timesteps on input database...
-    int timestep_count = mesh_data.get_input_io_region(input_index)->get_property("state_count").get_int();
+    int timestep_count = mesh_data.get_input_io_region()->get_property("state_count").get_int();
 
     if (timestep_count == 0 ) {
       mesh_data.write_output_mesh(results_index);
     }
     else {
       for (int step=1; step <= timestep_count; step++) {
-	double time = mesh_data.get_input_io_region(input_index)->get_state_time(step);
+	double time = mesh_data.get_input_io_region()->get_state_time(step);
 
 	// Normally, an app would only process the restart input at a single step and
 	// then continue with execution at that point.  Here just for testing, we are
 	// reading restart data at each step on the input restart file/mesh and then
 	// outputting that data to the restart and results output.
 
-	mesh_data.read_defined_input_fields(input_index, step);
+	mesh_data.read_defined_input_fields(step);
 	mesh_data.begin_output_step(restart_index, time);
 	mesh_data.begin_output_step(results_index, time);
 
@@ -147,7 +148,7 @@ namespace {
 	for (; i != iend; ++i) {
 	  const std::string parameterName = (*i).first;
 	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	  mesh_data.get_global(input_index, parameterName, parameter.value, parameter.type);
+	  mesh_data.get_global(parameterName, parameter.value, parameter.type);
 	}
 
 	for (i=parameters.begin(); i != iend; ++i) {

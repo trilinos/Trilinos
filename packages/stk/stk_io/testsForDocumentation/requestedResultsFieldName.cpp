@@ -15,7 +15,8 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
     stk::io::StkMeshIoBroker stkIo(communicator);
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh(index);
+    stkIo.set_active_mesh(index);
+    stkIo.create_input_mesh();
 
     stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
 
@@ -33,7 +34,7 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
     stkIo.add_field(resultsOutputIndex, nodalDisplacement, alternateFieldName);
 
     // field descriptions done, fill field data (done with mesh input)
-    stkIo.populate_bulk_data(index);
+    stkIo.populate_bulk_data();
 
     EXPECT_TRUE( fieldWithNameChangedIsOutput(stkIo, communicator, resultsOutputIndex, alternateFieldName) );
     unlink(outputFileName.c_str());

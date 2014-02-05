@@ -27,8 +27,9 @@ namespace {
       stk::io::StkMeshIoBroker stkIo(communicator);
       size_t index = stkIo.add_mesh_database(input_filename, "generated",
 					     stk::io::READ_MESH);
-      stkIo.create_input_mesh(index);
-      stkIo.populate_bulk_data(index);
+      stkIo.set_active_mesh(index);
+      stkIo.create_input_mesh();
+      stkIo.populate_bulk_data();
 
       stk::mesh::MetaData &meta_data = stkIo.meta_data();
       const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();

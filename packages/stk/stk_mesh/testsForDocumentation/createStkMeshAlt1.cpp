@@ -33,7 +33,7 @@ TEST(StkMesh, CreateStkMesh)
         exodusFileReader.set_bulk_data(stkMeshBulkData);
 
         const std::string exodusFileName = "example.exo";
-        exodusFileReader.open_mesh_database(exodusFileName, stk::io::READ_MESH);
+        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 
         // Populate the MetaData which has the descriptions of the Parts and Fields.
         exodusFileReader.create_input_mesh();

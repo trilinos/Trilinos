@@ -65,7 +65,7 @@ void example_io_1( stk::ParallelMachine comm,
   // The coordinates field will be set to the correct dimension.
 
   stk::io::StkMeshIoBroker mesh_data(comm);
-  mesh_data.open_mesh_database(in_filename, stk::io::READ_MESH);
+  mesh_data.add_mesh_database(in_filename, stk::io::READ_MESH);
   mesh_data.create_input_mesh();
   stk::mesh::MetaData &meta_data = mesh_data.meta_data();
 
