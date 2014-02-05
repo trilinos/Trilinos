@@ -21,7 +21,7 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
-#include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology
+//#include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
@@ -40,8 +40,8 @@
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
-#include "stk_mesh/base/FieldTraits.hpp"  // for FieldMetaData, FieldBase, etc
+//#include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
+//#include "stk_mesh/base/FieldTraits.hpp"  // for FieldMetaData, FieldBase, etc
 #include "stk_mesh/base/Part.hpp"       // for Part (ptr only), etc
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -1906,6 +1906,7 @@ bool Bucket::other_entities_have_single_rank(size_type bucket_ordinal, EntityRan
   return (m_mesh.entity_rank(*other_rels) == rank) && (m_mesh.entity_rank(*(other_rels_end - 1)) == rank);
 }
 
+
 inline
 void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank rank) const
 {
@@ -1914,99 +1915,13 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;
     Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;
-    ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
-                   "WARNING: entity " << print_entity_key(mesh_meta_data(), entity_key(entity)) << " does not have fully populated connectivity for rank " << mesh_meta_data().entity_rank_name(rank) << ", " << count_valid_connectivity(entity, rank) << "/" << b.num_connectivity(bucket_ord, rank));
+    ThrowAssert(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank));
   }
 #endif
 }
 
 
-//
-//  Field free access methods
-//
 
-inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
-  return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity;
-}
-inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
-  BulkData& bulk(f.get_mesh());
-  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
-  return field_bytes_per_entity(f, bulk.bucket(e));
-}
-
-inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(&f.get_mesh() == &b.mesh());
-  return(b.entity_rank() == static_cast<unsigned>(f.entity_rank()));
-}
-
-inline bool is_matching_rank(const FieldBase& f, Entity e) {
-  return is_matching_rank(f, f.get_mesh().bucket(e));
-}
-
-//
-//  Optimized field data access, here the size of the field data is passed in rather than looked up.
-//  This accessor can be used if the field is known to exist everywhere and known to have the same
-//  size everywhere.
-//
-
-template<class FieldType>
-inline
-typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
-  ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity == knownSize);
-  ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
-  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
-}
-
-template<class FieldType>
-inline
-typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const unsigned bucket_id) {
-  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data);
-}
-
-
-inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
-  ThrowAssert(&b.mesh() == &f.get_mesh());
-  //return true if field and bucket have the same rank and the field is associated with the bucket
-  return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
-}
-
-template<class FieldType>
-inline
-typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&f.get_mesh() == &b.mesh());
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
-}
-
-template<class FieldType>
-inline
-typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const Bucket& b)
-{
-  ThrowAssert(f.entity_rank() == b.entity_rank());
-  ThrowAssert(&b.mesh() == &f.get_mesh());
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
-}
-
-template<class FieldType>
-inline
-typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, Entity e)
-{
-  const MeshIndex& mi           = f.get_mesh().mesh_index(e);
-
-  ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
-  ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
-  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
-}
 
 } // namespace mesh
 } // namespace stk

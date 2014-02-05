@@ -7,7 +7,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
-
+#include <stk_mesh/base/Field.hpp>
 STKUNIT_UNIT_TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
 {
     const std::string outputFilename = "invalid_checks.exo";

@@ -16,6 +16,7 @@
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include <stk_mesh/base/FieldTraits.hpp>
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -352,8 +353,7 @@ bool Bucket::member_any( const OrdinalVector & parts ) const
   return ! result_none ;
 }
 
-unsigned char* Bucket::field_data_location(const FieldBase& field) const
-{
+unsigned char* Bucket::field_data_location(const FieldBase& field) const{
   return reinterpret_cast<unsigned char*>(stk::mesh::field_data(field, *this, 0));
 }
 

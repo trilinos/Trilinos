@@ -10,6 +10,8 @@
 #include <sstream>                      // for operator<<, basic_ostream
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/Relation.hpp>   // for Relation
 #include <string>                       // for operator<<
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket

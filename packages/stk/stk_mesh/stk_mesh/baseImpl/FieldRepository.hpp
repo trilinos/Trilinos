@@ -15,6 +15,7 @@
 #include <vector>                       // for vector
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/Selector.hpp"   // for Selector
+#include <stk_mesh/base/Field.hpp>
 namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class DataTraits; } }
 namespace stk { namespace mesh { class MetaData; } }

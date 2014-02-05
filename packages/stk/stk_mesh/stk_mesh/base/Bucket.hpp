@@ -13,6 +13,7 @@
 #include <algorithm>                    // for lower_bound
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
+#include <stk_mesh/base/CellTopology.hpp> 
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
@@ -653,6 +654,10 @@ void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type
 #endif
 
 typedef Bucket::iterator BucketIterator;
+
+/** Get the cell_topology off a bucket */
+CellTopology get_cell_topology(const Bucket &bucket);
+
 
 } // namespace mesh
 } // namespace stk

@@ -14,7 +14,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-
+#include <stk_mesh/base/MetaData.hpp>
 namespace stk { namespace mesh {
 
 struct GetCoordiantes;

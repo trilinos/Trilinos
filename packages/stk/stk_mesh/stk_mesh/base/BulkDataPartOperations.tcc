@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
 
 namespace stk {
