@@ -582,3 +582,12 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
   ENDIF()
 
 ENDIF()
+
+IF (Stokhos_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TpetraMatVec
+    SOURCES tpetra_mat_vec.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
