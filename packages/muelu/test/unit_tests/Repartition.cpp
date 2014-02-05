@@ -813,9 +813,6 @@ namespace MueLuTests {
 
     // Create a matrix and coordinates.
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    int numProcs = comm->getSize();
-
-    SC zero = Teuchos::ScalarTraits<SC>::zero();
 
     GO nx = 20, ny = 20;
     Teuchos::ParameterList matrixList;
@@ -828,6 +825,7 @@ namespace MueLuTests {
     galeriList.set("nx", nx);
     galeriList.set("ny", ny);
     RCP<const Map> map = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+
     //build coordinates before expanding map (nodal coordinates, not dof-based)
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixList);
     map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2); //expand map for 2 DOFs per node
