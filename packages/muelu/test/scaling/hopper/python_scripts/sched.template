@@ -1,18 +1,3 @@
-#PBS -q regular
-#PBS -l mppwidth=_WIDTH_
-#PBS -l walltime=00:10:00
-#PBS -N _MTYPE___CORES_
-#PBS -e screen.err.$PBS_JOBID
-#PBS -o screen.out.$PBS_JOBID
-#PBS -V
-#PBS -A m1327
-#PBS -S /bin/bash
-
-## #PBS -m e
-## #PBS -M aprokop@sandia.gov
-
-cd $PBS_O_WORKDIR
-
 num_runs=_NUM_RUNS_
 
 echo ""
@@ -31,7 +16,7 @@ for ((ii=1; ii <= $num_runs; ii++)); do
   for ((jj=1; jj <= $num_cmds && jj <= 5; jj++)); do
     echo "---- run ${ii} of ${num_runs} ----"
 
-    run_cmd="aprun _APRUN_ARGS_ -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ ${args[jj]}"
+    run_cmd="_SCHED_ARGS_ -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ ${args[jj]}"
 
     # epetra
     if [ "_EPETRA_" -eq "1" ]; then
