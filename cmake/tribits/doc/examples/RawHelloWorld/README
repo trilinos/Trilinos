@@ -1,4 +1,5 @@
-This is a simple raw CMake project that is used to contrast with TriBITS.
+This is a simple raw CMake project that is used to contrast with the TriBITS
+CMkae project in ../TribitsHelloWorld.
 
 To configure this, you just create a build dir as:
 
