@@ -50,6 +50,7 @@
 #include "elb_err.h"              // for Gen_Error, MAX_ERR_MSG
 #include "elb_groups.h"           // for parse_groups
 #include "elb_util.h"             // for in_list, roundfloat
+#include "elb_format.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -296,11 +297,11 @@ int read_mesh_params(const std::string &exo_file,
   printf("ExodusII mesh information\n");
   if(strlen(mesh->title) > 0)
     printf("\ttitle: %s\n", mesh->title);
-  printf("\tgeometry dimension: %lu\n", mesh->num_dims);
-  printf("\tnumber of nodes: %lu\tnumber of elements: %lu\n", mesh->num_nodes,
+  printf("\tgeometry dimension: "ST_ZU"\n", mesh->num_dims);
+  printf("\tnumber of nodes: "ST_ZU"\tnumber of elements: "ST_ZU"\n", mesh->num_nodes,
          mesh->num_elems);
-  printf("\tnumber of element blocks: %lu\n", mesh->num_el_blks);
-  printf("\tnumber of node sets: %lu\tnumber of side sets: %lu\n",
+  printf("\tnumber of element blocks: "ST_ZU"\n", mesh->num_el_blks);
+  printf("\tnumber of node sets: "ST_ZU"\tnumber of side sets: "ST_ZU"\n",
          mesh->num_node_sets, mesh->num_side_sets);
 
   return 1;
