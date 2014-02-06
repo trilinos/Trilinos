@@ -650,25 +650,25 @@ namespace stk {
 
     inline stk::mesh::MetaData &StkMeshIoBroker::meta_data()
     {
-      ThrowRequire( !Teuchos::is_null(m_meta_data)) ;
+      ThrowAssert( !Teuchos::is_null(m_meta_data)) ;
       return *m_meta_data;
     }
 
     inline stk::mesh::BulkData &StkMeshIoBroker::bulk_data()
     {
-      ThrowRequire( !Teuchos::is_null(m_bulk_data)) ;
+      ThrowAssert( !Teuchos::is_null(m_bulk_data)) ;
       return *m_bulk_data;
     }
 
     inline const stk::mesh::MetaData &StkMeshIoBroker::meta_data() const
     {
-      ThrowRequire( !Teuchos::is_null(m_meta_data)) ;
+      ThrowAssert( !Teuchos::is_null(m_meta_data)) ;
       return *m_meta_data;
     }
 
     inline const stk::mesh::BulkData &StkMeshIoBroker::bulk_data() const
     {
-      ThrowRequire( !Teuchos::is_null(m_bulk_data)) ;
+      ThrowAssert( !Teuchos::is_null(m_bulk_data)) ;
       return *m_bulk_data;
     }
 
