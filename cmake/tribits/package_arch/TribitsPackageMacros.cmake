@@ -50,6 +50,13 @@ INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsAddOptionAndDefine)
 
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
+
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of file!
 ###
