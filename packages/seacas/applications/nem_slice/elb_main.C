@@ -53,6 +53,7 @@
 #include "elb_inp.h"              // for check_inp_specs, etc
 #include "elb_loadbal.h"          // for generate_loadbal, etc
 #include "elb_output.h"           // for write_nemesis, write_vis
+#include "elb_format.h"
 
 #ifdef SGI10K
 #include <sys/resource.h>
@@ -702,7 +703,7 @@ namespace {
       {
 	printf("\tElement Block weights specified\n");
 	for (size_t cnt=0; cnt < weight->elemblk.size(); cnt++)
-	  printf("\telement block: %lu, weight: %lu\n",
+	  printf("\telement block: "ST_ZU", weight: "ST_ZU"\n",
 		 (size_t)weight->elemblk[cnt],
 		 (size_t)weight->elemblk_wgt[cnt]);
       }

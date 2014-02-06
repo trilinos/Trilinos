@@ -49,7 +49,7 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Galeri_XpetraMaps.hpp>
+#include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -196,7 +196,7 @@ namespace MueLuTests {
 
     Teuchos::ParameterList clist;
     clist.set("nx", (nx * comm->getSize())/3);
-    RCP<const Map>   cmap        = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, clist);
+    RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/3), Teuchos::as<int>(0), comm);
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", cmap, clist);
 
     if (lib == Xpetra::UseTpetra) {

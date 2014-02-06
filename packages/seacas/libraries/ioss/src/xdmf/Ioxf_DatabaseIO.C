@@ -1696,7 +1696,7 @@ namespace Ioxf {
   {
     Ioss::SerializeIO	serializeIO__(this);
 
-    state = get_database_step(state);
+    get_database_step(state);
     if (!is_input()) {
       // Zero global variable array...
       std::fill(globalValues.begin(), globalValues.end(), 0.0);

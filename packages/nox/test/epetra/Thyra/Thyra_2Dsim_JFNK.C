@@ -77,6 +77,7 @@
 
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
 #include "NOX_MatrixFree_ModelEvaluatorDecorator.hpp"
+#include "ModelEvaluator_LoggerDecorator.hpp"
 
 using namespace std;
 
@@ -366,9 +367,13 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
 
+  // Wrap model in logger decrator for unit testing
+  Teuchos::RCP<NOX_TEST::ModelEvaluatorLoggerDecorator<double> > loggedModel = 
+    Teuchos::rcp(new NOX_TEST::ModelEvaluatorLoggerDecorator<double>(thyraModel));
+
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group = 
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, loggedModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
 
@@ -408,6 +413,9 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
 
   // Final return value (0 = successfull, non-zero = failure)
   TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
+  TEST_EQUALITY(loggedModel->getNumExactCalls(),8);
+  TEST_EQUALITY(loggedModel->getNumApproxDerivCalls(),21);
+  TEST_EQUALITY(loggedModel->getNumVeryApproxDerivCalls(),0);
 
   Teuchos::TimeMonitor::summarize();
 }

@@ -89,10 +89,10 @@ namespace KokkosClassic {
     OpenMPNode();
 
     //! Get default parameters for this class.
-    static ParameterList getDefaultParameters();
+    static Teuchos::ParameterList getDefaultParameters ();
 
     //! Destructor.
-    ~OpenMPNode();
+    ~OpenMPNode ();
 
     /// \brief Set the number of threads that OpenMP should use.
     ///
@@ -105,11 +105,16 @@ namespace KokkosClassic {
     ///
     /// \param numThreads [in] The number of threads that OpenMP
     ///   should use.  Ignored if -1 or 0.
-    void init(int numThreads);
+    void init (const int numThreads);
+
+    /// \brief Return the human-readable name of this Node.
+    ///
+    /// See \ref kokkos_node_api "Kokkos Node API"
+    static std::string name ();
 
     //! Perform a parallel for loop on the given half-exclusive index range.
     template <class WDP>
-    static void parallel_for(int beg, int end, WDP wd) {
+    static void parallel_for (const int beg, const int end, WDP wd) {
 #pragma omp parallel for schedule(guided) default(shared)
       for (int i = beg; i < end; ++i) {
         wd.execute(i);
@@ -119,7 +124,7 @@ namespace KokkosClassic {
     //! Perform a parallel reduction on the given half-exclusive index range.
     template <class WDP>
     static typename WDP::ReductionType
-    parallel_reduce(int beg, int end, WDP wd) {
+    parallel_reduce (const int beg, const int end, WDP wd) {
       typedef typename WDP::ReductionType ReductionType;
       ReductionType threadResult = wd.identity();
       ReductionType globalResult = wd.identity();
@@ -136,7 +141,7 @@ namespace KokkosClassic {
     }
 
     //! Synchronize threads; this is a no-op for OpenMPNode.
-    inline void sync() const {};
+    inline void sync () const {}
 
   private:
     /// \brief "Num Threads" parameter value.
@@ -149,11 +154,12 @@ namespace KokkosClassic {
     bool verbose_;
   };
 
-  template <> 
-  class ArrayOfViewsHelper<OpenMPNode> : 
-    public ArrayOfViewsHelperTrivialImpl<OpenMPNode> {};
+  template <>
+  class ArrayOfViewsHelper<OpenMPNode> :
+    public ArrayOfViewsHelperTrivialImpl<OpenMPNode>
+  {};
 
-}
+} // namespace KokkosClassic
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 namespace Kokkos {

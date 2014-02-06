@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -65,7 +65,7 @@ public:
   ThrustGPUNode ();
 
   /*! \brief Constructor that takes a list of parameters.
-          
+
     We accept the following parameters:
     - "Device Number" [int] The CUDA device to which the Node will attach.
     - "Verbose" [int] Non-zero parameter specifies that the
@@ -76,29 +76,39 @@ public:
     is outside the range \f$[0,numDevices)\f$, where \c numDevices is
     the number of CUDA devices reported by cudaGetDeviceCount().
   */
-  ThrustGPUNode(Teuchos::ParameterList &pl);
+  ThrustGPUNode (Teuchos::ParameterList &pl);
 
-  //! \brief Destructor has no effect.
-  ~ThrustGPUNode();
+  //! Destructor.
+  ~ThrustGPUNode ();
 
-  /*! \brief Get default parameters for this node */
+  //! Get default parameters for this node.
   static ParameterList getDefaultParameters();
 
   //@{ Computational methods
 
-  //! \begin parallel for skeleton, a wrapper around thrust::for_each. See \ref kokkos_node_api "Kokkos Node API"
+  /// \brief Parallel for "skeleton"; wraps thrust::for_each.
+  ///
+  /// See \ref kokkos_node_api "Kokkos Node API"
   template <class WDP>
   static void parallel_for(int begin, int end, WDP wdp);
 
-  //! \begin parallel reduction skeleton, a wrapper around thrust::transform_reduce. See \ref kokkos_node_api "Kokkos Node API"
+  /// \brief Parallel reduction "skeleton"; wraps thrust::transform_reduce.
+  ///
+  /// See \ref kokkos_node_api "Kokkos Node API"
   template <class WDP>
   static typename WDP::ReductionType
   parallel_reduce(int begin, int end, WDP wd);
 
-  //! \begin Block until all node work is complete. Aids in accurate timing of multiple kernels.
+  /// \brief Block until all node work is complete.
+  ///
+  /// Aids in accurate timing of multiple kernels.
   void sync() const;
 
-  //@} 
+  /// \brief Return the human-readable name of this Node.
+  ///
+  /// See \ref kokkos_node_api "Kokkos Node API"
+  static std::string name ();
+  //@}
 
 private:
   int totalMem_;
@@ -111,7 +121,7 @@ void ThrustGPUNode::parallel_for(int begin, int end, WDP wd) {
 
 template <class WDP>
 typename WDP::ReductionType
-ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd) 
+ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd)
 {
   return ThrustGPUNodeDetails::parallel_reduce(begin,end,wd);
 }

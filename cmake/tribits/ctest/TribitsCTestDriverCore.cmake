@@ -832,8 +832,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 
   # Maximum number of procs an mpi test can request (if more are requested,
-  # the test will be skipped) 
-  SET_DEFAULT_AND_FROM_ENV( MPI_EXEC_MAX_NUMPROCS 4 )
+  # the test will be skipped).  Value of 0 means no override (determined
+  # internally).
+  SET_DEFAULT_AND_FROM_ENV( MPI_EXEC_MAX_NUMPROCS 0 )
 
   # How many tests ctest will spawn simultaneously
   SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL 1 )
@@ -1341,7 +1342,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         LIST(APPEND CONFIGURE_OPTIONS
           "-D${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
       ENDIF()
-      IF (MPI_EXEC_MAX_NUMPROCS)
+      IF (NOT MPI_EXEC_MAX_NUMPROCS STREQUAL 0)
         LIST(APPEND CONFIGURE_OPTIONS
           "-DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_MAX_NUMPROCS}")
       ENDIF()

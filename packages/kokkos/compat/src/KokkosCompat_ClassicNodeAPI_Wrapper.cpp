@@ -23,20 +23,30 @@ namespace Kokkos {
 
 #ifdef KOKKOS_HAVE_PTHREAD
     template<>
-    KokkosDeviceWrapperNode<Kokkos::Threads>::~KokkosDeviceWrapperNode<Kokkos::Threads>() {
+    KokkosDeviceWrapperNode<Kokkos::Threads>::
+    ~KokkosDeviceWrapperNode<Kokkos::Threads> ()
+    {
       count--;
-      if((count==0) && Threads::is_initialized()) {
+      if (count == 0 && Threads::is_initialized ()) {
 #ifdef KOKKOS_HAVE_CUDA
-        if(!Impl::is_same<Kokkos::Threads,Cuda::host_mirror_device_type>::value ||
-            KokkosDeviceWrapperNode<Kokkos::Cuda>::count==0)
+        if (! Impl::is_same<Kokkos::Threads,Cuda::host_mirror_device_type>::value ||
+            KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
-        Threads::finalize();
+          Threads::finalize ();
       }
     }
+
     template<>
-    void KokkosDeviceWrapperNode<Kokkos::Threads>::init(int NumTeams, int NumThreads, int Device) {
-      if(!Kokkos::Threads::is_initialized())
-        Kokkos::Threads::initialize(NumTeams*NumThreads);
+    void KokkosDeviceWrapperNode<Kokkos::Threads>::
+    init (int NumTeams, int NumThreads, int Device) {
+      if (! Kokkos::Threads::is_initialized ()) {
+        Kokkos::Threads::initialize (NumTeams*NumThreads);
+      }
+    }
+
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Threads>::name () {
+      return "Threads/Wrapper";
     }
 #endif
 
@@ -44,18 +54,27 @@ namespace Kokkos {
     template<>
     KokkosDeviceWrapperNode<Kokkos::OpenMP>::~KokkosDeviceWrapperNode<Kokkos::OpenMP>() {
       count--;
-      if((count==0) && OpenMP::is_initialized()) {
+      if (count == 0 && OpenMP::is_initialized ()) {
 #ifdef KOKKOS_HAVE_CUDA
-        if(!Impl::is_same<Kokkos::OpenMP,Cuda::host_mirror_device_type>::value ||
-            KokkosDeviceWrapperNode<Kokkos::Cuda>::count==0)
+        if (! Impl::is_same<Kokkos::OpenMP, Cuda::host_mirror_device_type>::value ||
+            KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
-        OpenMP::finalize();
+          OpenMP::finalize ();
       }
     }
+
     template<>
-    void KokkosDeviceWrapperNode<Kokkos::OpenMP>::init(int NumTeams, int NumThreads, int Device) {
-      if(!Kokkos::OpenMP::is_initialized())
-        Kokkos::OpenMP::initialize(NumTeams*NumThreads);
+    void KokkosDeviceWrapperNode<Kokkos::OpenMP>::
+    init (int NumTeams, int NumThreads, int Device)
+    {
+      if (! Kokkos::OpenMP::is_initialized ()) {
+        Kokkos::OpenMP::initialize (NumTeams*NumThreads);
+      }
+    }
+
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::OpenMP>::name () {
+      return "OpenMP/Wrapper";
     }
 #endif
 

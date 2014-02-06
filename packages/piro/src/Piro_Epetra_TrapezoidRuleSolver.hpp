@@ -95,8 +95,9 @@ class TrapezoidDecorator
   //! Method to give info to compute xDotDot(x), so that the
   // NOX solver can treat the time dep problem as steady 
   void injectData(const Teuchos::RCP<Epetra_Vector>& x_, 
-                  const Teuchos::RCP<Epetra_Vector>& x_pred_, 
-                  double fdt2_, double time_ );
+                  const Teuchos::RCP<Epetra_Vector>& x_pred_a_, double fdt2_,
+                  const Teuchos::RCP<Epetra_Vector>& x_pred_v_, double tdt_,
+                  double time_ );
 
   /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_x_map() const;
@@ -118,9 +119,12 @@ class TrapezoidDecorator
    //These are set in the constructor and used in evalModel
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
    Teuchos::RCP<Epetra_Vector> xDotDot;
-   Teuchos::RCP<Epetra_Vector> x_pred;
+   Teuchos::RCP<Epetra_Vector> xDot;
+   Teuchos::RCP<Epetra_Vector> x_pred_a;
+   Teuchos::RCP<Epetra_Vector> x_pred_v;
    Teuchos::RCP<Epetra_Vector> x_save;
    double fdt2;
+   double tdt;
    double time; 
 
 };

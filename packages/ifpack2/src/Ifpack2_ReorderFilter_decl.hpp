@@ -44,40 +44,26 @@
 #define IFPACK2_REORDERFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-
-#ifdef HAVE_IFPACK2_ZOLTAN2
-#include "Zoltan2_config.h"
-#include "Zoltan2_OrderingSolution.hpp"
-#endif
 
 
 namespace Ifpack2 {
-//! Ifpack2::ReorderFilter: a class for light-weight reorder of local rows and columns of an Tpetra::RowMatrix.
 
 /*!
-Class Ifpack2::ReorderFilter enables a light-weight construction of
-reordered matrices.
+\class ReorderFilter
+\brief Wraps a Tpetra::RowMatrix in a filter that reorders local rows and columns.
 
-This class is used in Ifpack2::AdditiveSchwarz to reorder (if required
-by the user) the localized matrix. As the localized matrix is defined
-on a serial communicator only, all maps are trivial (as all elements
-reside on the same process). This class does not attemp to define
-properly reordered maps, hence it should not be used for distributed
-matrices.
+This class is used in AdditiveSchwarz to reorder (if required by the
+user) the localized matrix.  As the localized matrix is defined on a
+serial communicator only, all maps are trivial (as all elements reside
+on the same process).  This class does not attemp to define properly
+reordered maps, hence it should not be used for distributed matrices.
 
 To improve the performance of Ifpack2::AdditiveSchwarz, some
-operations are not performed in the construction phase (like
-for instance the computation of the 1-norm and infinite-norm,
-of check whether the reordered matrix is lower/upper triangular or not).
-
-\date Last modified: Sep-12.
-
+operations are not performed in the construction phase (like for
+instance the computation of the 1-norm and infinite-norm, of check
+whether the reordered matrix is lower/upper triangular or not).
 */
-
 template<class MatrixType>
 class ReorderFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
@@ -85,48 +71,68 @@ class ReorderFilter :
                                      typename MatrixType::global_ordinal_type,
                                      typename MatrixType::node_type> {
 public:
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
 
   //! \name Constructor & destructor methods
   //@{
 
-  //! Constructor.
-#ifdef HAVE_IFPACK2_ZOLTAN2
-  explicit ReorderFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Matrix,
-                         const Teuchos::RCP<const Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> > & Reordering);
-#endif
+  /// \brief Constructor.
+  ///
+  /// \param A [in] The matrix to which to apply the filter.
+  /// \param perm [in] Forward permutation of A's rows and columns.
+  /// \param reverseperm [in] Reverse permutation of A's rows and columns.
+  ///
+  /// It must make sense to apply the given permutation to both the
+  /// rows and columns.  This means that the row and column Maps must
+  /// have the same numbers of entries on all processes, and must have
+  /// the same order of GIDs on all processes.
+  ///
+  /// perm[i] gives the where OLD index i shows up in the NEW
+  /// ordering.  revperm[i] gives the where NEW index i shows up in
+  /// the OLD ordering.  Note that perm is actually the "inverse
+  /// permutation," in Zoltan2 terms.
+  ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
+                 const Teuchos::ArrayRCP<local_ordinal_type>& perm,
+                 const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm);
+
   //! Destructor.
-  virtual ~ReorderFilter();
+  virtual ~ReorderFilter ();
 
   //@}
-
-  //! \name Matrix Query Methods
+  //! \name Matrix query methods
   //@{
 
-  //! Returns the communicator.
+  //! The matrix's communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-  //! Returns the underlying node.
-  virtual Teuchos::RCP<Node> getNode() const;
+  //! The matrix's Kokkos Node object.
+  virtual Teuchos::RCP<node_type> getNode () const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
+  virtual Teuchos::RCP<const map_type> getRowMap() const;
 
-  //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
+  //! Returns the Map that describes the column distribution in this matrix.
+  virtual Teuchos::RCP<const map_type> getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  virtual Teuchos::RCP<const map_type> getDomainMap() const;
 
-  //! \brief Returns the Map that describes the range distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  //! Returns the Map that describes the range distribution in this matrix.
+  virtual Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
 
   //! Returns the number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -141,7 +147,7 @@ public:
   virtual size_t getNodeNumCols() const;
 
   //! Returns the index base for global indices for this matrix.
-  virtual GlobalOrdinal getIndexBase() const;
+  virtual global_ordinal_type getIndexBase() const;
 
   //! Returns the global number of entries in this matrix.
   virtual global_size_t getGlobalNumEntries() const;
@@ -149,13 +155,21 @@ public:
   //! Returns the local number of entries in this matrix.
   virtual size_t getNodeNumEntries() const;
 
-  //! \brief Returns the current number of entries on this node in the specified global row.
-  /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
-  virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
+  /// \brief The current number of entries in this matrix, stored on
+  ///   the calling process, in the row whose global index is \c globalRow.
+  ///
+  /// \return The number of entries, or
+  ///   Teuchos::OrdinalTraits<size_t>::invalid() if the specified row
+  ///   is not owned by the calling process.
+  virtual size_t getNumEntriesInGlobalRow (global_ordinal_type globalRow) const;
 
-  //! Returns the current number of entries on this node in the specified local row.
-  /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-  virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+  /// \brief The current number of entries in this matrix, stored on
+  ///   the calling process, in the row whose local index is \c globalRow.
+  ///
+  /// \return The number of entries, or
+  ///   Teuchos::OrdinalTraits<size_t>::invalid() if the specified row
+  ///   is not owned by the calling process.
+  virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
 
   //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
   virtual global_size_t getGlobalNumDiags() const;
@@ -206,9 +220,9 @@ public:
     with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                                const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                                const Teuchos::ArrayView<Scalar> &Values,
+  virtual void getGlobalRowCopy(global_ordinal_type GlobalRow,
+                                const Teuchos::ArrayView<global_ordinal_type> &Indices,
+                                const Teuchos::ArrayView<scalar_type> &Values,
                                 size_t &NumEntries) const;
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
@@ -222,9 +236,9 @@ public:
     with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getLocalRowCopy(LocalOrdinal DropRow,
-                               const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                               const Teuchos::ArrayView<Scalar> &Values,
+  virtual void getLocalRowCopy(local_ordinal_type DropRow,
+                               const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                               const Teuchos::ArrayView<scalar_type> &Values,
                                size_t &NumEntries) const ;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
@@ -236,9 +250,9 @@ public:
     \pre <tt>isLocallyIndexed() == false</tt>
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                                Teuchos::ArrayView<const Scalar> &values) const;
+  virtual void getGlobalRowView(global_ordinal_type GlobalRow,
+                                Teuchos::ArrayView<const global_ordinal_type> &indices,
+                                Teuchos::ArrayView<const scalar_type> &values) const;
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -250,14 +264,14 @@ public:
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getLocalRowView(LocalOrdinal LocalRow,
-                               Teuchos::ArrayView<const LocalOrdinal> &indices,
-                               Teuchos::ArrayView<const Scalar> &values) const;
+  virtual void getLocalRowView(local_ordinal_type LocalRow,
+                               Teuchos::ArrayView<const local_ordinal_type> &indices,
+                               Teuchos::ArrayView<const scalar_type> &values) const;
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+  virtual void getLocalDiagCopy(Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const;
 
   //@}
 
@@ -273,7 +287,7 @@ public:
    *
    * \param x A vector to left scale this matrix.
    */
-  virtual void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void leftScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
 
   /**
    * \brief Scales the RowMatrix on the right with the Vector x.
@@ -284,51 +298,64 @@ public:
    *
    * \param x A vector to right scale this matrix.
    */
-  virtual void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void rightScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
 
   //! Returns the Frobenius norm of the matrix.
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
+  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType getFrobeniusNorm() const;
 
-  //! \brief Computes the operator-multivector application.
-  /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
-    vary according to the values of \c alpha and \c beta. Specifically
-    - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-    - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+  /// \brief \f$ Y := \beta Y + \alpha Op(A) X \f$,
+  ///   where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
+  ///
+  /// Apply the reordered version of the matrix (or its transpose or
+  /// conjugate transpose) to the given multivector X, producing Y.
+  ///   - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y,
+  ///     so that any values in \c Y (including NaNs) are ignored.
+  ///   - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the
+  ///     matrix, so that any values in \c X (including NaNs) are
+  ///     ignored.
+  ///
+  /// This method assumes that X and Y are in the reordered order.
+  ///
+  /// If hasTransposeApply() returns false, then the only valid value
+  /// of \c mode is Teuchos::NO_TRANS (the default).  Otherwise, it
+  /// accepts the following values:
+  ///   - mode = Teuchos::NO_TRANS: Op(A) is the reordered version of A.
+  ///   - mode = Teuchos::TRANS: Op(A) is the reordered version of the
+  ///     transpose of A.
+  ///   - mode = Teuchos::CONJ_TRANS: Op(A) is reordered version of
+  ///     the conjugate transpose of A.
+  virtual void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-    This assumes that X and Y are in the *reordered* order.
-  */
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
-
-  //! Indicates whether this operator supports applying the adjoint operator.
+  //! Whether apply() can apply the transpose or conjugate transpose.
   virtual bool hasTransposeApply() const;
 
-
   //! Permute multivector: original-to-reordered
-  virtual void permuteOriginalToReordered(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalX,
-                                          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const;
+  virtual void permuteOriginalToReordered(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &originalX,
+                                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &reorderedY) const;
 
   template <class DomainScalar, class RangeScalar>
-  void permuteOriginalToReorderedTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &originalX,
-                                       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const;
+  void
+  permuteOriginalToReorderedTempl (const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &originalX,
+                                       Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &reorderedY) const;
 
   //! Permute multivector: reordered-to-original
-  virtual void permuteReorderedToOriginal(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX,
-                                          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const;
+  virtual void permuteReorderedToOriginal(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &reorderedX,
+                                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &originalY) const;
 
   template <class DomainScalar, class RangeScalar>
-  void permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX,
-                                       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const;
+  void permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &reorderedX,
+                                       Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &originalY) const;
 
 
   //@}
-
   //! \name Deprecated routines to be removed at some point in the future.
   //@{
 
@@ -342,9 +369,10 @@ public:
 
     \pre isDroplyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayRCP<const Scalar>        &values) const;
+  TPETRA_DEPRECATED
+  virtual void getGlobalRowView (global_ordinal_type GlobalRow,
+                                 Teuchos::ArrayRCP<const global_ordinal_type> &indices,
+                                 Teuchos::ArrayRCP<const scalar_type> &values) const;
 
   //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
   /*!
@@ -356,24 +384,24 @@ public:
 
     \pre isGloballyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal DropRow,
-                                                 Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayRCP<const Scalar>       &values) const;
+  TPETRA_DEPRECATED
+  virtual void getLocalRowView (local_ordinal_type DropRow,
+                                Teuchos::ArrayRCP<const local_ordinal_type> &indices,
+                                Teuchos::ArrayRCP<const scalar_type> &values) const;
   //@}
 
-
 private:
-
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! The reordering
-  Teuchos::ArrayRCP<LocalOrdinal> perm_;        /* Original  -> Reordered  */
-  Teuchos::ArrayRCP<LocalOrdinal> reverseperm_; /* Reordered -> Original */
+  Teuchos::RCP<const row_matrix_type> A_;
+  //! Permutation: Original to reordered
+  Teuchos::ArrayRCP<local_ordinal_type> perm_;
+  //! Permutation: Reordered to original
+  Teuchos::ArrayRCP<local_ordinal_type> reverseperm_;
 
   //! Used in apply, to avoid allocation each time.
-  mutable Teuchos::Array<LocalOrdinal> Indices_;
+  mutable Teuchos::Array<local_ordinal_type> Indices_;
   //! Used in apply, to avoid allocation each time.
-  mutable Teuchos::Array<Scalar> Values_;
+  mutable Teuchos::Array<scalar_type> Values_;
 
 };// class ReorderFilter
 

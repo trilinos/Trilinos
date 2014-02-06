@@ -1020,11 +1020,19 @@ the MPI program.  This can be just the name of the program in which case
 the full path will be looked for in <tt class="docutils literal">${MPI_BIN_DIR}</tt> as described above.
 If it is an absolute path, it will be used without modification.)</p>
 <pre class="literal-block">
--D MPI_EXEC_MAX_NUMPROCS:STRING=4
+-D MPI_EXEC_DEFAULT_NUMPROCS:STRING=4
 </pre>
-<p>(The maximum number of processes to allow when setting up and running
+<p>(The default number of processes to use when setting up and running
 MPI test and example executables.  The default is set to '4' and only
 needs to be changed when needed or desired.)</p>
+<pre class="literal-block">
+-D MPI_EXEC_MAX_NUMPROCS:STRING=4
+</pre>
+<p>(The maximum number of processes to allow when setting up and running MPI
+test and example executables.  The default is set to '4' but should be set
+to the largest number that can be tolerated for the given machine.  Tests
+with more processes than this are excluded from the test suite at configure
+time.)</p>
 <pre class="literal-block">
 -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np
 </pre>

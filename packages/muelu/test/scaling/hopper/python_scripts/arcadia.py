@@ -9,7 +9,10 @@ import glob
 import re
 
 # ========================= constants =========================
-CPN          = 24                                               # cores per node
+PLATFORM     = "hopper"
+CPN          = 0                                                # number of physical cores per node (hopper has 24)
+SCHEDULER    = ''                                               # HPC platform scheduler
+SCHED_HEADER = ''                                               # header for the platform scheduler
 NUM_RUNS     = 2                                                # number of same runs (for reproducibility)
 BASECASE     = 1                                                # number of nodes in the smallest run
 DIR_PREFIX   = 'run_'                                           # directory prefix for runs (run with 2 nodes is stores in ${DIR_PREFIX}_2 (shell notation)
@@ -32,14 +35,15 @@ def controller():
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
     p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
     p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
-    p.add_option('-s',                 dest="nscale",       default="8", type='int')                    # number of weak scaling runs
-    p.add_option('-t', '--template',   dest="template",     default="petra.pbs.template")               # template pbs file for all runs
+    p.add_option('-s',                 dest="nscale",       default=8, type='int')                      # number of weak scaling runs
+    p.add_option('-t', '--template',   dest="template",     default="sched.template")                   # template file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
+    p.add_option(      '--cpn',        dest="cpn",          default=CPN, type='int')                    # cores per node
 
     # run arguments
-    p.add_option(      "--cmds",       dest="cmds",         default="")                                 # additional args for the command
+    p.add_option(      '--cmds',       dest="cmds",         default="")                                 # additional args for the command
     p.add_option('-m', '--matrixType', dest="matrix",       default="Laplace3D")                        # matrix
-    p.add_option('-n', '--nx',         dest="nx",           default="134", type="int")                  # number of nodes in any direction
+    p.add_option('-n', '--nx',         dest="nx",           default=134, type='int')                    # number of nodes in any direction
     p.add_option('-x', '--xml',        dest="xmlfile",      default="")                                 # xml file with hierarchy configuration
 
     # parse
@@ -48,6 +52,7 @@ def controller():
     if   options.petra == 'epetra': petra = 1
     elif options.petra == 'tpetra': petra = 2
     elif options.petra == 'both'  : petra = 3
+    elif options.petra == 'ml'    : petra = 4
     else:
         print("Unknown petra type %s" % options.petra)
         return
@@ -114,11 +119,14 @@ def controller():
             # custom number of nodes
             for i in re.split(',', options.nnodes):
                 nnodes.append(int(i))
-                nx.append(int(options.nx * pow(int(i), 1./dim)))
+
+        cpn = options.cpn
+        for i in range(0, len(nnodes)):
+            nx.append(int(options.nx * pow(nnodes[i] * float(cpn)/CPN, 1./dim)))
 
         for i in range(0, len(nnodes)):
             build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                datafiles=datafiles, cmds=cmds, template=options.template, output=options.output)
+                datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn)
 
     elif options.action == 'run':
         run()
@@ -132,11 +140,16 @@ def controller():
         if (options.ltmodule == ""):
           labels = LABELS
           timelines = TIMELINES
+          parsefunc = ""
         else:
           labels    = import_from(options.ltmodule, "LABELS")
           timelines = import_from(options.ltmodule, "TIMELINES")
+          try:
+            parsefunc  = import_from(options.ltmodule, "PARSEFUNC")
+          except(AttributeError):
+            parsefunc = ""
 
-        r = analyze(petra, analysis_run = options.output, labels=labels, timelines=timelines)
+        r = analyze(petra, analysis_run = options.output, labels=labels, timelines=timelines, parsefunc=parsefunc)
         if r : print(r)
 
     else:
@@ -145,17 +158,20 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze(petra, analysis_run, labels, timelines):
+def analyze(petra, analysis_run, labels, timelines, parsefunc):
     # test which of [et]petra is being run
     has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
     has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
+    has_ml     = (len(glob.glob(DIR_PREFIX + "**/*.ml")) > 0)     and (petra & 4)
 
-    if has_epetra == False and has_tpetra == False:
+    if has_epetra == False and has_tpetra == False and has_ml == False:
         return "Cannot find any of *.[et]petra files"
 
     # construct header
     analysis_run_string = "Analysis is performed for " + analysis_run
-    if   (petra == 3):
+    if   (petra == 4):
+      analysis_run_string += ".ml"
+    elif (petra == 3):
       analysis_run_string += ".[et]petra"
     elif (petra == 1):
       analysis_run_string += ".epetra"
@@ -169,15 +185,20 @@ def analyze(petra, analysis_run, labels, timelines):
             header = header + "  " + name + "-etime      eff"
         if has_tpetra:
             header = header + "  " + name + "-ttime      eff"
+        if has_ml:
+            header = header + "  " + name + "-mltime     eff"
     print(header)
 
     # initialize lists
     time_epetra     = list2dict(timelines)
-    eff_epetra      = list2dict(timelines)
+    time_ml         = list2dict(timelines)
     time_tpetra     = list2dict(timelines)
+    eff_epetra      = list2dict(timelines)
     eff_tpetra      = list2dict(timelines)
+    eff_ml          = list2dict(timelines)
     basetime_epetra = list2dict(timelines)
     basetime_tpetra = list2dict(timelines)
+    basetime_ml     = list2dict(timelines)
 
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         os.chdir(dir)
@@ -187,8 +208,8 @@ def analyze(petra, analysis_run, labels, timelines):
         fullstr = "%20s:" % dir
 
         # test if there is anything to analyze
-        if len(glob.glob("screen.out.*.*")) == 0:
-            if (has_epetra and os.path.exists(analysis_run + ".epetra")) or (has_tpetra and os.path.exists(analysis_run + ".tpetra")):
+        if len(glob.glob("screen.out.*")) == 0:
+            if (has_epetra and os.path.exists(analysis_run + ".epetra")) or (has_tpetra and os.path.exists(analysis_run + ".tpetra")) or (has_ml and os.path.exists(analysis_run + ".ml")):
                 fullstr += " running now?"
             else:
                 fullstr += " not run"
@@ -214,6 +235,23 @@ def analyze(petra, analysis_run, labels, timelines):
                 eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
                 fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
 
+            if has_ml:
+                ml_file = analysis_run + ".ml"
+                if (parsefunc == ""):
+                  return "Error: no parsing function provided"
+                else:
+                  theCommand = parsefunc(ml_file,s)
+                r = commands.getstatusoutput(theCommand)
+                # handle multiple timers w/ same name.  This splits last entry in tuple by line breaks into
+                # an array of strings.  The string array is then converted ("mapped") into an array of floats.
+                tt = map(float,r[-1].split())
+                time_ml[s] = sum(tt)
+
+                if nnodes == str(BASECASE):
+                    basetime_ml[s] = time_ml[s]
+                eff_ml[s] = 100 * basetime_ml[s] / time_ml[s]
+                fullstr += "%13.2f %7.2f%%" % (time_ml[s], eff_ml[s])
+
             if has_tpetra:
                 tpetra_file = analysis_run + ".tpetra"
 
@@ -235,7 +273,7 @@ def analyze(petra, analysis_run, labels, timelines):
 
         os.chdir("..")
 
-def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output):
+def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn):
     dir = DIR_PREFIX + str(nnodes)
     print("Building %s..." % dir)
 
@@ -244,20 +282,46 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output):
     for afile in datafiles:                                 # copy all xml files
         shutil.copy(afile, dir)
 
-    # construct PBS script from template
-    os_cmd = "cat " + template
-    os_cmd += (" | sed \"s/_NODES_/"    + str(nnodes)               + "/g\"" +
-               " | sed \"s/_CORES_/"    + str(nnodes*CPN)           + "/g\"" +
-               " | sed \"s/_MTYPE_/"    + matrix                    + "/g\"" +
-               " | sed \"s/_NX_/"       + str(nx)                   + "/g\"" +
-               " | sed \"s/_EPETRA_/"   + str(petra & 1)            + "/g\"" +
-               " | sed \"s/_TPETRA_/"   + str(petra & 2)            + "/g\"" +
-               " | sed \"s/_NUM_RUNS_/" + str(NUM_RUNS)             + "/g\"" +
-               " | sed \"s/_NUM_CMDS_/" + str(len(cmds))            + "/g\"")
+    sched_args = ""
+    if SCHEDULER == "pbs":
+        sched_args  = "aprun"
+        sched_args += " -ss"                                    # Demands strict memory containment per NUMA node
+        sched_args += " -cc numa_node"                          # Controls how tasks are bound to cores and NUMA nodes
+        sched_args += " -N " + str(cpn)                         # Number of tasks per node
+        if cpn % 4 == 0:
+            sched_args += " -S " + str(cpn/4)                   # Number of tasks per NUMA node (note: hopper has 4 NUMA nodes)
+
+    elif SCHEDULER == "slurm":
+        sched_args  = "srun"
+        sched_args += " -N " + str(nnodes)
+        sched_args += " --tasks-per-node " + str(cpn)
+        # TODO: --mem-bind
+
+    script_path = dir + "/" + PETRA_PREFIX + str(nnodes) + "." + SCHEDULER
+
+    full_template = "sched.full.template"
+    os.system("echo -e \"" + SCHED_HEADER + "\" > " + full_template)
+    os.system("cat " + template + " >> " + full_template)
+
+    # construct batch script from template
+    os_cmd = "cat " + full_template
+    os_cmd += (" | sed \"s/_SCHED_ARGS_/" + sched_args                + "/g\"" +
+               " | sed \"s/_WIDTH_/"      + str(nnodes*CPN)           + "/g\"" +
+               " | sed \"s/_NODES_/"      + str(nnodes)               + "/g\"" +
+               " | sed \"s/_CORES_/"      + str(nnodes*cpn)           + "/g\"" +
+               " | sed \"s/_MTYPE_/"      + matrix                    + "/g\"" +
+               " | sed \"s/_NX_/"         + str(nx)                   + "/g\"" +
+               " | sed \"s/_EPETRA_/"     + str(petra & 1)            + "/g\"" +
+               " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/g\"" +
+               " | sed \"s/_NUM_RUNS_/"   + str(NUM_RUNS)             + "/g\"" +
+               " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/g\"")
+
     for i in range(len(cmds)):
         os_cmd += " | sed \"s/_CMD" + str(i+1) + "_/" + cmds[i] + "/g\""
-    os_cmd += " > " + dir + "/" + PETRA_PREFIX + str(nnodes) + ".pbs"
+    os_cmd += " >> " + script_path
     os.system(os_cmd)
+
+    os.system("rm " + full_template)
 
 def clean():
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
@@ -265,11 +329,15 @@ def clean():
         shutil.rmtree(dir)
 
 def run():
+    scheduler = "slurm"
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         print("Running %s..." % dir)
 
         os.chdir(dir)
-        os.system("qsub " + PETRA_PREFIX + dir.replace(DIR_PREFIX, '') + ".pbs")
+        if   SCHEDULER == "pbs":
+            os.system("qsub "   + PETRA_PREFIX + dir.replace(DIR_PREFIX, '') + "." + SCHEDULER)
+        elif SCHEDULER == "slurm":
+            os.system("sbatch " + PETRA_PREFIX + dir.replace(DIR_PREFIX, '') + "." + SCHEDULER)
         os.chdir("..")
 
 # ========================= utility functions =========================
@@ -291,8 +359,46 @@ def list2dict(l):
 def import_from(module, name):
     module = __import__(module, fromlist=[name])
     return getattr(module, name)
+
 # ========================= main =========================
 def main():
+    global CPN
+    global SCHEDULER
+    global SCHED_HEADER
+
+    # We double escape the \n, as it is later
+    # passed to os.system
+    if PLATFORM == "hopper":
+        CPN          = 24
+        SCHEDULER    = "pbs"
+        SCHED_HEADER = ("#PBS -S /bin/bash\\n"
+                        "#PBS -q regular\\n" +
+                        "#PBS -l mppwidth=_WIDTH_\\n"
+                        "#PBS -l walltime=00:10:00\\n"
+                        "#PBS -N _MTYPE___CORES_\\n"
+                        "#PBS -e screen.err.\\$PBS_JOBID\\n"
+                        "#PBS -o screen.out.\\$PBS_JOBID\\n"
+                        "#PBS -V\\n"
+                        "#PBS -A m1327\\n\\n"
+                        "## #PBS -m e\\n"
+                        "## #PBS -M aprokop@sandia.gov\\n\\n"
+                        "cd \\$PBS_O_WORKDIR\\n")
+
+    elif PLATFORM == "shannon":
+        CPN          = 16
+        SCHEDULER    = "slurm"
+        SCHED_HEADER = ("#!/bin/bash\\n"
+                        "#SBATCH -N _NODES_\\n"
+                        "#SBATCH --exclusive\\n"
+                        "#SBATCH -t 00:10:00\\n"
+                        "#SBATCH -J _MTYPE___CORES_\\n"
+                        "#SBATCH -e screen.err.%J\\n"
+                        "#SBATCH -o screen.out.%J\\n")
+
+    else:
+        print("Unknown platform type \"%s\"" % PLATFORM)
+        return
+
     controller()
 
 if __name__ == '__main__':
