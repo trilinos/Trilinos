@@ -6,6 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#ifndef STK_MESH_BULK_DATA_PART_OPERATIONS_HPP
+#define STK_MESH_BULK_DATA_PART_OPERATIONS_HPP
+
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
 
@@ -513,3 +516,5 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
 
 } //namespace mesh
 } //namespace stk;
+
+#endif

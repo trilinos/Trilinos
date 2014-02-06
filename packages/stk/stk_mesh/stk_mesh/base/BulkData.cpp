@@ -16,7 +16,7 @@
 #include <cstring>                      // for strcmp, NULL
 #include <string>                       // for operator<<
 #include <string.h>                     // for NULL, memcpy, memset
-#include <stk_mesh/base/BulkDataPartOperations.tcc>
+#include <stk_mesh/base/BulkDataPartOperations.hpp>
 #include <algorithm>                    // for lower_bound, sort, unique, etc
 #include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <fstream>                      // for operator<<, basic_ostream, etc
