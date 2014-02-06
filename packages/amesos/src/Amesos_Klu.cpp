@@ -625,7 +625,16 @@ int Amesos_Klu::SymbolicFactorization()
   CreateTimer(Comm(), 2);
   
   ResetTimer(1);
-  
+
+  RowMatrixA_ = Problem_->GetMatrix(); // MS, 18-Apr-06 //
+  if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
+            == 0)
+  {
+      NumSymbolicFact_++;
+      IsSymbolicFactorizationOK_ = true;
+      return 0;
+  }
+
   // "overhead" time for the following method is considered here
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols64() );
@@ -671,6 +680,14 @@ int Amesos_Klu::SymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::NumericFactorization() 
 {
+  if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
+            == 0)
+  {
+      NumNumericFact_++;
+      IsNumericFactorizationOK_ = true;
+      return 0;
+  }
+
   if ( !TrustMe_ ) 
   { 
     IsNumericFactorizationOK_ = false;
@@ -710,6 +727,13 @@ int Amesos_Klu::NumericFactorization()
 //=============================================================================
 int Amesos_Klu::Solve() 
 {
+  if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
+            == 0)
+  {
+      ++NumSolve_;
+      return 0;
+  }
+
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
 
