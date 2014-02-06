@@ -346,8 +346,6 @@ int main(int argc, char *argv[])
   ** all done ***********
   **********************/
 
-  MPI_Finalize();
-
   if (myGraph.vertex_capacity > 0){
     free(myGraph.vertexGID);
     free(myGraph.nborIndex);
@@ -361,6 +359,7 @@ int main(int argc, char *argv[])
   if (parts) free(parts);
   if (lids) free(lids);
 
+  MPI_Finalize();
   return 0;
 }
 
