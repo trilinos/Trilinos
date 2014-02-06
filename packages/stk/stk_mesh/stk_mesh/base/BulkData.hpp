@@ -315,7 +315,6 @@ public:
     copy_entity_fields_callback(dst_mesh_idx.bucket->entity_rank(),
                          dst_mesh_idx.bucket->bucket_id(),
                          dst_mesh_idx.bucket_ordinal,
-                         src_mesh_idx.bucket->entity_rank(),
                          src_mesh_idx.bucket->bucket_id(),
                          src_mesh_idx.bucket_ordinal);
   }
@@ -1212,7 +1211,7 @@ private:
   void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket);
 
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                   EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord);
+                                   unsigned src_bucket_id, Bucket::size_type src_bucket_ord);
 
 
   void destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity);

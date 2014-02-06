@@ -37,6 +37,7 @@ class FieldRepository {
 
     void add_field(FieldBase* new_field) {
       m_fields.push_back(new_field);
+      m_rankedFields[new_field->entity_rank()].push_back(new_field);
     }
 
     FieldBase * get_field(
@@ -62,6 +63,13 @@ class FieldRepository {
     const FieldVector & get_fields() const {
       return m_fields;
     }
+
+    // return all fields of a given topological rank (node/face/elem, etc.)
+    const FieldVector & get_fields(stk::topology::rank_t rank) const {
+      ThrowAssert(rank <= stk::topology::NUM_RANKS);
+      return m_rankedFields[rank];
+    }
+
 
     template<class T>
       const T *
@@ -109,6 +117,9 @@ class FieldRepository {
 
   private:
     FieldVector m_fields;
+
+    // Fields assocated with each topologyical rank  
+    FieldVector m_rankedFields[stk::topology::NUM_RANKS];
 
     //disallow copy and assignment
     FieldRepository( const FieldRepository &);

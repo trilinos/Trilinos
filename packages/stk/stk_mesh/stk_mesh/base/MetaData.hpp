@@ -326,6 +326,10 @@ public:
     return m_field_repo.get_fields() ;
   }
 
+  const FieldVector & get_fields(stk::topology::rank_t rank) const {
+    return m_field_repo.get_fields(rank) ;
+  }
+
   /** \brief  Declare a field of the given
    *          \ref stk::mesh::Field "field_type", test name,
    *          and number of states.

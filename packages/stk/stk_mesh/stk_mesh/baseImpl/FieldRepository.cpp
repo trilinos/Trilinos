@@ -196,7 +196,7 @@ FieldBase * FieldRepository::declare_field(
           static_cast<FieldState>(i)
           );
 
-      m_fields.push_back( f[i] );
+      add_field( f[i] );
     }
 
     for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
