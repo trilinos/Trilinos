@@ -216,6 +216,10 @@ namespace panzer {
     
     Teuchos::RCP<const FieldLibraryBase> getFieldLibraryBase() const 
     { return m_field_lib.getConst(); }
+    
+    // return the Physics Block parameter list
+    Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
+    { return m_input_parameters; }
 
   protected:
     void initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,

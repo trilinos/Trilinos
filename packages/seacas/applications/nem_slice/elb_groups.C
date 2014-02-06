@@ -46,6 +46,7 @@
 #include "elb_groups.h"
 #include "elb_elem.h"             // for E_Type, elem_names
 #include "elb_err.h"              // for Gen_Error
+#include "elb_format.h"
 
 /*****************************************************************************/
 namespace {
@@ -147,7 +148,7 @@ int parse_groups(INT *el_blk_ids,
 
   {
     size_t first_el = 0;
-    printf("\nNumber of blocks: %lu\n", mesh->num_el_blks);
+    printf("\nNumber of blocks: "ST_ZU"\n", mesh->num_el_blks);
     printf("Block ID and associated groups:\n");
     printf("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {
