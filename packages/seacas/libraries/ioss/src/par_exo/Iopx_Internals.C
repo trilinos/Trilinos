@@ -933,46 +933,46 @@ int Internals::put_metadata(const Mesh &mesh)
   // ========================================================================
   // Blocks...
   if (!mesh.edgeblocks.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "edge block", mesh.edgeblocks.size(),
+    status += define_netcdf_vars(exodusFilePtr, "edge block", mesh.edgeblocks.size(),
 				DIM_NUM_ED_BLK, VAR_STAT_ED_BLK, VAR_ID_ED_BLK, VAR_NAME_ED_BLK);
   }
 
   if (!mesh.faceblocks.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "face block", mesh.faceblocks.size(),
+    status += define_netcdf_vars(exodusFilePtr, "face block", mesh.faceblocks.size(),
 				DIM_NUM_FA_BLK, VAR_STAT_FA_BLK, VAR_ID_FA_BLK, VAR_NAME_FA_BLK);
   }
 
   if (!mesh.elemblocks.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "element block", mesh.elemblocks.size(),
+    status += define_netcdf_vars(exodusFilePtr, "element block", mesh.elemblocks.size(),
 				DIM_NUM_EL_BLK, VAR_STAT_EL_BLK, VAR_ID_EL_BLK, VAR_NAME_EL_BLK);
   }
 
   // ========================================================================
   // Sets...
   if (!mesh.nodesets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesets.size(),
 				DIM_NUM_NS, VAR_NS_STAT, VAR_NS_IDS, VAR_NAME_NS);
   }
 
   if (!mesh.edgesets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "edge set", mesh.edgesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "edge set", mesh.edgesets.size(),
 				DIM_NUM_ES, VAR_ES_STAT, VAR_ES_IDS, VAR_NAME_ES);
   }
 
   if (!mesh.facesets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "face set", mesh.facesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "face set", mesh.facesets.size(),
 				DIM_NUM_FS, VAR_FS_STAT, VAR_FS_IDS, VAR_NAME_FS);
   }
 
   if (!mesh.elemsets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "element set", mesh.elemsets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "element set", mesh.elemsets.size(),
 				DIM_NUM_ELS, VAR_ELS_STAT, VAR_ELS_IDS, VAR_NAME_ELS);
   }
 
   // ========================================================================
   // side sets...
   if (!mesh.sidesets.empty() > 0) {
-    status = define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesets.size(),
 				DIM_NUM_SS, VAR_SS_STAT, VAR_SS_IDS, VAR_NAME_SS);
   }
 
@@ -2961,9 +2961,9 @@ namespace {
     char errmsg[MAX_ERR_LENGTH];
     const char *routine = "Internals::define_netcdf_vars()";
 
-    int status=nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
+    nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
 
-    status=nc_def_dim(exoid, dim_num, count, &dimid);
+    int status=nc_def_dim(exoid, dim_num, count, &dimid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,

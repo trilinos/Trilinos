@@ -50,7 +50,15 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
+#include "Thyra_LinearOpTester.hpp"
+#include "Thyra_UnitTestHelpers.hpp"
 #include "EpetraThyraAdaptersTestHelpers.hpp"
+
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -252,7 +260,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, RowStatLinearOpBase )
   const int numCols = numLocalRows / 2;
   const RCP<Epetra_CrsMatrix> epetraCrsM = getEpetraMatrix(numRows, numCols);
   const double two = 2.0;
-  epetraCrsM->PutScalar(two);
+  epetraCrsM->PutScalar(-two); // put in negative two just to be extra "tricky"
   const RCP<LinearOpBase<double> > epetraOp = nonconstEpetraLinearOp(epetraCrsM);
 
   const RCP<RowStatLinearOpBase<double> > rowStatOp =
@@ -266,12 +274,17 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, RowStatLinearOpBase )
 
   const RCP<VectorBase<double> > inv_row_sums =
     createMember<double>(epetraOp->range());
+  const RCP<VectorBase<double> > row_sums =
+    createMember<double>(epetraOp->range());
 
   rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
     inv_row_sums.ptr());
+  rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
 
   if (g_dumpAll) {
     out << "inv_row_sums = " << *inv_row_sums;
+    out << "row_sums = " << *row_sums;
   }
 
   TEST_FLOATING_EQUALITY(
@@ -280,6 +293,191 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, RowStatLinearOpBase )
     as<double>(10.0 * ST::eps())
     );
 
+  TEST_FLOATING_EQUALITY(
+    sum<double>(*row_sums),
+    as<double>(two * numCols * numRows),
+    as<double>(10.0 * ST::eps())
+    );
+}
+
+RCP<Epetra_CrsMatrix> getMyEpetraMatrix(int numRows, int numCols, double shift=0.0) 
+{
+  const RCP<const Epetra_Comm> comm = getEpetraComm();
+
+  const Epetra_Map rowMap(numRows, 0, *comm);
+  const Epetra_Map domainMap(numCols, numCols, 0, *comm);
+ 
+  const RCP<Epetra_CrsMatrix> epetraCrsM =
+    rcp(new Epetra_CrsMatrix(Copy, rowMap,domainMap,0));
+
+  Array<double> rowEntries(numCols);
+  Array<int> columnIndices(numCols);
+  for (int j = 0; j < numCols; ++j)
+    columnIndices[j] = j;
+
+  const int numLocalRows = rowMap.NumMyElements();
+  for (int i = 0; i < numLocalRows; ++i) {
+    for (int j = 0; j < numCols; ++j) {
+      rowEntries[j] = as<double>(i+1) + as<double>(j+1) / 10 + shift;
+    }
+
+    epetraCrsM->InsertMyValues( i, numCols, &rowEntries[0], &columnIndices[0] );
+  }
+
+  epetraCrsM->FillComplete(domainMap,rowMap);
+  return epetraCrsM;
+}
+
+TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScaledLinearOpBase)
+{
+  using Teuchos::null;
+  using Teuchos::inOutArg;
+  using Teuchos::updateSuccess;
+  using Teuchos::rcp_dynamic_cast;
+  typedef ScalarTraits<double> ST;
+
+  // Set up the EpetraLinearOp
+
+  const RCP<const Epetra_Comm> comm = getEpetraComm();
+  const int numLocalRows = g_localDim;
+  const int numRows = numLocalRows * comm->NumProc();
+  const int numCols = numLocalRows ;
+ 
+  out << "numRows = " << numRows << ", numCols = " << numCols << std::endl;
+
+  const RCP<Epetra_CrsMatrix> epetraCrsM00_base = getMyEpetraMatrix(numRows, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM01_base = getMyEpetraMatrix(numRows, numCols);
+  const RCP<Epetra_CrsMatrix> epetraCrsM10_base = getMyEpetraMatrix(numCols, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM11_base = getMyEpetraMatrix(numCols, numCols);
+  epetraCrsM00_base->PutScalar(2.0);
+  epetraCrsM01_base->PutScalar(-8.0);
+  epetraCrsM10_base->PutScalar(-9.0);
+  epetraCrsM11_base->PutScalar(3.0);
+  const RCP<Epetra_CrsMatrix> epetraCrsM00 = getMyEpetraMatrix(numRows, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM01 = getMyEpetraMatrix(numRows, numCols);
+  const RCP<Epetra_CrsMatrix> epetraCrsM10 = getMyEpetraMatrix(numCols, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM11 = getMyEpetraMatrix(numCols, numCols);
+  epetraCrsM00->PutScalar(2.0);
+  epetraCrsM01->PutScalar(-8.0);
+  epetraCrsM10->PutScalar(-9.0);
+  epetraCrsM11->PutScalar(3.0);
+
+  const RCP<const LinearOpBase<double> > op00_base = epetraLinearOp(epetraCrsM00_base);
+  const RCP<const LinearOpBase<double> > op01_base = epetraLinearOp(epetraCrsM01_base);
+  const RCP<const LinearOpBase<double> > op10_base = epetraLinearOp(epetraCrsM10_base);
+  const RCP<const LinearOpBase<double> > op11_base = epetraLinearOp(epetraCrsM11_base);
+
+  const RCP<LinearOpBase<double> > op00 = nonconstEpetraLinearOp(epetraCrsM00);
+  const RCP<LinearOpBase<double> > op01 = nonconstEpetraLinearOp(epetraCrsM01);
+  const RCP<LinearOpBase<double> > op10 = nonconstEpetraLinearOp(epetraCrsM10);
+  const RCP<LinearOpBase<double> > op11 = nonconstEpetraLinearOp(epetraCrsM11);
+
+  const RCP<const LinearOpBase<double> > blocked_base = block2x2(op00_base,op01_base,op10_base,op11_base);
+  const RCP<LinearOpBase<double> > blocked = nonconstBlock2x2(op00,op01,op10,op11);
+
+  const RCP<VectorBase<double> > left_scale  = createMember<double>(blocked_base->range());
+  const RCP<VectorBase<double> > right_scale = createMember<double>(blocked_base->domain());
+
+  put_scalar(7.0,left_scale.ptr());
+  put_scalar(-4.0,right_scale.ptr());
+
+  rcp_dynamic_cast<ScaledLinearOpBase<double> >(blocked)->scaleLeft(*left_scale);
+
+  {
+    LinearOpTester<double> tester;
+    tester.set_all_error_tol(1e-10);
+    tester.show_all_tests(true);
+    tester.dump_all(true);
+    tester.num_random_vectors(5);
+    const RCP<const LinearOpBase<double> > left_op = Thyra::diagonal(left_scale);
+    const RCP<const LinearOpBase<double> > ref_op = multiply(left_op,blocked_base);
+
+    updateSuccess(tester.compare(*ref_op, *blocked, ptrFromRef(out)), success);
+  }
+
+  rcp_dynamic_cast<ScaledLinearOpBase<double> >(blocked)->scaleRight(*right_scale);
+
+  {
+    LinearOpTester<double> tester;
+    tester.set_all_error_tol(1e-10);
+    tester.show_all_tests(true);
+    tester.dump_all(true);
+    tester.num_random_vectors(5);
+    const RCP<const LinearOpBase<double> > left_op = Thyra::diagonal(left_scale);
+    const RCP<const LinearOpBase<double> > right_op = Thyra::diagonal(right_scale);
+    const RCP<const LinearOpBase<double> > ref_op = multiply(left_op,blocked_base,right_op);
+
+    updateSuccess(tester.compare(*ref_op, *blocked, ptrFromRef(out)), success);
+  }
+}
+
+TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_RowStatLinearOpBase )
+{
+  using Teuchos::null;
+  using Teuchos::inOutArg;
+  using Teuchos::updateSuccess;
+  using Teuchos::rcp_dynamic_cast;
+  typedef ScalarTraits<double> ST;
+
+  // Set up the EpetraLinearOp
+
+  const RCP<const Epetra_Comm> comm = getEpetraComm();
+  const int numLocalRows = g_localDim;
+  const int numRows = numLocalRows * comm->NumProc();
+  const int numCols = numLocalRows / 2;
+ 
+  out << "numRows = " << numRows << ", numCols = " << numCols << std::endl;
+
+  const RCP<Epetra_CrsMatrix> epetraCrsM00 = getEpetraMatrix(numRows, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM01 = getEpetraMatrix(numRows, numCols);
+  const RCP<Epetra_CrsMatrix> epetraCrsM10 = getEpetraMatrix(numCols, numRows);
+  const RCP<Epetra_CrsMatrix> epetraCrsM11 = getEpetraMatrix(numCols, numCols);
+  epetraCrsM00->PutScalar(2.0);
+  epetraCrsM01->PutScalar(-8.0);
+  epetraCrsM10->PutScalar(-9.0);
+  epetraCrsM11->PutScalar(3.0);
+
+  const RCP<const LinearOpBase<double> > op00 = epetraLinearOp(epetraCrsM00);
+  const RCP<const LinearOpBase<double> > op01 = epetraLinearOp(epetraCrsM01);
+  const RCP<const LinearOpBase<double> > op10 = epetraLinearOp(epetraCrsM10);
+  const RCP<const LinearOpBase<double> > op11 = epetraLinearOp(epetraCrsM11);
+
+  const RCP<const LinearOpBase<double> > blocked = block2x2(op00,op01,op10,op11);
+
+  const RCP<const RowStatLinearOpBase<double> > rowStatOp =
+    rcp_dynamic_cast<const RowStatLinearOpBase<double> >(blocked, true);
+
+  if (g_dumpAll) {
+    out << "epetraOp = " << *blocked;
+  }
+
+  // Get the inverse row sums
+
+  const RCP<VectorBase<double> > inv_row_sums =
+    createMember<double>(blocked->range());
+  const RCP<VectorBase<double> > row_sums =
+    createMember<double>(blocked->range());
+
+  rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
+    inv_row_sums.ptr());
+  rowStatOp->getRowStat(RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+
+  if (g_dumpAll) {
+    out << "inv_row_sums = " << *inv_row_sums;
+    out << "row_sums = " << *row_sums;
+  }
+
+  TEST_FLOATING_EQUALITY(
+    sum<double>(*inv_row_sums),
+    as<double>((1.0/(numRows*2.0+numCols*8.0))*numRows + (1.0/(numRows*9.0+numCols*3.0))*numCols),
+    as<double>(10.0 * ST::eps())
+    );
+  TEST_FLOATING_EQUALITY(
+    sum<double>(*row_sums),
+    as<double>((numRows*2.0+numCols*8.0)*numRows + (numRows*9.0+numCols*3.0)*numCols),
+    as<double>(10.0 * ST::eps())
+    );
 }
 
 

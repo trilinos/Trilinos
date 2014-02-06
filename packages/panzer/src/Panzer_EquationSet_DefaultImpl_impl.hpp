@@ -551,6 +551,14 @@ panzer::EquationSet_DefaultImpl<EvalT>::getProvidedDOFs() const
 
 // ***********************************************************************
 template <typename EvalT>
+const std::vector<std::vector<std::string> > &
+panzer::EquationSet_DefaultImpl<EvalT>::getCoordinateDOFs() const
+{
+  return m_coordinate_dofs;
+}
+
+// ***********************************************************************
+template <typename EvalT>
 const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > &
 panzer::EquationSet_DefaultImpl<EvalT>::getIntegrationRules() const
 {
@@ -764,6 +772,25 @@ addDOFTimeDerivative(const std::string & dofName,
     desc.timeDerivative = std::make_pair(true,std::string("DXDT_")+dofName);
   else
     desc.timeDerivative = std::make_pair(true,dotName);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+setCoordinateDOFs(const std::vector<std::string> & dofNames)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(m_cell_data.baseCellDimension()!=dofNames.size(),std::invalid_argument,
+                             "EquationSet_DefaultImpl::setCoordinateDOFs: Size of vector is not equal to the "
+                             "spatial dimension.");
+
+  for(std::size_t d=0;d<dofNames.size();d++) {
+    typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dofNames[d]);
+    TEUCHOS_TEST_FOR_EXCEPTION(desc_it == m_provided_dofs_desc.end(),std::invalid_argument,
+                             "EquationSet_DefaultImpl::setCoordinateDOFs: DOF of name \"" + dofNames[d] + "\" "
+                             "has not been added, thus cannot be set as a coordinate DOF.");
+  }
+
+  m_coordinate_dofs.push_back(dofNames);
 }
 
 // ***********************************************************************

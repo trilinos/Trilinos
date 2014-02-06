@@ -560,10 +560,18 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_DEVICE_FUNCTION bool isInf (const float x) {
+#ifdef __APPLE__
+    return std::isinf (x);
+#else
     return isinf (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION bool isNan (const float x) {
+#ifdef __APPLE__
+    return std::isnan (x);
+#else
     return isnan (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION mag_type abs (const float x) {
     return ::fabs (x);
@@ -822,10 +830,18 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+#ifdef __APPLE__
+    return std::isinf (x);
+#else
     return isinf (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+#ifdef __APPLE__
+    return std::isnan (x);
+#else
     return isnan (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
     return ::fabs (x);

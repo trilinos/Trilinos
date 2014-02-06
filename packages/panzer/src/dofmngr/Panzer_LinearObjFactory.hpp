@@ -118,6 +118,22 @@ public:
     template <typename BuilderT>
     void buildGatherScatterEvaluators(const BuilderT & builder);
 
+   /** Read in a vector from a file. Fill a particular vector in the linear object container.
+     *
+     * \param[in] identifier Key for specifying which file(s) to read
+     * \param[in] loc Linear object container to fill with the vector
+     * \param[in] id Id for the field to be filled
+     */
+    virtual void readVector(const std::string & identifier,LinearObjContainer & loc,int id) const = 0;
+
+   /** Write in a vector from a file. Fill a particular vector in the linear object container.
+     *
+     * \param[in] identifier Key for specifying which file(s) to read
+     * \param[in] loc Linear object container to fill with the vector
+     * \param[in] id Id for the field to be filled
+     */
+    virtual void writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const = 0;
+
    /** Build a container with all the neccessary linear algebra objects. This is
      * the non-ghosted version.
      */ 

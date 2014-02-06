@@ -100,7 +100,9 @@ void printGraph(RCP<const Comm<int> > &comm, lno_t nvtx,
 
 template <typename User>
 int verifyInputAdapter(
-  Zoltan2::XpetraCrsGraphAdapter<User> &ia, tgraph_t &graph)
+  Zoltan2::XpetraCrsGraphAdapter<User> &ia,
+  tgraph_t &graph
+)
 {
   RCP<const Comm<int> > comm = graph.getComm();
   int fail = 0, gfail=0;
@@ -123,7 +125,7 @@ int verifyInputAdapter(
 
     nvtx = ia.getLocalNumVertices();
     ia.getVertexIDsView(vtxIds);
-    ia.getEdgeView(offsets, edgeIds);
+    ia.getEdgesView(offsets, edgeIds);
 
     if (nvtx != graph.getNodeNumRows())
       fail = 8;

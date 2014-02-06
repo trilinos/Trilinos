@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -57,7 +57,7 @@ namespace KokkosClassic {
     curNumThreads_ = params.get<int>("Num Threads");
     int verbose = params.get<int>("Verbose");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      curNumThreads_ < 0, std::runtime_error, 
+      curNumThreads_ < 0, std::runtime_error,
       "TPINode: The \"Num Threads\" parameter must be a nonnegative integer.");
     if (verbose) {
       std::cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;
@@ -65,14 +65,14 @@ namespace KokkosClassic {
     init (curNumThreads_);
   }
 
-  TPINode::TPINode(ParameterList &plist) 
+  TPINode::TPINode(ParameterList &plist)
   {
     ParameterList params = getDefaultParameters();
     params.setParameters(plist);
     curNumThreads_ = params.get<int>("Num Threads");
     int verbose = params.get<int>("Verbose");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      curNumThreads_ < 0, std::runtime_error, 
+      curNumThreads_ < 0, std::runtime_error,
       "TPINode: The \"Num Threads\" parameter must be a nonnegative integer.");
     if (verbose) {
       std::cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;
@@ -80,7 +80,7 @@ namespace KokkosClassic {
     init (curNumThreads_);
   }
 
-  ParameterList TPINode::getDefaultParameters() 
+  ParameterList TPINode::getDefaultParameters()
   {
     ParameterList params;
     params.set("Verbose",     0);
@@ -115,4 +115,7 @@ namespace KokkosClassic {
     }
   }
 
+  std::string TPINode::name () {
+    return "TPI";
+  }
 }

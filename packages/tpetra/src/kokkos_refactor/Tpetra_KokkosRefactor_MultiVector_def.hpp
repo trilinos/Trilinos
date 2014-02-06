@@ -93,7 +93,11 @@ namespace Tpetra {
       // Allocate a DualView from new Kokkos, wrap its device data into an ArrayRCP
       view_ = view_type("MV::dual_view",myLen,NumVectors);
       ArrayRCP<Scalar> data = Kokkos::Compat::persistingView(view_.d_view);
-      MVT::initializeValues(lclMV_,myLen,NumVectors,data,myLen);
+      // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+      size_t stride[8];
+      view_.stride (stride);
+      const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+      MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
 
       // First touch was done by view allocation
       /*if (zeroOut) {
@@ -134,9 +138,13 @@ namespace Tpetra {
     ArrayRCP<Scalar> data = (myLen > 0) ?
       Kokkos::Compat::persistingView(view_.d_view) :
       Teuchos::null;
-    const size_t stride = (myLen > 0) ? myLen : size_t (0);
+    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    size_t stride[8];
+    view_.stride (stride);
+    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+
     // This just sets the dimensions, pointer, and stride of lclMV_.
-    MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+    MVT::initializeValues (lclMV_, myLen, numVecs, data, LDA);
 
     // Refactor: don't copy we use view semantics
     //
@@ -248,7 +256,13 @@ namespace Tpetra {
     view_.template modify<typename view_type::host_mirror_device_type>();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
       ": LDA = " << LDA << " < numRows = " << numRows << ".");
-    MVT::initializeValues (lclMV_, numRows, numVecs, Kokkos::Compat::persistingView(view_.d_view), LDA);
+
+    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    size_t stride[8];
+    view_.stride (stride);
+    const size_t stride_1 = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+
+    MVT::initializeValues (lclMV_, numRows, numVecs, Kokkos::Compat::persistingView(view_.d_view), stride_1);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -274,12 +288,16 @@ namespace Tpetra {
     view_ = view_type("MV::view_",myLen,NumVectors);
 
     // TODO: write a functor and use parallel_for
+    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    size_t stride[8];
+    view_.stride (stride);
+    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
 
     for(size_t i = 0; i<myLen;i++)
       for(size_t j = 0; j<NumVectors;j++)
         view_.h_view(i,j) = ArrayOfPtrs[j][i];
       view_.template modify<typename view_type::t_host::device_type>();
-    MVT::initializeValues(lclMV_,myLen,NumVectors,Kokkos::Compat::persistingView(view_.d_view),myLen);
+    MVT::initializeValues(lclMV_,myLen,NumVectors,Kokkos::Compat::persistingView(view_.d_view),LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -308,7 +326,16 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getStride() const {
     if (isConstantStride()) {
-      return MVT::getStride(lclMV_);
+      // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+      size_t stride[8];
+      view_.stride (stride);
+      const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+      const size_t LDA_C = MVT::getStride(lclMV_);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        LDA != LDA_C, std::logic_error, "Tpetra::MultiVector::getStride: "
+        "LDA from Kokkos::View != LDA from KokkosClassic.  First is " << LDA
+        << ", second is " << LDA_C << ".");
+      return LDA;
     }
     return 0;
   }
@@ -371,7 +398,7 @@ namespace Tpetra {
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
     const size_t numCols = this->getNumVectors ();
-    const size_t stride = MVT::getStride (lclMV_);
+    //const size_t stride = MVT::getStride (lclMV_);
 
     // TODO (mfh 15 Sep 2013) When we replace
     // KokkosClassic::MultiVector with a Kokkos::View, there are two
@@ -606,7 +633,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (numVecs > 0 && importLIDs.size () > 0) {
-      const size_t myStride = MVT::getStride (lclMV_);
+      //const size_t myStride = MVT::getStride (lclMV_);
 
       // NOTE (mfh 10 Mar 2012) If you want to implement custom
       // combine modes, start editing here.  Also, if you trust
@@ -1046,15 +1073,12 @@ namespace Tpetra {
   {
     const size_t numVecs = getNumVectors();
     if (isConstantStride()) {
-      MVT::Init(lclMV_,alpha);
+      Kokkos::Impl::ViewFill<typename view_type::t_dev>(view_.d_view,alpha);
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
-      for (size_t j=0; j < numVecs; ++j) {
-        vj = MVT::getValuesNonConst(lclMV_,whichVectors_[j]);
-        MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
-        MVT::Init(v,alpha);
+      for (size_t k=0; k < numVecs; ++k) {
+        Kokkos::View<Scalar*,DeviceType> vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
+        Kokkos::Impl::ViewFill<Kokkos::View<Scalar*,DeviceType> >(vector_k,alpha);
       }
     }
   }

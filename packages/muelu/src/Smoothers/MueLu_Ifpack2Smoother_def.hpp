@@ -216,18 +216,22 @@ namespace MueLu {
     SetPrecParameters(paramList);
 
     // Apply
-    if (supportInitialGuess || InitialGuessIsZero) {
-      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
-      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
-      prec_->apply(tpB,tpX);
+    if (InitialGuessIsZero || supportInitialGuess) {
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(X);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(B);
+
+      prec_->apply(tpB, tpX);
 
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
-      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
-      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(*Correction);
-      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(*Residual);
-      prec_->apply(tpB,tpX);
+
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(*Correction);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(*Residual);
+
+      prec_->apply(tpB, tpX);
+
       X.update(TST::one(), *Correction, TST::one());
     }
   }

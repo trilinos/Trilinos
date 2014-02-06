@@ -182,9 +182,16 @@ FUNCTION(TRIBITS_SETUP_MPI)
       PRINT_NONEMPTY_VAR(MPI_EXEC_NUMPROCS_FLAG)
     ENDIF()
 
-    ADVANCED_SET( MPI_EXEC_MAX_NUMPROCS "4"
+    ADVANCED_SET( MPI_EXEC_DEFAULT_NUMPROCS "4"
       CACHE STRING
-      "The maximum mumber of processes to use when running MPI programs." )
+      "The default mumber of processes to use when running MPI programs." )
+
+    IF ( "${MPI_EXEC_MAX_NUMPROCS_DEFAULT}" STREQUAL "" )
+      SET(MPI_EXEC_MAX_NUMPROCS_DEFAULT 4)
+    ENDIF()
+    ADVANCED_SET( MPI_EXEC_MAX_NUMPROCS ${MPI_EXEC_MAX_NUMPROCS_DEFAULT}
+      CACHE STRING
+      "The maximum mumber of processes to use when running MPI programs.  Tests with more procs are excluded." )
 
     ADVANCED_SET( MPI_EXEC_PRE_NUMPROCS_FLAGS ""
       CACHE STRING

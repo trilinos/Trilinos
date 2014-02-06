@@ -58,7 +58,7 @@ void func(ScalarT& f, const ScalarT& x) {
 int main(int argc, char **argv)
 {
   double x0 = 1.0;                      // Initial condition
-  unsigned int deg = 40;                // Degree of Taylor series solution
+  int deg = 40;                // Degree of Taylor series solution
 
   Sacado::Tay::Taylor<double> x = x0;   // Taylor polynomial for independent
   Sacado::Tay::Taylor<double> f;        // Taylor polynomial for dependent
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   x.reserve(deg);
 
   // Compute Taylor series solution to dx/dt = f(x)
-  for (unsigned int k=0; k<deg; k++) {
+  for (int k=0; k<deg; k++) {
     func(f, x);
 
     // Set next coefficient
@@ -83,9 +83,9 @@ int main(int argc, char **argv)
   func(f_fad, x_fad);
   Sacado::Tay::Taylor<double> dxdx0(deg);
   dxdx0.fastAccessCoeff(0) = 1.0;
-  for (unsigned int k=0; k<deg; k++) {
+  for (int k=0; k<deg; k++) {
     dxdx0.fastAccessCoeff(k+1) = 0.0;
-    for (unsigned int j=0; j<=k; j++)
+    for (int j=0; j<=k; j++)
       dxdx0.fastAccessCoeff(k+1) += f_fad.dx(0).coeff(k-j) * dxdx0.coeff(j);
     dxdx0.fastAccessCoeff(k+1) /= k+1;
   }
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
   // Compute maximum relative error
   double max_err = 0.0;
   double err = 0.0;
-  for (unsigned int k=0; k<=deg; k++) {
+  for (int k=0; k<=deg; k++) {
     err = std::fabs(x.coeff(k) - u.coeff(k)) / (1.0 + fabs(u.coeff(k)));
     if (err > max_err) max_err = err;
   }
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
   // Compute maximum derivative relative error
   double deriv_max_err = 0.0;
   double deriv_err = 0.0;
-  for (unsigned int k=0; k<=deg; k++) {
+  for (int k=0; k<=deg; k++) {
     deriv_err = std::fabs(dxdx0.coeff(k) - dudx0.coeff(k)) / 
       (1.0 + fabs(dudx0.coeff(k)));
     if (deriv_err > deriv_max_err) deriv_max_err = deriv_err;

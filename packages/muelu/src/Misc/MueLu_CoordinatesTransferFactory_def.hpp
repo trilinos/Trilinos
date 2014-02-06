@@ -131,7 +131,7 @@ namespace MueLu {
     // Get some info about aggregates
     int                         myPID        = uniqueMap->getComm()->getRank();
     LO                          numAggs      = aggregates->GetNumAggregates();
-    ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+    ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes(true,true);
     const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
     const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
 

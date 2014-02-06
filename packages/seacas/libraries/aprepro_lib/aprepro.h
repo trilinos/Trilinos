@@ -21,9 +21,13 @@ namespace SEAMS {
 
   /* Array structure */
   struct array {
-    double *data;
+    std::vector<double> data;
     int rows;
     int cols;
+    
+    array(int r, int c) : rows(r), cols(c) {data.resize(r*c);}
+    array() : rows(0), cols(0) {}
+    ~array() {}
   };
 
   struct symrec

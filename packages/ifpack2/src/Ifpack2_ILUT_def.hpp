@@ -383,25 +383,28 @@ computeCondEst (CondestType CT,
 template<class MatrixType>
 void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
-  // Check in serial or one-process mode if the matrix is square.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! A.is_null () && A->getComm ()->getSize () == 1 &&
-    A->getNodeNumRows () != A->getNodeNumCols (),
-    std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
-    "contains one process, then A must be square.  Instead, you provided a "
-    "matrix A with " << A->getNodeNumRows () << " rows and "
-    << A->getNodeNumCols () << " columns.");
+  if (A.getRawPtr () != A_.getRawPtr ()) {
+    // Check in serial or one-process mode if the matrix is square.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! A.is_null () && A->getComm ()->getSize () == 1 &&
+      A->getNodeNumRows () != A->getNodeNumCols (),
+      std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
+      "contains one process, then A must be square.  Instead, you provided a "
+      "matrix A with " << A->getNodeNumRows () << " rows and "
+      << A->getNodeNumCols () << " columns.");
 
-  // It's legal for A to be null; in that case, you may not call
-  // initialize() until calling setMatrix() with a nonnull input.
-  // Regardless, setting the matrix invalidates any previous
-  // factorization.
-  IsInitialized_ = false;
-  IsComputed_ = false;
-  A_local_ = Teuchos::null;
-  L_ = Teuchos::null;
-  U_ = Teuchos::null;
-  A_ = A;
+    // It's legal for A to be null; in that case, you may not call
+    // initialize() until calling setMatrix() with a nonnull input.
+    // Regardless, setting the matrix invalidates any previous
+    // factorization.
+    IsInitialized_ = false;
+    IsComputed_ = false;
+    A_local_ = Teuchos::null;
+    L_ = Teuchos::null;
+    U_ = Teuchos::null;
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
+    A_ = A;
+  }
 }
 
 

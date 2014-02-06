@@ -47,7 +47,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO
     )
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(recirc2d_cp
-    SOURCE_FILES hands-on.sh xml/s3a.xml xml/s3b.xml xml/s3c.xml
+    SOURCE_FILES xml/s3a.xml xml/s3b.xml xml/s3c.xml
     )
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

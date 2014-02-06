@@ -101,11 +101,13 @@ namespace Kokkos {
         const WDP _c;
         const int _beg;
 
-        FunctorParallelFor(int beg, WDP wd):_beg(beg),_c(wd) {};
+        FunctorParallelFor (const int beg, const WDP wd) :
+          _c (wd), _beg (beg)
+        {}
 
         KOKKOS_INLINE_FUNCTION
         void operator() (const int & i) const {
-          _c.execute(i+_beg);
+          _c.execute (i + _beg);
         }
       };
 
@@ -123,7 +125,8 @@ namespace Kokkos {
 
         WDP _c;
         const int _beg;
-        FunctorParallelReduce(int beg, WDP wd):_beg(beg),_c(wd) {};
+        FunctorParallelReduce (const int beg, WDP wd) :
+          _c (wd), _beg (beg) {}
 
         KOKKOS_INLINE_FUNCTION
         void operator() (const int & i, volatile value_type& value) const {
@@ -258,7 +261,8 @@ namespace Kokkos {
       ///
       /// \param rw [in] 0 if read-only, 1 if read-write.  This is an int and not a KokkosClassic::ReadWriteOption, in order to avoid a circular dependency between KokkosCompat and KokkosClassic.
       template <class T> inline
-      Teuchos::ArrayRCP<T> viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
+      Teuchos::ArrayRCP<T>
+      viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
         (void) rw; // Silence "unused parameter" compiler warning
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
@@ -266,7 +270,10 @@ namespace Kokkos {
         return buff.persistingView(0,size);
       }
 
-      inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
+      inline void
+      readyBuffers (Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers,
+                    Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers)
+    {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
         if (isHostNode == false) {
           for (size_t i=0; i < (size_t)buffers.size(); ++i) {
@@ -277,10 +284,14 @@ namespace Kokkos {
           }
         }
 #endif
-        (void)buffers;
-        (void)ncBuffers;
+        (void) buffers;
+        (void) ncBuffers;
       }
 
+      /// \brief Return the human-readable name of this Node.
+      ///
+      /// See \ref kokkos_node_api "Kokkos Node API"
+      static std::string name();
 
       //@}
   };

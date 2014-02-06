@@ -38,6 +38,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_UNINIT
   "Enable use of uninit_f2c for debugging Rad"
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VIEW_SPEC
+  HAVE_SACADO_VIEW_SPEC
+  "Enable Sacado specializations for Kokkos::View<...>"
+  ON )
+
 SET(Sacado_ENABLE_ADOLC_default OFF)
 IF(TPL_ENABLE_ADOLC)
   SET(Sacado_ENABLE_ADOLC_default ON)

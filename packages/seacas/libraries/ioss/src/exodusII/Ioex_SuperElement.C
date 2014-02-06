@@ -125,39 +125,29 @@ Ioex::SuperElement::SuperElement(const std::string &filename,
   // At this point have a valid netcdf file handle.
   // Read some dimensions to determine size of Mass and Stiffness
   // matrix.
-  status = nc_get_dimension(filePtr, "NumDof",
-			    "number of degrees of freedom",
-			    &numDOF);
+  nc_get_dimension(filePtr, "NumDof",
+		   "number of degrees of freedom",
+		   &numDOF);
   
-  status = nc_get_dimension(filePtr, "num_nodes",
-			    "number of nodes",
-			    &num_nodes);
+  nc_get_dimension(filePtr, "num_nodes",
+		   "number of nodes",
+		   &num_nodes);
 
 
-  status = nc_get_dimension(filePtr, "NumEig",
-			    "number of eigenvalues",
-			    &numEIG);
+  nc_get_dimension(filePtr, "NumEig",
+		   "number of eigenvalues",
+		   &numEIG);
 
-  status = nc_get_dimension(filePtr, "num_dim",
-			    "number of dimensions",
-			    &num_dim);
+  nc_get_dimension(filePtr, "num_dim",
+		   "number of dimensions",
+		   &num_dim);
 
   size_t num_constraints = 0;
-  status = nc_get_dimension(filePtr, "NumConstraints",
-			    "number of interface dof",
-			    &num_constraints);
+  nc_get_dimension(filePtr, "NumConstraints",
+		   "number of interface dof",
+		   &num_constraints);
   assert(num_constraints == numDOF - numEIG);
     
-  // NumCols and NumDof are redundant dimensions in the netcdf file.
-  // Eventually, NumCols will be removed and NumDof is the long-term value.
-  // Verify that they match.
-  size_t numCols = numDOF;
-  //size_t numCols = 0;
-  //status = nc_get_dimension(filePtr, "NumCols",
-			    //"number of matrix columns",
-			    //&numCols);
-  assert(numCols == numDOF);
-
   // Add the standard properties...
   properties.add(Ioss::Property(this, "numDOF",
                                 Ioss::Property::INTEGER));

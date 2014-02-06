@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsLibraryMacros)
 
 #
@@ -55,7 +54,10 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_SimpleFadImp.hpp
   Sacado_Fad_SimpleFadOps.hpp
   Sacado_Fad_SimpleFadTraits.hpp
-  ) 
+  Sacado_Fad_ViewStorage.hpp
+  Sacado_Fad_ViewFad.hpp
+  Sacado_Fad_ViewFadTraits.hpp
+  )
 
 # ELRFAD
 SET(HEADERS ${HEADERS}
@@ -160,6 +162,14 @@ SET(HEADERS ${HEADERS}
   Sacado_Handle.hpp
   )
 
+IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
+
+SET(HEADERS ${HEADERS}
+  Kokkos_View_Fad.hpp
+  )
+
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Teuchos)
 
   # BLAS
@@ -179,9 +189,9 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     template/Sacado_TemplateManagerImp.hpp
     template/Sacado_TemplateIterator.hpp
     )
-  
+
   IF (${PACKAGE_NAME}_ENABLE_PARAMLIB)
-    
+
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/parameter)
     SET(HEADERS ${HEADERS}
       parameter/Sacado_ParameterFamilyBase.hpp
@@ -198,7 +208,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_PARAMLIB)
-  
+
 ENDIF(${PACKAGE_NAME}_ENABLE_Teuchos)
 
 #mpl

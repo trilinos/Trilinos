@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -48,57 +48,63 @@
 namespace KokkosClassic {
 
   TBBNode::TBBNode () :
-    alreadyInit_ (false), 
-    tsi_ (tbb::task_scheduler_init::deferred) 
+    tsi_ (tbb::task_scheduler_init::deferred),
+    alreadyInit_ (false)
   {
-    ParameterList params = getDefaultParameters();
-    int numThreads = params.get<int> ("Num Threads");
-    int verbose = params.get<int> ("Verbose");
+    Teuchos::ParameterList params = getDefaultParameters ();
+    const int numThreads = params.get<int> ("Num Threads");
+    const int verbose = params.get<int> ("Verbose");
     if (numThreads >= 0) {
       if (verbose) {
-        std::cout << "TBBNode initializing with numThreads == " << numThreads << std::endl;
+        std::cout << "TBBNode initializing with numThreads == " << numThreads
+                  << std::endl;
       }
-      init(numThreads);
+      init (numThreads);
     }
   }
 
 
-  TBBNode::TBBNode (Teuchos::ParameterList &pl) : 
-    alreadyInit_ (false), 
-    tsi_ (tbb::task_scheduler_init::deferred) 
+  TBBNode::TBBNode (Teuchos::ParameterList &pl) :
+    tsi_ (tbb::task_scheduler_init::deferred),
+    alreadyInit_ (false)
   {
-    ParameterList params = getDefaultParameters();
+    Teuchos::ParameterList params = getDefaultParameters ();
     params.setParameters (pl);
-    int numThreads = params.get<int>("Num Threads");
-    int verbose = params.get<int>("Verbose");
+    const int numThreads = params.get<int> ("Num Threads");
+    const int verbose = params.get<int> ("Verbose");
     if (numThreads >= 0) {
       if (verbose) {
-        std::cout << "TBBNode initializing with numThreads == " << numThreads << std::endl;
+        std::cout << "TBBNode initializing with numThreads == " << numThreads
+                  << std::endl;
       }
-      init(numThreads);
+      init (numThreads);
     }
   }
 
-  ParameterList TBBNode::getDefaultParameters() {
-    ParameterList params;
-    params.set("Verbose"    , 0);
-    params.set("Num Threads",-1);
+  Teuchos::ParameterList TBBNode::getDefaultParameters () {
+    Teuchos::ParameterList params;
+    params.set ("Verbose"    , 0);
+    params.set ("Num Threads",-1);
     return params;
   }
 
-  void TBBNode::init(int numThreads) {
+  void TBBNode::init (const int numThreads) {
     if (alreadyInit_) {
-      tsi_.terminate();
+      tsi_.terminate ();
     }
-    // 
+    //
     if (numThreads >= 1) {
-      tsi_.initialize(numThreads);
+      tsi_.initialize (numThreads);
     }
     else {
-      tsi_.initialize(tbb::task_scheduler_init::automatic);
+      tsi_.initialize (tbb::task_scheduler_init::automatic);
     }
   }
 
-  TBBNode::~TBBNode() {}
+  TBBNode::~TBBNode () {}
 
-}
+  std::string TBBNode::name () {
+    return "TBB";
+  }
+
+} // namespace KokkosClassic

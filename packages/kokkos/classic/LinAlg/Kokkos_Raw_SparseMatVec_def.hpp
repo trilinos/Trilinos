@@ -49,6 +49,10 @@
 ///   If you edit this header by hand, your edits will disappear the
 ///   next time you run the generator script.
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+#define KOKKOSCLASSIC_HAVE_FAST_COMPILE 1
+#endif // KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 namespace KokkosClassic {
 namespace Raw {
 
@@ -621,6 +625,8 @@ matVecCscColMajorForfor4Vec (
     }
   }
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -1577,6 +1583,8 @@ matVecCscColMajorForif4Vec (
     }
   }
 }
+
+#endif // KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -5376,6 +5384,8 @@ matVecCsrColMajorForfor4VecOmp (
 }
 #endif // HAVE_KOKKOSCLASSIC_OPENMP
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -9032,6 +9042,8 @@ matVecCsrColMajorForif4Vec (
   }
 }
 
+#endif // KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -9601,6 +9613,8 @@ matVecCscColMajorForforConj4Vec (
     }
   }
 }
+
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -10557,6 +10571,8 @@ matVecCscColMajorForifConj4Vec (
     }
   }
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 template<class Ordinal,
          class MatrixScalar,
@@ -14338,6 +14354,8 @@ matVecCsrColMajorForforConj4VecOmp (
 }
 #endif // HAVE_KOKKOSCLASSIC_OPENMP
 
+#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
+
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -17993,6 +18011,8 @@ matVecCsrColMajorForifConj4Vec (
     }
   }
 }
+
+#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
 
 } // namespace Raw
 } // namespace KokkosClassic

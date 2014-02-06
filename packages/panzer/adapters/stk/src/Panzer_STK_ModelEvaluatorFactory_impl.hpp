@@ -135,6 +135,10 @@ namespace panzer_stk {
   void ModelEvaluatorFactory<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
     paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+
+    // add in some addtional defaults that are hard to validate externally (this is because of the "disableRecursiveValidation" calls)
+    paramList->sublist("Initial Conditions").sublist("Vector File").validateParametersAndSetDefaults(
+      getValidParameters()->sublist("Initial Conditions").sublist("Vector File"));
     this->setMyParamList(paramList);
   }
 
@@ -151,8 +155,11 @@ namespace panzer_stk {
       pl->sublist("Solution Control").disableRecursiveValidation();
       pl->set<bool>("Use Discrete Adjoint",false);
       pl->sublist("Mesh").disableRecursiveValidation();
-      pl->sublist("Initial Conditions").disableRecursiveValidation();
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
+      pl->sublist("Initial Conditions").sublist("Vector File");
+      pl->sublist("Initial Conditions").sublist("Vector File").set("File Name","");
+      pl->sublist("Initial Conditions").sublist("Vector File").set<bool>("Enabled",false);
+      pl->sublist("Initial Conditions").disableRecursiveValidation();
       // pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo");
       pl->sublist("Output").set("Write to Exodus",true);
@@ -592,7 +599,11 @@ namespace panzer_stk {
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
 
-    {
+    Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
+
+    if(!p.sublist("Initial Conditions").sublist("Vector File").get<bool>("Enabled")) {
+      // read from exodus, or compute using field managers
+
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
@@ -609,17 +620,31 @@ namespace panzer_stk {
                                                  prefix,
                                                  phx_ic_field_managers);
 
-      Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
+      // set the vector to be filled
       Teuchos::RCP<panzer::ThyraObjContainer<double> > tloc = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc);
-
       Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
       tloc->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
 
       panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
+   }
+   else {
+      const std::string & vectorFile = p.sublist("Initial Conditions").sublist("Vector File").get<std::string>("File Name");
+      TEUCHOS_TEST_FOR_EXCEPTION(vectorFile=="",std::runtime_error,
+                                 "If \"Read From Vector File\" is true, then parameter \"Vector File\" cannot be the empty string.");
+ 
+      // set the vector to be filled
+      Teuchos::RCP<panzer::ThyraObjContainer<double> > tloc = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc);
+      Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
+      tloc->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
+      
+      // read the vector
+      linObjFactory->readVector(vectorFile,*loc,panzer::LinearObjContainer::X);
+   }
 
-      // Write the epetra vector into the STK mesh: use response library
-      //////////////////////////////////////////////////////////////////////////
+   // Write the IC vector into the STK mesh: use response library
+   //////////////////////////////////////////////////////////////////////////
 
+   {
       Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > solnWriter
           = initializeSolnWriterResponseLibrary(wkstContainer,globalIndexer,linObjFactory,mesh);
 
@@ -750,10 +775,31 @@ namespace panzer_stk {
 
 	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
 	const std::vector<panzer::StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
+	const std::vector<std::vector<std::string> > & coordinateDOFs = pb->getCoordinateDOFs(); 
+          // these are treated specially
 
 	// insert all fields into a set
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp> fieldNames;
 	fieldNames.insert(blockFields.begin(),blockFields.end());
+
+        // Now we will set up the coordinate fields (make sure to remove
+        // the DOF fields)
+        {
+          std::set<std::string> fields_to_remove;
+
+          // add mesh coordinate fields, setup their removal from fieldNames 
+          // set to prevent duplication
+          for(std::size_t i=0;i<coordinateDOFs.size();i++) {
+            mesh.addMeshCoordFields(pb->elementBlockID(),coordinateDOFs[i],"DISPL");
+            for(std::size_t j=0;j<coordinateDOFs[i].size();j++)
+              fields_to_remove.insert(coordinateDOFs[i][j]);
+          }
+
+          // remove the already added coordinate fields
+	  std::set<std::string>::const_iterator rmItr;
+  	  for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
+            fieldNames.erase(fieldNames.find(panzer::StrPureBasisPair(*rmItr,Teuchos::null)));
+        }
 
 	// add basis to DOF manager: block specific
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;
@@ -1230,7 +1276,7 @@ namespace panzer_stk {
       Teuchos::setStringToIntegralParameter<int>(
       "Start Time Type",
       "From Input File",
-      "Enables or disables SUPG stabilization in the Momentum equation",
+      "Set the start time",
       Teuchos::tuple<std::string>("From Input File","From Exodus File"),
       &validPL
       );

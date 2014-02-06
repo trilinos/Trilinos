@@ -2173,6 +2173,13 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_Comm       *comm;
    char          label1[80],label2[80];
 
+#  ifdef ML_TIMING
+   double tpre,tmult,tpost,ttotal;
+
+   tpre = GetClock();
+   ttotal = GetClock();
+#  endif
+
    if (Mat1->invec_leng != Mat2->outvec_leng)
    {
      if (Mat1->label == NULL) sprintf(label1,"%s","mat1_not_labeled");
@@ -2207,8 +2214,18 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    if (Mat1->getrow->pre_comm != NULL)
       ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
    else Mat2comm = Mat2;
+
+#  ifdef ML_TIMING
+   tpre = GetClock() - tpre;
+   tmult = GetClock();
+#  endif
          
    ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
+
+#  ifdef ML_TIMING
+   tmult = GetClock() - tmult;
+   tpost = GetClock();
+#  endif
 
    ML_free(Mat2->getrow->loc_glob_map); Mat2->getrow->loc_glob_map = NULL;
 
@@ -2245,6 +2262,23 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
    ML_Operator_Destroy(&Mat1Mat2comm);
+
+#  ifdef ML_TIMING
+   ttotal = GetClock() - ttotal;
+   tpost = GetClock() - tpost;
+   if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5) {
+     if (Mat1->label == NULL) sprintf(label1,"%s","unknownMatrix");
+     else                     sprintf(label1,"%s",Mat1->label);
+     printf("     Timing summary (in seconds) for product AB (%s)\n",label1);
+     printf("          AB pre-multiply communication time    = %3.2e\n", tpre);
+     printf("          AB multiply time                      = %3.2e\n", tmult);
+     printf("          AB post-multiply communication time   = %3.2e\n", tpost);
+     printf("          -----------------------------------------------------------\n");
+     printf("          total time                            = %3.2e\n\n", ttotal);
+
+   }
+#  endif
+
 }
 
 

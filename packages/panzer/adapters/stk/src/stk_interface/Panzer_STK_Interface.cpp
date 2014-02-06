@@ -166,6 +166,41 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
    }
 }
 
+void STK_Interface::addMeshCoordFields(const std::string & blockId,
+                                       const std::vector<std::string> & coordNames,
+                                       const std::string & dispPrefix)
+{
+   TEUCHOS_ASSERT(dimension_!=0);
+   TEUCHOS_ASSERT(dimension_==coordNames.size());
+   TEUCHOS_ASSERT(not initialized_);
+   TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
+                      "Unknown element block \"" << blockId << "\"");
+
+   // Note that there is a distinction between the key which is used for lookups
+   // and the field that lives on the mesh, which is used for printing the displacement.
+
+   std::map<std::string,std::string> & dispFields = meshCoordFields_[blockId];
+   std::map<std::string,int> & dispAxis = meshFieldsAxis_[blockId];
+
+   for(unsigned i=0;i<dimension_;i++) {
+      std::pair<std::string,std::string> key = std::make_pair(coordNames[i],blockId);
+      std::string dispName = dispPrefix+coordNames[i];
+   
+      // add & declare field if not already added...currently assuming linears
+      if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
+
+         SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(dispName);
+         if(field==0) {
+            field = &metaData_->declare_field<SolutionFieldType>(dispName);     
+            dispFields[coordNames[i]] = dispName; // record this field as a
+                                                  // displacement field
+            dispAxis[coordNames[i]] = i;          // record axis too
+         }
+         fieldNameToSolution_[key] = field;
+      }
+   }
+}
+
 void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO) 
 {
    TEUCHOS_ASSERT(not initialized_);
@@ -875,6 +910,28 @@ void STK_Interface::applyElementLoadBalanceWeights()
       loadBal[0] = blockWeight;
     }
   }
+}
+
+bool 
+STK_Interface::isMeshCoordField(const std::string & eBlock,
+                                const std::string & fieldName,
+                                int & axis) const
+{
+  typedef std::map<std::string,int> IntMap;
+ 
+  std::map<std::string,IntMap>::const_iterator blkItr = meshFieldsAxis_.find(eBlock);
+  if(blkItr==meshFieldsAxis_.end()) {
+    return false;
+  }
+
+  IntMap::const_iterator fldItr = blkItr->second.find(fieldName);
+  if(fldItr==blkItr->second.end()) {
+    return false;
+  }
+ 
+  axis = fldItr->second; 
+
+  return true;
 }
 
 Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 

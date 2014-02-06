@@ -53,6 +53,8 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_TestingHelpers.hpp>
 
 // Xpetra
 #include "Xpetra_ConfigDefs.hpp"
@@ -69,24 +71,8 @@
 #include <Galeri_XpetraUtils.hpp>
 
 // MueLu
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Memory.hpp"
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
-#include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_RebalanceAcFactory.hpp"
+#include <MueLu_ConfigDefs.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -121,6 +107,17 @@ int main(int argc, char *argv[]) {
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
+  Teuchos::CommandLineProcessor clp(false);
+  std::string xmlFileName = "TwoBillion.xml"; clp.setOption("xml", &xmlFileName,  "read parameters from a file");
+  int num_per_proc = 1000; clp.setOption("dpc", &num_per_proc,  "DOFs per core");
+
+  switch (clp.parse(argc,argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
   int NumProcs = comm->getSize();
   int MyPID    = comm->getRank();
 
@@ -133,8 +130,6 @@ int main(int argc, char *argv[]) {
   const long long IndexBase  = 0L;
   //  const long long IndexBase  = 3000000000L;
 
-  int num_per_proc = 10;
-
   global_size_t NumGlobalElements = NumProcs*num_per_proc;
 
   // Create Map w/ GIDs starting at > 2 billion
@@ -145,8 +140,8 @@ int main(int argc, char *argv[]) {
   for(int i=0; i<num_per_proc; i++)
     mygids[i] = FIRST_GID + MyPID*num_per_proc + i;
 
-  for(int i=0;i<num_per_proc;i++)
-    printf("[%d] mygids[%d] = %lld\n",MyPID,i,mygids[i]);
+  //for(int i=0;i<num_per_proc;i++)
+  //  printf("[%d] mygids[%d] = %lld\n",MyPID,i,mygids[i]);
 
 
   map = MapFactory::Build(Xpetra::UseTpetra, Teuchos::OrdinalTraits<global_size_t>::invalid(),mygids(),IndexBase,comm);
@@ -192,82 +187,27 @@ int main(int argc, char *argv[]) {
 
   RCP<Matrix> A = rcp(new CrsMatrixWrap(Acrs));
 
+  RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
+  nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+  RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, 1);
+  Teuchos::ArrayRCP<Scalar> coordVals = coordinates->getDataNonConst(0);
+  double h = 1.0 / NumGlobalElements;
+  for (LocalOrdinal i=0; i<num_per_proc; ++i)
+    coordVals[i] = MyPID*num_per_proc*h + i*h;
+  coordVals = Teuchos::null;
 
+  Teuchos::ParameterList paramList;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
+  RCP<HierarchyManager> mueLuFactory;
+  mueLuFactory = rcp(new ParameterListInterpreter(xmlFileName, *comm));
 
-  RCP<MueLu::Hierarchy<SC, LO, GO, NO, LMO> > H;
-  //
-  //
-  // SETUP
-  //
-  //
-  //
-  // Hierarchy
-  //
-
-  H = rcp(new Hierarchy());
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-
-  //
-  // Finest level
-  //
-
-  RCP<Level> Finest = H->GetLevel();
-  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",           A);
-
-  //
-  // FactoryManager
-  //
-
-  FactoryManager M;
-
-  //
-  //
-  // Aggregation
-  //
-
-  RCP<CoupledAggregationFactory> AggregationFact = rcp(new CoupledAggregationFactory());
-  M.SetFactory("Aggregates", AggregationFact);
-
-  //
-  // Non rebalanced factories
-  //
-  RCP<SaPFactory> PFact = rcp(new SaPFactory());
-  RCP<Factory>    RFact = rcp(new TransPFactory());
-  RCP<RAPFactory> AFact = rcp(new RAPFactory());
-  AFact->setVerbLevel(Teuchos::VERB_HIGH);
-
-  M.SetFactory("P", PFact);
-  M.SetFactory("R", RFact);
-  M.SetFactory("A", AFact);
-
-  //
-  // Smoothers
-  //
-  std::string ifpackType;
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 2);
-  ifpackType = "RELAXATION";
-  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, ifpackList));
-  M.SetFactory("Smoother", rcp(new SmootherFactory(smootherPrototype)));
-
-  //
-  // Coarse Solver
-  //
-  Teuchos::ParameterList ifpackList2;
-  ifpackList2.set("relaxation: sweeps", (LO) 6);
-  ifpackType = "RELAXATION";
-  ifpackList2.set("relaxation: type", "Symmetric Gauss-Seidel");
-  RCP<SmootherPrototype> smootherPrototype2 = rcp(new TrilinosSmoother(ifpackType, ifpackList2));
-  M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype2)));
-
-  //
-  // Setup preconditioner
-  //
-  int startLevel = 0;
-  H->Setup(M, startLevel, 10);
+  RCP<Hierarchy> H;
+  H = mueLuFactory->CreateHierarchy();
+  H->GetLevel(0)->Set("A",           A);
+  H->GetLevel(0)->Set("Nullspace",   nullspace);
+  H->GetLevel(0)->Set("Coordinates", coordinates);
+  mueLuFactory->SetupHierarchy(*H);
 
   //
   //
@@ -333,6 +273,11 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
+    if (solver->getNumIters() > 6) {
+       if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+      return(EXIT_FAILURE);
+    }
+
     // Compute actual residuals.
     int numrhs = 1;
     std::vector<double> actual_resids( numrhs ); //TODO: double?
@@ -358,6 +303,7 @@ int main(int argc, char *argv[]) {
   catch(...) {
     if (comm->getRank() == 0)
       std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+
   }
 
   // Check convergence

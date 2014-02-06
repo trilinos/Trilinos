@@ -111,7 +111,8 @@ static string testArgs[NUMTESTS*3] = {
 
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t> inputAdapter_t;
+typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
+typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
 
 int runRCB(const RCP<const Comm<int> > &comm,
   string fname, bool average_cuts, bool rectilinear_blocks,
@@ -123,9 +124,9 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   // Read this test data from the Zoltan(1) test directory.
 
-  RCP<UserInputForTests> uinput;
+  UserInputForTests *uinput;
   try{
-    uinput = rcp(new UserInputForTests(zoltanTestDirectory, fname, comm, true));
+    uinput = new UserInputForTests(zoltanTestDirectory, fname, comm, true);
   }
   catch(...){
     if (rank == 0)
@@ -169,26 +170,35 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   int weightDim = (weights.is_null() ? 0 : weights->getNumVectors());
 
-  // Create an input adapter.
+  // Create input adapters for the matrix and its coordinates
 
-  RCP<inputAdapter_t> ia;
+  matrixAdapter_t *ia;
 
   try{
-    ia = rcp(new inputAdapter_t(matrixConst, weightDim, coordDim));
+    ia = new matrixAdapter_t(matrixConst, weightDim);
   }
   catch(...){
     if (rank == 0)
-      std::cout << "FAIL: input adapter" << std::endl;
+      std::cout << "FAIL: matrix adapter" << std::endl;
     return 1;
-  }
-
-  for (int dim=0; dim < coordDim; dim++){
-    ia->setRowCoordinates(coords->getData(dim).getRawPtr(), 1, dim);
   }
 
   for (int dim=0; dim < weightDim; dim++)
     ia->setRowWeights(weights->getData(dim).getRawPtr(), 1, dim);
 
+  vectorAdapter_t *ca = NULL;
+
+  try{
+    ca = new vectorAdapter_t(coords);
+  }
+  catch(...){
+    if (rank == 0)
+      std::cout << "FAIL: vector adapter" << std::endl;
+    return 1;
+  }
+
+  ia->setCoordinateInput(ca);
+  
  // Parameters
 
   Teuchos::ParameterList params;
@@ -232,10 +242,9 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   // Create the problem.
 
-  RCP<Zoltan2::PartitioningProblem<inputAdapter_t> > problem;
+  Zoltan2::PartitioningProblem<matrixAdapter_t> *problem;
   try{
-    problem = rcp(new Zoltan2::PartitioningProblem<inputAdapter_t>(
-      ia.getRawPtr(), &params));
+    problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params);
   }
   catch(...){
     if (rank == 0)
@@ -257,6 +266,11 @@ int runRCB(const RCP<const Comm<int> > &comm,
   }
 
   problem->printTimers();
+
+  delete ia;
+  delete ca;
+  delete problem;
+  delete uinput;
 
   return 0;
 }

@@ -57,6 +57,7 @@
 #include "user_app_ConstantModel.hpp"
 #include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
+#include "Panzer_CoordinatesEvaluator.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -229,6 +230,26 @@ buildClosureModels(const std::string& model_id,
 
 	found = true;
     }
+
+    if (key == "Coordinates") {
+      std::string dim_str[3] = {"X","Y","Z"};
+      panzer::CellData cell_data(ir->workset_size,ir->topology);
+      panzer::PureBasis basis("HGrad",1,cell_data);
+
+      for(int i=0;i<basis.dimension();i++) {
+        ParameterList input;
+        input.set("Field Name", "COORD"+dim_str[i]);
+        input.set("Data Layout", basis.functional);
+        input.set("Dimension", i);
+
+        RCP< Evaluator<panzer::Traits> > e = 
+          rcp(new panzer::CoordinatesEvaluator<EvalT,panzer::Traits>(input));
+        evaluators->push_back(e);
+      }
+
+      found = true;
+    }
+
 
     if (!found) {
       std::stringstream msg;

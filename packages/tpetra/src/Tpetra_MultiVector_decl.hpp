@@ -1287,9 +1287,31 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
     createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
 
-  template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
-  void deep_copy( MultiVector<DS,DL,DG,DN>& dst,
-                  const MultiVector<SS,SL,SG,SN>& src);
+
+  /// \brief Copy the contents of \c src into \c dst.
+  ///
+  /// \pre The two multivectors must have the same communicator.
+  /// \pre The input multivector's Map must be compatible with this
+  ///      multivector's Map.  That is, \code
+  ///      this->getMap ()->isCompatible (source.getMap ());
+  ///      \endcode
+  /// \pre The two multivectors must have the same number of columns.
+  ///
+  /// Copy the contents of the MultiVector \c src into the MultiVector
+  /// \c dst.  The two MultiVectors need not necessarily have the same
+  /// template parameters, but the assignment of their entries must
+  /// make sense.
+  ///
+  /// This method must always be called as a collective operation on
+  /// all processes over which the multivector is distributed.  This
+  /// is because the method reserves the right to check for
+  /// compatibility of the two Maps, at least in debug mode, and throw
+  /// if they are not compatible.
+  template <class DS, class DL, class DG, class DN,
+            class SS, class SL, class SG, class SN>
+  void
+  deep_copy (MultiVector<DS,DL,DG,DN>& dst,
+             const MultiVector<SS,SL,SG,SN>& src);
 
 } // namespace Tpetra
 
