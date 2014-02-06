@@ -8,12 +8,6 @@
 
 //----------------------------------------------------------------------
 
-namespace sierra {
-  namespace Fmwk {
-    class MeshObjRoster;
-  }
-}
-
 namespace stk{
   namespace mesh{
 
