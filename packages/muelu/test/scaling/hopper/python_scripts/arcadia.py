@@ -9,7 +9,10 @@ import glob
 import re
 
 # ========================= constants =========================
-CPN          = 24                                               # number of physical cores per node (hopper has 24)
+PLATFORM     = "hopper"
+CPN          = 0                                                # number of physical cores per node (hopper has 24)
+SCHEDULER    = ''                                               # HPC platform scheduler
+SCHED_HEADER = ''                                               # header for the platform scheduler
 NUM_RUNS     = 2                                                # number of same runs (for reproducibility)
 BASECASE     = 1                                                # number of nodes in the smallest run
 DIR_PREFIX   = 'run_'                                           # directory prefix for runs (run with 2 nodes is stores in ${DIR_PREFIX}_2 (shell notation)
@@ -33,7 +36,7 @@ def controller():
     p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
     p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
     p.add_option('-s',                 dest="nscale",       default=8, type='int')                      # number of weak scaling runs
-    p.add_option('-t', '--template',   dest="template",     default="petra.pbs.template")               # template pbs file for all runs
+    p.add_option('-t', '--template',   dest="template",     default="sched.template")                   # template file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
     p.add_option(      '--cpn',        dest="cpn",          default=CPN, type='int')                    # cores per node
 
@@ -119,8 +122,7 @@ def controller():
 
         cpn = options.cpn
         for i in range(0, len(nnodes)):
-            nx.append(int(options.nx * pow(nnodes[i] * cpn/CPN, 1./dim)))
-
+            nx.append(int(options.nx * pow(nnodes[i] * float(cpn)/CPN, 1./dim)))
 
         for i in range(0, len(nnodes)):
             build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
@@ -169,7 +171,7 @@ def analyze(petra, analysis_run, labels, timelines, parsefunc):
     analysis_run_string = "Analysis is performed for " + analysis_run
     if   (petra == 4):
       analysis_run_string += ".ml"
-    elif   (petra == 3):
+    elif (petra == 3):
       analysis_run_string += ".[et]petra"
     elif (petra == 1):
       analysis_run_string += ".epetra"
@@ -206,7 +208,7 @@ def analyze(petra, analysis_run, labels, timelines, parsefunc):
         fullstr = "%20s:" % dir
 
         # test if there is anything to analyze
-        if len(glob.glob("screen.out.*.*")) == 0:
+        if len(glob.glob("screen.out.*")) == 0:
             if (has_epetra and os.path.exists(analysis_run + ".epetra")) or (has_tpetra and os.path.exists(analysis_run + ".tpetra")) or (has_ml and os.path.exists(analysis_run + ".ml")):
                 fullstr += " running now?"
             else:
@@ -280,16 +282,32 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
     for afile in datafiles:                                 # copy all xml files
         shutil.copy(afile, dir)
 
-    aprun_args  = "-ss"                                     # Demands strict memory containment per NUMA node
-    aprun_args += " -cc numa_node"                          # Controls how tasks are bound to cores and NUMA nodes
-    aprun_args += " -N " + str(cpn)                         # Number of tasks per node
-    if cpn % 4 == 0:
-      aprun_args += " -S " + str(cpn/4)                     # Nnumber of tasks per NUMA node (note: hopper has 4 NUMA nodes)
+    sched_args = ""
+    if SCHEDULER == "pbs":
+        sched_args  = "aprun"
+        sched_args += " -ss"                                    # Demands strict memory containment per NUMA node
+        sched_args += " -cc numa_node"                          # Controls how tasks are bound to cores and NUMA nodes
+        sched_args += " -N " + str(cpn)                         # Number of tasks per node
+        if cpn % 4 == 0:
+            sched_args += " -S " + str(cpn/4)                   # Number of tasks per NUMA node (note: hopper has 4 NUMA nodes)
 
-    # construct PBS script from template
-    os_cmd = "cat " + template
-    os_cmd += (" | sed \"s/_APRUN_ARGS_/" + aprun_args                + "/g\"" +
+    elif SCHEDULER == "slurm":
+        sched_args  = "srun"
+        sched_args += " -N " + str(nnodes)
+        sched_args += " --tasks-per-node " + str(cpn)
+        # TODO: --mem-bind
+
+    script_path = dir + "/" + PETRA_PREFIX + str(nnodes) + "." + SCHEDULER
+
+    full_template = "sched.full.template"
+    os.system("echo -e \"" + SCHED_HEADER + "\" > " + full_template)
+    os.system("cat " + template + " >> " + full_template)
+
+    # construct batch script from template
+    os_cmd = "cat " + full_template
+    os_cmd += (" | sed \"s/_SCHED_ARGS_/" + sched_args                + "/g\"" +
                " | sed \"s/_WIDTH_/"      + str(nnodes*CPN)           + "/g\"" +
+               " | sed \"s/_NODES_/"      + str(nnodes)               + "/g\"" +
                " | sed \"s/_CORES_/"      + str(nnodes*cpn)           + "/g\"" +
                " | sed \"s/_MTYPE_/"      + matrix                    + "/g\"" +
                " | sed \"s/_NX_/"         + str(nx)                   + "/g\"" +
@@ -297,10 +315,13 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
                " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/g\"" +
                " | sed \"s/_NUM_RUNS_/"   + str(NUM_RUNS)             + "/g\"" +
                " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/g\"")
+
     for i in range(len(cmds)):
         os_cmd += " | sed \"s/_CMD" + str(i+1) + "_/" + cmds[i] + "/g\""
-    os_cmd += " > " + dir + "/" + PETRA_PREFIX + str(nnodes) + ".pbs"
+    os_cmd += " >> " + script_path
     os.system(os_cmd)
+
+    os.system("rm " + full_template)
 
 def clean():
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
@@ -308,11 +329,15 @@ def clean():
         shutil.rmtree(dir)
 
 def run():
+    scheduler = "slurm"
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         print("Running %s..." % dir)
 
         os.chdir(dir)
-        os.system("qsub " + PETRA_PREFIX + dir.replace(DIR_PREFIX, '') + ".pbs")
+        if   SCHEDULER == "pbs":
+            os.system("qsub "   + PETRA_PREFIX + dir.replace(DIR_PREFIX, '') + "." + SCHEDULER)
+        elif SCHEDULER == "slurm":
+            os.system("sbatch " + PETRA_PREFIX + dir.replace(DIR_PREFIX, '') + "." + SCHEDULER)
         os.chdir("..")
 
 # ========================= utility functions =========================
@@ -337,6 +362,43 @@ def import_from(module, name):
 
 # ========================= main =========================
 def main():
+    global CPN
+    global SCHEDULER
+    global SCHED_HEADER
+
+    # We double escape the \n, as it is later
+    # passed to os.system
+    if PLATFORM == "hopper":
+        CPN          = 24
+        SCHEDULER    = "pbs"
+        SCHED_HEADER = ("#PBS -S /bin/bash\\n"
+                        "#PBS -q regular\\n" +
+                        "#PBS -l mppwidth=_WIDTH_\\n"
+                        "#PBS -l walltime=00:10:00\\n"
+                        "#PBS -N _MTYPE___CORES_\\n"
+                        "#PBS -e screen.err.\\$PBS_JOBID\\n"
+                        "#PBS -o screen.out.\\$PBS_JOBID\\n"
+                        "#PBS -V\\n"
+                        "#PBS -A m1327\\n\\n"
+                        "## #PBS -m e\\n"
+                        "## #PBS -M aprokop@sandia.gov\\n\\n"
+                        "cd \\$PBS_O_WORKDIR\\n")
+
+    elif PLATFORM == "shannon":
+        CPN          = 16
+        SCHEDULER    = "slurm"
+        SCHED_HEADER = ("#!/bin/bash\\n"
+                        "#SBATCH -N _NODES_\\n"
+                        "#SBATCH --exclusive\\n"
+                        "#SBATCH -t 00:10:00\\n"
+                        "#SBATCH -J _MTYPE___CORES_\\n"
+                        "#SBATCH -e screen.err.%J\\n"
+                        "#SBATCH -o screen.out.%J\\n")
+
+    else:
+        print("Unknown platform type \"%s\"" % PLATFORM)
+        return
+
     controller()
 
 if __name__ == '__main__':

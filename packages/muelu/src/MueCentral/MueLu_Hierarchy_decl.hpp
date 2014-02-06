@@ -300,6 +300,8 @@ namespace MueLu {
     //! vector of Level objects
     Array<RCP<Level> > Levels_;
 
+    void ReplaceCoordinateMap(Level &level);
+
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
     bool isPreconditioner_;
