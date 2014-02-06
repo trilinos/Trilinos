@@ -314,7 +314,8 @@ int main(int argc, char *argv[])
   ******************************************************************/
 
   start_gid = myGraph.numMyVertices - numImport;
-  num_nbors = myGraph.nborIndex[myGraph.numMyVertices] - myGraph.nborIndex[start_gid];
+  num_nbors = myGraph.nborIndex[myGraph.numMyVertices]
+            - myGraph.nborIndex[start_gid];
 
   rc = Zoltan_DD_Find(dd,
              (ZOLTAN_ID_PTR)(myGraph.nborGID + start_gid), NULL, NULL, 
@@ -355,6 +356,7 @@ int main(int argc, char *argv[])
       free(myGraph.nborPart);
     }
   }
+  Zoltan_DD_Destroy(&dd);
 
   if (parts) free(parts);
   if (lids) free(lids);
