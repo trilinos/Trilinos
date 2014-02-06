@@ -548,12 +548,19 @@ bool BulkData::modification_begin()
   else {
     ++m_sync_count ;
 
+    for(unsigned i=0, iend=m_entity_states.size(); i<iend; ++i) {
+      if(m_entity_states[i] != Deleted) {
+        m_entity_states[i] = Unchanged;
+      }
+    }
+    /*
     //Set all entity states to 'Unchanged',
     for ( impl::EntityRepository::const_iterator
             i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
     {
       m_entity_states[i->second.local_offset()] = Unchanged;
     }
+    */
   }
 
   // // It might be overkill to call this on every modification cycle.
