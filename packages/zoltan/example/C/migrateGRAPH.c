@@ -315,13 +315,9 @@ int main(int argc, char *argv[])
   ** Use the data dictionary to find neighbors' parts
   ******************************************************************/
 
-  start_gid = myGraph.numMyVertices - numImport;
-  num_nbors = myGraph.nborIndex[myGraph.numMyVertices]
-            - myGraph.nborIndex[start_gid];
-
   rc = Zoltan_DD_Find(dd,
-             (ZOLTAN_ID_PTR)(myGraph.nborGID + start_gid), NULL, NULL, 
-              myGraph.nborPart + start_gid, num_nbors, NULL);
+             (ZOLTAN_ID_PTR)(myGraph.nborGID), NULL, NULL, 
+              myGraph.nborPart, myGraph.nborIndex[myGraph.numMyVertices], NULL);
 
   /******************************************************************
   ** Visualize the graph partition after calling Zoltan.
