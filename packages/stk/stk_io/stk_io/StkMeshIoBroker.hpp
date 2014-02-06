@@ -254,7 +254,7 @@ namespace stk {
       // [2013-11-13: GDS: Currently
       // only used in Salinas/tools/superelem/MkSuperStkMesh.C:
       // The use-case is adding new parts to a mesh]
-      void set_input_io_region(size_t input_file_index, Teuchos::RCP<Ioss::Region> ioss_input_region);
+      size_t set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       Teuchos::RCP<Ioss::Region> get_input_io_region();
       Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index);

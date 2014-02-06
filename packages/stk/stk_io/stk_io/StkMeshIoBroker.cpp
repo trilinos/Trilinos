@@ -1345,7 +1345,7 @@ namespace stk {
 	input_region = get_input_io_region().get();
       }
       Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
-                                                                         properties, input_region.get()));
+                                                                         properties, input_region));
       m_output_files.push_back(output_file);
 
       size_t index_of_output_file = m_output_files.size()-1;
