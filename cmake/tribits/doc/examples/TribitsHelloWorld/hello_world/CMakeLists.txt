@@ -1,10 +1,5 @@
 INCLUDE(TribitsPackageMacros)
 
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
-INCLUDE(TribitsAddExecutableAndTest)
-
 TRIBITS_PACKAGE(HelloWorld)
 
 TRIBITS_ADD_LIBRARY(hello_world_lib
