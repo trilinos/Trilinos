@@ -59,8 +59,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
-
-
+#include <stk_mesh/base/BulkDataPartOperations.hpp>
 
 
 
