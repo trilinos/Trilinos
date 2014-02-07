@@ -11,11 +11,7 @@
 ###############################################################################
 #stuff that happens before processing any files
 BEGIN {
-    # regular expression for timing output
-    #regex="[0-9]*[.][0-9e-]*";
-    regex="[0-9]+[.]?[0-9]*[e]?[-]?[0-9]* [(][0-9][)]";
     startParsingTimers=0;
-    startParsingPC=0;
 }
 
 ###############################################################################
@@ -55,14 +51,12 @@ BEGIN {
     foundTotal=0;
     if (startParsingTimers && match($0,"^ScalingTest: 2 - MueLu Setup")) {
       foundTotal=1;
-      #match($0,regex);
-      #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
       alltimes = substr($0,RSTART+RLENGTH);
       cutCmd="cut -f3 -d')' | cut -f1 -d'('"
       TotalSetup[linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
     }
     if (foundTotal==0) {
-      #This duplicates the previous if-block.  Only the regex in the "if" is different.
+      #This duplicates the previous if-block.  Only the pattern to match in the "if" is different.
       if (startParsingTimers && match($0,"^MueLu: Hierarchy: Setup [(]total[)]")) {
         alltimes = substr($0,RSTART+RLENGTH);
         cutCmd="cut -f3 -d')' | cut -f1 -d'('"
@@ -117,7 +111,6 @@ function SortAndPrint(arrayToSort,labels,tallies,linalg)
   for (j in linalg) {
     runningTotals[j] = 0;
   }
-  foo = 0;
   arrayLeng=0
   for (i in arrayToSort) arrayLeng++; #length(arrayToSort) doesn't work here for some reason
   for (i=1; i<arrayLeng+1; i++) {
@@ -170,14 +163,11 @@ function RemoveWhiteSpace(theString)
 ###############################################################################
 END {
 
-  printLevelStats = 1;
-  if (printLevelStats) {
-    PrintHeader("Setup times (level specific) excluding child calls ",linalg);
-    SortAndReportTimings(linalg[FILENAME],setupLabels,setupTimes,linalg);
-    PrintTotalSetupTime();
-    #PrintHeader("Solve times ",linalg);
-    #SortAndReportTimings(linalg[FILENAME],solveLabels,solveTimes,linalg);
-    printf("\n\n");
-  }
+  PrintHeader("Setup times (level specific) excluding child calls ",linalg);
+  SortAndReportTimings(linalg[FILENAME],setupLabels,setupTimes,linalg);
+  PrintTotalSetupTime();
+  #PrintHeader("Solve times ",linalg);
+  #SortAndReportTimings(linalg[FILENAME],solveLabels,solveTimes,linalg);
+  printf("\n\n");
 
 }
