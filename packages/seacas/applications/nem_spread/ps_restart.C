@@ -47,6 +47,7 @@
 #include "rf_allo.h"                    // for array_alloc, safe_free
 #include "rf_io_const.h"                // for Exo_Res_File, ExoFile, etc
 #include "rf_util.h"                    // for break_message_up
+#include "rf_format.h"
 
 namespace {
   int get_free_descriptor_count(void);
@@ -233,7 +234,7 @@ void NemSpread<T,INT>::read_restart_data ()
     for (int cnt = 0; cnt < globals.Num_Elem_Blk; cnt++) {
       if (ex_get_block(exoid, EX_ELEM_BLOCK, eb_ids_global[cnt], cTemp,
 		       &(eb_cnts_global[cnt]), NULL, NULL, NULL, NULL) < 0) {
-	fprintf(stderr, "%s: unable to get element count for block id %lu",
+	fprintf(stderr, "%s: unable to get element count for block id "ST_ZU"",
 		yo, (size_t)eb_ids_global[cnt]);
 	exit(1);
       }
@@ -334,7 +335,7 @@ void NemSpread<T,INT>::read_restart_data ()
       if (ex_get_set_param(exoid, EX_SIDE_SET,
 			   ss_ids_global[cnt],
 			   &(ss_cnts_global[cnt]), NULL) < 0) {
-	fprintf(stderr, "%s: unable to get element count for sideset id %lu",
+	fprintf(stderr, "%s: unable to get element count for sideset id "ST_ZU"",
 		yo, (size_t)ss_ids_global[cnt]);
 	exit(1);
       }
@@ -376,7 +377,7 @@ void NemSpread<T,INT>::read_restart_data ()
       if (ex_get_set_param(exoid, EX_NODE_SET,
 			   ns_ids_global[cnt],
 			   &(ns_cnts_global[cnt]), NULL) < 0) {
-	fprintf(stderr, "%s: unable to get element count for nodeset id %lu",
+	fprintf(stderr, "%s: unable to get element count for nodeset id "ST_ZU"",
 		yo, (size_t)ns_ids_global[cnt]);
 	exit(1);
       }

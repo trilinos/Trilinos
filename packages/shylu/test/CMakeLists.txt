@@ -22,7 +22,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
-    SOURCE_FILES ShyLU.xml shylu_iqr_parameters.xml shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx
+    SOURCE_FILES ShyLU.xml shylu_iqr_parameters.xml
+    shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx
+    shylu_iqr_parameters.seq.xml
 #    EXEDEPS aztec_driver belos_driver
     EXEDEPS belos_driver iqr_driver
     )

@@ -53,55 +53,39 @@
 # ************************************************************************
 # @HEADER
 
-  
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.gcc.cmake")
 
 #
-# Platform/compiler specific options for typhon using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME MPI_RELEASE_DEV_TPetra_KokkosRefactor_GCC)
+SET(CTEST_PARALLEL_LEVEL 1)
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(Trilinos_PACKAGES Tpetra KokokosCore KokkosCompat KokkosContainers KokkosLinalg KokkosClassic)
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_KokkosCore=ON"
+  "-DTrilinos_ENABLE_KokkosCompat=ON"
+  "-DTrilinos_ENABLE_KokkosContainers=ON"
+  "-DTrilinos_ENABLE_KokkosLinalg=ON"
+  "-DTrilinos_ENABLE_KokkosClassic=ON"
+  "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
+  "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
+  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
+  "-DKokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosOpenMPWrapperNode"
+  "-DTPL_ENABLE_HWLOC:STRING=OFF"
+  "-DTPL_ENABLE_CUDA:STRING=OFF"
+)
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
-  SET( CTEST_BUILD_FLAGS "-j32 -i" )
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "4" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-  
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-
-    "-DTPL_ENABLE_SuperLU:BOOL=OFF"
-
-    "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DTPL_ENABLE_LAPACK:BOOL=ON"
- 
-
-    "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.0.9"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.6")
-
-  #Ensuring that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-         "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/opt/mpi/openmpi-1.7/gcc-4.4.6/cuda609"
-       )
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

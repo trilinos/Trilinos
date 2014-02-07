@@ -1091,8 +1091,12 @@ struct MV_MultiplyFunctor {
     //
     // FIXME (mfh 29 Sep 2013) Is a "loop count" of "24" a good idea
     // when the matrix has many fewer entries per row than that?
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
     for (size_type k = 0 ; k < UNROLL ; ++k) {
       // NOTE (mfh 09 Aug 2013) This requires that assignment from int
       // (in this case, 0) to value_type be defined.  It's not for
@@ -1110,14 +1114,22 @@ struct MV_MultiplyFunctor {
     if (doalpha != -1) {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
-#pragma loop count (15)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
       for (size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value ) {
         const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] +=  val * m_x(ind, kk + k);
         }
@@ -1125,14 +1137,22 @@ struct MV_MultiplyFunctor {
     } else {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
-#pragma loop count (15)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
       for(size_type iEntry = lane ; iEntry < row.length ; iEntry+=ShflThreadsPerRow::device_value ) {
         const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] -= val * m_x(ind, kk + k);
         }
@@ -1152,34 +1172,54 @@ struct MV_MultiplyFunctor {
     }
     if (lane==0) {
       if(doalpha * doalpha != 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] *= alpha(kk + k);
         }
       }
 
       if (dobeta == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = sum[k];
         }
       } else if(dobeta == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) += sum[k];
         }
       } else if (dobeta == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = -m_y(iRow, kk + k) +  sum[k];
         }
       } else {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = beta(kk + k) * m_y(iRow, kk + k) + sum[k] ;
         }
@@ -1196,14 +1236,30 @@ struct MV_MultiplyFunctor {
     if(doalpha != -1) {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
+#endif
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
     } else {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
+#endif
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum -= row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
@@ -1367,15 +1423,29 @@ struct MV_MultiplyFunctor {
 
       if (doalpha != -1) {
 
-#pragma loop count (15)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
         for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
           sum += row.value(iEntry) * m_x(row.colidx(iEntry));
         }
       } else {
 
-#pragma loop count (15)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
         for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
           sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
         }
@@ -1526,12 +1596,16 @@ struct MV_MultiplyFunctor {
         const size_type ind = row.colidx(iEntry);
 
         if(doalpha!=1) {
-          #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (size_type k = 0; k < n; ++k) {
             atomic_add(&m_y(ind,k), alpha(k) * val * m_x(iRow, k));
           }
         } else {
-          #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (size_type k = 0; k < n; ++k) {
             atomic_add(&m_y(ind,k), val * m_x(iRow, k));
           }

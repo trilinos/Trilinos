@@ -70,6 +70,7 @@
 #include <Epetra_CrsMatrix.h>
 
 #include <EpetraExt_CrsMatrixIn.h>
+#include "EpetraExt_MultiVectorIn.h"
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -115,6 +116,9 @@ Ifpack_Preconditioner* buildShyLU(Epetra_RowMatrix* Matrix,
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
+
+int InitMatValues( const Epetra_CrsMatrix& newA, Epetra_CrsMatrix* A );
+int InitMVValues( const Epetra_MultiVector& newb, Epetra_MultiVector* b );
 
 int main(int argc, char** argv)
 {
@@ -190,13 +194,30 @@ int main(int argc, char** argv)
 	// Read the matrix
     std::string matrixFileName
     		= globalParams->get<std::string>("matrix file name", "wathenSmall.mtx");
+    std::string rhsFileName = globalParams->get<std::string>("rhs_file", "");
+
+    int maxFiles = globalParams->get<int>("Maximum number of files to read in", 1);
+    int startFile = globalParams->get<int>("Number of initial file", 1);
+    int file_number = startFile;
+
+    char file_name[100];
+    if (maxFiles > 1)
+    {
+        matrixFileName += "%d.mm";
+        sprintf( file_name, matrixFileName.c_str(), file_number );
+    }
+    else
+    {
+        sprintf( file_name, matrixFileName.c_str());
+    }
 
     if (verbose) {
     	std::cout << "--- Using matrix file: " << matrixFileName << std::endl;
+    	std::cout << "--- Using rhs file: " << rhsFileName << std::endl;
     }
 
     Epetra_CrsMatrix *A;
-    int err = EpetraExt::MatrixMarketFileToCrsMatrix(matrixFileName.c_str(), Comm, A);
+    int err = EpetraExt::MatrixMarketFileToCrsMatrix(file_name, Comm, A);
     if (err) {
     	if (verbose) {
     		std::cout << "!!! Matrix file could not be read in, info = "<< err << std::endl;
@@ -205,6 +226,16 @@ int main(int argc, char** argv)
     	return -3;
     }
 
+
+    if (rhsFileName != "" && maxFiles > 1)
+    {
+        rhsFileName += "%d.mm";
+        sprintf( file_name, rhsFileName.c_str(), file_number );
+    }
+    else
+    {
+        sprintf( file_name, rhsFileName.c_str());
+    }
     // Partition the matrix
     ParameterList isorropiaParams = globalParams->sublist("Isorropia parameters");
     RCP<Isorropia::Epetra::Partitioner> partitioner
@@ -213,38 +244,44 @@ int main(int argc, char** argv)
     RCP<Isorropia::Epetra::Redistributor> rd
     		= rcp(new Isorropia::Epetra::Redistributor(partitioner));
 
-    // Generate a RHS and LHS
     int numRows = A->NumGlobalRows();
     RCP<Epetra_Map> vectorMap = rcp(new Epetra_Map(numRows, 0, Comm));
-    Epetra_MultiVector *RHS = new Epetra_MultiVector(*vectorMap, 1, false);
+    Epetra_MultiVector *RHS;
+    bool allOneRHS = false;
+    if (rhsFileName != "")
+    {
+        err = EpetraExt::MatrixMarketFileToMultiVector(file_name, *vectorMap, RHS);
+    }
+    else
+    {
+        // Generate a RHS and LHS
+        allOneRHS = true;
+        RHS = new Epetra_MultiVector(*vectorMap, 1, false);
+        RHS->Random();
+    }
     Epetra_MultiVector *LHS = new Epetra_MultiVector(*vectorMap, 1, true);
-    RHS->Random();
 
     // Redistribute matrix and vectors
     RCP<Epetra_CrsMatrix> rcpA;
     RCP<Epetra_MultiVector> rcpRHS;
     RCP<Epetra_MultiVector> rcpLHS;
-
-    {
 		Epetra_CrsMatrix *newA;
 		Epetra_MultiVector *newLHS, *newRHS;
+
+    {
 		rd->redistribute(*A, newA);
 		delete A;
-		A = newA;
-		rcpA = rcp(A, true);
+		rcpA = rcp(newA, true);
 
 		rd->redistribute(*RHS, newRHS);
 		delete RHS;
-		RHS = newRHS;
-		rcpRHS = rcp(RHS, true);
+		rcpRHS = rcp(newRHS, true);
 
 		rd->redistribute(*LHS, newLHS);
 		delete LHS;
-		LHS = newLHS;
-		rcpLHS = rcp(LHS, true);
+		rcpLHS = rcp(newLHS, true);
     }
 
-	// Build ML preconditioner
     if (! globalParams->isSublist("ML parameters")) {
     	if (verbose) {
     		std::cout << "!!! ML parameter list not found. Exiting." << std::endl;
@@ -254,13 +291,6 @@ int main(int argc, char** argv)
     }
     ParameterList mlParameters = globalParams->sublist("ML parameters");
 
-    Teuchos::Time setupPrecTimer("preconditioner setup timer", false);
-    setupPrecTimer.start();
-    RCP<ML_Epetra::MultiLevelPreconditioner> MLprec
-    		= rcp(new ML_Epetra::MultiLevelPreconditioner(*A, mlParameters, true), true);
-    setupPrecTimer.stop();
-
-	// Build linear solver
     if (! globalParams->isSublist("Belos parameters")) {
     	if (verbose) {
     		std::cout << "!!! Belos parameter list not found. Exiting." << std::endl;
@@ -273,12 +303,48 @@ int main(int argc, char** argv)
     int belosMaxRestarts = belosParams.get<int>("Maximum Restarts", 0);
     int belosMaxIterations = belosParams.get<int>("Maximum Iterations", numRows);
     double belosTolerance = belosParams.get<double>("Convergence Tolerance", 1e-10);
+	if (verbose) {
+		std::cout << std::endl;
+		std::cout << "--- Dimension of matrix: " << numRows << std::endl;
+		std::cout << "--- Block size used by solver: " << belosBlockSize << std::endl;
+		std::cout << "--- Number of restarts allowed: " << belosMaxRestarts << std::endl;
+		std::cout << "--- Max number of Gmres iterations per restart cycle: "
+				  << belosMaxIterations << std::endl;
+		std::cout << "--- Relative residual tolerance: " << belosTolerance << std::endl;
+	}
+
+    Epetra_CrsMatrix *iterA = 0;
+    Epetra_CrsMatrix *redistA = 0;
+    Epetra_MultiVector *iterb1 = 0;
+    RCP<ML_Epetra::MultiLevelPreconditioner> MLprec;
+    Teuchos::Time setupPrecTimer("preconditioner setup timer", false);
+    Teuchos::Time linearSolverTimer("linear solver timer");
+    RCP< Belos::SolverManager<double, MV, OP> > solver;
+    while(file_number < maxFiles+startFile)
+    {
+
+        if (file_number == startFile)
+        {
+            // Build ML preconditioner
+            setupPrecTimer.start();
+            MLprec = rcp(new ML_Epetra::MultiLevelPreconditioner(*newA, mlParameters, false), true);
+            MLprec->ComputePreconditioner();
+            setupPrecTimer.stop();
+        }
+        else
+        {
+            setupPrecTimer.start();
+            MLprec->ReComputePreconditioner();
+            setupPrecTimer.stop();
+        }
+
+	// Build linear solver
 
     RCP<Belos::EpetraPrecOp> belosPrec = rcp(new Belos::EpetraPrecOp(MLprec), false);
 
     // Construct a preconditioned linear problem
     RCP<Belos::LinearProblem<double, MV, OP> > problem
-    		= rcp( new Belos::LinearProblem<double, MV, OP>( rcpA, rcpLHS, rcpRHS ) );
+    = rcp( new Belos::LinearProblem<double, MV, OP>( rcpA, rcpLHS, rcpRHS ) );
     problem->setRightPrec( belosPrec );
 
     if (! problem->setProblem()) {
@@ -290,21 +356,10 @@ int main(int argc, char** argv)
     }
 
     // Create an iterative solver manager
-    RCP< Belos::SolverManager<double, MV, OP> > solver
-    = rcp( new Belos::BlockGmresSolMgr<double, MV, OP>(problem, rcp(&belosParams,false)));
+    solver = rcp( new Belos::BlockGmresSolMgr<double, MV, OP>(problem, rcp(&belosParams,false)));
 
 	// Solve linear system
-	if (verbose) {
-		std::cout << std::endl;
-		std::cout << "--- Dimension of matrix: " << numRows << std::endl;
-		std::cout << "--- Block size used by solver: " << belosBlockSize << std::endl;
-		std::cout << "--- Number of restarts allowed: " << belosMaxRestarts << std::endl;
-		std::cout << "--- Max number of Gmres iterations per restart cycle: "
-				  << belosMaxIterations << std::endl;
-		std::cout << "--- Relative residual tolerance: " << belosTolerance << std::endl;
-	}
 
-    Teuchos::Time linearSolverTimer("linear solver timer");
     linearSolverTimer.start();
 	Belos::ReturnType ret = solver->solve();
 	linearSolverTimer.stop();
@@ -315,7 +370,6 @@ int main(int argc, char** argv)
 		MPI_Finalize();
 		return -7;
 	}
-
 	// Print time measurements
 	int numIters = solver->getNumIters();
 	double timeSetupPrec = setupPrecTimer.totalElapsedTime();
@@ -330,10 +384,105 @@ int main(int argc, char** argv)
 				  << timeSetupPrec + timeLinearSolver << std::endl;
 	}
 
+        file_number++;
+        if (file_number >= maxFiles+startFile)
+        {
+          break;
+        }
+        else
+        {
+            sprintf(file_name, matrixFileName.c_str(), file_number);
+
+            if (redistA != NULL) delete redistA;
+            // Load the new matrix
+            err = EpetraExt::MatrixMarketFileToCrsMatrix(file_name,
+                            Comm, iterA);
+            if (err != 0)
+            {
+                if (myPID == 0)
+                  cout << "Could not open file: "<< file_name << endl;
+            }
+            else
+            {
+                rd->redistribute(*iterA, redistA);
+                delete iterA;
+                InitMatValues(*redistA, newA);
+            }
+
+            // Load the new rhs
+            if (!allOneRHS)
+            {
+                sprintf(file_name, rhsFileName.c_str(), file_number);
+
+                if (iterb1 != NULL) delete iterb1;
+                err = EpetraExt::MatrixMarketFileToMultiVector(file_name,
+                        *vectorMap, RHS);
+                if (err != 0)
+                {
+                    if (myPID==0)
+                        cout << "Could not open file: "<< file_name << endl;
+                }
+                else
+                {
+                    rd->redistribute(*RHS, iterb1);
+                    delete RHS;
+                    InitMVValues( *iterb1, newRHS );
+                }
+            }
+        }
+    }
+
 	// Release the ML preconditioner, destroying MPI subcommunicators before the call to
 	// MPI_Finalize() in order to avoid MPI errors (this is related to ParMETIS, I think).
 	MLprec.reset();
 
     MPI_Finalize();
 	return 0;
+}
+
+
+int InitMatValues( const Epetra_CrsMatrix& newA, Epetra_CrsMatrix* A )
+{
+  int numMyRows = newA.NumMyRows();
+  int maxNum = newA.MaxNumEntries();
+  int numIn;
+  int *idx = 0;
+  double *vals = 0;
+
+  idx = new int[maxNum];
+  vals = new double[maxNum];
+
+  // For each row get the values and indices, and replace the values in A.
+  for (int i=0; i<numMyRows; ++i) {
+
+    // Get the values and indices from newA.
+    EPETRA_CHK_ERR( newA.ExtractMyRowCopy(i, maxNum, numIn, vals, idx) );
+
+    // Replace the values in A
+    EPETRA_CHK_ERR( A->ReplaceMyValues(i, numIn, vals, idx) );
+
+  }
+
+  // Clean up.
+  delete [] idx;
+  delete [] vals;
+
+  return 0;
+}
+
+int InitMVValues( const Epetra_MultiVector& newb, Epetra_MultiVector* b )
+{
+  int length = newb.MyLength();
+  int numVecs = newb.NumVectors();
+  const Epetra_Vector *tempnewvec;
+  Epetra_Vector *tempvec = 0;
+
+  for (int i=0; i<numVecs; ++i) {
+    tempnewvec = newb(i);
+    tempvec = (*b)(i);
+    for (int j=0; j<length; ++j)
+      (*tempvec)[j] = (*tempnewvec)[j];
+  }
+
+  return 0;
 }

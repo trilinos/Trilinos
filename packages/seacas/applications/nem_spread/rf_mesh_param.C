@@ -39,6 +39,7 @@
 #include "exodusII.h"                   // for MAX_LINE_LENGTH, ex_close, etc
 #include "nem_spread.h"                 // for NemSpread, etc
 #include "rf_io_const.h"                // for Debug_Flag, ExoFile
+#include "rf_format.h"
 
 
 /* need to hang on to this to write it out to the proc 0 file */
@@ -117,8 +118,8 @@ void NemSpread<T,INT>::read_mesh_param ()
   printf ("\nExodus file (%s)\n", exofile);
   printf ("\tTitle of file: %s\n", GeomTitle);
   printf ("\tDimensionality of problem = %d\n",   globals.Num_Dim);
-  printf ("\tNumber of nodes           = %lu\n",   globals.Num_Node);
-  printf ("\tNumber of elements        = %lu\n",   globals.Num_Elem);
+  printf ("\tNumber of nodes           = "ST_ZU"\n",   globals.Num_Node);
+  printf ("\tNumber of elements        = "ST_ZU"\n",   globals.Num_Elem);
   printf ("\tNumber of element blocks  = %d\n",   globals.Num_Elem_Blk);
   printf ("\tNumber of node sets       = %d\n",   globals.Num_Node_Set);
   printf ("\tNumber of side sets       = %d\n\n", globals.Num_Side_Set);
