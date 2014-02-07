@@ -968,11 +968,11 @@ public:
   //These connectivity getter methods are implemented by macros which are located further
   //down in this header. (Search for BEGIN_END_PAIR.)
 
-  Entity const* begin(Entity entity, EntityRank rank) const;
-  Entity const* begin_nodes(Entity entity) const;
-  Entity const* begin_edges(Entity entity) const;
-  Entity const* begin_faces(Entity entity) const;
-  Entity const* begin_elements(Entity entity) const;
+  inline Entity const* begin(Entity entity, EntityRank rank) const;
+  inline Entity const* begin_nodes(Entity entity) const;
+  inline Entity const* begin_edges(Entity entity) const;
+  inline Entity const* begin_faces(Entity entity) const;
+  inline Entity const* begin_elements(Entity entity) const;
 
   // The ordinal of a connected entity is that entity's local index on the entity it
   // is connected to, as defined by standard exodus conventions. For example, the
@@ -986,48 +986,48 @@ public:
   // though those faces are sorted by ordinal.
   // e.g., a hex-8 element may only have two of its six possible faces.
 
-  ConnectivityOrdinal const* begin_ordinals(Entity entity, EntityRank rank) const;
-  ConnectivityOrdinal const* begin_node_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* begin_edge_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* begin_face_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* begin_element_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* begin_ordinals(Entity entity, EntityRank rank) const;
+  inline ConnectivityOrdinal const* begin_node_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* begin_edge_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* begin_face_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* begin_element_ordinals(Entity entity) const;
 
   // The permutation of a connected entity is an integer type which is used
   // to store the polarity and orientation of the entity.
 
-  Permutation const* begin_permutations(Entity entity, EntityRank rank) const;
-  Permutation const* begin_node_permutations(Entity entity) const;
-  Permutation const* begin_edge_permutations(Entity entity) const;
-  Permutation const* begin_face_permutations(Entity entity) const;
-  Permutation const* begin_element_permutations(Entity entity) const;
+  inline Permutation const* begin_permutations(Entity entity, EntityRank rank) const;
+  inline Permutation const* begin_node_permutations(Entity entity) const;
+  inline Permutation const* begin_edge_permutations(Entity entity) const;
+  inline Permutation const* begin_face_permutations(Entity entity) const;
+  inline Permutation const* begin_element_permutations(Entity entity) const;
 
   unsigned num_connectivity(Entity entity, EntityRank rank) const;
 
-  unsigned num_nodes(Entity entity) const;
-  unsigned num_edges(Entity entity) const;
-  unsigned num_faces(Entity entity) const;
-  unsigned num_elements(Entity entity) const;
+  inline unsigned num_nodes(Entity entity) const;
+  inline unsigned num_edges(Entity entity) const;
+  inline unsigned num_faces(Entity entity) const;
+  inline unsigned num_elements(Entity entity) const;
 
   unsigned count_valid_connectivity(Entity entity, EntityRank rank) const;
   unsigned count_valid_connectivity(Entity entity) const;
 
-  Entity const* end(Entity entity, EntityRank rank) const;
-  Entity const* end_nodes(Entity entity) const;
-  Entity const* end_edges(Entity entity) const;
-  Entity const* end_faces(Entity entity) const;
-  Entity const* end_elements(Entity entity) const;
+  inline Entity const* end(Entity entity, EntityRank rank) const;
+  inline Entity const* end_nodes(Entity entity) const;
+  inline Entity const* end_edges(Entity entity) const;
+  inline Entity const* end_faces(Entity entity) const;
+  inline Entity const* end_elements(Entity entity) const;
   Entity const* end_constraints(Entity entity) const
   { return end(entity, stk::topology::CONSTRAINT_RANK); }
-  ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
-  ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* end_edge_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* end_face_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* end_element_ordinals(Entity entity) const;
-  Permutation const* end_permutations(Entity entity, EntityRank rank) const;
-  Permutation const* end_node_permutations(Entity entity) const;
-  Permutation const* end_edge_permutations(Entity entity) const;
-  Permutation const* end_face_permutations(Entity entity) const;
-  Permutation const* end_element_permutations(Entity entity) const;
+  inline ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
+  inline ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* end_edge_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* end_face_ordinals(Entity entity) const;
+  inline ConnectivityOrdinal const* end_element_ordinals(Entity entity) const;
+  inline Permutation const* end_permutations(Entity entity, EntityRank rank) const;
+  inline Permutation const* end_node_permutations(Entity entity) const;
+  inline Permutation const* end_edge_permutations(Entity entity) const;
+  inline Permutation const* end_face_permutations(Entity entity) const;
+  inline Permutation const* end_element_permutations(Entity entity) const;
 
 
   // Return index (offset) of query ordinal if found, num_connectivity otherwise.

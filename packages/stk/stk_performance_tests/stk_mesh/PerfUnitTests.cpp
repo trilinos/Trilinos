@@ -737,9 +737,9 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, parallel_sum )
 
   std::vector<FieldBase*> fields(num_fields);
   for (int i = 0; i < num_fields; ++i) {
-    std::ostringstream oss;
-    oss << "field_" << i;
-    fields[i] = &meta.declare_field<ScalarField>(stk::topology::NODE_RANK, oss.str());
+    std::ostringstream ostrstr;
+    ostrstr << "field_" << i;
+    fields[i] = &meta.declare_field<ScalarField>(stk::topology::NODE_RANK, ostrstr.str());
     stk::mesh::put_field(*fields[i], meta.universal_part());
   }
 

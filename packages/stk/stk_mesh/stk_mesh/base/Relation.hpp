@@ -60,22 +60,22 @@ public:
   void set_attribute(attribute_type attr) const  { m_attribute = attr; }
 
   /** \brief  The encoded relation raw_relation_id */
-  static raw_relation_id_type raw_relation_id( unsigned rank , unsigned id );
+  inline static raw_relation_id_type raw_relation_id( unsigned rank , unsigned id );
 
   /** \brief  The encoded relation raw_relation_id */
   raw_relation_id_type raw_relation_id() const { return m_raw_relation.value ; }
 
   /** \brief  The rank of the referenced entity */
-  unsigned entity_rank() const ;
+  inline unsigned entity_rank() const ;
 
   /** \brief  The local relation identifier */
-  RelationIdentifier relation_ordinal() const ;
+  inline RelationIdentifier relation_ordinal() const ;
 
   /** \brief  The referenced entity */
-  Entity entity() const;
+  inline Entity entity() const;
 
   /** \brief  Equality operator */
-  bool operator == ( const Relation & r ) const;
+  inline bool operator == ( const Relation & r ) const;
 
   /** \brief  Inequality operator */
   bool operator != ( const Relation & r ) const
@@ -183,7 +183,7 @@ private:
   Relation(EntityRank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
 
   // Only needed by Framework and Framework-based apps.
-  void setMeshObj(Entity object, EntityRank object_rank);
+  inline void setMeshObj(Entity object, EntityRank object_rank);
 
   RelationType  getRelationType() const {
     return static_cast<RelationType::relation_type_t >(attribute() >> fmwk_orientation_digits);

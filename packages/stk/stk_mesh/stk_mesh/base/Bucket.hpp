@@ -439,6 +439,9 @@ private:
   template <typename T>
   void modify_all_connectivity(T& callable, Bucket* other_bucket=NULL);
 
+#ifdef NDEBUG
+inline
+#endif
   void check_for_invalid_connectivity_request(ConnectivityType const* type) const;
 };
 #undef CONNECTIVITY_TYPE_SWITCH

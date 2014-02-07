@@ -381,7 +381,7 @@ void BulkData::gather_and_print_mesh_partitioning() const
         size_t num_partitions_for_this_rank = 0;
         buf.unpack<size_t>(num_partitions_for_this_rank);
 
-        for (size_t p = 0; p < num_partitions_for_this_rank; ++p) {
+        for (size_t partition = 0; partition < num_partitions_for_this_rank; ++partition) {
           size_t num_entities_in_partition = 0;
           buf.unpack<size_t>(num_entities_in_partition);
 
