@@ -146,7 +146,9 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
 				    const Teuchos::RCP<panzer::GlobalData>& global_data,
-				    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null);
+				    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
+                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
+                    const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
 
     //@}
 
@@ -327,6 +329,8 @@ namespace panzer_stk {
 
     Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
     Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
+ 
+    bool useDynamicCoordinates_;
   };
 
 template<typename ScalarT>
