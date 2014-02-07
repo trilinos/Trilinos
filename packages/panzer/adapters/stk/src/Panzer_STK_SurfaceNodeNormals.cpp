@@ -117,7 +117,7 @@ namespace panzer_stk {
       std::vector<stk::mesh::Entity*> elementEntities;
       elementEntities.push_back(*parentElement);
       Intrepid::FieldContainer<double> vertices;
-      mesh->getElementVertices(elementEntities,vertices);
+      mesh->getElementVertices(elementEntities,elementBlockName,vertices);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology);
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));

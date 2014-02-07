@@ -62,8 +62,8 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
     localIds.push_back(mesh.elementLocalId(element));
   }
 
-  // get vertices
-  mesh.getElementVertices(localIds,vertices);
+  // get vertices (this is slightly faster then the local id version)
+  mesh.getElementVertices(elements,blockId,vertices);
 }
 
 }
