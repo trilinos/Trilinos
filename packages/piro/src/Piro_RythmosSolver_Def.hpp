@@ -46,6 +46,7 @@
 #include "Piro_ValidPiroParameters.hpp"
 
 #include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_ForwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
@@ -164,6 +165,10 @@ void Piro::RythmosSolver<Scalar>::initialize(
 
   if (stepperType == "Backward Euler") {
     fwdStateStepper = Rythmos::backwardEulerStepper<Scalar> (model, fwdTimeStepSolver);
+    fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
+  }
+  else if (stepperType == "Forward Euler") {
+    fwdStateStepper = Rythmos::forwardEulerStepper<Scalar> (model);
     fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
   }
   else if (stepperType == "Explicit RK") {
