@@ -502,11 +502,10 @@ initAllValues (const row_matrix_type& A)
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  // FIXME (mfh 24 Jan 2014) This assumes that the row Map's global
-  // indices are contiguous on the calling process!
-  for (global_ordinal_type i = rowMap->getMinGlobalIndex ();
-       i <= rowMap->getMaxGlobalIndex (); ++i) {
-    global_ordinal_type global_row = i;
+  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
+  for (typename Teuchos::ArrayView<const global_ordinal_type>::const_iterator avi = nodeGIDs.begin(); avi != nodeGIDs.end(); avi++)
+  {
+    global_ordinal_type global_row = *avi;
     local_ordinal_type local_row = rowMap->getLocalElement (global_row);
 
     A.getGlobalRowCopy (global_row, InI(), InV(), NumIn); // Get Values and Indices
@@ -520,7 +519,7 @@ initAllValues (const row_matrix_type& A)
     for (size_t j = 0; j < NumIn; ++j) {
       const global_ordinal_type k = InI[j];
 
-      if (k == i) {
+      if (k == global_row) {
         DiagFound = true;
         // Store perturbed diagonal in Tpetra::Vector D_
         DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_;
@@ -534,7 +533,7 @@ initAllValues (const row_matrix_type& A)
           "Nevertheless, the code I found here insisted on this being an error "
           "state, so I will throw an exception here.");
       }
-      else if (k < i) {
+      else if (k < global_row) {
         LI[NumL] = k;
         LV[NumL] = InV[j];
         NumL++;
