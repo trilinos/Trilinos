@@ -9,7 +9,6 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::rank
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
-#include <stk_mesh/base/BulkDataPartOperations.hpp>
 
 namespace stk {
 namespace mesh {

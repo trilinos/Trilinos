@@ -237,6 +237,16 @@ bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
   return false;
 }
 
+inline
+bool contains_ordinal_part( PartVector::const_iterator beg, PartVector::const_iterator end, unsigned part_ordinal )
+{
+  for(PartVector::const_iterator i=beg; i!=end; ++i) {
+    if ((*i)->mesh_meta_data_ordinal() == part_ordinal) return true;
+  }
+
+  return false;
+}
+
 /** \brief  Query containment for two properly ordered PartVector */
 bool contain( const PartVector & , const PartVector & );
 

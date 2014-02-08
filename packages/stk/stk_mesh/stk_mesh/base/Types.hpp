@@ -66,6 +66,7 @@ class MetaData ;  // Meta-data description of a mesh
  *          maintained as a vector of Part pointers.
  */
 typedef std::vector< Part * > PartVector;
+typedef std::vector< const Part * > ConstPartVector;
 typedef std::vector< unsigned > OrdinalVector;
 typedef std::vector< unsigned > PermutationIndexVector;
 

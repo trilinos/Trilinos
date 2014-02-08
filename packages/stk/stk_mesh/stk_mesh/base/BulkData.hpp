@@ -21,7 +21,6 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
-//#include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
@@ -40,8 +39,6 @@
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-//#include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
-//#include "stk_mesh/base/FieldTraits.hpp"  // for FieldMetaData, FieldBase, etc
 #include "stk_mesh/base/Part.hpp"       // for Part (ptr only), etc
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -407,10 +404,9 @@ public:
   //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
   //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
   //the propagation that stk-mesh does.
-  template<typename AddIterator, typename RemoveIterator>
   void change_entity_parts( Entity entity,
-                            AddIterator begin_add_parts, AddIterator end_add_parts,
-                            RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
+                            PartVector::const_iterator begin_add_parts, PartVector::const_iterator end_add_parts,
+                            PartVector::const_iterator begin_remove_parts, PartVector::const_iterator end_remove_parts,
                             bool always_propagate_internal_changes=true );
 
   /** \brief  Request the destruction an entity on the local process.
@@ -1268,14 +1264,12 @@ private:
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
-  template <typename PartT>
   void internal_change_entity_parts( Entity ,
-                                     const std::vector<PartT> & add_parts ,
-                                     const std::vector<PartT> & remove_parts,
+                                     const std::vector<Part*> & add_parts ,
+                                     const std::vector<Part*> & remove_parts,
                                      bool always_propagate_internal_changes=true);
 
-  template <typename PartT>
-  void internal_propagate_part_changes( Entity entity, const std::vector<PartT> & removed );
+  void internal_propagate_part_changes( Entity entity, const std::vector<Part*> & removed );
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -1315,10 +1309,9 @@ private:
                                          const unsigned ent_rank,
                                          const unsigned undef_rank) const;
 
-  template <typename PartT>
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
-                                     const std::vector<PartT> & parts ) const;
+                                     const std::vector<Part*> & parts ) const;
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
 
