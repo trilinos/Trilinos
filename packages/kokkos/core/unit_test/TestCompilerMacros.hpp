@@ -1,9 +1,9 @@
-// @HEADER
-// ***********************************************************************
+/*
+//@HEADER
+// ************************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,38 +35,60 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
-// @HEADER
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 
-#ifndef PANZER_STK_SETUP_UTILITIES_IMPL_HPP
-#define PANZER_STK_SETUP_UTILITIES_IMPL_HPP
+#include <Kokkos_Macros.hpp>
+#include <Kokkos_View.hpp>
 
-namespace panzer_stk {
-namespace workset_utils {
+#define KOKKOS_PRAGMA_UNROLL(a)
 
-template<typename ArrayT>
-void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
-			 std::string blockId,
-			 std::vector<std::size_t>& localIds,
-			 ArrayT & vertices) {
-  
-  std::vector<stk::mesh::Entity*> elements;
-  mesh.getMyElements(blockId,elements);
-  
-  // loop over elements of this block
-  for(std::size_t elm=0;elm<elements.size();++elm) {
-    stk::mesh::Entity * element = elements[elm];
-    
-    localIds.push_back(mesh.elementLocalId(element));
-  }
+namespace TestCompilerMacros {
 
-  // get vertices (this is slightly faster then the local id version)
-  mesh.getElementVertices(elements,blockId,vertices);
-}
+template<class DEVICE_TYPE>
+struct AddFunctor {
+  typedef DEVICE_TYPE device_type;
+  typedef typename Kokkos::View<int**,device_type> type;
+  type a,b;
+  int length;
 
-}
-}
+  AddFunctor(type a_, type b_):a(a_),b(b_),length(a.dimension_1()) {}
 
+  KOKKOS_INLINE_FUNCTION
+  void operator()(int i) const {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+    #pragma unroll
 #endif
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+    #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+    #pragma vector always
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+    #pragma loop count(128)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_SIMD
+    #pragma simd
+#endif
+    for(int j=0;j<length;j++)
+      a(i,j) += b(i,j);
+  }
+};
+
+template<class DeviceType>
+bool Test() {
+  typedef typename Kokkos::View<int**,DeviceType> type;
+  type a("A",1024,128);
+  type b("B",1024,128);
+
+  AddFunctor<DeviceType> f(a,b);
+  Kokkos::parallel_for(1024,f);
+  DeviceType::fence();
+  return true;
+}
+
+}

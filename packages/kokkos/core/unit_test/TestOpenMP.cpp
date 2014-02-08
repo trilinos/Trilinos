@@ -69,6 +69,7 @@
 #include <TestScan.hpp>
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -246,6 +247,12 @@ TEST_F( openmp , team_scan )
   TestScanRequest< Kokkos::OpenMP >( 10000 );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
+}
 
 } // namespace test
 

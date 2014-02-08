@@ -66,6 +66,7 @@
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -262,6 +263,18 @@ void test_device_cuda_team_scan()
 {
   TestScanRequest< Kokkos::Cuda >( 10 );
   TestScanRequest< Kokkos::Cuda >( 10000 );
+}
+
+}
+
+
+//----------------------------------------------------------------------------
+
+namespace Test {
+
+void test_device_cuda_compiler_macros()
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Cuda >() ) );
 }
 
 }

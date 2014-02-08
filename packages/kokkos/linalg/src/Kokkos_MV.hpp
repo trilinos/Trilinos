@@ -69,7 +69,9 @@ struct MV_MulScalarFunctor
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    #pragma ivdep
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
 	for(size_type k=0;k<n;k++)
 	   m_r(i,k) = m_a[k]*m_x(i,k);
   }
@@ -89,7 +91,9 @@ struct MV_MulScalarFunctorSelf
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    #pragma ivdep
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
 	for(size_type k=0;k<n;k++)
 	   m_x(i,k) *= m_a[k];
   }
@@ -133,7 +137,9 @@ struct MV_MulScalarFunctor<RVector,typename XVector::value_type,XVector>
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    #pragma ivdep
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
 	for(size_type k=0;k<n;k++)
 	   m_r(i,k) = m_a*m_x(i,k);
   }
@@ -153,7 +159,9 @@ struct MV_MulScalarFunctorSelf<typename XVector::value_type,XVector>
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    #pragma ivdep
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
 	for(size_type k=0;k<n;k++)
 	   m_x(i,k) *= m_a;
   }
@@ -207,47 +215,65 @@ struct MV_AddUnrollFunctor
   void operator()( const size_type i ) const
   {
 	if((scalar_x==1)&&(scalar_y==1)){
-	#pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
     for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_x(i,k) + m_y(i,k);
 	}
 	if((scalar_x==1)&&(scalar_y==-1)){
-	  #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
 	  for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_x(i,k) - m_y(i,k);
 	}
 	if((scalar_x==-1)&&(scalar_y==-1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = -m_x(i,k) - m_y(i,k);
 	}
 	if((scalar_x==-1)&&(scalar_y==1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = -m_x(i,k) + m_y(i,k);
 	}
 	if((scalar_x==2)&&(scalar_y==1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_a(k)*m_x(i,k) + m_y(i,k);
 	}
 	if((scalar_x==2)&&(scalar_y==-1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_a(k)*m_x(i,k) - m_y(i,k);
 	}
 	if((scalar_x==1)&&(scalar_y==2)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_x(i,k) + m_b(k)*m_y(i,k);
 	}
 	if((scalar_x==-1)&&(scalar_y==2)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = -m_x(i,k) + m_b(k)*m_y(i,k);
 	}
 	if((scalar_x==2)&&(scalar_y==2)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
 	}
@@ -274,48 +300,84 @@ struct MV_AddVectorFunctor
   void operator()( const size_type i ) const
   {
 	if((scalar_x==1)&&(scalar_y==1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_x(i,k) + m_y(i,k);
 	if((scalar_x==1)&&(scalar_y==-1))
-      #pragma ivdep
-	  #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_x(i,k) - m_y(i,k);
 	if((scalar_x==-1)&&(scalar_y==-1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = -m_x(i,k) - m_y(i,k);
 	if((scalar_x==-1)&&(scalar_y==1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = -m_x(i,k) + m_y(i,k);
 	if((scalar_x==2)&&(scalar_y==1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_a(k)*m_x(i,k) + m_y(i,k);
 	if((scalar_x==2)&&(scalar_y==-1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_a(k)*m_x(i,k) - m_y(i,k);
 	if((scalar_x==1)&&(scalar_y==2))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_x(i,k) + m_b(k)*m_y(i,k);
 	if((scalar_x==-1)&&(scalar_y==2))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = -m_x(i,k) + m_b(k)*m_y(i,k);
 	if((scalar_x==2)&&(scalar_y==2))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
 
@@ -345,47 +407,65 @@ struct MV_AddUnrollFunctor<RVector,typename XVector::value_type, XVector, typena
   void operator()( const size_type i ) const
   {
   if((scalar_x==1)&&(scalar_y==1)){
-  #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
     for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_x(i,k) + m_y(i,k);
   }
   if((scalar_x==1)&&(scalar_y==-1)){
-    #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
     for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_x(i,k) - m_y(i,k);
   }
   if((scalar_x==-1)&&(scalar_y==-1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = -m_x(i,k) - m_y(i,k);
   }
   if((scalar_x==-1)&&(scalar_y==1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = -m_x(i,k) + m_y(i,k);
   }
   if((scalar_x==2)&&(scalar_y==1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_a*m_x(i,k) + m_y(i,k);
   }
   if((scalar_x==2)&&(scalar_y==-1)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_a*m_x(i,k) - m_y(i,k);
   }
   if((scalar_x==1)&&(scalar_y==2)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_x(i,k) + m_b*m_y(i,k);
   }
   if((scalar_x==-1)&&(scalar_y==2)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = -m_x(i,k) + m_b*m_y(i,k);
   }
   if((scalar_x==2)&&(scalar_y==2)){
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
 for(size_type k=0;k<UNROLL;k++)
       m_r(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
   }
@@ -412,48 +492,84 @@ struct MV_AddVectorFunctor<RVector,typename XVector::value_type, XVector, typena
   void operator()( const size_type i ) const
   {
   if((scalar_x==1)&&(scalar_y==1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = m_x(i,k) + m_y(i,k);
   if((scalar_x==1)&&(scalar_y==-1))
-      #pragma ivdep
-    #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = m_x(i,k) - m_y(i,k);
   if((scalar_x==-1)&&(scalar_y==-1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = -m_x(i,k) - m_y(i,k);
   if((scalar_x==-1)&&(scalar_y==1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = -m_x(i,k) + m_y(i,k);
   if((scalar_x==2)&&(scalar_y==1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = m_a*m_x(i,k) + m_y(i,k);
   if((scalar_x==2)&&(scalar_y==-1))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = m_a*m_x(i,k) - m_y(i,k);
   if((scalar_x==1)&&(scalar_y==2))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = m_x(i,k) + m_b*m_y(i,k);
   if((scalar_x==-1)&&(scalar_y==2))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = -m_x(i,k) + m_b*m_y(i,k);
   if((scalar_x==2)&&(scalar_y==2))
-      #pragma ivdep
-      #pragma vector always
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
       for(size_type k=0;k<n;k++)
       m_r(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
 
@@ -822,27 +938,39 @@ struct MV_DotProduct_Right_FunctorVector
   {
 	const size_type numVecs=value_count;
 
-    #pragma ivdep
-    #pragma vector always
-	for(size_type k=0;k<numVecs;k++)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+	  for(size_type k=0;k<numVecs;k++)
       sum[k]+=m_x(i,k)*m_y(i,k);
   }
   KOKKOS_INLINE_FUNCTION void init( value_type update) const
   {
     const size_type numVecs = value_count;
-    #pragma ivdep
-    #pragma vector always
-	for(size_type k=0;k<numVecs;k++)
-	  update[k] = 0;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+	  for(size_type k=0;k<numVecs;k++)
+	    update[k] = 0;
   }
   KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
                     const volatile value_type  source ) const
   {
     const size_type numVecs = value_count;
-    #pragma ivdep
-    #pragma vector always
-	for(size_type k=0;k<numVecs;k++){
-	  update[k] += source[k];
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+	  for(size_type k=0;k<numVecs;k++){
+	    update[k] += source[k];
 	}
   }
 };
@@ -867,20 +995,26 @@ struct MV_DotProduct_Right_FunctorUnroll
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type sum ) const
   {
-    #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
     for(size_type k=0;k<UNROLL;k++)
       sum[k]+=m_x(i,k)*m_y(i,k);
   }
   KOKKOS_INLINE_FUNCTION void init( volatile value_type update) const
   {
-    #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
 	for(size_type k=0;k<UNROLL;k++)
 	  update[k] = 0;
   }
   KOKKOS_INLINE_FUNCTION void join( volatile value_type update ,
                     const volatile value_type source) const
   {
-    #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
 	for(size_type k=0;k<UNROLL;k++)
 	 update[k] += source[k] ;
   }

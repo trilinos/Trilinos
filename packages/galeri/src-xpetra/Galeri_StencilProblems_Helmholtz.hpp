@@ -109,6 +109,7 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Helmholtz2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
+      int model = this->list_.get("model", 0);
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       double h = this->list_.get("h", 1.0);
@@ -129,13 +130,16 @@ namespace Galeri {
       }
 
       this->A_ = Cross2D_Helmholtz<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, h, delta,
-										 PMLx_left, PMLx_right, PMLy_left, PMLy_right, omega, cpxshift);
+										 PMLx_left, PMLx_right,
+										 PMLy_left, PMLy_right,
+										 omega, cpxshift, model);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > Helmholtz2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrices() {
+      int model = this->list_.get("model", 0);
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       double h = this->list_.get("h", 1.0);
@@ -158,7 +162,9 @@ namespace Galeri {
       std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > system;
 
       system = Cross2D_Helmholtz_Pair<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, h, delta,
-											  PMLx_left, PMLx_right, PMLy_left, PMLy_right, omega, cpxshift);
+										    PMLx_left, PMLx_right,
+										    PMLy_left, PMLy_right,
+										    omega, cpxshift, model);
       return system;
     }
 
@@ -173,6 +179,7 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Helmholtz3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
+      int model = this->list_.get("model", 0);
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
@@ -196,13 +203,17 @@ namespace Galeri {
       }
 
       this->A_ = Cross3D_Helmholtz<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, h, delta,
-										 PMLx_left, PMLx_right, PMLy_left, PMLy_right, PMLz_left, PMLz_right, omega, cpxshift);
+										 PMLx_left, PMLx_right,
+										 PMLy_left, PMLy_right,
+										 PMLz_left, PMLz_right,
+										 omega, cpxshift, model);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > Helmholtz3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrices() {
+      int model = this->list_.get("model", 0);
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
@@ -228,7 +239,10 @@ namespace Galeri {
       std::pair< Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > system;
 
       system = Cross3D_Helmholtz_Pair<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, h, delta,
-											  PMLx_left, PMLx_right, PMLy_left, PMLy_right, PMLz_left, PMLz_right, omega, cpxshift);
+										    PMLx_left, PMLx_right,
+										    PMLy_left, PMLy_right,
+										    PMLz_left, PMLz_right,
+										    omega, cpxshift, model);
       return system;
     }
 

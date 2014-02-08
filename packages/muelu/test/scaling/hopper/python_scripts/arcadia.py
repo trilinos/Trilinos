@@ -292,10 +292,11 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
             sched_args += " -S " + str(cpn/4)                   # Number of tasks per NUMA node (note: hopper has 4 NUMA nodes)
 
     elif SCHEDULER == "slurm":
-        sched_args  = "srun"
-        sched_args += " -N " + str(nnodes)
-        sched_args += " --tasks-per-node " + str(cpn)
-        # TODO: --mem-bind
+        # There some issues on Shannon with openmpi and srun, so we use mpirun instead
+        sched_args  = "mpirun"
+        sched_args += " --npernode " + str(cpn)
+        sched_args += " --bind-to-core"
+        # sched_args += " --map-by numa"                        # This conflicts with --npernode
 
     script_path = dir + "/" + PETRA_PREFIX + str(nnodes) + "." + SCHEDULER
 

@@ -14,7 +14,7 @@
                 <Parameter name="X Blocks" type="int" value="1" />
                 <Parameter name="Y Blocks" type="int" value="1" />
                 <Parameter name="X Elements" type="int" value="20" />
-                <Parameter name="Y Elements" type="int" value="20" />
+                <Parameter name="Y Elements" type="int" value="10" />
                 <Parameter name="X0" type="double" value="0.0" />
                 <Parameter name="Y0" type="double" value="0.0" />
                 <Parameter name="Xf" type="double" value="2.0" />
@@ -68,7 +68,7 @@
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
             <ParameterList name="NODE_VELOCITY_Y">
-                <Parameter name="Value" type="double" value="-1.0"/>
+                <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
 
         </ParameterList>
@@ -84,30 +84,7 @@
     </ParameterList>
 
     <ParameterList name="Boundary Conditions">
-
-        <ParameterList>
-            <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="left"/> 
-            <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
-            <Parameter name="Equation Set Name" type="string" value="COORDX"/> 
-            <Parameter name="Strategy" type="string" value="Constant"/>
-            <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="0.0"/>
-            </ParameterList>
-        </ParameterList>
-<!--
-
-        <ParameterList>
-            <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="left"/> 
-            <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
-            <Parameter name="Equation Set Name" type="string" value="COORDY"/> 
-            <Parameter name="Strategy" type="string" value="Constant"/>
-            <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="0.0"/>
-            </ParameterList>
-        </ParameterList>
--->
+      <!-- No boundary conditions listed -->
 
     </ParameterList>
 
@@ -256,9 +233,10 @@
   <ParameterList name="Rythmos">
     <Parameter name="Nonlinear Solver Type" type="string" value='NOX'/>
     <Parameter name="Initial Time" type="double" value="0.0"/>
-    <Parameter name="Final Time" type="double" value="1.00"/>
+    <Parameter name="Final Time" type="double" value="1.0"/>
 
-    <Parameter name="Stepper Type" type="string" value="Explicit RK"/>
+    <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
+    <!--<Parameter name="Stepper Type" type="string" value="Explicit RK"/>-->
     <ParameterList name="Rythmos Stepper">
     </ParameterList>
 
@@ -271,7 +249,7 @@
     <ParameterList name="Rythmos Integration Control">
       <Parameter name="Take Variable Steps" type="bool" value="false"/>
       <!--<Parameter name="Number of Time Steps" type="int" value="10000"/>-->
-      <Parameter name="Fixed dt" type="double" value="0.01"/>
+      <Parameter name="Fixed dt" type="double" value="0.1"/>
     </ParameterList>
 
   </ParameterList>

@@ -66,10 +66,10 @@ namespace Galeri {
 
       Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string & matrixType="Laplace1D", int keepBCs=0,
                  double stretchx=1.0, double stretchy=1.0, double stretchz=1.0, double h=1.0, double delta=0.0, int PMLXL=0, int PMLXR=0,
-                 int PMLYL=0, int PMLYR=0, int PMLZL=0, int PMLZR=0, double omega=2.0*M_PI, double shift=0.5, int mx=1, int my=1, int mz=1)
+                 int PMLYL=0, int PMLYR=0, int PMLZL=0, int PMLZR=0, double omega=2.0*M_PI, double shift=0.5, int mx=1, int my=1, int mz=1, int model=0)
 	: nx_(nx), ny_(ny), nz_(nz), mx_(mx), my_(my), mz_(mz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz), matrixType_(matrixType), keepBCs_(keepBCs),
           h_(h), delta_(delta), PMLx_left(PMLXL), PMLx_right(PMLXR), PMLy_left(PMLYL), PMLy_right(PMLYR), PMLz_left(PMLZL), PMLz_right(PMLZR),
-          omega_(omega), shift_(shift) {
+          omega_(omega), shift_(shift), model_(model) {
         clp.setOption("nx",         &nx_,           "mesh points in x-direction.");
         clp.setOption("ny",         &ny_,           "mesh points in y-direction.");
         clp.setOption("nz",         &nz_,           "mesh points in z-direction.");
@@ -91,6 +91,7 @@ namespace Galeri {
         clp.setOption("mx",         &mx_,           "processors in x-direction.");
         clp.setOption("my",         &my_,           "processors in y-direction.");
         clp.setOption("mz",         &mz_,           "processors in z-direction.");
+        clp.setOption("model",      &model_,        "velocity model");
       }
 
       void check() const {
@@ -144,6 +145,7 @@ namespace Galeri {
         paramList_.set("mx",          mx_);
         paramList_.set("my",          my_);
         paramList_.set("mz",          mz_);
+	paramList_.set("model",       model_);
         paramList_.set("stretchx",    stretchx_);
         paramList_.set("stretchy",    stretchy_);
         paramList_.set("stretchz",    stretchz_);
@@ -214,6 +216,7 @@ namespace Galeri {
       mutable int PMLz_left, PMLz_right;
       mutable double omega_;
       mutable double shift_;
+      mutable int model_;
 
       mutable Teuchos::ParameterList paramList_; // only used by GetParameterList(). It's temporary data. TODO: bad design...
     };

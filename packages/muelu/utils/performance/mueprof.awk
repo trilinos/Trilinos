@@ -11,10 +11,10 @@
 ###############################################################################
 #stuff that happens before processing any files
 BEGIN {
-    # regular expression for timing output
-    #regex="[0-9]*[.][0-9e-]*";
-    regex="[0-9]+[.]?[0-9]*[e]?[-]?[0-9]* [(][0-9][)]";
     startParsingTimers=0;
+    possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
+    possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
+    possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
 }
 
 ###############################################################################
@@ -31,172 +31,51 @@ BEGIN {
       startParsingTimers=1;
     }
 
-    #indicates start of MueLu parent/child tags
-    #and end of timers
-    if (match($0,"^Parent Child Map")) {
-      startParsingPC=1;
-      startParsingTimers=0;
-    }
+    if (startParsingTimers) {
 
-    if (startParsingPC) {
-      levelSpecific=0;
-      #try to match mutually exclusive level-specific timer
-      if (match($0,"^Key: ")) {
-        startOfKey = RSTART+RLENGTH;
-        #print "found key line >"$0"<"
-        if (match($0,"[(]level=[0-9]+[)]")) {
-          endOfKey=RSTART+RLENGTH-1;
-          key=substr($0,startOfKey,endOfKey-startOfKey+1);
-          #print "  found key >"key"<"
-          #removing whitespace before and after
-          sub(/^[ ]*/,"",key);
-          sub(/[ ]*$/,"",key);
-          levelSpecific=1;
-        }
-      }
-      #get corresponding parent timer 
-      if (match($0,"Value: ") && levelSpecific) {
-        startOfValue = RSTART+RLENGTH;
-        match($0,"$");
-        value=substr($0,startOfValue,RSTART+RLENGTH-1);
-        #print "  found value >"value"<"
-        ParentOf[key] = value;
-      }
-    } #startParsingPC
-
-    if (startParsingTimers && match($0,"^MueLu: ")) {
-
-        #match time
-        match($0,regex);
-        #RSTART is where the pattern starts
-        #RLENGTH is the length of the pattern
-        before = substr($0,1,RSTART-1);
-        #remove trailing white space in variable "before"
-        sub(/[ ]*$/,"",before);
-        pattern = substr($0,RSTART,RLENGTH);
-        after = substr($0,RSTART+RLENGTH);
-
-        # totals, not level-specific 
-        if (match($0,"[(]total[)]")) {
-          tlabels[before] = before;
-          ttallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        # totals by level
-        if (match($0,"[(]total, level=")) {
-          tllabels[before] = before;
-          tltallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        # no totals, not level-specific
-        if (!match($0,"level") && !match($0,"total")) {
-          ntlabels[before] = before;
-          nttallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        # no totals, level-specific
+      if (match($0,"^MueLu: ")) {
+        # matched a timer
         if (match($0,"[(]level=[0-9][)]")) {
-          #print linalg[FILENAME] " | " before " | " pattern " | " after   #debugging
-          factAndLevel = before;
-          ntllabels[factAndLevel] = factAndLevel;
-          ntltallies[factAndLevel,linalg[FILENAME]] = pattern;
+          # timer is level-specific (and by its nature excludes calls to child factories)
+          factAndLevel = substr($0,1,RSTART-1+RLENGTH);
           alltimes = substr($0,RSTART+RLENGTH);
-          #trim off white space before and after
-          sub(/^[ ]*/,"",alltimes);
-          sub(/[ ]*$/,"",alltimes);
-          if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
-            #print "  match found!\n"
-            #before = substr(alltimes,1,RSTART-1);
-            #remove trailing white space in variable "before"
-            #sub(/[ ]*$/,"",before);
-            #pattern = substr(alltimes,RSTART,RLENGTH);
-            alltimes = substr(alltimes,1,RSTART-1);
-            #print ">"alltimes"<"
-            #after = substr(alltimes,RSTART+RLENGTH);
-            #print before " | " pattern " | " after   #debugging
-            #print "  " pattern
+          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          maxtime = ExtractTime(alltimes,cutCmd);
+          if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
+            #TODO figure out which solve labels to pull out
+            solveLabels[factAndLevel] = factAndLevel;
+            solveTimes[factAndLevel,linalg[FILENAME]] = maxtime;
+          } else {
+            setupLabels[factAndLevel] = factAndLevel;
+            setupTimes[factAndLevel,linalg[FILENAME]] = maxtime;
           }
-          # get the max time
-          if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
-            themax = substr(alltimes,RSTART,RLENGTH);
-            sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
-            #print "themax = " themax
-            ntltallies[factAndLevel,linalg[FILENAME]] = themax;
-          }
-          ntlenchilada[factAndLevel,linalg[FILENAME]] = alltimes;
-          #print "ntlenchilada[" before "," linalg[FILENAME] "] = " ntlenchilada[before,linalg[FILENAME]]      #debugging
-        }
-
-        #subfactory timings, summed  over all levels
-        if (match($0,"[(]sub, total[)]")) {
-          stlabels[before] = before;
-          sttallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        #subfactory timings, level-specific
-        if (match($0,"[(]sub, total, level")) {
-          stllabels[before] = before;
-          stltallies[before,linalg[FILENAME]] = pattern;
-        }
-
-    }
-
-    # Pull out the reported total setup time.  This is printed as a sanity check.
-    foundTotal=0;
-    if (startParsingTimers && match($0,"^ScalingTest: 2 - MueLu Setup")) {
-      foundTotal=1;
-      #match($0,regex);
-      #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
-      alltimes = substr($0,RSTART+RLENGTH);
-      #trim off white space before and after
-      sub(/^[ ]*/,"",alltimes); sub(/[ ]*$/,"",alltimes);
-      #chop off the 4th time
-      if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
-        alltimes = substr(alltimes,1,RSTART-1);
-      }
-      #print ">"alltimes"<"
-      # get the max time
-      if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
-        themax = substr(alltimes,RSTART,RLENGTH);
-        sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
-        TotalSetup[linalg[FILENAME]] = themax;
-      }
-    }
-    if (foundTotal==0) {
-      #TODO Code consolidation.
-      #TODO This duplicates the previous if-block.  Only the regex in the "if" is different.
-      if (startParsingTimers && match($0,"^MueLu: Hierarchy: Setup [(]total[)]")) {
-        #match($0,regex);
-        #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
-        alltimes = substr($0,RSTART+RLENGTH);
-        #trim off white space before and after
-        sub(/^[ ]*/,"",alltimes); sub(/[ ]*$/,"",alltimes);
-        #chop off the 4th time
-        if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
-          alltimes = substr(alltimes,1,RSTART-1);
-        }
-        #print ">"alltimes"<"
-        # get the max time
-        if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
-          themax = substr(alltimes,RSTART,RLENGTH);
-          sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
-          TotalSetup[linalg[FILENAME]] = themax;
         }
       }
-    }
+
+      # Check for any reported total setup time.  This is printed as a sanity check
+      # against the running total.
+      for (i in possibleTotalLabels) {
+        if (match($0,possibleTotalLabels[i])) {
+          pattern = substr($0,RSTART,RLENGTH);
+          alltimes = substr($0,RSTART+RLENGTH);
+          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          TotalSetup[pattern,linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
+        }
+      }
+    } #if (startParsingTimers)
+
 }
 
 ###############################################################################
 function PrintHeader(description,linalg)
 {
   space = " ";
-  printf("%80s      ",toupper(description));
+  printf("%60s      ",toupper(description));
   for (j in linalg) {
     printf("%10s  ",linalg[j]);
     printf(" (total)");
   }
-  printf("%10s   ","T/E ratio");
-  printf("\n%80s          ---------------------------------\n",space);
+  printf("\n%60s          ------------------\n",space);
 }
 
 ###############################################################################
@@ -226,70 +105,6 @@ function SortAndReportTimings(libToSortOn,mylabels,tallies,linalg)
 }
 
 ###############################################################################
-# Reorder all the timings by sorting either the Epetra or Tpetra timer numbers
-# in ascending order.
-function SortByTimerNumber(libToSortOn,mylabels,tallies,timerNumbersToSort,linalg)
-{
-  numInds=1;
-  for (i in mylabels) {
-    if (match(i," [0-9]* :")) {
-      # pull out the timer number
-      #RSTART is where the pattern starts
-      #RLENGTH is the length of the pattern
-      timerNumber = substr(i,RSTART,RLENGTH);
-      sub(/[ ]*/,"",timerNumber); #remove spaces
-      sub(/:/,"",timerNumber); #remove colon
-      # the plus 0 is just a trick to make asort treat "timerNumbersToSort" as numeric
-      timerNumbersToSort[numInds] = timerNumber+0;
-      newlabels[timerNumbersToSort[numInds]] = mylabels[i];
-      for (j in linalg) {
-        newtallies[timerNumbersToSort[numInds],linalg[j]] = tallies[i,linalg[j]];
-      }
-      numInds++;
-    }
-  }
-
-  CopyArray(newlabels,mylabels);
-  CopyArray(newtallies,tallies);
-  delete newlabels
-  delete newtallies
-}
-
-###############################################################################
-# Reorder all the timings by sorting either the Epetra or Tpetra timer numbers
-# in ascending order.
-function SortAndReportByTimerNumber(libToSortOn,mylabels,tallies,linalg)
-{
-  numInds=1;
-  for (i in mylabels) {
-    if (match(i," [0-9]* :")) {
-      # pull out the timer number
-      #RSTART is where the pattern starts
-      #RLENGTH is the length of the pattern
-      timerNumber = substr(i,RSTART,RLENGTH);
-      #print "timerNumber = " timerNumber
-      sub(/[ ]*/,"",timerNumber); #remove spaces
-      sub(/:/,"",timerNumber); #remove colon
-      # the plus 0 is just a trick to make asort treat "timerNumbersToSort" as numeric
-      timerNumbersToSort[numInds] = timerNumber+0;
-      #print "mylabels[" i "] = " mylabels[i];
-      newlabels[timerNumbersToSort[numInds]] = mylabels[i];
-      #print "newlabels[" timerNumbersToSort[numInds] "] = " mylabels[i];
-      for (j in linalg) {
-        newtallies[timerNumbersToSort[numInds],linalg[j]] = tallies[i,linalg[j]];
-      }
-      numInds++;
-    }
-  }
-
-  SortAndPrint(timerNumbersToSort,newlabels,newtallies,linalg);
-
-  #awk has weird scoping rules
-  delete newlabels
-  delete newtallies
-  delete timerNumbersToSort
-}
-###############################################################################
 # helper function
 function SortAndPrint(arrayToSort,labels,tallies,linalg)
 {
@@ -301,7 +116,7 @@ function SortAndPrint(arrayToSort,labels,tallies,linalg)
   for (i in arrayToSort) arrayLeng++; #length(arrayToSort) doesn't work here for some reason
   for (i=1; i<arrayLeng+1; i++) {
     ind = arrayToSort[i];
-    printf("%80s  ==> ",labels[ind]);
+    printf("%60s  ==> ",labels[ind]);
     for (j in linalg) {
       runningTotals[j] += tallies[ind,linalg[j]];
       printf("%10.4f   (%5.2f)",tallies[ind,linalg[j]],runningTotals[j]);
@@ -317,94 +132,45 @@ function SortAndPrint(arrayToSort,labels,tallies,linalg)
 # For sanity purposes, print the total that MueLu prints
 function PrintTotalSetupTime()
 {
-  #printf("%80s          ----------------------------------------------\n%100s"," "," ");
-  printf("%80s          ----------------\n%83s"," "," ");
-  for (i in linalg)
-    printf("Hierarchy Setup: %5.2f seconds       ",TotalSetup[linalg[i]]);
-    #printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
+  printf("%60s          ----------------\n"," ");
+  for (i in TotalSetup) {
+    split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
+                         #we only want the first one, sep[1]
+    printf("%60s  ==>   %6.3f seconds       \n",sep[1],TotalSetup[i]);
+  }
 }
 ###############################################################################
-function CopyArray(arrayToCopy, copy_array)
+
+function ExtractTime(alltimes,cutCmd)
 {
-  for (word in arrayToCopy) {
-    copy_array[word] = arrayToCopy[word];
-  }
+  alltimes = RemoveWhiteSpace(alltimes);
+  print alltimes |& cutCmd
+  close(cutCmd,"to")
+  cutCmd |& getline themax
+  close(cutCmd)
+  themax = RemoveWhiteSpace(themax);
+  return (themax);
+}
+
+###############################################################################
+
+function RemoveWhiteSpace(theString)
+{
+  sub(/^[ ]*/,"",theString); sub(/[ ]*$/,"",theString);
+  return (theString)
 }
 ###############################################################################
 
 ###############################################################################
 #stuff that happens after processing all files
+###############################################################################
 END {
 
-  if (printSummedStats) {
-    PrintHeader("Timings including child calls, summed over all levels",linalg);
-    SortAndReportTimings("Tpetra",tlabels,ttallies,linalg);
-    printf("\n\n");
-  }
+  PrintHeader("Setup times (level specific) excluding child calls ",linalg);
+  SortAndReportTimings(linalg[FILENAME],setupLabels,setupTimes,linalg);
+  PrintTotalSetupTime();
+  #PrintHeader("Solve times ",linalg);
+  #SortAndReportTimings(linalg[FILENAME],solveLabels,solveTimes,linalg);
+  printf("\n\n");
 
-  if (printLevelStats) {
-    PrintHeader("Timings including child calls, level specific",linalg);
-    SortAndReportTimings("Tpetra",tllabels,tltallies,linalg);
-    printf("\n\n");
-  }
-
-  if (printSummedStats) {
-    PrintHeader("Timings without child calls, summed over all levels",linalg);
-    SortAndReportTimings("Tpetra",ntlabels,nttallies,linalg);
-    PrintTotalSetupTime();
-    printf("\n\n");
-  }
-
-if (1) {
-  printLevelStats = 1;
-  if (printLevelStats) {
-    PrintHeader("Timings without child calls, level specific",linalg);
-    SortAndReportTimings(linalg[FILENAME],ntllabels,ntltallies,linalg);
-    PrintTotalSetupTime();
-    printf("\n\n");
-  }
-
-  CopyArray(ntllabels,newlabs);
-  CopyArray(ntltallies,newtals);
-  SortByTimerNumber(libToSortOn,newlabs,newtals,timerNumbers,linalg);
-  asort(timerNumbers);
-  arrayLeng=0;
-  for (i in timerNumbers) arrayLeng++;
-  for (i=1; i<arrayLeng+1; i++) {
-    myTN[newlabs[i]] = i;
-  }
-
-  printf("%77s%-17s%-17s%-17s%-11s\n"," ","minimum","average","maximum","running sum");
-  printf("%77s%-17s%-17s%-17s%-11s\n"," ","-------","-------","-------","-----------");
-
-  for (j in linalg) {
-    runningTotals[j] = 0;
-  }
-  for (i=1; i<arrayLeng+1; i++) {
-    tn = timerNumbers[i];
-    for (j in linalg) {
-      me = newlabs[tn];
-      if (i>1) {
-        lastTimer=newlabs[timerNumbers[i-1]];
-        if (ParentOf[me] == "no parent") {tab[me] = "";}
-        else                             {tab[me] = tab[ParentOf[me]] "  ";}
-      }
-      runningTotals[j] += newtals[tn,linalg[j]]
-      printf("%-75s  %-s%-11s\n",tab[me] me,ntlenchilada[me,linalg[j]],runningTotals[j]);
-    }
-  }
-  printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," "," ","-------");
-  printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
-}
-
-#  if (printSummedStats) {
-#    PrintHeader("Timings for subfactories, summed over all levels",linalg);
-#    SortAndReportTimings("Tpetra",stlabels,sttallies,linalg);
-#    printf("\n\n");
-#  }
-
-#  if (printLevelStats) {
-#    PrintHeader("Timings for subfactories, level specific",linalg);
-#    SortAndReportTimings("Tpetra",stllabels,stltallies,linalg);
-#  }
 }

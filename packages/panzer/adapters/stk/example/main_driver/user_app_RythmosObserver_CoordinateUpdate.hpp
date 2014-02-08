@@ -40,33 +40,47 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STK_SETUP_UTILITIES_IMPL_HPP
-#define PANZER_STK_SETUP_UTILITIES_IMPL_HPP
+#ifndef USER_APP_RYTHMOS_OBSERVER_COORDINATEUPDATE_HPP
+#define USER_APP_RYTHMOS_OBSERVER_COORDINATEUPDATE_HPP
 
-namespace panzer_stk {
-namespace workset_utils {
+#include "Rythmos_StepperBase.hpp"
+#include "Rythmos_IntegrationObserverBase.hpp"
+#include "Rythmos_TimeRange.hpp"
 
-template<typename ArrayT>
-void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
-			 std::string blockId,
-			 std::vector<std::size_t>& localIds,
-			 ArrayT & vertices) {
-  
-  std::vector<stk::mesh::Entity*> elements;
-  mesh.getMyElements(blockId,elements);
-  
-  // loop over elements of this block
-  for(std::size_t elm=0;elm<elements.size();++elm) {
-    stk::mesh::Entity * element = elements[elm];
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Assert.hpp"
+
+#include "Panzer_WorksetContainer.hpp"
+
+namespace user_app {
+
+  class RythmosObserver_CoordinateUpdate : 
+    public Rythmos::IntegrationObserverBase<double> {
+
+  public:
     
-    localIds.push_back(mesh.elementLocalId(element));
-  }
+    RythmosObserver_CoordinateUpdate(const Teuchos::RCP<panzer::WorksetContainer> & workset_container) :
+      m_workset_container(workset_container)
+    { }
+    
+    Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
+    cloneIntegrationObserver() const
+    { return Teuchos::rcp(new RythmosObserver_CoordinateUpdate(m_workset_container)); }
 
-  // get vertices (this is slightly faster then the local id version)
-  mesh.getElementVertices(elements,blockId,vertices);
-}
+    void resetIntegrationObserver(const Rythmos::TimeRange<double> &integrationTimeDomain)
+    { }
 
-}
+    void observeCompletedTimeStep(const Rythmos::StepperBase<double> &stepper,
+				  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
+				  const int timeStepIter)
+    { TEUCHOS_ASSERT(m_workset_container!=Teuchos::null); 
+      m_workset_container->clear(); }
+    
+  protected:
+
+    Teuchos::RCP<panzer::WorksetContainer> m_workset_container;
+  };
+
 }
 
 #endif

@@ -79,6 +79,7 @@ extern void test_device_cuda_view_aggregate();
 extern void test_device_cuda_atomic();
 extern void test_device_cuda_scan();
 extern void test_device_cuda_team_scan();
+extern void test_device_cuda_compiler_macros();
 
 TEST_F( cuda, view_impl )
 {
@@ -150,6 +151,10 @@ TEST_F( cuda , team_scan )
   test_device_cuda_team_scan();
 }
 
+TEST_F( cuda , compiler_macros )
+{
+  test_device_cuda_compiler_macros();
+}
 
 }
 

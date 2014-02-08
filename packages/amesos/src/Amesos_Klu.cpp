@@ -626,7 +626,7 @@ int Amesos_Klu::SymbolicFactorization()
   
   ResetTimer(1);
 
-  RowMatrixA_ = Problem_->GetMatrix(); // MS, 18-Apr-06 //
+  RowMatrixA_ = Problem_->GetMatrix();
   if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
             == 0)
   {
@@ -680,6 +680,7 @@ int Amesos_Klu::SymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::NumericFactorization() 
 {
+  RowMatrixA_ = Problem_->GetMatrix();
   if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
             == 0)
   {
@@ -727,6 +728,7 @@ int Amesos_Klu::NumericFactorization()
 //=============================================================================
 int Amesos_Klu::Solve() 
 {
+  RowMatrixA_ = Problem_->GetMatrix();
   if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
             == 0)
   {

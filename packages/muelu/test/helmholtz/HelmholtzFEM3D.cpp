@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
   double stretchx, stretchy, stretchz, h, delta;
   int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
   double omega, shift;
+  int model;
 
   std::ifstream inputfile;
   inputfile.open("helm3D.xml");
@@ -113,11 +114,14 @@ int main(int argc, char *argv[]) {
   inputfile >> mx       >> my       >> mz ;
   if(comm->getRank()==0)
     std::cout<<"mx: "<<mx<<"  my: "<<my<<"  mz: "<<mz<<std::endl;
+  inputfile >> model ;
+  if(comm->getRank()==0)
+    std::cout<<"velocity model: "<<model<<std::endl;
 
   Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "HelmholtzFEM3D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0,   mx,   my,   mz  );
+							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0, mx, my, mz, model);
   Galeri::Xpetra::Parameters<GO> matrixParameters_shifted(clp, nx, ny, nz, "HelmholtzFEM3D", 0, stretchx, stretchy, stretchz,
-							  h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift,   mx,   my,   mz  );
+							  h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx, my, mz, model);
   Xpetra::Parameters             xpetraParameters(clp);
 
   //****************************************//

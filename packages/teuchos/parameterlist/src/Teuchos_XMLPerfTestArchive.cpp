@@ -42,12 +42,17 @@
 
 #include <iostream>
 #include <fstream>
-#include <unistd.h>
 #include <cstring>
 #include <cstdlib>
 #include <Teuchos_XMLObject.hpp>
 #include <Teuchos_FileInputSource.hpp>
 #include <Teuchos_XMLPerfTestArchive.hpp>
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#include <Winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <unistd.h>
+#endif
 
 namespace Teuchos {
 
