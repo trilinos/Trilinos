@@ -913,6 +913,9 @@ startup_multi_exec(MPI_Comm                world_comm,
     int fluid_master = 0;
 
     if (world_rank == 0) {
+
+      
+
       typedef std::map<ExecType, std::vector<int> > ExecTypeRanks;
 
       ExecTypeRanks exec_type_ranks;
@@ -923,8 +926,8 @@ startup_multi_exec(MPI_Comm                world_comm,
         MPI_Status status;
         int proc_stat[2];         // rank, ExecType
 
-        if (MPI_Recv(proc_stat, 2, MPI_INTEGER, i, MPI_ANY_TAG, world_comm, &status) != MPI_SUCCESS)
-          throw RuntimeError() << "MPI_Recv failed";
+	if (MPI_Recv(proc_stat, 2, MPI_INTEGER, i, MPI_ANY_TAG, world_comm, &status) != MPI_SUCCESS)
+	  throw RuntimeError() << "MPI_Recv failed";
 
         exec_type_ranks[static_cast<ExecType>(proc_stat[1])].push_back(proc_stat[0]);
       }
@@ -953,21 +956,27 @@ startup_multi_exec(MPI_Comm                world_comm,
       proc_stat[0] = world_rank;
       proc_stat[1] = my_executable_type;
 
+
       if (MPI_Send(proc_stat, 2, MPI_INTEGER, 0, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Send failed";
 
+     
       if (MPI_Bcast(&fluid_master, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
 
       if (MPI_Bcast(&lag_master, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
 
+
       if (MPI_Bcast(&lag_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
+
+
     }
 
     MPI_Comm lag_comm   = world_comm;
     MPI_Comm fluid_comm = MPI_COMM_NULL;
+
     const int fluid_rank_size = world_size - lag_rank_size;
 
     if (fluid_rank_size) {
@@ -977,9 +986,8 @@ startup_multi_exec(MPI_Comm                world_comm,
         if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS) {
           throw RuntimeError() << "MPI_Bcast failed";
 	}
-      }
 
-     
+      }
 
 
       MPI_Group world_group;
@@ -1014,11 +1022,31 @@ startup_multi_exec(MPI_Comm                world_comm,
 
     }
 
+    /*
+    cout<<"START ALPHA TEST"<<endl;
+
+    int NumFlags[6] = {2, 3, 1, 2, 4, 0};
+    int HdrFlag[2] = {3,2};
+    int TAG = 0;
+
+    MPI_Send(NumFlags, 6, MPI_INTEGER, fluid_master, TAG, world_comm);
+
+    MPI_Send(HdrFlag, NumFlags[0], MPI_INTEGER, fluid_master, TAG, world_comm);
+
+    int NumFlagEul[5];
+    MPI_Status stat;
+    MPI_Recv(NumFlagEul, 3, MPI_INTEGER, fluid_master, TAG, world_comm, &stat);
+
+    cout<<"END ALPHA TEST"<<endl;
+    */
+
+
     env_data.m_worldComm                            = world_comm;
     env_data.m_execMap[EXEC_TYPE_LAG].m_master      = lag_master;
     env_data.m_execMap[EXEC_TYPE_LAG].m_groupComm   = lag_comm;
     env_data.m_execMap[EXEC_TYPE_FLUID].m_master    = fluid_master;
     env_data.m_execMap[EXEC_TYPE_FLUID].m_groupComm = fluid_comm;
+
   }
   else if (my_executable_type == EXEC_TYPE_PEER) {
 
