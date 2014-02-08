@@ -847,6 +847,7 @@ namespace MueLuTests {
     H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
     ParameterList stats1 = H->print();
+    H = Teuchos::null;
 
     //build a map that is a "randomly" permuted version of the correct
     //coordinate map.  This map will be used to build the "bad" coordinates.
