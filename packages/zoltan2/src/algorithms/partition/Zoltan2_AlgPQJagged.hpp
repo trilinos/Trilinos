@@ -1079,7 +1079,7 @@ void getNewCoordinates(
     pq_scalar_t seenW = 0;
     float expected = 0;
     pq_scalar_t leftImbalance = 0, rightImbalance = 0;
-    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon() * 10;
     //pq_scalar_t _EPSILON = numeric_limits<float>::epsilon();
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -2104,7 +2104,7 @@ void pqJagged_1D_Partition(
     MPI_Op_create(sumMinMin, 0, &myop);   /* step 3 */
 #endif
 
-    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon() * 10;
 
     Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>
                  *reductionOp = NULL;
@@ -2428,7 +2428,7 @@ public:
         this->index = 0;
         this->count = 0;
         this->val = NULL;
-        this->_EPSILON = numeric_limits<WT>::epsilon();
+        this->_EPSILON = numeric_limits<WT>::epsilon() * 10;
     }
 
 
@@ -2436,7 +2436,7 @@ public:
         this->index = index_;
         this->count = count_;
         this->val = vals_;
-        this->_EPSILON = numeric_limits<WT>::epsilon();
+        this->_EPSILON = numeric_limits<WT>::epsilon() * 10;
     }
 
     uMultiSortItem( const uMultiSortItem<IT,CT,WT>& other ){
@@ -4597,7 +4597,7 @@ partId_t getPartitionArrays(
         futurePartNumbers = 1; //TODO this should be removed.
 
         //cout << "i:" << i << endl;
-        double fEpsilon = numeric_limits<double>::epsilon();
+        double fEpsilon = numeric_limits<double>::epsilon() * 10;
         for (partId_t ii = 0; ii < currentPartitionCount; ++ii){
             //get how many parts a part should be divided.
             partId_t numFuture = (*currentPartitions)[ii];
@@ -4840,7 +4840,7 @@ void getChunksFromCoordinates(
     //pq_lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
     partId_t noCuts = partNo - 1;
     //size_t total_part_count = noCuts + partNo;
-    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon() * 10;
 
     //if (migration_check == true) allowNonRectelinearPart = false;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -5468,7 +5468,7 @@ void sequentialTaskPartitioning(
 
 
 
-    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon() * 10;
     //partId_t partIndexBegin = 0;
     partId_t futurePartNumbers = totalPartCount;
 
@@ -6283,7 +6283,7 @@ void AlgPQJagged(
     }
 #endif
 
-    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon() * 10;
     partId_t partIndexBegin = 0;
     partId_t futurePartNumbers = totalPartCount;
     bool is_data_ever_migrated = false;
