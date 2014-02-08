@@ -12,6 +12,9 @@
 #stuff that happens before processing any files
 BEGIN {
     startParsingTimers=0;
+    possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
+    possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
+    possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
 }
 
 ###############################################################################
@@ -28,53 +31,51 @@ BEGIN {
       startParsingTimers=1;
     }
 
-    if (startParsingTimers && match($0,"^MueLu: ")) {
+    if (startParsingTimers) {
 
-      # level-specific timers that do not include calls to child factories
-      if (match($0,"[(]level=[0-9][)]")) {
-        factAndLevel = substr($0,1,RSTART-1+RLENGTH);
-        alltimes = substr($0,RSTART+RLENGTH);
-        cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-        maxtime = ExtractTime(alltimes,cutCmd);
-        if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
-          #TODO figure out which solve labels to pull out
-          solveLabels[factAndLevel] = factAndLevel;
-          solveTimes[factAndLevel,linalg[FILENAME]] = maxtime;
-        } else {
-          setupLabels[factAndLevel] = factAndLevel;
-          setupTimes[factAndLevel,linalg[FILENAME]] = maxtime;
+      if (match($0,"^MueLu: ")) {
+        # matched a timer
+        if (match($0,"[(]level=[0-9][)]")) {
+          # timer is level-specific (and by its nature excludes calls to child factories)
+          factAndLevel = substr($0,1,RSTART-1+RLENGTH);
+          alltimes = substr($0,RSTART+RLENGTH);
+          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          maxtime = ExtractTime(alltimes,cutCmd);
+          if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
+            #TODO figure out which solve labels to pull out
+            solveLabels[factAndLevel] = factAndLevel;
+            solveTimes[factAndLevel,linalg[FILENAME]] = maxtime;
+          } else {
+            setupLabels[factAndLevel] = factAndLevel;
+            setupTimes[factAndLevel,linalg[FILENAME]] = maxtime;
+          }
         }
       }
-    }
 
-    # Pull out the reported total setup time.  This is printed as a sanity check.
-    foundTotal=0;
-    if (startParsingTimers && match($0,"^ScalingTest: 2 - MueLu Setup")) {
-      foundTotal=1;
-      alltimes = substr($0,RSTART+RLENGTH);
-      cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-      TotalSetup[linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
-    }
-    if (foundTotal==0) {
-      #This duplicates the previous if-block.  Only the pattern to match in the "if" is different.
-      if (startParsingTimers && match($0,"^MueLu: Hierarchy: Setup [(]total[)]")) {
-        alltimes = substr($0,RSTART+RLENGTH);
-        cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-        TotalSetup[linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
+      # Check for any reported total setup time.  This is printed as a sanity check
+      # against the running total.
+      for (i in possibleTotalLabels) {
+        if (match($0,possibleTotalLabels[i])) {
+          pattern = substr($0,RSTART,RLENGTH);
+          alltimes = substr($0,RSTART+RLENGTH);
+          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          TotalSetup[pattern,linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
+        }
       }
-    }
+    } #if (startParsingTimers)
+
 }
 
 ###############################################################################
 function PrintHeader(description,linalg)
 {
   space = " ";
-  printf("%80s      ",toupper(description));
+  printf("%60s      ",toupper(description));
   for (j in linalg) {
     printf("%10s  ",linalg[j]);
     printf(" (total)");
   }
-  printf("\n%80s          ------------------\n",space);
+  printf("\n%60s          ------------------\n",space);
 }
 
 ###############################################################################
@@ -115,7 +116,7 @@ function SortAndPrint(arrayToSort,labels,tallies,linalg)
   for (i in arrayToSort) arrayLeng++; #length(arrayToSort) doesn't work here for some reason
   for (i=1; i<arrayLeng+1; i++) {
     ind = arrayToSort[i];
-    printf("%80s  ==> ",labels[ind]);
+    printf("%60s  ==> ",labels[ind]);
     for (j in linalg) {
       runningTotals[j] += tallies[ind,linalg[j]];
       printf("%10.4f   (%5.2f)",tallies[ind,linalg[j]],runningTotals[j]);
@@ -131,10 +132,12 @@ function SortAndPrint(arrayToSort,labels,tallies,linalg)
 # For sanity purposes, print the total that MueLu prints
 function PrintTotalSetupTime()
 {
-  printf("%80s          ----------------\n%83s"," "," ");
-  for (i in linalg)
-    printf("Hierarchy Setup: %5.2f seconds       ",TotalSetup[linalg[i]]);
-    #printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
+  printf("%60s          ----------------\n"," ");
+  for (i in TotalSetup) {
+    split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
+                         #we only want the first one, sep[1]
+    printf("%60s  ==>   %6.3f seconds       \n",sep[1],TotalSetup[i]);
+  }
 }
 ###############################################################################
 
