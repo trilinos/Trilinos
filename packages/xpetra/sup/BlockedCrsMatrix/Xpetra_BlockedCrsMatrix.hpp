@@ -78,9 +78,9 @@
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
-/** \file Xpetra_Matrix.hpp
+/** \file Xpetra_BlockedCrsMatrix.hpp
 
-  Declarations for the class Xpetra::Matrix.
+  Declarations for the class Xpetra::BlockedCrsMatrix.
 */
 namespace Xpetra {
 
