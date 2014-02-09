@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_DEV_TPetra_KokkosRefactor_GCC)
+SET(BUILD_DIR_NAME MPI_RELEASE_DEV_TPetra_KokkosRefactor_CUDA_OPENMP_HWLOC_GCC)
 SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
@@ -77,7 +77,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosCore=ON"
   "-DTrilinos_ENABLE_KokkosCompat=ON"
   "-DTrilinos_ENABLE_KokkosContainers=ON"
-  "-DTrilinos_ENABLE_KokkosLinalg=ON"
+  "-DTrilinos_ENABLE_KokkosLinAlg=ON"
   "-DTrilinos_ENABLE_KokkosClassic=ON"
   
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
