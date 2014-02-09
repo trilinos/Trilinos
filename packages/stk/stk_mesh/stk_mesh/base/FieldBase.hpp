@@ -293,7 +293,7 @@ template<class FieldType>
 inline
 typename FieldTraits<FieldType>::data_type*
 field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize) {
-  ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity == knownSize);
+  ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity >= knownSize, "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytes_per_entity= " << f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity);
   ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
   return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(f.get_meta_data_for_field()[bucket_id].m_data + knownSize * bucket_ord);
 }
