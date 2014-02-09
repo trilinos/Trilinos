@@ -30,6 +30,10 @@ typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,No
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedCoarseMapFactory;
 #endif
 
+#ifdef MUELU_BLOCKEDDIRECTSOLVER_SHORT
+typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedDirectSolver;
+#endif
+
 #ifdef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_SHORT
 typedef MueLu::BlockedGaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedGaussSeidelSmoother;
 #endif
@@ -136,6 +140,10 @@ typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 
 #ifdef MUELU_MAPTRANSFERFACTORY_SHORT
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MapTransferFactory;
+#endif
+
+#ifdef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
+typedef MueLu::MergedBlockedMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MergedBlockedMatrixFactory;
 #endif
 
 #ifdef MUELU_MERGEDSMOOTHER_SHORT

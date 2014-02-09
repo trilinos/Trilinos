@@ -70,6 +70,7 @@
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BlockedCoarseMapFactory.hpp"
+#include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
@@ -223,6 +224,7 @@ namespace MueLu {
       if (factoryName == "SimpleSmoother")             return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BraessSarazinSmoother")      return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SchurComplementFactory")     return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedDirectSolver")        return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
@@ -534,6 +536,19 @@ namespace MueLu {
       }
 
       return rcp(new SmootherFactory(bs));
+    }
+
+    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      //if (paramList.begin() == paramList.end())
+        return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
+
+      /*TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
+
+      std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
+      // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
+      Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
+
+      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));*/
     }
 
     RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
