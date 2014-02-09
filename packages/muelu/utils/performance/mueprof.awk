@@ -11,7 +11,9 @@
 ###############################################################################
 #stuff that happens before processing any files
 BEGIN {
-    startParsingTimers=0;
+    whichBlockToAnalyze=blockNumber; #passed in from shell script
+    foundTimerBlock=0;
+    foundTimersToReport=0;
     possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
     possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
     possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
@@ -20,7 +22,6 @@ BEGIN {
 ###############################################################################
 #stuff that happens when processing all files
 {
-    #fix minor difference between Epetra and Tpetra smoother tags
     if (match($0,"Linear algebra library: ")) {
       after = substr($0,RSTART+RLENGTH);
       linalg[FILENAME] = after;
@@ -28,15 +29,23 @@ BEGIN {
 
     #indicates start of MueLu timer output
     if (match($0,"^Timer Name")) {
-      startParsingTimers=1;
+      #logic to ensure only the ith solver block is analyzed
+      whichBlockToAnalyze--;
+      if (whichBlockToAnalyze>0)
+        foundTimerBlock=0;
+      if (whichBlockToAnalyze==0)
+        foundTimerBlock=1;
+      if (whichBlockToAnalyze<0)
+        nextfile; #we've moved past the solver block of interest,
+                  #stop analyzing this file
     }
 
-    if (startParsingTimers) {
-
+    if (foundTimerBlock) {
       if (match($0,"^MueLu: ")) {
-        # matched a timer
+        # matched a MueLu timer
         if (match($0,"[(]level=[0-9][)]")) {
           # timer is level-specific (and by its nature excludes calls to child factories)
+          foundTimersToReport=1;
           factAndLevel = substr($0,1,RSTART-1+RLENGTH);
           alltimes = substr($0,RSTART+RLENGTH);
           cutCmd="cut -f3 -d')' | cut -f1 -d'('"
@@ -62,7 +71,7 @@ BEGIN {
           TotalSetup[pattern,linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
         }
       }
-    } #if (startParsingTimers)
+    } #if (foundTimerBlock)
 
 }
 
@@ -144,6 +153,8 @@ function PrintTotalSetupTime()
 function ExtractTime(alltimes,cutCmd)
 {
   alltimes = RemoveWhiteSpace(alltimes);
+  # system call to cutCmd
+  # see GNU Awk manual section 12.3, Two-Way Communications with Another Process
   print alltimes |& cutCmd
   close(cutCmd,"to")
   cutCmd |& getline themax
@@ -166,11 +177,15 @@ function RemoveWhiteSpace(theString)
 ###############################################################################
 END {
 
-  PrintHeader("Setup times (level specific) excluding child calls ",linalg);
-  SortAndReportTimings(linalg[FILENAME],setupLabels,setupTimes,linalg);
-  PrintTotalSetupTime();
-  #PrintHeader("Solve times ",linalg);
-  #SortAndReportTimings(linalg[FILENAME],solveLabels,solveTimes,linalg);
-  printf("\n\n");
+  if (foundTimersToReport) {
+    PrintHeader("Setup times (level specific) excluding child calls ",linalg);
+    SortAndReportTimings(linalg[FILENAME],setupLabels,setupTimes,linalg);
+    PrintTotalSetupTime();
+    #PrintHeader("Solve times ",linalg);
+    #SortAndReportTimings(linalg[FILENAME],solveLabels,solveTimes,linalg);
+  } else {
+    printf("\nFound only %d solver blocks, you requested block %d.\n",blockNumber-whichBlockToAnalyze,blockNumber);
+  }
+  printf("\n");
 
 }

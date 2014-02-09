@@ -3,7 +3,7 @@
 # bash script to compare Epetra and Tpetra timings from MueLu_ScalingTest.exe side-by-side.
 #
 # syntax:
-#    mueprof.sh [-h] file
+#    mueprof.sh [-h] [-n] file
 #
 # prerequisites:
 #
@@ -15,6 +15,7 @@
 #
 # optional arguments:
 #   -h           help
+#   -n k         analyze solver block k (default=1)
 #
 # required arguments:
 #
@@ -30,13 +31,17 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=$(dirname $SCRIPT)
 
-USAGE="Usage: `basename $0` [-h] file"
-OPTDESCR="\n  -h  help\n"
+USAGE="Usage: `basename $0` [-hn] file"
+OPTDESCR="\n  -h  help\n  -n k analyze solver block k (default k=1)\n"
 
 numReqd=1;
+blockNumber=1;
 # Parse command line options.
-while getopts ahsl OPT; do
+while getopts ahsln: OPT; do
     case "$OPT" in
+        n)
+            blockNumber=$OPTARG
+            ;;
         h)
             echo $USAGE
             echo -e $OPTDESCR
@@ -70,10 +75,10 @@ file=$1;
 #done
 
 #if not defined, set path so that we can find mueprof.awk
-set ${AWKPATH:=$PATH}
+set ${AWKPATH:=./}
 export AWKPATH
 
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -f $SCRIPTPATH/mueprof.awk $file
+awk -v "blockNumber=$blockNumber" -f $SCRIPTPATH/mueprof.awk $file
