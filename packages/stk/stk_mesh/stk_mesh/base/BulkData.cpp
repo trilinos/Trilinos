@@ -5332,7 +5332,7 @@ void filter_out( std::vector<unsigned> & vec ,
   std::vector<unsigned>::iterator i , j ;
   i = j = vec.begin();
 
-  typename std::vector<Part*>::const_iterator ip = parts.begin() ;
+  std::vector<Part*>::const_iterator ip = parts.begin() ;
 
   while ( j != vec.end() && ip != parts.end() ) {
     if      ( get_ordinal(*ip) < *j ) { ++ip ; }
@@ -5350,7 +5350,7 @@ void filter_out( std::vector<unsigned> & vec ,
 void merge_in( std::vector<unsigned> & vec , const std::vector<Part*> & parts )
 {
   std::vector<unsigned>::iterator i = vec.begin();
-  typename std::vector<Part*>::const_iterator ip = parts.begin() ;
+  std::vector<Part*>::const_iterator ip = parts.begin() ;
 
   for ( ; i != vec.end() && ip != parts.end() ; ++i ) {
 
@@ -5505,7 +5505,7 @@ void BulkData::internal_change_entity_parts(
   const unsigned locally_owned_ordinal = m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal();
 
   bool add_to_locally_owned = false;
-  for (typename std::vector<Part*>::const_iterator itr = add_parts.begin(), end_itr = add_parts.end(); itr != end_itr; ++itr) {
+  for (std::vector<Part*>::const_iterator itr = add_parts.begin(), end_itr = add_parts.end(); itr != end_itr; ++itr) {
     if ( impl::get_ordinal(*itr) == locally_owned_ordinal ) {
       add_to_locally_owned = true;
       break;
@@ -5515,7 +5515,7 @@ void BulkData::internal_change_entity_parts(
 
 
   bool remove_from_locally_owned = false;
-  for (typename std::vector<Part*>::const_iterator itr = remove_parts.begin(), end_itr = remove_parts.end(); itr != end_itr; ++itr) {
+  for (std::vector<Part*>::const_iterator itr = remove_parts.begin(), end_itr = remove_parts.end(); itr != end_itr; ++itr) {
     if ( impl::get_ordinal(*itr) == locally_owned_ordinal ) {
       remove_from_locally_owned = true;
       break;
@@ -5623,7 +5623,7 @@ void BulkData::internal_change_entity_parts(
   // the entity's rank. Other parts don't get induced...)
 
   std::vector<Part*> inducable_parts_removed;
-  for(typename std::vector<Part*>::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
+  for(std::vector<Part*>::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
     Part const& check_part = impl::get_part(*pr, m_mesh_meta_data);
     if (check_part.should_induce(e_rank)) {
       inducable_parts_removed.push_back(*pr);
@@ -5717,7 +5717,7 @@ void BulkData::internal_propagate_part_changes(
           OrdinalVector::const_iterator to_add_begin = to_add.begin(),
             to_add_end   = to_add.end();
 
-          for ( typename std::vector<Part*>::const_iterator
+          for (std::vector<Part*>::const_iterator
                   k = removed.begin() ; k != removed.end() ; ++k ) {
             if ( ! contains_ordinal( to_add_begin, to_add_end , impl::get_ordinal(*k) ) ) {
               induced_part_membership( impl::get_part(*k, m_mesh_meta_data), erank, irank, to_del );
@@ -5772,7 +5772,7 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
   bool ok = true ;
   std::ostringstream msg ;
 
-  for ( typename std::vector<Part*>::const_iterator
+  for (std::vector<Part*>::const_iterator
         i = parts.begin() ; i != parts.end() ; ++i ) {
 
     const Part & p = impl::get_part(*i, m_mesh_meta_data);
