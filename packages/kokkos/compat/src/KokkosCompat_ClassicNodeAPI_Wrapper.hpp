@@ -79,7 +79,7 @@ namespace Kokkos {
         if(count==0)
           init (curNumTeams,curNumThreads,curDevice);
         count++;
-      };
+      }
 
       ~KokkosDeviceWrapperNode();
 

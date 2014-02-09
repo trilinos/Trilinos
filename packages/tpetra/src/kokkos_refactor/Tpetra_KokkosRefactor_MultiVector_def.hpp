@@ -1472,7 +1472,7 @@ namespace Tpetra {
         Kokkos::MV_Add(view_.d_view,alpha,A.view_.d_view,beta,B.view_.d_view);
       } else {
         Kokkos::MV_Add(view_.d_view,alpha,A.view_.d_view,gamma,view_.d_view);
-        Kokkos::MV_Add(view_.d_view,beta,B.view_.d_view,1.0,view_.d_view);
+        Kokkos::MV_Add(view_.d_view,beta,B.view_.d_view,Teuchos::ScalarTraits<Scalar>::one (),view_.d_view);
       }
     } else { // some input (or *this) is not constant stride
       const size_t numVecs = getNumVectors ();
