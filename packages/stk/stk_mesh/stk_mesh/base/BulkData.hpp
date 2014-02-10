@@ -1297,7 +1297,7 @@ private:
                                  bool& rel_target_ok,
                                  bool& rank_ok) const;
 
-  void internal_check_unpopulated_relations(Entity entity, EntityRank rank) const;
+  inline void internal_check_unpopulated_relations(Entity entity, EntityRank rank) const;
 
   // Returns false if there is a problem. It is expected that
   // verify_change_parts will be called if quick_verify_change_part detects

@@ -16,7 +16,7 @@ namespace stk{
       enum Entity_t {
 	InvalidEntity = 0ull,
 	MinEntity = 1ull,
-	MaxEntity = ~0ull,
+	MaxEntity = ~0ull
       };
 
       uint64_t m_value;
