@@ -5283,8 +5283,8 @@ void BulkData::internal_update_fast_comm_maps()
     m_volatile_fast_shared_comm_map.resize(num_ranks);
     for (EntityRank r = 0; r < num_ranks; ++r) {
       m_volatile_fast_shared_comm_map[r].resize(parallel_size());
-      for (int prank = 0; prank < parallel_size(); ++prank) {
-        m_volatile_fast_shared_comm_map[r][prank].clear();
+      for (int proc = 0; proc < parallel_size(); ++proc) {
+        m_volatile_fast_shared_comm_map[r][proc].clear();
       }
     }
 

@@ -577,9 +577,8 @@ public:
 
   VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const
   {
-    // TODO - Change to asserts
-    ThrowRequire(synchronized_state() == SYNCHRONIZED);
-    ThrowRequireMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
+    ThrowAssert(synchronized_state() == SYNCHRONIZED);
+    ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
     return m_volatile_fast_shared_comm_map[rank];
   }
 
