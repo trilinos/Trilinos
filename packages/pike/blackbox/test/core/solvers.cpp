@@ -222,12 +222,18 @@ namespace pike_test {
     status->addTest(convergedTests);
 
     pike::BlockJacobi solver;
+    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
+    p->set("Type","Block Jacobi");
+    p->set("MPI Barrier Transfers",true);
+    p->set("MPI Barrier Solves",true);
+    solver.setParameterList(p);
     solver.registerModelEvaluator(leftWall);
     solver.registerModelEvaluator(middleWall);
     solver.registerModelEvaluator(rightWall);
     solver.registerDataTransfer(transferQ);
     solver.registerDataTransfer(transferLeftToMiddle);
     solver.registerDataTransfer(transferMiddleToRight);
+    solver.registerComm(globalComm);
     solver.completeRegistration();
     solver.setStatusTests(status);
     solver.solve();
@@ -235,13 +241,6 @@ namespace pike_test {
     TEST_EQUALITY(solver.getNumberOfIterations(),18);
     TEST_EQUALITY(solver.getStatus(),pike::CONVERGED);
   }
-
-
-
-
-
-
-
 
   TEUCHOS_UNIT_TEST(solvers, factory)
   {
@@ -336,7 +335,6 @@ namespace pike_test {
 						     solverParams.ptr(),
 						     *globalComm);
 
-
     pike::SolverFactory factory;
     Teuchos::RCP<pike_test::UserSolverFactory> userFactory1 = 
       Teuchos::rcp(new pike_test::UserSolverFactory("My Super-Special Solver"));
@@ -359,11 +357,6 @@ namespace pike_test {
     TEST_EQUALITY(solver->getNumberOfIterations(),18);
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
   }
-
-
-
-
-
 
   TEUCHOS_UNIT_TEST(solvers, hierarchic)
   {
