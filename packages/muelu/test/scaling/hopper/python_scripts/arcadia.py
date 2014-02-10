@@ -103,7 +103,7 @@ def controller():
                         print("WARNING: command '" + cmds[i] + "' provides an xmlfile '" + xmlfile +
                               "' overriding the provided through '--xml' option ['" + options.xmlfile + "']")
 
-            datafiles.append(xmlfile)
+                datafiles.append(xmlfile)
 
         nnodes = []         # number of nodes
         nx     = []         # single dimension of the problem
