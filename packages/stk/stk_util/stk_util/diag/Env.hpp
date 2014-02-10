@@ -41,6 +41,18 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 /// @{
 ///
 
+
+//
+//  Provide single switch point for gemini interface options
+//
+  enum GeminiSCIVersion {
+    GEMINI_SCI_1 = 1,
+    GEMINI_SCI_2 = 2
+  };
+
+  GeminiSCIVersion GetGeminiVersion();
+
+
 /**
  * @brief Enumeration ExecutableType defines the known types of coordinated executables that operate
  * with a sierra application.  Unfortunately, this scheme for coordination is currently defined by

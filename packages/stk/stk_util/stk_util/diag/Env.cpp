@@ -54,6 +54,13 @@ using namespace std;
 namespace sierra {
 namespace Env {
 
+  GeminiSCIVersion GetGeminiVersion() {
+    return GEMINI_SCI_1;
+    //return GEMINI_SCI_2;
+  }
+    
+
+
 namespace {
 
 void sierra_bootstrap()
@@ -407,6 +414,7 @@ bool StartupSierra(int *			  argc,
   const char *		  build_time,
   ExecType                mpi_key,
   const std::vector<int> *peer_sizes) {
+
 
 
   bool returnValue = false;
@@ -913,9 +921,6 @@ startup_multi_exec(MPI_Comm                world_comm,
     int fluid_master = 0;
 
     if (world_rank == 0) {
-
-      
-
       typedef std::map<ExecType, std::vector<int> > ExecTypeRanks;
 
       ExecTypeRanks exec_type_ranks;
@@ -981,7 +986,7 @@ startup_multi_exec(MPI_Comm                world_comm,
 
     if (fluid_rank_size) {
 
-      if( sierra::Env::get_param("gemini") == "6.5") {
+      if( Env::GetGeminiVersion() == Env::GEMINI_SCI_2) {
         int eul_rank_size = fluid_rank_size;
         if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS) {
           throw RuntimeError() << "MPI_Bcast failed";
