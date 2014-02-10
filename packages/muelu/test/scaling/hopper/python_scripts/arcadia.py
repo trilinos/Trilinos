@@ -149,7 +149,8 @@ def controller():
           except(AttributeError):
             parsefunc = ""
 
-        r = analyze(petra, analysis_run = options.output, labels=labels, timelines=timelines, parsefunc=parsefunc)
+        analysis_runs = re.split(',', options.output)
+        r = analyze(petra, analysis_runs = analysis_runs, labels=labels, timelines=timelines, parsefunc=parsefunc)
         if r : print(r)
 
     else:
@@ -158,7 +159,7 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze(petra, analysis_run, labels, timelines, parsefunc):
+def analyze(petra, analysis_runs, labels, timelines, parsefunc):
     # test which of [et]petra is being run
     has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
     has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
@@ -168,7 +169,7 @@ def analyze(petra, analysis_run, labels, timelines, parsefunc):
         return "Cannot find any of *.[et]petra files"
 
     # construct header
-    analysis_run_string = "Analysis is performed for " + analysis_run
+    analysis_run_string = "Analysis is performed for " + str(analysis_runs)
     if   (petra == 4):
       analysis_run_string += ".ml"
     elif (petra == 3):
@@ -200,78 +201,81 @@ def analyze(petra, analysis_run, labels, timelines, parsefunc):
     basetime_tpetra = list2dict(timelines)
     basetime_ml     = list2dict(timelines)
 
-    for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
-        os.chdir(dir)
+    for analysis_run in analysis_runs:
+        for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
+            os.chdir(dir)
 
-        nnodes = dir.replace(DIR_PREFIX, '')
+            nnodes = dir.replace(DIR_PREFIX, '')
 
-        fullstr = "%20s:" % dir
+            fullstr = "%20s:" % dir
 
-        # test if there is anything to analyze
-        if len(glob.glob("screen.out.*")) == 0:
-            if (has_epetra and os.path.exists(analysis_run + ".epetra")) or (has_tpetra and os.path.exists(analysis_run + ".tpetra")) or (has_ml and os.path.exists(analysis_run + ".ml")):
-                fullstr += " running now?"
-            else:
-                fullstr += " not run"
-            print(fullstr)
-            os.chdir("..")
-            continue
-
-        for s in timelines:
-            if has_epetra:
-                epetra_file = analysis_run + ".epetra"
-
-                r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
-                if r[0] != 0:
-                    return "Error reading \"" + analysis_run + ".epetra"
-
-                try:
-                  time_epetra[s] = float(r[1])
-                except (RuntimeError, ValueError):
-                    print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, epetra_file))
-
-                if nnodes == str(BASECASE):
-                    basetime_epetra[s] = time_epetra[s]
-                eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
-                fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
-
-            if has_ml:
-                ml_file = analysis_run + ".ml"
-                if (parsefunc == ""):
-                  return "Error: no parsing function provided"
+            # test if there is anything to analyze
+            if len(glob.glob("screen.out.*")) == 0:
+                if (has_epetra and os.path.exists(analysis_run + ".epetra")) or \
+                   (has_tpetra and os.path.exists(analysis_run + ".tpetra")) or \
+                   (has_ml and os.path.exists(analysis_run + ".ml")):
+                    fullstr += " running now?"
                 else:
-                  theCommand = parsefunc(ml_file,s)
-                r = commands.getstatusoutput(theCommand)
-                # handle multiple timers w/ same name.  This splits last entry in tuple by line breaks into
-                # an array of strings.  The string array is then converted ("mapped") into an array of floats.
-                tt = map(float,r[-1].split())
-                time_ml[s] = sum(tt)
+                    fullstr += " not run"
+                print(fullstr)
+                os.chdir("..")
+                continue
 
-                if nnodes == str(BASECASE):
-                    basetime_ml[s] = time_ml[s]
-                eff_ml[s] = 100 * basetime_ml[s] / time_ml[s]
-                fullstr += "%13.2f %7.2f%%" % (time_ml[s], eff_ml[s])
+            for s in timelines:
+                if has_epetra:
+                    epetra_file = analysis_run + ".epetra"
 
-            if has_tpetra:
-                tpetra_file = analysis_run + ".tpetra"
+                    r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
+                    if r[0] != 0:
+                        return "Error reading \"" + analysis_run + ".epetra"
 
-                r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
-                if r[0] != 0:
-                    return "Error reading \"" + analysis_run + ".tpetra"
-                try:
-                  time_tpetra[s] = float(r[1])
-                except (RuntimeError, ValueError):
-                  print("Problem converting \"%s\" to float for timeline \"%s\" in %s" % (r[1], s, tpetra_file))
+                    try:
+                      time_epetra[s] = float(r[1])
+                    except (RuntimeError, ValueError):
+                        print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, epetra_file))
 
-                time_tpetra[s] = float(r[1])
-                if nnodes == str(BASECASE):
-                    basetime_tpetra[s] = time_tpetra[s]
-                eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
-                fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
+                    if nnodes == str(BASECASE):
+                        basetime_epetra[s] = time_epetra[s]
+                    eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
+                    fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
 
-        print(fullstr)
+                if has_ml:
+                    ml_file = analysis_run + ".ml"
+                    if (parsefunc == ""):
+                      return "Error: no parsing function provided"
+                    else:
+                      theCommand = parsefunc(ml_file,s)
+                    r = commands.getstatusoutput(theCommand)
+                    # handle multiple timers w/ same name.  This splits last entry in tuple by line breaks into
+                    # an array of strings.  The string array is then converted ("mapped") into an array of floats.
+                    tt = map(float,r[-1].split())
+                    time_ml[s] = sum(tt)
 
-        os.chdir("..")
+                    if nnodes == str(BASECASE):
+                        basetime_ml[s] = time_ml[s]
+                    eff_ml[s] = 100 * basetime_ml[s] / time_ml[s]
+                    fullstr += "%13.2f %7.2f%%" % (time_ml[s], eff_ml[s])
+
+                if has_tpetra:
+                    tpetra_file = analysis_run + ".tpetra"
+
+                    r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
+                    if r[0] != 0:
+                        return "Error reading \"" + analysis_run + ".tpetra"
+                    try:
+                      time_tpetra[s] = float(r[1])
+                    except (RuntimeError, ValueError):
+                      print("Problem converting \"%s\" to float for timeline \"%s\" in %s" % (r[1], s, tpetra_file))
+
+                    time_tpetra[s] = float(r[1])
+                    if nnodes == str(BASECASE):
+                        basetime_tpetra[s] = time_tpetra[s]
+                    eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
+                    fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
+
+            print(fullstr)
+
+            os.chdir("..")
 
 def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn):
     dir = DIR_PREFIX + str(nnodes)
