@@ -2661,39 +2661,98 @@ namespace Tpetra {
     const size_t numRows = getNodeNumRows();
     ArrayRCP<size_t> ptrs;
     ArrayRCP<LocalOrdinal> inds;
+
+    t_LocalOrdinal_1D k_inds;
+    typename LocalStaticCrsGraphType::row_map_type k_ptrs;
+    t_LocalOrdinal_1D k_lclInds1D_  = k_lclGraph_.entries;
+    typename LocalStaticCrsGraphType::row_map_type k_rowPtrs_    = k_lclGraph_.row_map;
+
     bool requestOptimizedStorage = true;
     if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
-      inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
+      //ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
+      //inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
+
+      t_RowPtrs tmpk_ptrs = t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
+      ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
+                                         Kokkos::Compat::deallocator(tmpk_ptrs), false);
+      k_ptrs = tmpk_ptrs;
+      // hack until we get parallel_scan in kokkos
+
+      typename t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
+      Kokkos::deep_copy(h_tmpk_ptrs,tmpk_ptrs);
+        // hack until we get parallel_scan in kokkos
+      for(int i = 0; i < numRowEntries_.size(); i++) {
+        h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
+      }
+      Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
+
+      k_inds = t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
+      inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
+                                     Kokkos::Compat::deallocator(k_inds), false);
+
+      typename t_LocalOrdinal_1D::HostMirror h_inds = Kokkos::create_mirror_view(k_inds);
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
-        std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin()+numentrs, inds+ptrs[row] );
+        std::copy (lclInds2D_[row].begin(),
+                   lclInds2D_[row].begin() + numentrs,
+                   h_inds.ptr_on_device() + h_tmpk_ptrs[row]);
+        //std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin()+numentrs, inds+ptrs[row] );
       }
+      Kokkos::deep_copy(k_inds,h_inds);
     }
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries_ != nodeNumAllocated_) {
         //ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
         //inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
-        size_t nRE = numRowEntries_().size();
-        typename LocalStaticCrsGraphType::row_map_type::non_const_type lclInds1DView_ =
-          typename LocalStaticCrsGraphType::row_map_type::non_const_type ("Graph::lclInds1D", nRE + 1);
-        ptrs = Kokkos::Compat::persistingView(lclInds1DView_);
-        ptrs[0] = 0;
-        std::partial_sum( numRowEntries_().getRawPtr(), numRowEntries_().getRawPtr()+numRowEntries_().size(), ptrs.begin()+1 );
-        //inds = Kokkos::Compat::persistingView(rowPtrsView_);
-        inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
-
-        for (size_t row=0; row < numRows; ++row) {
-          const size_t numentrs = numRowEntries_[row];
-          std::copy( lclInds1D_+rowPtrs_[row], lclInds1D_+rowPtrs_[row]+numentrs, inds+ptrs[row] );
+        t_RowPtrs tmpk_ptrs = t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
+        ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
+                                           Kokkos::Compat::deallocator(tmpk_ptrs), false);
+        k_ptrs = tmpk_ptrs;
+        {
+          typename t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
+          Kokkos::deep_copy(h_tmpk_ptrs,tmpk_ptrs);
+          // hack until we get parallel_scan in kokkos
+          for(int i = 0; i < numRowEntries_.size(); i++) {
+            h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
+          }
+          Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
         }
+
+
+        //inds = sparse_ops_type::template allocStorage<LO> (node, ptrs ());
+        k_inds = t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",*(ptrs.end()-1));
+        inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
+                                       Kokkos::Compat::deallocator(k_inds), false);
+        if (k_rowPtrs_.dimension_0()==0) {
+          t_RowPtrs tmp_unpacked_ptrs = t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
+          for(int i = 0; i < rowPtrs_.size(); i++) {
+            tmp_unpacked_ptrs(i) = rowPtrs_[i];
+          }
+          k_rowPtrs_ = tmp_unpacked_ptrs;
+        }
+        t_LocalOrdinal_1D tmp_unpacked_inds;
+        if (k_lclInds1D_.dimension_0()==0) {
+          tmp_unpacked_inds = t_LocalOrdinal_1D("Tpetra::CrsGraph::t_LocalOridnal",lclInds1D_.size());
+          for(int i = 0; i < lclInds1D_.size(); i++) {
+            tmp_unpacked_inds(i) = lclInds1D_[i];
+          }
+        } else
+          tmp_unpacked_inds = k_lclInds1D_;
+        {
+          pack_functor<t_LocalOrdinal_1D, typename LocalStaticCrsGraphType::row_map_type>
+            f(k_inds,tmp_unpacked_inds,tmpk_ptrs,k_rowPtrs_);
+          Kokkos::parallel_for(numRows,f);
+        }
+
       }
       else {
         inds = lclInds1D_;
         ptrs = rowPtrs_;
+        k_ptrs = k_rowPtrs_;
+        k_inds = k_lclInds1D_;
       }
     }
     // can we ditch the old allocations for the packed one?
@@ -2705,6 +2764,8 @@ namespace Tpetra {
       rowPtrs_ = ptrs;
       nodeNumAllocated_ = nodeNumEntries_;
       pftype_ = StaticProfile;
+      k_lclInds1D_ = k_inds;
+      k_rowPtrs_   = k_ptrs;
     }
     // build the local graph, hand over the indices
     RCP<ParameterList> lclparams;
@@ -2712,6 +2773,7 @@ namespace Tpetra {
     else                lclparams = sublist(params,"Local Graph");
     lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getColMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
     lclGraph_->setStructure(ptrs,inds);
+    k_lclGraph_ = LocalStaticCrsGraphType(k_inds,k_ptrs);
     ptrs = null;
     inds = null;
     // finalize local graph
