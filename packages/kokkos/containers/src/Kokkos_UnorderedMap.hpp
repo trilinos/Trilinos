@@ -637,7 +637,7 @@ public:
     m_next_index = src.m_next_index;
     m_keys = src.m_keys;
     m_values = src.m_values;
-    m_scalars = src.scalars;
+    m_scalars = src.m_scalars;
     m_failed_insert_scratch = src.m_failed_insert_scratch;
     return *this;
   }
