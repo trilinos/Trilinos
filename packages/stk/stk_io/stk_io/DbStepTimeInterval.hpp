@@ -40,6 +40,23 @@ namespace stk {
 	}
       }
     
+      size_t get_closest_step() const
+      {
+	size_t step = 0;
+	if (exists_before && !exists_after) {
+	  step = s_before;
+	}
+	else if (!exists_before && exists_after) {
+	  step = s_after;
+	}
+	else {
+	  double delta_b = t_analysis - t_before;
+	  double delta_a = t_after    - t_analysis;
+	  step = delta_b < delta_a ? s_before : s_after;
+	}
+	return step;
+      }
+
       Ioss::Region *region; 
       double t_analysis;  // Analysis time.
       double t_before;    // Time at step s_before; valid only if exists_before == true

@@ -68,11 +68,6 @@ namespace stk {
 	GREATER_EQUAL,
       };
 
-      enum PeriodType {
-	CYCLIC,   /*< Cycles 0 1 2 0 1 2 0 1 2 ... */
-	REVERSING /*< Cycles 0 1 2 1 0 1 2 1 0 ... */
-      };
-
       MeshField();
 
       // Read 'db_name' field data into 'field' using 'tmo' (default CLOSEST) time on database.
@@ -102,12 +97,6 @@ namespace stk {
        */
 
       MeshField& set_read_time(double time_to_read);
-      MeshField& set_offset_time(double offset_time);
-      MeshField& set_periodic_time(double period_length, double startup_time = 0.0,
-				   PeriodType ptype = CYCLIC);
-      MeshField& set_start_time(double start_time);
-      MeshField& set_stop_time(double stop_time);
-  
       void restore_field_data(Ioss::Region *region,
 			      stk::mesh::BulkData &bulk,
 			      const stk::io::DBStepTimeInterval &sti);
@@ -140,56 +129,6 @@ namespace stk {
       double m_time;
       double m_timeRead;
       
-      /*@{*/
-
-      /**
-       * For input interpolation only: The 'startupTime' and
-       * 'periodLength' are used to support input of periodic data.  The
-       * 'startupTime' specifies the length of time prior to the start of
-       * the periodic behavior; if the application time is less than
-       * 'startupTime', then it is passed unchanged to the database.  Once
-       * the 'startupTime' is exceeded, then the variables on the database
-       * enter their periodic behavior the length of the period is
-       * specified by 'periodLength'.
-       *
-       * If:  t_app < t_start_time || t_app > t_stop_time then
-       *  don't do anything...
-       *
-       * If:  t_app < t_startup, then
-       *  \code
-       *      t_db = t_app + t_offset
-       *  \endcode
-       * Else:
-       *   If: ptype == CYCLIC
-       *    \code
-       *      t_db = t_startup + mod(t_app-t_startup, period_length) + t_offset
-       *    \endcode
-       *   If: ptype == REVERSING
-       *    \code
-       *      tpm = mod(t_app-t_startup, 2*period_length)
-       *      if (tpm <= period_length)
-       *         t_db = t_startup + tpm + t_offset
-       *      else 
-       *         t_db = t_startup + (2*period_length - tpm) + t_offset
-       *    \endcode
-       *
-       * Currently only used for Input interpolation.
-       * Ignored for all other cases.
-       */
-      double m_startupTime;
-
-      /** See MeshField::startupTime */
-      double m_periodLength;
-      /** See MeshField::startupTime */
-      double m_offsetTime;
-      /** See MeshField::startupTime */
-      double m_startTime;
-      /** See MeshField::startupTime */
-      double m_stopTime;
-      /** See MeshField::startupTime */
-      PeriodType m_periodType;
-      
-      /*@}*/
       Interpolator *m_interpolator;
     };
   } 

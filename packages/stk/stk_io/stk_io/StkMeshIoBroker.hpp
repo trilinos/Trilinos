@@ -41,6 +41,8 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {
   namespace io {
+    class InputFile;
+    
     static std::string CoordinateFieldName("coordinates");
 
     // ------------------------------------------------------------------------
@@ -134,58 +136,6 @@ namespace stk {
     };
 
     // ========================================================================
-    class InputFile
-    {
-    public:
-      InputFile(std::string filename,
-		MPI_Comm communicator,
-		const std::string &type,
-		DatabasePurpose purpose,
-		Ioss::PropertyManager& property_manager);
-      InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
-
-      ~InputFile()
-      {}
-
-      void create_ioss_region();
-      //      void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name);
-      void add_input_field(const stk::io::MeshField &mesh_field);
-      void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta);
-      double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missing,
-				       stk::mesh::BulkData &bulk);
-      double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missing,
-				       stk::mesh::BulkData &bulk);
-      void get_global_variable_names(std::vector<std::string> &names);
-
-      void build_field_part_associations(stk::mesh::BulkData &bulk);
-
-      Teuchos::RCP<Ioss::Region> get_input_io_region()
-      {
-	if (Teuchos::is_null(m_region) && !Teuchos::is_null(m_database)) {
-	  create_ioss_region();
-	}
-	return m_region;
-      }
-
-    private:
-      void build_field_part_associations(stk::io::MeshField &mesh_field,
-					 const stk::mesh::Part &part,
-					 const stk::mesh::EntityRank rank,
-					 Ioss::GroupingEntity *io_entity);
-
-      DatabasePurpose m_db_purpose;
-      Teuchos::RCP<Ioss::DatabaseIO> m_database;
-      Teuchos::RCP<Ioss::Region> m_region;
-      std::vector<stk::io::MeshField> m_fields;
-
-    public:
-      bool m_fieldsInitialized;
-      
-    private:
-      InputFile(const InputFile &);
-      const InputFile & operator=(const InputFile &);
-    };
-
     // ========================================================================    
     enum HeartbeatType {
       BINARY = 1, /* Exodus (history file) */
@@ -633,16 +583,6 @@ namespace stk {
       size_t old = m_active_mesh_index;
       m_active_mesh_index = input_file_index;
       return old;
-    }
-
-    inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region()
-    {
-      if (m_input_files.empty()) {
-	return Teuchos::RCP<Ioss::Region>();
-      } else {
-	validate_input_file_index(m_active_mesh_index);
-	return m_input_files[m_active_mesh_index]->get_input_io_region();
-      }
     }
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {

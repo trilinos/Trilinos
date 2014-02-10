@@ -31,12 +31,6 @@ MeshField::MeshField(stk::mesh::FieldBase *field,
     m_wasFound(false),
     m_time(0.0),
     m_timeRead(0.0),
-    m_startupTime(0.0),
-    m_periodLength(0.0),
-    m_offsetTime(0.0),
-    m_startTime(-std::numeric_limits<double>::max()),
-    m_stopTime(std::numeric_limits<double>::max()),
-    m_periodType(CYCLIC),
     m_interpolator(NULL)
 {
   if (db_name == "") {
@@ -54,12 +48,6 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
     m_wasFound(false),
     m_time(0.0),
     m_timeRead(0.0),
-    m_startupTime(0.0),
-    m_periodLength(0.0),
-    m_offsetTime(0.0),
-    m_startTime(-std::numeric_limits<double>::max()),
-    m_stopTime(std::numeric_limits<double>::max()),
-    m_periodType(CYCLIC),
     m_interpolator(NULL)
 {
   if (db_name == "") {
@@ -98,32 +86,6 @@ MeshField& MeshField::set_read_time(double time_to_read)
   return *this;
 }
 
-MeshField& MeshField::set_offset_time(double offset_time)
-{
-  m_offsetTime = offset_time;
-  return *this;
-}
-
-MeshField& MeshField::set_periodic_time(double period_length, double startup_time, PeriodType ptype)
-{
-  m_periodLength = period_length;
-  m_startupTime = startup_time;
-  m_periodType = ptype;
-  return *this;
-}
-
-MeshField& MeshField::set_start_time(double start_time)
-{
-  m_startTime = start_time;
-  return *this;
-}
-  
-MeshField& MeshField::set_stop_time(double stop_time)
-{
-  m_stopTime = stop_time;
-  return *this;
-}
-  
 void MeshField::add_part(const stk::mesh::Part &part,
 			 const stk::mesh::EntityRank rank,
 			 Ioss::GroupingEntity *io_entity)
@@ -136,9 +98,7 @@ void MeshField::restore_field_data(Ioss::Region *region,
 				   const stk::io::DBStepTimeInterval &sti)
 {
   // Temporary ---
-  double delta_b = sti.exists_before ? sti.t_analysis - sti.t_before   : std::numeric_limits<double>::max();
-  double delta_a = sti.exists_after  ? sti.t_after    - sti.t_analysis : std::numeric_limits<double>::max();
-  size_t step = delta_b < delta_a ? sti.s_before : sti.s_after;
+  int step = sti.get_closest_step();
   region->begin_state(step);
   // End Temporary ---
 
