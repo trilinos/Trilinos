@@ -86,7 +86,7 @@ namespace Sacado {
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       Expr(const Expr& x) :
-        GeneralFad<T,Storage>(x) {}
+        GeneralFad<T,Storage>(static_cast<const GeneralFad<T,Storage>&>(x)) {}
 
       //! Copy constructor from any Expression object
       template <typename S>

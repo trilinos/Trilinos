@@ -391,7 +391,7 @@ namespace Sacado {
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       SFad(const SFad& x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
+        Expr< SFadExprTag< ValueT,Num > >(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x)) {}
 
       //! Copy constructor from any Expression object
       template <typename S>
@@ -475,7 +475,7 @@ struct ViewFadType< Sacado::Fad::SFad< ValueType, N >, length, stride > {
 //! The View Fad type associated with this type
 template< class ValueType, int N, unsigned length, unsigned stride >
 struct ViewFadType< const Sacado::Fad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::Fad::ViewFad<ValueType,length,stride> type;
+  typedef Sacado::Fad::ViewFad<const ValueType,length,stride> type;
 };
 
 /** \brief  Analyze the array shape of a Sacado::Fad::SFad<T,N>.
