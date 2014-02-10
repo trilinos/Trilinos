@@ -75,7 +75,7 @@ namespace {
       stkIo.populate_bulk_data();
 
       //+ The name of the field on the database is "temp"
-      stkIo.add_input_field(temperature, "temp");
+      stkIo.add_input_field(stk::io::MeshField(temperature, "temp"));
 
       //+ Read the field values from the database at time 2.0
       stkIo.read_defined_input_fields(2.0);

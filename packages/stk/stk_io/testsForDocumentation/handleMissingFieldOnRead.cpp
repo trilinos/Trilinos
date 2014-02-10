@@ -85,17 +85,17 @@ namespace {
 
       // The name of the field on the database is "temp"
       // This field does exist and should be read correctly
-      stkIo.add_input_field(temperature, "temp");
+      stkIo.add_input_field(stk::io::MeshField(temperature, "temp"));
 
       //+ The name of the field on the database is "disp"
       //+ This field does not exist and will not be found.
-      stkIo.add_input_field(displacement, "disp");
+      stkIo.add_input_field(stk::io::MeshField(displacement, "disp"));
 
       
       //+ Read the field values from the database at time 2.0
       //+ The 'missing_fields' vector will contain the names of
       //+ any fields that were not found.
-      std::vector<stk::io::FieldAndName> missing_fields;
+      std::vector<stk::io::MeshField> missing_fields;
       stkIo.read_defined_input_fields(2.0, &missing_fields);
 
       //+ If read the fields, but don't pass in the 'missing_fields'

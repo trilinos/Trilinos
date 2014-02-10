@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*  Copyright 2010, 2011, 2012, 2013 Sandia Corporation.                  */
+/*  Copyright 2010, 2011, 2012, 2013, 2014 Sandia Corporation.            */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -8,20 +8,28 @@
 
 #ifndef STK_IO_STKMESHIOBROKER_HPP
 #define STK_IO_STKMESHIOBROKER_HPP
-#include <Ioss_Field.h>                 // for Field, Field::BasicType
-#include <Ioss_PropertyManager.h>       // for PropertyManager
-#include <stddef.h>                     // for size_t, NULL
-#include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
 #include <algorithm>                    // for swap
-#include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
-#include <stk_io/IossBridge.hpp>        // for FieldAndName, etc
-#include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_util/util/ParameterList.hpp>  // for Type
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
-#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include <stddef.h>                     // for size_t, NULL
+
 #include "mpi.h"                        // for MPI_Comm, etc
+
+#include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+
+#include <Ioss_Field.h>                 // for Field, Field::BasicType
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+
+#include <stk_io/MeshField.hpp>
+#include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
+#include <stk_io/IossBridge.hpp>        // for FieldAndName, etc
+
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+
+#include <stk_util/util/ParameterList.hpp>  // for Type
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire, etc
+
 namespace Ioss { class DatabaseIO; }
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
@@ -31,16 +39,7 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-
-
-
-
-namespace Ioss {
-}
-
 namespace stk {
-  namespace mesh {
-  }
   namespace io {
     static std::string CoordinateFieldName("coordinates");
 
@@ -108,18 +107,8 @@ namespace stk {
 
       void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
 
-      bool use_nodeset_for_part_nodes_fields() const
-      {
-	return m_use_nodeset_for_part_nodes_fields;
-      }
-
-      void use_nodeset_for_part_nodes_fields(bool true_false)
-      {
-	ThrowErrorMsgIf(m_mesh_defined,
-			"ERROR: The use_nodeset_for_part_nodes_fields setting cannot be changed after "
-			"the mesh has already been written.");
-	m_use_nodeset_for_part_nodes_fields = true_false;
-      }
+      bool use_nodeset_for_part_nodes_fields() const;
+      void use_nodeset_for_part_nodes_fields(bool true_false);
 
     private:
       void define_output_fields(const stk::mesh::BulkData& bulk_data);
@@ -144,28 +133,31 @@ namespace stk {
       const OutputFile & operator=(const OutputFile &);
     };
 
+    // ========================================================================
     class InputFile
     {
     public:
       InputFile(std::string filename,
 		MPI_Comm communicator,
 		const std::string &type,
-		DatabasePurpose db_type,
+		DatabasePurpose purpose,
 		Ioss::PropertyManager& property_manager);
-      InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region) {}
+      InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       ~InputFile()
       {}
 
       void create_ioss_region();
-      void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name);
+      //      void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name);
+      void add_input_field(const stk::io::MeshField &mesh_field);
       void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta);
-      double read_defined_input_fields(double time, std::vector<stk::io::FieldAndName> *missing,
+      double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missing,
 				       stk::mesh::BulkData &bulk);
-      double read_defined_input_fields(int step, std::vector<stk::io::FieldAndName> *missing,
+      double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missing,
 				       stk::mesh::BulkData &bulk);
       void get_global_variable_names(std::vector<std::string> &names);
-      void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
+
+      void build_field_part_associations(stk::mesh::BulkData &bulk);
 
       Teuchos::RCP<Ioss::Region> get_input_io_region()
       {
@@ -176,11 +168,20 @@ namespace stk {
       }
 
     private:
+      void build_field_part_associations(stk::io::MeshField &mesh_field,
+					 const stk::mesh::Part &part,
+					 const stk::mesh::EntityRank rank,
+					 Ioss::GroupingEntity *io_entity);
+
       DatabasePurpose m_db_purpose;
       Teuchos::RCP<Ioss::DatabaseIO> m_database;
       Teuchos::RCP<Ioss::Region> m_region;
-      std::vector<stk::io::FieldAndName> m_fields;
+      std::vector<stk::io::MeshField> m_fields;
 
+    public:
+      bool m_fieldsInitialized;
+      
+    private:
       InputFile(const InputFile &);
       const InputFile & operator=(const InputFile &);
     };
@@ -195,7 +196,7 @@ namespace stk {
       SPYHIS
     };
 
-    // ------------------------------------------------------------------------
+    // ========================================================================
     class Heartbeat {
     public:
       Heartbeat(const std::string &filename, HeartbeatType db_type,
@@ -242,19 +243,6 @@ namespace stk {
       // use in Percept following change to make m_property_manger
       // private)
       void remove_property_if_exists(const std::string &property_name);
-
-      // Set the input Ioss::Region directly instead of letting it be
-      // created by StkMeshIoBroker during the create_input_mesh(type,
-      // filename) call. After setting the input io region, you would
-      // then either set the metadata manually using the
-      // set_meta_data() call, or call the no-argument
-      // create_input_mesh() function which will then create a meta
-      // data corresponding to the data in the Ioss::Region.
-      //
-      // [2013-11-13: GDS: Currently
-      // only used in Salinas/tools/superelem/MkSuperStkMesh.C:
-      // The use-case is adding new parts to a mesh]
-      size_t set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       Teuchos::RCP<Ioss::Region> get_input_io_region();
       Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index);
@@ -328,6 +316,19 @@ namespace stk {
       size_t add_mesh_database(const std::string &filename,
 			       const std::string &type,
 			       DatabasePurpose purpose);
+
+      // Set the input Ioss::Region directly instead of letting it be
+      // created by StkMeshIoBroker during the create_input_mesh(type,
+      // filename) call. After setting the input io region, you would
+      // then either set the metadata manually using the
+      // set_meta_data() call, or call the no-argument
+      // create_input_mesh() function which will then create a meta
+      // data corresponding to the data in the Ioss::Region.
+      //
+      // [2013-11-13: GDS: Currently
+      // only used in Salinas/tools/superelem/MkSuperStkMesh.C:
+      // The use-case is adding new parts to a mesh]
+      size_t add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       size_t set_active_mesh(size_t input_file_index);
       size_t get_active_mesh() const {return m_active_mesh_index;}
@@ -410,7 +411,7 @@ namespace stk {
       // is NULL, then an exception will be thrown if any fields are
       // not found.
       double read_defined_input_fields(int step,
-				       std::vector<stk::io::FieldAndName> *missing=NULL);
+				       std::vector<stk::io::MeshField> *missing=NULL);
 
       // For all transient input fields defined, read the data at the
       // specified database time 'time' and populate the stk
@@ -421,7 +422,7 @@ namespace stk {
       // is NULL, then an exception will be thrown if any fields are
       // not found.
       double read_defined_input_fields(double time,
-				       std::vector<stk::io::FieldAndName> *missing=NULL);
+				       std::vector<stk::io::MeshField> *missing=NULL);
 
       void get_global_variable_names(std::vector<std::string> &names);
       bool get_global(const std::string &variableName,
@@ -441,8 +442,7 @@ namespace stk {
 		      std::vector<int> &globalVar,
 		      bool abort_if_not_found=true);
 
-      void add_input_field(stk::mesh::FieldBase &field,
-			   const std::string &db_name = std::string());
+      void add_input_field(const stk::io::MeshField &mesh_field);
 
       // Create an exodus mesh database with the specified
       // filename. This function creates the exodus metadata which
@@ -720,18 +720,6 @@ namespace stk {
     {
       ThrowAssert( !Teuchos::is_null(m_bulk_data)) ;
       return *m_bulk_data;
-    }
-
-    inline bool StkMeshIoBroker::use_nodeset_for_part_nodes_fields(size_t output_file_index) const
-    {
-      validate_output_file_index(output_file_index);
-      return m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields();
-    }
-
-    inline void StkMeshIoBroker::use_nodeset_for_part_nodes_fields(size_t output_file_index, bool true_false)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields(true_false);
     }
   }
 }

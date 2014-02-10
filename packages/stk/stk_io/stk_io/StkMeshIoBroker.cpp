@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_io/DbStepTimeInterval.hpp>
 #include <assert.h>                     // for assert
 #include <init/Ionit_Initializer.h>     // for Initializer
 #include <stdint.h>                     // for int64_t
@@ -59,11 +60,13 @@
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
 
-
-
 namespace {
 
   bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::FieldAndName &f2) {
+    return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
+  }
+
+  bool meshFieldSort(const stk::io::MeshField& f1, const stk::io::MeshField &f2) {
     return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
   }
 
@@ -370,7 +373,7 @@ namespace {
     if (step_count == 0) {
       std::ostringstream msg ;
       msg << " ERROR: Input database '" << region->get_database()->get_filename()
-          << " has no transient data.";
+          << "' has no transient data.";
       throw std::runtime_error( msg.str() );
     }
 
@@ -443,58 +446,6 @@ namespace {
     get_selected_entities(selector, bulk.buckets(type), entities);
     return entities.size();
   }
-
-  void ioss_restore_input_fields(std::vector<stk::io::FieldAndName> &fields,
-                                 stk::mesh::BulkData &bulk,
-                                 const stk::mesh::Part &part,
-                                 const stk::mesh::EntityRank part_type,
-                                 Ioss::GroupingEntity *io_entity,
-                                 stk::io::DatabasePurpose purpose)
-  {
-    assert(io_entity != NULL);
-    std::vector<stk::mesh::Entity> entity_list;
-    bool entity_list_filled=false;
-
-    std::vector<stk::io::FieldAndName>::iterator I = fields.begin();
-    while (I != fields.end()) {
-      std::string db_name = (*I).db_name();
-      stk::mesh::FieldBase *f = (*I).field();
-      if (stk::io::is_field_on_part(f,part_type,part)) {
-        // Only add TRANSIENT Fields -- check role; if not present assume transient...
-        const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
-
-        if (role == NULL || *role == Ioss::Field::TRANSIENT) {
-          const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
-          std::pair<std::string, Ioss::Field::BasicType> field_type;
-          stk::io::get_io_field_type(f, res, &field_type);
-          if (field_type.second != Ioss::Field::INVALID) {
-
-            // See if field with that name exists on io_entity...
-            if (io_entity->field_exists(db_name)) {
-              // Restore data...
-              if (!entity_list_filled) {
-                stk::io::get_entity_list(io_entity, part_type, bulk, entity_list);
-                entity_list_filled=true;
-              }
-              size_t state_count = f->number_of_states();
-              stk::mesh::FieldState state = f->state();
-
-              // If the multi-state field is not "set" at the newest state, then the user has
-              // registered the field at a specific state and only that state should be input.
-              if(purpose == stk::io::READ_MESH || state_count == 1 || state != stk::mesh::StateNew) {
-                stk::io::field_data_from_ioss(bulk, f, entity_list, io_entity, db_name);
-              } else {
-                stk::io::multistate_field_data_from_ioss(bulk, f, entity_list, io_entity, db_name, state_count);
-              }
-              (*I).m_wasFound = true;
-            }
-          }
-        }
-      }
-      ++I;
-    }
-  }
-}
 
 // ========================================================================
 template <typename INT>
@@ -1151,6 +1102,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 {
   put_field_data(bulk, part, part_type, io_entity, namedFields, Ioss::Field::Field::TRANSIENT, subset_selector);
 }
+}
 
 namespace stk {
   namespace io {
@@ -1187,17 +1139,13 @@ namespace stk {
       return * coord_field;
     }
 
-    void StkMeshIoBroker::set_input_io_region(size_t input_index, Teuchos::RCP<Ioss::Region> ioss_input_region)
+    size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region)
     {
-      validate_input_file_index(input_index);
-      m_input_files[input_index]->set_input_io_region(ioss_input_region);
-    }
+      Teuchos::RCP<InputFile> input_file = Teuchos::rcp(new InputFile(ioss_input_region));
+      m_input_files.push_back(input_file);
 
-    void InputFile::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
-    {
-      ThrowErrorMsgIf(!Teuchos::is_null(m_region),
-                      "This StkMeshIoBroker already has an Ioss::Region associated with it.");
-      m_region = ioss_input_region;
+      size_t index_of_input_file = m_input_files.size()-1;
+      return index_of_input_file;
     }
 
     void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
@@ -1249,13 +1197,8 @@ namespace stk {
 			 const std::string &mesh_type,
 			 DatabasePurpose purpose,
 			 Ioss::PropertyManager &properties)
-      : m_db_purpose(purpose)
+      : m_db_purpose(purpose), m_fieldsInitialized(false)
     {
-      ThrowErrorMsgIf(!Teuchos::is_null(m_database),
-                      "This StkMeshIoBroker already has an Ioss::DatabaseIO associated with it.");
-      ThrowErrorMsgIf(!Teuchos::is_null(m_region),
-                      "This StkMeshIoBroker already has an Ioss::Region associated with it.");
-
       Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
       if (m_db_purpose == stk::io::READ_RESTART)
         db_usage = Ioss::READ_RESTART;
@@ -1270,12 +1213,29 @@ namespace stk {
     }
 
 
-    void StkMeshIoBroker::create_ioss_region()
+    InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
+      : m_database(ioss_input_region->get_database()), m_region(ioss_input_region)
     {
-      validate_input_file_index(m_active_mesh_index);
-      m_input_files[m_active_mesh_index]->create_ioss_region();
+      ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
+		      "ERROR: Invalid Ioss region detected in add_mesh_database");
+
+      Ioss::DatabaseUsage db_usage = m_database->usage();
+      if (db_usage == Ioss::READ_RESTART) {
+	m_db_purpose = stk::io::READ_RESTART;
+      }
+      else if (db_usage == Ioss::READ_MODEL) {
+	m_db_purpose = stk::io::READ_MESH;
+      }
+      else {
+        std::ostringstream msg;
+        msg << "ERROR: Unrecognized database usage for Ioss region named "
+	    << ioss_input_region->name()
+	    << ". Must be READ_RESTART or READ_MODEL";
+        throw std::runtime_error( msg.str() );
+      }
+      m_database.release(); // The m_region will delete the m_database pointer.
     }
-    
+
     void InputFile::create_ioss_region()
     {
       // If the m_region is null, try to create it from
@@ -1289,381 +1249,27 @@ namespace stk {
       }
     }
 
-    void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
+    void InputFile::add_input_field(const stk::io::MeshField &mesh_field)
     {
-      ThrowErrorMsgIf(!Teuchos::is_null(m_meta_data),
-                      "There meta data associated with this StkMeshIoBroker has already been created. "
-                      "It is not permissible to set the rank_name_vector() at this time.");
-
-      m_rank_names.clear();
-      std::copy(rank_names.begin(), rank_names.end(), std::back_inserter(m_rank_names));
-    }
-
-    void StkMeshIoBroker::create_input_mesh()
-    {
-      validate_input_file_index(m_active_mesh_index);
-      if (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region())) {
-        m_input_files[m_active_mesh_index]->create_ioss_region();
-      }
-
-      Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-      ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
-
-      // See if meta data is null, if so, create a new one...
-      if (Teuchos::is_null(m_meta_data)) {
-        m_meta_data = Teuchos::rcp(new stk::mesh::MetaData());
-      }
-
-      size_t spatial_dimension = region->get_property("spatial_dimension").get_int();
-      if (m_rank_names.empty()) {
-        initialize_spatial_dimension(meta_data(), spatial_dimension, stk::mesh::entity_rank_names());
-      } else {
-        initialize_spatial_dimension(meta_data(), spatial_dimension, m_rank_names);
-      }
-
-      process_nodeblocks(*region,    meta_data());
-      process_elementblocks(*region, meta_data());
-      process_sidesets(*region,      meta_data());
-      process_nodesets(*region,      meta_data());
-    }
-
-
-    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type)
-    {
-      return create_output_mesh(filename, db_type, m_property_manager);
-    }
-
-
-    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
-                                               Ioss::PropertyManager &properties)
-    {
-      std::string out_filename = filename;
-      stk::util::filename_substitution(out_filename);
-      Ioss::Region *input_region = NULL;
-      if (!m_input_files.empty()) {
-	input_region = get_input_io_region().get();
-      }
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
-                                                                         properties, input_region));
-      m_output_files.push_back(output_file);
-
-      size_t index_of_output_file = m_output_files.size()-1;
-      return index_of_output_file;
-    }
-
-
-    void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
-    }
-
-    int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index)
-    {
-      validate_output_file_index(output_file_index);
-      int current_output_step = m_output_files[output_file_index]->write_defined_output_fields(*m_bulk_data);
-      return current_output_step;
-    }
-
-    int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
-    {
-      validate_output_file_index(output_file_index);
-      int current_output_step = m_output_files[output_file_index]->process_output_request(time, *m_bulk_data);
-      return current_output_step;
-    }
-
-    void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->begin_output_step(time, *m_bulk_data);
-    }
-
-    void StkMeshIoBroker::end_output_step(size_t output_file_index)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->end_output_step();
-    }
-
-    void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
-    {
-      validate_input_file_index(m_active_mesh_index);
-
-      if (!meta_data().is_commit())
-        meta_data().commit();
-
-
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region()),
-                       "There is no Input mesh region associated with this Mesh Data.");
-
-      Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-      ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
-
-      // Check if bulk_data is null; if so, create a new one...
-      if (Teuchos::is_null(m_bulk_data)) {
-        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
-                                                               , region->get_database()->util().communicator()
-#ifdef SIERRA_MIGRATION
-                                                               , false
-#endif
-                                                               , m_connectivity_map
-                                                               )));
-      }
-
-      if (delay_field_data_allocation) {
-        bulk_data().deactivate_field_updating();
-      }
-
-      bool i_started_modification_cycle = bulk_data().modification_begin();
-
-      bool ints64bit = db_api_int_size(region) == 8;
-      if (ints64bit) {
-        int64_t zero = 0;
-        process_nodeblocks(*region,    bulk_data(), zero);
-        process_elementblocks(*region, bulk_data(), zero);
-        process_nodesets(*region,      bulk_data(), zero);
-        process_sidesets(*region,      bulk_data());
-      } else {
-        int zero = 0;
-        process_nodeblocks(*region,    bulk_data(), zero);
-        process_elementblocks(*region, bulk_data(), zero);
-        process_nodesets(*region,      bulk_data(), zero);
-        process_sidesets(*region,      bulk_data());
-      }
-
-      if (i_started_modification_cycle) {
-        bulk_data().modification_end();
-      }
-
-      if (region->get_property("state_count").get_int() == 0) {
-        region->get_database()->release_memory();
-      }
-    }
-
-    void StkMeshIoBroker::populate_field_data()
-    {
-      validate_input_file_index(m_active_mesh_index);
-
-      //if field-data has already been allocated, then the allocate_field_data() method
-      //is a harmless no-op.
-      bulk_data().allocate_field_data();
-
-      Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-      ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
-
-      bool ints64bit = db_api_int_size(region) == 8;
-      if (ints64bit) {
-          int64_t zero = 0;
-          process_node_coords_and_attributes(*region, bulk_data(), zero);
-          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
-          process_nodesets_df(*region,      bulk_data(), zero);
-          process_sidesets_df(*region,      bulk_data());
-      }
-      else {
-          int zero = 0;
-          process_node_coords_and_attributes(*region, bulk_data(), zero);
-          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
-          process_nodesets_df(*region,      bulk_data(), zero);
-          process_sidesets_df(*region,      bulk_data());
-      }
-    }
-
-    // ========================================================================
-    void StkMeshIoBroker::populate_bulk_data()
-    {
-      validate_input_file_index(m_active_mesh_index);
-
-      // to preserve behavior for callers of this method, don't do the
-      // delay-field-data-allocation optimization.
-      // If want the optimization, call the population_mesh/populate_field_data methods separately.
-      bool delay_field_data_allocation = false;
-
-      populate_mesh(delay_field_data_allocation);
-      populate_field_data();
-    }
-    
-    void StkMeshIoBroker::add_input_field(stk::mesh::FieldBase &field, const std::string &db_name)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      m_input_files[m_active_mesh_index]->add_input_field(field, db_name);
-    }
-
-    void InputFile::add_input_field(stk::mesh::FieldBase &field, const std::string &db_name)
-    {
-      std::string name = pickFieldName(field, db_name);
-      
       bool fieldAlreadyExists=false;
       for (size_t i=0; i <m_fields.size(); i++) {
-        if (&field == m_fields[i].field()) {
-          m_fields[i].set_db_name(name);
+        if (mesh_field.field() == m_fields[i].field()) {
           fieldAlreadyExists = true;
           break;
         }
       }
 
       if (!fieldAlreadyExists) {
-        stk::io::FieldAndName inputField(&field, name);
-        m_fields.push_back(inputField);
-        stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
+        m_fields.push_back(mesh_field);
+        stk::io::set_field_role(*mesh_field.field(), Ioss::Field::TRANSIENT);
       }
-    }
-
-    void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
-    {
-      ThrowErrorMsgIf(m_output_files.empty() || output_file_index >= m_output_files.size(),
-		      "StkMeshIoBroker::validate_output_file_index: invalid output file index of "
-		      << output_file_index << ".");
-      
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_files[output_file_index]->get_output_io_region()),
-        "StkMeshIoBroker::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
-    }
-
-    void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
-    {
-      ThrowErrorMsgIf(m_input_files.empty() || input_file_index >= m_input_files.size(),
-		      "StkMeshIoBroker::validate_input_file_index: invalid input file index of "
-		      << input_file_index << ".");
-    }
-
-    void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field)
-    {
-        add_field(output_file_index, field, field.name());
-    }
-
-    void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->add_field(field, alternate_name);
-    }
-
-    void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      m_input_files[m_active_mesh_index]->get_global_variable_names(names);
     }
 
     void InputFile::get_global_variable_names(std::vector<std::string> &names)
     {
-        ThrowErrorMsgIf (Teuchos::is_null(m_region),
-                         "Attempt to read global variables before restart initialized.");
-        m_region->field_describe(Ioss::Field::TRANSIENT, &names);
-    }
-
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName,
-                                     boost::any &value, stk::util::ParameterType::Type type,
-                                     bool abort_if_not_found)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
-      return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
-    }
-
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar,
-                                     bool abort_if_not_found)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
-      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
-                                  abort_if_not_found);
-    }
-
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<int> &globalVar,
-                                     bool abort_if_not_found)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
-      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
-                                  abort_if_not_found);
-    }
-
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVar,
-                                     bool abort_if_not_found)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
-      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
-                                  abort_if_not_found);
-    }
-
-    bool StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar,
-                                     bool abort_if_not_found)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
-      return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
-                                  abort_if_not_found);
-    }
-
-    void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
-                                     const boost::any &value, stk::util::ParameterType::Type type)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->add_global(name, value, type);
-    }
-
-    void StkMeshIoBroker::add_global_ref(size_t output_file_index, const std::string &name,
-                                         const boost::any *value, stk::util::ParameterType::Type type)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->add_global_ref(name, value, type);
-    }
-
-    void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->add_global(globalVarName, dataType);
-    }
-
-    void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->add_global(globalVarName, component_count, dataType);
-    }
-
-    void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
-    {
-      validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->add_global(globalVarName, storage, dataType);
-    }
-
-    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
-                                       const boost::any &value, stk::util::ParameterType::Type type)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_global(globalVarName, value, type);
-    }
-
-    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
-    }
-
-    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, int globalVarData)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
-    }
-
-    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& globalVarData)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
-    }
-
-    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& globalVarData)
-    {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
-    }
-
-
-    void StkMeshIoBroker::add_all_mesh_fields_as_input_fields()
-    {
-      validate_input_file_index(m_active_mesh_index);
-      m_input_files[m_active_mesh_index]->add_all_mesh_fields_as_input_fields(meta_data());
+      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+		       "Attempt to read global variables before restart initialized.");
+      m_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
     void InputFile::add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta)
@@ -1675,65 +1281,82 @@ namespace stk {
       for (size_t i=0; i < fields.size(); i++) {
         const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
         if ( role && *role == Ioss::Field::TRANSIENT ) {
-	  add_input_field(*fields[i], fields[i]->name()); // input
+	  add_input_field(MeshField(fields[i]));
 	}
       }
     }
 
-    double StkMeshIoBroker::read_defined_input_fields(double time,
-                                                      std::vector<stk::io::FieldAndName> *missing)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      return m_input_files[m_active_mesh_index]->read_defined_input_fields(time, missing, bulk_data());
-    }
-
-    double InputFile::read_defined_input_fields(double time,
-						std::vector<stk::io::FieldAndName> *missing,
-						stk::mesh::BulkData &bulk)
-    {
-      // Find the step on the database with time closest to the requested time...
-      Ioss::Region *region = m_region.get();
-      
-      int step = find_closest_step(region, time);
-      return read_defined_input_fields(step, missing, bulk);
-    }
-
-    double StkMeshIoBroker::read_defined_input_fields(int step,
-                                                      std::vector<stk::io::FieldAndName> *missing)
-    {
-      validate_input_file_index(m_active_mesh_index);
-      return m_input_files[m_active_mesh_index]->read_defined_input_fields(step, missing, bulk_data());
-    }
-
     double InputFile::read_defined_input_fields(int step,
-						std::vector<stk::io::FieldAndName> *missing,
+						std::vector<stk::io::MeshField> *missing,
 						stk::mesh::BulkData &bulk)
     {
-      if (step <= 0)
-        return 0;
+      ThrowErrorMsgIf(step <= 0, 
+		      "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
       ThrowErrorMsgIf (Teuchos::is_null(m_region),
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
 
-      std::sort(m_fields.begin(), m_fields.end(), fieldOrdinalSort);
+      int step_count = region->get_property("state_count").get_int();
 
-      {
-        std::vector<stk::io::FieldAndName>::iterator I = m_fields.begin();
-        while (I != m_fields.end()) {
-          (*I).m_wasFound = false; ++I;
-        }
+      ThrowErrorMsgIf(step_count == 0, 
+		      "ERROR: Input database '" << region->get_database()->get_filename()
+		      << "' has no transient data.");
+
+      ThrowErrorMsgIf(step > step_count,
+		      "ERROR: Input database '" << region->get_database()->get_filename()
+		      << "'. Step " << step << " was specified, but database only has "
+		      << step_count << " steps.");
+
+      double state_time = region->get_state_time(step);
+      return read_defined_input_fields(state_time, missing, bulk);
+    }
+
+    void InputFile::build_field_part_associations(stk::io::MeshField &mesh_field,
+						  const stk::mesh::Part &part,
+						  const stk::mesh::EntityRank rank,
+						  Ioss::GroupingEntity *io_entity)
+    {
+      const stk::mesh::FieldBase *f = mesh_field.field();
+      // Only add TRANSIENT Fields -- check role; if not present assume transient...
+      const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
+      if (role == NULL || *role == Ioss::Field::TRANSIENT) {
+	if (stk::io::is_field_on_part(f, rank, part)) {
+	  const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, rank, part);
+	  std::pair<std::string, Ioss::Field::BasicType> field_type;
+	  stk::io::get_io_field_type(f, res, &field_type);
+	  if (field_type.second != Ioss::Field::INVALID) {
+	  
+	    // See if field with that name exists on io_entity...
+	    const std::string &db_name = mesh_field.db_name();
+	    if (io_entity->field_exists(db_name)) {
+	      mesh_field.add_part(part, rank, io_entity);
+	      mesh_field.m_singleState = (m_db_purpose == stk::io::READ_RESTART) ? false : true;
+	      mesh_field.m_wasFound = true;
+	    }
+	  }
+	}
       }
+    }
 
-      // Pick which time index to read into solution field.
-      region->begin_state(step);
+    void InputFile::build_field_part_associations(stk::mesh::BulkData &bulk)
+    {
+      // Each input field will have a list of the Parts that the field exists on...
+      // Create this list.
+      
+      Ioss::Region *region = m_region.get();
 
-      // Special processing for nodeblock (all nodes in model)...
+      // Check universal_part() NODE_RANK first...
       const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-      ioss_restore_input_fields(m_fields, bulk, meta.universal_part(),
-                                stk::topology::NODE_RANK,
-                                region->get_node_blocks()[0], m_db_purpose);
+      {
+	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+	while (I != m_fields.end()) {
+	  build_field_part_associations(*I, meta.universal_part(), stk::topology::NODE_RANK,
+					region->get_node_blocks()[0]);
+	  ++I;
+	}
+      }
 
       // Now handle all non-nodeblock parts...
       const stk::mesh::PartVector &all_parts = meta.get_parts();
@@ -1748,475 +1371,901 @@ namespace stk {
           // Get Ioss::GroupingEntity corresponding to this part...
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && entity->type() != Ioss::SIDESET) {
-            ioss_restore_input_fields(m_fields, bulk, *part, rank, entity,
-                                      m_db_purpose);
-          }
+	    std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+	    while (I != m_fields.end()) {
+	      build_field_part_associations(*I, *part, rank, entity);
 
-          // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-          // (should probably do edges and faces also...)
-          // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::topology::NODE_RANK) {
-            Ioss::GroupingEntity *node_entity = NULL;
-            std::string nodes_name = part->name() + "_nodes";
-            node_entity = region->get_entity(nodes_name);
-            if (node_entity == NULL) {
-              node_entity = region->get_entity("nodeblock_1");
-            }
-            if (node_entity != NULL) {
-              ioss_restore_input_fields(m_fields, bulk, *part,
-                                        stk::topology::NODE_RANK, node_entity,
-                                        m_db_purpose);
-            }
-          }
-        }
-      }
-
-      size_t missing_fields = 0;
-      std::ostringstream msg ;
-      std::vector<stk::io::FieldAndName>::iterator I = m_fields.begin();
-      while (I != m_fields.end()) {
-        if (!(*I).m_wasFound) {
-          ++missing_fields;
-          if (missing) {
-            missing->push_back(*I);
-          }
-          else {
-            msg << "ERROR: Could not find input field '" << (*I).db_name() << "'.\n";
-          }
-        }
-        ++I;
-      }
-
-      ThrowAssert(missing==NULL || missing_fields == missing->size());
-      if (missing_fields > 0 && missing==NULL) {
-        msg << "ERROR: Input processing at step " << step << " could not find " << missing_fields << " fields.\n";
-        throw std::runtime_error( msg.str() );
-      }
-
-      region->end_state(step);
-
-      return region->get_state_time(step);
-    }
-
-    
-    size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
-                                                 const Ioss::PropertyManager &properties)
-    {
-      std::string out_filename = filename;
-      stk::util::filename_substitution(out_filename);
-      Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(out_filename, hb_type,
-                                                                     properties, m_communicator));
-      m_heartbeat.push_back(heartbeat);
-      return m_heartbeat.size()-1;
-    }
-
-    Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
-                         Ioss::PropertyManager properties, MPI_Comm comm)
-      : m_current_step(0), m_processor(0)
-    {
-      if (comm != MPI_COMM_NULL) {
-        MPI_Comm_rank(comm, &m_processor);
-      }
-
-      if (m_processor == 0) {
-        std::string db_io_type = "exodus";
-        Ioss::DatabaseUsage db_usage = Ioss::WRITE_HISTORY;
-
-        if (hb_type != BINARY) {
-          db_io_type = "heartbeat";
-          db_usage = Ioss::WRITE_HEARTBEAT;
-
-          // Always add the "time" field to all heartbeat outputs...
-          if (!properties.exists("SHOW_TIME_FIELD")) {
-            properties.add(Ioss::Property("SHOW_TIME_FIELD", true));
-          }
-
-          if (hb_type == SPYHIS) {
-            if (!properties.exists("FILE_FORMAT")) {
-              properties.add(Ioss::Property("FILE_FORMAT", "spyhis"));
-            }
-          }
-          else if (hb_type == CSV) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-              properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-              properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
-            }
-          }
-          else if (hb_type == TS_CSV) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-              properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-              properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
-            }
-          }
-          else if (hb_type == TEXT) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-              properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-              properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
-            }
-          }
-          else if (hb_type == TS_TEXT) {
-            if (!properties.exists("SHOW_TIME_STAMP")) {
-              properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
-            }
-            if (!properties.exists("FIELD_SEPARATOR")) {
-              properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
-            }
-          }
-        }
-
-        Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
-                                                       db_usage, comm, properties);
-        if (db == NULL || !db->ok()) {
-          std::cerr << "ERROR: Could not open history/heartbeat database '" << filename
-                    << "'\n";
-          return;
-        }
-
-        // NOTE: 'region' owns 'db' pointer at this time...
-        m_region = Teuchos::rcp(new Ioss::Region(db, filename));
+	      // If rank is != NODE_RANK, then see if field is defined on the nodes of this part
+	      if (rank != stk::topology::NODE_RANK) {
+		Ioss::GroupingEntity *node_entity = NULL;
+		std::string nodes_name = part->name() + "_nodes";
+		node_entity = region->get_entity(nodes_name);
+		if (node_entity == NULL) {
+		  node_entity = region->get_entity("nodeblock_1");
+		}
+		if (node_entity != NULL) {
+		  build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity);
+		}
+	      }
+	      ++I;
+	    }
+	  }
+	}
       }
     }
 
-    void Heartbeat::add_global_ref(const std::string &name, const boost::any *value,
-                                   stk::util::ParameterType::Type type)
-    {
-      if (m_processor == 0) {
-        ThrowErrorMsgIf (m_current_step != 0, 
-                         "At least one output step has been written to the history/heartbeat file. "
-                         "Variables cannot be added anymore.");
-
-        Ioss::State currentState = m_region->get_state();
-        if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
-          m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-        }
-
-        // Determine name and type of parameter...
-        std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
-        internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-        m_fields.push_back(GlobalAnyVariable(name, value, type));
-      }
-    }
-
-    void Heartbeat::process_output(int step, double time)
-    {
-      if (m_processor == 0) {
-        Ioss::State currentState = m_region->get_state();
-        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
-          m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
-        }
-
-        m_region->begin_mode(Ioss::STATE_TRANSIENT);
-        m_current_step = m_region->add_state(time);
-        m_region->begin_state(m_current_step);
-        
-        write_defined_global_any_fields(m_region, m_fields);
-
-        m_region->end_state(m_current_step);
-        m_region->end_mode(Ioss::STATE_TRANSIENT);
-      }
-    }
-
-    void OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
-    {
-      if ( m_mesh_defined == false )
+      double InputFile::read_defined_input_fields(double time,
+						  std::vector<stk::io::MeshField> *missing,
+						  stk::mesh::BulkData &bulk)
       {
-        m_mesh_defined = true;
+	ThrowErrorMsgIf (Teuchos::is_null(m_region),
+			 "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
-         // used in stk_adapt/stk_percept
-        bool sort_stk_parts = m_region->property_exists("sort_stk_parts");
+	Ioss::Region *region = m_region.get();
 
-        stk::io::define_output_db(*m_region, bulk_data, m_input_region, m_subset_selector.get(),
-                                  sort_stk_parts, m_use_nodeset_for_part_nodes_fields);
+	// Get struct containing interval of database time(s) containing 'time'
+	DBStepTimeInterval sti(region, time);
+	ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
+			"ERROR: Input database '" << region->get_database()->get_filename()
+			<< "' has no transient data.");
+      
+	// Sort fields to ensure they are iterated in the same order on all processors.
+	std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
-        stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
+	if (!m_fieldsInitialized) {
+	  std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+	  while (I != m_fields.end()) {
+	    (*I).m_wasFound = false; ++I;
+	  }
 
-        //Attempt to avoid putting state change into the interface.  We'll see . . .
-        m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-      }
-    }
+	  build_field_part_associations(bulk);
+	  m_fieldsInitialized = true;
 
-    void OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
-    {
-        ThrowErrorMsgIf (m_fields_defined,
-                         "Attempting to add fields after fields have already been written to the database.");
-        ThrowErrorMsgIf (alternate_name.empty(),
-                         "Attempting to output results field " << field.name() << " with no name.");
+	  size_t missing_fields = 0;
+	  std::ostringstream msg ;
+	  I = m_fields.begin();
+	  while (I != m_fields.end()) {
+	    if (!(*I).m_wasFound) {
+	      ++missing_fields;
+	      if (missing) {
+		missing->push_back(*I);
+	      }
+	      else {
+		msg << "ERROR: Could not find input field '" << (*I).db_name() << "'.\n";
+	      }
+	    }
+	    ++I;
+	  }
 
-        bool fieldAlreadyExists=false;
-        for (size_t i=0;i<m_named_fields.size();i++) {
-          if ( &field == m_named_fields[i].field() ) {
-            m_named_fields[i].set_db_name(alternate_name);
-            fieldAlreadyExists = true;
-            break;
-          }
-        }
+	  ThrowAssert(missing==NULL || missing_fields == missing->size());
+	  if (missing_fields > 0 && missing==NULL) {
+	    msg << "ERROR: Input processing at time " << time << " could not find " << missing_fields << " fields.\n";
+	    throw std::runtime_error( msg.str() );
+	  }
+	}
 
-        if (!fieldAlreadyExists) {
-          if (m_db_purpose == stk::io::WRITE_RESTART) {
-            int state_count = field.number_of_states();
-            ThrowAssert(state_count < 7);
-            int num_states_to_write = std::max(state_count-1, 1);
-            for(int state=0; state < num_states_to_write; state++) {
-              stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-              stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
-              std::string field_name_with_suffix = stk::io::get_stated_field_name(alternate_name, state_identifier);
-              stk::io::FieldAndName namedField(statedField, field_name_with_suffix);
-              m_named_fields.push_back(namedField);
-              stk::io::set_field_role(*statedField, Ioss::Field::TRANSIENT);
-            }
-          } else {
-            stk::io::FieldAndName namedField(&field, alternate_name);
-            m_named_fields.push_back(namedField);
-            stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
-          }
-        }
-    }
-
-    void OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
-    {
-      ThrowErrorMsgIf (m_fields_defined,
-                       "On region named " << m_region->name() << 
-                       " Attempting to add global variable after data has already been written to the database.");
-      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
-      internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-      m_global_any_fields.push_back(GlobalAnyVariable(name, value, type));
-    }
-
-    void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
-    {
-      ThrowErrorMsgIf (m_fields_defined,
-                       "On region named " << m_region->name() << 
-                       " Attempting to add global variable after data has already been written to the database.");
-      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
-      m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
-      internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-    }
-
-    void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
-    {
-      ThrowErrorMsgIf (m_fields_defined,
-                       "On region named " << m_region->name() << 
-                       " Attempting to add global variable after data has already been written to the database.");
-      m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
-      internal_add_global(m_region, globalVarName, "scalar", dataType);
-    }
-
-    void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
-    {
-      ThrowErrorMsgIf (m_fields_defined,
-                       "On region named " << m_region->name() << 
-                       " Attempting to add global variable after data has already been written to the database.");
-      m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
-      internal_add_global(m_region, globalVarName, component_count, dataType);
-    }
-
-    void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
-    {
-        ThrowErrorMsgIf (m_fields_defined,
-                         "On region named " << m_region->name() << 
-                         " Attempting to add global variable after data has already been written to the database.");
-        m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
-        internal_add_global(m_region, globalVarName, storage, dataType);
-    }
-
-    void OutputFile::write_global(const std::string &globalVarName,
-                                  const boost::any &value, stk::util::ParameterType::Type type)
-    {
-        internal_write_parameter(m_region, globalVarName, value, type);
-    }
-
-    void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
-    {
-        internal_write_global(m_region, globalVarName, globalVarData);
-    }
-
-    void OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
-    {
-        internal_write_global(m_region, globalVarName, globalVarData);
-    }
-
-    void OutputFile::write_global(const std::string &globalVarName, int globalVarData)
-    {
-        internal_write_global(m_region, globalVarName, globalVarData);
-    }
-
-    void OutputFile::write_global(const std::string &globalVarName, double globalVarData)
-    {
-        internal_write_global(m_region, globalVarName, globalVarData);
-    }
-
-    void OutputFile::setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager)
-    {
-      ThrowErrorMsgIf (filename.empty(),
-                       "No filename was specified for the output file creation.");
-      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", filename,
-                                                      Ioss::WRITE_RESULTS,
-                                                      communicator,
-                                                      property_manager);
-
-      if (dbo == NULL || !dbo->ok()) {
-        std::cerr << "ERROR: Could not open output database '" << filename
-                  << "' of type 'exodus'\n";
-        std::exit(EXIT_FAILURE);
+	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+	while (I != m_fields.end()) {
+	  (*I).restore_field_data(get_input_io_region().get(), bulk, sti);
+	  ++I;
+	}
+	return time;
       }
 
-      // There is no "label" for the output region; just use the filename for now so
-      // Ioss messages will specify a unique or identifiable instance.
-      m_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
-    }
+      void StkMeshIoBroker::create_ioss_region()
+      {
+	validate_input_file_index(m_active_mesh_index);
+	m_input_files[m_active_mesh_index]->create_ioss_region();
+      }
+    
+      void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
+      {
+	ThrowErrorMsgIf(!Teuchos::is_null(m_meta_data),
+			"There meta data associated with this StkMeshIoBroker has already been created. "
+			"It is not permissible to set the rank_name_vector() at this time.");
 
-    void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
-    {
-        if (!m_fields_defined) {
+	m_rank_names.clear();
+	std::copy(rank_names.begin(), rank_names.end(), std::back_inserter(m_rank_names));
+      }
+
+      void StkMeshIoBroker::create_input_mesh()
+      {
+	validate_input_file_index(m_active_mesh_index);
+	if (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region())) {
+	  m_input_files[m_active_mesh_index]->create_ioss_region();
+	}
+
+	Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
+	ThrowErrorMsgIf (region==NULL,
+			 "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
+
+	// See if meta data is null, if so, create a new one...
+	if (Teuchos::is_null(m_meta_data)) {
+	  m_meta_data = Teuchos::rcp(new stk::mesh::MetaData());
+	}
+
+	size_t spatial_dimension = region->get_property("spatial_dimension").get_int();
+	if (m_rank_names.empty()) {
+	  initialize_spatial_dimension(meta_data(), spatial_dimension, stk::mesh::entity_rank_names());
+	} else {
+	  initialize_spatial_dimension(meta_data(), spatial_dimension, m_rank_names);
+	}
+
+	process_nodeblocks(*region,    meta_data());
+	process_elementblocks(*region, meta_data());
+	process_sidesets(*region,      meta_data());
+	process_nodesets(*region,      meta_data());
+      }
+
+
+      size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type)
+      {
+	return create_output_mesh(filename, db_type, m_property_manager);
+      }
+
+
+      size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
+						 Ioss::PropertyManager &properties)
+      {
+	std::string out_filename = filename;
+	stk::util::filename_substitution(out_filename);
+	Ioss::Region *input_region = NULL;
+	if (!m_input_files.empty()) {
+	  input_region = get_input_io_region().get();
+	}
+	Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
+									   properties, input_region));
+	m_output_files.push_back(output_file);
+
+	size_t index_of_output_file = m_output_files.size()-1;
+	return index_of_output_file;
+      }
+
+
+      void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
+      }
+
+      int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index)
+      {
+	validate_output_file_index(output_file_index);
+	int current_output_step = m_output_files[output_file_index]->write_defined_output_fields(*m_bulk_data);
+	return current_output_step;
+      }
+
+      int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
+      {
+	validate_output_file_index(output_file_index);
+	int current_output_step = m_output_files[output_file_index]->process_output_request(time, *m_bulk_data);
+	return current_output_step;
+      }
+
+      void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->begin_output_step(time, *m_bulk_data);
+      }
+
+      void StkMeshIoBroker::end_output_step(size_t output_file_index)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->end_output_step();
+      }
+
+      void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
+      {
+	validate_input_file_index(m_active_mesh_index);
+
+	if (!meta_data().is_commit())
+	  meta_data().commit();
+
+
+	ThrowErrorMsgIf (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region()),
+			 "There is no Input mesh region associated with this Mesh Data.");
+
+	Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
+	ThrowErrorMsgIf (region==NULL,
+			 "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
+
+	// Check if bulk_data is null; if so, create a new one...
+	if (Teuchos::is_null(m_bulk_data)) {
+	  set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
+								 , region->get_database()->util().communicator()
+#ifdef SIERRA_MIGRATION
+								 , false
+#endif
+								 , m_connectivity_map
+								 )));
+	}
+
+	if (delay_field_data_allocation) {
+	  bulk_data().deactivate_field_updating();
+	}
+
+	bool i_started_modification_cycle = bulk_data().modification_begin();
+
+	bool ints64bit = db_api_int_size(region) == 8;
+	if (ints64bit) {
+	  int64_t zero = 0;
+	  process_nodeblocks(*region,    bulk_data(), zero);
+	  process_elementblocks(*region, bulk_data(), zero);
+	  process_nodesets(*region,      bulk_data(), zero);
+	  process_sidesets(*region,      bulk_data());
+	} else {
+	  int zero = 0;
+	  process_nodeblocks(*region,    bulk_data(), zero);
+	  process_elementblocks(*region, bulk_data(), zero);
+	  process_nodesets(*region,      bulk_data(), zero);
+	  process_sidesets(*region,      bulk_data());
+	}
+
+	if (i_started_modification_cycle) {
+	  bulk_data().modification_end();
+	}
+
+	if (region->get_property("state_count").get_int() == 0) {
+	  region->get_database()->release_memory();
+	}
+      }
+
+      void StkMeshIoBroker::populate_field_data()
+      {
+	validate_input_file_index(m_active_mesh_index);
+
+	//if field-data has already been allocated, then the allocate_field_data() method
+	//is a harmless no-op.
+	bulk_data().allocate_field_data();
+
+	Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
+	ThrowErrorMsgIf (region==NULL,
+			 "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
+
+	bool ints64bit = db_api_int_size(region) == 8;
+	if (ints64bit) {
+          int64_t zero = 0;
+          process_node_coords_and_attributes(*region, bulk_data(), zero);
+          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
+          process_nodesets_df(*region,      bulk_data(), zero);
+          process_sidesets_df(*region,      bulk_data());
+	}
+	else {
+          int zero = 0;
+          process_node_coords_and_attributes(*region, bulk_data(), zero);
+          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
+          process_nodesets_df(*region,      bulk_data(), zero);
+          process_sidesets_df(*region,      bulk_data());
+	}
+      }
+
+      // ========================================================================
+      void StkMeshIoBroker::populate_bulk_data()
+      {
+	validate_input_file_index(m_active_mesh_index);
+
+	// to preserve behavior for callers of this method, don't do the
+	// delay-field-data-allocation optimization.
+	// If want the optimization, call the population_mesh/populate_field_data methods separately.
+	bool delay_field_data_allocation = false;
+
+	populate_mesh(delay_field_data_allocation);
+	populate_field_data();
+      }
+    
+      void StkMeshIoBroker::add_input_field(const stk::io::MeshField &mesh_field)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	m_input_files[m_active_mesh_index]->add_input_field(mesh_field);
+      }
+
+      void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
+      {
+	ThrowErrorMsgIf(m_output_files.empty() || output_file_index >= m_output_files.size(),
+			"StkMeshIoBroker::validate_output_file_index: invalid output file index of "
+			<< output_file_index << ".");
+      
+	ThrowErrorMsgIf (Teuchos::is_null(m_output_files[output_file_index]->get_output_io_region()),
+			 "StkMeshIoBroker::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
+      }
+
+      void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
+      {
+	ThrowErrorMsgIf(m_input_files.empty() || input_file_index >= m_input_files.size(),
+			"StkMeshIoBroker::validate_input_file_index: invalid input file index of "
+			<< input_file_index << ".");
+      }
+
+      void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field)
+      {
+        add_field(output_file_index, field, field.name());
+      }
+
+      void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->add_field(field, alternate_name);
+      }
+
+      void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	m_input_files[m_active_mesh_index]->get_global_variable_names(names);
+      }
+
+      bool StkMeshIoBroker::get_global(const std::string &globalVarName,
+				       boost::any &value, stk::util::ParameterType::Type type,
+				       bool abort_if_not_found)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+	return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
+      }
+
+      bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar,
+				       bool abort_if_not_found)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+	return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
+				    abort_if_not_found);
+      }
+
+      bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<int> &globalVar,
+				       bool abort_if_not_found)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+	return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
+				    abort_if_not_found);
+      }
+
+      bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVar,
+				       bool abort_if_not_found)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+	return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
+				    abort_if_not_found);
+      }
+
+      bool StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar,
+				       bool abort_if_not_found)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	Teuchos::RCP<Ioss::Region> region = m_input_files[m_active_mesh_index]->get_input_io_region();
+	return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
+				    abort_if_not_found);
+      }
+
+      void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
+				       const boost::any &value, stk::util::ParameterType::Type type)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->add_global(name, value, type);
+      }
+
+      void StkMeshIoBroker::add_global_ref(size_t output_file_index, const std::string &name,
+					   const boost::any *value, stk::util::ParameterType::Type type)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->add_global_ref(name, value, type);
+      }
+
+      void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->add_global(globalVarName, dataType);
+      }
+
+      void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->add_global(globalVarName, component_count, dataType);
+      }
+
+      void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->add_global(globalVarName, storage, dataType);
+      }
+
+      void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
+					 const boost::any &value, stk::util::ParameterType::Type type)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->write_global(globalVarName, value, type);
+      }
+
+      void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
+      }
+
+      void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, int globalVarData)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
+      }
+
+      void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& globalVarData)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
+      }
+
+      void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& globalVarData)
+      {
+        validate_output_file_index(output_file_index);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
+      }
+
+
+      void StkMeshIoBroker::add_all_mesh_fields_as_input_fields()
+      {
+	validate_input_file_index(m_active_mesh_index);
+	m_input_files[m_active_mesh_index]->add_all_mesh_fields_as_input_fields(meta_data());
+      }
+
+      double StkMeshIoBroker::read_defined_input_fields(double time,
+							std::vector<stk::io::MeshField> *missing)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	return m_input_files[m_active_mesh_index]->read_defined_input_fields(time, missing, bulk_data());
+      }
+
+      double StkMeshIoBroker::read_defined_input_fields(int step,
+							std::vector<stk::io::MeshField> *missing)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	return m_input_files[m_active_mesh_index]->read_defined_input_fields(step, missing, bulk_data());
+      }
+
+      bool StkMeshIoBroker::use_nodeset_for_part_nodes_fields(size_t output_file_index) const
+      {
+	validate_output_file_index(output_file_index);
+	return m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields();
+      }
+
+      void StkMeshIoBroker::use_nodeset_for_part_nodes_fields(size_t output_file_index, bool true_false)
+      {
+	validate_output_file_index(output_file_index);
+	m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields(true_false);
+      }
+
+      size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
+						   const Ioss::PropertyManager &properties)
+      {
+	std::string out_filename = filename;
+	stk::util::filename_substitution(out_filename);
+	Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(out_filename, hb_type,
+								       properties, m_communicator));
+	m_heartbeat.push_back(heartbeat);
+	return m_heartbeat.size()-1;
+      }
+
+      Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
+			   Ioss::PropertyManager properties, MPI_Comm comm)
+	: m_current_step(0), m_processor(0)
+	{
+	  if (comm != MPI_COMM_NULL) {
+	    MPI_Comm_rank(comm, &m_processor);
+	  }
+
+	  if (m_processor == 0) {
+	    std::string db_io_type = "exodus";
+	    Ioss::DatabaseUsage db_usage = Ioss::WRITE_HISTORY;
+
+	    if (hb_type != BINARY) {
+	      db_io_type = "heartbeat";
+	      db_usage = Ioss::WRITE_HEARTBEAT;
+
+	      // Always add the "time" field to all heartbeat outputs...
+	      if (!properties.exists("SHOW_TIME_FIELD")) {
+		properties.add(Ioss::Property("SHOW_TIME_FIELD", true));
+	      }
+
+	      if (hb_type == SPYHIS) {
+		if (!properties.exists("FILE_FORMAT")) {
+		  properties.add(Ioss::Property("FILE_FORMAT", "spyhis"));
+		}
+	      }
+	      else if (hb_type == CSV) {
+		if (!properties.exists("SHOW_TIME_STAMP")) {
+		  properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
+		}
+		if (!properties.exists("FIELD_SEPARATOR")) {
+		  properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+		}
+	      }
+	      else if (hb_type == TS_CSV) {
+		if (!properties.exists("SHOW_TIME_STAMP")) {
+		  properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
+		}
+		if (!properties.exists("FIELD_SEPARATOR")) {
+		  properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+		}
+	      }
+	      else if (hb_type == TEXT) {
+		if (!properties.exists("SHOW_TIME_STAMP")) {
+		  properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
+		}
+		if (!properties.exists("FIELD_SEPARATOR")) {
+		  properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+		}
+	      }
+	      else if (hb_type == TS_TEXT) {
+		if (!properties.exists("SHOW_TIME_STAMP")) {
+		  properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
+		}
+		if (!properties.exists("FIELD_SEPARATOR")) {
+		  properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+		}
+	      }
+	    }
+
+	    Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
+							   db_usage, comm, properties);
+	    if (db == NULL || !db->ok()) {
+	      std::cerr << "ERROR: Could not open history/heartbeat database '" << filename
+			<< "'\n";
+	      return;
+	    }
+
+	    // NOTE: 'region' owns 'db' pointer at this time...
+	    m_region = Teuchos::rcp(new Ioss::Region(db, filename));
+	  }
+	}
+
+	void Heartbeat::add_global_ref(const std::string &name, const boost::any *value,
+				       stk::util::ParameterType::Type type)
+	{
+	  if (m_processor == 0) {
+	    ThrowErrorMsgIf (m_current_step != 0, 
+			     "At least one output step has been written to the history/heartbeat file. "
+			     "Variables cannot be added anymore.");
+
+	    Ioss::State currentState = m_region->get_state();
+	    if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
+	      m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+	    }
+
+	    // Determine name and type of parameter...
+	    std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
+	    internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+	    m_fields.push_back(GlobalAnyVariable(name, value, type));
+	  }
+	}
+
+	void Heartbeat::process_output(int step, double time)
+	{
+	  if (m_processor == 0) {
+	    Ioss::State currentState = m_region->get_state();
+	    if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
+	      m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+	    }
+
+	    m_region->begin_mode(Ioss::STATE_TRANSIENT);
+	    m_current_step = m_region->add_state(time);
+	    m_region->begin_state(m_current_step);
+        
+	    write_defined_global_any_fields(m_region, m_fields);
+
+	    m_region->end_state(m_current_step);
+	    m_region->end_mode(Ioss::STATE_TRANSIENT);
+	  }
+	}
+
+	void OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
+	{
+	  if ( m_mesh_defined == false )
+	    {
+	      m_mesh_defined = true;
+
+	      // used in stk_adapt/stk_percept
+	      bool sort_stk_parts = m_region->property_exists("sort_stk_parts");
+
+	      stk::io::define_output_db(*m_region, bulk_data, m_input_region, m_subset_selector.get(),
+					sort_stk_parts, m_use_nodeset_for_part_nodes_fields);
+
+	      stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
+
+	      //Attempt to avoid putting state change into the interface.  We'll see . . .
+	      m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+	    }
+	}
+
+	void OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
+	{
+	  ThrowErrorMsgIf (m_fields_defined,
+			   "Attempting to add fields after fields have already been written to the database.");
+	  ThrowErrorMsgIf (alternate_name.empty(),
+			   "Attempting to output results field " << field.name() << " with no name.");
+
+	  bool fieldAlreadyExists=false;
+	  for (size_t i=0;i<m_named_fields.size();i++) {
+	    if ( &field == m_named_fields[i].field() ) {
+	      m_named_fields[i].set_db_name(alternate_name);
+	      fieldAlreadyExists = true;
+	      break;
+	    }
+	  }
+
+	  if (!fieldAlreadyExists) {
+	    if (m_db_purpose == stk::io::WRITE_RESTART) {
+	      int state_count = field.number_of_states();
+	      ThrowAssert(state_count < 7);
+	      int num_states_to_write = std::max(state_count-1, 1);
+	      for(int state=0; state < num_states_to_write; state++) {
+		stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+		stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
+		std::string field_name_with_suffix = stk::io::get_stated_field_name(alternate_name, state_identifier);
+		stk::io::FieldAndName namedField(statedField, field_name_with_suffix);
+		m_named_fields.push_back(namedField);
+		stk::io::set_field_role(*statedField, Ioss::Field::TRANSIENT);
+	      }
+	    } else {
+	      stk::io::FieldAndName namedField(&field, alternate_name);
+	      m_named_fields.push_back(namedField);
+	      stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
+	    }
+	  }
+	}
+
+	void OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
+	{
+	  ThrowErrorMsgIf (m_fields_defined,
+			   "On region named " << m_region->name() << 
+			   " Attempting to add global variable after data has already been written to the database.");
+	  std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
+	  internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+	  m_global_any_fields.push_back(GlobalAnyVariable(name, value, type));
+	}
+
+	void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
+	{
+	  ThrowErrorMsgIf (m_fields_defined,
+			   "On region named " << m_region->name() << 
+			   " Attempting to add global variable after data has already been written to the database.");
+	  std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
+	  m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+	  internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+	}
+
+	void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
+	{
+	  ThrowErrorMsgIf (m_fields_defined,
+			   "On region named " << m_region->name() << 
+			   " Attempting to add global variable after data has already been written to the database.");
+	  m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+	  internal_add_global(m_region, globalVarName, "scalar", dataType);
+	}
+
+	void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+	{
+	  ThrowErrorMsgIf (m_fields_defined,
+			   "On region named " << m_region->name() << 
+			   " Attempting to add global variable after data has already been written to the database.");
+	  m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+	  internal_add_global(m_region, globalVarName, component_count, dataType);
+	}
+
+	void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
+	{
+	  ThrowErrorMsgIf (m_fields_defined,
+			   "On region named " << m_region->name() << 
+			   " Attempting to add global variable after data has already been written to the database.");
+	  m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+	  internal_add_global(m_region, globalVarName, storage, dataType);
+	}
+
+	void OutputFile::write_global(const std::string &globalVarName,
+				      const boost::any &value, stk::util::ParameterType::Type type)
+	{
+	  internal_write_parameter(m_region, globalVarName, value, type);
+	}
+
+	void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
+	{
+	  internal_write_global(m_region, globalVarName, globalVarData);
+	}
+
+	void OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
+	{
+	  internal_write_global(m_region, globalVarName, globalVarData);
+	}
+
+	void OutputFile::write_global(const std::string &globalVarName, int globalVarData)
+	{
+	  internal_write_global(m_region, globalVarName, globalVarData);
+	}
+
+	void OutputFile::write_global(const std::string &globalVarName, double globalVarData)
+	{
+	  internal_write_global(m_region, globalVarName, globalVarData);
+	}
+
+	void OutputFile::setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager)
+	{
+	  ThrowErrorMsgIf (filename.empty(),
+			   "No filename was specified for the output file creation.");
+	  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", filename,
+							  Ioss::WRITE_RESULTS,
+							  communicator,
+							  property_manager);
+
+	  if (dbo == NULL || !dbo->ok()) {
+	    std::cerr << "ERROR: Could not open output database '" << filename
+		      << "' of type 'exodus'\n";
+	    std::exit(EXIT_FAILURE);
+	  }
+
+	  // There is no "label" for the output region; just use the filename for now so
+	  // Ioss messages will specify a unique or identifiable instance.
+	  m_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
+	}
+
+	void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
+	{
+	  if (!m_fields_defined) {
             define_output_fields(bulk_data);
-        }
+	  }
 
-        //Attempt to avoid putting state change into the interface.  We'll see . . .
-        Ioss::State currentState = m_region->get_state();
-        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
-          m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
-        }
+	  //Attempt to avoid putting state change into the interface.  We'll see . . .
+	  Ioss::State currentState = m_region->get_state();
+	  if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
+	    m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+	  }
 
-        m_region->begin_mode(Ioss::STATE_TRANSIENT);
-        m_current_output_step = m_region->add_state(time);
-        m_region->begin_state(m_current_output_step);
-    }
+	  m_region->begin_mode(Ioss::STATE_TRANSIENT);
+	  m_current_output_step = m_region->add_state(time);
+	  m_region->begin_state(m_current_output_step);
+	}
 
-    // ========================================================================
-    // Iterate over all fields defined in the stk mesh data structure.
-    // If the field has the io_attribute set, then define that field
-    // on the corresponding io entity on the output mesh database.
-    // The database field will have the same name as the stk field.
-    //
-    // To export the data to the database, call
-    // process_output_request().
-    void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data)
-    {
-        if(m_fields_defined) {
+	// ========================================================================
+	// Iterate over all fields defined in the stk mesh data structure.
+	// If the field has the io_attribute set, then define that field
+	// on the corresponding io entity on the output mesh database.
+	// The database field will have the same name as the stk field.
+	//
+	// To export the data to the database, call
+	// process_output_request().
+	void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data)
+	{
+	  if(m_fields_defined) {
             return;
-        }
+	  }
 
-        write_output_mesh(bulk_data);
+	  write_output_mesh(bulk_data);
 
-        Ioss::Region *region = m_region.get();
+	  Ioss::Region *region = m_region.get();
 
-        // Sort the fields in m_named_fields based on the field ordinal.
-        // This is needed so all processors will process the fields in the same order
-        // Not guaranteed that the application has added the fields in order, so make
-        // the guarantee here...
-        std::sort(m_named_fields.begin(), m_named_fields.end(), fieldOrdinalSort);
+	  // Sort the fields in m_named_fields based on the field ordinal.
+	  // This is needed so all processors will process the fields in the same order
+	  // Not guaranteed that the application has added the fields in order, so make
+	  // the guarantee here...
+	  std::sort(m_named_fields.begin(), m_named_fields.end(), fieldOrdinalSort);
 
-        const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
-        // Special processing for nodeblock (all nodes in model)...
-        stk::io::ioss_add_fields(meta_data.universal_part(), stk::topology::NODE_RANK,
-                                 region->get_node_blocks()[0], m_named_fields);
+	  const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
+	  // Special processing for nodeblock (all nodes in model)...
+	  stk::io::ioss_add_fields(meta_data.universal_part(), stk::topology::NODE_RANK,
+				   region->get_node_blocks()[0], m_named_fields);
 
-        const stk::mesh::PartVector &all_parts = meta_data.get_parts();
-        for(stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
+	  const stk::mesh::PartVector &all_parts = meta_data.get_parts();
+	  for(stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
             stk::mesh::Part * const part = *ip;
 
             // Check whether this part should be output to database.
             if(stk::io::is_part_io_part(*part)) {
-                stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-                // Get Ioss::GroupingEntity corresponding to this part...
-                Ioss::GroupingEntity *entity = region->get_entity(part->name());
-                if(entity != NULL) {
-                    stk::io::ioss_add_fields(*part, rank, entity, m_named_fields);
-                }
+	      stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+	      // Get Ioss::GroupingEntity corresponding to this part...
+	      Ioss::GroupingEntity *entity = region->get_entity(part->name());
+	      if(entity != NULL) {
+		stk::io::ioss_add_fields(*part, rank, entity, m_named_fields);
+	      }
 
-                // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-                // (should probably do edges and faces also...)
-                // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-                if(rank != stk::topology::NODE_RANK) {
-                    Ioss::GroupingEntity *node_entity = NULL;
-                    if (m_use_nodeset_for_part_nodes_fields) {
-                        std::string nodes_name = part->name() + "_nodes";
-                        node_entity = region->get_entity(nodes_name);
-                    } else {
-                        node_entity = region->get_entity("nodeblock_1");
-                    }
-                    if(node_entity != NULL) {
-                        stk::io::ioss_add_fields(*part, stk::topology::NODE_RANK, node_entity, m_named_fields);
-                    }
-                }
+	      // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+	      // (should probably do edges and faces also...)
+	      // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+	      if(rank != stk::topology::NODE_RANK) {
+		Ioss::GroupingEntity *node_entity = NULL;
+		if (m_use_nodeset_for_part_nodes_fields) {
+		  std::string nodes_name = part->name() + "_nodes";
+		  node_entity = region->get_entity(nodes_name);
+		} else {
+		  node_entity = region->get_entity("nodeblock_1");
+		}
+		if(node_entity != NULL) {
+		  stk::io::ioss_add_fields(*part, stk::topology::NODE_RANK, node_entity, m_named_fields);
+		}
+	      }
             }
-        }
-        m_fields_defined = true;
-    }
+	  }
+	  m_fields_defined = true;
+	}
 
-    int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
-    {
-      ThrowErrorMsgIf(m_non_any_global_variables_defined,
-                      "The output database " << m_region->name() << " has defined global variables, "
-                      "but is calling the process_output_request() function which does not output global "
-                      "variables.  Call begin_output_step() instead.");
+	int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
+	{
+	  ThrowErrorMsgIf(m_non_any_global_variables_defined,
+			  "The output database " << m_region->name() << " has defined global variables, "
+			  "but is calling the process_output_request() function which does not output global "
+			  "variables.  Call begin_output_step() instead.");
       
-      begin_output_step(time, bulk_data);
-      write_defined_output_fields(bulk_data);
-      write_defined_global_any_fields(m_region, m_global_any_fields);
-      end_output_step();
+	  begin_output_step(time, bulk_data);
+	  write_defined_output_fields(bulk_data);
+	  write_defined_global_any_fields(m_region, m_global_any_fields);
+	  end_output_step();
 
-      return m_current_output_step;
-    }
+	  return m_current_output_step;
+	}
 
-    int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
-    {
-      Ioss::Region *region = m_region.get();
-      ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
+	int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
+	{
+	  Ioss::Region *region = m_region.get();
+	  ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
 
-      const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
-      // Special processing for nodeblock (all nodes in model)...
-      put_field_data(bulk_data, meta_data.universal_part(), stk::topology::NODE_RANK,
-                     region->get_node_blocks()[0], m_named_fields, m_subset_selector.get());
+	  const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+	  // Special processing for nodeblock (all nodes in model)...
+	  put_field_data(bulk_data, meta_data.universal_part(), stk::topology::NODE_RANK,
+			 region->get_node_blocks()[0], m_named_fields, m_subset_selector.get());
 
-      // Now handle all non-nodeblock parts...
-      const stk::mesh::PartVector &all_parts = meta_data.get_parts();
-      for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-        stk::mesh::Part * const part = *ip;
+	  // Now handle all non-nodeblock parts...
+	  const stk::mesh::PartVector &all_parts = meta_data.get_parts();
+	  for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+	    stk::mesh::Part * const part = *ip;
 
-        // Check whether this part should be output to database.
-        if (stk::io::is_part_io_part(*part)) {
-          stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-          // Get Ioss::GroupingEntity corresponding to this part...
-          Ioss::GroupingEntity *entity = region->get_entity(part->name());
-          if (entity != NULL && entity->type() != Ioss::SIDESET) {
-            put_field_data(bulk_data, *part, rank, entity, m_named_fields, m_subset_selector.get());
-          }
+	    // Check whether this part should be output to database.
+	    if (stk::io::is_part_io_part(*part)) {
+	      stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+	      // Get Ioss::GroupingEntity corresponding to this part...
+	      Ioss::GroupingEntity *entity = region->get_entity(part->name());
+	      if (entity != NULL && entity->type() != Ioss::SIDESET) {
+		put_field_data(bulk_data, *part, rank, entity, m_named_fields, m_subset_selector.get());
+	      }
 
-          // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-          // (should probably do edges and faces also...)
-          // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::topology::NODE_RANK && m_use_nodeset_for_part_nodes_fields) {
-            std::string nodes_name = part->name() + "_nodes";
-            Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-            if (node_entity != NULL) {
-              put_field_data(bulk_data, *part, stk::topology::NODE_RANK, node_entity, m_named_fields,
-                             m_subset_selector.get());
-            }
-          }
-        }
-      }
-      return m_current_output_step;
-    }
+	      // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+	      // (should probably do edges and faces also...)
+	      // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+	      if (rank != stk::topology::NODE_RANK && m_use_nodeset_for_part_nodes_fields) {
+		std::string nodes_name = part->name() + "_nodes";
+		Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+		if (node_entity != NULL) {
+		  put_field_data(bulk_data, *part, stk::topology::NODE_RANK, node_entity, m_named_fields,
+				 m_subset_selector.get());
+		}
+	      }
+	    }
+	  }
+	  return m_current_output_step;
+	}
 
-    void OutputFile::end_output_step()
-    {
-        m_region->end_state(m_current_output_step);
-        m_region->end_mode(Ioss::STATE_TRANSIENT);
-    }
+	void OutputFile::end_output_step()
+	{
+	  m_region->end_state(m_current_output_step);
+	  m_region->end_mode(Ioss::STATE_TRANSIENT);
+	}
 
-    void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
-    {
-      ThrowErrorMsgIf(m_mesh_defined,
-                      "ERROR: On region named " << m_region->name() << 
-                      " the subset_selector cannot be changed after the mesh has already been written.");
-      m_subset_selector = my_selector;
-    }    
-  } // namespace io
-} // namespace stk
+	void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+	{
+	  ThrowErrorMsgIf(m_mesh_defined,
+			  "ERROR: On region named " << m_region->name() << 
+			  " the subset_selector cannot be changed after the mesh has already been written.");
+	  m_subset_selector = my_selector;
+	}    
+
+	bool OutputFile::use_nodeset_for_part_nodes_fields() const
+	{
+	  return m_use_nodeset_for_part_nodes_fields;
+	}
+
+	void OutputFile::use_nodeset_for_part_nodes_fields(bool true_false)
+	{
+	  ThrowErrorMsgIf(m_mesh_defined,
+			  "ERROR: The use_nodeset_for_part_nodes_fields setting cannot be changed after "
+			  "the mesh has already been written.");
+	  m_use_nodeset_for_part_nodes_fields = true_false;
+	}
+
+    } // namespace io
+  } // namespace stk

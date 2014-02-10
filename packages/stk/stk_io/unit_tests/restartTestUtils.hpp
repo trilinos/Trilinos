@@ -126,7 +126,7 @@ inline void testMultistateFieldWroteCorrectlyToRestart(const std::string &restar
     stk::mesh::FieldBase *triStateField =
             declareTriStateNodalField(restartedMetaData, fieldName);
 
-    stkIo.add_input_field(*triStateField);
+    stkIo.add_input_field(stk::io::MeshField(*triStateField));
     stkIo.populate_bulk_data();
     stkIo.read_defined_input_fields(time);
 
@@ -158,9 +158,9 @@ inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename
     stk::mesh::FieldBase *FieldN   = declareNodalField(resultsedMetaData, nName, 1);
     stk::mesh::FieldBase *FieldNm1 = declareNodalField(resultsedMetaData, nm1Name, 1);
 
-    stkIo.add_input_field(*FieldNp1, np1Name);
-    stkIo.add_input_field(*FieldN,   nName);
-    stkIo.add_input_field(*FieldNm1, nm1Name);
+    stkIo.add_input_field(stk::io::MeshField(*FieldNp1, np1Name));
+    stkIo.add_input_field(stk::io::MeshField(*FieldN,   nName));
+    stkIo.add_input_field(stk::io::MeshField(*FieldNm1, nm1Name));
 
     stkIo.populate_bulk_data();
     stkIo.read_defined_input_fields(time);

@@ -10,13 +10,32 @@
 #define STK_IO_MeshField_h
 
 #include <string>
+#include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/Part.hpp"  
+
+namespace Ioss {
+  class GroupingEntity;
+  class Region;
+}
 
 namespace stk {
   namespace mesh {
     class FieldBase;
   }
+  
   namespace io {
+    class DBStepTimeInterval;
     class Interpolator;
+    
+    struct MeshFieldPart {
+      MeshFieldPart(const stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *io_entity)
+	: m_ordinal(part.mesh_meta_data_ordinal()), m_rank(rank), m_ioEntity(io_entity)
+      {}
+
+      unsigned m_ordinal;
+      stk::mesh::EntityRank m_rank;
+      Ioss::GroupingEntity *m_ioEntity;
+    };
     
     class MeshField
     {
@@ -89,20 +108,33 @@ namespace stk {
       MeshField& set_start_time(double start_time);
       MeshField& set_stop_time(double stop_time);
   
+      void restore_field_data(Ioss::Region *region,
+			      stk::mesh::BulkData &bulk,
+			      const stk::io::DBStepTimeInterval &sti);
+      
       void get_data(double time, bool use_state_n = false);
       void initialize(); // Initialize for interpolation role.
 
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}
 	
+      void add_part(const stk::mesh::Part &part,
+		    const stk::mesh::EntityRank rank,
+		    Ioss::GroupingEntity *io_entity);
+      
     private:
+      std::vector<MeshFieldPart> m_fieldParts;
+      
       stk::mesh::FieldBase *m_field;
       std::string m_dbName; ///<  Name of the field on the input/output database.
 
       DatabaseTimeMapping m_timeMap;
+    public:
       TimeMatchOption m_timeMatch;
+    private:
       bool m_oneTimeOnly;
     public:
+      bool m_singleState;
       bool m_wasFound;
     private:
       double m_time;
