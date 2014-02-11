@@ -1548,10 +1548,10 @@ namespace stk {
       }
 
 
-      void StkMeshIoBroker::add_all_mesh_fields_as_input_fields()
+      void StkMeshIoBroker::add_all_mesh_fields_as_input_fields(MeshField::TimeMatchOption tmo)
       {
 	validate_input_file_index(m_active_mesh_index);
-	m_input_files[m_active_mesh_index]->add_all_mesh_fields_as_input_fields(meta_data());
+	m_input_files[m_active_mesh_index]->add_all_mesh_fields_as_input_fields(meta_data(), tmo);
       }
 
       double StkMeshIoBroker::read_defined_input_fields(double time,

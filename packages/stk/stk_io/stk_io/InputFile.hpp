@@ -4,6 +4,7 @@
 #include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
 #include <stk_mesh/base/Types.hpp>
 #include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
+#include <stk_io/MeshField.hpp>   
 
 namespace Ioss {
   class PropertyManager;
@@ -20,8 +21,6 @@ namespace stk {
   }
   
   namespace io {
-    class MeshField;
-    
     class InputFile
     {
     public:
@@ -43,7 +42,7 @@ namespace stk {
       void create_ioss_region();
       //      void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name);
       void add_input_field(const stk::io::MeshField &mesh_field);
-      void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta);
+      void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
       double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missing,
 				       stk::mesh::BulkData &bulk);
       double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missing,

@@ -107,7 +107,7 @@ namespace stk {
       m_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    void InputFile::add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta)
+    void InputFile::add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo)
     {
       stk::io::define_input_fields(*m_region.get(),  meta);
 
@@ -116,7 +116,7 @@ namespace stk {
       for (size_t i=0; i < fields.size(); i++) {
         const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
         if ( role && *role == Ioss::Field::TRANSIENT ) {
-	  add_input_field(MeshField(fields[i]));
+	  add_input_field(MeshField(fields[i], fields[i]->name(), tmo));
 	}
       }
     }

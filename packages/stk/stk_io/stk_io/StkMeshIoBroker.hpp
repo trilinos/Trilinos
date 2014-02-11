@@ -351,7 +351,7 @@ namespace stk {
       //
       // NOTE: This should only be called if you want *ALL* transient
       // fields on the input mesh to be defined as stk fields and read.
-      void add_all_mesh_fields_as_input_fields();
+      void add_all_mesh_fields_as_input_fields(MeshField::TimeMatchOption tmo = MeshField::CLOSEST);
 
       // For all transient input fields defined, read the data at the
       // specified database step 'step' (1-based) and populate the stk
