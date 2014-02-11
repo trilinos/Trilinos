@@ -93,6 +93,7 @@
 #include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
+#include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
@@ -1522,6 +1523,15 @@ namespace panzer_stk {
        if(m_req_handler==Teuchos::null) {
           reqHandler = Teuchos::rcp(new Teko::RequestHandler);
           m_req_handler = reqHandler;
+       }
+
+       std::string fieldName;
+       if(determineCoordinateField(*globalIndexer,fieldName)) {
+          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
+             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
+          Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,GO> > callback =
+                Teuchos::rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
+          reqHandler->addRequestCallback(callback);
        }
 
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
