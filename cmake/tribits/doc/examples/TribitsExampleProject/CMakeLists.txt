@@ -4,6 +4,10 @@
 #                                                                              #
 ################################################################################
 
+# Make CMake set WIN32 with CYGWIN for older CMake versions.  CMake requires
+# this to be in the top-level CMakeLists.txt file and not an include file :-(
+SET(CMAKE_LEGACY_CYGWIN_WIN32 1 CACHE BOOL "" FORCE)
+
 #
 # A) Define your project name and set up major project options
 #
@@ -20,7 +24,6 @@ PROJECT(${PROJECT_NAME} NONE)
 #
 
 SET(CMAKE_MODULE_PATH "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch")
-MESSAGE("CMAKE_MODULE_PATH = '${CMAKE_MODULE_PATH}'")
 INCLUDE(TribitsProject)
 
 # CMake requires this be in the top file and not in an include file :-(
