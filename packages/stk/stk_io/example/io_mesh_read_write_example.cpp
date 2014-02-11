@@ -36,8 +36,12 @@ namespace {
 		       const std::string &filename,
 		       stk::io::StkMeshIoBroker &mesh_data,
 		       int db_integer_size,
-		       stk::io::HeartbeatType hb_type)
+		       stk::io::HeartbeatType hb_type,
+		       int interpolation_intervals)
   {
+    if (interpolation_intervals == 0)
+      interpolation_intervals = 1;
+    
     std::string file = working_directory;
     file += filename;
 
@@ -47,7 +51,11 @@ namespace {
 
     // This is done just to define some fields in stk
     // that can be used later for reading restart data.
-    mesh_data.add_all_mesh_fields_as_input_fields();
+    stk::io::MeshField::TimeMatchOption tmo = stk::io::MeshField::CLOSEST;
+    if (interpolation_intervals > 1) {
+      tmo = stk::io::MeshField::LINEAR_INTERPOLATION;
+    }
+    mesh_data.add_all_mesh_fields_as_input_fields(tmo);
 
     mesh_data.populate_bulk_data();
 
@@ -128,39 +136,49 @@ namespace {
     else {
       for (int step=1; step <= timestep_count; step++) {
 	double time = mesh_data.get_input_io_region()->get_state_time(step);
+	if (step == timestep_count)
+	  interpolation_intervals = 1;
+	
+	int step_end = step < timestep_count ? step+1 : step;
+	double tend =  mesh_data.get_input_io_region()->get_state_time(step_end);
+	double tbeg = time;
+	double delta = (tend - tbeg) / static_cast<double>(interpolation_intervals);
+	
+	for (int interval = 0; interval < interpolation_intervals; interval++) {
+	  // Normally, an app would only process the restart input at a single step and
+	  // then continue with execution at that point.  Here just for testing, we are
+	  // reading restart data at each step on the input restart file/mesh and then
+	  // outputting that data to the restart and results output.
+	  time = tbeg + delta * static_cast<double>(interval);
 
-	// Normally, an app would only process the restart input at a single step and
-	// then continue with execution at that point.  Here just for testing, we are
-	// reading restart data at each step on the input restart file/mesh and then
-	// outputting that data to the restart and results output.
+	  mesh_data.read_defined_input_fields(time);
+	  mesh_data.begin_output_step(restart_index, time);
+	  mesh_data.begin_output_step(results_index, time);
 
-	mesh_data.read_defined_input_fields(step);
-	mesh_data.begin_output_step(restart_index, time);
-	mesh_data.begin_output_step(results_index, time);
+	  mesh_data.write_defined_output_fields(restart_index);
+	  mesh_data.write_defined_output_fields(results_index);
 
-	mesh_data.write_defined_output_fields(restart_index);
-	mesh_data.write_defined_output_fields(results_index);
+	  // Transfer all global variables from the input mesh to the
+	  // restart and results databases
+	  stk::util::ParameterMapType::const_iterator i = parameters.begin();
+	  stk::util::ParameterMapType::const_iterator iend = parameters.end();
+	  for (; i != iend; ++i) {
+	    const std::string parameterName = (*i).first;
+	    stk::util::Parameter &parameter = parameters.get_param(parameterName);
+	    mesh_data.get_global(parameterName, parameter.value, parameter.type);
+	  }
 
-	// Transfer all global variables from the input mesh to the
-	// restart and results databases
-	stk::util::ParameterMapType::const_iterator i = parameters.begin();
-	stk::util::ParameterMapType::const_iterator iend = parameters.end();
-	for (; i != iend; ++i) {
-	  const std::string parameterName = (*i).first;
-	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	  mesh_data.get_global(parameterName, parameter.value, parameter.type);
+	  for (i=parameters.begin(); i != iend; ++i) {
+	    const std::string parameterName = (*i).first;
+	    stk::util::Parameter parameter = (*i).second;
+	    mesh_data.write_global(restart_index, parameterName, parameter.value, parameter.type);
+	    mesh_data.write_global(results_index, parameterName, parameter.value, parameter.type);
+	  }
+
+	  mesh_data.end_output_step(restart_index);
+	  mesh_data.end_output_step(results_index);
+
 	}
-
-	for (i=parameters.begin(); i != iend; ++i) {
-	  const std::string parameterName = (*i).first;
-	  stk::util::Parameter parameter = (*i).second;
-	  mesh_data.write_global(restart_index, parameterName, parameter.value, parameter.type);
-	  mesh_data.write_global(results_index, parameterName, parameter.value, parameter.type);
-	}
-
-	mesh_data.end_output_step(restart_index);
-	mesh_data.end_output_step(results_index);
-
 	mesh_data.process_heartbeat_output(heart, step, time);
       }
     }
@@ -176,7 +194,8 @@ namespace {
 	      int  compression_level,
 	      bool compression_shuffle,
 	      int  db_integer_size,
-	      stk::io::HeartbeatType hb_type)
+	      stk::io::HeartbeatType hb_type,
+	      int interpolation_intervals)
   {
     stk::io::StkMeshIoBroker mesh_data(comm);
 
@@ -208,7 +227,8 @@ namespace {
       mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
     }
 
-    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size, hb_type);
+    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size, hb_type,
+		    interpolation_intervals);
   }
 }
 
@@ -221,6 +241,7 @@ int main(int argc, char** argv)
   std::string mesh = "";
   std::string type = "exodusii";
   int compression_level = 0;
+  int interpolation_intervals = 0;
   bool compression_shuffle = false;
   int db_integer_size = 4;
   bool compose_output = false;
@@ -245,6 +266,7 @@ int main(int argc, char** argv)
      "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
     ("heartbeat_format", bopt::value<std::string>(&heartbeat_format),
      "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis")
+    ("interpolate", bopt::value<int>(&interpolation_intervals), "number of intervals to divide each input time step into")
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
 
@@ -282,7 +304,8 @@ int main(int argc, char** argv)
 
   driver(use_case_environment.m_comm, parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, db_integer_size, hb_type);
+	 compression_level, compression_shuffle, db_integer_size, hb_type,
+	 interpolation_intervals);
 
   return 0;
 }
