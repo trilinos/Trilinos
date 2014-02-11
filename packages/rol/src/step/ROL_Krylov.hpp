@@ -97,12 +97,7 @@ public:
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
 
-    if ( this->useInexact_ ) {
-      itol = gtol/(this->maxit_ * gnorm); 
-    }
-
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
 
     iter = 0; 
     flag = 0;
@@ -114,6 +109,11 @@ public:
     Real gv    = v->dot(*gnew); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
+      if ( this->useInexact_ ) {
+        itol = gtol/(this->maxit_ * gnorm); 
+      }
+      pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
+
       kappa = p->dot(*Hp);
       if ( kappa <= 0.0 ) { 
         flag = 2;
@@ -137,16 +137,13 @@ public:
  
       p->scale(beta);
       p->axpy(1.0,*v);
-
-      if ( this->useInexact_ ) {
-        itol = gtol/(this->maxit_ * gnorm); 
-      }
-      pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
     }
-    iter++;
     if ( iter == this->maxit_ ) {
       flag = 1;
     }    
+    else {
+      iter++;
+    }
   }
 
   // Use (inexact) CR to solve Newton system 
@@ -222,10 +219,12 @@ public:
       Hp->scale(beta);
       Hp->axpy(1.0,*Hv); 
     }
-    iter++;
     if ( iter == this->maxit_ ) {
       flag = 1;
-    }    
+    }   
+    else {
+      iter++;
+    } 
   }
 };
 
