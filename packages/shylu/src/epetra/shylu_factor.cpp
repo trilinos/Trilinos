@@ -946,7 +946,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
     	data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
     				(IfpackFactory.Create(schurPrec,
-					 Sbar.getRawPtr(), 0, false));
+					 Sbar.getRawPtr(), config->overlap, false));
 
         data->schur_prec->Initialize();
         data->schur_prec->Compute();

@@ -118,6 +118,7 @@ typedef struct
     int debug_level;
     //DebugManager dm;
     int reset_iter;             // When should we reset the guided_probing
+  int overlap;
 } shylu_config;
 
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,

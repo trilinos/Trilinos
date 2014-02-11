@@ -144,7 +144,7 @@ int Ifpack_ShyLU::Initialize()
     slu_config_.schurSolver = Teuchos::getParameter<string>(List_,
                                                 "Schur Complement Solver");
     slu_config_.schurAmesosSolver = List_.get<string>("Schur Amesos Solver",
-    											"Amesos_Klu");
+                                                "Amesos_Klu");
     //slu_config_.diagonalBlockSolver =
             //Teuchos::getParameter<string>(List_, "Diagonal Block Solver");
     slu_config_.diagonalBlockSolver = List_.get<string>("Diagonal Block Solver",
@@ -174,30 +174,31 @@ int Ifpack_ShyLU::Initialize()
     }
     if (schurApproxMethod == "IQR")
     {
-    	slu_config_.schurSolver = "IQR";
-    	slu_config_.schurApproxMethod = 4;
+        slu_config_.schurSolver = "IQR";
+        slu_config_.schurApproxMethod = 4;
 
-    	List_.set<bool>("Use full IQR", true, "");
-    	slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
+        List_.set<bool>("Use full IQR", true, "");
+        slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
     }
     if (schurApproxMethod == "G")
     {
-    	slu_config_.schurSolver = "G";
-    	slu_config_.schurApproxMethod = 5;
+        slu_config_.schurSolver = "G";
+        slu_config_.schurApproxMethod = 5;
 
-    	List_.set<bool>("Use full IQR", false, "");
-    	slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
+        List_.set<bool>("Use full IQR", false, "");
+        slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
     }
 
     slu_config_.schurPreconditioner = List_.get<string>("Schur Preconditioner",
-    													"ILU stand-alone");
+                                                        "ILU stand-alone");
     slu_config_.silent_subiter = List_.get<bool>("Silent subiterations",
-    											 true);
+                                                 true);
 
     slu_config_.inner_tolerance =  Teuchos::getParameter<double>(List_,
                                                 "Inner Solver Tolerance");
     slu_config_.inner_maxiters =  Teuchos::getParameter<int>(List_,
                                                 "Inner Solver MaxIters");
+    slu_config_.overlap =  List_.get<int>("Schur Preconditioner Overlap", 0);
     string sep_type = Teuchos::getParameter<string>(List_,
                                                     "Separator Type");
     int dl =  List_.get<int>("Debug Level", 0);
