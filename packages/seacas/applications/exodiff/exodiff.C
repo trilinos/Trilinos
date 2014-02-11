@@ -301,7 +301,7 @@ namespace {
       // Calculate proprtion...
       double t1 = file.Time(tbef);
       double t2 = file.Time(tbef+1);
-      tprop.proportion = (t2 - time) / (t2 - t1);
+      tprop.proportion = (time - t1) / (t2 - t1);
       return tprop;
     }
   }
