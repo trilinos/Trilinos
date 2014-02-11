@@ -127,6 +127,12 @@ public:
   */
   virtual std::string print( AlgorithmState<Real> &algo_state, bool printHeader = false ) const = 0;
 
+  /** \brief Print iterate status.
+  */
+  virtual Teuchos::RCP<const StepState<Real> > getState(void) const {
+    return this->state_;
+  }
+
   // struct StepState (scalars, vectors) map?
 
   // getState
