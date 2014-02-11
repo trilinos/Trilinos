@@ -4,12 +4,11 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 namespace {
 
-  TEST(StkMeshIoBrokerHowTo, handleMissingFieldOnRead)
+  TEST(StkMeshIoBrokerHowTo, handleMissingFieldOnReadThrow)
   {
     std::string ic_name = "input_field_example.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -91,29 +90,12 @@ namespace {
       //+ This field does not exist and will not be found.
       stkIo.add_input_field(stk::io::MeshField(displacement, "disp"));
 
+      //+ If read the fields, but don't pass in the 'missing_fields'
+      //+ vector, the code will print an error message and throw an
+      //+ exception if it doesn't find all of the requested fields.
+      EXPECT_THROW(stkIo.read_defined_input_fields(2.0), std::exception);
       
-      //+ Read the field values from the database at time 2.0
-      //+ The 'missing_fields' vector will contain the names of
-      //+ any fields that were not found.
-      std::vector<stk::io::MeshField> missing_fields;
-      stkIo.read_defined_input_fields(2.0, &missing_fields);
-
-      // ============================================================
-      //+ VERIFICATION
-      //+ The 'missing' vector should be of size 1 and contain
-      //+ 'disp'
-      EXPECT_EQ(1u, missing_fields.size());
-      EXPECT_STREQ("disp", missing_fields[0].db_name().c_str());
-		  
-      // The value of the "temperature" field at all nodes should be 2.0
-      std::vector<stk::mesh::Entity> nodes;
-      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK,
-			      nodes);
-      for(size_t i=0; i<nodes.size(); i++) {
-	double *fieldDataForNode =
-	  stk::mesh::field_data(temperature, nodes[i]);
-	EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
-      }
+      //+ No field data will have been read in this case...
       //-END      
     }
     // ============================================================
