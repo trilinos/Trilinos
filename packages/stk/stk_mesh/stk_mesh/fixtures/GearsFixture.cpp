@@ -12,7 +12,7 @@
 #include <cmath>                        // for fabs, floor
 #include <iostream>                     // for ostringstream, etc
 #include <set>                          // for set
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
@@ -23,6 +23,7 @@
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine

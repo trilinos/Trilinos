@@ -11,23 +11,24 @@
 
 #include <stddef.h>                     // for NULL
 #include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, Bucket::size_type
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction, etc
 #include <stk_mesh/base/FieldState.hpp>  // for FieldState
-#include <stk_mesh/base/Types.hpp>      // for EntityRank
+#include <stk_mesh/base/Types.hpp>      // for FieldTraits, EntityRank, etc
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>  // for FieldBaseImpl
 #include <string>                       // for string
-#include <vector>                       // for vector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
-#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/TrackingAllocator.hpp"
 namespace shards { class ArrayDimTag; }
-namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class DataTraits; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class UnitTestFieldImpl; } }
 namespace stk { namespace mesh { namespace impl { class FieldRepository; } } }
+
+namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk {
 namespace mesh {

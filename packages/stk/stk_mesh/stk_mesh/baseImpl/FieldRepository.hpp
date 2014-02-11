@@ -15,7 +15,8 @@
 #include <vector>                       // for vector
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/Selector.hpp"   // for Selector
-#include <stk_mesh/base/Field.hpp>
+#include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
 namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class DataTraits; } }
 namespace stk { namespace mesh { class MetaData; } }

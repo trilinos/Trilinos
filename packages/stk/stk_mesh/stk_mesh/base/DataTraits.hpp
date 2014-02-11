@@ -17,7 +17,7 @@
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
 namespace stk { class CommBuffer; }
-namespace stk { namespace mesh { class DataTraits; } }  // lines 25-25
+namespace stk { namespace mesh { class DataTraits; } }
 
 namespace stk {
 namespace mesh {

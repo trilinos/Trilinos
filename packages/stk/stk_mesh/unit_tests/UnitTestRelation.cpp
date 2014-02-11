@@ -16,6 +16,7 @@
 #include <string>                       // for string
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, vector<>::iterator
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<

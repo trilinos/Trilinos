@@ -8,6 +8,7 @@
 
 #include <stk_mesh/base/FieldBase.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
+#include <vector>                       // for vector, etc
 #include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction

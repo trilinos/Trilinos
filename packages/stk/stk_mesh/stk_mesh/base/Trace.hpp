@@ -50,12 +50,9 @@
 //   are up to date.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <stk_mesh/base/DiagWriter.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
-#include <stk_util/diag/WriterExt.hpp>
-#include <string>
-#include <typeinfo>
-#include <vector>
+#include <iosfwd>                       // for ostream
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector, etc
 
 namespace stk {
 namespace mesh {

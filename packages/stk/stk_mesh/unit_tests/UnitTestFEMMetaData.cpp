@@ -8,6 +8,7 @@
 
 #include <stddef.h>                     // for size_t, NULL
 #include <algorithm>                    // for count
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stdexcept>                    // for runtime_error, logic_error
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
@@ -15,6 +16,7 @@
 #include <vector>                       // for vector
 #include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
 #include "Shards_CellTopology.hpp"      // for operator==, CellTopology
+#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_topology/topology.hpp"    // for topology, etc

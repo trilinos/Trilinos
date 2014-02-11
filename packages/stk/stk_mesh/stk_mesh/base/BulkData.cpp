@@ -10,53 +10,51 @@
  * @author H. Carter Edwards
  */
 
-#include <stddef.h>                     // for NULL, size_t
-#include <set>                          // for _Rb_tree_const_iterator, etc
 #include <stk_mesh/base/BulkData.hpp>
-#include <cstring>                      // for strcmp, NULL
-#include <string>                       // for operator<<
-#include <string.h>                     // for NULL, memcpy, memset
-#include <algorithm>                    // for lower_bound, sort, unique, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <string.h>                     // for memcpy, memset, strcmp
+#include <algorithm>                    // for sort, lower_bound, unique, etc
 #include <boost/foreach.hpp>            // for auto_any_base, etc
-#include <fstream>                      // for operator<<, basic_ostream, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
-#include <utility>                      // for pair
-#include <vector>                       // for vector, vector<>::iterator, etc
-#include <iterator>                     // for distance
-#include <stk_mesh/base/Bucket.hpp>     // for BucketIdComparator, Bucket, etc
+#include <iterator>                     // for back_insert_iterator, etc
+#include <set>                          // for set, set<>::iterator, etc
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
 #include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
 #include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
-#include "mpi.h"                        // for ompi_communicator_t
+#include <string>                       // for char_traits, string, etc
+#include <utility>                      // for pair, make_pair, swap
+#include <vector>                       // for vector, etc
 #include "boost/mpl/bool.hpp"           // for bool_
 #include "boost/mpl/bool_fwd.hpp"       // for false_
+#include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/EntityCommDatabase.hpp"  // for EntityCommDatabase
-#include "stk_mesh/base/Part.hpp"       // for remove, insert
-#include "stk_mesh/base/Relation.hpp"   // for Relation
+#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
+#include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
+#include "stk_mesh/base/Part.hpp"       // for Part, remove, etc
+#include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
-#include "stk_mesh/base/Trace.hpp"      // for DiagIfWatching, etc
-#include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityVector, etc
+#include "stk_mesh/base/Trace.hpp"      // for DiagIfWatching, Trace_, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
-#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
-#include "stk_util/util/NamedPair.hpp"  // for operator==, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
+#include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
-#include "stk_topology/topology.hpp"    // for topology, etc
 
 
 namespace stk {

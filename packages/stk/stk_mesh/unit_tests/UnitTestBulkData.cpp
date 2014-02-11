@@ -10,7 +10,7 @@
 #include <stddef.h>                     // for size_t
 #include <stdlib.h>                     // for exit
 #include <exception>                    // for exception
-#include <iostream>                     // for ostringstream, etc
+#include <iostream>                     // for basic_ostream::operator<<, etc
 #include <iterator>                     // for distance
 #include <map>                          // for _Rb_tree_const_iterator
 #include <stdexcept>                    // for logic_error, runtime_error
@@ -28,11 +28,13 @@
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"       // for Part

@@ -13,6 +13,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, etc
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey

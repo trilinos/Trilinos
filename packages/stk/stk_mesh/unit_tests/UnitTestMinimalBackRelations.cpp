@@ -13,7 +13,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BucketConnectivity.hpp"

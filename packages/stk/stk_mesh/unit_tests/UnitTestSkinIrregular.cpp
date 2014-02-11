@@ -21,6 +21,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_topology/topology.hpp"    // for topology, etc

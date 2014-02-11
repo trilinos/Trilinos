@@ -11,6 +11,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_SELF, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity

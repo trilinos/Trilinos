@@ -17,6 +17,7 @@
 #include <string>                       // for string, operator==, etc
 #include <vector>                       // for vector
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity

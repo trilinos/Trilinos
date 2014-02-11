@@ -10,7 +10,7 @@
 #include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, ostream, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -19,9 +19,10 @@
 #include <string>                       // for operator==, string, etc
 #include <vector>                       // for vector
 #include "Shards_Array.hpp"
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_SELF, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for print
+#include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc

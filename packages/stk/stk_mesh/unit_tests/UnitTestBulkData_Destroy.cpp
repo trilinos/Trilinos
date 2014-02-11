@@ -7,12 +7,14 @@
 /*------------------------------------------------------------------------*/
 
 #include <stddef.h>                     // for size_t
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap

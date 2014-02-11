@@ -15,7 +15,6 @@
 #include <stdint.h>                     // for uint16_t
 #include <functional>                   // for less
 #include <iostream>                     // for operator<<, basic_ostream, etc
-#include <iterator>                     // for distance
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
@@ -29,25 +28,27 @@
 #include <stk_util/parallel/DistributedIndex.hpp>  // for DistributedIndex
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/PageAlignedAllocator.hpp>
-#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
-#include <string>                       // for char_traits, operator<<, etc
+#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator, etc
+#include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
 #include "Shards_CellTopologyData.h"    // for CellTopologyData, etc
 #include "mpi.h"                        // for ompi_communicator_t
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/Part.hpp"       // for Part (ptr only), etc
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
-
 namespace sierra { namespace Fmwk { class MeshBulkData; } }
 namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
+
 
 //----------------------------------------------------------------------
 

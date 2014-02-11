@@ -7,11 +7,13 @@
 /*------------------------------------------------------------------------*/
 
 #include <stddef.h>                     // for size_t
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector, etc
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc

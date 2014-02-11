@@ -7,11 +7,11 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdexcept>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }

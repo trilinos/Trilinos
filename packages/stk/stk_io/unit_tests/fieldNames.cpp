@@ -1,4 +1,5 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/diag/StringUtil.hpp>
 #include <string>
 #include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>

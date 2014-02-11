@@ -13,6 +13,7 @@
 #include <stk_mesh/base/Property.hpp>   // for property_data
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for string
+#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/PropertyBase.hpp"  // for Property, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }

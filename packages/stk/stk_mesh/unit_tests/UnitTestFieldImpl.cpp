@@ -8,7 +8,7 @@
 
 
 #include <stddef.h>                     // for NULL
-#include <iostream>                     // for ostream, operator<<, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
@@ -17,6 +17,7 @@
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "Shards_Array.hpp"
+#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction

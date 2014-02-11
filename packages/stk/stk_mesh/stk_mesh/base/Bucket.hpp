@@ -13,7 +13,7 @@
 #include <algorithm>                    // for lower_bound
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
-#include <stk_mesh/base/CellTopology.hpp> 
+#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
@@ -25,11 +25,11 @@
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }  // lines 61-61
-namespace stk { namespace mesh { namespace impl { class Partition; } } }  // lines 60-60
-namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor; } } }  // lines 62-62
-namespace stk { namespace mesh { namespace utest { struct ReversePartition; } } }  // lines 55-55
-namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }  // lines 56-56
+namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
+namespace stk { namespace mesh { namespace impl { class Partition; } } }
+namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor; } } }
+namespace stk { namespace mesh { namespace utest { struct ReversePartition; } } }
+namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {

@@ -13,6 +13,7 @@
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
+#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class BulkData; } }

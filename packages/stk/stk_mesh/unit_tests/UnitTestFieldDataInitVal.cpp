@@ -6,16 +6,18 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian2d, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for operator!=
+#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc

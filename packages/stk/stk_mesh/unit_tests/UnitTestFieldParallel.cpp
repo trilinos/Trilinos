@@ -6,28 +6,32 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stddef.h>                     // for size_t, NULL
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, field_data, etc
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for max, min
+#include <iostream>                     // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldParallel.hpp>  // for parallel_max, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector
-#include "Shards_BasicTopologies.hpp"   // for Hexahedron
+#include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian
+#include "stk_mesh/base/CreateEdges.hpp"  // for create_edges
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
-#include "stk_mesh/base/Types.hpp"      // for PairIterEntityComm, etc
-#include "stk_mesh/base/CreateEdges.hpp"
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
+#include "stk_mesh/fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_mesh/fixtures/HexFixture.hpp"
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { class Part; } }
 
 namespace {
 

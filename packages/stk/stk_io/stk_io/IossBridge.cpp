@@ -15,7 +15,7 @@
 #include <complex>                      // for complex
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData, etc
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, Matrix, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
