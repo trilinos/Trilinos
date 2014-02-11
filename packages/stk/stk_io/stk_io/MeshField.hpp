@@ -36,16 +36,15 @@ namespace stk {
       void get_interpolated_field_data(const DBStepTimeInterval &sti, std::vector<double> &values);
       void release_field_data();
       
+      stk::mesh::EntityRank get_entity_rank() const {return m_rank;}
+      Ioss::GroupingEntity* get_io_entity() const {return m_ioEntity;}
+
     private:
       void load_field_data(const DBStepTimeInterval &sti);
 
-    public:
       stk::mesh::EntityRank m_rank;
       Ioss::GroupingEntity *m_ioEntity;
-
-    private:
       std::string m_dbName;
-
       std::vector<double> m_preData;
       std::vector<double> m_postData;
       size_t m_preStep;
@@ -60,28 +59,15 @@ namespace stk {
       // * Frequency:
       //   -- one time only
       //   -- multiple times
-      // * Database Time:
-      //   -- non-transient variable
-      //   -- analysis time (Offset/Period/... from analysis time)
-      //   -- specified time
       // * Matching of time
       //   -- Linear Interpolation
       //   -- Closest
-      //   -- Less Equal
-      //   -- Greater Equal
+      //   -- specified time
       
-      enum DatabaseTimeMapping {
-	MODEL,      // Non-transient variable on db
-	ANALYSIS,   // Use analysis time as db time (with offset,period,...)
-	SPECIFIED,  // Use time specified on MeshField
-      };
-
       enum TimeMatchOption {
 	LINEAR_INTERPOLATION,
-	CLOSEST, 
-	LESS_EQUAL,
-	GREATER_EQUAL,
-      };
+	CLOSEST,
+	SPECIFIED }; // Use time specified on MeshField
 
       MeshField();
 
@@ -100,6 +86,13 @@ namespace stk {
       // MeshField& operator=(const MeshField&); Default version is good
 
       MeshField& set_read_time(double time_to_read);
+      MeshField& set_active();
+      MeshField& set_inactive();
+      MeshField& set_single_state(bool yesno);
+      MeshField& set_read_once(bool yesno);
+      
+      bool is_active() const {return m_isActive;}
+      
       void restore_field_data(stk::mesh::BulkData &bulk,
 			      const DBStepTimeInterval &sti);
       
@@ -115,14 +108,12 @@ namespace stk {
       stk::mesh::FieldBase *m_field;
       std::string m_dbName; ///<  Name of the field on the input/output database.
 
-      DatabaseTimeMapping m_timeMap;
-    public:
+      double m_timeToRead;
+      
       TimeMatchOption m_timeMatch;
-    private:
       bool m_oneTimeOnly;
-    public:
       bool m_singleState;
-      bool m_wasFound;
+      bool m_isActive;
     };
   } 
 } 

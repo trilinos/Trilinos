@@ -26,11 +26,11 @@ MeshField::MeshField(stk::mesh::FieldBase *field,
 		     TimeMatchOption tmo)
   : m_field(field),
     m_dbName(db_name),
-    m_timeMap(ANALYSIS),
+    m_timeToRead(0.0),
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
     m_singleState(true),
-    m_wasFound(false)
+    m_isActive(false)
 {
   if (db_name == "") {
     m_dbName = field->name();
@@ -42,10 +42,10 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
 		     TimeMatchOption tmo)
   : m_field(&field),
     m_dbName(db_name),
-    m_timeMap(ANALYSIS),
+    m_timeToRead(0.0),
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
-    m_wasFound(false)
+    m_isActive(false)
 {
   if (db_name == "") {
     m_dbName = field.name();
@@ -54,6 +54,37 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
 
 MeshField::~MeshField()
 {}
+
+MeshField& MeshField::set_read_time(double time_to_read)
+{
+  m_timeToRead = time_to_read;
+  m_timeMatch = SPECIFIED;
+  m_oneTimeOnly = true;
+  return *this;
+}
+
+MeshField& MeshField::set_active()
+{
+  m_isActive = true;
+  return *this;
+}
+MeshField& MeshField::set_inactive()
+{
+  m_isActive = false;
+  return *this;
+}
+
+MeshField& MeshField::set_single_state(bool yesno)
+{
+  m_singleState = yesno;
+  return *this;
+}
+
+MeshField& MeshField::set_read_once(bool yesno)
+{
+  m_oneTimeOnly = yesno;
+  return *this;
+}
 
 void MeshField::add_part(const stk::mesh::EntityRank rank,
 			 Ioss::GroupingEntity *io_entity)
@@ -64,17 +95,26 @@ void MeshField::add_part(const stk::mesh::EntityRank rank,
 void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 				   const stk::io::DBStepTimeInterval &sti)
 {
-  if (m_timeMatch == CLOSEST) {
-    // Temporary ---
-    int step = sti.get_closest_step();
+  if (!is_active())
+    return;
+  
+  if (m_timeMatch == CLOSEST || m_timeMatch == SPECIFIED) {
+    int step = 0;
+    if (m_timeMatch == CLOSEST) {
+      step = sti.get_closest_step();
+    }
+    else if (m_timeMatch == SPECIFIED) {
+      DBStepTimeInterval sti2(sti.region, m_timeToRead);
+      step = sti2.get_closest_step();
+    }
+    ThrowRequire(step > 0);
+    
     sti.region->begin_state(step);
-    // End Temporary ---
 
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
-      const stk::mesh::EntityRank part_rank = (*I).m_rank;
-      Ioss::GroupingEntity *io_entity = (*I).m_ioEntity;
-
+      const stk::mesh::EntityRank part_rank = (*I).get_entity_rank();
+      Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
       std::vector<stk::mesh::Entity> entity_list;
       stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
       
@@ -87,6 +127,10 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       } else {
 	stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName, state_count);
       }
+
+      if (m_oneTimeOnly) {
+	(*I).release_field_data();
+      }
       ++I;
     }
     sti.region->end_state(step);
@@ -94,23 +138,22 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
   else if (m_timeMatch == LINEAR_INTERPOLATION) {
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
-      const stk::mesh::EntityRank part_rank = (*I).m_rank;
-      Ioss::GroupingEntity *io_entity = (*I).m_ioEntity;
-
       // Get data at beginning of interval...
       std::vector<double> values;
       (*I).get_interpolated_field_data(sti, values);
       
       size_t state_count = m_field->number_of_states();
       stk::mesh::FieldState state = m_field->state();
-      // If the multi-state field is not "set" at the newest state, then the user has
-      // registered the field at a specific state and only that state should be input.
+
+      // Interpolation only handles single-state fields currently.
       ThrowRequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
 
+      Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
       const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);
       size_t field_component_count = io_field.transformed_storage()->component_count();
 
       std::vector<stk::mesh::Entity> entity_list;
+      const stk::mesh::EntityRank part_rank = (*I).get_entity_rank();
       stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
       
       for (size_t i=0; i < entity_list.size(); ++i) {
@@ -123,8 +166,14 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 	  }
 	}
       }
+      if (m_oneTimeOnly) {
+	(*I).release_field_data();
+      }
       ++I;
     }
+  }
+  if (m_oneTimeOnly) {
+    set_inactive();
   }
 }
 

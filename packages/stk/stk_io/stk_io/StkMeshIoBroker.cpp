@@ -1564,6 +1564,9 @@ namespace stk {
       double StkMeshIoBroker::read_defined_input_fields(int step,
 							std::vector<stk::io::MeshField> *missing)
       {
+	if (step <= 0)
+	  return 0.0;
+	
 	validate_input_file_index(m_active_mesh_index);
 	return m_input_files[m_active_mesh_index]->read_defined_input_fields(step, missing, bulk_data());
       }

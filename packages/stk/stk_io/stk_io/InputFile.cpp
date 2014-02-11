@@ -97,6 +97,7 @@ namespace stk {
       if (!fieldAlreadyExists) {
         m_fields.push_back(mesh_field);
         stk::io::set_field_role(*mesh_field.field(), Ioss::Field::TRANSIENT);
+	m_fieldsInitialized = false;
       }
     }
 
@@ -167,8 +168,8 @@ namespace stk {
 	    const std::string &db_name = mesh_field.db_name();
 	    if (io_entity->field_exists(db_name)) {
 	      mesh_field.add_part(rank, io_entity);
-	      mesh_field.m_singleState = (m_db_purpose == stk::io::READ_RESTART) ? false : true;
-	      mesh_field.m_wasFound = true;
+	      mesh_field.set_single_state((m_db_purpose == stk::io::READ_RESTART) ? false : true);
+	      mesh_field.set_active();
 	    }
 	  }
 	}
@@ -235,7 +236,7 @@ namespace stk {
       std::ostringstream msg ;
       std::vector<stk::io::MeshField>::const_iterator I = m_fields.begin();
       while (I != m_fields.end()) {
-	if (!(*I).m_wasFound) {
+	if (!(*I).is_active()) {
 	  ++missing_fields;
 	  if (missing) {
 	    missing->push_back(*I);
@@ -264,7 +265,7 @@ namespace stk {
 	if (!m_fieldsInitialized) {
 	  std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	  while (I != m_fields.end()) {
-	    (*I).m_wasFound = false; ++I;
+	    (*I).set_inactive(); ++I;
 	  }
 
 	  build_field_part_associations(bulk);
