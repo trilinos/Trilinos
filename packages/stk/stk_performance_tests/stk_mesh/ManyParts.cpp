@@ -85,4 +85,6 @@ STKUNIT_UNIT_TEST(many_parts, many_parts)
   const char* timer_names[NUM_TIMERS] = {"Part create", "Field register", "Part subset", "Total time"};
 
   stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+
+  stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }

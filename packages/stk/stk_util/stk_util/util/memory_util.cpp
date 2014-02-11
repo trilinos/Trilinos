@@ -114,21 +114,13 @@ void get_memory_usage(size_t & now, size_t & hwm)
 #endif
 }
 
-void get_memory_high_water_mark_across_processors(MPI_Comm comm, long int & hwm_max, long int & hwm_min, double & hwm_average)
+void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max, size_t& hwm_min, size_t& hwm_avg)
 {
-    size_t now = 0;
-    size_t hwm = 0;
-    stk::get_memory_usage(now, hwm);
+  size_t now = 0;
+  size_t hwm = 0;
+  stk::get_memory_usage(now, hwm);
 
-    int numProcs = 1;
-    MPI_Comm_size(comm, &numProcs);
-
-    long int hwmThisProc = hwm;
-    double hwmThisProcAverage = static_cast<double>(hwmThisProc)/static_cast<double>(numProcs);
-
-    MPI_Allreduce(&hwmThisProc, &hwm_max, 1, MPI_LONG_LONG, MPI_MAX, comm);
-    MPI_Allreduce(&hwmThisProc, &hwm_min, 1, MPI_LONG_LONG, MPI_MIN, comm);
-    MPI_Allreduce(&hwmThisProcAverage, &hwm_average, 1, MPI_DOUBLE, MPI_SUM, comm);
+  get_max_min_avg(comm, hwm, hwm_max, hwm_min, hwm_avg);
 }
 
 std::string human_bytes(size_t arg_bytes)

@@ -97,6 +97,8 @@ TEST(hex_edges, hex_edges)
     stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
     std::cout<<"Global HWM: "<<stk::human_bytes(global_hwm)<<std::endl;
   }
+
+  stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }
 
 TEST(hex_edges, minimal_hex_edges)
@@ -169,6 +171,8 @@ TEST(hex_edges, minimal_hex_edges)
     stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
     std::cout<<"Global HWM: "<<stk::human_bytes(global_hwm)<<std::endl;
   }
+
+  stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }
 
 } //namespace performance_tests

@@ -461,9 +461,10 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
     }
   }
 
+  double total_time = stk::wall_time() - start_time;
+  const char* timer_label = "Total Time";
   if (p_rank == 0) {
-    double total_time = stk::wall_time() - start_time;
-    const char* timer_label = "Total Time";
     stk::print_timers_and_memory(&timer_label, &total_time, 1);
   }
+  stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }

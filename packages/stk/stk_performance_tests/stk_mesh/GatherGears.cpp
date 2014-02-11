@@ -128,6 +128,8 @@ STKUNIT_UNIT_TEST(gather_gears, gather_gears)
   const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
 
   stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+
+  stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }
 
 } // namespace performance_tests

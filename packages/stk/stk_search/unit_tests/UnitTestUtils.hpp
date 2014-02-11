@@ -152,8 +152,7 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
 
 inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
 {
-    long int maxHwm = 0, minHwm = 0;
-    double avgHwm = 0;
+    size_t maxHwm = 0, minHwm = 0, avgHwm = 0;
     stk::get_memory_high_water_mark_across_processors(comm, maxHwm, minHwm, avgHwm);
 
     int proc=-1;
@@ -170,7 +169,7 @@ inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
 
     if (proc == 0)
     {
-      double bytesInMegabyte = 1024*1024;
+      const double bytesInMegabyte = 1024*1024;
       std::cout << "Max time: "  << maxTime << ", Min time: " << minTime << ", Avg time: " << avgTime << std::endl;
       std::cout << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<double(maxHwm)/double(bytesInMegabyte)
         <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;

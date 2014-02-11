@@ -63,8 +63,6 @@ void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, Entit
   }
 
   mesh.modification_end();
-
-
 }
 
 void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, EntityRank element_rank ) {
@@ -505,4 +503,6 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
   if (p_rank == 0) {
     stk::print_timers_and_memory(&timer_names[0], &timing_sums[0], TIMER_COUNT, &memory_names[0], &memory_max[0], 2);
   }
+
+  stk::parallel_print_time_without_output_and_hwm(pm, timings[5]);
 }

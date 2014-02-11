@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <mpi.h>
+#include <iomanip>
 
 #include <stk_util/util/memory_util.hpp>
 
@@ -58,6 +60,33 @@ void print_timers_and_memory(NameItr name_itr, TimerItr timer_itr, int count)
   stk::get_memory_usage(mem_array[0], mem_array[1]);
 
   print_timers_and_memory(name_itr, timer_itr, count, &mem_names[0], &mem_array[0], 2);
+}
+
+// Use this version to produce output compatible with the compare_test_result_timings.py
+// It will also do parallel reductions for you.
+inline
+void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_this_proc, std::ostream& out = std::cout)
+{
+  size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
+  get_memory_high_water_mark_across_processors(comm, hwm_max, hwm_min, hwm_avg);
+
+  double max_time = 0.0, min_time = 0.0, avg_time = 0.0;
+  get_max_min_avg(comm, time_on_this_proc, max_time, min_time, avg_time);
+
+  int rank = 0;
+  MPI_Comm_rank(comm, &rank);
+
+  const double bytes_in_MB = 1024*1024;
+
+  if (rank == 0) {
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Min High-water memory usage " << hwm_min / bytes_in_MB << " MB" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg High-water memory usage " << hwm_avg / bytes_in_MB << " MB" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Max High-water memory usage " << hwm_max / bytes_in_MB << " MB\n" << std::endl;
+
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Min No-output time " << min_time << " sec" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg No-output time " << avg_time << " sec" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Max No-output time " << max_time << " sec" << std::endl;
+  }
 }
 
 }

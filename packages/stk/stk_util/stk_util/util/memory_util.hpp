@@ -4,6 +4,8 @@
 #include <string>
 #include <mpi.h>
 
+#include <stk_util/parallel/MPI.hpp>
+
 namespace stk {
 
 /*
@@ -25,7 +27,23 @@ std::string human_bytes(size_t bytes);
  */
 void get_memory_usage(size_t & now, size_t & hwm);
 
-void get_memory_high_water_mark_across_processors(MPI_Comm comm, long int & hwm_max, long int & hwm_min, double & hwm_average);
+void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max, size_t& hwm_min, size_t& hwm_avg);
+
+template <typename T>
+inline
+void get_max_min_avg(MPI_Comm comm, T this_proc, T& max, T& min, T& avg)
+{
+  int num_procs = 1;
+  MPI_Comm_size(comm, &num_procs);
+
+  T this_proc_average = this_proc / num_procs;
+
+  MPI_Datatype type = sierra::MPI::Datatype<T>::type();
+
+  MPI_Allreduce(&this_proc,         &max, 1, type, MPI_MAX, comm);
+  MPI_Allreduce(&this_proc,         &min, 1, type, MPI_MIN, comm);
+  MPI_Allreduce(&this_proc_average, &avg, 1, type, MPI_SUM, comm);
+}
 
 }
 
