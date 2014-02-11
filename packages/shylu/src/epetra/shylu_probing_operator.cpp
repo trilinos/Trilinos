@@ -270,6 +270,8 @@ void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
 {
     using Teuchos::RCP;
     nvectors_ = nvectors;
+    if (nvectors_ == 0) return;
+
     if (nvectors <= ssym_->Drhs->NumVectors())
     {
         // If vectors were created already, they will be freed.
