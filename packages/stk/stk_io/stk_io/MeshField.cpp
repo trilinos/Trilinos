@@ -30,15 +30,13 @@ MeshField::MeshField(stk::mesh::FieldBase *field,
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
     m_singleState(true),
-    m_wasFound(false),
-    m_time(0.0),
-    m_timeRead(0.0),
-    m_interpolator(NULL)
+    m_wasFound(false)
 {
   if (db_name == "") {
     m_dbName = field->name();
   }
 }
+    
 MeshField::MeshField(stk::mesh::FieldBase &field,
 		     const std::string &db_name,
 		     TimeMatchOption tmo)
@@ -47,10 +45,7 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
     m_timeMap(ANALYSIS),
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
-    m_wasFound(false),
-    m_time(0.0),
-    m_timeRead(0.0),
-    m_interpolator(NULL)
+    m_wasFound(false)
 {
   if (db_name == "") {
     m_dbName = field.name();
@@ -58,136 +53,156 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
 }
 
 MeshField::~MeshField()
-{
-#if 0
-  delete m_interpolator;
-  m_interpolator = NULL;
-#endif
-}
+{}
 
-#if 0
-MeshField& MeshField::set_field(const std::string &entity_name,
-				const std::string &field_name,
-				const std::string &fmwk_field_name,
-				UInt type)
-{
-  assert(entity_name     != "");
-  assert(field_name      != "");
-  assert(fmwk_field_name != "");
-  entityName = entity_name;
-  fieldName = field_name;
-  fmwkFieldName = fmwk_field_name;
-  type_ = type;
-  return *this;
-}
-#endif
-
-MeshField& MeshField::set_read_time(double time_to_read)
-{
-  m_time = time_to_read;
-  return *this;
-}
-
-void MeshField::add_part(const stk::mesh::Part &part,
-			 const stk::mesh::EntityRank rank,
+void MeshField::add_part(const stk::mesh::EntityRank rank,
 			 Ioss::GroupingEntity *io_entity)
 {
-  m_fieldParts.push_back(MeshFieldPart(part,rank,io_entity));
+  m_fieldParts.push_back(MeshFieldPart(rank,io_entity, m_dbName));
 }
 
-void MeshField::restore_field_data(Ioss::Region *region,
-				   stk::mesh::BulkData &bulk,
+void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 				   const stk::io::DBStepTimeInterval &sti)
 {
-  // Temporary ---
-  int step = sti.get_closest_step();
-  region->begin_state(step);
-  // End Temporary ---
+  if (m_timeMatch == CLOSEST) {
+    // Temporary ---
+    int step = sti.get_closest_step();
+    sti.region->begin_state(step);
+    // End Temporary ---
 
-  std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
-  while (I != m_fieldParts.end()) {
-    const stk::mesh::EntityRank part_rank = (*I).m_rank;
-    Ioss::GroupingEntity *io_entity = (*I).m_ioEntity;
+    std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
+    while (I != m_fieldParts.end()) {
+      const stk::mesh::EntityRank part_rank = (*I).m_rank;
+      Ioss::GroupingEntity *io_entity = (*I).m_ioEntity;
 
-    std::vector<stk::mesh::Entity> entity_list;
-    stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
+      std::vector<stk::mesh::Entity> entity_list;
+      stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
       
-    //sti.set_state(stk::io::MeshField::CLOSEST);
-		
-    size_t state_count = m_field->number_of_states();
-    stk::mesh::FieldState state = m_field->state();
-    // If the multi-state field is not "set" at the newest state, then the user has
-    // registered the field at a specific state and only that state should be input.
-    if(m_singleState || state_count == 1 || state != stk::mesh::StateNew) {
-      stk::io::field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName);
-    } else {
-      stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName, state_count);
+      size_t state_count = m_field->number_of_states();
+      stk::mesh::FieldState state = m_field->state();
+      // If the multi-state field is not "set" at the newest state, then the user has
+      // registered the field at a specific state and only that state should be input.
+      if(m_singleState || state_count == 1 || state != stk::mesh::StateNew) {
+	stk::io::field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName);
+      } else {
+	stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName, state_count);
+      }
+      ++I;
     }
-    ++I;
+    sti.region->end_state(step);
   }
-  region->end_state(step);
+  else if (m_timeMatch == LINEAR_INTERPOLATION) {
+    std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
+    while (I != m_fieldParts.end()) {
+      const stk::mesh::EntityRank part_rank = (*I).m_rank;
+      Ioss::GroupingEntity *io_entity = (*I).m_ioEntity;
+
+      // Get data at beginning of interval...
+      std::vector<double> values;
+      (*I).get_interpolated_field_data(sti, values);
+      
+      size_t state_count = m_field->number_of_states();
+      stk::mesh::FieldState state = m_field->state();
+      // If the multi-state field is not "set" at the newest state, then the user has
+      // registered the field at a specific state and only that state should be input.
+      ThrowRequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
+
+      const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);
+      size_t field_component_count = io_field.transformed_storage()->component_count();
+
+      std::vector<stk::mesh::Entity> entity_list;
+      stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
+      
+      for (size_t i=0; i < entity_list.size(); ++i) {
+	if (bulk.is_valid(entity_list[i])) {
+	  double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));
+	  if (fld_data !=NULL) {
+	    for(size_t j=0; j<field_component_count; ++j) {
+	      fld_data[j] = values[i*field_component_count+j];
+	    }
+	  }
+	}
+      }
+      ++I;
+    }
+  }
 }
 
-void MeshField::get_data(double time, bool use_state_n)
+void MeshFieldPart::release_field_data()
 {
-#if 0
-  if (role_ == Ioss::FemIO::Bridge::COPY_TRANSFER_PROXIMITY ||
-      role_ == Ioss::FemIO::Bridge::COPY_TRANSFER_BY_ID ||
-      role_ == Ioss::FemIO::Bridge::THREE_STATE)
-    return;
-  
-  if (m_interpolator == NULL)
-    m_interpolator = InterpolatorFactory::create(this);
-  assert(m_interpolator != NULL);
+  m_preStep = 0;
+  m_postStep = 0;
+  std::vector<double>().swap(m_preData);
+  std::vector<double>().swap(m_postData);
+}
 
-  if (role_ == Ioss::FemIO::Bridge::TRANSIENT ||
-      role_ == Ioss::FemIO::Bridge::CLOSEST_TIME_ONCE ||
-      role_ == Ioss::FemIO::Bridge::MODEL) {
-    time = m_time;
-    m_interpolator->get_data(time, fieldState_);
-    if (use_state_n && fieldState_ == sierra::STATE_NP1) {
-      // If initializing (use_state_n == true), then also load data
-      // into STATE_N if this is a two state field.
-      sierra::State state = sierra::STATE_N;
-      m_interpolator->get_data(time, state);
+void MeshFieldPart::load_field_data(const DBStepTimeInterval &sti)
+{
+  if (sti.exists_before && m_preStep != sti.s_before) {
+    m_preStep = sti.s_before;
+    assert(m_preStep > 0);
+
+    if (m_preStep == m_postStep) {
+      m_preData.swap(m_postData);
+      std::swap(m_preStep, m_postStep);
+    }
+    else {
+      sti.region->begin_state(m_preStep);
+      m_ioEntity->get_field_data(m_dbName, m_preData);
+      sti.region->end_state(m_preStep);
     }
   }
 
-  else if (role_ == Ioss::FemIO::Bridge::FIXED_TIME_INTERPOLATION) {
-    time = m_time;
-    m_interpolator->get_data(time, fieldState_);
+  if (sti.exists_after && m_postStep != sti.s_after) {
+    m_postStep = sti.s_after;
+    assert(m_postStep > 0);
 
-  }  else if (role_ == Ioss::FemIO::Bridge::TIME_INTERPOLATION ||
-	      role_ == Ioss::FemIO::Bridge::CLOSEST_TIME) {
-    // See if 'time' is outside active range 
-    if (time < startTime || time > stopTime)
-      return;
-    
-    // Modify input time if startupTime and periodLength specified
-    if (time > startupTime && periodLength > 0.0) {
-
-      if (periodType == CYCLIC) {
-	time = startupTime + fmod((time-startupTime), periodLength);
-
-      } else if (periodType == REVERSING) {
-	double pmod = fmod((time-startupTime), 2.0*periodLength);
-	if (pmod <= periodLength)
-	  time = startupTime + pmod;
-	else
-	  time = startupTime + 2.0 * periodLength - pmod;
-      }	  
+    if (m_preStep == m_postStep) {
+      m_postData.resize(0);
+      m_postData.reserve(m_preData.size());
+      std::copy(m_preData.begin(), m_preData.end(), std::back_inserter(m_postData));
     }
-    time += offsetTime;
-    
-    m_interpolator->get_data(time, fieldState_);
-    if (use_state_n && fieldState_ == sierra::STATE_NP1) {
-      // If initializing (use_state_n == true), then also load data
-      // into STATE_N if this is a two state field.
-      sierra::State state = sierra::STATE_N;
-      m_interpolator->get_data(time, state);
+    else {
+      sti.region->begin_state(m_postStep);
+      m_ioEntity->get_field_data(m_dbName, m_postData);
+      sti.region->end_state(m_postStep);
     }
   }
-#endif
+}
+
+void MeshFieldPart::get_interpolated_field_data(const DBStepTimeInterval &sti, std::vector<double> &values)
+{
+  load_field_data(sti);
+  size_t values_size = sti.exists_before ? m_preData.size() : m_postData.size();
+  values.resize(0);
+  values.reserve(values_size);
+
+  if (sti.exists_before && !sti.exists_after) {
+    std::copy(m_preData.begin(), m_preData.end(), std::back_inserter(values));
+  }
+  else if (!sti.exists_before && sti.exists_after) {
+    std::copy(m_postData.begin(), m_postData.end(), std::back_inserter(values));
+  }
+  else {
+    assert(sti.exists_before && sti.exists_after);
+    if (sti.s_after == sti.s_before) {
+      // No interpolation. preData and postData contain the same step.
+      std::copy(m_preData.begin(), m_preData.end(), std::back_inserter(values));
+    }
+    else {
+      // Interpolate
+      double tb = sti.region->get_state_time(sti.s_before);
+      double ta = sti.region->get_state_time(sti.s_after);
+      double delta =  ta - tb;
+      double mult_1 = (sti.t_analysis - tb) / delta;
+      double mult_2 = 1.0 - mult_1;
+
+      assert(m_preData.size() == m_postData.size());
+      for (size_t i=0; i < m_preData.size(); i++) {
+	values.push_back(mult_1 * m_preData[i] + mult_2 * m_postData[i]);
+      }
+    }
+  }
 }
 
 }}  // Close namespaces

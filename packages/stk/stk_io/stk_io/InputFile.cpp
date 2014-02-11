@@ -166,7 +166,7 @@ namespace stk {
 	    // See if field with that name exists on io_entity...
 	    const std::string &db_name = mesh_field.db_name();
 	    if (io_entity->field_exists(db_name)) {
-	      mesh_field.add_part(part, rank, io_entity);
+	      mesh_field.add_part(rank, io_entity);
 	      mesh_field.m_singleState = (m_db_purpose == stk::io::READ_RESTART) ? false : true;
 	      mesh_field.m_wasFound = true;
 	    }
@@ -280,18 +280,23 @@ namespace stk {
 
 	// Get struct containing interval of database time(s) containing 'time'
 	DBStepTimeInterval sti(region, time);
+
 	ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
 			"ERROR: Input database '" << region->get_database()->get_filename()
 			<< "' has no transient data.");
 
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	while (I != m_fields.end()) {
-	  (*I).restore_field_data(get_input_io_region().get(), bulk, sti);
+	  (*I).restore_field_data(bulk, sti);
 	  ++I;
 	}
 
 	size_t step = sti.get_closest_step();
-	region->begin_state(step);
+	int current_step = region->get_current_state();
+	if (current_step != -1 && current_step != (int)step)
+	  region->end_state(current_step);
+	if (current_step != (int)step) 
+	  region->begin_state(step);
 
 	return region->get_state_time(step);
       }

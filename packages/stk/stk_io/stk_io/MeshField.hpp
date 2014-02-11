@@ -25,16 +25,31 @@ namespace stk {
   
   namespace io {
     class DBStepTimeInterval;
-    class Interpolator;
     
-    struct MeshFieldPart {
-      MeshFieldPart(const stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *io_entity)
-	: m_ordinal(part.mesh_meta_data_ordinal()), m_rank(rank), m_ioEntity(io_entity)
+    class MeshFieldPart {
+    public:
+      MeshFieldPart(stk::mesh::EntityRank rank, Ioss::GroupingEntity *io_entity, const std::string db_field_name)
+	: m_rank(rank), m_ioEntity(io_entity), m_dbName(db_field_name),
+	  m_preStep(0), m_postStep(0)
       {}
 
-      unsigned m_ordinal;
+      void get_interpolated_field_data(const DBStepTimeInterval &sti, std::vector<double> &values);
+      void release_field_data();
+      
+    private:
+      void load_field_data(const DBStepTimeInterval &sti);
+
+    public:
       stk::mesh::EntityRank m_rank;
       Ioss::GroupingEntity *m_ioEntity;
+
+    private:
+      std::string m_dbName;
+
+      std::vector<double> m_preData;
+      std::vector<double> m_postData;
+      size_t m_preStep;
+      size_t m_postStep;
     };
     
     class MeshField
@@ -84,31 +99,14 @@ namespace stk {
       // MeshField(const MeshField&); Default version is good.
       // MeshField& operator=(const MeshField&); Default version is good
 
-      /**
-       * The MeshField class uses the "Named Parameter Idiom" which supports "method chaining".
-       * For example, you can do the following:
-       *
-       * MeshField my_field = MeshField(stress_fld, "stress")
-       *                               .set_read_time(1.0)
-       *                               .set_offset_time(2.0)
-       *                               .set_periodic_time(11.5)
-       *                               .set_start_time(0.5)
-       *                               .set_stop_time(12.3);
-       */
-
       MeshField& set_read_time(double time_to_read);
-      void restore_field_data(Ioss::Region *region,
-			      stk::mesh::BulkData &bulk,
-			      const stk::io::DBStepTimeInterval &sti);
+      void restore_field_data(stk::mesh::BulkData &bulk,
+			      const DBStepTimeInterval &sti);
       
-      void get_data(double time, bool use_state_n = false);
-      void initialize(); // Initialize for interpolation role.
-
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}
 	
-      void add_part(const stk::mesh::Part &part,
-		    const stk::mesh::EntityRank rank,
+      void add_part(const stk::mesh::EntityRank rank,
 		    Ioss::GroupingEntity *io_entity);
       
     private:
@@ -125,11 +123,6 @@ namespace stk {
     public:
       bool m_singleState;
       bool m_wasFound;
-    private:
-      double m_time;
-      double m_timeRead;
-      
-      Interpolator *m_interpolator;
     };
   } 
 } 
