@@ -2664,8 +2664,8 @@ namespace Tpetra {
 
     t_LocalOrdinal_1D k_inds;
     typename LocalStaticCrsGraphType::row_map_type k_ptrs;
-    t_LocalOrdinal_1D k_lclInds1D_  = k_lclGraph_.entries;
-    typename LocalStaticCrsGraphType::row_map_type k_rowPtrs_    = k_lclGraph_.row_map;
+    t_LocalOrdinal_1D k_lclInds1D  = k_lclGraph_.entries;
+    typename LocalStaticCrsGraphType::row_map_type k_rowPtrs    = k_lclGraph_.row_map;
 
     bool requestOptimizedStorage = true;
     if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
@@ -2726,24 +2726,24 @@ namespace Tpetra {
         k_inds = t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",*(ptrs.end()-1));
         inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
                                        Kokkos::Compat::deallocator(k_inds), false);
-        if (k_rowPtrs_.dimension_0()==0) {
+        if (k_rowPtrs.dimension_0()==0) {
           t_RowPtrs tmp_unpacked_ptrs = t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
           for(int i = 0; i < rowPtrs_.size(); i++) {
             tmp_unpacked_ptrs(i) = rowPtrs_[i];
           }
-          k_rowPtrs_ = tmp_unpacked_ptrs;
+          k_rowPtrs = tmp_unpacked_ptrs;
         }
         t_LocalOrdinal_1D tmp_unpacked_inds;
-        if (k_lclInds1D_.dimension_0()==0) {
+        if (k_lclInds1D.dimension_0()==0) {
           tmp_unpacked_inds = t_LocalOrdinal_1D("Tpetra::CrsGraph::t_LocalOridnal",lclInds1D_.size());
           for(int i = 0; i < lclInds1D_.size(); i++) {
             tmp_unpacked_inds(i) = lclInds1D_[i];
           }
         } else
-          tmp_unpacked_inds = k_lclInds1D_;
+          tmp_unpacked_inds = k_lclInds1D;
         {
           pack_functor<t_LocalOrdinal_1D, typename LocalStaticCrsGraphType::row_map_type>
-            f(k_inds,tmp_unpacked_inds,tmpk_ptrs,k_rowPtrs_);
+            f(k_inds,tmp_unpacked_inds,tmpk_ptrs,k_rowPtrs);
           Kokkos::parallel_for(numRows,f);
         }
 
@@ -2751,8 +2751,8 @@ namespace Tpetra {
       else {
         inds = lclInds1D_;
         ptrs = rowPtrs_;
-        k_ptrs = k_rowPtrs_;
-        k_inds = k_lclInds1D_;
+        k_ptrs = k_rowPtrs;
+        k_inds = k_lclInds1D;
       }
     }
     // can we ditch the old allocations for the packed one?
@@ -2764,8 +2764,8 @@ namespace Tpetra {
       rowPtrs_ = ptrs;
       nodeNumAllocated_ = nodeNumEntries_;
       pftype_ = StaticProfile;
-      k_lclInds1D_ = k_inds;
-      k_rowPtrs_   = k_ptrs;
+      k_lclInds1D = k_inds;
+      k_rowPtrs   = k_ptrs;
     }
     // build the local graph, hand over the indices
     RCP<ParameterList> lclparams;

@@ -121,7 +121,7 @@ namespace Kokkos {
       typedef typename view_type::value_type value_type;
 
       // Constructor takes the View that owns the memory.
-      Deallocator (const ViewType& view) : view_ (view) {}
+      Deallocator (const ViewType& view__) : view_ (view__) {}
 
       // "Deallocation function" doesn't actually deallocate its input
       // pointer; the View is responsible for deallocation of its

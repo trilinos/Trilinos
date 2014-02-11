@@ -546,18 +546,17 @@ public:
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::device_type   device_type ;
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
+      typedef typename traits::memory_space  memory_space_ ;
+      typedef typename traits::shape_type    shape_type_ ;
+      typedef typename traits::value_type    value_type_ ;
 
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      shape_type_::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_with_padding( m_stride , m_shape );
 
-      m_ptr_on_device = (value_type *)
-        memory_space::allocate( label ,
-                                typeid(value_type) ,
-                                sizeof(value_type) ,
+      m_ptr_on_device = (value_type_ *)
+        memory_space_::allocate( label ,
+                                typeid(value_type_) ,
+                                sizeof(value_type_) ,
                                 Impl::capacity( m_shape , m_stride ) );
 
       (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
@@ -581,18 +580,17 @@ public:
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::device_type   device_type ;
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
+      typedef typename traits::memory_space  memory_space_ ;
+      typedef typename traits::shape_type    shape_type_ ;
+      typedef typename traits::value_type    value_type_ ;
 
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      shape_type_::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_with_padding( m_stride , m_shape );
 
-      m_ptr_on_device = (value_type *)
-        memory_space::allocate( label ,
-                                typeid(value_type) ,
-                                sizeof(value_type) ,
+      m_ptr_on_device = (value_type_ *)
+        memory_space_::allocate( label ,
+                                typeid(value_type_) ,
+                                sizeof(value_type_) ,
                                 Impl::capacity( m_shape , m_stride ) );
     }
 
@@ -617,10 +615,9 @@ public:
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
-      typedef typename traits::shape_type  shape_type ;
-      typedef typename traits::value_type  value_type ;
+      typedef typename traits::shape_type  shape_type_ ;
 
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      shape_type_::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
     }
 
@@ -644,23 +641,23 @@ public:
         const unsigned n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::shape_type  shape_type ;
-      typedef typename traits::value_type  value_type ;
+      typedef typename traits::shape_type  shape_type_ ;
+      typedef typename traits::value_type  value_type_ ;
 
       enum { align = 8 };
       enum { mask  = align - 1 };
 
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      shape_type_::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
 
       typedef Impl::if_c< ! traits::is_managed ,
-                          value_type * ,
+                          value_type_ * ,
                           Impl::ViewError::device_shmem_constructor_requires_unmanaged >
         if_device_shmem_pointer ;
 
       // Select the first argument:
       m_ptr_on_device = if_device_shmem_pointer::select(
-       (value_type *) dev.get_shmem( unsigned( sizeof(value_type) * Impl::capacity( m_shape , m_stride ) + unsigned(mask) ) & ~unsigned(mask) ) );
+       (value_type_*) dev.get_shmem( unsigned( sizeof(value_type_) * Impl::capacity( m_shape , m_stride ) + unsigned(mask) ) & ~unsigned(mask) ) );
     }
 
   static inline
@@ -676,16 +673,16 @@ public:
     enum { align = 8 };
     enum { mask  = align - 1 };
 
-    typedef typename traits::shape_type  shape_type ;
-    typedef typename traits::value_type  value_type ;
+    typedef typename traits::shape_type  shape_type_ ;
+    typedef typename traits::value_type  value_type_ ;
 
-    shape_type  shape ;
+    shape_type_  shape ;
     stride_type stride ;
 
     traits::shape_type::assign( shape, n0, n1, n2, n3, n4, n5, n6, n7 );
     stride_type::assign_no_padding( stride , shape );
 
-    return unsigned( sizeof(value_type) * Impl::capacity( shape , stride ) + unsigned(mask) ) & ~unsigned(mask) ;
+    return unsigned( sizeof(value_type_) * Impl::capacity( shape , stride ) + unsigned(mask) ) & ~unsigned(mask) ;
   }
 
   //------------------------------------

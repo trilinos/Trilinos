@@ -2744,7 +2744,7 @@ namespace Tpetra {
     DeepCopySelectedVectors(DstType dst_, SrcType src_,
                             Kokkos::View<int*,DeviceType> whichVectorDst_,
                             Kokkos::View<int*,DeviceType> whichVectorSrc_):
-                              dst(dst_),src(src_),whichVectorDst(whichVectorDst_),whichVectorSrc(whichVectorSrc_),n(whichVectorSrc_.dimension_0()) {};
+                              dst(dst_),src(src_),whichVectorSrc(whichVectorSrc_),whichVectorDst(whichVectorDst_),n(whichVectorSrc_.dimension_0()) {};
     void KOKKOS_INLINE_FUNCTION operator()(int i) const {
       if(DstConstStride ) {
         if(SrcConstStride) {
