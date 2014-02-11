@@ -908,7 +908,8 @@ namespace {
     else if (file1.Num_Times() != file2.Num_Times()) {
       if ((file1.Num_Times() - interface.time_step_offset == file2.Num_Times()) ||
 	  (interface.time_step_stop > 0) ||
-	  (interface.explicit_steps.first != 0 && interface.explicit_steps.second != 0)) {
+	  (interface.explicit_steps.first != 0 && interface.explicit_steps.second != 0) ||
+	  (interface.interpolating)){
 	std::cout << "\nexodiff: Files are the same" << std::endl;
 	std::cout << "         The number of timesteps are different but "
 		  << "the timesteps that were compared are the same."
