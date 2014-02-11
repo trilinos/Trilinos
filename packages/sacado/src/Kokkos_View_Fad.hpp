@@ -34,6 +34,8 @@
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
+#include "Sacado_Traits.hpp"
+
 #include "Kokkos_View.hpp"
 #include "impl/Kokkos_Error.hpp"
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
@@ -131,6 +133,10 @@ public:
 
   typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
+  typedef typename traits::value_type fad_type ;
+  typedef typename Sacado::ValueType<fad_type>::type fad_value_type ;
+  typedef typename Kokkos::Impl::add_const<fad_value_type>::type const_fad_value_type ;
+
 private:
 
   // Assignment of compatible views requirement:
@@ -138,8 +144,6 @@ private:
 
   // Assignment of compatible subview requirement:
   template< class , class , class > friend struct Impl::ViewAssignment ;
-
-  typedef typename traits::value_type fad_type ;
 
   enum { FadStaticDimension = Sacado::StaticSize<fad_type>::value };
 
@@ -149,7 +153,7 @@ private:
   typedef Impl::LayoutStride< typename traits::shape_type ,
                               typename traits::array_layout > stride_type ;
 
-  typename fad_type::value_type              * m_ptr_on_device ;
+  fad_value_type                             * m_ptr_on_device ;
   typename traits::shape_type                  m_shape ;
   stride_type                                  m_stride ;
   typename traits::device_type::size_type      m_storage_size ;
@@ -183,7 +187,7 @@ public:
   // Shape
 
   // Rank for multidimensional array of the Fad value_type
-  // is one less than the rank of the array of intrinsic scalar_type defined by the shape.
+  // is one less than the rank of the array of intrinsic fad_value_type defined by the shape.
   enum { Rank = traits::rank - 1 };
 
   KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
@@ -313,7 +317,6 @@ public:
     {
       typedef typename traits::memory_space  memory_space ;
       typedef typename traits::shape_type    shape_type ;
-      typedef typename fad_type::value_type  scalar_type ;
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_with_padding( m_stride , m_shape );
@@ -321,10 +324,10 @@ public:
       verify_dimension_storage_static_size();
 
       m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
-      m_ptr_on_device = (scalar_type *)
+      m_ptr_on_device = (fad_value_type *)
         memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
+                                typeid(fad_value_type) ,
+                                sizeof(fad_value_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
 
       (void) Impl::ViewFill< array_type >( *this , typename array_type::value_type() );
@@ -345,7 +348,6 @@ public:
     {
       typedef typename traits::memory_space  memory_space ;
       typedef typename traits::shape_type    shape_type ;
-      typedef typename fad_type::value_type  scalar_type ;
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_with_padding( m_stride , m_shape );
@@ -353,10 +355,10 @@ public:
       verify_dimension_storage_static_size();
 
       m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
-      m_ptr_on_device = (scalar_type *)
+      m_ptr_on_device = (fad_value_type *)
         memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
+                                typeid(fad_value_type) ,
+                                sizeof(fad_value_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
     }
 
@@ -364,6 +366,20 @@ public:
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
 
+  // template< typename T >
+  // View( T * ptr ,
+  //       size_t n0 = 0 ,
+  //       size_t n1 = 0 ,
+  //       size_t n2 = 0 ,
+  //       size_t n3 = 0 ,
+  //       size_t n4 = 0 ,
+  //       size_t n5 = 0 ,
+  //       size_t n6 = 0 ,
+  //       typename Impl::enable_if<(
+  //         ( Impl::is_same<T,typename traits::value_type>::value ||
+  //           Impl::is_same<T,typename traits::const_value_type>::value ) &&
+  //         ! traits::is_managed ),
+  //       const size_t >::type n7 = 0 )
   template< typename T >
   View( T * ptr ,
         size_t n0 = 0 ,
@@ -374,8 +390,8 @@ public:
         size_t n5 = 0 ,
         size_t n6 = 0 ,
         typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
+          ( Impl::is_same<T,fad_value_type>::value ||
+            Impl::is_same<T,const_fad_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -411,7 +427,6 @@ public:
     : m_ptr_on_device(0)
     {
       typedef typename traits::shape_type   shape_type ;
-      typedef typename fad_type::value_type scalar_type ;
 
       enum { align = 8 };
       enum { mask  = align - 1 };
@@ -420,7 +435,7 @@ public:
       stride_type::assign_no_padding( m_stride , m_shape );
 
       typedef Impl::if_c< ! traits::is_managed ,
-                          scalar_type * ,
+                          fad_value_type * ,
                           Impl::ViewError::device_shmem_constructor_requires_unmanaged >
         if_device_shmem_pointer ;
 
@@ -430,7 +445,7 @@ public:
 
       // Select the first argument:
       m_ptr_on_device = if_device_shmem_pointer::select(
-        (scalar_type *) dev.get_shmem( shmem_size(n0,n1,n2,n3,n4,n5,n6,n7) ) );
+        (fad_value_type *) dev.get_shmem( shmem_size(n0,n1,n2,n3,n4,n5,n6,n7) ) );
     }
 
   static KOKKOS_INLINE_FUNCTION
@@ -447,7 +462,6 @@ public:
     enum { mask  = align - 1 };
 
     typedef typename traits::shape_type   shape_type ;
-    typedef typename fad_type::value_type scalar_type ;
 
     shape_type  shape ;
     stride_type stride ;
@@ -455,7 +469,7 @@ public:
     traits::shape_type::assign( shape, n0, n1, n2, n3, n4, n5, n6, n7 );
     stride_type::assign_no_padding( stride , shape );
 
-    return unsigned( sizeof(scalar_type) * Impl::capacity( shape , stride ) + unsigned(mask) ) & ~unsigned(mask) ;
+    return unsigned( sizeof(fad_value_type) * Impl::capacity( shape , stride ) + unsigned(mask) ) & ~unsigned(mask) ;
   }
 
   //------------------------------------
@@ -845,8 +859,7 @@ public:
   // These methods are specific to specialization of a view.
 
   KOKKOS_FORCEINLINE_FUNCTION
-  typename traits::value_type::value_type *
-    ptr_on_device() const { return m_ptr_on_device ; }
+  fad_value_type * ptr_on_device() const { return m_ptr_on_device ; }
 
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
@@ -865,8 +878,12 @@ public:
   { return m_storage_size; }
 };
 
-/** \brief  A deep copy between views of the same specialization, compatible type,
- *          same rank, same layout are handled by that specialization.
+/**
+ * \brief A deep copy between views of the same specialization, compatible
+ * type, same rank, same layout are handled by that specialization.
+ *
+ * We compare the nested fad_value_type instead of the view value_type as it
+ * allows deep_copy to work with views of different, but compatible Fad types.
  */
 template< class DT , class DL , class DD , class DM ,
           class ST , class SL , class SD , class SM >
@@ -874,8 +891,12 @@ inline
 void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad> & dst ,
                 const View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoFad> & src ,
                 typename Impl::enable_if<(
-                  Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad>::value_type::value_type ,
-                                 typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoFad>::value_type::value_type >::value
+                  ( Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad>::fad_value_type ,
+                                   typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoFad>::fad_value_type >::value ||
+                    Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad>::const_fad_value_type ,
+                                   typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoFad>::fad_value_type >::value ||
+                    Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad>::fad_value_type ,
+                                   typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoFad>::const_fad_value_type >::value )
                   &&
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad>::array_layout ,
                                  typename View<ST,SL,SD,SM,Impl::ViewSpecializeSacadoFad>::array_layout >::value
@@ -894,7 +915,7 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad> & dst ,
 
     Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    const size_t nbytes = sizeof(typename dst_type::value_type::value_type) * dst.capacity();
+    const size_t nbytes = sizeof(typename dst_type::fad_value_type) * dst.capacity();
 
     Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
   }

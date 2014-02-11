@@ -957,6 +957,9 @@ namespace Tpetra {
     ArrayRCP<size_t>                  numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
+    typename Graph::LocalStaticCrsGraphType::row_map_type k_rowPtrs_    = staticGraph_->k_lclGraph_.row_map;
+    typename Graph::LocalStaticCrsGraphType::row_map_type k_ptrs;
+    t_ValuesType k_vals;
 
     // May we ditch the old allocations for the packed (and otherwise
     // "optimized") allocations, later in this routine?  Request
@@ -993,20 +996,33 @@ namespace Tpetra {
       // need it here temporarily in order to convert to 1-D storage.
       // (The allocStorage() function needs it.)  We'll free ptrs
       // later in this method.
-      ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries ());
-      vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
-      // TODO (mfh 05 Dec 2012) We should really parallelize this copy
-      // operation.  This is not currently required in the
-      // sparse_ops_type interface.  Some implementations of that
-      // interface (such as AltSparseOps) do provide a copyStorage()
-      // method, but this does not currently cover the case of copying
-      // from 2-D to 1-D storage.
-      for (size_t row=0; row < numRows; ++row) {
-        const size_t numentrs = numRowEntries[row];
-        std::copy (values2D_[row].begin(),
-                   values2D_[row].begin() + numentrs,
-                   vals+ptrs[row]);
+      typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries.size()+1);
+      ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
+                                         Kokkos::Compat::deallocator(tmpk_ptrs), false);
+      k_ptrs = tmpk_ptrs;
+      // hack until we get parallel_scan in kokkos
+
+      typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
+      Kokkos::deep_copy(h_tmpk_ptrs,tmpk_ptrs);
+        // hack until we get parallel_scan in kokkos
+      for(int i = 0; i < numRowEntries.size(); i++) {
+        h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries[i];
       }
+      Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
+
+      k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
+      vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
+                                 Kokkos::Compat::deallocator(k_vals), false);
+
+      typename t_ValuesType::HostMirror h_vals = Kokkos::create_mirror_view(k_vals);
+
+      for (size_t row=0; row < numRows; ++row) {
+              const size_t numentrs = numRowEntries[row];
+              std::copy (values2D_[row].begin(),
+                         values2D_[row].begin() + numentrs,
+                         h_vals.ptr_on_device() + h_tmpk_ptrs[row]);
+      }
+      Kokkos::deep_copy(k_vals,h_vals);
     }
     else if (getProfileType() == StaticProfile) {
       // StaticProfile means that the matrix's values are currently
@@ -1029,25 +1045,61 @@ namespace Tpetra {
       if (nodeNumEntries != nodeNumAllocated) {
         // We have to pack the 1-D storage, since the user didn't fill
         // up all requested storage.
-        ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries ());
-        vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
+        //ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries ());
+        //vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
+
+        typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries.size()+1);
+        ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
+                                           Kokkos::Compat::deallocator(tmpk_ptrs), false);
+        k_ptrs = tmpk_ptrs;
+        {
+          typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
+          Kokkos::deep_copy(h_tmpk_ptrs,tmpk_ptrs);
+          // hack until we get parallel_scan in kokkos
+          for(int i = 0; i < numRowEntries.size(); i++) {
+            h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries[i];
+          }
+          Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
+        }
+
+
+        //vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
+        k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(ptrs.end()-1));
+
+        vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
+                                   Kokkos::Compat::deallocator(k_vals), false);
+
+        t_ValuesType tmp_unpacked_vals;
+        if (k_values1D_.dimension_0()==0) {
+          tmp_unpacked_vals = t_ValuesType("Tpetra::CrsMatrix::t_Values",values1D_.size());
+          for(int i = 0; i < values1D_.size(); i++) {
+            tmp_unpacked_vals(i) = values1D_[i];
+          }
+        } else
+          tmp_unpacked_vals = k_values1D_;
+        {
+          pack_functor<t_ValuesType, typename Graph::LocalStaticCrsGraphType::row_map_type>
+            f(k_vals,tmp_unpacked_vals,tmpk_ptrs,k_rowPtrs_);
+          Kokkos::parallel_for(numRows,f);
+        }
         // TODO (mfh 05 Dec 2012) We should really parallelize this
         // copy operation.  This is not currently required in the
         // sparse_ops_type interface.  Some implementations of that
         // interface (such as AltSparseOps) do provide a copyStorage()
         // method, but I have to check whether it requires that the
         // input have the same packed offsets as the output.
-        for (size_t row=0; row < numRows; ++row) {
+        /*for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries[row];
           std::copy (values1D_.begin() + rowPtrs[row],
                      values1D_.begin() + rowPtrs[row]+numentrs,
                      vals + ptrs[row]);
-        }
+        }*/
       }
       else {
         // The user filled up all requested storage, so we don't have
         // to pack.
         vals = values1D_;
+        k_vals = k_values1D_;
       }
     }
     // We're done with the packed row offsets array now.
@@ -1059,6 +1111,7 @@ namespace Tpetra {
       // unpacked 2-D and 1-D storage, and keep the packed storage.
       values2D_ = null;
       values1D_ = vals;
+      k_values1D_  = k_vals;
     }
 
     // build the matrix, hand over the values
@@ -1091,9 +1144,9 @@ namespace Tpetra {
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
 
-    k_lclMatrix_ = k_local_matrix_type("TPetra::CrsMatrix::k_lclMatrix_",getDomainMap()->getNodeNumElements(),k_values1D_,staticGraph_->getLocalGraph_Kokkos());
+    k_lclMatrix_ = k_local_matrix_type("TPetra::CrsMatrix::k_lclMatrix_",getDomainMap()->getNodeNumElements(),k_vals,staticGraph_->getLocalGraph_Kokkos());
     vals = null;
-
+    k_vals = t_ValuesType();
     // Finalize the local matrix.
     if (params == null) {
       lclparams = parameterList ();

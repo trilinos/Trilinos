@@ -104,12 +104,28 @@ namespace Sacado {
    */
   template <typename T> struct ScalarType {};
 
+  //! Specialization of %ScalarType for const types
+  /*!
+   * This should work for most types
+   */
+  template <typename T> struct ScalarType<const T> {
+    typedef const typename ScalarType<T>::type type;
+  };
+
   //! Base template specification for %ValueType
   /*!
    * The %ValueType classes provide a mechanism for computing the
    * the type stored in AD classes
    */
   template <typename T> struct ValueType {};
+
+  //! Specialization of %ValueType for const types
+  /*!
+   * This should work for most types
+   */
+  template <typename T> struct ValueType<const T> {
+    typedef const typename ValueType<T>::type type;
+  };
 
   //! Base template specification for %IsADType
   /*!

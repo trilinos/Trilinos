@@ -195,7 +195,7 @@ struct ViewFadType< Sacado::Fad::DFad< ValueType >, length, stride > {
 //! The View Fad type associated with this type
 template< class ValueType, unsigned length, unsigned stride >
 struct ViewFadType< const Sacado::Fad::DFad< ValueType >, length, stride > {
-  typedef Sacado::Fad::ViewFad<ValueType,length,stride> type;
+  typedef Sacado::Fad::ViewFad<const ValueType,length,stride> type;
 };
 
 /** \brief  Analyze the array shape of a Sacado::Fad::DFad<T>.

@@ -98,14 +98,22 @@ namespace {
 
 #define TEST_IS_COMPATIBLE(m1,m2,is_compat)               \
 {                                                         \
-    TEST_EQUALITY_CONST(m1.isCompatible(m1), true);       \
-    TEST_EQUALITY_CONST(m2.isCompatible(m2), true);       \
-    TEST_EQUALITY_CONST(m1.isCompatible(m2), is_compat);  \
-    TEST_EQUALITY_CONST(m2.isCompatible(m1), is_compat);  \
+  Teuchos::OSTab tabCompat0 (out);                        \
+  out << "Expect " << (is_compat ? "" : "NOT ") << "compatible" << std::endl; \
+  Teuchos::OSTab tabCompat1 (out); \
+  out << "Is m1 compatible with itself?" << std::endl;  \
+  TEST_EQUALITY_CONST(m1.isCompatible(m1), true);       \
+  out << "Is m2 compatible with itself?" << std::endl;  \
+  TEST_EQUALITY_CONST(m2.isCompatible(m2), true);       \
+  out << "Is m1 compatible with m2?" << std::endl;      \
+  TEST_EQUALITY_CONST(m1.isCompatible(m2), is_compat);  \
+  out << "Is m2 compatible with m1?" << std::endl;      \
+  TEST_EQUALITY_CONST(m2.isCompatible(m1), is_compat);  \
 }
 
 #define TEST_IS_SAME_AS(m1,m2,is_sameas)               \
 {                                                      \
+  out << "Expect " << (is_sameas ? "" : "NOT ") << "same" << std::endl; \
     TEST_EQUALITY_CONST(m1.isSameAs(m1), true);        \
     TEST_EQUALITY_CONST(m2.isSameAs(m2), true);        \
     TEST_EQUALITY_CONST(m1.isSameAs(m2), is_sameas);   \
@@ -224,12 +232,17 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, compatibilityTests, LO, GO )
   {
+    using std::endl;
     typedef Map<LO,GO> M;
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+
+    out << "Test Map::isCompatible" << endl;
+    Teuchos::OSTab tab0 (out);
+
     // test isCompatible()
     // m1.isCompatible(m2) should be true if m1 and m2 have the same number of global entries and the same number of local entries on
     // corresponding nodes
@@ -243,11 +256,13 @@ namespace {
     // test symmetry   : m1.isCompatible(m2) <=> m2.isCompatible(m1)
     // test reflexivity: m1.isCompatible(m1), m2.isCompatible(m2)
     {
+      out << "Contiguous nonuniform ctor, same local GID count globally" << endl;
       M m1(GSTI,myImageID,0,comm),
         m2(GSTI,myImageID,0,comm);
       TEST_IS_COMPATIBLE( m1, m2, true );
     }
     {
+      out << "Contiguous nonuniform ctor, different local and global GID counts" << endl;
       M m1(GSTI,myImageID+1,0,comm),
         m2(GSTI,myImageID,0,comm);
       TEST_IS_COMPATIBLE( m1, m2, false);
@@ -255,8 +270,18 @@ namespace {
     if (numImages > 1) {
       // want different num local on every proc; map1:numLocal==[0,...,numImages-1], map2:numLocal==[1,...,numImages-1,0]
       {
+        out << "Contiguous nonuniform ctor, same global GID count, "
+            << "different local GID counts" << endl;
         M m1(GSTI,myImageID,0,comm),
           m2(GSTI,(myImageID+1)%numImages,0,comm);
+        out << "myImageID = " << myImageID
+            << ", (myImageID+1) % numImages = "
+            << ((myImageID+1) % numImages) << endl;
+        Teuchos::OSTab tab1 (out);
+        out << "m1.getGlobalNumElements() = " << m1.getGlobalNumElements () << endl
+            << "m2.getGlobalNumElements() = " << m2.getGlobalNumElements () << endl
+            << "m1.getNodeNumElements() = " << m1.getNodeNumElements () << endl
+            << "m2.getNodeNumElements() = " << m2.getNodeNumElements () << endl;
         TEST_IS_COMPATIBLE( m1, m2, false);
       }
       if (numImages > 2) {
@@ -275,6 +300,8 @@ namespace {
           mynl1 = mynl2 = myImageID;
         }
         {
+          out << "Contiguous nonuniform ctor, same global GID count, "
+              << "different local GID counts on subset of processes" << endl;
           M m1(GSTI,mynl1,0,comm),
             m2(GSTI,mynl2,0,comm);
           TEST_IS_COMPATIBLE( m1, m2, false);

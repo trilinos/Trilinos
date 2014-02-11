@@ -1011,6 +1011,29 @@ namespace Tpetra {
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
     //@}
 
+    template<class ViewType, class OffsetViewType >
+    struct pack_functor {
+      typedef typename ViewType::device_type device_type;
+      ViewType src;
+      ViewType dest;
+      OffsetViewType src_offset;
+      OffsetViewType dest_offset;
+      typedef typename OffsetViewType::non_const_value_type ScalarIndx;
+
+      pack_functor(ViewType dest_, ViewType src_, OffsetViewType dest_offset_, OffsetViewType src_offset_):
+        src(src_),dest(dest_),src_offset(src_offset_),dest_offset(dest_offset_) {};
+
+      KOKKOS_INLINE_FUNCTION
+      void operator() (size_t row) const {
+        ScalarIndx i = src_offset(row);
+        ScalarIndx j = dest_offset(row);
+        const ScalarIndx k = dest_offset(row+1);
+        for(;j<k;j++,i++) {
+          dest(j) = src(i);
+        }
+      }
+    };
+
   private:
     // We forbid copy construction by declaring this method private
     // and not implementing it.

@@ -105,6 +105,7 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Piro_ConfigDefs.hpp"
 #include "Piro_NOXSolver.hpp"
+#include "Piro_LOCASolver.hpp"
 #include "Piro_RythmosSolver.hpp"
 
 #include "Epetra_MpiComm.h"
@@ -266,6 +267,12 @@ namespace panzer_stk {
     // for pseudo-transient, we need to enable transient solver support to get time derivatives into fill
     if (solncntl_params.get<std::string>("Piro Solver") == "NOX") {
       if (solncntl_params.sublist("NOX").get<std::string>("Nonlinear Solver") == "Pseudo-Transient")
+	is_transient = true;
+    }
+    // for eigenvalues, we need to enable transient solver support to
+    // get time derivatives into generalized eigenvale problem
+    if (solncntl_params.get<std::string>("Piro Solver") == "LOCA") {
+      if (solncntl_params.sublist("LOCA").sublist("Stepper").get<bool>("Compute Eigenvalues"))
 	is_transient = true;
     }
     m_is_transient = is_transient;
@@ -901,15 +908,23 @@ namespace panzer_stk {
     std::string solver = solncntl_params.get<std::string>("Piro Solver");
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me_db
        = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me);
-    if (solver=="NOX") {
+    if ( (solver=="NOX") || (solver == "LOCA") ) {
 
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(nox_observer_factory), std::runtime_error,
 				 "No NOX obersver built!  Please call setNOXObserverFactory() member function if you plan to use a NOX solver.");
 
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-      piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params,
-                                            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db)));
+
+      if (solver=="NOX")
+	piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params,
+							Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db)));
+      else if (solver == "LOCA")
+	piro = Teuchos::rcp(new Piro::LOCASolver<double>(piro_params,
+							 Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db),
+							 Teuchos::null));
+      TEUCHOS_ASSERT(nonnull(piro));
+
       // override printing to use panzer ostream
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);

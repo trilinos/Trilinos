@@ -243,6 +243,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+// Tests that require view spec
+
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, ShmemSize, FadType, Layout, Device )
@@ -267,7 +269,101 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
       mask ) & ~mask;
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Unmanaged, FadType, Layout, Device )
+{
+  typedef typename FadType::value_type scalar_type;
+  typedef typename ApplyView<scalar_type***,Layout,Device>::type ViewType;
+  typedef typename ApplyView<FadType**,Layout,Device,Kokkos::MemoryUnmanaged>::type FadViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename FadViewType::HostMirror fad_host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j,0) = f.val();
+      for (size_type k=0; k<fad_size; k++)
+        h_v(i,j,k+1) = f.dx(k);
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Create unmanaged view
+  FadViewType v_fad(v.ptr_on_device(), num_rows, num_cols, fad_size+1);
+
+  // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
+  fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
+  Kokkos::deep_copy(h_v_fad, v_fad);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_v_fad(i,j), out);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
+{
+  typedef typename FadType::value_type scalar_type;
+  typedef typename ApplyView<scalar_type***,Layout,Device>::type ViewType;
+  typedef typename ApplyView<const scalar_type***,Layout,Device>::type ConstViewType;
+  typedef typename ApplyView<FadType**,Layout,Device,Kokkos::MemoryUnmanaged>::type FadViewType;
+  typedef typename ApplyView<const FadType**,Layout,Device,Kokkos::MemoryUnmanaged>::type ConstFadViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename FadViewType::HostMirror fad_host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j,0) = f.val();
+      for (size_type k=0; k<fad_size; k++)
+        h_v(i,j,k+1) = f.dx(k);
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+  ConstViewType v_const = v;
+
+  // Create unmanaged view
+  ConstFadViewType v_fad(
+    v_const.ptr_on_device(), num_rows, num_cols, fad_size+1);
+
+  // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
+  fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
+  Kokkos::deep_copy(h_v_fad, v_fad);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_v_fad(i,j), out);
+    }
+  }
+}
+
 #else
+
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, ShmemSize, FadType, Layout, Device )
 {
@@ -289,10 +385,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     ( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask;
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Unmanaged, FadType, Layout, Device ) {}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device ) {}
+
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, UnmanagedConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Multiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
