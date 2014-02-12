@@ -56,7 +56,7 @@ class LOCPair_GlobalEvaluationData : public GlobalEvaluationData {
 public:
    LOCPair_GlobalEvaluationData(
                  Teuchos::RCP<const LinearObjFactory<panzer::Traits> > lof,
-                 int initParam) : lof_(lof), initParam_(initParam) 
+                 int initParam) : lof_(lof)
    {
       globalLOC_ = lof_->buildLinearObjContainer();
       ghostedLOC_ = lof_->buildGhostedLinearObjContainer();
@@ -79,7 +79,6 @@ private:
    Teuchos::RCP<LinearObjContainer> ghostedLOC_, globalLOC_;
 
    Teuchos::RCP<const LinearObjFactory<panzer::Traits> > lof_; 
-   int initParam_;
 };
 
 }
