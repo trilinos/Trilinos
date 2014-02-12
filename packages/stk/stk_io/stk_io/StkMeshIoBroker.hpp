@@ -577,14 +577,6 @@ namespace stk {
       size_t m_active_mesh_index;
     };
 
-    inline size_t StkMeshIoBroker::set_active_mesh(size_t input_file_index)
-    {
-      validate_input_file_index(input_file_index);
-      size_t old = m_active_mesh_index;
-      m_active_mesh_index = input_file_index;
-      return old;
-    }
-
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {
       validate_output_file_index(output_file_index);
       return m_output_files[output_file_index]->get_output_io_region();

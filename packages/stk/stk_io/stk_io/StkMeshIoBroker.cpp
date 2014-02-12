@@ -1198,6 +1198,15 @@ namespace stk {
 	}
       }
 
+    size_t StkMeshIoBroker::set_active_mesh(size_t input_file_index)
+    {
+      validate_input_file_index(input_file_index);
+      size_t old = m_active_mesh_index;
+      m_active_mesh_index = input_file_index;
+      m_input_files[m_active_mesh_index]->create_ioss_region();
+      return old;
+    }
+
       void StkMeshIoBroker::create_ioss_region()
       {
 	validate_input_file_index(m_active_mesh_index);
