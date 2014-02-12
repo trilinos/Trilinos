@@ -253,7 +253,7 @@ string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index
 	  
 	  double *results1 = results_[var_index];
 	  for (size_t i=0; i < numEntity; i++) {
-	    results1[i] = proportion * results1[i] + (1.0 - proportion) * results2[i];
+	    results1[i] = (1.0-proportion) * results1[i] + proportion * results2[i];
 	  }
 	}
       }
