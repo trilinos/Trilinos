@@ -1410,8 +1410,13 @@ namespace stk {
     
       void StkMeshIoBroker::add_input_field(const stk::io::MeshField &mesh_field)
       {
-	validate_input_file_index(m_active_mesh_index);
-	m_input_files[m_active_mesh_index]->add_input_field(mesh_field);
+	add_input_field(m_active_mesh_index, mesh_field);
+      }
+
+      void StkMeshIoBroker::add_input_field(size_t mesh_index, const stk::io::MeshField &mesh_field)
+      {
+	validate_input_file_index(mesh_index);
+	m_input_files[mesh_index]->add_input_field(mesh_field);
       }
 
       void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const

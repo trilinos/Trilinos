@@ -393,6 +393,7 @@ namespace stk {
 		      bool abort_if_not_found=true);
 
       void add_input_field(const stk::io::MeshField &mesh_field);
+      void add_input_field(size_t mesh_index, const stk::io::MeshField &mesh_field);
 
       // Create an exodus mesh database with the specified
       // filename. This function creates the exodus metadata which
