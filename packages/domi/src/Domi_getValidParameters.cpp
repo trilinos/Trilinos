@@ -55,7 +55,7 @@ using Teuchos::ParameterList;
 using Teuchos::ParameterEntryValidator;
 using Teuchos::EnhancedNumberValidator;
 using Teuchos::ArrayNumberValidator;
-using Teuchos::ScalarOrArrayNumberValidator;
+//using Teuchos::ScalarOrArrayNumberValidator;
 using Teuchos::StringToIntegralParameterEntryValidator;
 
 namespace Domi
@@ -108,7 +108,8 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > periodicValidator =
       rcp< const ParameterEntryValidator >
-      (new ScalarOrArrayNumberValidator< int >(constPeriodicNumber));
+      //(new ScalarOrArrayNumberValidator< int >(constPeriodicNumber));
+      (new ArrayNumberValidator< int >(constPeriodicNumber));
 
     int periodic = 0;
     plist->set("periodic",
@@ -157,7 +158,8 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > padValidator =
       rcp< const ParameterEntryValidator >
-      (new ScalarOrArrayNumberValidator< int >(constPadNumber));
+      //(new ScalarOrArrayNumberValidator< int >(constPadNumber));
+      (new ArrayNumberValidator< int >(constPadNumber));
 
     // "boundary pad" parameter applies to MDMap
     plist->set("boundary pad",
