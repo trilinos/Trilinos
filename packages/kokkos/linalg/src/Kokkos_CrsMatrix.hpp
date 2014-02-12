@@ -813,7 +813,7 @@ generate (const std::string &label,
   srand(13721);
   h_row_map(0) = 0;
 
-  for (int rowi = 0; rowi < nrows; ++rowi) {.
+  for (int rowi = 0; rowi < nrows; ++rowi) {
    // int varianz = (1.0 * rand() / INT_MAX - 0.5) * varianz_nel_row;
    // h_row_map(row + 1) = h_row_map(row) + elements_per_row + varianz;
   }
