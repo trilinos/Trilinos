@@ -121,7 +121,10 @@ namespace MueLu {
 
       // Get/calculate the maximum eigenvalue
       if (paramList.isParameter(maxEigString)) {
-        lambdaMax = paramList.get<double>(maxEigString);
+        if (paramList.isType<double>(maxEigString))
+          lambdaMax = paramList.get<double>(maxEigString);
+        else
+          lambdaMax = paramList.get<SC>(maxEigString);
         this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
       } else {
@@ -135,7 +138,13 @@ namespace MueLu {
       // Calculate the eigenvalue ratio
       const SC defaultEigRatio = 20;
 
-      SC ratio = (paramList.isParameter(eigRatioString) ? paramList.get<double>(eigRatioString) : defaultEigRatio);
+      SC ratio = defaultEigRatio;
+      if (paramList.isParameter(eigRatioString)) {
+        if (paramList.isType<double>(eigRatioString))
+          ratio = paramList.get<double>(eigRatioString);
+        else
+          ratio = paramList.get<SC>(eigRatioString);
+      }
       if (currentLevel.GetLevelID()) {
         // Update ratio to be
         //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
