@@ -8,6 +8,7 @@
 #include <stk_io/MeshField.hpp>
 #include <stk_io/DbStepTimeInterval.hpp>
 #include <stk_io/IossBridge.hpp>        
+#include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 
@@ -35,6 +36,10 @@ MeshField::MeshField(stk::mesh::FieldBase *field,
   if (db_name == "") {
     m_dbName = field->name();
   }
+
+  ThrowErrorMsgIf(m_timeMatch == LINEAR_INTERPOLATION && m_field->type_is<int>(),
+		  "ERROR: Input interpolation field '" << m_field->name()
+		  << "' is an integer field.  Only double fields can be interpolated.");
 }
     
 MeshField::MeshField(stk::mesh::FieldBase &field,
@@ -50,6 +55,10 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
   if (db_name == "") {
     m_dbName = field.name();
   }
+
+  ThrowErrorMsgIf(m_timeMatch == LINEAR_INTERPOLATION && m_field->type_is<int>(),
+		  "ERROR: Input interpolation field '" << m_field->name()
+		  << "' is an integer field.  Only double fields can be interpolated.");
 }
 
 MeshField::~MeshField()
@@ -138,6 +147,7 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
   else if (m_timeMatch == LINEAR_INTERPOLATION) {
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
+
       // Get data at beginning of interval...
       std::vector<double> values;
       (*I).get_interpolated_field_data(sti, values);
@@ -243,12 +253,11 @@ void MeshFieldPart::get_interpolated_field_data(const DBStepTimeInterval &sti, s
       double tb = sti.region->get_state_time(sti.s_before);
       double ta = sti.region->get_state_time(sti.s_after);
       double delta =  ta - tb;
-      double mult_1 = (sti.t_analysis - tb) / delta;
-      double mult_2 = 1.0 - mult_1;
+      double frac  = (sti.t_analysis - tb) / delta;
 
       assert(m_preData.size() == m_postData.size());
       for (size_t i=0; i < m_preData.size(); i++) {
-	values.push_back(mult_1 * m_preData[i] + mult_2 * m_postData[i]);
+	values.push_back((1.0 - frac) * m_preData[i] + frac * m_postData[i]);
       }
     }
   }
