@@ -707,31 +707,31 @@ apply (const Tpetra::MultiVector<scalar_type,
 
 
 template <class MatrixType>
-std::string SupportGraph<MatrixType>::description () const {
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status: [initialized, computed]";
-    }
-    else {
-      oss << "{status: [initialized, not computed]";
-    }
+std::string SupportGraph<MatrixType>::description () const
+{
+  std::ostringstream os;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  os << "\"Ifpack2::SupportGraph\": {";
+  if (this->getObjectLabel () != "") {
+    os << "Label: \"" << this->getObjectLabel () << "\", ";
+  }
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
   }
   else {
-    oss << "{status: [not initialized, not computed]";
+    os << "Matrix: not null"
+       << ", Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
   }
 
-  if (A_.is_null()) {
-    oss << ", A_: null";
-  }
-  else {
-    oss << ", A_: nonnull, "
-        << ", global number of rows: " << A_->getGlobalNumRows()
-        << ", global number of columns: " << A_->getGlobalNumCols()
-        << "}";
-  }
-  return oss.str();
+  os << "}";
+  return os.str ();
 }
 
 

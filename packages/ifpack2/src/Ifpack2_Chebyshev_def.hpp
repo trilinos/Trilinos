@@ -376,11 +376,11 @@ PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordi
   // }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void Chebyshev<MatrixType>::
-CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-            const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
+CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
+    const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
    const int MaximumIterations,
    scalar_type& lambda_min, scalar_type& lambda_max)
 {
@@ -390,35 +390,51 @@ CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,nod
     "Please use Belos' implementation of CG with Tpetra objects.");
 }
 
-//==========================================================================
+
 template <class MatrixType>
-std::string Chebyshev<MatrixType>::description() const {
-  std::ostringstream oss;
-  oss << Teuchos::LabeledObject::getObjectLabel();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed, ";
-    }
-    else {
-      oss << "{status = initialized, not computed, ";
-    }
+std::string Chebyshev<MatrixType>::description () const {
+  std::ostringstream out;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  out << "\"Ifpack2::Chebyshev\": {";
+  if (this->getObjectLabel () != "") {
+    out << "Label: \"" << this->getObjectLabel () << "\", ";
+  }
+  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (impl_.getMatrix ().is_null ()) {
+    out << "Matrix: null";
   }
   else {
-    oss << "{status = not initialized, not computed, ";
+    out << "Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << impl_.getMatrix ()->getGlobalNumRows () << ", "
+        << impl_.getMatrix ()->getGlobalNumCols () << "]";
   }
 
-  oss << impl_.description();
-
-  oss << ", global rows = " << impl_.getMatrix ()->getGlobalNumRows()
-      << ", global cols = " << impl_.getMatrix ()->getGlobalNumCols()
-      << ", global nnz  = " << impl_.getMatrix ()->getGlobalNumEntries()
-      << "}";
-  return oss.str();
+  out << "}";
+  return out.str ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
-void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+void Chebyshev<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+  const int myRank = this->getComm ()->getRank ();
+
+  if (vl != Teuchos::VERB_NONE && myRank == 0) {
+    // By convention, describe() starts with a tab.
+    Teuchos::OSTab tab0 (out);
+    out << description ();
+  }
+
 #if 0
   using Teuchos::Comm;
   using Teuchos::RCP;
@@ -568,10 +584,10 @@ applyImpl (const MV& X,
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
-typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply() const {
-  return impl_.getLambdaMaxForApply();
+typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply () const {
+  return impl_.getLambdaMaxForApply ();
 }
 
 

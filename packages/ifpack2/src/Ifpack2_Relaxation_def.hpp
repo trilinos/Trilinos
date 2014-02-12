@@ -1352,49 +1352,43 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
 
 
 template<class MatrixType>
-std::string Relaxation<MatrixType>::description() const {
-  using Teuchos::TypeNameTraits;
+std::string Relaxation<MatrixType>::description () const {
   std::ostringstream os;
-
-  std::string status;
-  if (isInitialized ()) {
-    status = "initialized";
-    if (isComputed ()) {
-      status += ", computed";
-    } else {
-      status += ", not computed";
-    }
-  } else {
-    status = "not initialized";
-  }
-
-  std::string type;
-  if (PrecType_ == Ifpack2::Details::JACOBI) {
-    type = "Jacobi";
-  } else if (PrecType_ == Ifpack2::Details::GS) {
-    type = "Gauss-Seidel";
-  } else if (PrecType_ == Ifpack2::Details::SGS) {
-    type = "Symmetric Gauss-Seidel";
-  } else {
-    type = "INVALID";
-  }
 
   // Output is a valid YAML dictionary in flow style.  If you don't
   // like everything on a single line, you should call describe()
   // instead.
-  os << "\"Ifpack2::Relaxation\": { "
-     << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\", "
-     << "Status: " << status << ", "
-     << "\"relaxation: type\": " << type << ", "
-     << "\"relaxation: sweeps\": " << NumSweeps_ << ", "
-     << "\"relaxation: damping factor\": " << DampingFactor_ << ", ";
-  if (DoL1Method_) {
-    os << "\"relaxation: use l1\": " << DoL1Method_ << ", "
-       << "\"relaxation: l1 eta\": " << L1Eta_ << ", ";
+  os << "\"Ifpack2::Relaxation\": {";
+  if (this->getObjectLabel () != "") {
+    os << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  os << "\"Global number of rows\": " << A_->getGlobalNumRows () << ", "
-     << "\"Global number of columns\": " << A_->getGlobalNumCols ()
-     << " }";
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Matrix: not null"
+       << ", Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+  }
+
+  // It's useful to print this instance's relaxation method (Jacobi,
+  // Gauss-Seidel, or symmetric Gauss-Seidel).  If you want more info
+  // than that, call describe() instead.
+  os << "\"relaxation: type\": ";
+  if (PrecType_ == Ifpack2::Details::JACOBI) {
+    os << "Jacobi";
+  } else if (PrecType_ == Ifpack2::Details::GS) {
+    os << "Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::SGS) {
+    os << "Symmetric Gauss-Seidel";
+  } else {
+    os << "INVALID";
+  }
+
+  os << "}";
   return os.str ();
 }
 
@@ -1432,8 +1426,13 @@ describe (Teuchos::FancyOStream &out,
     // Output is valid YAML; hence the quotes, to protect the colons.
     out << "\"Ifpack2::Relaxation\":" << endl;
     OSTab tab2 (out);
-    out << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\"" << endl
-        << "Label: " << this->getObjectLabel () << endl
+    out << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\""
+        << endl;
+    if (this->getObjectLabel () != "") {
+      out << "Label: " << this->getObjectLabel () << endl;
+    }
+    out << "Initialized: " << (isInitialized () ? "true" : "false") << endl
+        << "Computed: " << (isComputed () ? "true" : "false") << endl
         << "Parameters: " << endl;
     {
       OSTab tab3 (out);
@@ -1458,12 +1457,10 @@ describe (Teuchos::FancyOStream &out,
           << "\"relaxation: use l1\": " << DoL1Method_ << endl
           << "\"relaxation: l1 eta\": " << L1Eta_ << endl;
     }
-    out << "Computed quantities: " << endl;
+    out << "Computed quantities:" << endl;
     {
       OSTab tab3 (out);
-      out << "initialized: " << (isInitialized () ? "true" : "false") << endl
-          << "computed: " << (isComputed () ? "true" : "false") << endl
-          << "Condition number estimate: " << Condest_ << endl
+      out << "Condition number estimate: " << Condest_ << endl
           << "Global number of rows: " << A_->getGlobalNumRows () << endl
           << "Global number of columns: " << A_->getGlobalNumCols () << endl;
     }
