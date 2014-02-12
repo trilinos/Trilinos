@@ -38,6 +38,18 @@ typename T::EntityKeyMap::iterator  insert (typename T::EntityKeyMap &map,
   return it;
 }
 
+template <class ForwardIterator, class Compare>
+bool is_sorted(ForwardIterator first, ForwardIterator last, Compare compare)
+{
+  if (first == last) return true;
+  ForwardIterator next = first;
+  while (++next!=last) {
+      if ( compare(*next, *first) ) return false;
+      ++first;
+  }
+  return true;
+}
+
 template <class INTERPOLATE> class GeometricTransfer : public TransferBase {
 
 public :
@@ -149,13 +161,20 @@ private :
     ThrowErrorMsg(__FILE__<<":"<<__LINE__<<" Error: post_coarse_search_filter undefinded in this class.");
   }
 
-
-
-
   void coarse_search(EntityProcRelationVec   &RangeToDomain,
                      const MeshA             &mesha,
                      const MeshB             &meshb,
                      const double             expansion_factor) const ;
+
+  template <class BoundingBoxType>
+  struct BoundingBoxCompare{
+
+    bool operator()(const BoundingBoxType & a, const BoundingBoxType & b) const
+    {
+      return a.second.id() < b.second.id();
+    }
+
+  };
 
   struct compare {
     bool operator()(const BoundingBoxB &a, const EntityProcB  &b) const
@@ -301,6 +320,11 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
 
   mesha.bounding_boxes(domain_vector);
   meshb.bounding_boxes(range_vector);
+
+  if( !is_sorted( domain_vector.begin(), domain_vector.end(), BoundingBoxCompare<BoundingBoxA>() ) )
+    std::sort(domain_vector.begin(),domain_vector.end(),BoundingBoxCompare<BoundingBoxA>());
+  if( !is_sorted( range_vector.begin(), range_vector.end(), BoundingBoxCompare<BoundingBoxB>() ) )
+    std::sort(range_vector.begin(),range_vector.end(),BoundingBoxCompare<BoundingBoxB>());
 
   unsigned range_vector_not_empty = !range_vector.empty();
   stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
