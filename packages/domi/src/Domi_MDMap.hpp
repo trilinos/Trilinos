@@ -77,8 +77,8 @@ namespace Domi
  * Rather than taking a <tt>Teuchos::Comm</tt> object in its
  * constructor, an <tt>MDMap</tt> object takes a <tt>Domi::MDComm</tt>
  * object.  An <tt>MDComm</tt> object is ordered in a structured way,
- * with processors assigned to each axis, whose product is the total
- * number of processors of its underlying communicator.
+ * with processors assigned to each axis, whose product of lengths is
+ * the total number of processors of its underlying communicator.
  *
  * At a bare minimum, an <tt>MDMap</tt> constructor requires an
  * <tt>MDComm</tt> and an array of dimensions indicating the size and
@@ -331,7 +331,7 @@ public:
    */
   bool isPeriodic(int axis) const;
 
-  /** \brief Get the rank of the lower neighbor
+  /** \brief Get the axis rank of this processor
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -342,7 +342,7 @@ public:
    */
   int getAxisRank(int axis) const;
 
-  /** \brief Get the rank of the upper neighbor
+  /** \brief Get the rank of the lower neighbor
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -355,8 +355,8 @@ public:
    * of the calling processor is zero, then this method returns -1.
    *
    * If the periodic flag for the given axis is on, and the axis rank
-   * of the calling processor is zero, then the returned lower
-   * neighbor will be the highest axis rank processor along this axis.
+   * of the calling processor is the highest axis rank processor along
+   * this axis, then the returned lower neighbor will be zero.
    */
   int getLowerNeighbor(int axis) const;
 
@@ -365,13 +365,17 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   *
    * If the periodic flag for the given axis is off, and the axis rank
-   * of the calling processor is the highest axis rank along the axis,
-   * then this method returns -1.
+   * of the calling processor is the highest axis rank processor along
+   * this axis, then this method returns -1.
    *
    * If the periodic flag for the given axis is on, and the axis rank
-   * of the calling processor is the highest axis rank along the axis,
-   * then this method will return axis rank zero.
+   * of the calling processor is zero, then the returned lower
+   * neighbor will be the highest axis rank processor along this axis.
    */
   int getUpperNeighbor(int axis) const;
 
