@@ -124,18 +124,18 @@ namespace Stokhos {
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    volatile StaticFixedStorage&
+    /*volatile*/ StaticFixedStorage&
     operator=(const StaticFixedStorage& s) volatile {
       ss::copy(s.coeff_, coeff_, Num);
-      return *this;
+      return const_cast<StaticFixedStorage&>(*this);
     }
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    volatile StaticFixedStorage&
+    /*volatile*/ StaticFixedStorage&
     operator=(const volatile StaticFixedStorage& s) volatile {
       ss::copy(s.coeff_, coeff_, Num);
-      return *this;
+      return const_cast<StaticFixedStorage&>(*this);
     }
 
     //! Initialize values to a constant value

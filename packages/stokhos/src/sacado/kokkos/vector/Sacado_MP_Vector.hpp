@@ -333,9 +333,9 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator=(const value_type& x) volatile {
+      /*volatile*/ Vector& operator=(const value_type& x) volatile {
         s.init(x);
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Assignment with Vector right-hand-side
@@ -354,16 +354,16 @@ namespace Sacado {
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator=(const Vector& x) volatile {
+      /*volatile*/ Vector& operator=(const Vector& x) volatile {
         s = x.s;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator=(const volatile Vector& x) volatile {
+      /*volatile*/ Vector& operator=(const volatile Vector& x) volatile {
         s = x.s;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Assignment with any expression right-hand-side
@@ -388,7 +388,7 @@ namespace Sacado {
       //! Assignment with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator=(const Expr<S>& xx) volatile {
+      /*volatile*/ Vector& operator=(const Expr<S>& xx) volatile {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
@@ -401,7 +401,7 @@ namespace Sacado {
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.coeff(i);
         }
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Assignment operator only valid for view storage
@@ -602,18 +602,18 @@ namespace Sacado {
 
       //! Addition-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator += (const value_type& x) volatile {
+      /*volatile*/ Vector& operator += (const value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Addition-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator += (const volatile value_type& x) volatile {
+      /*volatile*/ Vector& operator += (const volatile value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
@@ -634,18 +634,18 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator -= (const value_type& x) volatile {
+      /*volatile*/ Vector& operator -= (const value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator -= (const volatile value_type& x) volatile {
+      /*volatile*/ Vector& operator -= (const volatile value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
@@ -666,18 +666,18 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator *= (const value_type& x) volatile {
+      /*volatile*/ Vector& operator *= (const value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator *= (const volatile value_type& x) volatile {
+      /*volatile*/ Vector& operator *= (const volatile value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with constant right-hand-side
@@ -698,18 +698,18 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator /= (const value_type& x) volatile {
+      /*volatile*/ Vector& operator /= (const value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator /= (const volatile value_type& x) volatile {
+      /*volatile*/ Vector& operator /= (const volatile value_type& x) volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Addition-assignment operator with Expr right-hand-side
@@ -731,17 +731,17 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator += (const Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator += (const Expr<S>& x) volatile {
         *this = *this + x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator += (const volatile Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator += (const volatile Expr<S>& x) volatile {
         *this = *this + x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
@@ -763,17 +763,17 @@ namespace Sacado {
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator -= (const Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator -= (const Expr<S>& x) volatile {
         *this = *this - x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator -= (const volatile Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator -= (const volatile Expr<S>& x) volatile {
         *this = *this - x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
@@ -795,17 +795,17 @@ namespace Sacado {
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator *= (const Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator *= (const Expr<S>& x) volatile {
         *this = *this * x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator *= (const volatile Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator *= (const volatile Expr<S>& x) volatile {
         *this = *this * x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with Expr right-hand-side
@@ -827,17 +827,17 @@ namespace Sacado {
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator /= (const Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator /= (const Expr<S>& x) volatile {
         *this = *this / x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      volatile Vector& operator /= (const volatile Expr<S>& x) volatile {
+      /*volatile*/ Vector& operator /= (const volatile Expr<S>& x) volatile {
         *this = *this / x;
-        return *this;
+        return const_cast<Vector&>(*this);
       }
 
       //! Prefix ++
