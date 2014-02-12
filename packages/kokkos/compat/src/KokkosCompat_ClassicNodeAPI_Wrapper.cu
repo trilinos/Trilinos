@@ -26,7 +26,8 @@ namespace Kokkos {
           }
         }
         if(Cuda::is_initialized())
-          Cuda::finalize();
+          if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
+            Cuda::finalize();
       }
     }
     template<>

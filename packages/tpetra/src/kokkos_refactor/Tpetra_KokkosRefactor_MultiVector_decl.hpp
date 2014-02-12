@@ -1133,6 +1133,14 @@ namespace Tpetra {
     };
   } // namespace Details
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+    createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src);
+
+  template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
+  void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+                  const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
+
 } // namespace Tpetra
 
 #endif // TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
