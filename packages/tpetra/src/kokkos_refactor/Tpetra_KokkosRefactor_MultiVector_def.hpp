@@ -2742,8 +2742,8 @@ namespace Tpetra {
     typedef DeviceType device_type;
     DstType dst;
     SrcType src;
-    Kokkos::View<int*,DeviceType> whichVectorSrc;
     Kokkos::View<int*,DeviceType> whichVectorDst;
+    Kokkos::View<int*,DeviceType> whichVectorSrc;
     int n;
     DeepCopySelectedVectors(DstType dst_, SrcType src_,
                             Kokkos::View<int*,DeviceType> whichVectorDst_,
