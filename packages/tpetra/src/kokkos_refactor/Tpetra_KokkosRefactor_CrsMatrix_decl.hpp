@@ -228,6 +228,10 @@ namespace Tpetra {
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
 
+    typedef typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::t_RowPtrs t_RowPtrs;
+    typedef typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::t_LocalOrdinal_1D t_LocalOrdinal_1D;
+    typedef Kokkos::View<Scalar*, typename Node::device_type> t_ValuesType;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -358,6 +362,35 @@ namespace Tpetra {
     ///   default values.
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    /// \brief Constructor specifying column Map and arrays containing the matrix in sorted, local ids.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the matrix,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the matrix.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    ///
+    /// \param values [in] The local entries in the matrix,
+    ///   as in a CSR "vals" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+               const t_RowPtrs & rowPointers,
+               const t_LocalOrdinal_1D & columnIndices,
+               const t_ValuesType & values,
+               const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and arrays containing the matrix in sorted, local ids.
     ///
@@ -835,6 +868,19 @@ namespace Tpetra {
 
     //! Scale the matrix's values: <tt>this := alpha*this</tt>.
     void scale (const Scalar &alpha);
+
+    //! Sets the 1D pointer arrays of the graph.
+    /**
+       \pre <tt>hasColMap() == true</tt>
+       \pre <tt>getGraph() != Teuchos::null</tt>
+       \pre No insert/sum routines have been called
+
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    void
+    setAllValues (const t_RowPtrs& rowPointers,
+                  const t_LocalOrdinal_1D& columnIndices,
+                  const t_ValuesType& values);
 
     //! Sets the 1D pointer arrays of the graph.
     /**
@@ -2381,7 +2427,6 @@ namespace Tpetra {
     /// allocation for the matrix.
     //@{
     ArrayRCP<Scalar> values1D_;
-    typedef Kokkos::View<Scalar*, typename Node::device_type> t_ValuesType;
     t_ValuesType k_values1D_;
     ArrayRCP<Array<Scalar> > values2D_;
     //@}
