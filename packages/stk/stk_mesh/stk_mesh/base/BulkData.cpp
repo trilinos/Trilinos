@@ -1265,7 +1265,7 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
       unsigned char * const src = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_data;
       unsigned char * const dst = (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
 
-      ThrowAssert(src_size == (*field_set[i])->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity);
+      ThrowAssert(src_size == (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity);
 
       std::memcpy( dst + src_size * dst_bucket_ord,
 		   src + src_size * src_bucket_ord,
