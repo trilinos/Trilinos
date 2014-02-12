@@ -54,13 +54,7 @@ namespace Kokkos {
     template <typename D, typename T>
     Kokkos::View<T*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<T>& a) {
-#if defined(KOKKOS_HAVE_PTHREAD)
-      typedef Kokkos::Threads HostDevice;
-#elif defined(KOKKOS_HAVE_OPENMP)
-      typedef Kokkos::OpenMP HostDevice;
-#else
-      typedef Kokkos::Serial HostDevice;
-#endif
+      typedef typename D::host_mirror_device_type HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
       typedef Kokkos::View<T*,typename view_type::array_layout,HostDevice,Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
       if (a.size() == 0)
@@ -74,13 +68,7 @@ namespace Kokkos {
     template <typename D, typename T>
     Kokkos::View<const T*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const T>& a) {
-#if defined(KOKKOS_HAVE_PTHREAD)
-      typedef Kokkos::Threads HostDevice;
-#elif defined(KOKKOS_HAVE_OPENMP)
-      typedef Kokkos::OpenMP HostDevice;
-#else
-      typedef Kokkos::Serial HostDevice;
-#endif
+      typedef typename D::host_mirror_device_type HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
       typedef Kokkos::View<const T*,typename view_type::array_layout,HostDevice,Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
       if (a.size() == 0)
