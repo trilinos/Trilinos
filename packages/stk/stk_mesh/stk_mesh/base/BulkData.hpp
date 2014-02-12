@@ -1221,8 +1221,12 @@ private:
 
   void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket);
 
+  //
+  //  "fields" is an optional argument, if present copy only the listed fields.
+  //
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                   unsigned src_bucket_id, Bucket::size_type src_bucket_ord);
+                                   unsigned src_bucket_id, Bucket::size_type src_bucket_ord, 
+                                   const std::vector<FieldBase*>* fields =NULL);
 
 
   void destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity);

@@ -412,38 +412,76 @@ void Partition::sort(bool force)
 
   Bucket* orig_vacancy_bucket = vacancy_bucket;
 
+
+  FieldVector reduced_fields;
+  if(m_mesh.is_field_updating_active()) {
+    if(buckets_begin != buckets_end && (stk::topology::rank_t)(*buckets_begin)->entity_rank() < stk::topology::NUM_RANKS) {
+      const FieldVector& rankFields = m_mesh.mesh_meta_data().get_fields((stk::topology::rank_t)(*buckets_begin)->entity_rank());
+      reduced_fields.reserve(rankFields.size());
+      for(unsigned ifield=0; ifield<rankFields.size(); ++ifield) {
+	if(field_bytes_per_entity(*rankFields[ifield], *(*buckets_begin))) {
+	  reduced_fields.push_back(rankFields[ifield]);
+	}
+      }
+    }
+  }
+
   for (std::vector<Bucket *>::iterator bucket_itr = begin(); bucket_itr != buckets_end; ++bucket_itr)
   {
     Bucket &curr_bucket = **bucket_itr;
     const unsigned n = *bucket_itr == orig_vacancy_bucket ? curr_bucket.size() -1 : curr_bucket.size(); // skip very last entity in partition
-    for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr )
-    {
-      ThrowAssert(sorted_ent_vector_itr != entities.end());
 
-      Entity curr_entity = curr_bucket[curr_bucket_ord];
-      ThrowAssert(m_mesh.is_valid(curr_entity));
+    //if(m_mesh.is_field_updating_active()) { 
+      for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr ) {
+	ThrowAssert(sorted_ent_vector_itr != entities.end());
 
-      if ( curr_entity != *sorted_ent_vector_itr ) // check if we need to move
-      {
-        // Move current entity to the vacant spot
-        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(curr_entity), "sort affects this entity");
+	Entity curr_entity = curr_bucket[curr_bucket_ord];
+	ThrowAssert(m_mesh.is_valid(curr_entity));
 
-        if (vacancy_bucket != &curr_bucket || vacancy_ordinal != curr_bucket_ord) {
-          vacancy_bucket->overwrite_entity( vacancy_ordinal, curr_entity );
-        }
+	if ( curr_entity != *sorted_ent_vector_itr ) // check if we need to move
+	  {
+	    // Move current entity to the vacant spot
+	    if (vacancy_bucket != &curr_bucket || vacancy_ordinal != curr_bucket_ord) {
+	      vacancy_bucket->overwrite_entity( vacancy_ordinal, curr_entity, &reduced_fields );
+	    }
 
-        // Set the vacant spot to where the required entity is now.
-        vacancy_bucket  = & (m_mesh.bucket(*sorted_ent_vector_itr));
-        vacancy_ordinal = m_mesh.bucket_ordinal(*sorted_ent_vector_itr);
+	    // Set the vacant spot to where the required entity is now.
+	    vacancy_bucket  = & (m_mesh.bucket(*sorted_ent_vector_itr));
+	    vacancy_ordinal = m_mesh.bucket_ordinal(*sorted_ent_vector_itr);
 
-        // Move required entity to the required spot
-        curr_bucket.overwrite_entity( curr_bucket_ord, *sorted_ent_vector_itr );
-
-        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(*sorted_ent_vector_itr), "sort affects this entity");
-        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(*sorted_ent_vector_itr), "  new_bucket: " << curr_bucket << ", new_ordinal: " << curr_bucket_ord);
+	    // Move required entity to the required spot
+	    curr_bucket.overwrite_entity( curr_bucket_ord, *sorted_ent_vector_itr, &reduced_fields );
+	  }
       }
-    }
+      //} else {
+      /*
+      for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr ) {
+	ThrowAssert(sorted_ent_vector_itr != entities.end());
+
+	Entity curr_entity = curr_bucket[curr_bucket_ord];
+	ThrowAssert(m_mesh.is_valid(curr_entity));
+
+	if ( curr_entity != *sorted_ent_vector_itr ) // check if we need to move
+	  {
+	    // Move current entity to the vacant spot
+	    if (vacancy_bucket != &curr_bucket || vacancy_ordinal != curr_bucket_ord) {
+	      vacancy_bucket->overwrite_entity( vacancy_ordinal, curr_entity );
+	    }
+
+	    // Set the vacant spot to where the required entity is now.
+	    vacancy_bucket  = & (m_mesh.bucket(*sorted_ent_vector_itr));
+	    vacancy_ordinal = m_mesh.bucket_ordinal(*sorted_ent_vector_itr);
+
+	    // Move required entity to the required spot
+	    curr_bucket.overwrite_entity( curr_bucket_ord, *sorted_ent_vector_itr);
+	  }
+      }
+      */
+      //}
+
+
   }
+
   m_updated_since_sort = false;
 
   orig_vacancy_bucket->remove_entity();

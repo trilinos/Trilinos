@@ -1253,34 +1253,53 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
 //
 
 void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                           unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
+                                           unsigned src_bucket_id, Bucket::size_type src_bucket_ord, const std::vector<FieldBase*>* field_set)
 {
-  if (!m_keep_fields_updated) {
-    return;
-  }
 
-  const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields((stk::topology::rank_t)dst_rank);
-  for (int i = 0, iend=field_set.size(); i < iend; ++i) {
-    const int src_size        = field_set[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
-    if (src_size == 0) {
-      continue;
+  //
+  //  If field set is passed in copy only the defined fields.  Also assume the fields are valid for the bucket
+  //
+  if(field_set) {
+    for (int i = 0, iend=field_set->size(); i < iend; ++i) {
+      const int src_size        = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
+      unsigned char * const src = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_data;
+      unsigned char * const dst = (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
+
+      ThrowAssert(src_size == (*field_set[i])->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity);
+
+      std::memcpy( dst + src_size * dst_bucket_ord,
+		   src + src_size * src_bucket_ord,
+		   src_size );
+    }
+  } else {
+    if (!m_keep_fields_updated) {
+      return;
     }
 
+    const std::vector< FieldBase * >& allFields = mesh_meta_data().get_fields((stk::topology::rank_t)dst_rank);
+    for (int i = 0, iend=allFields.size(); i < iend; ++i) {
+      const int src_size        = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
+      if (src_size == 0) {
+	continue;
+      }
 
-    unsigned char * const src = field_set[i]->get_meta_data_for_field()[src_bucket_id].m_data;
-    const int dst_size        = field_set[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity;
 
-    if ( dst_size ) {
-      unsigned char * const dst = field_set[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
-      ThrowAssertMsg( dst_size == src_size,
-		      "Incompatible field sizes: " << dst_size << " != " << src_size );
+      unsigned char * const src = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_data;
+      const int dst_size        = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity;
 
-      std::memcpy( dst + dst_size * dst_bucket_ord,
-		   src + src_size * src_bucket_ord,
-		   dst_size );
+      if ( dst_size ) {
+	unsigned char * const dst = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
+	ThrowAssertMsg( dst_size == src_size,
+			"Incompatible field sizes: " << dst_size << " != " << src_size );
+
+	std::memcpy( dst + dst_size * dst_bucket_ord,
+		     src + src_size * src_bucket_ord,
+		     dst_size );
+      }
     }
   }
 }
+
 
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {

@@ -411,10 +411,12 @@ private:
   // overwrites existing entity at ordinal with entity
   // bucket[to_ordinal] = entity;
   // whatever was there before is lost
-  void overwrite_entity(size_type to_ordinal, Entity entity);
+  //  With optional fields argument only copy listed fields
+  void overwrite_entity(size_type to_ordinal, Entity entity, const std::vector<FieldBase*>* fields=NULL);
 
   void initialize_slot(size_type ordinal, Entity entity);
-  void reset_entity_location(Entity entity, size_type to_ordinal);
+  //  Optional fields argument, only copy listed fields
+  void reset_entity_location(Entity entity, size_type to_ordinal, const std::vector<FieldBase*>* fields = NULL);
 
   // BucketKey key = ( part-count , { part-ordinals } , counter )
   //  key[ key[0] ] == counter

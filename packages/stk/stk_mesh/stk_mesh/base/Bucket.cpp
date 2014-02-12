@@ -590,7 +590,7 @@ void Bucket::initialize_slot(size_type ordinal, Entity entity)
   }
 }
 
-void Bucket::reset_entity_location(Entity entity, size_type to_ordinal)
+void Bucket::reset_entity_location(Entity entity, size_type to_ordinal, const FieldVector* fields)
 {
   Bucket & from_bucket = mesh().bucket(entity);
   const Bucket::size_type from_ordinal = mesh().bucket_ordinal(entity);
@@ -602,7 +602,7 @@ void Bucket::reset_entity_location(Entity entity, size_type to_ordinal)
   mesh().set_mesh_index(entity, this, to_ordinal);
 
   m_mesh.copy_entity_fields_callback(m_entity_rank, m_bucket_id, to_ordinal,
-                                     from_bucket.m_bucket_id, from_ordinal);
+                                     from_bucket.m_bucket_id, from_ordinal, fields);
 }
 
 void Bucket::add_entity(Entity entity)
@@ -736,7 +736,7 @@ void Bucket::copy_entity(Entity entity)
   old_bucket->m_dynamic_other_connectivity.copy_entity(old_ordinal, m_dynamic_other_connectivity);
 }
 
-void Bucket::overwrite_entity(size_type to_ordinal, Entity entity)
+void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVector* fields)
 {
   ThrowAssert(to_ordinal < m_capacity);
   ThrowAssert(mesh().is_valid(entity));
@@ -744,11 +744,12 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity)
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
   const MeshIndex from_index = m_mesh.mesh_index(entity);
-  reset_entity_location(entity, to_ordinal);
+  reset_entity_location(entity, to_ordinal, fields);
 
   impl::OverwriteEntityFunctor functor(from_index.bucket_ordinal, to_ordinal);
   modify_all_connectivity(functor, from_index.bucket);
 }
+
 
 void Bucket::parent_topology( EntityRank parent_rank, std::vector<stk::topology> & parent_topologies) const
 {
