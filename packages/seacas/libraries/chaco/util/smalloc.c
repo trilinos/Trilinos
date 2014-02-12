@@ -8,12 +8,12 @@
 
 #if defined(__STDC_VERSION__)
 #  if (__STDC_VERSION__ >= 199901L)
-#    define ST_ZU   "zu"
+#    define ST_ZU   "%zu"
 #  else
-#    define ST_ZU   "lu"
+#    define ST_ZU   "%lu"
 #  endif
 #else
-#  define ST_ZU   "lu"
+#  define ST_ZU   "%lu"
 #endif
 
 static int nmalloc = 0;		/* number of calls to malloc */
