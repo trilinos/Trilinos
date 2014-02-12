@@ -813,7 +813,7 @@ generate (const std::string &label,
   srand(13721);
   h_row_map(0) = 0;
 
-  for (int rowi = 0; rowi < nrows; ++rowi) {
+  for (int rowi = 0; rowi < nrows; ++rowi) {.
    // int varianz = (1.0 * rand() / INT_MAX - 0.5) * varianz_nel_row;
    // h_row_map(row + 1) = h_row_map(row) + elements_per_row + varianz;
   }
@@ -1158,17 +1158,17 @@ struct MV_MultiplyFunctor {
         }
       }
     }
-    for (int i=0; i < UNROLL; ++i) {
+    for (int ii=0; ii < UNROLL; ++ii) {
       if (ShflThreadsPerRow::device_value > 1)
-        sum[i] += shfl_down(sum[i], 1,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 1,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 2)
-        sum[i] += shfl_down(sum[i], 2,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 2,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 4)
-        sum[i] += shfl_down(sum[i], 4,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 4,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 8)
-        sum[i] += shfl_down(sum[i], 8,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 8,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 16)
-        sum[i] += shfl_down(sum[i], 16,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 16,ShflThreadsPerRow::device_value);
     }
     if (lane==0) {
       if(doalpha * doalpha != 1) {
