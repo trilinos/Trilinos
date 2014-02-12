@@ -9,6 +9,7 @@
 #include <stk_mesh/base/Entity.hpp>
 
 
+#include <iostream>
 
 
 namespace stk {
