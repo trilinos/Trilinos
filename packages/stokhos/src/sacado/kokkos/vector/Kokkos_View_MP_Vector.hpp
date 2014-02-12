@@ -2212,6 +2212,77 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
 
     Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
   }
+
+  //------------------------------------
+  /** \brief  Assign to flattened view where Sacado dimension is combined with
+   * most adjacent dimension.  Must have instrinsic value_type, layout, and
+   * rank (add 1 to rank for sacado dimension, remove 1 for flattening)
+   */
+
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(
+    View<DT,DL,DD,DM,ViewDefault>& dst,
+    const View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>& src,
+    typename enable_if<
+      (
+        is_same< typename View<DT,DL,DD,DM,ViewDefault>::value_type ,
+                 typename View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::value_type::storage_type::value_type >::value &&
+        is_same< typename View<DT,DL,DD,DM,ViewDefault>::array_layout ,
+                 typename View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::array_layout >::value &&
+        ( unsigned(View<DT,DL,DD,DM,ViewDefault>::rank) ==
+          unsigned(View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::rank) )
+      ) >::type * = 0)
+  {
+    typedef View<DT,DL,DD,DM,ViewDefault>   dst_type ;
+    typedef typename dst_type::shape_type   dst_shape_type ;
+    typedef typename dst_type::stride_type  dst_stride_type ;
+    typedef typename dst_type::array_layout dst_layout_type;
+
+    if ( src.m_stride != 1 ) {
+      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort(msg);
+#else
+      throw std::runtime_error(msg);
+#endif
+    }
+
+    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+
+    // Create flattened shape
+    unsigned dims[8];
+    dims[0] = src.m_shape.N0;
+    dims[1] = src.m_shape.N1;
+    dims[2] = src.m_shape.N2;
+    dims[3] = src.m_shape.N3;
+    dims[4] = src.m_shape.N4;
+    dims[5] = src.m_shape.N5;
+    dims[6] = src.m_shape.N6;
+    dims[7] = src.m_shape.N7;
+    unsigned rank = dst_type::rank;
+    unsigned sacado_size = src.static_storage_size();
+    if (is_same<dst_layout_type, LayoutLeft>::value) {
+      dims[0] = dims[0]*sacado_size;
+      dims[rank] = 0;
+    }
+    else {
+      dims[rank-1] = dims[rank-1]*sacado_size;
+      dims[rank] = 0;
+    }
+    dst_shape_type::assign( dst.m_shape,
+                            dims[0] , dims[1] , dims[2] , dims[3] ,
+                            dims[4] , dims[5] , dims[6] , dims[7] );
+
+    // No padding in dst to be consistent with src
+    dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+
+    dst.m_ptr_on_device =
+      reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
+
+    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+  }
 };
 
 //----------------------------------------------------------------------------

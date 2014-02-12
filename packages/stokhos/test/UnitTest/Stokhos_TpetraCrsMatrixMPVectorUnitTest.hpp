@@ -845,7 +845,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_MP, Flatten, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
 {
-#if 0
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
@@ -963,7 +962,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       TEST_EQUALITY( y_view[i].fastAccessCoeff(j),
                      y2_view[i].fastAccessCoeff(j) );
   }
-#endif
 }
 
 #if defined(HAVE_STOKHOS_BELOS)
@@ -1598,7 +1596,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if 0 && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
 
 //
 // Test Amesos2 solve for a 1-D Laplacian matrix

@@ -161,6 +161,87 @@ namespace Stokhos {
     return flat_graph;
   }
 
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
+  // Create a flattened graph for a graph from a matrix with the
+  // MP::Vector scalar type (each block is an identity matrix)
+  // If flat_domain_map and/or flat_range_map are null, they will be computed,
+  // otherwise they will be used as-is.
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
+            typename LMO>
+  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
+                                 Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
+  create_flat_mp_graph(
+    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device>,LMO>& graph,
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
+    const LocalOrdinal block_size) {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+    typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
+    typedef typename Graph::t_RowPtrs RowPtrs;
+    typedef typename Graph::t_LocalOrdinal_1D LocalIndices;
+
+    // Build domain map if necessary
+    if (flat_domain_map == Teuchos::null)
+      flat_domain_map = create_flat_map(*(graph.getDomainMap()), block_size);
+
+    // Build range map if necessary
+    if (flat_range_map == Teuchos::null)
+      flat_range_map = create_flat_map(*(graph.getRangeMap()), block_size);
+
+    // Build column map
+    RCP<const Map> flat_col_map =
+      create_flat_map(*(graph.getColMap()), block_size);
+
+    // Build row map if necessary
+    // Check if range_map == row_map, then we can use flat_range_map
+    // as the flattened row map
+    RCP<const Map> flat_row_map;
+    if (graph.getRangeMap() == graph.getRowMap())
+      flat_row_map = flat_range_map;
+    else
+      flat_row_map = create_flat_map(*(graph.getRowMap()), block_size);
+
+    // Build flattened row offsets and column indices
+    ArrayRCP<const size_t> row_offsets = graph.getNodeRowPtrs();
+    ArrayRCP<const LocalOrdinal> col_indices = graph.getNodePackedIndices();
+    const size_t num_row = graph.getNodeNumRows();
+    const size_t num_col_indices = col_indices.size();
+    RowPtrs flat_row_offsets("row_ptrs", num_row*block_size+1);
+    LocalIndices flat_col_indices("col_indices", num_col_indices * block_size);
+    for (size_t row=0; row<num_row; ++row) {
+      const size_t row_beg = row_offsets[row];
+      const size_t row_end = row_offsets[row+1];
+      const size_t num_col = row_end - row_beg;
+      for (LocalOrdinal j=0; j<block_size; ++j) {
+        const size_t flat_row = row*block_size + j;
+        const size_t flat_row_beg = row_beg*block_size + j*num_col;
+        flat_row_offsets[flat_row] = flat_row_beg;
+        for (size_t entry=0; entry<num_col; ++entry) {
+          const LocalOrdinal col = col_indices[row_beg+entry];
+          const LocalOrdinal flat_col = col*block_size + j;
+          flat_col_indices[flat_row_beg+entry] = flat_col;
+        }
+      }
+    }
+    flat_row_offsets[num_row*block_size] = num_col_indices*block_size;
+
+    // Build flattened graph
+    RCP<Graph> flat_graph =
+      rcp(new Graph(flat_row_map, flat_col_map,
+                    flat_row_offsets, flat_col_indices));
+    flat_graph->fillComplete(flat_domain_map, flat_range_map);
+
+    return flat_graph;
+  }
+
+#endif
+
   // Create a flattened vector by unrolling the MP::Vector scalar type.  The
   // returned vector is a view of the original
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
@@ -367,7 +448,7 @@ namespace Stokhos {
   create_flat_vector_view(
     const Tpetra::MultiVector<Sacado::MP::Vector<Storage>,
                               LocalOrdinal,GlobalOrdinal,
-                              Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& vec_const,
+                              Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& vec,
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
                                           Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
     using Teuchos::RCP;
@@ -378,29 +459,13 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename Vector::view_type view_type;
     typedef typename FlatVector::view_type flat_view_type;
 
-    // Cast-away const since resulting vector is a view and we can't create
-    // a const-vector directly
-    Vector& vec = const_cast<Vector&>(vec_const);
-
-    // Get data
-    view_type vec_vals = vec.getLocalView();
-    //typename view_type::array_type vec_vals_array = vec_vals;
-
-    // MP size
-    const LocalOrdinal mp_size = vec_vals.d_view.static_storage_size();
-
-    // Create view of data
-    // How do I create an unmanaged dual view????
-    flat_view_type flat_vec_vals("flat_vals",
-                                 vec_vals.dimension_0()*mp_size,
-                                 vec_vals.dimension_1());
+    // Create flattenend view using special reshaping view assignment operator
+    flat_view_type flat_vals = vec.getLocalView();
 
     // Create flat vector
-    RCP<FlatVector> flat_vec =
-      rcp(new FlatVector(flat_map, flat_vec_vals));
+    RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
 
     return flat_vec;
   }
@@ -418,7 +483,6 @@ namespace Stokhos {
                         Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& vec,
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,
                                           Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
-    using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
@@ -427,25 +491,13 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename Vector::view_type view_type;
     typedef typename FlatVector::view_type flat_view_type;
 
-    // Get data
-    view_type vec_vals = vec.getLocalView();
-    //typename view_type::array_type vec_vals_array = vec_vals;
-
-    // MP size
-    const LocalOrdinal mp_size = vec_vals.d_view.static_storage_size();
-
-    // Create view of data
-    // How do I create an unmanaged dual view????
-    flat_view_type flat_vec_vals("flat_vals",
-                                 vec_vals.dimension_0()*mp_size,
-                                 vec_vals.dimension_1());
+    // Create flattenend view using special reshaping view assignment operator
+    flat_view_type flat_vals = vec.getLocalView();
 
     // Create flat vector
-    RCP<FlatVector> flat_vec =
-      rcp(new FlatVector(flat_map, flat_vec_vals));
+    RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
 
     return flat_vec;
   }
