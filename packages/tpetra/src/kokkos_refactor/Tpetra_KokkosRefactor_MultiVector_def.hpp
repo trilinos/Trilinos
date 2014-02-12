@@ -2685,6 +2685,16 @@ namespace Tpetra {
     replaceMap (newMap);
   }
 
+  template <class Scalar, class LO, class GO, class DeviceType>
+  Teuchos::RCP<MultiVector<Scalar, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  createMultiVector (const Teuchos::RCP<const Map<LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& map,
+                     size_t numVectors)
+  {
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef MultiVector<Scalar, LO, GO, node_type> MV;
+    return Teuchos::rcp (new MV (map, numVectors));
+  }
+
   /// \brief Nonmember MultiVector constructor with view semantics using user-allocated data.
   /// \relatesalso MultiVector
   /// \relatesalso Vector
@@ -2714,23 +2724,17 @@ namespace Tpetra {
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& map,
                              const Teuchos::ArrayRCP<Scalar>& view,
-                             size_t LDA,
-                             size_t numVectors)
+                             const size_t LDA,
+                             const size_t numVectors)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::createMultiVectorFromView: Not implemented for KokkosDeviceWrapperNode");
+    (void) map;
+    (void) view;
+    (void) LDA;
+    (void) numVectors;
 
-    /*
-    using Teuchos::rcp;
-    typedef Tpetra::details::ViewAccepter<Node> VAN;
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-
-    // This uses a protected MultiVector constructor, but this
-    // nonmember function was declared a friend of MultiVector.
-    //
-    // The ViewAccepter expression will fail to compile for
-    // unsupported Kokkos Node types.
-    return rcp (new MV (map, VAN::template acceptView<Scalar> (view),
-                        LDA, numVectors, HOST_VIEW_CONSTRUCTOR));*/
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::createMultiVectorFromView: "
+      "Not implemented for Node = KokkosDeviceWrapperNode.");
   }
 
   template<class DstType, class SrcType, class DeviceType,bool DstConstStride,bool SrcConstStride>
@@ -2768,28 +2772,50 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-    createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src) {
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
-    MV cpy(src.getMap(),src.getNumVectors());
-    if(src.isConstantStride())
-      Kokkos::deep_copy(cpy.getLocalView(),src.getLocalView());
+  createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
+  {
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
+
+    MV cpy (src.getMap (), src.getNumVectors ());
+    if (src.isConstantStride ()) {
+      Kokkos::deep_copy (cpy.getLocalView (), src.getLocalView ());
+    }
     else {
-      if(src.getLocalView().modified_device>=src.getLocalView().modified_host) {
-        Kokkos::View<int*,DeviceType> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
-        for(int i = 0; i < src.whichVectors_.size(); i++)
-          whichVectors(i)=src.whichVectors_[i];
-        Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MV::view_type::t_dev,typename MV::view_type::t_dev,DeviceType,true,false>
-                                                  (cpy.getLocalView().template view<DeviceType>(),
-                                                   src.getLocalView().template view<DeviceType>(),
-                                                   whichVectors,whichVectors));
+      const char viewName[] = "MultiVector::createCopy::WhichVectors";
+
+      if (src.getLocalView ().modified_device >= src.getLocalView ().modified_host) {
+        typedef typename DeviceType::size_type size_type;
+        typedef DeepCopySelectedVectors<typename MV::view_type::t_dev,
+                                        typename MV::view_type::t_dev,
+                                        DeviceType, true, false> functor_type;
+
+        const size_type numWhichVectors = src.whichVectors_.size ();
+        Kokkos::View<int*, DeviceType> whichVectors (viewName, numWhichVectors);
+        for (size_type i = 0; i < numWhichVectors; ++i) {
+          whichVectors(i) = src.whichVectors_[i];
+        }
+        Kokkos::parallel_for (src.getLocalLength (),
+                              functor_type (cpy.getLocalView ().template view<DeviceType> (),
+                                            src.getLocalView ().template view<DeviceType> (),
+                                            whichVectors, whichVectors));
       } else {
-        Kokkos::View<int*,typename DeviceType::host_mirror_device_type> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
-        for(int i = 0; i < src.whichVectors_.size(); i++)
-          whichVectors(i)=src.whichVectors_[i];
-        Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MV::view_type::t_host,typename MV::view_type::t_host,typename DeviceType::host_mirror_device_type,true,false>
-                                                  (cpy.getLocalView().template view<typename DeviceType::host_mirror_device_type>(),
-                                                   src.getLocalView().template view<typename DeviceType::host_mirror_device_type>(),
-                                                   whichVectors,whichVectors));
+        typedef typename DeviceType::host_mirror_device_type host_mirror_device_type;
+        typedef typename host_mirror_device_type::size_type size_type;
+        typedef DeepCopySelectedVectors<typename MV::view_type::t_host,
+                                        typename MV::view_type::t_host,
+                                        host_mirror_device_type,
+                                        true, false> functor_type;
+
+        const size_type numWhichVectors = src.whichVectors_.size ();
+        Kokkos::View<int*, host_mirror_device_type> whichVectors (viewName, numWhichVectors);
+        for (size_type i = 0; i < numWhichVectors; ++i) {
+          whichVectors(i) = src.whichVectors_[i];
+        }
+        Kokkos::parallel_for (src.getLocalLength (),
+                              functor_type (cpy.getLocalView ().template view<host_mirror_device_type> (),
+                                            src.getLocalView ().template view<host_mirror_device_type> (),
+                                            whichVectors, whichVectors));
       }
     }
     return cpy;
