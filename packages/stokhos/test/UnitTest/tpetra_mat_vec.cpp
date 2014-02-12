@@ -91,7 +91,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
   ArrayRCP<Scalar> x_view = y->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
+    //const GlobalOrdinal row = myGIDs[i];
     Scalar val = 2.0;
 
     // if (row != nrow-1) {
@@ -101,9 +101,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
 }
 
-
-//typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
 typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+#else
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+#endif
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(
   Tpetra_CrsMatrix, MatVec, double, int, int, Node )
 
