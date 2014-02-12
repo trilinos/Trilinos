@@ -42,13 +42,18 @@
 #ifndef DOMI_MDVECTOR_HPP
 #define DOMI_MDVECTOR_HPP
 
+// Standard includes
+#include <ctime>
+
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
 #include "Domi_MDMap.hpp"
+#include "Domi_MDArrayRCP.hpp"
 
 // Teuchos includes
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ScalarTraitsDecl.hpp"
+#include "Teuchos_Comm.hpp"
 
 namespace Domi
 {
@@ -197,7 +202,7 @@ public:
    */
   bool isPeriodic(int axis) const;
 
-  /** \brief Get the rank of the lower neighbor
+  /** \brief Get the axis rank of this processor
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -208,6 +213,24 @@ public:
    */
   int getAxisRank(int axis) const;
 
+  /** \brief Get the rank of the lower neighbor
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   *
+   * If the periodic flag for the given axis is off, and the axis rank
+   * of the calling processor is zero, then this method returns -1.
+   *
+   * If the periodic flag for the given axis is on, and the axis rank
+   * of the calling processor is the highest axis rank processor along
+   * this axis, then the returned lower neighbor will be zero.
+   */
+  int getLowerNeighbor(int axis) const;
+
   /** \brief Get the rank of the upper neighbor
    *
    * \param axis [in] the index of the axis (from zero to the number
@@ -217,20 +240,13 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    *
-   * If the periodic flag for the given axis is set, the returned
-   * lower neighbor will be the highest rank of the highest axis rank
-   * processor along this axis.
-   */
-  int getLowerNeighbor(int axis) const;
-
-  /** \brief Get the rank of the upper neighbor
+   * If the periodic flag for the given axis is off, and the axis rank
+   * of the calling processor is the highest axis rank processor along
+   * this axis, then this method returns -1.
    *
-   * \param axis [in] the index of the axis (from zero to the number
-   *        of dimensions - 1)
-   *
-   * If the periodic flag for the given axis is set, the lower
-   * neighbor will be the rank of the zero axis rank processor along
-   * this axis.
+   * If the periodic flag for the given axis is on, and the axis rank
+   * of the calling processor is zero, then the returned lower
+   * neighbor will be the highest axis rank processor along this axis.
    */
   int getUpperNeighbor(int axis) const;
 
@@ -294,18 +310,92 @@ public:
    */
   Slice getLocalBounds(int axis, bool withCommPad=false) const;
 
+  /** \brief Return true if there is any padding stored locally
+   *
+   * Note that it is not as simple as whether there were communication
+   * padding specified in the constructor.  Suppose non-zero
+   * communication padding was specified, but the problem is on one
+   * processor and no boundary padding was specified: this method will
+   * return false.  Similarly, if no communication padding was
+   * specified but boundary padding was, then boundary processors will
+   * have padding and this method will return true.
+   */
+  bool hasPadding() const;
+
+  /** \brief Get the size of the lower padding along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Note that the returned padding can be either communication
+   * padding or boundary padding as appropriate.
+   */
+  int getLowerPad(int axis) const;
+
+  /** \brief Get the size of the upper padding along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Note that the returned padding can be either communication
+   * padding or boundary padding as appropriate.
+   */
+  int getUpperPad(int axis) const;
+
+  /** \brief Get the communication padding size along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This returns the value of the communication padding along the
+   * given axis at the time of construction, regardless of the
+   * processor's position relative to the domain boundary.
+   */
+  int getCommPadSize(int axis) const;
+
+  /** \brief Get the size of the lower boundary padding along the
+   *         given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
+  int getLowerBndryPad(int axis) const;
+
+  /** \brief Get the size of the upper boundary padding along the
+   *         given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
+  int getUpperBndryPad(int axis) const;
+
+  /** \brief Get the boundary padding size along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This returns the value of the boundary padding along the given
+   * axis at the time of construction, regardless of whether a sub-map
+   * reduced these values.
+   */
+  int getBndryPadSize(int axis) const;
+
+  /** \brief Get the storage order
+   */
+  ELayout getLayout() const;
+
   //@}
 
   /** \name Data extraction methods */
   //@{
 
-  /** \brief Get a non-const view of the data as an MDArrayRCP
+  /** \brief Get a non-const view of the data as an MDArrayView
    */
-  MDArrayRCP< Scalar > getDataNonConst();
+  MDArrayView< Scalar > getDataNonConst();
 
-  /** \brief Get a const view of the data as an MDArrayRCP
+  /** \brief Get a const view of the data as an MDArrayView
    */
-  MDArrayRCP< const Scalar > getData() const;
+  MDArrayView< const Scalar > getData() const;
 
   //@}
 
@@ -399,7 +489,7 @@ public:
    *        <tt>n</tt>-dimensional <tt>MDVector</tt>.
    */
   MDVector< Scalar, LocalOrd, GlobalOrd, Node >
-  operator[](GlobalOrd index);
+  operator[](GlobalOrd index) const;
 
   /** \brief Sub-vector access operator.  The returned
    *  <tt>MDVector</tt> will have the same number of dimensions as the
@@ -411,18 +501,36 @@ public:
    *        <tt>n</tt>-dimensional <tt>MDVector</tt>.
    */
   MDVector< Scalar, LocalOrd, GlobalOrd, Node >
-  operator[](Slice slice);
+  operator[](Slice slice) const;
 
   //@}
 
 private:
+
+  // The Teuchos communicator.  Note that this is always a reference
+  // to the communicator of the _mdMap, and is stored only for
+  // convenience
+  const TeuchosCommRCP _teuchosComm;
 
   // The MDMap that describes the domain decomposition of this
   // MDVector
   const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > _mdMap;
 
   // The MDArrayRCP that stores the data of this MDVector
-  const MDArrayRCP< Scalar > _mdArray;
+  MDArrayRCP< Scalar > _mdArrayRcp;
+
+  // The MDArrayView of the (possibly whole) sub-view into this
+  // MDVector's MDArrayRCP
+  MDArrayView< Scalar > _mdArrayView;
+
+  // The operator[](int) and operator[](Slice) methods are applied to
+  // a specific axis, namely this internally stored and updated next
+  // axis
+  int _nextAxis;
+
+  // The operator[](Slice) method calls a constructor that can take a
+  // boundary pad size, which we store internally here
+  Teuchos::Array< int > _sliceBndryPad;
 
 };
 
@@ -439,8 +547,12 @@ template< class Scalar,
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
          bool zeroOut) :
+  _teuchosComm(mdMap->getTeuchosComm()),
   _mdMap(mdMap),
-  _mdArray()
+  _mdArrayRcp(),
+  _mdArrayView(),
+  _nextAxis(0),
+  _sliceBndryPad(mdMap->getNumDims())
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
@@ -451,8 +563,9 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = _mdMap->getLocalDim(axis);
 
-  // Resize the MDArayRCP
-  _mdArray.resize(dims);
+  // Resize the MDArrayRCP and set the MDArrayView
+  _mdArrayRcp.resize(dims);
+  _mdArrayView = _mdArrayRcp();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -466,22 +579,25 @@ MDVector(const Teuchos::RCP<
            const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
          const MDArrayView< const Scalar > & source) :
   _mdMap(mdMap),
-  _mdArray(source)
+  _mdArrayRcp(source),
+  _mdArrayView(_mdArrayRcp()),
+  _nextAxis(0),
+  _sliceBndryPad(mdMap->getNumDims())
 {
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->getNumDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numDims != _mdArray.getNumDims(),
+    numDims != _mdArrayRcp.getNumDims(),
     InvalidArgument,
     "MDMap and source array do not have the same number of dimensions");
 
   for (int axis = 0; axis < numDims; ++axis)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      _mdMap->getLocalDim(axis) != _mdArray.getLocalDim(axis),
+      _mdMap->getLocalDim(axis) != _mdArrayRcp.dimension(axis),
       InvalidArgument,
       "Axis " << axis << ": MDMap dimension = " << _mdMap->getLocalDim(axis)
-      << ", MDArray dimension = " << _mdArray.getLocalDim(axis));
+      << ", MDArray dimension = " << _mdArrayRcp.dimension(axis));
   }
 }
 
@@ -493,8 +609,12 @@ template< class Scalar,
           class Node >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source) :
+  _teuchosComm(source.getMDMap()->getTeuchosComm()),
   _mdMap(source.getMDMap()),
-  _mdArray(source.getDataNonConst())
+  _mdArrayRcp(source._mdArrayRcp),
+  _mdArrayView(source._mdArrayView),
+  _nextAxis(0),
+  _sliceBndryPad(source->_sliceBndryPad)
 {
   setObjectLabel("Domi::MDVector");
 }
@@ -509,22 +629,27 @@ MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
          int axis,
          GlobalOrd index) :
+  _teuchosComm(parent._teuchosComm),
   _mdMap(),
-  _mdArray()
+  _mdArrayRcp(parent._mdArrayRcp),
+  _mdArrayView(parent._mdArrayView),
+  _nextAxis(0),
+  _sliceBndryPad(parent.getNumDims())
 {
   setObjectLabel("Domi::MDVector");
-  _mdMap = Teuchos::rcp(new MDMap< LocalOrd, GlobalOrd, Node >(*(parent->getMDMap()),
-                                  axis,
-                                  index));
-  MDArrayView< Scalar > view = parent->getDataNonConst()();
+
+  // Obtain the new, sliced MDMap
+  _mdMap =
+    Teuchos::rcp(new MDMap< LocalOrd, GlobalOrd, Node >(*(parent->getMDMap()),
+                                                        axis,
+                                                        index));
+  // Take a slice of this MDVector's MDArrayView
   int numDims = parent->getNumDims();
   for (int myAxis=0; myAxis < numDims; ++myAxis)
   {
-    if (myAxis == axis) view = view[myAxis];
-    else                view = view[Slice()];
+    if (myAxis == axis) _mdArrayView = _mdArrayView[index];
+    else                _mdArrayView = _mdArrayView[Slice()];
   }
-  // Must be careful here to obtain an MDArrayRCP of sub-view of the
-  // original MDArrayRCP.
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -538,11 +663,27 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
          int axis,
          const Slice & slice,
          int bndryPad) :
+  _teuchosComm(parent._teuchosComm),
   _mdMap(),
-  _mdArray()
+  _mdArrayRcp(parent._mdArrayRcp),
+  _mdArrayView(parent._mdArrayView),
+  _nextAxis(0)
 {
   setObjectLabel("Domi::MDVector");
-  /// \todo Implement parent/single slice constructor
+
+  // Obtain the new, sliced MDMap
+  _mdMap =
+    Teuchos::rcp(new MDMap< LocalOrd, GlobalOrd, Node >(*(parent->getMDMap()),
+                                                        axis,
+                                                        slice,
+                                                        bndryPad));
+  // Take a slice of this MDVector's MDArrayView
+  int numDims = parent->getNumDims();
+  for (int myAxis=0; myAxis < numDims; ++myAxis)
+  {
+    if (myAxis == axis) _mdArrayView = _mdArrayView[slice];
+    else                _mdArrayView = _mdArrayView[Slice()];
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -744,11 +885,11 @@ template< class Scalar,
           class LocalOrd,
           class GlobalOrd,
           class Node >
-MDArrayRCP< Scalar >
+bool
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getDataNonConst()
+hasPadding() const
 {
-  return _mdArray;
+  return _mdMap->hasPadding();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -757,11 +898,491 @@ template< class Scalar,
           class LocalOrd,
           class GlobalOrd,
           class Node >
-MDArrayRCP< const Scalar >
+int
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getLowerPad(int axis) const
+{
+  return _mdMap->getLowerPad(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+int
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getUpperPad(int axis) const
+{
+  return _mdMap->getUpperPad(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+int
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getCommPadSize(int axis) const
+{
+  return _mdMap->getCommPadSize(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+int
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getLowerBndryPad(int axis) const
+{
+  return _mdMap->getLowerBndryPad(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+int
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getUpperBndryPad(int axis) const
+{
+  return _mdMap->getUpperBndryPad(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+int
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getBndryPadSize(int axis) const
+{
+  return _mdMap->getBndryPadSize(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+ELayout
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getLayout() const
+{
+  return _mdMap->getLayout();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDArrayView< Scalar >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getDataNonConst()
+{
+  return _mdArrayView;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDArrayView< const Scalar >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getData() const
 {
-  return _mdArray;
+  return _mdArrayView.getConst();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+Scalar
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+dot(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & a) const
+{
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
+  // \todo Add macro-protected array bounds checking
+  MDArrayView< const Scalar > aView = a.getData();
+  Scalar local_dot = 0;
+  iterator a_it = aView.begin();
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end();
+       ++it, ++a_it)
+    local_dot += *it * *a_it;
+  Scalar global_dot = 0;
+  Teuchos::reduceAll(*_teuchosComm,
+                     Teuchos::REDUCE_SUM,
+                     1,
+                     &local_dot,
+                     &global_dot);
+  return global_dot;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+typename Teuchos::ScalarTraits< Scalar >::magnitudeType
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+norm1() const
+{
+  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  mag local_norm1 = 0;
+  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
+       it != _mdArrayView.end(); ++it)
+    local_norm1 += std::abs(*it);
+  mag global_norm1 = 0;
+  Teuchos::reduceAll(*_teuchosComm,
+                     Teuchos::REDUCE_SUM,
+                     1,
+                     &local_norm1,
+                     &global_norm1);
+  return global_norm1;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+typename Teuchos::ScalarTraits< Scalar >::magnitudeType
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+norm2() const
+{
+  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  mag norm2 = dot(*this);
+  return Teuchos::ScalarTraits<mag>::squareroot(norm2);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+typename Teuchos::ScalarTraits< Scalar >::magnitudeType
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+normInf() const
+{
+  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  mag local_normInf = 0;
+  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
+       it != _mdArrayView.end(); ++it)
+    local_normInf = std::max(local_normInf, std::abs(*it));
+  mag global_normInf = 0;
+  Teuchos::reduceAll(*_teuchosComm,
+                     Teuchos::REDUCE_MAX,
+                     1,
+                     &local_normInf,
+                     &global_normInf);
+  return global_normInf;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+typename Teuchos::ScalarTraits< Scalar >::magnitudeType
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+normWeighted(const MDVector< Scalar,
+                             LocalOrd,
+                             GlobalOrd,
+                             Node > & weights) const
+{
+  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  // \todo Add macro-protected array bounds checking
+  MDArrayView< const Scalar > wView = weights.getData();
+  mag local_wNorm = 0;
+  typename MDArrayView< const Scalar >::iterator w_it = wView.begin();
+  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
+       it != _mdArrayView.end(); ++it, ++w_it)
+    local_wNorm += *it * *it * *w_it;
+  mag global_wNorm = 0;
+  Teuchos::reduceAll(*_teuchosComm,
+                     Teuchos::REDUCE_SUM,
+                     1,
+                     &local_wNorm,
+                     &global_wNorm);
+  Teuchos::Array< GlobalOrd > dimensions(getNumDims());
+  for (int i = 0; i < getNumDims(); ++i)
+    dimensions[i] = _mdMap->getGlobalDim(i);
+  LocalOrd n = computeSize(dimensions);
+  if (n == 0) return 0;
+  return Teuchos::ScalarTraits<mag>::squareroot(global_wNorm / n);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+Scalar
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+meanValue() const
+{
+  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  mag local_sum = 0;
+  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
+       it != _mdArrayView.end(); ++it)
+    local_sum += *it;
+  mag global_sum = 0;
+  Teuchos::reduceAll(*_teuchosComm,
+                     Teuchos::REDUCE_SUM,
+                     1,
+                     &local_sum,
+                     &global_sum);
+  Teuchos::Array< GlobalOrd > dimensions(getNumDims());
+  for (int i = 0; i < getNumDims(); ++i)
+    dimensions[i] = _mdMap->getGlobalDim(i);
+  LocalOrd n = computeSize(dimensions);
+  if (n == 0) return 0;
+  return global_sum / n;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+std::string
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+description() const
+{
+  using Teuchos::TypeNameTraits;
+
+  Teuchos::Array< GlobalOrd > dims(getNumDims());
+  for (int axis = 0; axis < getNumDims(); ++axis)
+    dims[axis] = getGlobalDim(axis, true);
+
+  std::ostringstream oss;
+  oss << "\"Domi::MDVector\": {"
+      << "Template parameters: {"
+      << "Scalar: " << TypeNameTraits<Scalar>::name()
+      << ", LocalOrd: " << TypeNameTraits<LocalOrd>::name()
+      << ", GlobalOrd: " << TypeNameTraits<GlobalOrd>::name()
+      << ", Node: " << TypeNameTraits<Node>::name()
+      << "}";
+  if (this->getObjectLabel() != "")
+    oss << ", Label: \"" << this->getObjectLabel () << "\", ";
+  oss << "Global dimensions: " << dims << " }";
+  return oss.str();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+describe(Teuchos::FancyOStream &out,
+         const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using std::endl;
+  using std::setw;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::TypeNameTraits;
+  using Teuchos::VERB_DEFAULT;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
+
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+  const MDMap<LocalOrd, GlobalOrd, Node> & mdMap = *(getMDMap());
+  TeuchosCommRCP comm = mdMap.getTeuchosComm();
+  const int myImageID = comm->getRank();
+  const int numImages = comm->getSize();
+  Teuchos::OSTab tab0(out);
+
+  if (vl != VERB_NONE)
+  {
+    if (myImageID == 0)
+    {
+      out << "\"Domi::MDVector\":" << endl;
+    }
+    Teuchos::OSTab tab1(out);// applies to all processes
+    if (myImageID == 0)
+    {
+      out << "Template parameters:";
+      {
+        Teuchos::OSTab tab2(out);
+        out << "Scalar: " << TypeNameTraits<Scalar>::name() << endl
+            << "LocalOrd: " << TypeNameTraits<LocalOrd>::name() << endl
+            << "GlobalOrd: " << TypeNameTraits<GlobalOrd>::name() << endl
+            << "Node: " << TypeNameTraits<Node>::name() << endl;
+      }
+      out << endl;
+      if (this->getObjectLabel() != "")
+      {
+        out << "Label: \"" << getObjectLabel() << "\"" << endl;
+      }
+      Teuchos::Array< GlobalOrd > globalDims(getNumDims());
+      for (int axis = 0; axis < getNumDims(); ++axis)
+        globalDims[axis] = getGlobalDim(axis, true);
+      out << "Global dimensions: " << globalDims << endl;
+    }
+    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr)
+    {
+      if (myImageID == imageCtr)
+      {
+        if (vl != VERB_LOW)
+        {
+          // VERB_MEDIUM and higher prints getLocalLength()
+          out << "Process: " << myImageID << endl;
+          Teuchos::OSTab tab2(out);
+          Teuchos::Array< LocalOrd > localDims(getNumDims());
+          for (int axis = 0; axis < getNumDims(); ++axis)
+            localDims[axis] = getLocalDim(axis, true);
+          out << "Local dimensions: " << localDims << endl;
+
+          // if (vl == VERB_EXTREME && this->getLocalLength() > 0)
+          // {
+          //   // VERB_EXTREME prints values
+          //   out << "Global indices and values:" << endl;
+          //   Teuchos::OSTab tab3 (out);
+          //   RCP<Node> node = this->lclMV_.getNode();
+          //   ArrayRCP<const Scalar> myview =
+          //     node->template viewBuffer<Scalar> (this->getLocalLength(),
+          //                                        MVT::getValues (this->lclMV_));
+          //   for (size_t i = 0; i < this->getLocalLength(); ++i)
+          //   {
+          //     out << map.getGlobalElement(i) << ": " << myview[i] << endl;
+          //   }
+          // }
+        }
+        std::flush(out); // give output time to complete
+      }
+      comm->barrier(); // give output time to complete
+      comm->barrier();
+      comm->barrier();
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+putScalar(const Scalar & value)
+{
+  for (typename MDArrayView< Scalar >::iterator it = _mdArrayView.begin();
+       it != _mdArrayView.end(); ++it)
+    *it = value;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+randomize()
+{
+  typedef typename MDArrayView< Scalar >::iterator iterator;
+  Teuchos::ScalarTraits< Scalar >::seedrandom(time(NULL));
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
+    *it = Teuchos::ScalarTraits< Scalar >::random();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+updateCommPad(int axis)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+updateCommPad()
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+operator[](GlobalOrd index) const
+{
+  MDVector< Scalar, LocalOrd, GlobalOrd, Node > result(*this,
+                                                       _nextAxis,
+                                                       index);
+  int newAxis = _nextAxis + 1;
+  if (newAxis >= result.getNumDims()) newAxis = 0;
+  result._nextAxis = newAxis;
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+operator[](Slice slice) const
+{
+  MDVector< Scalar, LocalOrd, GlobalOrd, Node >
+    result(*this,
+           _nextAxis,
+           slice,
+           _sliceBndryPad[_nextAxis]);
+  int newAxis = _nextAxis + 1;
+  if (newAxis >= result.getNumDims()) newAxis = 0;
+  result._nextAxis = newAxis;
+  return result;
 }
 
 }  // Namespace Domi
