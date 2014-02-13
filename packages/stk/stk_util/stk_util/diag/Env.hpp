@@ -74,6 +74,7 @@ struct ExecInfo
 {
   MPI_Comm              m_groupComm;
   int                   m_master;
+  MPI_Comm              m_worldComm;
 };
 
 
@@ -107,7 +108,8 @@ struct ExecInfo
    *                            Only used if mpi_key = EXEC_TYPE_PEER
    */
  bool StartupSierra(int *argc, char ***argv, const char *product_name, const char *build_date_time,
-	           ExecType mpi_key = EXEC_TYPE_WORLD, const std::vector<int> *peer_sizes = NULL);
+	           ExecType mpi_key = EXEC_TYPE_WORLD, const std::vector<int> *peer_sizes = NULL,
+	           const ExecInfo * preSplitCommunicatorInfo = NULL);
 
  //
  //  Cleanup any MPI stuff that was created from the startup sierra call, pass in the MPI initialization flag
@@ -155,7 +157,8 @@ public:
    *                            Only used if mpi_key = EXEC_TYPE_PEER
    */
   Startup(int *argc, char ***argv, const char *product_name, const char *build_date_time,
-	  ExecType mpi_key = EXEC_TYPE_WORLD, const std::vector<int> *peer_sizes = NULL);
+	  ExecType mpi_key = EXEC_TYPE_WORLD, const std::vector<int> *peer_sizes = NULL,
+	  const ExecInfo * preSplitCommunicatorInfo = 0);
 
   /**
    * @brief Destroys a <b>Startup</b> instance.  IT closes all logging output streams and
@@ -188,7 +191,8 @@ private:
    *
    */
   void startup(int *argc, char ***argv, const char *product_name, const char *build_time,
-	       ExecType mpi_key, const std::vector<int> *peer_sizes);
+	       ExecType mpi_key, const std::vector<int> *peer_sizes,
+	       const ExecInfo * preSplitCommunicatorInfo);
 
 private:
   bool m_mpiInitFlag;			///< True if Startup initialized MPI

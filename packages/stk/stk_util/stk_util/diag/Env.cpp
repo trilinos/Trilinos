@@ -413,7 +413,8 @@ bool StartupSierra(int *			  argc,
   const char *		  product_name,
   const char *		  build_time,
   ExecType                mpi_key,
-  const std::vector<int> *peer_sizes) {
+  const std::vector<int> *peer_sizes,
+  const ExecInfo * preSplitCommunicatorInfo) {
 
 
 
@@ -504,7 +505,9 @@ bool StartupSierra(int *			  argc,
   }
 
   try {
+
     startup_preparallel_platform();
+
     // Communicator has not been set, initialize MPI if not already initialized
     int mpi_init_val = 0 ;
 
@@ -525,7 +528,15 @@ bool StartupSierra(int *			  argc,
       }
       returnValue = true ;
       if (mpi_key != EXEC_TYPE_WORLD) startup_multi_exec(startup_mpi_comm, mpi_key, peer_sizes);
+
+    } else {
+      if(preSplitCommunicatorInfo != 0) {
+        env_data.m_worldComm                           = preSplitCommunicatorInfo->m_worldComm;
+        env_data.m_execMap[EXEC_TYPE_PEER].m_groupComm = preSplitCommunicatorInfo->m_groupComm;
+        env_data.m_execMap[EXEC_TYPE_PEER].m_master    = preSplitCommunicatorInfo->m_master;
+      }
     }
+
 
     // Ready to reset the environment from NULL, we are the Lagrangian application at this point.
     MPI_Comm new_comm = mpi_key != EXEC_TYPE_WORLD ? env_data.m_execMap[mpi_key].m_groupComm : MPI_COMM_WORLD;
@@ -793,8 +804,10 @@ Startup::startup(
   const char *		  product_name,
   const char *		  build_time,
   ExecType                mpi_key,
-  const std::vector<int> *peer_sizes) {
-  m_mpiInitFlag = StartupSierra(argc, argv, product_name, build_time, mpi_key, peer_sizes);
+  const std::vector<int> *peer_sizes,
+  const ExecInfo * preSplitCommunicatorInfo)
+{
+  m_mpiInitFlag = StartupSierra(argc, argv, product_name, build_time, mpi_key, peer_sizes, preSplitCommunicatorInfo);
 }
 
 
@@ -804,10 +817,11 @@ Startup::Startup(
   const char *          product_name,
   const char *          build_date_time,
   ExecType              mpi_key,
-  const std::vector<int> *peer_sizes)
+  const std::vector<int> *peer_sizes,
+  const ExecInfo * preSplitCommunicatorInfo)
   : m_mpiInitFlag(false)
 {
-  startup(argc, argv, product_name, build_date_time, mpi_key, peer_sizes);
+  startup(argc, argv, product_name, build_date_time, mpi_key, peer_sizes, preSplitCommunicatorInfo);
 }
 
 
