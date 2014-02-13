@@ -94,7 +94,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.2")
   
   IF (COMM_TYPE STREQUAL MPI)
     SET(TPL_ENABLE_MPI ON)
@@ -102,16 +102,16 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/gcc-4.6.1/openmpi-1.4.3"
+      "-DMPI_BASE_DIR:PATH=/Users/trilinos/compilers/gcc/openmpi_1.6.5_gcc_4.8.2"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/trilinos/compilers/gcc/4.8.2/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/trilinos/compilers/gcc/4.8.2/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/trilinos/compilers/gcc/4.8.2/bin/gfortran"
       )
   
   ENDIF()
