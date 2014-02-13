@@ -97,6 +97,16 @@ namespace Sacado {
         return static_cast<const derived_type&>(*this);
       }
 
+      //! Return derived object
+      /*!
+       * This assumes a CRTP pattern where T is infact derived from
+       * Expr<T>.  This will only compile if this infact the case.
+       */
+      KOKKOS_INLINE_FUNCTION
+      const volatile derived_type& derived() const volatile {
+        return static_cast<const volatile derived_type&>(*this);
+      }
+
     };
 
     //! Vectorized evaluation class
@@ -110,9 +120,13 @@ namespace Sacado {
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
       typedef typename storage_type::pointer pointer;
+      typedef typename storage_type::volatile_pointer volatile_pointer;
       typedef typename storage_type::const_pointer const_pointer;
+      typedef typename storage_type::const_volatile_pointer const_volatile_pointer;
       typedef typename storage_type::reference reference;
+      typedef typename storage_type::volatile_reference volatile_reference;
       typedef typename storage_type::const_reference const_reference;
+      typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
       //! Typename of scalar's (which may be different from T)
       typedef typename ScalarType<value_type>::type scalar_type;
@@ -166,6 +180,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       Vector(const Vector& x) : s(x.s) {}
 
+      //! Copy constructor
+      KOKKOS_INLINE_FUNCTION
+      Vector(const volatile Vector& x) : s(x.s) {}
+
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
@@ -192,9 +210,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       void init(const value_type& v) { s.init(v); }
 
+      //! Initialize coefficients to value
+      KOKKOS_INLINE_FUNCTION
+      void init(const value_type& v) volatile { s.init(v); }
+
       //! Initialize coefficients to an array of values
       KOKKOS_INLINE_FUNCTION
       void init(const value_type* v) { s.init(v); }
+
+      //! Initialize coefficients to an array of values
+      KOKKOS_INLINE_FUNCTION
+      void init(const value_type* v) volatile { s.init(v); }
 
       //! Initialize coefficients from an Vector with different storage
       template <typename S>
@@ -203,14 +229,30 @@ namespace Sacado {
         s.init(v.s.coeff(), v.s.size());
       }
 
+      //! Initialize coefficients from an Vector with different storage
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      void init(const Vector<S>& v) volatile {
+        s.init(v.s.coeff(), v.s.size());
+      }
+
       //! Load coefficients to an array of values
       KOKKOS_INLINE_FUNCTION
       void load(value_type* v) { s.load(v); }
+
+      //! Load coefficients to an array of values
+      KOKKOS_INLINE_FUNCTION
+      void load(value_type* v) volatile { s.load(v); }
 
       //! Load coefficients into an Vector with different storage
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       void load(Vector<S>& v) { s.load(v.s.coeff()); }
+
+      //! Load coefficients into an Vector with different storage
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      void load(Vector<S>& v) volatile { s.load(v.s.coeff()); }
 
       //! Reset size
       /*!
@@ -218,6 +260,19 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       void reset(ordinal_type sz_new) {
+        ordinal_type sz = this->size();
+        s.resize(sz_new);
+        if (sz == 1 && sz_new > sz)
+          for (ordinal_type i=1; i<sz_new; i++)
+            s[i] = s[0];
+      }
+
+      //! Reset size
+      /*!
+       * Coefficients are preserved.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void reset(ordinal_type sz_new) volatile {
         ordinal_type sz = this->size();
         s.resize(sz_new);
         if (sz == 1 && sz_new > sz)
@@ -236,12 +291,25 @@ namespace Sacado {
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
       KOKKOS_INLINE_FUNCTION
-      void copyForWrite() {  }
+      void copyForWrite() volatile {  }
 
       //! Returns whether two ETV objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       bool isEqualTo(const Expr<S>& xx) const {
+        const typename Expr<S>::derived_type& x = xx.derived();
+        typedef IsEqual<value_type> IE;
+        if (x.size() != this->size()) return false;
+        bool eq = true;
+        for (ordinal_type i=0; i<this->size(); i++)
+          eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+        return eq;
+      }
+
+      //! Returns whether two ETV objects have the same values
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      bool isEqualTo(const Expr<S>& xx) const volatile {
         const typename Expr<S>::derived_type& x = xx.derived();
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
@@ -263,11 +331,39 @@ namespace Sacado {
         return *this;
       }
 
+      //! Assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator=(const value_type& x) volatile {
+        s.init(x);
+        return const_cast<Vector&>(*this);
+      }
+
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator=(const Vector& x) {
         s = x.s;
         return *this;
+      }
+
+      //! Assignment with Vector right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator=(const volatile Vector& x) {
+        s = x.s;
+        return *this;
+      }
+
+      //! Assignment with Vector right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator=(const Vector& x) volatile {
+        s = x.s;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Assignment with Vector right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator=(const volatile Vector& x) volatile {
+        s = x.s;
+        return const_cast<Vector&>(*this);
       }
 
       //! Assignment with any expression right-hand-side
@@ -289,6 +385,25 @@ namespace Sacado {
         return *this;
       }
 
+      //! Assignment with any expression right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator=(const Expr<S>& xx) volatile {
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] = x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] = x.coeff(i);
+        }
+        return const_cast<Vector&>(*this);
+      }
+
       //! Assignment operator only valid for view storage
       template< typename S >
       KOKKOS_INLINE_FUNCTION
@@ -296,6 +411,22 @@ namespace Sacado {
                                          Stokhos::is_ViewStorage<Storage>::value
                                        ), Vector >
         ::type const & operator = ( const Expr<S> & xx ) const
+      {
+        const typename Expr<S>::derived_type & x = xx.derived();
+
+        for ( ordinal_type i = 0 ; i < s.size() ; ++i ) { s[i] = x.coeff(i); }
+
+        return *this ;
+      }
+
+      //! Assignment operator only valid for view storage
+      template< typename S >
+      KOKKOS_INLINE_FUNCTION
+      volatile
+      typename Kokkos::Impl::enable_if<( ! Kokkos::Impl::is_same<S,void>::value &&
+                                         Stokhos::is_ViewStorage<Storage>::value
+                                       ), Vector >
+        ::type const & operator = ( const Expr<S> & xx ) const volatile
       {
         const typename Expr<S>::derived_type & x = xx.derived();
 
@@ -312,7 +443,15 @@ namespace Sacado {
 
       //! Returns storage object
       KOKKOS_INLINE_FUNCTION
+      const volatile storage_type& storage() const volatile { return s; }
+
+      //! Returns storage object
+      KOKKOS_INLINE_FUNCTION
       const storage_type& storage() const { return s; }
+
+      //! Returns storage object
+      KOKKOS_INLINE_FUNCTION
+      volatile storage_type& storage() volatile { return s; }
 
       //! Returns storage object
       KOKKOS_INLINE_FUNCTION
@@ -325,7 +464,15 @@ namespace Sacado {
 
       //! Returns value
       KOKKOS_INLINE_FUNCTION
+      const_volatile_reference val() const volatile { return s[0]; }
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
       const_reference val() const { return s[0]; }
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      volatile_reference val() volatile { return s[0]; }
 
       //! Returns value
       KOKKOS_INLINE_FUNCTION
@@ -338,47 +485,97 @@ namespace Sacado {
        */
       //@{
 
-      //! Returns size of polynomial
+      //! Returns size of vector
       KOKKOS_INLINE_FUNCTION
       ordinal_type size() const { return s.size();}
 
-      //! Returns true if polynomial has size >= sz
+      //! Returns size of vector
+      KOKKOS_INLINE_FUNCTION
+      ordinal_type size() const volatile { return s.size();}
+
+      //! Returns true if vector has size >= sz
       KOKKOS_INLINE_FUNCTION
       bool hasFastAccess(ordinal_type sz) const { return s.size()>=sz;}
 
-      //! Returns Hermite coefficient array
+      //! Returns true if vector has size >= sz
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess(ordinal_type sz) const volatile { return s.size()>=sz;}
+
+      //! Returns coefficient array
       KOKKOS_INLINE_FUNCTION
       const_pointer coeff() const { return s.coeff();}
 
-      //! Returns Hermite coefficient array
+      //! Returns coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_pointer coeff() const volatile { return s.coeff();}
+
+      //! Returns coefficient array
+      KOKKOS_INLINE_FUNCTION
+      volatile_pointer coeff() volatile { return s.coeff();}
+
+      //! Returns coefficient array
       KOKKOS_INLINE_FUNCTION
       pointer coeff() { return s.coeff();}
 
-      //! Returns degree \c i term with bounds checking
+      //! Returns term \c i with bounds checking
+      KOKKOS_INLINE_FUNCTION
+      value_type coeff(ordinal_type i) const volatile {
+        return i<s.size() ? s[i] : s[0]; }
+
+      //! Returns term \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
       value_type coeff(ordinal_type i) const {
         return i<s.size() ? s[i] : s[0]; }
 
-      //! Returns degree \c i term with bounds checking
+      //! Returns term \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
-      value_type & coeff(ordinal_type i) {
+      value_type coeff(ordinal_type i) volatile {
         return i<s.size() ? s[i] : s[0]; }
 
-      //! Returns degree \c i term without bounds checking
+      //! Returns term \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
-      reference fastAccessCoeff(ordinal_type i) { return s[i];}
+      value_type coeff(ordinal_type i) {
+        return i<s.size() ? s[i] : s[0]; }
 
-      //! Returns degree \c i term without bounds checking
+      //! Returns term \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
-      value_type fastAccessCoeff(ordinal_type i) const { return s[i];}
+      const_volatile_reference fastAccessCoeff(ordinal_type i) const volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_reference fastAccessCoeff(ordinal_type i) const {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      volatile_reference fastAccessCoeff(ordinal_type i) volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      reference fastAccessCoeff(ordinal_type i) {
+        return s[i];}
 
       template <int i>
       KOKKOS_INLINE_FUNCTION
-      value_type getCoeff() const { return s.template getCoeff<i>(); }
+      value_type getCoeff() const volatile {
+        return s.template getCoeff<i>(); }
 
       template <int i>
       KOKKOS_INLINE_FUNCTION
-      reference getCoeff() { return s.template getCoeff<i>(); }
+      value_type getCoeff() const {
+        return s.template getCoeff<i>(); }
+
+      template <int i>
+      KOKKOS_INLINE_FUNCTION
+      volatile_reference getCoeff() volatile {
+        return s.template getCoeff<i>(); }
+
+      template <int i>
+      KOKKOS_INLINE_FUNCTION
+      reference getCoeff() {
+        return s.template getCoeff<i>(); }
 
       //@}
 
@@ -395,12 +592,60 @@ namespace Sacado {
         return *this;
       }
 
+      //! Addition-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator += (const volatile value_type& x) {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] += x;
+        return *this;
+      }
+
+      //! Addition-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator += (const value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] += x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Addition-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator += (const volatile value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] += x;
+        return const_cast<Vector&>(*this);
+      }
+
       //! Subtraction-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator -= (const value_type& x) {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
         return *this;
+      }
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator -= (const volatile value_type& x) {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] -= x;
+        return *this;
+      }
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator -= (const value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] -= x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator -= (const volatile value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] -= x;
+        return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
@@ -411,12 +656,60 @@ namespace Sacado {
         return *this;
       }
 
+      //! Multiplication-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator *= (const volatile value_type& x) {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] *= x;
+        return *this;
+      }
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator *= (const value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] *= x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator *= (const volatile value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] *= x;
+        return const_cast<Vector&>(*this);
+      }
+
       //! Division-assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator /= (const value_type& x) {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
         return *this;
+      }
+
+      //! Division-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator /= (const volatile value_type& x) {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] /= x;
+        return *this;
+      }
+
+      //! Division-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator /= (const value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] /= x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Division-assignment operator with constant right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator /= (const volatile value_type& x) volatile {
+        for (ordinal_type i=0; i<s.size(); i++)
+          s[i] /= x;
+        return const_cast<Vector&>(*this);
       }
 
       //! Addition-assignment operator with Expr right-hand-side
@@ -427,12 +720,60 @@ namespace Sacado {
         return *this;
       }
 
+      //! Addition-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator += (const volatile Expr<S>& x) {
+        *this = *this + x;
+        return *this;
+      }
+
+      //! Addition-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator += (const Expr<S>& x) volatile {
+        *this = *this + x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Addition-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator += (const volatile Expr<S>& x) volatile {
+        *this = *this + x;
+        return const_cast<Vector&>(*this);
+      }
+
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       Vector& operator -= (const Expr<S>& x) {
         *this = *this - x;
         return *this;
+      }
+
+      //! Subtraction-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator -= (const volatile Expr<S>& x) {
+        *this = *this - x;
+        return *this;
+      }
+
+      //! Subtraction-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator -= (const Expr<S>& x) volatile {
+        *this = *this - x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Subtraction-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator -= (const volatile Expr<S>& x) volatile {
+        *this = *this - x;
+        return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
@@ -443,6 +784,30 @@ namespace Sacado {
         return *this;
       }
 
+      //! Multiplication-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator *= (const volatile Expr<S>& x) {
+        *this = *this * x;
+        return *this;
+      }
+
+      //! Multiplication-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator *= (const Expr<S>& x) volatile {
+        *this = *this * x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Multiplication-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator *= (const volatile Expr<S>& x) volatile {
+        *this = *this * x;
+        return const_cast<Vector&>(*this);
+      }
+
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
@@ -451,9 +816,41 @@ namespace Sacado {
         return *this;
       }
 
+      //! Division-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      Vector& operator /= (const volatile Expr<S>& x) {
+        *this = *this / x;
+        return *this;
+      }
+
+      //! Division-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator /= (const Expr<S>& x) volatile {
+        *this = *this / x;
+        return const_cast<Vector&>(*this);
+      }
+
+      //! Division-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      /*volatile*/ Vector& operator /= (const volatile Expr<S>& x) volatile {
+        *this = *this / x;
+        return const_cast<Vector&>(*this);
+      }
+
       //! Prefix ++
       KOKKOS_INLINE_FUNCTION
       Vector& operator++() {
+        for (ordinal_type i=0; i<s.size(); i++)
+          ++(s[i]);
+        return *this;
+      }
+
+      //! Prefix ++
+      KOKKOS_INLINE_FUNCTION
+      volatile Vector& operator++() volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           ++(s[i]);
         return *this;
@@ -467,9 +864,25 @@ namespace Sacado {
         return tmp;
       }
 
+      //! Postfix ++
+      KOKKOS_INLINE_FUNCTION
+      Vector operator++(int) volatile {
+        Vector tmp(*this);
+        ++(*this);
+        return tmp;
+      }
+
       //! Prefix --
       KOKKOS_INLINE_FUNCTION
       Vector& operator--() {
+        for (ordinal_type i=0; i<s.size(); i++)
+          --(s[i]);
+        return *this;
+      }
+
+      //! Prefix --
+      KOKKOS_INLINE_FUNCTION
+      volatile Vector& operator--() volatile {
         for (ordinal_type i=0; i<s.size(); i++)
           --(s[i]);
         return *this;
@@ -483,10 +896,18 @@ namespace Sacado {
         return tmp;
       }
 
+      //! Postfix --
+      KOKKOS_INLINE_FUNCTION
+      Vector operator--(int) volatile {
+        Vector tmp(*this);
+        --(*this);
+        return tmp;
+      }
+
       //@}
 
       KOKKOS_INLINE_FUNCTION
-      std::string name() const { return "x"; }
+      std::string name() const volatile { return "x"; }
 
     protected:
 
@@ -529,9 +950,34 @@ namespace Sacado {
       typedef const Vector<S>& type;
     };
 
+    //! Type for storing nodes in expression graph
+    /*!
+     * Specialization for leaf-nodes, which can be stored by reference
+     * since they are an argument to the expression.
+     */
+    template <typename S> struct const_expr_ref< volatile Vector<S> > {
+      typedef const volatile Vector<S>& type;
+    };
+
+    //! Traits class for removing volatile from type
+    template <typename T> struct remove_volatile {
+      typedef T type;
+    };
+    template <typename T> struct remove_volatile<volatile T> {
+      typedef T type;
+    };
+
+    //! Traits class for adding volatile to type
+    template <typename T> struct add_volatile {
+      typedef volatile T type;
+    };
+    template <typename T> struct add_volatile<volatile T> {
+      typedef volatile T type;
+    };
+
     template <typename Storage>
     std::ostream&
-    operator << (std::ostream& os, const Vector<Storage>& a)
+    operator << (std::ostream& os, const volatile Vector<Storage>& a)
     {
       typedef typename Vector<Storage>::ordinal_type ordinal_type;
 
@@ -541,7 +987,7 @@ namespace Sacado {
         os << a.coeff(i) << " ";
       }
 
-      os << "]\n";
+      os << "]";
       return os;
     }
 

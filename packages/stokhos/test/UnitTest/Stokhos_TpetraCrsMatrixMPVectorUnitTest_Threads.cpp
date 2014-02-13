@@ -39,33 +39,23 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
+#include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
+// Instantiate test for serial node
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> ThreadsWrapperNode;
+CRSMATRIX_MP_VECTOR_TESTS_SLGN( double, int, int, ThreadsWrapperNode )
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_NullspacePresmoothFactory_def.hpp"
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::NullspacePresmoothFactory<S, LO, GO, N>;
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(MUELU_INST_S_LO_GO_N, N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-// Currently excluding GPU nodes because SparseOps may not be
-// implemented, I think depending on the choice of TPLs
-//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
-MUELU_INST_N(KokkosClassic_SerialNode)
-
-#endif
-
-#endif
+  return ret;
+}

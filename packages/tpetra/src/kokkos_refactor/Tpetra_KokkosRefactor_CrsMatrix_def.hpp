@@ -290,6 +290,33 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& rowMap,
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& colMap,
+             const t_RowPtrs & rowPointers,
+             const t_LocalOrdinal_1D & columnIndices,
+             const t_ValuesType & values,
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap)
+  {
+    try {
+      myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers,columnIndices,params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
+    }
+    staticGraph_ = myGraph_;
+    k_values1D_  = values;
+    values1D_    = Kokkos::Compat::persistingView(k_values1D_);
+    resumeFill(params);
+    checkInternalState();
+  }
+
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal, class DeviceType>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& rowMap,
+             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& colMap,
              const ArrayRCP<size_t> & rowPointers,
              const ArrayRCP<LocalOrdinal> & columnIndices,
              const ArrayRCP<Scalar> & values,
@@ -305,6 +332,7 @@ namespace Tpetra {
         "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
+    k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
     values1D_    = values;
     resumeFill(params);
     checkInternalState();
@@ -1969,6 +1997,25 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllValues(const t_RowPtrs & rowPointers,const t_LocalOrdinal_1D & columnIndices, const t_ValuesType & values)
+  {
+    const char tfecfFuncName[] = "setAllValues()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    try {
+      myGraph_->setAllIndices(rowPointers,columnIndices);
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+    }
+    k_values1D_  = values;
+    values1D_    = Kokkos::Compat::persistingView(k_values1D_);
+    checkInternalState();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values)
   {
     const char tfecfFuncName[] = "setAllValues()";
@@ -1980,6 +2027,7 @@ namespace Tpetra {
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
     }
+    k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
     values1D_    = values;
     checkInternalState();
   }
@@ -3202,6 +3250,20 @@ namespace Tpetra {
                const ESweepDirection direction,
                const int numSweeps) const
   {
+    reorderedGaussSeidel(B,X,D,Teuchos::null,dampingFactor,direction,numSweeps);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  reorderedGaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &B,
+               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
+               const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &D,
+               const ArrayView<LocalOrdinal> & rowIndices,
+               const Scalar& dampingFactor,
+               const ESweepDirection direction,
+               const int numSweeps) const
+  {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -3404,28 +3466,48 @@ namespace Tpetra {
 
       // Do local Gauss-Seidel.
       if (direction != Symmetric) {
-        this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
-                                                 dampingFactor,
-                                                 localDirection);
-      } else { // direction == Symmetric
-        this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
-                                                 dampingFactor,
-                                                 KokkosClassic::Forward);
-        // mfh 18 Mar 2013: Aztec's implementation of "symmetric
-        // Gauss-Seidel" does _not_ do an Import between the forward
-        // and backward sweeps.  This makes sense, because Aztec
-        // considers "symmetric Gauss-Seidel" a subdomain solver.
+        if(rowIndices.is_null())
+          this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                   dampingFactor,
+                                                   localDirection);
+        else
+          this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap, D, rowIndices,
+                                                            dampingFactor,
+                                                            localDirection);
+      } else { // direction == Symmetri
         const bool doImportBetweenDirections = false;
-
-        if (doImportBetweenDirections) {
-          // Communicate again before the Backward sweep.
-          if (! importer.is_null ()) {
-            X_colMap->doImport (*X_domainMap, *importer, INSERT);
+        if(rowIndices.is_null()) {
+          this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                   dampingFactor,
+                                                   KokkosClassic::Forward);
+          // mfh 18 Mar 2013: Aztec's implementation of "symmetric
+          // Gauss-Seidel" does _not_ do an Import between the forward
+          // and backward sweeps.  This makes sense, because Aztec
+          // considers "symmetric Gauss-Seidel" a subdomain solver.
+          if (doImportBetweenDirections) {
+            // Communicate again before the Backward sweep.
+            if (! importer.is_null ()) {
+              X_colMap->doImport (*X_domainMap, *importer, INSERT);
+            }
           }
+          this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                   dampingFactor,
+                                                   KokkosClassic::Backward);
         }
-        this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
-                                                 dampingFactor,
-                                                 KokkosClassic::Backward);
+        else {
+          this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap, D, rowIndices,
+                                                   dampingFactor,
+                                                   KokkosClassic::Forward);
+          if (doImportBetweenDirections) {
+            // Communicate again before the Backward sweep.
+            if (! importer.is_null ()) {
+              X_colMap->doImport (*X_domainMap, *importer, INSERT);
+            }
+          }
+          this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap, D, rowIndices,
+                                                            dampingFactor,
+                                                            KokkosClassic::Backward);
+        }
       }
     }
 
@@ -3442,6 +3524,22 @@ namespace Tpetra {
   gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &B,
                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &D,
+                   const Scalar& dampingFactor,
+                   const ESweepDirection direction,
+                   const int numSweeps,
+                   const bool zeroInitialGuess) const
+  {
+    reorderedGaussSeidelCopy(X,B,D,Teuchos::null,dampingFactor,direction,numSweeps,zeroInitialGuess);
+  }
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
+                   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &B,
+                   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &D,
+                            const ArrayView<LocalOrdinal> & rowIndices,
                    const Scalar& dampingFactor,
                    const ESweepDirection direction,
                    const int numSweeps,
@@ -3685,21 +3783,37 @@ namespace Tpetra {
 
       // Do local Gauss-Seidel.
       if (direction != Symmetric) {
-        this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
-                                                 dampingFactor,
-                                                 localDirection);
+        if(rowIndices.is_null())
+          this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                   dampingFactor,
+                                                   localDirection);
+        else
+          this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap, D, rowIndices,
+                                                            dampingFactor,
+                                                            localDirection);
       } else { // direction == Symmetric
-        this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
-                                                 dampingFactor,
-                                                 KokkosClassic::Forward);
-        // mfh 18 Mar 2013: Aztec's implementation of "symmetric
-        // Gauss-Seidel" does _not_ do an Import between the forward
-        // and backward sweeps.  This makes symmetric Gauss-Seidel a
-        // symmetric preconditioner if the matrix A is symmetric.  We
-        // imitate Aztec's behavior here.
-        this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
-                                                 dampingFactor,
-                                                 KokkosClassic::Backward);
+        if(rowIndices.is_null()) {
+          this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                   dampingFactor,
+                                                   KokkosClassic::Forward);
+          // mfh 18 Mar 2013: Aztec's implementation of "symmetric
+          // Gauss-Seidel" does _not_ do an Import between the forward
+          // and backward sweeps.  This makes symmetric Gauss-Seidel a
+          // symmetric preconditioner if the matrix A is symmetric.  We
+          // imitate Aztec's behavior here.
+          this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                   dampingFactor,
+                                                   KokkosClassic::Backward);
+        }
+        else {
+          this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap, D, rowIndices,
+                                                            dampingFactor,
+                                                            KokkosClassic::Forward);
+          this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap, D, rowIndices,
+                                                            dampingFactor,
+                                                            KokkosClassic::Backward);
+
+        }
       }
     }
 
@@ -3792,6 +3906,25 @@ namespace Tpetra {
     lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  template <class DomainScalar, class RangeScalar>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  reorderedLocalGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &B,
+                    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
+                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &D,
+                    const ArrayView<LocalOrdinal> & rowIndices,
+                    const RangeScalar& dampingFactor,
+                    const KokkosClassic::ESweepDirection direction) const
+  {
+    KokkosClassic::MultiVector<DomainScalar,Node>& x = X.getLocalMVNonConst ();
+    const KokkosClassic::MultiVector<RangeScalar,Node>& b = B.getLocalMV ();
+    const KokkosClassic::MultiVector<RangeScalar,Node>& d = D.getLocalMV ();
+
+    lclMatOps_->template reorderedGaussSeidel<DomainScalar, RangeScalar> (b, x, d, rowIndices, dampingFactor, direction);
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

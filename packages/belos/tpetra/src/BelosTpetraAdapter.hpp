@@ -124,7 +124,7 @@ namespace { // anonymous
       // However, the Kokkos::Compat wrapper Nodes do NOT do a deep copy
       // in their copy constructor, so this is fine to use there (and
       // indeed is the preferred mode).
-      return Teuchos::rcp (new MV (Tpetra::createCopy (X)));
+      return Teuchos::rcp (new MV (Tpetra::createCopy<S,LO,GO,Device> (X)));
     }
   };
 

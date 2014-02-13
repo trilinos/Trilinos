@@ -42,10 +42,9 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
-#include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
-
 // Tpetra
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
@@ -56,6 +55,9 @@
 
 // Kokkos device types
 #include "Kokkos_Serial.hpp"
+
+#include "KokkosCompat_View.hpp"
+#include "KokkosCompat_View_def.hpp"
 
 // Belos solver
 #ifdef HAVE_STOKHOS_BELOS
@@ -68,16 +70,19 @@
 // Ifpack2 preconditioner
 #ifdef HAVE_STOKHOS_IFPACK2
 #include "Stokhos_Ifpack2_MP_Vector.hpp"
+#include "Ifpack2_Factory.hpp"
 #endif
 
 // MueLu preconditioner
 #ifdef HAVE_STOKHOS_MUELU
+#include "Stokhos_MueLu_MP_Vector.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #endif
 
 // Amesos2 solver
 #ifdef HAVE_STOKHOS_AMESOS2
 #include "Stokhos_Amesos2_MP_Vector.hpp"
+#include "Amesos2_Factory.hpp"
 #endif
 
 template <typename scalar, typename ordinal>
@@ -93,21 +98,31 @@ scalar generate_vector_coefficient( const ordinal nFEM,
   //return 1.0;
 }
 
-// Currently only using Kokkos::Serial device for every node
-template <typename Node>
-struct DeviceForNode {
-  typedef Kokkos::Serial type;
-};
+template <typename scalar, typename ordinal>
+inline
+scalar generate_multi_vector_coefficient( const ordinal nFEM,
+                                          const ordinal nVec,
+                                          const ordinal nStoch,
+                                          const ordinal iColFEM,
+                                          const ordinal iVec,
+                                          const ordinal iStoch)
+{
+  const scalar X_fem  = 100.0  + scalar(iColFEM) / scalar(nFEM);
+  const scalar X_stoch =  1.0  + scalar(iStoch)  / scalar(nStoch);
+  const scalar X_col    = 0.01 + scalar(iVec)    / scalar(nVec);
+  return X_fem + X_stoch + X_col;
+  //return 1.0;
+}
 
 //
 // Tests
 //
 
 //
-// Test matrix-vector multiplication for a simple banded upper-triangular matrix
+// Test vector addition
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, Basic, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, VectorAdd, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -116,7 +131,466 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
+  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+
+  // Ensure device is initialized
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  // Comm
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Map
+  GlobalOrdinal nrow = 10;
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+
+  // Fill vectors
+  RCP<Tpetra_Vector> x1 = Tpetra::createVector<Scalar>(map);
+  RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
+  ArrayRCP<Scalar> x1_view = x1->get1dViewNonConst();
+  ArrayRCP<Scalar> x2_view = x2->get1dViewNonConst();
+  Scalar val1(VectorSize, BaseScalar(0.0)), val2(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      val1.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(nrow, VectorSize, row, j);
+      val2.fastAccessCoeff(j) = 0.12345 * generate_vector_coefficient<BaseScalar,size_t>(nrow, VectorSize, row, j);
+    }
+    x1_view[i] = val1;
+    x2_view[i] = val2;
+  }
+  x1_view = Teuchos::null;
+  x2_view = Teuchos::null;
+
+  // Add
+  Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    alpha.fastAccessCoeff(i) = 1.0 + i;
+    beta.fastAccessCoeff(i) = 2.0 * i;
+  }
+  RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
+  y->update(alpha, *x1, beta, *x2, Scalar(0.0));
+
+  // y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
+
+  // Check
+  ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
+  Scalar val(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      BaseScalar v = generate_vector_coefficient<BaseScalar,size_t>(
+        nrow, VectorSize, row, j);
+      val.fastAccessCoeff(j) = alpha.coeff(j)*v + 0.12345*beta.coeff(j)*v;
+    }
+    TEST_EQUALITY( y_view[i].size(), VectorSize );
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      TEST_EQUALITY( y_view[i].fastAccessCoeff(j), val.fastAccessCoeff(j) );
+  }
+}
+
+//
+// Test vector dot product
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, VectorDot, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const LocalOrdinal VectorSize = 3;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
+  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+
+  // Ensure device is initialized
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  // Comm
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Map
+  GlobalOrdinal nrow = 10;
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+
+  // Fill vectors
+  RCP<Tpetra_Vector> x1 = Tpetra::createVector<Scalar>(map);
+  RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
+  ArrayRCP<Scalar> x1_view = x1->get1dViewNonConst();
+  ArrayRCP<Scalar> x2_view = x2->get1dViewNonConst();
+  Scalar val1(VectorSize, BaseScalar(0.0)), val2(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      val1.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(nrow, VectorSize, row, j);
+      val2.fastAccessCoeff(j) = 0.12345 * generate_vector_coefficient<BaseScalar,size_t>(nrow, VectorSize, row, j);
+    }
+    x1_view[i] = val1;
+    x2_view[i] = val2;
+  }
+  x1_view = Teuchos::null;
+  x2_view = Teuchos::null;
+
+  // Dot product
+  Scalar dot = x1->dot(*x2);
+
+  // Check
+
+  // Local contribution
+  Scalar local_val(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      BaseScalar v = generate_vector_coefficient<BaseScalar,size_t>(
+        nrow, VectorSize, row, j);
+      local_val.fastAccessCoeff(j) += 0.12345 * v * v;
+    }
+  }
+
+  // Global reduction
+  Scalar val(VectorSize, BaseScalar(0.0));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
+                     Teuchos::outArg(val));
+
+  out << "dot = " << dot << " expected = " << val << std::endl;
+
+  TEST_EQUALITY( dot.size(), VectorSize );
+  for (LocalOrdinal j=0; j<VectorSize; ++j)
+    TEST_EQUALITY( dot.fastAccessCoeff(j), val.fastAccessCoeff(j) );
+}
+
+//
+// Test multi-vector addition
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, MultiVectorAdd, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const LocalOrdinal VectorSize = 3;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
+  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+
+  // Ensure device is initialized
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  // Comm
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Map
+  GlobalOrdinal nrow = 10;
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+
+  // Fill vectors
+  size_t ncol = 5;
+  RCP<Tpetra_MultiVector> x1 = Tpetra::createMultiVector<Scalar>(map, ncol);
+  RCP<Tpetra_MultiVector> x2 = Tpetra::createMultiVector<Scalar>(map, ncol);
+  ArrayRCP< ArrayRCP<Scalar> > x1_view = x1->get2dViewNonConst();
+  ArrayRCP< ArrayRCP<Scalar> > x2_view = x2->get2dViewNonConst();
+  Scalar val1(VectorSize, BaseScalar(0.0)), val2(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v =
+          generate_multi_vector_coefficient<BaseScalar,size_t>(
+            nrow, ncol, VectorSize, row, j, k);
+        val1.fastAccessCoeff(k) = v;
+        val2.fastAccessCoeff(k) = 0.12345 * v;
+      }
+      x1_view[j][i] = val1;
+      x2_view[j][i] = val2;
+    }
+  }
+  x1_view = Teuchos::null;
+  x2_view = Teuchos::null;
+
+  // Add
+  Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    alpha.fastAccessCoeff(i) = 1.678 + i;
+    beta.fastAccessCoeff(i)  = 2.234 * i;
+  }
+  RCP<Tpetra_MultiVector> y = Tpetra::createMultiVector<Scalar>(map, ncol);
+  y->update(alpha, *x1, beta, *x2, Scalar(0.0));
+
+  // y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
+
+  // Check
+  ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
+  Scalar val(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
+          nrow, ncol, VectorSize, row, j, k);
+        val.fastAccessCoeff(k) = alpha.coeff(k)*v + 0.12345*beta.coeff(k)*v;
+      }
+      TEST_EQUALITY( y_view[j][i].size(), VectorSize );
+      for (LocalOrdinal k=0; k<VectorSize; ++k)
+        TEST_EQUALITY( y_view[j][i].fastAccessCoeff(k),
+                       val.fastAccessCoeff(k) );
+    }
+  }
+}
+
+//
+// Test multi-vector dot product
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, MultiVectorDot, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const LocalOrdinal VectorSize = 3;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
+  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+
+  // Ensure device is initialized
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  // Comm
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Map
+  GlobalOrdinal nrow = 10;
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+
+  // Fill vectors
+  size_t ncol = 5;
+  RCP<Tpetra_MultiVector> x1 = Tpetra::createMultiVector<Scalar>(map, ncol);
+  RCP<Tpetra_MultiVector> x2 = Tpetra::createMultiVector<Scalar>(map, ncol);
+  ArrayRCP< ArrayRCP<Scalar> > x1_view = x1->get2dViewNonConst();
+  ArrayRCP< ArrayRCP<Scalar> > x2_view = x2->get2dViewNonConst();
+  Scalar val1(VectorSize, BaseScalar(0.0)), val2(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v =
+          generate_multi_vector_coefficient<BaseScalar,size_t>(
+            nrow, ncol, VectorSize, row, j, k);
+        val1.fastAccessCoeff(k) = v;
+        val2.fastAccessCoeff(k) = 0.12345 * v;
+      }
+      x1_view[j][i] = val1;
+      x2_view[j][i] = val2;
+    }
+  }
+  x1_view = Teuchos::null;
+  x2_view = Teuchos::null;
+
+  // Dot product
+  Array<Scalar> dots(ncol);
+  x1->dot(*x2, dots());
+
+  // Check
+
+  // Local contribution
+  Array<Scalar> local_vals(ncol, Scalar(VectorSize, BaseScalar(0.0)));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
+          nrow, ncol, VectorSize, row, j, k);
+        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+      }
+    }
+  }
+
+  // Global reduction
+  Array<Scalar> vals(ncol, Scalar(VectorSize, BaseScalar(0.0)));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol), local_vals.getRawPtr(),
+                     vals.getRawPtr());
+
+  for (size_t j=0; j<ncol; ++j) {
+    out << "dots(" << j << ") = " << dots[j]
+        << " expected(" << j << ") = " << vals[j] << std::endl;
+    TEST_EQUALITY( dots[j].size(), VectorSize );
+    for (LocalOrdinal k=0; k<VectorSize; ++k)
+      TEST_EQUALITY( dots[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k) );
+  }
+}
+
+//
+// Test multi-vector dot product using subviews
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, MultiVectorDotSub, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const LocalOrdinal VectorSize = 3;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
+  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+
+  // Ensure device is initialized
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  // Comm
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Map
+  GlobalOrdinal nrow = 10;
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+
+  // Fill vectors
+  size_t ncol = 5;
+  RCP<Tpetra_MultiVector> x1 = Tpetra::createMultiVector<Scalar>(map, ncol);
+  RCP<Tpetra_MultiVector> x2 = Tpetra::createMultiVector<Scalar>(map, ncol);
+  ArrayRCP< ArrayRCP<Scalar> > x1_view = x1->get2dViewNonConst();
+  ArrayRCP< ArrayRCP<Scalar> > x2_view = x2->get2dViewNonConst();
+  Scalar val1(VectorSize, BaseScalar(0.0)), val2(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v =
+          generate_multi_vector_coefficient<BaseScalar,size_t>(
+            nrow, ncol, VectorSize, row, j, k);
+        val1.fastAccessCoeff(k) = v;
+        val2.fastAccessCoeff(k) = 0.12345 * v;
+      }
+      x1_view[j][i] = val1;
+      x2_view[j][i] = val2;
+    }
+  }
+  x1_view = Teuchos::null;
+  x2_view = Teuchos::null;
+
+  // Get subviews
+  size_t ncol_sub = 2;
+  Teuchos::Array<size_t> cols(ncol_sub);
+  cols[0] = 4; cols[1] = 2;
+  RCP<const Tpetra_MultiVector> x1_sub = x1->subView(cols());
+  RCP<const Tpetra_MultiVector> x2_sub = x2->subView(cols());
+
+  // Dot product
+  Array<Scalar> dots(ncol_sub);
+  x1_sub->dot(*x2_sub, dots());
+
+  // Check
+
+  // Local contribution
+  Array<Scalar> local_vals(ncol_sub, Scalar(VectorSize, BaseScalar(0.0)));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol_sub; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
+          nrow, ncol, VectorSize, row, cols[j], k);
+        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+      }
+    }
+  }
+
+  // Global reduction
+  Array<Scalar> vals(ncol_sub, Scalar(VectorSize, BaseScalar(0.0)));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,
+                     Teuchos::as<int>(ncol_sub), local_vals.getRawPtr(),
+                     vals.getRawPtr());
+
+  for (size_t j=0; j<ncol_sub; ++j) {
+    out << "dots(" << j << ") = " << dots[j]
+        << " expected(" << j << ") = " << vals[j] << std::endl;
+    TEST_EQUALITY( dots[j].size(), VectorSize );
+    for (LocalOrdinal k=0; k<VectorSize; ++k)
+      TEST_EQUALITY( dots[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k) );
+  }
+}
+
+//
+// Test matrix-vector multiplication for a simple banded upper-triangular matrix
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, MatrixVectorMultiply, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const LocalOrdinal VectorSize = 3;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -138,7 +612,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(2));
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -189,6 +664,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
         nrow, VectorSize, row, j);
     x_view[i] = val;
   }
+  x_view = Teuchos::null;
+
+  // matrix->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //                  Teuchos::VERB_EXTREME);
+
+  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
 
   // Multiply
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
@@ -220,6 +702,144 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 }
 
 //
+// Test matrix-multi-vector multiplication for a simple banded upper-triangular matrix
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, MatrixMultiVectorMultiply, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+
+  const LocalOrdinal VectorSize = 3;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
+  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
+
+  // Ensure device is initialized
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  // Build banded matrix
+  GlobalOrdinal nrow = 10;
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
+  Array<GlobalOrdinal> columnIndices(2);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    size_t ncol = 1;
+    if (row != nrow-1) {
+      columnIndices[1] = row+1;
+      ncol = 2;
+    }
+    graph->insertGlobalIndices(row, columnIndices(0,ncol));
+  }
+  graph->fillComplete();
+  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
+
+  // Set values in matrix
+  Array<Scalar> vals(2);
+  Scalar val(VectorSize, BaseScalar(0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+      val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
+        nrow, VectorSize, row, j);
+    vals[0] = val;
+    size_t ncol = 1;
+
+    if (row != nrow-1) {
+      columnIndices[1] = row+1;
+      for (LocalOrdinal j=0; j<VectorSize; ++j)
+        val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
+          nrow, VectorSize, row+1, j);
+      vals[1] = val;
+      ncol = 2;
+    }
+    matrix->replaceGlobalValues(row, columnIndices(0,ncol), vals(0,ncol));
+  }
+  matrix->fillComplete();
+
+  // Fill multi-vector
+  size_t ncol = 5;
+  RCP<Tpetra_MultiVector> x = Tpetra::createMultiVector<Scalar>(map, ncol);
+  ArrayRCP< ArrayRCP<Scalar> > x_view = x->get2dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v =
+          generate_multi_vector_coefficient<BaseScalar,size_t>(
+            nrow, ncol, VectorSize, row, j, k);
+        val.fastAccessCoeff(k) = v;
+      }
+      x_view[j][i] = val;
+    }
+  }
+  x_view = Teuchos::null;
+
+  // matrix->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //                  Teuchos::VERB_EXTREME);
+
+  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
+
+  // Multiply
+  RCP<Tpetra_MultiVector> y = Tpetra::createMultiVector<Scalar>(map, ncol);
+  matrix->apply(*x, *y);
+
+  // y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
+
+  // Check
+  ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v1 = generate_vector_coefficient<BaseScalar,size_t>(
+          nrow, VectorSize, row, k);
+        BaseScalar v2 = generate_multi_vector_coefficient<BaseScalar,size_t>(
+          nrow, ncol, VectorSize, row, j, k);
+        val.fastAccessCoeff(k) = v1*v2;
+      }
+      if (row != nrow-1) {
+        for (LocalOrdinal k=0; k<VectorSize; ++k) {
+          BaseScalar v1 = generate_vector_coefficient<BaseScalar,size_t>(
+            nrow, VectorSize, row+1, k);
+          BaseScalar v2 = generate_multi_vector_coefficient<BaseScalar,size_t>(
+            nrow, ncol, VectorSize, row+1, j, k);
+          val.fastAccessCoeff(k) += v1*v2;
+        }
+      }
+      TEST_EQUALITY( y_view[j][i].size(), VectorSize );
+      for (LocalOrdinal k=0; k<VectorSize; ++k)
+        TEST_EQUALITY( y_view[j][i].fastAccessCoeff(k),
+                       val.fastAccessCoeff(k) );
+    }
+  }
+}
+
+//
 // Test flattening MP::Vector matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
@@ -232,7 +852,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -257,7 +877,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(2));
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -341,10 +962,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       TEST_EQUALITY( y_view[i].fastAccessCoeff(j),
                      y2_view[i].fastAccessCoeff(j) );
   }
-
 }
 
-#ifdef HAVE_STOKHOS_BELOS
+#if defined(HAVE_STOKHOS_BELOS)
 
 //
 // Test Belos GMRES solve for a simple banded upper-triangular matrix
@@ -360,7 +980,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -382,7 +1002,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(2));
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -495,6 +1116,141 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
+#if defined(HAVE_STOKHOS_BELOS)
+
+//
+// Test Belos GMRES solve for a simple banded upper-triangular matrix
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, ScalarBelosGMRES, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ParameterList;
+
+  typedef BaseScalar Scalar;
+
+  typedef Teuchos::Comm<int> Tpetra_Comm;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
+
+  // Build banded matrix
+  GlobalOrdinal nrow = 10;
+  RCP<const Tpetra_Comm> comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<Node> node = rcp(new Node);
+  RCP<const Tpetra_Map> map =
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      nrow, comm, node);
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
+  Array<GlobalOrdinal> columnIndices(2);
+  ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
+  const size_t num_my_row = myGIDs.size();
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    size_t ncol = 1;
+    if (row != nrow-1) {
+      columnIndices[1] = row+1;
+      ncol = 2;
+    }
+    graph->insertGlobalIndices(row, columnIndices(0,ncol));
+  }
+  graph->fillComplete();
+  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
+
+  // Set values in matrix
+  Array<Scalar> vals(2);
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    columnIndices[0] = row;
+    vals[0] = Scalar(2.0);
+    size_t ncol = 1;
+
+    if (row != nrow-1) {
+      columnIndices[1] = row+1;
+      vals[1] = Scalar(2.0);
+      ncol = 2;
+    }
+    matrix->replaceGlobalValues(row, columnIndices(0,ncol), vals(0,ncol));
+  }
+  matrix->fillComplete();
+
+  // Fill RHS vector
+  RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
+  ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
+  for (size_t i=0; i<num_my_row; ++i) {
+    b_view[i] = Scalar(1.0);
+  }
+
+  // Solve
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
+  typedef BaseScalar BelosScalar;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
+  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
+  typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
+  RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
+  RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
+  RCP<ParameterList> belosParams = rcp(new ParameterList);
+  typename ST::magnitudeType tol = 1e-12;
+  belosParams->set("Flexible Gmres", false);
+  belosParams->set("Num Blocks", 100);
+  belosParams->set("Convergence Tolerance", BelosScalar(tol));
+  belosParams->set("Maximum Iterations", 100);
+  belosParams->set("Verbosity", 33);
+  belosParams->set("Output Style", 1);
+  belosParams->set("Output Frequency", 1);
+  belosParams->set("Output Stream", out.getOStream());
+  RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
+    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  problem->setProblem();
+  Belos::ReturnType ret = solver->solve();
+  TEST_EQUALITY_CONST( ret, Belos::Converged );
+
+  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+  //             Teuchos::VERB_EXTREME);
+
+  // Check -- Correct answer is:
+  //     [ 0, 0,   ..., 0            ]
+  //     [ 1, 1/2, ..., 1/VectorSize ]
+  //     [ 0, 0,   ..., 0            ]
+  //     [ 1, 1/2, ..., 1/VectorSize ]
+  //     ....
+  ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
+  Scalar val = Scalar(0.5);
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    if (row % 2) {
+      val = Scalar(0.5);
+    }
+    else
+      val = Scalar(0.0);
+
+    // Set small values to zero
+    Scalar v = x_view[i];
+    if (ST::magnitude(v) < tol)
+      v = Scalar(0.0);
+
+    TEST_FLOATING_EQUALITY(v, val, tol);
+  }
+}
+
+#else
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Tpetra_CrsMatrix_MP, ScalarBelosGMRES, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+{}
+
+#endif
+
 #if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2)
 
 //
@@ -512,7 +1268,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -534,7 +1290,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(2));
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -673,7 +1430,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -696,7 +1453,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(3));
+  RCP<Tpetra_CrsGraph> graph =
+    rcp(new Tpetra_CrsGraph(map, size_t(3), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(3);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -763,7 +1521,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
   RCP<OP> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+  // RCP<OP> M =
+  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
   // typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
   // Ifpack2::Factory factory;
   // RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", matrix);
@@ -793,6 +1553,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //belosParams->set("Orthogonalization", "TSQR");
   RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
     rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  // RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
+  //   rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP>(problem, belosParams));
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
 
@@ -850,7 +1612,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   const LocalOrdinal VectorSize = 3;
-  typedef typename DeviceForNode<Node>::type Device;
+  typedef typename Stokhos::DeviceForNode<Node>::type Device;
   typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -1003,8 +1765,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #endif
 
 #define CRSMATRIX_MP_VECTOR_TESTS_SLGN(S, LO, GO, N)                    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Basic, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, VectorAdd, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, VectorDot, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, MultiVectorAdd, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, MultiVectorDot, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, MultiVectorDotSub, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, MatrixVectorMultiply, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, MatrixMultiVectorMultiply, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Flatten, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, ScalarBelosGMRES, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosCG_Muelu, S, LO, GO, N ) \

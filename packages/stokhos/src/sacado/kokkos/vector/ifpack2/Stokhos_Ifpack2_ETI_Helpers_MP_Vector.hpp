@@ -41,6 +41,7 @@
 
 #include "Tpetra_ETIHelperMacros.h"
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_Ifpack2_MP_Vector.hpp"
 
 #define IFPACK2_INSTANT_MP_VECTOR_N(N)               \
   INSTANTIATE_TPETRA_MP_VECTOR_N(IFPACK2_LOCAL_INSTANT, N)

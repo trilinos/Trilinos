@@ -52,69 +52,7 @@ namespace Stokhos {
 
   //! Dynamically allocated storage class with striding
   template <typename ordinal_t, typename value_t, typename device_t>
-  class DynamicThreadedStorage {
-  public:
-
-    typedef ordinal_t ordinal_type;
-    typedef value_t value_type;
-    typedef device_t device_type;
-    typedef value_type& reference;
-    typedef const value_type& const_reference;
-    typedef value_type* pointer;
-    typedef const value_type* const_pointer;
-    typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
-
-    //! Turn DynamicThreadedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t = value_t, typename dev_t = device_t>
-    struct apply {
-      typedef DynamicThreadedStorage<ord_t,val_t,dev_t> type;
-    };
-
-    //! Constructor
-    DynamicThreadedStorage(const ordinal_type& sz,
-                  const value_type& x = value_type(0.0));
-
-    //! Copy constructor
-    DynamicThreadedStorage(const DynamicThreadedStorage& s);
-
-    //! Destructor
-    ~DynamicThreadedStorage();
-
-    //! Assignment operator
-    DynamicThreadedStorage& operator=(const DynamicThreadedStorage& s);
-
-    //! Initialize values to a constant value
-    void init(const_reference v);
-
-    //! Initialize values to an array of values
-    void init(const_pointer v, const ordinal_type& sz_ = 0);
-
-    //! Load values to an array of values
-    void load(pointer v);
-
-    //! Resize to new size (values are preserved)
-    void resize(const ordinal_type& sz);
-
-    //! Reset storage to given array, size, and stride
-    void shallowReset(pointer v, const ordinal_type& sz,
-                      const ordinal_type& stride, bool owned);
-
-    //! Return size
-    static ordinal_type size();
-
-    //! Coefficient access (avoid if possible)
-    const_reference operator[] (const ordinal_type& i) const;
-
-    //! Coefficient access (avoid if possible)
-    reference operator[] (const ordinal_type& i);
-
-    //! Get coefficients
-    const_pointer coeff() const;
-
-    //! Get coefficients
-    pointer coeff();
-
-  };
+  class DynamicThreadedStorage {};
 
 }
 

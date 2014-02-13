@@ -39,33 +39,20 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#ifndef STOKHOS_MUELU_MP_VECTOR_HPP
+#define STOKHOS_MUELU_MP_VECTOR_HPP
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
+// This header file should be included whenever compiling any MueLu
+// code with Stokhos scalar types
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
-
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
-
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_NullspacePresmoothFactory_def.hpp"
-
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::NullspacePresmoothFactory<S, LO, GO, N>;
-
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(MUELU_INST_S_LO_GO_N, N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-// Currently excluding GPU nodes because SparseOps may not be
-// implemented, I think depending on the choice of TPLs
-//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
-MUELU_INST_N(KokkosClassic_SerialNode)
-
+// MP includes and specializations
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "MueLu_config.hpp"
+#if defined(HAVE_MUELU_IFPACK2)
+#include "Stokhos_Ifpack2_MP_Vector.hpp"
+#endif
+#if defined(HAVE_MUELU_AMESOS2)
+#include "Stokhos_Amesos2_MP_Vector.hpp"
 #endif
 
-#endif
+#endif // STOKHOS_MUELU_MP_VECTOR_HPP

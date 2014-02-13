@@ -2036,8 +2036,9 @@ void coordinateTaskMapperInterface(
 
     //cout << "numProcessors:" << numProcessors << endl;
     //cout << "task_communication_xadj_[numProcessors]:" << task_communication_xadj_[numProcessors - 1] << endl;
-    Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_communication_xadj_, 0, numProcessors, false);
-    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+    Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_communication_xadj_, 0, numTasks, false);
+    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numTasks -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+
     /*
     int machine_dimensions[3];
     machine_dimensions[0] = 17;

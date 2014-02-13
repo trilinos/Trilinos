@@ -331,22 +331,22 @@ private:
         Impl::ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
       }
 
-    void init( Impl::ThreadsExec & exec ) const
-      { m_func.init( Reduce::reference( exec.reduce_base() ) ); }
+    void init( Impl::ThreadsExec & exec_ ) const
+      { m_func.init( Reduce::reference( exec_.reduce_base() ) ); }
 
-    void exec( Impl::ThreadsExec & exec ) const
+    void exec( Impl::ThreadsExec & exec_ ) const
       {
-        typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
+        typename Reduce::reference_type update = Reduce::reference( exec_.reduce_base() );
 
-        const std::pair<size_t,size_t> work = exec.work_range( m_work );
+        const std::pair<size_t,size_t> work = exec_.work_range( m_work );
 
         for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
           m_func( iwork , update );
         }
       }
 
-    void fan_in_reduce( Impl::ThreadsExec & exec ) const
-      { exec.fan_in_reduce( m_func ); }
+    void fan_in_reduce( Impl::ThreadsExec & exec_ ) const
+      { exec_.fan_in_reduce( m_func ); }
 
     void output( void * ptr ) const
       {
@@ -366,21 +366,21 @@ private:
 
   std::vector< MemberBase * > m_members ;
 
-  static void execute_members( Impl::ThreadsExec & exec , const void * arg )
+  static void execute_members( Impl::ThreadsExec & exec_ , const void * arg )
   {
     const MultiFunctorParallelReduce & self = * ((const MultiFunctorParallelReduce *) arg );
 
     // First functor initializes:
 
-    self.m_members.front()->init( exec ); // Initialize thread-local value
+    self.m_members.front()->init( exec_ ); // Initialize thread-local value
 
     for ( unsigned i = 0 ; i < self.m_members.size() ; ++i ) {
-      self.m_members[i]->exec( exec );
+      self.m_members[i]->exec( exec_ );
     }
 
     // Last functor fan-in reduce:
 
-    self.m_members.back()->fan_in_reduce( exec );
+    self.m_members.back()->fan_in_reduce( exec_ );
   }
 
 public:

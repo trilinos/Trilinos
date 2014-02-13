@@ -357,7 +357,6 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
-      sacado/kokkos/Stokhos_LocalStorage.hpp
       sacado/kokkos/Stokhos_StaticStorage.hpp
       sacado/kokkos/Stokhos_StaticFixedStorage.hpp
       sacado/kokkos/Stokhos_DynamicStorage.hpp
@@ -365,7 +364,6 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Stokhos_ViewStorage.hpp
-      sacado/kokkos/Stokhos_ViewStridedStorage.hpp
       sacado/kokkos/vector/Sacado_MP_Vector.hpp
       sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
@@ -377,6 +375,7 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       SET(HEADERS ${HEADERS}
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
+        sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
         )
       IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
         SET(HEADERS ${HEADERS}
@@ -384,13 +383,15 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
+    # IF (Stokhos_ENABLE_Tpetra AND
+    #     NOT Tpetra_ENABLE_Kokkos_DistObject AND
+    #     NOT Tpetra_ENABLE_Kokkos_Refactor)
     IF (Stokhos_ENABLE_Tpetra AND
-        NOT Tpetra_ENABLE_Kokkos_DistObject AND
-        NOT Tpetra_ENABLE_Kokkos_Refactor)
+        NOT Tpetra_ENABLE_Kokkos_DistObject)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
-      APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
       IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
         SET(TPETRA_ETI_CLASSES
           MultiVector
           Vector
@@ -432,8 +433,8 @@ IF (Stokhos_ENABLE_Sacado)
       IF (Stokhos_ENABLE_Ifpack2)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
         APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
-        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
+          APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           SET(IFPACK2_ETI_CRS_ROW_CLASSES
             Chebyshev
             Diagonal
@@ -471,7 +472,9 @@ IF (Stokhos_ENABLE_Sacado)
       IF (Stokhos_ENABLE_MueLu)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
         APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
-        APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
+        IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
+          APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
+        ENDIF()
       ENDIF()
 
       IF (Stokhos_ENABLE_Amesos2)

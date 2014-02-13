@@ -938,6 +938,36 @@ computeCondEst (CondestType CT,
   return Condest_;
 }
 
+
+template<class MatrixType>
+std::string RILUK<MatrixType>::description () const
+{
+  std::ostringstream os;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  os << "\"Ifpack2::RILUK\": {";
+  if (this->getObjectLabel () != "") {
+    os << "Label: \"" << this->getObjectLabel () << "\", ";
+  }
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Matrix: not null"
+       << ", Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+  }
+
+  os << "}";
+  return os.str ();
+}
+
+
 } // namespace Ifpack2
 
 #endif

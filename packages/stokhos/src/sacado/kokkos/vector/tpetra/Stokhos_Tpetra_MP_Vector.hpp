@@ -39,33 +39,40 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#ifndef STOKHOS_TPETRA_MP_VECTOR_HPP
+#define STOKHOS_TPETRA_MP_VECTOR_HPP
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
+// This header file should be included whenever compiling any Tpetra
+// code with Stokhos scalar types
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+// MP includes and specializations
+#include "Stokhos_Sacado_Kokkos.hpp"
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
-
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_NullspacePresmoothFactory_def.hpp"
-
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::NullspacePresmoothFactory<S, LO, GO, N>;
-
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_MP_VECTOR_N(MUELU_INST_S_LO_GO_N, N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-// Currently excluding GPU nodes because SparseOps may not be
-// implemented, I think depending on the choice of TPLs
-//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
-MUELU_INST_N(KokkosClassic_SerialNode)
-
+// Kokkos-Linalg
+#include "Tpetra_config.h"
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Kokkos_ArithTraits_MP_Vector.hpp"
 #endif
 
-#endif
+namespace Kokkos {
+  class Serial;
+  namespace Compat {
+    template <class D> class KokkosDeviceWrapperNode;
+  }
+}
+
+namespace Stokhos {
+
+// Traits for determining device type from node type
+template <typename Node>
+struct DeviceForNode {
+  typedef Kokkos::Serial type;
+};
+template <typename Device>
+struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
+  typedef Device type;
+};
+
+}
+
+#endif // STOKHOS_TPETRA_MP_VECTOR_HPP

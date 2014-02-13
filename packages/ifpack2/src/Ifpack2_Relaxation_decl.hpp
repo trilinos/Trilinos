@@ -584,7 +584,7 @@ public:
   /// users really like to see all the attributes of the object in a
   /// single line.  If you prefer multiple lines of output, you should
   /// call describe() instead.
-  std::string description() const;
+  std::string description () const;
 
   /// \brief Print the object's attributes to the given output stream.
   ///

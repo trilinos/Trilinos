@@ -2980,14 +2980,15 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
-    createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+  createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
     return src;
   }
 
   template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
-  void deep_copy( MultiVector<DS,DL,DG,DN>& dst,
-                  const MultiVector<SS,SL,SG,SN>& src) {
+  void
+  deep_copy (MultiVector<DS,DL,DG,DN>& dst, const MultiVector<SS,SL,SG,SN>& src)
+  {
     dst = src;
   }
 } // namespace Tpetra
@@ -3007,7 +3008,7 @@ namespace Tpetra {
   \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
-  template void deep_copy( MultiVector< SCALAR , LO , GO , NODE >& dst, const MultiVector< SCALAR , LO , GO , NODE >& src); \
+  template void deep_copy (MultiVector< SCALAR , LO , GO , NODE >& dst, const MultiVector< SCALAR , LO , GO , NODE >& src); \
 
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP

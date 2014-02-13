@@ -907,7 +907,7 @@ template< class DataType ,
           class Arg3Type >
 class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewSpecializeSacadoMPVectorStatic >
   : public ViewTraits< DataType
-                     , LayoutRight
+                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::array_layout
                      , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::device_type
                      , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::memory_traits
                      >
@@ -915,7 +915,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewSpecializeSaca
 public:
 
   typedef ViewTraits< DataType
-                    , LayoutRight
+                    , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::array_layout
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::device_type
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::memory_traits
                     > traits ;
@@ -943,6 +943,15 @@ private:
   // original_static_dimension = m_stride * StokhosStorageStaticDimension
   // m_stride = 1 for original allocation.
 
+  // Stride here has a slightly different meaning than in the standard
+  // View implementation.  For the moment we are assuming no padding within
+  // the view array itself and stride is to allow for partitioning the view
+  // by dividing up the scalar type.
+  //
+  // I suspect we could combine this with the way the stride is managed in
+  // the default view, in which case, I don't think we even need a
+  // specialization
+
 public:
 
   // This needs to be public so that we know what the return type of () is
@@ -965,6 +974,10 @@ public:
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > array_type ;
+  // typedef View< typename traits::array_type ,
+  //               LayoutRight ,
+  //               typename traits::device_type ,
+  //               typename traits::memory_traits > array_type ;
 
   typedef View< typename Impl::RebindStokhosStorageDevice<
                 typename traits::data_type ,
@@ -1398,6 +1411,206 @@ public:
     { return operator()(i0,i1,i2,i3,i4,i5,i6); }
 
   //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 1:
+
+  template< typename iType0 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & , traits, LayoutLeft, 1, iType0 >::type
+    operator() ( const iType0 & i0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      // May have partitioned
+      return m_ptr_on_device[ m_stride * i0 ];
+    }
+
+  template< typename iType0 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & , traits, LayoutLeft, 1, iType0 >::type
+    operator[] ( const iType0 & i0 ) const
+    { return operator()( i0 ); }
+
+  template< typename iType0 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & , traits, LayoutLeft, 1, iType0 >::type
+    at( const iType0 & i0 , int , int , int , int , int , int , int ) const
+    { return operator()(i0); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 2:
+
+  template< typename iType0 , typename iType1 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 2, iType0, iType1 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, i1 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ m_stride * ( i0 + m_shape.N0 * i1 ) ];
+    }
+
+  template< typename iType0 , typename iType1 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 2,
+                                      iType0, iType1 >::type
+    at( const iType0 & i0 , const iType1 & i1 , int , int , int , int , int , int ) const
+    { return operator()(i0,i1); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 3:
+
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, i2 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ m_stride * ( i0 + m_shape.N0 * ( i1 + m_shape.N1 * i2 ) ) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 3,
+                                      iType0, iType1, iType2 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , int , int , int , int , int ) const
+    { return operator()(i0,i1,i2); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 4:
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
+    {
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, i3 );
+
+      return m_ptr_on_device[ m_stride * (
+                              i0 + m_shape.N0 * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * ( i3 )))) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 4,
+                                      iType0, iType1, iType2, iType3 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , int , int , int , int ) const
+    { return operator()(i0,i1,i2,i3); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 5:
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3, iType4 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 ) const
+    {
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, i4 );
+
+      return m_ptr_on_device[ m_stride * (
+                              i0 + m_shape.N0 * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * ( i4 ))))) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 ,
+            typename iType3 , typename iType4 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 5,
+                                      iType0, iType1, iType2, iType3, iType4 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+        const iType4 & i4 , int , int , int ) const
+    { return operator()(i0,i1,i2,i3,i4); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 6:
+
+  template< typename iType0 , typename iType1 , typename iType2 ,
+            typename iType3 , typename iType4 , typename iType5 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 ) const
+    {
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, i5 );
+
+      return m_ptr_on_device[ m_stride * (
+                              i0 + m_shape.N0 * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * (
+                              i4 + m_shape.N4 * ( i5 )))))) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 ,
+            typename iType3 , typename iType4 , typename iType5 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 6,
+                                      iType0, iType1, iType2, iType3, iType4, iType5 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+        const iType4 & i4 , const iType5 & i5 , const int , int ) const
+    { return operator()(i0,i1,i2,i3,i4,i5); }
+
+  //------------------------------------
+  //------------------------------------
+  // Array operators, traits::rank 7:
+
+  template< typename iType0 , typename iType1 , typename iType2 ,
+            typename iType3 , typename iType4 , typename iType5, typename iType6 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
+    {
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, i6 );
+
+      return m_ptr_on_device[ m_stride * (
+                              i0 + m_shape.N0 * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * (
+                              i4 + m_shape.N4 * (
+                              i5 + m_shape.N5 * ( i6 ))))))) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 ,
+            typename iType3 , typename iType4 , typename iType5, typename iType6 >
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::value_type & ,
+                                      traits, LayoutLeft, 7,
+                                      iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+        const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , int ) const
+    { return operator()(i0,i1,i2,i3,i4,i5,i6); }
+
+  //------------------------------------
   // Access to the underlying contiguous storage of this view specialization.
   // These methods are specific to specialization of a view.
 
@@ -1408,7 +1621,10 @@ public:
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   void stride( iType * const s ) const
-  { Impl::stride( s , m_shape , m_stride ); }
+  { stride_type stride;
+    stride_type::assign_no_padding(stride, m_shape);
+    Impl::stride( s , m_shape , stride );
+  }
 
   // Count of contiguously allocated data members including padding.
   KOKKOS_FORCEINLINE_FUNCTION
@@ -1452,7 +1668,7 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoMPVectorStatic>
 
     const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
 
-    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( (void*) dst.ptr_on_device() , (void*) src.ptr_on_device() , nbytes );
   }
 }
 
@@ -1723,6 +1939,203 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
     dst.m_ptr_on_device = reinterpret_cast<typename dst_type::value_type*>( src.m_ptr_on_device )
                         + part.begin / dst_stokhos_storage_type::static_size ;
   }
+
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from range of Rank-1 array, either layout */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  const std::pair<iType,iType> & range ,
+                  typename enable_if< (
+                          ViewAssignable< View<DT,DL,DD,DM,specialize> ,
+                                          View<ST,SL,SD,SM,specialize> >::value
+                    &&
+                          ( View<ST,SL,SD,SM,specialize>::rank == 1 )
+                    &&
+                          ( View<DT,DL,DD,DM,specialize>::rank == 1 )
+                    &&
+                          ( View<DT,DL,DD,DM,specialize>::rank_dynamic == 1 )
+                  ) >::type * = 0 )
+  {
+    typedef View<DT,DL,DD,DM,specialize> dst_type ;
+    typedef typename dst_type::shape_type shape_type ;
+
+    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range.first < range.second ) {
+      assert_shape_bounds( src.m_shape , 1 , range.first );
+      assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
+
+      dst.m_shape.N0 = range.second - range.first ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
+      dst.m_stride = src.m_stride ;
+
+      ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
+                  ), unsigned >::type i1 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = src.m_shape.N0 ;
+    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
+    dst.m_stride = src.m_stride ;
+
+    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), unsigned >::type i1 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = src.m_shape.N0 ;
+    dst.m_shape.N1      = 1 ;
+    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
+    dst.m_stride = src.m_stride ;
+
+    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract rank-2 from rank-2 array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  ALL ,
+                  const std::pair<iType,iType> & range1 ,
+                  typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank == 2
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
+                  ) >::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = 0 ;
+    dst.m_shape.N1      = 0 ;
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range1.first < range1.second ) {
+      assert_shape_bounds( src.m_shape , 2 , 0 , range1.first );
+      assert_shape_bounds( src.m_shape , 2 , src.m_shape.N0 - 1 , range1.second - 1 );
+
+      dst.m_shape.N0 = src.m_shape.N0 ;
+      dst.m_shape.N1 = range1.second - range1.first ;
+      dst.m_stride   = src.m_stride ;
+
+      // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
+      dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_shape.N0 * range1.first ;
+
+      // LayoutRight won't work with how we are currently using the stride
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
+  //------------------------------------
+  /** \brief  Extract rank-2 from rank-2 array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  const std::pair<iType,iType> & range0 ,
+                  ALL ,
+                  typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank == 2
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
+                  ) >::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = 0 ;
+    dst.m_shape.N1      = 0 ;
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range0.first < range0.second ) {
+      assert_shape_bounds( src.m_shape , 2 , range0.first , 0 );
+      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , src.m_shape.N1 - 1 );
+
+      dst.m_shape.N0 = range0.second - range0.first ;
+      dst.m_shape.N1 = src.m_shape.N1 ;
+      dst.m_stride   = src.m_stride ;
+
+      // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
+      dst.m_ptr_on_device = src.m_ptr_on_device + range0.first ;
+
+      // LayoutRight won't work with how we are currently using the stride
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
 };
 
 
@@ -1796,6 +2209,77 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
     dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
+
+    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Assign to flattened view where Sacado dimension is combined with
+   * most adjacent dimension.  Must have instrinsic value_type, layout, and
+   * rank (add 1 to rank for sacado dimension, remove 1 for flattening)
+   */
+
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(
+    View<DT,DL,DD,DM,ViewDefault>& dst,
+    const View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>& src,
+    typename enable_if<
+      (
+        is_same< typename View<DT,DL,DD,DM,ViewDefault>::value_type ,
+                 typename View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::value_type::storage_type::value_type >::value &&
+        is_same< typename View<DT,DL,DD,DM,ViewDefault>::array_layout ,
+                 typename View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::array_layout >::value &&
+        ( unsigned(View<DT,DL,DD,DM,ViewDefault>::rank) ==
+          unsigned(View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::rank) )
+      ) >::type * = 0)
+  {
+    typedef View<DT,DL,DD,DM,ViewDefault>   dst_type ;
+    typedef typename dst_type::shape_type   dst_shape_type ;
+    typedef typename dst_type::stride_type  dst_stride_type ;
+    typedef typename dst_type::array_layout dst_layout_type;
+
+    if ( src.m_stride != 1 ) {
+      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort(msg);
+#else
+      throw std::runtime_error(msg);
+#endif
+    }
+
+    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+
+    // Create flattened shape
+    unsigned dims[8];
+    dims[0] = src.m_shape.N0;
+    dims[1] = src.m_shape.N1;
+    dims[2] = src.m_shape.N2;
+    dims[3] = src.m_shape.N3;
+    dims[4] = src.m_shape.N4;
+    dims[5] = src.m_shape.N5;
+    dims[6] = src.m_shape.N6;
+    dims[7] = src.m_shape.N7;
+    unsigned rank = dst_type::rank;
+    unsigned sacado_size = src.static_storage_size();
+    if (is_same<dst_layout_type, LayoutLeft>::value) {
+      dims[0] = dims[0]*sacado_size;
+      dims[rank] = 0;
+    }
+    else {
+      dims[rank-1] = dims[rank-1]*sacado_size;
+      dims[rank] = 0;
+    }
+    dst_shape_type::assign( dst.m_shape,
+                            dims[0] , dims[1] , dims[2] , dims[3] ,
+                            dims[4] , dims[5] , dims[6] , dims[7] );
+
+    // No padding in dst to be consistent with src
+    dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+
+    dst.m_ptr_on_device =
+      reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
     Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
   }

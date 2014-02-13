@@ -1066,22 +1066,32 @@ double AdditiveSchwarz<MatrixType,LocalInverseType>::getApplyTime() const
 
 
 template<class MatrixType,class LocalInverseType>
-std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
+std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description () const
 {
-  using Teuchos::TypeNameTraits;
-
   std::ostringstream out;
-  out << "Ifpack2::AdditiveSchwarz: {";
-  out << "MatrixType: " << TypeNameTraits<MatrixType>::name ()
-      << ", LocalInverseType: " << TypeNameTraits<LocalInverseType>::name ();
+
+  out << "\"Ifpack2::AdditiveSchwarz\": {";
   if (this->getObjectLabel () != "") {
-    out << ", Label: \"" << this->getObjectLabel () << "\"";
+    out << "Label: \"" << this->getObjectLabel () << "\"";
   }
   out << ", Initialized: " << (isInitialized () ? "true" : "false")
-      << ", Computed: " << (isComputed () ? "true" : "false")
-      << ", Overlap level: " << OverlapLevel_
-      << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\""
-      << "}";
+      << ", Computed: " << (isComputed () ? "true" : "false");
+
+  if (Matrix_.is_null ()) {
+    out << ", Matrix: null";
+  }
+  else {
+    out << ", Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << Matrix_->getGlobalNumRows () << ", "
+        << Matrix_->getGlobalNumCols () << "]";
+  }
+
+  // It's useful to print this instance's overlap level.  If you want
+  // more info than that, call describe() instead.
+  out << ", Overlap level: " << OverlapLevel_;
+
+  out << "}";
   return out.str ();
 }
 
@@ -1089,7 +1099,8 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
 template<class MatrixType,class LocalInverseType>
 void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
-describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
   using Teuchos::OSTab;
   using Teuchos::TypeNameTraits;
@@ -1104,7 +1115,7 @@ describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) 
     // describe() starts with a tab, by convention.
     OSTab tab0 (out);
     if (myRank == 0) {
-      out << "Ifpack2::AdditiveSchwarz:";
+      out << "\"Ifpack2::AdditiveSchwarz\":";
     }
     OSTab tab1 (out);
     if (myRank == 0) {
@@ -1127,17 +1138,18 @@ describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) 
       } else if (CombineMode_ == Tpetra::ZERO) {
         out << "ZERO";
       }
-      out << "\"" << endl;
+      out << "\"" << endl
+          << "Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"" << endl;
     }
 
     if (Matrix_.is_null ()) {
       if (myRank == 0) {
-        out << "Input matrix A: null" << endl;
+        out << "Matrix: null" << endl;
       }
     }
     else {
       if (myRank == 0) {
-        out << "Input matrix A:" << endl;
+        out << "Matrix:" << endl;
         std::flush (out);
       }
       Matrix_->getComm ()->barrier (); // wait for output to finish

@@ -68,7 +68,7 @@ private:
 
 public:
   typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::view_type view_type;
-  
+
   //! @name Constructor/Destructor Methods
   //@{
 
@@ -96,13 +96,22 @@ public:
   virtual ~Vector();
 
   //@}
+  //! \name Clone method
+  //@{
+
+  /// \brief Return a deep copy of <tt>*this</tt> with a different Node type.
+  /// \tparam Node2 The returned Vector's Node type.
+  ///
+  /// \param node2 [in] The returned Vector's Kokkos Node instance.
+  template <class Node2>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  clone (const RCP<Node2> &node2);
+
+
+  //@}
   //! @name Post-construction modification routines
   //@{
 
-  //!Create a cloned Vector for a different node type
-  template <class Node2>
-  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  clone(const RCP<Node2> &node2);
 
 
   //! Replace current value at the specified location with specified value.
@@ -219,6 +228,17 @@ createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Com
     true, std::logic_error, "Tpetra::createVectorFromView: "
     "Not implemented for Node = KokkosDeviceWrapperNode");
 }
+
+/// \brief Return a deep copy of the Vector \c src.
+///
+/// This is the preferred way to make a deep copy of a Vector.  The
+/// new Kokkos refactor implementations of Tpetra objects have view
+/// semantics, which means that the copy constructor and assignment
+/// operator (operator=) make shallow copies.  To make a deep copy,
+/// call the nonmember function createCopy().
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src);
 
 /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class Node2>

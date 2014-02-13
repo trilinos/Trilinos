@@ -307,6 +307,31 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+              const t_RowPtrs & rowPointers,
+              const t_LocalOrdinal_1D & columnIndices,
+              const RCP<ParameterList>& params = null);
+
+    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
               const ArrayRCP<size_t> & rowPointers,
               const ArrayRCP<LocalOrdinal> & columnIndices,
               const RCP<ParameterList>& params = null);
@@ -940,6 +965,18 @@ namespace Tpetra {
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
+
+    /// \brief Set the graph's data directly, using 1-D storage.
+    ///
+    /// \pre <tt>hasColMap() == true</tt>
+    /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
+    /// \pre No insert routines have been called.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    setAllIndices (const t_RowPtrs & rowPointers,
+                   const t_LocalOrdinal_1D & columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///

@@ -510,17 +510,30 @@ template<class MatrixType>
 std::string
 DenseSolver<MatrixType, false>::description () const
 {
-  std::ostringstream oss;
-  oss << "Ifpack2::Details::DenseSolver: ";
-  oss << "{";
+  std::ostringstream out;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  out << "\"Ifpack2::Details::DenseSolver\": ";
+  out << "{";
   if (this->getObjectLabel () != "") {
-    oss << "label: " << this->getObjectLabel () << ", ";
+    out << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  oss << "initialized: " << (isInitialized_ ? "true" : "false")
-      << ", "
-      << "computed: " << (isComputed_ ? "true" : "false")
-      << "}";
-  return oss.str ();
+  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (A_.is_null ()) {
+    out << "Matrix: null";
+  }
+  else {
+    out << "Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+  }
+
+  out << "}";
+  return out.str ();
 }
 
 

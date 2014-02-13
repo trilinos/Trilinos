@@ -396,16 +396,6 @@ namespace StaticFixedVecTest {
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticFixedVector)
 }
 
-namespace LocalVecTest {
-  Sacado::Random<double> rnd;
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
-  typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  UnitTestSetup<vec_type, fad_type> setup;
-  VEC_SERIALIZATION_TESTS(vec_type, fad_type, LocalVector)
-}
-
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

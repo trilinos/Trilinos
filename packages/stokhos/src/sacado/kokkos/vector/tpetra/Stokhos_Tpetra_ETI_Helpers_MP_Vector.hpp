@@ -40,12 +40,15 @@
 // @HEADER
 
 // MP::Vector includes
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Tpetra_MP_Vector.hpp"
 
 // Kokkos includes
 #include "Kokkos_Serial.hpp"
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#endif
 
-typedef Kokkos::Serial Kokkos_Serial;
+//typedef Kokkos::Serial Kokkos_Serial;
 
 #define INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
   INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
@@ -64,7 +67,8 @@ typedef Kokkos::Serial Kokkos_Serial;
   INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
 #define INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_D(INSTMACRO, Kokkos_Serial, LO, GO, N)
+  typedef typename Stokhos::DeviceForNode<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
+  INSTANTIATE_MP_VECTOR_SFS_D(INSTMACRO, DFN_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
 #define INSTANTIATE_MP_VECTOR(INSTMACRO, LO, GO, N) \
   INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, LO, GO, N)
