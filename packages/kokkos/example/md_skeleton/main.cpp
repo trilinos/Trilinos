@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
   int ny = -1;
   int nz = -1;
 
-  int neighbor_size = 1.5; // Default bin size for neighbor list construction
+  int neighbor_size = 1; // Default bin size for neighbor list construction
 
   double rho = 0.8442; // Number density of the system
   double delta = 0; // Scaling factor for random offsets of atom positions
