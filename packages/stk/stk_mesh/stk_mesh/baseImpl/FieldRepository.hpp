@@ -52,6 +52,7 @@ class FieldRepository {
 
     FieldBase * declare_field(
         const std::string                 & arg_name ,
+        stk::topology::rank_t               arg_entity_rank ,
         const DataTraits                  & arg_traits ,
         unsigned                            arg_rank ,
         const shards::ArrayDimTag * const * arg_dim_tags ,

@@ -115,6 +115,7 @@ FieldBase * FieldRepository::get_field(
 
 FieldBase * FieldRepository::declare_field(
   const std::string                 & arg_name ,
+  stk::topology::rank_t               arg_entity_rank ,
   const DataTraits                  & arg_traits ,
   unsigned                            arg_rank ,
   const shards::ArrayDimTag * const * arg_dim_tags ,
@@ -187,6 +188,7 @@ FieldBase * FieldRepository::declare_field(
 
       f[i] = new FieldBase(
           arg_meta_data ,
+          arg_entity_rank,
           m_fields.size() ,
           field_names[i] ,
           arg_traits ,

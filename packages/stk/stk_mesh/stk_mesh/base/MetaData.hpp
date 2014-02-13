@@ -428,6 +428,7 @@ public:
   /** \brief  Declare a field via runtime type information */
   FieldBase * declare_field_base(
     const std::string & arg_name,
+    stk::topology::rank_t arg_entity_rank,
     const DataTraits  & arg_traits ,
     unsigned            arg_rank ,
     const shards::ArrayDimTag * const * arg_dim_tags ,
@@ -436,7 +437,7 @@ public:
     require_not_committed();
 
     return m_field_repo.declare_field(
-                  arg_name, arg_traits, arg_rank, arg_dim_tags,
+                  arg_name, arg_entity_rank, arg_traits, arg_rank, arg_dim_tags,
                   arg_num_states, this
                  );
   }
