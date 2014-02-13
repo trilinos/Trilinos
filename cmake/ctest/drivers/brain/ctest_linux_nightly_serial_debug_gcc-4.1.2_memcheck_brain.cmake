@@ -67,10 +67,10 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 # Explicitly enable the packages to be memory tested.
-SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
+#SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
   Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
 
-SET(EXTRA_EXCLUDE_PACKAGES Panzer)
+#SET(EXTRA_EXCLUDE_PACKAGES Panzer)
 
 SET(CTEST_PARALLEL_LEVEL 12)
 SET(CTEST_DO_TEST TRUE)
