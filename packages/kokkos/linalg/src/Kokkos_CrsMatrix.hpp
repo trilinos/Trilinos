@@ -1080,9 +1080,9 @@ struct MV_MultiplyFunctor {
 
   template<int UNROLL>
   KOKKOS_INLINE_FUNCTION
-  void strip_mine (const size_type ii, const size_type kk) const {
-    const size_type iRow = ii / ShflThreadsPerRow::device_value ;
-    const int lane = ii % ShflThreadsPerRow::device_value ;
+  void strip_mine (const size_type i, const size_type kk) const {
+    const size_type iRow = i / ShflThreadsPerRow::device_value ;
+    const int lane = i % ShflThreadsPerRow::device_value ;
 
     value_type sum[UNROLL];
     // FIXME (mfh 29 Sep 2013) These pragmas ("ivdep", "unroll", and
