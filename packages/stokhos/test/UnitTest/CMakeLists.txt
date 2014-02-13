@@ -482,9 +482,6 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      # IF (Stokhos_ENABLE_Tpetra  AND
-      #     NOT Tpetra_ENABLE_Kokkos_DistObject AND
-      #     NOT Tpetra_ENABLE_Kokkos_Refactor)
       IF (Stokhos_ENABLE_Tpetra  AND
           NOT Tpetra_ENABLE_Kokkos_DistObject)
 
