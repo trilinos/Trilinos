@@ -56,14 +56,15 @@
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     shylu_symbolic *sym,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
-    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver,
+    Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap)
 {
     double relative_thres = config->relative_threshold;
     int nvectors = 16;
 
-    ShyLU_Probing_Operator probeop(sym, G, R, LP, solver, C, localDRowMap,
-                                    nvectors);
+    ShyLU_Probing_Operator probeop(config, sym, G, R, LP, solver, ifSolver, C,
+                                    localDRowMap, nvectors);
 
     // Get row map
     Epetra_Map rMap = G->RowMap();
@@ -248,7 +249,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     shylu_symbolic *ssym,   // symbolic structure
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
-    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver,
+    Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap)
 {
     int i;
@@ -330,8 +332,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int nvectors = 16;
     /*ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
                                         localDRowMap, nvectors);*/
-    ShyLU_Local_Schur_Operator probeop(ssym, &localG, R, LP, solver, C,
-                                        localDRowMap, nvectors);
+    ShyLU_Local_Schur_Operator probeop(config, ssym, &localG, R, LP, solver,
+                                        ifSolver, C, localDRowMap, nvectors);
 
 #ifdef DUMP_MATRICES
     //ostringstream fnamestr;
@@ -545,6 +547,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     Epetra_CrsMatrix *R = ssym->R.getRawPtr();
     Epetra_LinearProblem *LP = ssym->LP.getRawPtr();
     Amesos_BaseSolver *solver = ssym->Solver.getRawPtr();
+    Ifpack_Preconditioner *ifSolver = ssym->ifSolver.getRawPtr();
     Epetra_CrsMatrix *C = ssym->C.getRawPtr();
 
     // Need to create local G (block diagonal portion) , R, C
@@ -672,8 +675,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     cout << "Created local G matrix" << endl;
 
     int nvectors = 16;
-    ShyLU_Probing_Operator probeop(ssym, &localG, &localR, LP, solver, &localC,
-                                        localDRowMap, nvectors);
+    ShyLU_Probing_Operator probeop(config, ssym, &localG, &localR, LP, solver,
+                                ifSolver, &localC, localDRowMap, nvectors);
 
 #ifdef DUMP_MATRICES
     //ostringstream fnamestr;

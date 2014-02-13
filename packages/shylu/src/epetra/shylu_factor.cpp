@@ -692,11 +692,6 @@ int shylu_symbolic_factor
 
     delete[] SColElems;
 
-    Amesos Factory;
-    const char* SolverType = config->diagonalBlockSolver.c_str();
-    bool IsAvailable = Factory.Query(SolverType);
-    assert(IsAvailable == true);
-
     Teuchos::RCP<Epetra_LinearProblem> LP = Teuchos::RCP<Epetra_LinearProblem> 
                                         (new Epetra_LinearProblem());
     LP->SetOperator((ssym->D).getRawPtr());
@@ -719,8 +714,30 @@ int shylu_symbolic_factor
     ssym->LP = Teuchos::RCP<Epetra_LinearProblem>(&((*(ssym->ReIdx_LP))(*LP)),
                                         false);
 
-    Teuchos::RCP<Amesos_BaseSolver> Solver = Teuchos::RCP<Amesos_BaseSolver>
-                                    (Factory.Create(SolverType, *(ssym->LP)));
+    Teuchos::RCP<Amesos_BaseSolver> Solver;
+    Teuchos::RCP<Ifpack_Preconditioner> ifpackSolver;
+    std::size_t found = (config->diagonalBlockSolver).find("Amesos");
+    if (found == 0)
+    {
+        Amesos Factory;
+        const char* SolverType = config->diagonalBlockSolver.c_str();
+        bool IsAvailable = Factory.Query(SolverType);
+        assert(IsAvailable == true);
+        config->amesosForDiagonal = true;
+        Solver = Teuchos::RCP<Amesos_BaseSolver>
+                    (Factory.Create(SolverType, *(ssym->LP)));
+    }
+    else
+    {
+        config->amesosForDiagonal = false;
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory IfpackFactory;
+#else
+    Ifpack IfpackFactory;
+#endif
+        ifpackSolver = Teuchos::rcp<Ifpack_Preconditioner>(IfpackFactory.Create
+         (config->diagonalBlockSolver, (ssym->D).getRawPtr(), 0, false));
+    }
     //config->dm.print(5, "Created the diagonal solver");
 
 #ifdef TIMING_OUTPUT
@@ -728,10 +745,17 @@ int shylu_symbolic_factor
     ftime.start();
 #endif
     //Solver->SetUseTranspose(true); // for transpose
-    Teuchos::ParameterList aList;
-    aList.set("TrustMe", true);
-    Solver->SetParameters(aList);
-    Solver->SymbolicFactorization();
+    if (config->amesosForDiagonal)
+    {
+        Teuchos::ParameterList aList;
+        aList.set("TrustMe", true);
+        Solver->SetParameters(aList);
+        Solver->SymbolicFactorization();
+    }
+    else
+    {
+        ifpackSolver->Initialize();
+    }
 
     //config->dm.print(3, "Symbolic Factorization done");
 
@@ -744,6 +768,7 @@ int shylu_symbolic_factor
     ssym->OrigLP = LP;
     //ssym->LP = LP;
     ssym->Solver = Solver;
+    ssym->ifSolver = ifpackSolver;
 
     if (config->schurApproxMethod == 1)
     {
@@ -782,6 +807,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
     Teuchos::RCP<Epetra_LinearProblem> LP = ssym->LP;
     Teuchos::RCP<Amesos_BaseSolver> Solver = ssym->Solver;
+    Teuchos::RCP<Ifpack_Preconditioner> ifpackSolver = ssym->ifSolver;
     Teuchos::RCP<Isorropia::Epetra::Prober> prober = ssym->prober;
 
     /*--Extract the Epetra Matrices into already existing matrices --- */
@@ -794,12 +820,16 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
 
     //config->dm.print(3, "In Numeric Factorization");
-    Solver->NumericFactorization();
+    if (config->amesosForDiagonal)
+        Solver->NumericFactorization();
+    else
+        ifpackSolver->Compute();
 
     //config->dm.print(3, "Numeric Factorization done");
 
 #ifdef SHYLU_DEBUG
-    Solver->PrintStatus();
+    if (config->amesosForDiagonal)
+        Solver->PrintStatus();
 #endif
 
 #ifdef TIMING_OUTPUT
@@ -814,10 +844,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
    data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
-             ShyLU_Probing_Operator(ssym, (ssym->G).getRawPtr(),
+             ShyLU_Probing_Operator(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
-             1));
+             (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+             (ssym->C).getRawPtr(), &LocalDRowMap, 1));
 
     if (config->schurApproxMethod == 1)
     {
@@ -825,10 +855,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //Set up the probing operator
         // TODO: Change to RCPs. Call Set vectors on schur_op and remove
         // probeop
-        ShyLU_Probing_Operator probeop(ssym, (ssym->G).getRawPtr(),
+        ShyLU_Probing_Operator probeop(config, ssym, (ssym->G).getRawPtr(),
          (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-         (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
-         nvectors);
+         (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+         (ssym->C).getRawPtr(), &LocalDRowMap, nvectors);
 
         //cout << "Doing probing" << endl;
         Sbar = prober->probe(probeop);
@@ -852,12 +882,13 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         if (config->sep_type == 2)
             Sbar = computeApproxSchur(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
-             &LocalDRowMap);
+             (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+             (ssym->C).getRawPtr(), &LocalDRowMap);
         else
             Sbar = computeApproxWideSchur(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
+             (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+             (ssym->C).getRawPtr(),
              &LocalDRowMap);
 
         //cout << *Sbar << endl;
@@ -1006,7 +1037,6 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     {
         assert (0 == 1);
     }
-
 
     //cout << " Out of factor" << endl ;
 #ifdef TIMING_OUTPUT

@@ -52,17 +52,21 @@
 
 
 ShyLU_Local_Schur_Operator::ShyLU_Local_Schur_Operator(
+    shylu_config *config,
     shylu_symbolic *ssym,   // symbolic structure
     Epetra_CrsMatrix *G,
     Epetra_CrsMatrix *R,
-    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver,
+    Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap, int nvectors)
 {
     ssym_ = ssym;
+    config_ = config;
     G_ = G;
     R_ = R;
     LP_ = LP;
     solver_ = solver;
+    ifSolver_ = ifSolver;
     C_ = C;
     localDRowMap_ = localDRowMap;
     orig_lhs_ = ssym_->OrigLP->GetLHS();
@@ -142,7 +146,10 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
 #endif
 
     // The lhs and rhs is set in ResetTempVectors()
-    solver_->Solve();
+    if (config_->amesosForDiagonal)
+        solver_->Solve();
+    else
+        ifSolver_->ApplyInverse(*temp, *localX);
 
 #ifdef TIMING_OUTPUT
     trisolve_time_->stop();

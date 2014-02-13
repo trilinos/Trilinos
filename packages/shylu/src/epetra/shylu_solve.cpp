@@ -62,7 +62,7 @@ static int shylu_dist_solve(
 )
 {
     int err;
-    AztecOO *solver;
+    AztecOO *solver = 0;
     assert(X.Map().SameAs(Y.Map()));
     //assert(X.Map().SameAs(A_->RowMap()));
     const Epetra_MultiVector *newX; 
@@ -115,9 +115,16 @@ static int shylu_dist_solve(
     }
 
     // TODO : Do we need to reset the lhs and rhs here ?
-    ssym->LP->SetRHS(&localrhs);
-    ssym->LP->SetLHS(&locallhs);
-    ssym->Solver->Solve();
+    if (config->amesosForDiagonal)
+    {
+        ssym->LP->SetRHS(&localrhs);
+        ssym->LP->SetLHS(&locallhs);
+        ssym->Solver->Solve();
+    }
+    else
+    {
+        ssym->ifSolver->ApplyInverse(localrhs, locallhs);
+    }
 
     err = locallhs.ExtractView(&values, &lda);
     assert (err == 0);
@@ -206,9 +213,16 @@ static int shylu_dist_solve(
        }
     }
 
-    ssym->LP->SetRHS(&localrhs);
-    ssym->LP->SetLHS(&locallhs);
-    ssym->Solver->Solve();
+    if (config->amesosForDiagonal)
+    {
+        ssym->LP->SetRHS(&localrhs);
+        ssym->LP->SetLHS(&locallhs);
+        ssym->Solver->Solve();
+    }
+    else
+    {
+        ssym->ifSolver->ApplyInverse(localrhs, locallhs);
+    }
 
     err = locallhs.ExtractView(&values, &lda);
     assert (err == 0);
@@ -271,10 +285,17 @@ static int shylu_local_solve(
                                                                     // paper
     Epetra_MultiVector temp3 (View, *(ssym->Drhs), 0,  nvectors);
 
-    ssym->OrigLP->SetRHS(&localrhs);
-    ssym->OrigLP->SetLHS(&locallhs);
-    ssym->ReIdx_LP->fwd();
-    ssym->Solver->Solve();
+    if (config->amesosForDiagonal)
+    {
+        ssym->OrigLP->SetRHS(&localrhs);
+        ssym->OrigLP->SetLHS(&locallhs);
+        ssym->ReIdx_LP->fwd();
+        ssym->Solver->Solve();
+    }
+    else
+    {
+        ssym->ifSolver->ApplyInverse(localrhs, locallhs);
+    }
 
     Epetra_MultiVector temp1(LocalSMap, nvectors);
     err = ssym->R->Multiply(false, locallhs, temp1);
@@ -293,7 +314,7 @@ static int shylu_local_solve(
 
     Bs.Update(-1.0, temp2, 1.0);
 
-    AztecOO *solver;
+    AztecOO *solver = 0;
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
     if ((config->schurSolver == "G") || (config->schurSolver == "IQR"))
     {
@@ -349,10 +370,17 @@ static int shylu_local_solve(
     assert (err == 0);
     temp3.Update(1.0, localrhs, -1.0);
 
-    ssym->OrigLP->SetRHS(&temp3);
-    ssym->OrigLP->SetLHS(&locallhs);
-    ssym->ReIdx_LP->fwd();
-    ssym->Solver->Solve();
+    if (config->amesosForDiagonal)
+    {
+        ssym->OrigLP->SetRHS(&temp3);
+        ssym->OrigLP->SetLHS(&locallhs);
+        ssym->ReIdx_LP->fwd();
+        ssym->Solver->Solve();
+    }
+    else
+    {
+        ssym->ifSolver->ApplyInverse(temp3, locallhs);
+    }
 
     Epetra_Export XdExporter(LocalDMap, Y.Map());
     Y.Export(locallhs, XdExporter, Insert);
@@ -383,4 +411,6 @@ int shylu_solve(
         shylu_dist_solve(ssym, data, config, X, Y);
     else
         shylu_local_solve(ssym, data, config, X, Y);
+
+    return 0;
 }
