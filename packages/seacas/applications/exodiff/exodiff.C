@@ -1624,48 +1624,58 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
         
 	size_t ncount = nset1->Size();
-	for (size_t e = 0; e < ncount; ++e) {
-	  int idx1 = nset1->Node_Index(e);
-	  int idx2 = 0;
+	if (nset2->Size() == ncount) {
+	  for (size_t e = 0; e < ncount; ++e) {
+	    int idx1 = nset1->Node_Index(e);
+	    int idx2 = 0;
 
-	  if (out_file_id >= 0) vals[idx1] = 0.;
-	  if (!interface.summary_flag) {
-	    idx2 = nset2->Node_Index(e);
-	    v2 = vals2[idx2];
-	  }
+	    if (out_file_id >= 0) vals[idx1] = 0.;
+	    if (!interface.summary_flag) {
+	      idx2 = nset2->Node_Index(e);
+	      v2 = vals2[idx2];
+	    }
           
-	  if (interface.summary_flag) {
-	    mm_ns[e_idx].spec_min_max(vals1[idx1], step1, e, nset1->Id());
-	  }
-	  else if (out_file_id >= 0) {
-	    vals[idx1] = FileDiff(vals1[idx1], v2, interface.output_type);
-	  }
-	  else if (interface.show_all_diffs) {
-	    double d = interface.ns_var[e_idx].Delta(vals1[idx1], v2);
-	    if (d > interface.ns_var[e_idx].value) {
-	      diff_flag = true;
-	      sprintf(buf,
-		      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", node "ST_ZU")",
-		  name_length, name.c_str(), interface.ns_var[e_idx].abrstr(),
-		      vals1[idx1], v2, d, nset1->Id(), e);
-	      std::cout << buf << std::endl;
+	    if (interface.summary_flag) {
+	      mm_ns[e_idx].spec_min_max(vals1[idx1], step1, e, nset1->Id());
+	    }
+	    else if (out_file_id >= 0) {
+	      vals[idx1] = FileDiff(vals1[idx1], v2, interface.output_type);
+	    }
+	    else if (interface.show_all_diffs) {
+	      double d = interface.ns_var[e_idx].Delta(vals1[idx1], v2);
+	      if (d > interface.ns_var[e_idx].value) {
+		diff_flag = true;
+		sprintf(buf,
+			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", node "ST_ZU")",
+			name_length, name.c_str(), interface.ns_var[e_idx].abrstr(),
+			vals1[idx1], v2, d, nset1->Id(), e);
+		std::cout << buf << std::endl;
+	      }
+	    }
+	    else {
+	      double d = interface.ns_var[e_idx].Delta(vals1[idx1], v2);
+	      max_diff.set_max(d, vals1[idx1], v2, e, nset1->Id());
+	    }
+	    if (interface.doNorms) {
+	      norm_d += (vals1[idx1]-v2)*(vals1[idx1]-v2);
+	      norm_1 += vals1[idx1]*vals1[idx1];
+	      norm_2 += v2*v2;
 	    }
 	  }
-	  else {
-	    double d = interface.ns_var[e_idx].Delta(vals1[idx1], v2);
-	    max_diff.set_max(d, vals1[idx1], v2, e, nset1->Id());
-	  }
-	  if (interface.doNorms) {
-	    norm_d += (vals1[idx1]-v2)*(vals1[idx1]-v2);
-	    norm_1 += vals1[idx1]*vals1[idx1];
-	    norm_2 += v2*v2;
-	  }
-	}
         
-	if (out_file_id >= 0)
-	  ex_put_var(out_file_id, t2.step1, EX_NODE_SET,
-		     e_idx+1, nset1->Id(),
-		     nset1->Size(), vals);
+	  if (out_file_id >= 0)
+	    ex_put_var(out_file_id, t2.step1, EX_NODE_SET,
+		       e_idx+1, nset1->Id(),
+		       nset1->Size(), vals);
+	}
+	else {
+	  sprintf(buf,
+		  "   %-*s     diff: nodeset node counts differ for nodeset "ST_ZU,
+		  name_length, name.c_str(), 
+		  (size_t)nset1->Id());
+	  std::cout << buf << std::endl;
+	  diff_flag = true;
+	}
         
 	nset1->Free_Results();
 	if (!interface.summary_flag) {
@@ -1775,50 +1785,60 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
         
 	size_t ecount = sset1->Size();
-	for (size_t e = 0; e < ecount; ++e) {
-	  size_t ind1 = sset1->Side_Index(e);
-	  size_t ind2 = 0;
-	  if (out_file_id >= 0) vals[ind1] = 0.;
-	  if (!interface.summary_flag) {
-	    ind2 = sset2->Side_Index(e);
-	    v2 = vals2[ind2];
-	  }
+	if (sset2->Size() == ecount) {
+	  for (size_t e = 0; e < ecount; ++e) {
+	    size_t ind1 = sset1->Side_Index(e);
+	    size_t ind2 = 0;
+	    if (out_file_id >= 0) vals[ind1] = 0.;
+	    if (!interface.summary_flag) {
+	      ind2 = sset2->Side_Index(e);
+	      v2 = vals2[ind2];
+	    }
           
-	  if (interface.summary_flag) {
-	    mm_ss[e_idx].spec_min_max(vals1[ind1], step1, e, sset1->Id());
-	  }
-	  else if (out_file_id >= 0) {
-	    vals[ind1] = FileDiff(vals1[ind1], v2, interface.output_type);
-	  }
-	  else if (interface.show_all_diffs) {
-	    double d = interface.ss_var[e_idx].Delta(vals1[ind1], v2);
-	    if (d > interface.ss_var[e_idx].value) {
-	      diff_flag = true;
-	      sprintf(buf,
-		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", side "ST_ZU".%d)",
-		      name_length, name.c_str(), interface.ss_var[e_idx].abrstr(),
-		      vals1[ind1], v2, d,
-		      (size_t)sset1->Id(),
-		      (size_t)id_map[sset1->Side_Id(e).first-1],
-		      (int)sset1->Side_Id(e).second);
-	      std::cout << buf << std::endl;
+	    if (interface.summary_flag) {
+	      mm_ss[e_idx].spec_min_max(vals1[ind1], step1, e, sset1->Id());
+	    }
+	    else if (out_file_id >= 0) {
+	      vals[ind1] = FileDiff(vals1[ind1], v2, interface.output_type);
+	    }
+	    else if (interface.show_all_diffs) {
+	      double d = interface.ss_var[e_idx].Delta(vals1[ind1], v2);
+	      if (d > interface.ss_var[e_idx].value) {
+		diff_flag = true;
+		sprintf(buf,
+			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", side "ST_ZU".%d)",
+			name_length, name.c_str(), interface.ss_var[e_idx].abrstr(),
+			vals1[ind1], v2, d,
+			(size_t)sset1->Id(),
+			(size_t)id_map[sset1->Side_Id(e).first-1],
+			(int)sset1->Side_Id(e).second);
+		std::cout << buf << std::endl;
+	      }
+	    }
+	    else {
+	      double d = interface.ss_var[e_idx].Delta(vals1[ind1], v2);
+	      max_diff.set_max(d, vals1[ind1], v2, e, sset1->Id());
+	    }
+	    if (interface.doNorms) {
+	      norm_d += (vals1[ind1]-v2)*(vals1[ind1]-v2);
+	      norm_1 += vals1[ind1]*vals1[ind1];
+	      norm_2 += v2*v2;
 	    }
 	  }
-	  else {
-	    double d = interface.ss_var[e_idx].Delta(vals1[ind1], v2);
-	    max_diff.set_max(d, vals1[ind1], v2, e, sset1->Id());
-	  }
-	  if (interface.doNorms) {
-	    norm_d += (vals1[ind1]-v2)*(vals1[ind1]-v2);
-	    norm_1 += vals1[ind1]*vals1[ind1];
-	    norm_2 += v2*v2;
-	  }
+	  if (out_file_id >= 0)
+	    ex_put_var(out_file_id, t2.step1, EX_SIDE_SET,
+		       e_idx+1, sset1->Id(),
+		       sset1->Size(), vals);
+	}
+	else {
+	  sprintf(buf,
+		  "   %-*s     diff: sideset side counts differ for sideset "ST_ZU,
+		  name_length, name.c_str(), 
+		  (size_t)sset1->Id());
+	  std::cout << buf << std::endl;
+	  diff_flag = true;
 	}
         
-	if (out_file_id >= 0)
-	  ex_put_var(out_file_id, t2.step1, EX_SIDE_SET,
-		     e_idx+1, sset1->Id(),
-		     sset1->Size(), vals);
 	sset1->Free_Results();
 	if (!interface.summary_flag) {
 	  sset2->Free_Results();

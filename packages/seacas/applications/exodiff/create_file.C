@@ -182,11 +182,11 @@ int Create_File(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 	std::cout << "WARNING: Using old definition of floor tolerance. |a-b|<floor.\n\n";
       }
       if (interface.coord_tol.type != IGNORE) {
-	sprintf(buf, "Coordinates will be compared .. tol: %8g (%s), floor: %8g",
+	sprintf(buf, "\nNodal coordinates will be compared .. tol: %8g (%s), floor: %8g",
 		interface.coord_tol.value, interface.coord_tol.typestr(), interface.coord_tol.floor);
 	std::cout << buf << std::endl;
       } else {
-	std::cout << "Locations of nodes will not be compared." << std::endl;
+	std::cout << "\nNodal coordinates will not be compared." << std::endl;
       }
       
       if (interface.time_tol.type != IGNORE) {
@@ -326,7 +326,7 @@ namespace {
 	    } else {
 	      *diff_found = true;
 	      if (!interface.quiet_flag)
-		std::cout << "exodiff: WARNING .. " << type << " variable \"" << name
+		std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
 			  << "\" is in the first file but not the second." << std::endl;
 	      continue;
 	    }
@@ -348,7 +348,7 @@ namespace {
 	    if (find_string(x_list, name, interface.nocase_var_names) < 0 ) {
 	      *diff_found = true;
 	      if (!interface.quiet_flag)
-		std::cout << "exodiff: WARNING .. " << type << " variable \"" << name
+		std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
 			  << "\" is in the second file but not the first." << std::endl;
 	      continue;
 	    }
@@ -374,13 +374,13 @@ namespace {
 	else {
 	  *diff_found = true;
 	  if (!interface.quiet_flag)
-	    std::cout << "exodiff: WARNING .. " << type << " variable \"" << name
+	    std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
 		      << "\" is not in the second file." << std::endl;
 	}
       } else {
 	*diff_found = true;
 	if (!interface.quiet_flag)
-	  std::cout << "exodiff: WARNING .. specified " << type << " variable \"" << name
+	  std::cout << "exodiff: WARNING .. Specified " << type << " variable \"" << name
 		    << "\" is not in the first file." << std::endl;
       }
     }
