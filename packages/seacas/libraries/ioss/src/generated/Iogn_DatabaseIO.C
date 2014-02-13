@@ -774,7 +774,6 @@ namespace Iogn {
     for (size_t i=0; i < var_count; i++) {
       std::string var_name = entity->type_string() + "_" + Ioss::Utils::to_string(i+1);
       entity->field_add(Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT, entity_count));
-      std::cerr << "Adding field '" << var_name << "' to '" << entity->name() << "'.\n";
     }
   }
 }
