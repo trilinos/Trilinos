@@ -564,7 +564,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields)
     }
   }
 
-  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm comm = mesh.parallel();
   parallel_data_exchange_sym_t(send_data, recv_data, comm);
 
   DoOp<T, OP> do_op;
