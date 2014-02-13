@@ -9,22 +9,22 @@
 #include <stk_mesh/base/GetEntities.hpp>
 namespace {
 
-  TEST(StkMeshIoBrokerHowTo, handleMissingFieldOnRead)
+  TEST(StkMeshIoBrokerHowTo, interpolateFieldNegativeTime)
   {
-    std::string ic_name = "input_field_example.e";
+    std::string ic_name = "interpolate_field_example.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     {
       // ============================================================
       //+ INITIALIZATION:
       //+ Create a mesh with the nodal field "temp" for 3 timesteps.
+      //+ The times on the database are -2.0, -1.0, and 0.0
       //+ The value of the field at each node is 0.0 at time 0.0,
-      //+ 1.0 at time 1.0, and 2.0 at time 2.0
+      //+ -1.0 at time -1.0, and -2.0 at time -2.0
       stk::io::StkMeshIoBroker stkIo(communicator);
 
       const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
-      size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-      stkIo.set_active_mesh(index); // Optional if only a single input database
+      stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
       stk::mesh::Field<double> &temperature =
@@ -43,13 +43,13 @@ namespace {
     
       // Add three steps to the database
       // For each step, the value of the field is the value 'time'
-      for (size_t i=0; i < 3; i++) {
+      for (int i=-2; i <= 0; i++) {
 	double time = i;
 
 	for(size_t inode=0; inode<nodes.size(); inode++) {
-	  double *fieldDataForNode =
+	  double *fieldData =
 	    stk::mesh::field_data(temperature, nodes[inode]);
-	  *fieldDataForNode = time;
+	  *fieldData = time;
 	}
 
 	stkIo.begin_output_step(fh, time);
@@ -62,14 +62,13 @@ namespace {
       //-BEGIN
       // ============================================================
       //+ EXAMPLE: 
-      //+ Demonstrate what happens when application requests the
-      //+ reading of a field that does not exist on the input
-      //+ mesh database.  The nodal field "displacement" is
-      //+ requested for input from the database field "disp" which
-      //+ does not exist.
+      //+ The input mesh database has 3 timesteps with times -2.0, -1.0, 0.0.
+      //+ The value of the field "temp" is equal to the time
+      //+ Read the "temp" value at times -2.0 to 0.0 with an interval
+      //+ of 0.1 (-2.0, -1.9, -1.8, ..., 0.0) and verify that 
+      //+ the field contains the correct interpolated value.
       stk::io::StkMeshIoBroker stkIo(communicator);
-      size_t index = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
-      stkIo.set_active_mesh(index);
+      stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
       stk::mesh::Field<double> &temperature =
@@ -77,42 +76,28 @@ namespace {
 	                                            (stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
-      stk::mesh::Field<double> &displacement =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "displacement", 1);
-      stk::mesh::put_field(displacement, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
-      // The name of the field on the database is "temp"
-      // This field does exist and should be read correctly
-      stkIo.add_input_field(stk::io::MeshField(temperature, "temp"));
-
-      //+ The name of the field on the database is "disp"
-      //+ This field does not exist and will not be found.
-      stkIo.add_input_field(stk::io::MeshField(displacement, "disp"));
-
-      
-      //+ Read the field values from the database at time 2.0
-      //+ The 'missing_fields' vector will contain the names of
-      //+ any fields that were not found.
-      std::vector<stk::io::MeshField> missing_fields;
-      stkIo.read_defined_input_fields(2.0, &missing_fields);
-
-      // ============================================================
-      //+ VERIFICATION
-      //+ The 'missing' vector should be of size 1 and contain
-      //+ 'disp'
-      EXPECT_EQ(1u, missing_fields.size());
-      EXPECT_STREQ("disp", missing_fields[0].db_name().c_str());
-		  
-      // The value of the "temperature" field at all nodes should be 2.0
       std::vector<stk::mesh::Entity> nodes;
-      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK,
-			      nodes);
-      for(size_t i=0; i<nodes.size(); i++) {
-	double *fieldDataForNode =
-	  stk::mesh::field_data(temperature, nodes[i]);
-	EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
+      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
+      
+      // The name of the field on the database is "temp"
+      stkIo.add_input_field(stk::io::MeshField(temperature, "temp",
+					       stk::io::MeshField::LINEAR_INTERPOLATION));
+
+      for (int i=-20; i <= 0; i++) {
+	double time = i/10.0;
+	//+ Read the field values from the database and verify that they
+	//+ are interpolated correctly.
+	stkIo.read_defined_input_fields(time);
+
+	// ============================================================
+	//+ VERIFICATION
+	// The value of the "temperature" field at all nodes should be 'time'
+	for(size_t i=0; i<nodes.size(); i++) {
+	  double *fieldData = stk::mesh::field_data(temperature, nodes[i]);
+	  EXPECT_DOUBLE_EQ(time, *fieldData);
+	}
       }
       //-END      
     }

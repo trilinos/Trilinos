@@ -4,6 +4,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 namespace {
@@ -23,7 +24,7 @@ namespace {
 
       const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
       size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-      stkIo.set_active_mesh(index);
+      stkIo.set_active_mesh(index); // Optional if only a single input database
       stkIo.create_input_mesh();
 
       stk::mesh::Field<double> &temperature =
