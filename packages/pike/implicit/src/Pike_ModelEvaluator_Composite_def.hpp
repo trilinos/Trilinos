@@ -4,42 +4,61 @@
 
 namespace pike {
 
-  CompositeModelEvaluator() :
-    setupCalled_(false)
-    {
+  template<typename Scalar>
+  CompositeModelEvaluator::CompositeModelEvaluator()
+  {
+    
+  }
+
+  template<typename Scalar>
+  void CompositeModelEvaluator::
+  setModels(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > >& me)
+  {
+    models_ = me;
+
+    std::vector<Teuchos::RCP<Thyra::VectorSpace<Scalar> > > x_spaces;
+    std::vector<Teuchos::RCP<Thyra::VectorSpace<Scalar> > > f_spaces;
+
+    for (int model = 0; model < me.size(); ++model) {
+
+      x_spaces.push_back(me->get_x_space());
+      f_spaces.push_back(me->get_f_space());
 
     }
 
-    void addModel(const Teuchos::RCP<const Thyra::ModelEvaluator>& me)
-    {
-      models_.push_back(me);
-    }
-
-    //! Build the composite objects.  Once called, no more ModelEvaluators can be added via the addModel method.
-    void setup()
-    {
-      // Create the x_space
-
-      // Create the f_space
-
-      // Create the composite p structures
-
-      // Create the composite g structure
-
- 
-      setupCalled_ = true;
-    }
+    x_space_ = Teuchos::rcp(new Thyra::DefaultProductVectorSpace<Scalar>(x_spaces));
+    f_space_ = Teuchos::rcp(new Thyra::DefaultProductVectorSpace<Scalar>(f_spaces));
+  }
 
     // From Thyra::ModelEvaluator
-    int Np() const
+  template<typename Scalar>
+  int CompositeModelEvaluator::Np() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Np() not implemented yet!");
+    return 0;
+  }
+  
+  int CompositeModelEvaluator::Ng() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Ng() not implemented yet!");
+    return 0;
+  }
+
+    RCP<const VectorSpaceBase<Scalar> > get_x_space() const
     {
-      
+      return x_space_;
     }
 
-    int Ng() const;
-    RCP<const VectorSpaceBase<Scalar> > get_x_space() const;    
-    RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
-    RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+    RCP<const VectorSpaceBase<Scalar> > get_f_space() const
+    {
+      return f_space_;
+    }
+
+    RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const
+    {
+      return p_space_;
+    }
+
     RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
     RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
     ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
