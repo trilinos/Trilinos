@@ -255,6 +255,25 @@ namespace stk {
       }
     }
 
+    double InputFile::map_analysis_to_db_time(double time) const
+    {
+      double db_time = time;
+      if (time > m_startupTime && m_periodLength > 0.0) {
+	if (m_periodType == CYCLIC) {
+	  db_time = m_startupTime + fmod(time-m_startupTime, m_periodLength);
+	} else if (m_periodType == REVERSING) {
+	  double pmod = fmod((time-m_startupTime), 2.0*m_periodLength);
+	  if (pmod <= m_periodLength) {
+	    db_time = m_startupTime + pmod;
+	  }
+	  else {
+	    db_time = startupTime + 2.0 * periodLength - pmod;
+	  }
+	}
+      }
+      db_time += m_offsetTime;
+    }
+
       double InputFile::read_defined_input_fields(double time,
 						  std::vector<stk::io::MeshField> *missing,
 						  stk::mesh::BulkData &bulk)
@@ -274,13 +293,20 @@ namespace stk {
 	  m_fieldsInitialized = true;
 	}
 
+	if (time < m_startTime || time > m_stopTime)
+	  return 0.0;
+
+	// Map analysis time to database time using offset, periodic, ...
+	// See details in header file.
+	double db_time = map_analysis_to_db_time(time);
+	
 	ThrowErrorMsgIf (Teuchos::is_null(m_region),
 			 "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
 	Ioss::Region *region = m_region.get();
 
 	// Get struct containing interval of database time(s) containing 'time'
-	DBStepTimeInterval sti(region, time);
+	DBStepTimeInterval sti(region, db_time);
 
 	ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
 			"ERROR: Input database '" << region->get_database()->get_filename()

@@ -65,6 +65,9 @@ namespace stk {
       InputFile& set_start_time(double start_time);
       InputFile& set_stop_time(double stop_time);
   
+      // Only public so easier to test...
+      double map_analysis_to_db_time(double time) const;
+
     private:
       void build_field_part_associations(stk::io::MeshField &mesh_field,
 					 const stk::mesh::Part &part,
