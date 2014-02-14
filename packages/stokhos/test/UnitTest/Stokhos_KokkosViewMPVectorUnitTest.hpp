@@ -84,16 +84,41 @@ checkVectorView(const ViewType& v,
   Kokkos::deep_copy(h_v, v);
   host_array_type h_a = h_v;
 
-  size_type num_rows = v.dimension_0();
-  size_type num_cols = v.dimension_1();
+  size_type num_rows, num_cols;
+
+  // For static, layout left, sacado dimension becomes first dimension
+  // instead of last
+  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+                                         Kokkos::LayoutRight >::value;
+  if (is_right || !view_type::is_static) {
+    num_rows = h_a.dimension_0();
+    num_cols = h_a.dimension_1();
+  }
+  else {
+    num_rows = h_a.dimension_1();
+    num_cols = h_a.dimension_0();
+  }
   bool success = true;
-  for (size_type i=0; i<num_rows; ++i) {
-    for (size_type j=0; j<num_cols; ++j) {
-      scalar_type val = h_a(i,j);
-      scalar_type val_expected =
-        generate_vector_coefficient<scalar_type>(
-          num_rows, num_cols, i, j);
-      TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
+  if (is_right || !view_type::is_static) {
+    for (size_type i=0; i<num_rows; ++i) {
+      for (size_type j=0; j<num_cols; ++j) {
+        scalar_type val = h_a(i,j);
+        scalar_type val_expected =
+          generate_vector_coefficient<scalar_type>(
+            num_rows, num_cols, i, j);
+        TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
+      }
+    }
+  }
+  else {
+    for (size_type i=0; i<num_rows; ++i) {
+      for (size_type j=0; j<num_cols; ++j) {
+        scalar_type val = h_a(j,i);
+        scalar_type val_expected =
+          generate_vector_coefficient<scalar_type>(
+            num_rows, num_cols, i, j);
+        TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
+      }
     }
   }
 
@@ -116,8 +141,8 @@ checkConstantVectorView(const ViewType& v,
   Kokkos::deep_copy(h_v, v);
   host_array_type h_a = h_v;
 
-  size_type num_rows = v.dimension_0();
-  size_type num_cols = v.dimension_1();
+  const size_type num_rows = h_a.dimension_0();
+  const size_type num_cols = h_a.dimension_1();
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
@@ -163,10 +188,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
   host_view_type h_v = Kokkos::create_mirror_view(v);
   host_array_type h_a = h_v;
 
-  for (size_type i=0; i<num_rows; ++i)
-    for (size_type j=0; j<num_cols; ++j)
-      h_a(i,j) = generate_vector_coefficient<Scalar>(
-        num_rows, num_cols, i, j);
+  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+                                         Kokkos::LayoutRight >::value;
+  if (is_right || !Storage::is_static) {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(i,j) = generate_vector_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
+  else {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(j,i) = generate_vector_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
   Kokkos::deep_copy(v, h_v);
 
   success = checkVectorView(v, out);
@@ -223,10 +258,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, 
   ViewType v("view", num_rows, num_cols);
   host_array_type h_a = Kokkos::create_mirror_view(v);
 
-  for (size_type i=0; i<num_rows; ++i)
-    for (size_type j=0; j<num_cols; ++j)
-      h_a(i,j) = generate_vector_coefficient<Scalar>(
-        num_rows, num_cols, i, j);
+  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+                                         Kokkos::LayoutRight >::value;
+  if (is_right || !Storage::is_static) {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(i,j) = generate_vector_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
+  else {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(j,i) = generate_vector_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
   Kokkos::deep_copy(v, h_a);
 
   success = checkVectorView(v, out);
@@ -312,27 +357,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy, STORAGE, LAYOUT )                         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_MP, DeepCopy_ConstantScalar, STORAGE, LAYOUT )
+    Kokkos_View_MP, DeepCopy_ConstantScalar, STORAGE, LAYOUT )          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, DeepCopy_ConstantVector, STORAGE, LAYOUT )
 
 // Some tests the fail, or fail to compile
 
   /*
-   // This doesn't compile because deep_copy() only has an overload for
-   // scalar_type, and not value_type
-   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                \
-    Kokkos_View_MP, DeepCopy_ConstantVector, STORAGE, LAYOUT )
-  */
-
-  /*
-    // This compiles but gives the wrong answer for LayoutLeft or LayoutRight
-    // (but is correct for default layout)
+    // These don't compile as there are no deep_copy overloads between
+    // static view spec and its array_type.  That could be done, but
+    // would require some additional work to ensure the shapes match.
+    // It is simple enough to create an array_type view, so deep copying
+    // between matching views isn't much more trouble.
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy_HostArray, STORAGE, LAYOUT )               \
-  */
-
-  /*
-    // This doesn't compile, I believe for the same reason the above generates
-    // the wrong answer
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                       \
     Kokkos_View_MP, DeepCopy_DeviceArray, STORAGE, LAYOUT )
   */

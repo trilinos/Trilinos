@@ -47,6 +47,8 @@
 #include "Stokhos_ViewStorage.hpp"
 #include <Kokkos_View.hpp>
 
+#include "Kokkos_AnalyzeSacadoShape.hpp"
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -936,6 +938,9 @@ private:
   typedef Impl::LayoutStride< typename traits::shape_type ,
                               typename traits::array_layout > stride_type ;
 
+  typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
+                                    typename traits::array_layout > analyze_sacado_shape;
+
   typename traits::value_type  * m_ptr_on_device ;
   typename traits::shape_type    m_shape ;
   unsigned                       m_stride ;
@@ -951,6 +956,11 @@ private:
   // I suspect we could combine this with the way the stride is managed in
   // the default view, in which case, I don't think we even need a
   // specialization
+  //
+  // For reshaping by folding the sacado dimension into its next adjacent
+  // dimension, padding wouldn't generally work.  So unless there becomes
+  // a way to turn padding off in the default view, a specialization
+  // will be necessary.
 
 public:
 
@@ -970,21 +980,37 @@ public:
                 typename traits::device_type ,
                 typename traits::memory_traits > non_const_type ;
 
-  typedef View< typename traits::array_type ,
-                typename traits::array_layout ,
-                typename traits::device_type ,
-                typename traits::memory_traits > array_type ;
-  // typedef View< typename traits::array_type ,
-  //               LayoutRight ,
-  //               typename traits::device_type ,
-  //               typename traits::memory_traits > array_type ;
-
+  // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
                 typename traits::data_type ,
                 typename traits::device_type::host_mirror_device_type >::type ,
                 typename traits::array_layout ,
                 typename traits::device_type::host_mirror_device_type ,
                 void > HostMirror ;
+
+  // Equivalent array type for this view.
+  typedef View< typename analyze_sacado_shape::array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type ,
+                typename traits::memory_traits > array_type ;
+
+  // Equivalent const array type for this view.
+  typedef View< typename analyze_sacado_shape::const_array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type ,
+                typename traits::memory_traits > const_array_type ;
+
+  // Equivalent host array type for this view.
+  typedef View< typename analyze_sacado_shape::array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type::host_mirror_device_type ,
+                typename traits::memory_traits > host_array_type ;
+
+  // Equivalent const host array type for this view.
+  typedef View< typename analyze_sacado_shape::const_array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type::host_mirror_device_type ,
+                typename traits::memory_traits > host_const_array_type ;
 
   //------------------------------------
   // Shape for the Sacado::MP::Vector value_type ignores the internal static array length.
@@ -1737,6 +1763,67 @@ public:
   typedef       Sacado::MP::Vector< StorageType >  non_const_value_type ;
 };
 
+/** \brief  Analyze the array shape of a Sacado::MP::Vector.
+ *
+ *  This specialization is required so that the array shape of
+ *  Kokkos::View< Sacado::MP::Vector< StorageType > , ... >
+ *  can be determined at compile-time.
+ *
+ *  The dimension associated with the MP::Vector is always dynamic.
+ */
+template< class StorageType, class Layout >
+struct AnalyzeSacadoShape< Sacado::MP::Vector< StorageType >, Layout >
+  : if_c< StorageType::is_static
+        , Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > // Treat as a scalar
+        , typename ShapeInsert< typename AnalyzeSacadoShape< typename StorageType::value_type, Layout >::shape , 0 >::type
+        >::type
+{
+private:
+
+  typedef AnalyzeSacadoShape< typename StorageType::value_type, Layout > nested ;
+
+public:
+
+  typedef typename
+    if_c< StorageType::is_static
+        , ViewSpecializeSacadoMPVectorStatic
+        , ViewSpecializeSacadoMPVector
+        >::type specialize ;
+
+  typedef typename
+    if_c< StorageType::is_static
+        , Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 >
+        , typename ShapeInsert< typename nested::shape , 0 >::type
+        >::type shape ;
+
+  // If ( ! StorageType::is_static ) then 0 == StorageType::static_size and the first array declaration is not used.
+  // However, the compiler will still generate this type declaration and it must not have a zero length.
+  //
+  // For LayoutLeft, always use a dynamic dimension, which get's tacked on to the left of the array type
+  // I think this means our approach doesn't really work for Sacado::MP::Vector<StaticFixedStorage<...> >[N] ???
+  typedef typename
+    if_c< StorageType::is_static && is_same<Layout, LayoutRight>::value
+        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
+        , typename nested::array_type *
+        >::type array_type ;
+
+  typedef typename
+    if_c< StorageType::is_static && is_same<Layout, LayoutRight>::value
+        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
+        , typename nested::const_array_type *
+        >::type const_array_type ;
+
+  typedef array_type non_const_array_type ;
+
+  typedef       Sacado::MP::Vector< StorageType >  type ;
+  typedef const Sacado::MP::Vector< StorageType >  const_type ;
+  typedef       Sacado::MP::Vector< StorageType >  non_const_type ;
+
+  typedef       Sacado::MP::Vector< StorageType >  value_type ;
+  typedef const Sacado::MP::Vector< StorageType >  const_value_type ;
+  typedef       Sacado::MP::Vector< StorageType >  non_const_value_type ;
+};
+
 //----------------------------------------------------------------------------
 
 template<>
@@ -2183,9 +2270,9 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
   ViewAssignment( typename View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic>::array_type & dst
                 , const    View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic> & src )
   {
-    typedef View<ST,SL,SD,SM,ViewSpecializeSacadoMPVector>    src_type ;
-    typedef typename src_type::value_type                     src_sacado_mp_vector_type ;
-    typedef typename src_sacado_mp_vector_type::storage_type  src_stokhos_storage_type ;
+    typedef View<ST,SL,SD,SM,ViewSpecializeSacadoMPVectorStatic> src_type ;
+    typedef typename src_type::value_type                        src_sacado_mp_vector_type ;
+    typedef typename src_sacado_mp_vector_type::storage_type     src_stokhos_storage_type ;
 
     typedef typename src_type::array_type   dst_type ;
     typedef typename dst_type::shape_type   dst_shape_type ;
@@ -2202,9 +2289,33 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
 
     ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
 
+    unsigned dims[8];
+    dims[0] = src.m_shape.N0;
+    dims[1] = src.m_shape.N1;
+    dims[2] = src.m_shape.N2;
+    dims[3] = src.m_shape.N3;
+    dims[4] = src.m_shape.N4;
+    dims[5] = src.m_shape.N5;
+    dims[6] = src.m_shape.N6;
+    dims[7] = src.m_shape.N7;
+    unsigned rank = src_type::rank;
+    unsigned sacado_size = src.static_storage_size();
+    if (is_same<typename src_type::array_layout, LayoutLeft>::value) {
+      // Move sacado_size to the first dimension, shift all others up one
+      for (unsigned i=rank; i>0; --i)
+        dims[i] = dims[i-1];
+      dims[0] = sacado_size;
+    }
+    else {
+      dims[rank] = sacado_size;
+    }
     dst_shape_type::assign( dst.m_shape,
-                            src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                            src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+                            dims[0] , dims[1] , dims[2] , dims[3] ,
+                            dims[4] , dims[5] , dims[6] , dims[7] );
+
+    // dst_shape_type::assign( dst.m_shape,
+    //                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
+    //                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
     dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
 
