@@ -85,25 +85,19 @@ bool ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::handlesReq
      std::string field;
      if(pl->isType<std::string>("x-coordinates")) {
        field = pl->get<std::string>("x-coordinates");
-       std::cout << "TEST X" << std::endl;
        if(!isField(field)) {
-         std::cout << "(fail) TEST X" << std::endl;
          return false;
        }
      }
      if(pl->isType<std::string>("y-coordinates")) {
-       std::cout << "TEST Y" << std::endl;
        // we assume that the fields must be the same
        if(field != pl->get<std::string>("y-coordinates")) {
-         std::cout << "(fail) TEST Y" << std::endl;
          return false;
        }
      }
      if(pl->isType<std::string>("z-coordinates")) {
-       std::cout << "TEST Z" << std::endl;
        // we assume that the fields must be the same
        if(field != pl->get<std::string>("z-coordinates")) {
-         std::cout << "(fail) TEST Z" << std::endl;
          return false;
        }
      }
