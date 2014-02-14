@@ -245,6 +245,8 @@ Teuchos::RCP<const panzer::IntrepidFieldPattern> ParameterListCallbackBlocked<Lo
     if(blocked_ugi_->fieldInBlock(fieldName,blockId))
       return Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(blocked_ugi_->getFieldPattern(blockId,fieldName),true);
   }
+
+  return Teuchos::null;
 }
 
 
