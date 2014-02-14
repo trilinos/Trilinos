@@ -267,6 +267,7 @@ namespace stk {
 			       const std::string &type,
 			       DatabasePurpose purpose);
 
+      
       // Set the input Ioss::Region directly instead of letting it be
       // created by StkMeshIoBroker during the create_input_mesh(type,
       // filename) call. After setting the input io region, you would
@@ -279,6 +280,11 @@ namespace stk {
       // only used in Salinas/tools/superelem/MkSuperStkMesh.C:
       // The use-case is adding new parts to a mesh]
       size_t add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region);
+
+      // Get a reference to an existing mesh database so it can be modified
+      // Typical modifications deal with
+      // times: tart/stop/offset/scale/cycle/periodlength.
+      InputFile &get_mesh_database(size_t input_file_index);
 
       size_t set_active_mesh(size_t input_file_index);
       size_t get_active_mesh() const {return m_active_mesh_index;}

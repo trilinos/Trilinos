@@ -1198,6 +1198,12 @@ namespace stk {
 	}
       }
 
+    InputFile &StkMeshIoBroker::get_mesh_database(size_t input_file_index)
+    {
+      validate_input_file_index(input_file_index);
+      return *m_input_files[m_active_mesh_index];
+    }
+
     size_t StkMeshIoBroker::set_active_mesh(size_t input_file_index)
     {
       validate_input_file_index(input_file_index);
