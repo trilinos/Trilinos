@@ -15,7 +15,6 @@
 #include <Ioss_GroupingEntity.h>        // for GroupingEntity
 #include <Ioss_VariableType.h>          // for VariableType
 
-#include <limits>
 #include <math.h>
 #include <assert.h>
 
@@ -198,14 +197,14 @@ void MeshFieldPart::release_field_data()
 void MeshFieldPart::load_field_data(const DBStepTimeInterval &sti)
 {
   if (sti.exists_before && m_preStep != sti.s_before) {
-    m_preStep = sti.s_before;
-    assert(m_preStep > 0);
+    assert(sti.s_before > 0);
 
-    if (m_preStep == m_postStep) {
+    if (sti.s_before == m_postStep) {
       m_preData.swap(m_postData);
       std::swap(m_preStep, m_postStep);
     }
     else {
+      m_preStep = sti.s_before;
       sti.region->begin_state(m_preStep);
       m_ioEntity->get_field_data(m_dbName, m_preData);
       sti.region->end_state(m_preStep);
