@@ -1466,9 +1466,10 @@ namespace stk {
       //delay-field-data-allocation optimization.
       //Folks who want the optimization can call the population_mesh/populate_field_data methods separately.
       bool delay_field_data_allocation = false;
-
+      bulk_data().modification_begin();
       populate_mesh(delay_field_data_allocation);
       populate_field_data();
+      bulk_data().modification_end();
     }
 
     void StkMeshIoBroker::add_input_field(stk::mesh::FieldBase &field, const std::string &db_name)
