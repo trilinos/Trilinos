@@ -79,7 +79,7 @@ SystemInterface interface;
 struct TimeInterp
 {
   TimeInterp() :
-    step1(-1), step2(-1), time(0.0), proportion(1.0) {}
+    step1(-1), step2(-1), time(0.0), proportion(0.0) {}
   
   int step1; // step at beginning of interval. -1 if time prior to time at step1
   int step2; // step at end of interval. -1 if time after time at step2
@@ -87,8 +87,8 @@ struct TimeInterp
   double time; // Time being interpolated to.
 
   // If t1 = time at step1 and t2 = time at step2,
-  // then proportion = (time-t2)/(t2-t1)
-  // Or, value at time = proportion*v1 + (1.0-proportion)*v2
+  // then proportion = (time-t1)/(t2-t1)
+  // Or, value at time = (1.0-proportion)*v1 + proportion*v2
   double proportion; 
 }
 ;
@@ -685,7 +685,7 @@ namespace {
       t2.step1 = ts2;
       t2.step2 = ts2;
       t2.time  = file2.Time(ts2);
-      t2.proportion = 1.0;
+      t2.proportion = 0.0;
 
       if (!interface.quiet_flag) {
 	if (out_file_id >= 0)  {
@@ -790,7 +790,7 @@ namespace {
 	      t2.step1 = time_step2;
 	      t2.step2 = time_step2;
 	      t2.time  = file2.Time(time_step2);
-	      t2.proportion = 1.0;
+	      t2.proportion = 0.0;
 	    }
 	    SMART_ASSERT(t2.step1 <= file2.Num_Times());
 	    SMART_ASSERT(t2.step2 <= file2.Num_Times());

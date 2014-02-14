@@ -249,11 +249,7 @@ public:
   ///   entries in the hash table.
   /// \param hash [in] Hasher function for \c Key instances.  The
   ///   default value usually suffices.
-  template <typename Integer>
-  UnorderedMap(  Integer requested_capacity
-               , hasher_type hasher = hasher_type()
-               , typename Impl::enable_if< (Impl::is_integral<Integer>::value && is_insertable_map),int>::type = 0
-              )
+  UnorderedMap(  size_type requested_capacity , hasher_type hasher = hasher_type() )
     : m_hasher(hasher)
     , m_capacity(((requested_capacity + block_size -1)/block_size)*block_size)
     , m_available_indexes(AllocateWithoutInitializing(), "UnorderedMap available indexes", m_capacity/block_size)
@@ -264,6 +260,10 @@ public:
     , m_scalars("UnorderedMap scalars")
     , m_failed_insert_scratch("UnorderedMap scratch", (m_available_indexes.size() ? m_available_indexes.size() : 1))
   {
+    if (!is_insertable_map) {
+      throw std::runtime_error("Cannot construct a non-insertable (i.e. const key_type) unordered_map");
+    }
+
     Kokkos::deep_copy(m_available_indexes, invalid_index);
     Kokkos::deep_copy(m_hash_lists,invalid_index);
     Kokkos::deep_copy(m_next_index,invalid_index);
@@ -303,8 +303,7 @@ public:
   ///
   /// This is <i>not</i> a device function; it may <i>not</i> be
   /// called in a parallel kernel.
-  template <typename Integer>
-  bool rehash(Integer new_capacity = 0)
+  bool rehash(size_type new_capacity = 0)
   {
     if(!is_insertable_map) return false;
 

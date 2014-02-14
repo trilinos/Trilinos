@@ -79,6 +79,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+    "-DTrilinos_ENABLE_Fortran=OFF"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/trilinos/tpl/gcc/boost-1.49.0"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
@@ -94,24 +95,23 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.2.1")
   
   IF (COMM_TYPE STREQUAL MPI)
     SET(TPL_ENABLE_MPI ON)
-  
+    # No MPI wrappers for this version of GCC yet, so don't run any MPI jobs 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/gcc-4.6.1/openmpi-1.4.3"
+      "-DMPI_BASE_DIR:PATH=/Users/trilinos/compilers/gcc/openmpi_1.6.5_gcc_4.8.2"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
       )
   
   ENDIF()

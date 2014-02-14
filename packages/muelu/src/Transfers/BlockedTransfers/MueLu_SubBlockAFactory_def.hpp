@@ -106,10 +106,8 @@ namespace MueLu {
     RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(Ain);
 
     TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
-    TEUCHOS_TEST_FOR_EXCEPTION(row>bA->Rows(), Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: A.Rows() > rows_! error.");
-    TEUCHOS_TEST_FOR_EXCEPTION(col>bA->Cols(), Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: A.Cols() > cols_! error.");
-    TEUCHOS_TEST_FOR_EXCEPTION(row<0, Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: row_<0 error.");
-    TEUCHOS_TEST_FOR_EXCEPTION(col<0, Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: col_<0 error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(row > bA->Rows(), Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: A.Rows() > rows_! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(col > bA->Cols(), Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: A.Cols() > cols_! error.");
 
     Teuchos::RCP<CrsMatrixClass> A = bA->getMatrix(row, col);
 

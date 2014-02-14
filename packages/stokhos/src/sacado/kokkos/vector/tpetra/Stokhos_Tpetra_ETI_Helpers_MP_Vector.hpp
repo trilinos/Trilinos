@@ -42,14 +42,6 @@
 // MP::Vector includes
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 
-// Kokkos includes
-#include "Kokkos_Serial.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#endif
-
-//typedef Kokkos::Serial Kokkos_Serial;
-
 #define INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
   INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
 

@@ -726,7 +726,7 @@ Chebyshev<ScalarType, MV>::
 computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
                  const Teuchos::ETransp mode)
 {
-  R = B;
+  Tpetra::deep_copy(R, B);
   A.apply (X, R, mode, -STS::one(), STS::one());
 }
 
@@ -1013,7 +1013,7 @@ ifpackApplyImpl (const op_type& A,
 #endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
-    X = W; // X = 0 + W
+    Tpetra::deep_copy(X, W); // X = 0 + W
   }
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG

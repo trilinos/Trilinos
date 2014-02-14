@@ -48,7 +48,7 @@
 #ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
-#include <Zoltan2_MeshInput.hpp>
+#include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StrideData.hpp>
 #include <vector>
 

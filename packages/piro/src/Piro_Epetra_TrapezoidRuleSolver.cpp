@@ -408,7 +408,8 @@ void Piro::Epetra::TrapezoidDecorator::evalModel( const InArgs& inArgs,
   modelInArgs.set_x_dot(xDot); 
 
   modelInArgs.set_omega(fdt2);  // fdt2 = 4/(dt)^2
-  modelInArgs.set_beta(tdt);    // tdt  = 2/dt
+  modelInArgs.set_alpha(tdt);    // tdt  = 2/dt
+  modelInArgs.set_beta(1.0);
   modelInArgs.set_t(time);
 
   //Evaluate the underlying model

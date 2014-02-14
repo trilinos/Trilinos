@@ -48,18 +48,21 @@
 // MP includes and specializations
 #include "Stokhos_Sacado_Kokkos.hpp"
 
+// Kokkos includes
+#include "KokkosClassic_config.h"
+#include "Kokkos_Serial.hpp"
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#include "Kokkos_BufferMacros.hpp"
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "KokkosCompat_View.hpp"
+#include "KokkosCompat_View_def.hpp"
+#endif
+
 // Kokkos-Linalg
 #include "Tpetra_config.h"
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_MP_Vector.hpp"
 #endif
-
-namespace Kokkos {
-  class Serial;
-  namespace Compat {
-    template <class D> class KokkosDeviceWrapperNode;
-  }
-}
 
 namespace Stokhos {
 
