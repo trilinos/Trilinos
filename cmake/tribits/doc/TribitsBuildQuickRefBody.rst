@@ -266,7 +266,34 @@ e) Removing all package enables in the Cache
 Selecting compiler and linker options
 -------------------------------------
 
-NOTE: The <Project> TriBiTS CMake build system will set up default compile options for GCC ('GNU') in development mode on order to help produce portable code.
+The <Project> TriBITS CMake build system offers the ability to tweak the
+built-in CMake approach for setting compiler flags.  When CMake creates the
+object file build command for a given source file, it passes in flags to the
+compiler in the order::
+
+  ${CMAKE_<LANG>_FLAGS}  ${CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>}
+
+where ``<LANG>`` = ``C``, ``CXX``, or ``Fortran`` and ``<CMAKE_BUILD_TYPE>`` =
+``DEBUG`` or ``RELEASE``.  Note that the options in
+``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` come after and override those in
+``CMAKE_<LANG>_FLAGS``!  The flags in ``CMAKE_<LANG>_FLAGS`` apply to all
+build types.  Optimization, debug, and other build-type-specific flags are set
+in ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>``.  CMake automatically provides a
+default set of debug and release optimization flags for
+``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` (e.g. ``CMAKE_CXX_FLAGS_DEBUG`` is
+typically ``"-g -O0"`` while ``CMAKE_CXX_FLAGS_RELEASE`` is typically
+``"-O3"``).  TriBITS provides a means for project and package developers and
+users to set and override these compiler flag variables globally and on a
+package-by-package basis.  Below, the facilities for manipulating compiler
+flags is described.
+
+The <Project> TriBiTS CMake build system will set up default compile flags for
+GCC ('GNU') in development mode
+(i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``) on order to help produce
+portable code.  These flags set up strong warning options and enforce langauge
+standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``),
+these flags are not set.  These flags get set internally into the variables
+``CMAKE_<LANG>_FLAGS``.
 
 a) Configuring to build with default debug or release compiler flags:
 
@@ -274,64 +301,70 @@ a) Configuring to build with default debug or release compiler flags:
 
     -D CMAKE_BUILD_TYPE:STRING=DEBUG
 
-  This will result in default debug flags getting passed to the compiler.
+  This will result in debug flags getting passed to the compiler according to
+  what is set in ``CMAKE_<LANG>_FLAGS_DEBUG``.
 
   To build a release (optimized) version, pass into 'cmake'::
 
     -D CMAKE_BUILD_TYPE:STRING=RELEASE
 
-  This will result in optimized flags getting passed to the compiler.
+  This will result in optimized flags getting passed to the compiler according
+  to what is in ``CMAKE_<LANG>_FLAGS_RELEASE``.
 
 b) Adding arbitrary compiler flags but keeping other default flags:
 
-  To append arbitrary compiler flags that apply to all build types,
-  configure with::
+  To append arbitrary compiler flags to ``CMAKE_<LANG>_FLAGS`` (which may be
+  set internally by TriBITS) that apply to all build types, configure with::
 
-    -DCMAKE_<LANG>_FLAGS:STRING="<EXTRA_COMPILER_OPTIONS>"
+    -D CMAKE_<LANG>_FLAGS:STRING="<EXTRA_COMPILER_OPTIONS>"
 
-  where <LANG> = C, CXX, Fortran and <EXTRA_COMPILER_OPTIONS> are your extra
-  compiler options like "-DSOME_MACRO_TO_DEFINE -funroll-loops".  These
-  options will get appended to other internally defined compiler option and
+  where ``<EXTRA_COMPILER_OPTIONS>`` are your extra compiler options like
+  ``"-DSOME_MACRO_TO_DEFINE -funroll-loops"``.  These options will get
+  appended to (i.e. come after) other internally defined compiler option and
   therefore override them.
+
+  Options can also be targeted to a specific TriBITS package using::
+
+    -D <TRIBITS_PACKAGE>_<LANG>_FLAGS:STRING="<EXTRA_COMPILER_OPTIONS>"
+  
+  The package-specific options get appened to those already in
+  ``CMAKE_<LANG>_FLAGS`` and therefore override (but not replace) those set
+  globally in ``CMAKE_<LANG>_FLAGS`` (either internally or by the user in the
+  cache).
 
   NOTES:
 
-  1) Setting CMAKE_<LANG>_FLAGS will override but will not replace any other
-  internally set flags in CMAKE_<LANG>_FLAGS defined by the <Project> CMake
-  system because these flags will come after those set internally.  To get
-  rid of these default flags, see below.
+  1) Setting ``CMAKE_<LANG>_FLAGS`` will override but will not replace any
+  other internally set flags in ``CMAKE_<LANG>_FLAGS`` defined by the
+  <Project> CMake system because these flags will come after those set
+  internally.  To get rid of these project/TriBITS default flags, see below.
 
-  2) For each compiler type (e.g. C, C++ (CXX), Fortran), CMake passes
-  compiler options to the compiler in the order::
-
-    CMAKE_<LANG>_FLAGS   CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>
-
-  where <LANG> = C, CXX, or Fortran and <CMAKE_BUILD_TYPE> = DEBUG or
-  RELEASE.  THEREFORE: The options in CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>
-  come after and override those in CMAKE_<LANG>_FLAGS!.
-
-  3) CMake defines default CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> values that
-  are overridden by the <Project> CMake build system for GCC ("GNU")
-  compilers in development mode (e.g. <Project>_ENABLE_DEVELOPMENT_MODE=ON).
-  This is mostly to provide greater control over the <Project> development
-  environment.  This means that users setting the CMAKE_<LANG>_FLAGS will
-  *not* override the internally set debug or release flags in
-  CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> which come after on the compile
-  line.  Therefore, setting CMAKE_<LANG>_FLAGS should only be used for
-  options that will not get overridden by the internally-set debug or
-  release compiler flags in CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>.  However,
-  setting CMAKE_<LANG>_FLAGS will work well for adding extra compiler
-  defines (e.g. -DSOMETHING) for example.
+  2) Given that CMake passes in flags in
+  ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` after those in
+  ``CMAKE_<LANG>_FLAGS``, this means that users setting the
+  ``CMAKE_<LANG>_FLAGS`` and ``<TRIBITS_PACKAGE>_<LANG>_FLAGS`` will *not*
+  override the flags in ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` which come
+  after on the compile line.  Therefore, setting ``CMAKE_<LANG>_FLAGS`` and
+  ``<TRIBITS_PACKAGE>_<LANG>_FLAGS`` should only be used for options that will
+  not get overridden by the debug or release compiler flags in
+  ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>``.  However, setting
+  ``CMAKE_<LANG>_FLAGS`` will work well for adding extra compiler defines
+  (e.g. -DSOMETHING) for example.
 
   WARNING: Any options that you set through the cache variable
-  CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> (where <CMAKE_BUILD_TYPE> = DEBUG or
-  RELEASE) will get overridden in the <Project> CMake system for GNU
-  compilers in development mode so don't try to manually set
-  CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>!
+  ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` will get overridden in the
+  <Project> CMake system for GNU compilers in development mode so don't try to
+  manually set CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>!  To override those
+  options, see ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>_OVERRIDE``.
 
-c) Overriding debug/release compiler options:
+c) Overriding CMAKE_BUILD_TYPE debug/release compiler options:
 
-  To pass in compiler options that override the default debug options use::
+  To override the default CMake-set options in
+  ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>``, use::
+
+    -D CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>_OVERRIDE:STRING="<OPTIONS_TO_OVERRIDE>"
+
+  For example, to default debug options use::
 
     -D CMAKE_C_FLAGS_DEBUG_OVERRIDE:STRING="-g -O1" \
     -D CMAKE_CXX_FLAGS_DEBUG_OVERRIDE:STRING="-g -O1"
@@ -341,27 +374,33 @@ c) Overriding debug/release compiler options:
     -D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING="-O3 -funroll-loops" \
     -D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE:STRING="-03 -fexceptions"
 
-  NOTES: The new CMake variable CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE is
-  used and not CMAKE_${LANG}_FLAGS_${BUILDTYPE} because the <Project> CMake
-  wrappers redefine CMAKE_${LANG}_FLAGS_${BUILDTYPE} and it is impossible to
-  determine if the value defined is determined by a user or by CMake.
+  NOTES: The TriBITS CMake cache variable
+  ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>_OVERRIDE`` is used and not
+  ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` because is given a default
+  internally by CMake and the new varaible is needed to make the override
+  explicit.
 
-d) Appending arbitrary link flags to every executable:
+d) Appending arbitrary libraries and link flags every executable:
 
-  In order to append any set of arbitrary link flags to your executables use::
+  In order to append any set of arbitrary libraries and link flags to your
+  executables use::
 
-    -D <Project>_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
+    -D<Project>_EXTRA_LINK_FLAGS:STRING="<EXTRA_LINK_LIBRARIES>" \
+    -DCMAKE_EXE_LINKER_FLAGS:STRING="<EXTRA_LINK_FLAGG>"
 
   Above, you can pass any type of library and they will always be the last
-  libraries listed, even after all of the TPL.
+  libraries listed, even after all of the TPLs.
 
   NOTE: This is how you must set extra libraries like Fortran libraries and
   MPI libraries (when using raw compilers).  Please only use this variable
   as a last resort.
 
-  NOTE: You must only pass in libraries in <Project>_EXTRA_LINK_FLAGS and
+  NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
   *not* arbitrary linker flags.  To pass in extra linker flags that are not
-  libraries, use the built-in CMake variable CMAKE_EXE_LINKER_FLAGS instead.
+  libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
+  instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
+  in this respect but the name remains due to backward compatibility
+  requirements.
 
 e) Turning off strong warnings for individual packages:
 
@@ -371,7 +410,7 @@ e) Turning off strong warnings for individual packages:
     -D <TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:BOOL=ON
 
   This will only affect the compilation of the sources for
-  <TRIBITS_PACKAGES>, not warnings generated from the header files in
+  ``<TRIBITS_PACKAGES>``, not warnings generated from the header files in
   downstream packages or client code.
 
 f) Overriding all (strong warnings and debug/release) compiler options:
@@ -388,10 +427,14 @@ f) Overriding all (strong warnings and debug/release) compiler options:
     -D <Project>_ENABLE_COVERAGE_TESTING:BOOL=OFF \
     -D <Project>_ENABLE_CHECKED_STL:BOOL=OFF \
 
-  NOTE: Options like <Project>_ENABLE_SHADOW_WARNINGS,
-  <Project>_ENABLE_COVERAGE_TESTING, and <Project>_ENABLE_CHECKED_STL do not
-  need to be turned off by default but they are shown above to make it clear
-  what other CMake cache variables can add compiler and link arguments.
+  NOTE: Options like ``<Project>_ENABLE_SHADOW_WARNINGS``,
+  ``<Project>_ENABLE_COVERAGE_TESTING``, and ``<Project>_ENABLE_CHECKED_STL``
+  do not need to be turned off by default but they are shown above to make it
+  clear what other CMake cache variables can add compiler and link arguments.
+
+  NOTE: By setting ``CMAKE_BUILD_TYPE=NONE``, then ``CMAKE_<LANG>_FLAGS_NONE``
+  will be empty and therefore the options set in ``CMAKE_<LANG>_FLAGS`` will
+  be all that is passed in.
 
 g) Enable and disable shadowing warnings for all <Project> packages:
 
@@ -400,7 +443,8 @@ g) Enable and disable shadowing warnings for all <Project> packages:
 
     -D <Project>_ENABLE_SHADOW_WARNINGS:BOOL=ON
 
-  To disable shadowing warnings for all <Project> packages then use::
+  To disable shadowing warnings for all <Project> packages (even those that
+  have them turned on by default) then use::
 
     -D <Project>_ENABLE_SHADOW_WARNINGS:BOOL=OFF
 
