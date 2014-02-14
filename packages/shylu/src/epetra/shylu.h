@@ -77,8 +77,30 @@ typedef struct
     int *gvals;                 // O(n) array differentiating local/global
                                 //  row/col
     //Epetra_SerialComm *SComm;   // Serial comm for block diagonals
-    //Epetra_Map *LDRowMap;       // RowMap for block diagonals
-    //Epetra_Map *LDColMap;       // ColMap for block diagonals
+    Teuchos::RCP<Epetra_Map> LDRowMap;       // RowMap for block diagonals
+    Teuchos::RCP<Epetra_Map> LGRowMap;       // RowMap for G (local)
+    Teuchos::RCP<Epetra_Map> GMap;           // Dist Map for G
+
+    Teuchos::RCP<Epetra_Import> BdImporter;
+    Teuchos::RCP<Epetra_Import> DistImporter;
+    Teuchos::RCP<Epetra_Import> BsImporter;
+    Teuchos::RCP<Epetra_Import> XsImporter;
+    Teuchos::RCP<Epetra_Export> XdExporter;
+    Teuchos::RCP<Epetra_Export> XsExporter;
+
+    Teuchos::RCP<Epetra_MultiVector> localrhs;
+    Teuchos::RCP<Epetra_MultiVector> temp1;
+    Teuchos::RCP<Epetra_MultiVector> temp2;
+    Teuchos::RCP<Epetra_MultiVector> Bs;
+    Teuchos::RCP<Epetra_MultiVector> Xs;
+    Teuchos::RCP<Epetra_MultiVector> LocalXs;
+
+    // temp timers
+    //Teuchos::RCP<Teuchos::Time> importExportTime;
+    //Teuchos::RCP<Teuchos::Time> innerIterTime;
+    //Teuchos::RCP<Teuchos::Time> fwdTime;
+    //Teuchos::RCP<Teuchos::Time> amesosSchurTime;
+
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<IQR::IQRSolver> iqrSolver; // Solver object for IQR func.

@@ -268,63 +268,51 @@ static int shylu_local_solve(
 {
     int err;
     int nvectors = X.NumVectors();
-    Epetra_MpiComm LComm(MPI_COMM_SELF);        // Use Serial Comm for the local blocks.
-    //cout <<" In local solve " << endl;
+    assert (nvectors == data->localrhs->NumVectors());
 
-    Epetra_Map LocalDMap(-1, data->Dnr, data->DRowElems, 0, LComm);
-    Epetra_Map LocalSMap(-1, data->Snr, data->SRowElems, 0, LComm);
-    Epetra_Map SMap(-1, data->Snr, data->SRowElems, 0, X.Comm());
-
-    Epetra_Import BdImporter(LocalDMap, X.Map()); // TODO: Construct only once
+    // Initialize the X vector for iterative solver
+    data->Xs->PutScalar(0.0);
 
     // Get local portion of X
-    Epetra_MultiVector localrhs(LocalDMap, nvectors);
-    localrhs.Import(X, BdImporter, Insert);
+    data->localrhs->Import(X, *(data->BdImporter), Insert);
 
+    // TODO: Can be moved out as well.
+    Epetra_MultiVector temp3 (View, *(ssym->Drhs), 0,  nvectors);
     Epetra_MultiVector locallhs (View, *(ssym->Dlhs), 0,  nvectors); // z in
                                                                     // paper
-    Epetra_MultiVector temp3 (View, *(ssym->Drhs), 0,  nvectors);
-
-    if (config->amesosForDiagonal)
-    {
-        ssym->OrigLP->SetRHS(&localrhs);
+    if (config->amesosForDiagonal) {
+        ssym->OrigLP->SetRHS((data->localrhs).getRawPtr());
         ssym->OrigLP->SetLHS(&locallhs);
         ssym->ReIdx_LP->fwd();
         ssym->Solver->Solve();
     }
-    else
-    {
-        ssym->ifSolver->ApplyInverse(localrhs, locallhs);
+    else {
+        ssym->ifSolver->ApplyInverse(*(data->localrhs), locallhs);
     }
 
-    Epetra_MultiVector temp1(LocalSMap, nvectors);
-    err = ssym->R->Multiply(false, locallhs, temp1);
+    err = ssym->R->Multiply(false, locallhs, *(data->temp1));
     assert (err == 0);
 
     // Export temp1 to a dist vector - temp2
-    Epetra_MultiVector temp2(SMap, nvectors);
-    Epetra_Import DistImporter(SMap, LocalSMap);
-    //temp2.Import(X, DistImporter, Insert);
-    temp2.Import(temp1, DistImporter, Insert);
+    data->temp2->Import(*(data->temp1), *(data->DistImporter), Insert);
 
-    Epetra_MultiVector Bs(SMap, nvectors); // b_2 - R * z in ShyLU paper
-    Epetra_MultiVector Xs(SMap, nvectors);
-    Epetra_Import BsImporter(SMap, X.Map());
-    Bs.Import(X, BsImporter, Insert);
-
-    Bs.Update(-1.0, temp2, 1.0);
+    //Epetra_MultiVector Bs(SMap, nvectors); // b_2 - R * z in ShyLU paper
+    data->Bs->Import(X, *(data->BsImporter), Insert);
+    data->Bs->Update(-1.0, *(data->temp2), 1.0);
 
     AztecOO *solver = 0;
-    Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
+    Epetra_LinearProblem Problem(data->Sbar.get(),
+                             (data->Xs).getRawPtr(), (data->Bs).getRawPtr());
     if ((config->schurSolver == "G") || (config->schurSolver == "IQR"))
     {
-    	IFPACK_CHK_ERR(data->iqrSolver->Solve(*(data->schur_op), Bs, Xs));
+        IFPACK_CHK_ERR(data->iqrSolver->Solve(*(data->schur_op),
+                                 *(data->Bs), *(data->Xs)));
     }
     else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
-        data->OrigLP2->SetLHS(&Xs);
-        data->OrigLP2->SetRHS(&Bs);
+        data->OrigLP2->SetLHS((data->Xs).getRawPtr());
+        data->OrigLP2->SetRHS((data->Bs).getRawPtr());
         data->ReIdx_LP2->fwd();
         //cout << "Calling solve *****************************" << endl;
         solver2->Solve();
@@ -335,8 +323,8 @@ static int shylu_local_solve(
         if (config->libName == "Belos")
         {
             solver = data->innersolver;
-            solver->SetLHS(&Xs);
-            solver->SetRHS(&Bs);
+            solver->SetLHS((data->Xs).getRawPtr());
+            solver->SetRHS((data->Bs).getRawPtr());
         }
         else
         {
@@ -362,31 +350,24 @@ static int shylu_local_solve(
     }
 
     // Import Xs locally
-    Epetra_MultiVector LocalXs(LocalSMap, nvectors);
-    Epetra_Import XsImporter(LocalSMap, SMap);
-    LocalXs.Import(Xs, XsImporter, Insert);
+    data->LocalXs->Import(*(data->Xs), *(data->XsImporter), Insert);
 
-    err = ssym->C->Multiply(false, LocalXs, temp3);
+    err = ssym->C->Multiply(false, *(data->LocalXs), temp3);
     assert (err == 0);
-    temp3.Update(1.0, localrhs, -1.0);
+    temp3.Update(1.0, *(data->localrhs), -1.0);
 
-    if (config->amesosForDiagonal)
-    {
+    if (config->amesosForDiagonal) {
         ssym->OrigLP->SetRHS(&temp3);
         ssym->OrigLP->SetLHS(&locallhs);
         ssym->ReIdx_LP->fwd();
         ssym->Solver->Solve();
     }
-    else
-    {
+    else {
         ssym->ifSolver->ApplyInverse(temp3, locallhs);
     }
 
-    Epetra_Export XdExporter(LocalDMap, Y.Map());
-    Y.Export(locallhs, XdExporter, Insert);
-
-    Epetra_Export XsExporter2(LocalSMap, Y.Map());
-    Y.Export(LocalXs, XsExporter2, Insert);
+    Y.Export(locallhs, *(data->XdExporter), Insert);
+    Y.Export(*(data->LocalXs), *(data->XsExporter), Insert);
 
     if (config->libName == "Belos" || config->schurSolver == "Amesos")
     {

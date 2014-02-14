@@ -790,6 +790,45 @@ int shylu_symbolic_factor
 #endif
         ssym->prober = prober;
     }
+
+    // Set the maps, importers and multivectors to be used in the solve once.
+    Epetra_MpiComm LComm(MPI_COMM_SELF);
+    data->LDRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Dnr,
+                                 data->DRowElems, 0, LComm));
+    data->LGRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Snr,
+                                 data->SRowElems, 0, LComm));
+    data->GMap = Teuchos::rcp(new Epetra_Map(-1, data->Snr,
+                             data->SRowElems, 0, A->Comm()));
+
+    // Assuming X and A will have the same rowmap. Should it be domain map ?
+    data->BdImporter = Teuchos::rcp(new Epetra_Import(*(data->LDRowMap),
+                     A->RowMap()));
+    data->DistImporter = Teuchos::rcp(new Epetra_Import(*(data->GMap),
+                         *(data->LGRowMap)));;
+    // Assuming X and A will have the same rowmap. Should it be domain map ?
+    data->BsImporter = Teuchos::rcp(new Epetra_Import(*(data->GMap),
+                     A->RowMap()));
+    data->XsImporter = Teuchos::rcp(new Epetra_Import(*(data->LGRowMap),
+                         *(data->GMap)));
+    // Assuming Y and A will have the same rowmap. Should it be range map ?
+    data->XdExporter = Teuchos::rcp(new Epetra_Export(*(data->LDRowMap), 
+                 A->RowMap()));
+    data->XsExporter = Teuchos::rcp(new Epetra_Export(*(data->LGRowMap),
+             A->RowMap()));
+
+    // Create multivectors for solve, TODO: Can we do with fewer
+    data->localrhs = Teuchos::rcp(new Epetra_MultiVector(*(data->LDRowMap), 1));
+    data->temp1 = Teuchos::rcp(new Epetra_MultiVector(*(data->LGRowMap), 1));
+    data->temp2 = Teuchos::rcp(new Epetra_MultiVector(*(data->GMap), 1));
+    data->Bs = Teuchos::rcp(new Epetra_MultiVector(*(data->GMap), 1));
+    data->Xs = Teuchos::rcp(new Epetra_MultiVector(*(data->GMap), 1));
+    data->LocalXs = Teuchos::rcp(new Epetra_MultiVector(*(data->LGRowMap), 1));
+    data->Xs->PutScalar(0.0);
+
+    //data->importExportTime = Teuchos::rcp(new Teuchos::Time("import export time"));
+    //data->innerIterTime = Teuchos::rcp(new Teuchos::Time("innertIter time"));
+    //data->fwdTime = Teuchos::rcp(new Teuchos::Time("reindex fwd time"));
+    //data->amesosSchurTime = Teuchos::rcp(new Teuchos::Time("amesos schur time"));
 #ifdef TIMING_OUTPUT
     symtime.stop();
     cout << "Symbolic Time" << symtime.totalElapsedTime() << endl;
