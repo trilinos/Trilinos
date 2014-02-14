@@ -18,6 +18,8 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
 
+#include <limits>
+
 namespace {
   bool meshFieldSort(const stk::io::MeshField& f1, const stk::io::MeshField &f2) {
     return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
@@ -32,7 +34,15 @@ namespace stk {
 			 const std::string &mesh_type,
 			 DatabasePurpose purpose,
 			 Ioss::PropertyManager &properties)
-      : m_db_purpose(purpose), m_fieldsInitialized(false)
+      : m_db_purpose(purpose), m_region(NULL),
+	m_startupTime(0.0),
+	m_periodLength(0.0),
+	m_scaleTime(1.0),
+	m_offsetTime(0.0),
+	m_startTime(-std::numeric_limits<double>::max()),
+	m_stopTime(std::numeric_limits<double>::max()),
+	m_periodType(CYCLIC),
+	m_fieldsInitialized(false)
     {
       Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
       if (m_db_purpose == stk::io::READ_RESTART)
@@ -49,7 +59,15 @@ namespace stk {
 
 
     InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
-      : m_database(ioss_input_region->get_database()), m_region(ioss_input_region)
+      : m_database(ioss_input_region->get_database()), m_region(ioss_input_region),
+	m_startupTime(0.0),
+	m_periodLength(0.0),
+	m_scaleTime(1.0),
+	m_offsetTime(0.0),
+	m_startTime(-std::numeric_limits<double>::max()),
+	m_stopTime(std::numeric_limits<double>::max()),
+	m_periodType(CYCLIC),
+	m_fieldsInitialized(false)
     {
       ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
 		      "ERROR: Invalid Ioss region detected in add_mesh_database");
@@ -99,6 +117,39 @@ namespace stk {
         stk::io::set_field_role(*mesh_field.field(), Ioss::Field::TRANSIENT);
 	m_fieldsInitialized = false;
       }
+    }
+
+    InputFile& InputFile::set_offset_time(double offset_time)
+    {
+      m_offsetTime = offset_time;
+      return *this;
+    }
+
+    InputFile& InputFile::set_scale_time(double scale_time)
+    {
+      m_scaleTime = scale_time;
+      return *this;
+    }
+
+    InputFile& InputFile::set_periodic_time(double period_length, double startup_time,
+					    PeriodType ptype)
+    {
+      m_periodLength = period_length;
+      m_startupTime = startup_time;
+      m_periodType = ptype;
+      return *this;
+    }
+
+    InputFile& InputFile::set_start_time(double start_time)
+    {
+      m_startTime = start_time;
+      return *this;
+    }
+
+    InputFile& InputFile::set_stop_time(double stop_time)
+    {
+      m_stopTime = stop_time;
+      return *this;
     }
 
     void InputFile::get_global_variable_names(std::vector<std::string> &names)
@@ -267,11 +318,13 @@ namespace stk {
 	    db_time = m_startupTime + pmod;
 	  }
 	  else {
-	    db_time = startupTime + 2.0 * periodLength - pmod;
+	    db_time = m_startupTime + 2.0 * m_periodLength - pmod;
 	  }
 	}
       }
+      db_time *= m_scaleTime;
       db_time += m_offsetTime;
+      return db_time;
     }
 
       double InputFile::read_defined_input_fields(double time,

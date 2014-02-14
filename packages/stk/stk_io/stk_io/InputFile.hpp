@@ -60,6 +60,7 @@ namespace stk {
       }
 
       InputFile& set_offset_time(double offset_time);
+      InputFile& set_scale_time(double scale_time);
       InputFile& set_periodic_time(double period_length, double startup_time = 0.0,
 				   PeriodType ptype = CYCLIC);
       InputFile& set_start_time(double start_time);
@@ -84,9 +85,8 @@ namespace stk {
       /*@{*/
 
       /**
-       * For input interpolation only: The 'startupTime' and
-       * 'periodLength' are used to support input of periodic data.  The
-       * 'startupTime' specifies the length of time prior to the start of
+       * The 'startupTime' and 'periodLength' are used to support input of periodic data.
+       * The 'startupTime' specifies the length of time prior to the start of
        * the periodic behavior; if the application time is less than
        * 'startupTime', then it is passed unchanged to the database.  Once
        * the 'startupTime' is exceeded, then the variables on the database
@@ -98,29 +98,33 @@ namespace stk {
        *
        * If:  t_app < t_startup, then
        *  \code
-       *      t_db = t_app + t_offset
+       *      t_db = t_app
        *  \endcode
        * Else:
        *   If: ptype == CYCLIC
        *    \code
-       *      t_db = t_startup + mod(t_app-t_startup, period_length) + t_offset
+       *      t_db = t_startup + mod(t_app-t_startup, period_length)
        *    \endcode
        *   If: ptype == REVERSING
        *    \code
        *      tpm = mod(t_app-t_startup, 2*period_length)
        *      if (tpm <= period_length)
-       *         t_db = t_startup + tpm + t_offset
+       *         t_db = t_startup + tpm
        *      else 
-       *         t_db = t_startup + (2*period_length - tpm) + t_offset
+       *         t_db = t_startup + (2*period_length - tpm)
        *    \endcode
        *
-       * Currently only used for Input interpolation.
-       * Ignored for all other cases.
+       * \code
+       *  t_db = t_db * t_scale + t_offset
+       * \endcode
+       *  
        */
       double m_startupTime;
 
       /** See InputFile::startupTime */
       double m_periodLength;
+      /** See InputFile::startupTime */
+      double m_scaleTime;
       /** See InputFile::startupTime */
       double m_offsetTime;
       /** See InputFile::startupTime */
