@@ -94,6 +94,8 @@ typedef struct
     Teuchos::RCP<Epetra_MultiVector> Bs;
     Teuchos::RCP<Epetra_MultiVector> Xs;
     Teuchos::RCP<Epetra_MultiVector> LocalXs;
+    Teuchos::RCP<Epetra_MultiVector> temp3;
+    Teuchos::RCP<Epetra_MultiVector> locallhs;
 
     // temp timers
     //Teuchos::RCP<Teuchos::Time> importExportTime;

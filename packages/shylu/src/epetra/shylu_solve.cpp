@@ -276,21 +276,18 @@ static int shylu_local_solve(
     // Get local portion of X
     data->localrhs->Import(X, *(data->BdImporter), Insert);
 
-    // TODO: Can be moved out as well.
-    Epetra_MultiVector temp3 (View, *(ssym->Drhs), 0,  nvectors);
-    Epetra_MultiVector locallhs (View, *(ssym->Dlhs), 0,  nvectors); // z in
-                                                                    // paper
+    // locallhs is z in paper
     if (config->amesosForDiagonal) {
         ssym->OrigLP->SetRHS((data->localrhs).getRawPtr());
-        ssym->OrigLP->SetLHS(&locallhs);
+        ssym->OrigLP->SetLHS((data->locallhs).getRawPtr());
         ssym->ReIdx_LP->fwd();
         ssym->Solver->Solve();
     }
     else {
-        ssym->ifSolver->ApplyInverse(*(data->localrhs), locallhs);
+        ssym->ifSolver->ApplyInverse(*(data->localrhs), *(data->locallhs));
     }
 
-    err = ssym->R->Multiply(false, locallhs, *(data->temp1));
+    err = ssym->R->Multiply(false, *(data->locallhs), *(data->temp1));
     assert (err == 0);
 
     // Export temp1 to a dist vector - temp2
@@ -352,21 +349,21 @@ static int shylu_local_solve(
     // Import Xs locally
     data->LocalXs->Import(*(data->Xs), *(data->XsImporter), Insert);
 
-    err = ssym->C->Multiply(false, *(data->LocalXs), temp3);
+    err = ssym->C->Multiply(false, *(data->LocalXs), *(data->temp3));
     assert (err == 0);
-    temp3.Update(1.0, *(data->localrhs), -1.0);
+    data->temp3->Update(1.0, *(data->localrhs), -1.0);
 
     if (config->amesosForDiagonal) {
-        ssym->OrigLP->SetRHS(&temp3);
-        ssym->OrigLP->SetLHS(&locallhs);
+        ssym->OrigLP->SetRHS((data->temp3).getRawPtr());
+        ssym->OrigLP->SetLHS((data->locallhs).getRawPtr());
         ssym->ReIdx_LP->fwd();
         ssym->Solver->Solve();
     }
     else {
-        ssym->ifSolver->ApplyInverse(temp3, locallhs);
+        ssym->ifSolver->ApplyInverse(*(data->temp3), *(data->locallhs));
     }
 
-    Y.Export(locallhs, *(data->XdExporter), Insert);
+    Y.Export(*(data->locallhs), *(data->XdExporter), Insert);
     Y.Export(*(data->LocalXs), *(data->XsExporter), Insert);
 
     if (config->libName == "Belos" || config->schurSolver == "Amesos")

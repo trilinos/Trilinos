@@ -705,6 +705,12 @@ int shylu_symbolic_factor
     ssym->Gvec = Teuchos::RCP<Epetra_MultiVector>
                     (new Epetra_MultiVector(ssym->G->RowMap(), 16));
 
+    // Are these even needed, plan to remove them ?
+    data->temp3 = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(View, *(ssym->Drhs), 0, 1));
+    data->locallhs = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(View, *(ssym->Dlhs), 0, 1));
+
     LP->SetRHS(ssym->Drhs.getRawPtr());
     LP->SetLHS(ssym->Dlhs.getRawPtr());
 
