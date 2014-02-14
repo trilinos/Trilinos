@@ -82,6 +82,8 @@ namespace pike {
     /** \brief Builds the application subcommunicators and any coupling subcommunicators. 
   
        \param[in] globalComm The global comm across which all applications are contained.  Apps do not have to exist on every process of the global comm, but all application subcomms must be contained in this comm.
+
+       NOTE: The globalComm supplied by the method call is duplicated() in the setup to get a unique context space for MultiphysicsDistributor opperations.  the call to getGlobalComm returns the internal duplicated comm that is separate form the one supplied by the user.   
      */
     void setup(const Teuchos::RCP<const Teuchos::Comm<int> >& globalComm, bool printCommDistribution = false);
 

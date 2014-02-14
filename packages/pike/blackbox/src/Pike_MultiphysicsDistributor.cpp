@@ -132,7 +132,9 @@ namespace pike {
     TEUCHOS_ASSERT(!setupCalled_);
     TEUCHOS_ASSERT(nonnull(globalComm));
 
-    globalComm_ = globalComm;
+    // Duplicate the global comm to get a separate context for this
+    // objects's communication
+    globalComm_ = globalComm->duplicate();
 
     TEUCHOS_TEST_FOR_EXCEPTION((applications_.size() < 1),
 			       std::logic_error,
