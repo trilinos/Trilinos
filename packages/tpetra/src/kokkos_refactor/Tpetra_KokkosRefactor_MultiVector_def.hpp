@@ -385,7 +385,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
-    typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
+    //typedef typename ArrayView<const LocalOrdinal>::size_type size_type; // unused
     const char tfecfFuncName[] = "copyAndPermute";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -492,7 +492,7 @@ namespace Tpetra {
     using Teuchos::as;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
-    typedef Array<size_t>::size_type size_type;
+    //typedef Array<size_t>::size_type size_type; // unused
 
     // If we have no exports, there is nothing to do
     if (exportLIDs.size () == 0) {
@@ -591,13 +591,12 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::as;
     using Kokkos::Compat::getKokkosViewDeepCopy;
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
     const char tfecfFuncName[] = "unpackAndCombine";
 
     // If we have no imports, there is nothing to do
-    if (importLIDs.size() == 0)
+    if (importLIDs.size () == 0) {
       return;
+    }
 
     // We don't need numPacketsPerLID; forestall "unused variable"
     // compile warnings.

@@ -1980,7 +1980,7 @@ namespace Tpetra {
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view_type;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type;
+    //typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type; // unused
 
     Teuchos::OSTab tab (out_);
 
@@ -2342,7 +2342,7 @@ namespace Tpetra {
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view_type;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type;
+    //typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type; // unused
 
     Teuchos::OSTab tab (out_);
 
