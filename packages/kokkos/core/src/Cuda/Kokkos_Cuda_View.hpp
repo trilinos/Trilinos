@@ -294,8 +294,8 @@ struct ViewAssignment< ViewCudaTexture , ViewCudaTexture , void >
     typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
+    //typedef typename DstViewType::memory_space  memory_space ; // unused
+    //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
     ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
 
@@ -478,7 +478,7 @@ public:
     : m_texture( Impl::CudaTextureFetch< typename traits::value_type >(ptr))
     {
       typedef typename traits::shape_type  shape_type ;
-      typedef typename traits::value_type  value_type ;
+      //typedef typename traits::value_type  value_type ; // unused
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );

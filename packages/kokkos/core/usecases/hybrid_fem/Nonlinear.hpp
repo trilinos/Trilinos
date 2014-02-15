@@ -166,7 +166,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
   typedef typename fixture_type::device_type  device_type;
-  typedef typename device_type::size_type     size_type ;
+  //typedef typename device_type::size_type     size_type ; // unused
 
   typedef typename fixture_type::FEMeshType mesh_type ;
   typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
@@ -209,8 +209,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef Kokkos::View< Scalar* , device_type >     vector_type ;
-  typedef Kokkos::CrsMatrix< Scalar , device_type >  matrix_type ;
+  typedef Kokkos::View< scalar_type* , device_type >     vector_type ;
+  typedef Kokkos::CrsMatrix< scalar_type , device_type >  matrix_type ;
   typedef typename matrix_type::graph_type                matrix_graph_type ;
   typedef typename matrix_type::coefficients_type         matrix_coefficients_type ;
 
@@ -219,9 +219,9 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Problem setup types:
 
-  typedef ElementComputation < mesh_type , Scalar > ElementFunctor ;
-  typedef DirichletSolution  < mesh_type , Scalar > DirichletSolutionFunctor ;
-  typedef DirichletResidual  < mesh_type , Scalar > DirichletResidualFunctor ;
+  typedef ElementComputation < mesh_type , scalar_type > ElementFunctor ;
+  typedef DirichletSolution  < mesh_type , scalar_type > DirichletSolutionFunctor ;
+  typedef DirichletResidual  < mesh_type , scalar_type > DirichletResidualFunctor ;
 
   typedef typename ElementFunctor::elem_matrices_type elem_matrices_type ;
   typedef typename ElementFunctor::elem_vectors_type  elem_vectors_type ;
@@ -536,7 +536,7 @@ void driver( const char * const label ,
 
     for(int j = 0; j < runs; j++){
 
-      perf_data = run<Scalar,fixture_type>(mesh,ix,iy,iz, print_sample );
+      perf_data = run<scalar_type,fixture_type>(mesh,ix,iy,iz, print_sample );
 
       if( j == 0 ) {
         perf_best = perf_data ;

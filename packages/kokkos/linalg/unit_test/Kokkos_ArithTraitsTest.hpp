@@ -156,6 +156,14 @@ public:
     // Make sure that the typedef exists.
     typedef typename AT::mag_type mag_type;
 
+    // mfh 14 Feb 2014: In order to avoid a warning for an unused by
+    // declared typedef, we declare an instance of mag_type, and mark
+    // it with "(void)" to prevent a warning for the unused variable.
+    {
+      mag_type thing;
+      (void) thing;
+    }
+
     // ArithTraits should not even compile if it's not specialized for
     // T, but we check for this int constant for compatibility with
     // std::numeric_limits.
@@ -360,6 +368,14 @@ public:
 
     // Make sure that the typedef exists.
     typedef typename AT::mag_type mag_type;
+
+    // mfh 14 Feb 2014: In order to avoid a warning for an unused by
+    // declared typedef, we declare an instance of mag_type, and mark
+    // it with "(void)" to prevent a warning for the unused variable.
+    {
+      mag_type thing;
+      (void) thing;
+    }
 
     // ArithTraits should not even compile if it's not specialized for
     // T, but we check for this int constant for compatibility with

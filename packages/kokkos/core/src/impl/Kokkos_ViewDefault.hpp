@@ -468,7 +468,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
+    //typedef typename traits_type::shape_type shape_type ; // unused
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
 
@@ -673,7 +673,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
+    //typedef typename traits_type::shape_type shape_type ; // unused
     enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
@@ -723,7 +723,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
+    //typedef typename traits_type::shape_type shape_type ; // unused
     enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
@@ -774,7 +774,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
+    //typedef typename traits_type::shape_type shape_type ; // unused
     enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );

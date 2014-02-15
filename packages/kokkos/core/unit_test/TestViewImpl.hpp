@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -77,7 +77,7 @@ struct ArrayType { typedef Type type ; };
 template < class Device >
 void test_view_impl()
 {
-  typedef typename Device::memory_space memory_space ;
+  //typedef typename Device::memory_space memory_space ; // unused
 
   typedef ArrayType< int[100]                >::type type_01 ;
   typedef ArrayType< int*                    >::type type_11 ;
@@ -85,14 +85,33 @@ void test_view_impl()
   typedef ArrayType< double*[8][9][900]      >::type type_14 ;
   typedef ArrayType< long**                  >::type type_22 ;
   typedef ArrayType< short***[5][6][7]       >::type type_36 ;
-  typedef ArrayType< const short***[5][6][7] >::type const_type_36 ;
+  //typedef ArrayType< const short***[5][6][7] >::type const_type_36 ; // unused
   typedef ArrayType< short **[5][6][7]       >::type type_25 ;
   typedef ArrayType< const short **[5][6][7] >::type const_type_25 ;
 
+  // mfh 14 Feb 2014: With gcc 4.8.2 -Wall, this emits a warning:
+  //
+  // typedef ‘ok_const_25’ locally defined but not used [-Wunused-local-typedefs]
+  //
+  // It's unfortunate that this is the case, because the typedef is
+  // being used for a compile-time check!  We deal with this by
+  // declaring an instance of ok_const_25, and marking it with
+  // "(void)" so that instance doesn't emit an "unused variable"
+  // warning.
+  //
+  // typedef typename Kokkos::Impl::StaticAssertSame<
+  //    typename Kokkos::Impl::AnalyzeShape<type_25>::const_type ,
+  //    typename Kokkos::Impl::AnalyzeShape<const_type_25>::type
+  //      > ok_const_25 ;
+
   typedef typename Kokkos::Impl::StaticAssertSame<
-     typename Kokkos::Impl::AnalyzeShape<type_25>::const_type ,
-     typename Kokkos::Impl::AnalyzeShape<const_type_25>::type 
-       > ok_const_25 ;
+    typename Kokkos::Impl::AnalyzeShape<type_25>::const_type,
+    typename Kokkos::Impl::AnalyzeShape<const_type_25>::type
+      > ok_const_25 ;
+  {
+    ok_const_25 thing;
+    (void) thing; // silence warning for unused variable
+  }
 
   ASSERT_TRUE( ( Kokkos::Impl::is_same< ExtractValueType<type_03>::type , int >::value ) );
   ASSERT_TRUE( ( Kokkos::Impl::is_same< ExtractValueType<type_14>::type , double >::value ) );

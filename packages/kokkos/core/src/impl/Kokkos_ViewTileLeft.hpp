@@ -142,8 +142,8 @@ struct ViewAssignment< ViewTileLeftFast , ViewTileLeftFast, void >
   {
     typedef View<DT,DL,DD,DM,ViewTileLeftFast> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
+    //typedef typename DstViewType::memory_space  memory_space ; // unused
+    //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
@@ -211,9 +211,9 @@ struct ViewAssignment< ViewDefault , ViewTileLeftFast, void >
                   ), unsigned >::type i1 )
   {
     typedef View<DT,DL,DD,DM,ViewDefault> DstViewType ;
-    typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
+    //typedef typename DstViewType::shape_type    shape_type ; // unused
+    //typedef typename DstViewType::memory_space  memory_space ; // unused
+    //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 

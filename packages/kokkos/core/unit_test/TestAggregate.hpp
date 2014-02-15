@@ -229,15 +229,15 @@ public:
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize< ValueType
                      , Test::EmbedArray
-                     , LayoutLeft 
+                     , LayoutLeft
                      , MemorySpace
                      , MemoryTraits >
 { typedef Test::EmbedArray type ; };
 
 template< class ValueType , class MemorySpace , class MemoryTraits >
-struct ViewSpecialize< ValueType 
+struct ViewSpecialize< ValueType
                      , Test::EmbedArray
-                     , LayoutRight 
+                     , LayoutRight
                      , MemorySpace
                      , MemoryTraits >
 { typedef Test::EmbedArray type ; };
@@ -471,7 +471,7 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::device_type   device_type ;
+      //typedef typename traits::device_type   device_type ; // unused
       typedef typename traits::memory_space  memory_space ;
       typedef typename traits::shape_type    shape_type ;
       typedef typename traits::value_type::value_type   scalar_type ;
@@ -501,7 +501,7 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::device_type   device_type ;
+      //typedef typename traits::device_type   device_type ; // unused
       typedef typename traits::memory_space  memory_space ;
       typedef typename traits::shape_type    shape_type ;
       typedef typename traits::value_type::value_type   scalar_type ;
@@ -537,7 +537,7 @@ public:
     : m_ptr_on_device(0)
     {
       typedef typename traits::shape_type   shape_type ;
-      typedef typename traits::value_type::value_type   scalar_type ;
+      //typedef typename traits::value_type::value_type   scalar_type ; // unused
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );

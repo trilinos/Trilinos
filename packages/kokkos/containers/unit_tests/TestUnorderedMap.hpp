@@ -245,6 +245,17 @@ void test_failed_insert( uint32_t num_nodes)
   typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
   typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
 
+  // mfh 14 Feb 2014: This function doesn't actually create instances
+  // of const_map_type, but I'm guessing that ensuring that the
+  // typedef makes sense at compile time is important.  I preserve the
+  // typedef without the warning by declaring an empty instance of
+  // that type, and marking it with "(void)" to avoid a compiler
+  // warning for the unused variable.
+  {
+    const_map_type thing;
+    (void) thing;
+  }
+
   map_type map(num_nodes);
   Device::fence();
 
@@ -266,6 +277,22 @@ void test_deep_copy( uint32_t num_nodes )
 
   typedef Kokkos::UnorderedMap<uint32_t, uint32_t, host_type> host_map_type;
   typedef Kokkos::UnorderedMap<const uint32_t, const uint32_t, host_type> const_host_map_type;
+
+  // mfh 14 Feb 2014: This function doesn't actually create instances
+  // of non_insertable_map_type or const_host_map_type, but I'm
+  // guessing that ensuring that the typedefs make sense at compile
+  // time is important.  I preserve the typedefs without the warnings
+  // by declaring an empty instance of each type, and marking it with
+  // "(void)" to avoid a compiler warning for the unused variable.
+  {
+    non_insertable_map_type thing;
+    (void) thing;
+  }
+  {
+    const_host_map_type thing;
+    (void) thing;
+  }
+
 
   map_type map(num_nodes);
   Device::fence();
