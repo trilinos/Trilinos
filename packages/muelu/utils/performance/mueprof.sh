@@ -36,9 +36,13 @@ OPTDESCR="\n  -h  help\n  -n k analyze solver block k (default k=1)\n"
 
 numReqd=1;
 blockNumber=1;
+sortByLib="Tpetra"
 # Parse command line options.
-while getopts ahsln: OPT; do
+while getopts hn:s: OPT; do
     case "$OPT" in
+        s)
+            sortByLib=$OPTARG
+            ;;
         n)
             blockNumber=$OPTARG
             ;;
@@ -66,7 +70,8 @@ if (( $# < $numReqd )); then
     exit 1
 fi
 
-file=$1;
+file1=$1;
+file2=$2;
 
 # Access additional arguments as usual through
 # variables $@, $*, $1, $2, etc. or using this loop:
@@ -81,4 +86,4 @@ export AWKPATH
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -v "blockNumber=$blockNumber" -f $SCRIPTPATH/mueprof.awk $file
+awk -v "blockNumber=$blockNumber" -v "sortByLib=$sortByLib" -f $SCRIPTPATH/mueprof.awk $file1 $file2

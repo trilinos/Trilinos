@@ -17,14 +17,20 @@ BEGIN {
     possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
     possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
     possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
+    tt=""
 }
 
 ###############################################################################
 #stuff that happens when processing all files
 {
-    if (match($0,"Linear algebra library: ")) {
-      after = substr($0,RSTART+RLENGTH);
-      linalg[FILENAME] = after;
+    if (tt != FILENAME) {
+      tt=FILENAME
+      #reset for next file
+      whichBlockToAnalyze=blockNumber;
+      foundTimerBlock=0;
+      foundTimersToReport=0;
+      #hack, since we can't count on having "Linear algebra library: Tpetra" print in nalu
+      linalg[FILENAME] = "Epetra"
     }
 
     #indicates start of MueLu timer output
@@ -35,14 +41,18 @@ BEGIN {
         foundTimerBlock=0;
       if (whichBlockToAnalyze==0)
         foundTimerBlock=1;
-      if (whichBlockToAnalyze<0)
+      if (whichBlockToAnalyze<0) {
         nextfile; #we've moved past the solver block of interest,
                   #stop analyzing this file
+      }
     }
 
     if (foundTimerBlock) {
       if (match($0,"^MueLu: ")) {
         # matched a MueLu timer
+        #fix minor difference between Epetra and Tpetra smoother tags
+        sub(/Ifpack2Smoother/,"IfpackSmoother");
+        sub(/Amesos2Smoother/,"AmesosSmoother");
         if (match($0,"[(]level=[0-9][)]")) {
           # timer is level-specific (and by its nature excludes calls to child factories)
           foundTimersToReport=1;
@@ -53,12 +63,16 @@ BEGIN {
           if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
             #TODO figure out which solve labels to pull out
             solveLabels[factAndLevel] = factAndLevel;
-            solveTimes[factAndLevel,linalg[FILENAME]] = maxtime;
+            solveTimes[factAndLevel,FILENAME] = maxtime;
           } else {
             setupLabels[factAndLevel] = factAndLevel;
-            setupTimes[factAndLevel,linalg[FILENAME]] = maxtime;
+            setupTimes[factAndLevel,FILENAME] = maxtime;
           }
         }
+      }
+
+      if (match($0,"^YY Tpetra Transpose Only")) {
+        linalg[FILENAME] = "Tpetra"
       }
 
       # Check for any reported total setup time.  This is printed as a sanity check
@@ -68,7 +82,7 @@ BEGIN {
           pattern = substr($0,RSTART,RLENGTH);
           alltimes = substr($0,RSTART+RLENGTH);
           cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-          TotalSetup[pattern,linalg[FILENAME]] = ExtractTime(alltimes,cutCmd);
+          TotalSetup[pattern,FILENAME] = ExtractTime(alltimes,cutCmd);
         }
       }
     } #if (foundTimerBlock)
@@ -84,57 +98,9 @@ function PrintHeader(description,linalg)
     printf("%10s  ",linalg[j]);
     printf(" (total)");
   }
-  printf("\n%60s          ------------------\n",space);
-}
-
-###############################################################################
-# Reorder all the timings by sorting either the Epetra or Tpetra timing values
-# in ascending order.
-function SortAndReportTimings(libToSortOn,mylabels,tallies,linalg)
-{
-  numInds=1;
-  for (i in mylabels) {
-    # the plus 0 is just a trick to make asort treat "talliesToSort" as numeric
-    talliesToSort[numInds] = tallies[i,libToSortOn]+0;
-    newlabels[talliesToSort[numInds]] = mylabels[i];
-    for (j in linalg) {
-      newtallies[talliesToSort[numInds],linalg[j]] = tallies[i,linalg[j]];
-    }
-    numInds++;
-  }
-
-  # Sort timings for library "libToSortOn" in ascending order.
-  # These sorted timings are used as the indices into newlabels and newtallies.
-  SortAndPrint(talliesToSort,newlabels,newtallies,linalg);
-
-  #awk has weird scoping rules
-  delete newlabels
-  delete newtallies
-  delete talliesToSort
-}
-
-###############################################################################
-# helper function
-function SortAndPrint(arrayToSort,labels,tallies,linalg)
-{
-  asort(arrayToSort);
-  for (j in linalg) {
-    runningTotals[j] = 0;
-  }
-  arrayLeng=0
-  for (i in arrayToSort) arrayLeng++; #length(arrayToSort) doesn't work here for some reason
-  for (i=1; i<arrayLeng+1; i++) {
-    ind = arrayToSort[i];
-    printf("%60s  ==> ",labels[ind]);
-    for (j in linalg) {
-      runningTotals[j] += tallies[ind,linalg[j]];
-      printf("%10.4f   (%5.2f)",tallies[ind,linalg[j]],runningTotals[j]);
-    }
-    if (tallies[ind,"Epetra"] != 0) {
-      printf("%8.2f   ",tallies[ind,"Tpetra"] / tallies[ind,"Epetra"]);
-    }
-    printf("\n");
-  }
+  if (length(linalg)>1)
+    printf("%13s  ","T/E ratio");
+  printf("\n%60s          -------------------------------------------------\n",space);
 }
 
 ###############################################################################
@@ -148,6 +114,66 @@ function PrintTotalSetupTime()
     printf("%60s  ==>   %6.3f seconds       \n",sep[1],TotalSetup[i]);
   }
 }
+
+###############################################################################
+function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
+{
+  if (length(linalg) == 1)
+    for (i in linalg) sortByLib = linalg[i]
+  len=0
+  for (i in timerLabels) {
+    valuesAndLabels[len] = timerLabels[i];
+    for (j in linalg)
+      valuesAndLabels[len] = valuesAndLabels[len] "@" timerValues[i,j]
+    len++
+  }
+
+  #combine timer label and corresponding values into one array entry
+  sortField=2
+  for (i in linalg) {
+    if (linalg[i] == libToSortOn) break
+    sortField++
+  }
+  sortCmd = "sort -k" sortField" -n -t @"
+  SystemSort(valuesAndLabels,sortedValuesAndLabels,sortCmd);
+
+  jj=2
+  for (i in linalg) {
+    runningTotals[i] = 0
+    if (linalg[i] == "Epetra") epetraInd = jj;
+    if (linalg[i] == "Tpetra") tpetraInd = jj;
+    jj++
+  }
+  for (j=1; j<=len; j++) {
+    split(sortedValuesAndLabels[j],fields,"@");
+    printf("%60s  ==> ",fields[1]);
+    offset=2
+    for (i in linalg) {
+      runningTotals[i] += fields[offset]
+      printf("%10.2f   (%5.1f)",fields[offset],runningTotals[i]);
+      offset++
+    }
+    if (fields[epetraInd] != 0 && length(linalg) > 1) {
+      printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
+    }
+    printf("\n");
+  }
+
+}
+###############################################################################
+
+function SystemSort(arrayToSort, sortedArray, sortCmd)
+{
+  # Write to the coprocess...
+  for(i in arrayToSort) print arrayToSort[i] |& sortCmd
+  close(sortCmd, "to")
+  i=0
+  # ...and read back from it
+  while((sortCmd |& getline sortedArray[++i]) > 0)
+    ;
+  close(sortCmd)
+}
+
 ###############################################################################
 
 function ExtractTime(alltimes,cutCmd)
@@ -179,10 +205,8 @@ END {
 
   if (foundTimersToReport) {
     PrintHeader("Setup times (level specific) excluding child calls ",linalg);
-    SortAndReportTimings(linalg[FILENAME],setupLabels,setupTimes,linalg);
+    SortAndReportTimings(sortByLib,setupLabels,setupTimes,linalg);
     PrintTotalSetupTime();
-    #PrintHeader("Solve times ",linalg);
-    #SortAndReportTimings(linalg[FILENAME],solveLabels,solveTimes,linalg);
   } else {
     printf("\nFound only %d solver blocks, you requested block %d.\n",blockNumber-whichBlockToAnalyze,blockNumber);
   }
