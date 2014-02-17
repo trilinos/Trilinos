@@ -26,8 +26,8 @@ namespace {
       stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"temperature",1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
@@ -70,9 +70,8 @@ namespace {
       stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"temperature",1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
       stkIo.populate_bulk_data();
@@ -80,9 +79,9 @@ namespace {
       std::vector<stk::mesh::Entity> nodes;
       stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
       
-      // The name of the field on the database is "temp"
+      //+ Specify that the field data are to be linear interpolated.
       stkIo.add_input_field(stk::io::MeshField(temperature, "temp",
-					       stk::io::MeshField::LINEAR_INTERPOLATION));
+					       stk::io::MeshField::LINEAR_INTERPOLATION));/*@\label{io:input:interpolate}*/
 
       for (size_t i=0; i < 21; i++) {
 	double time = i/10.0;

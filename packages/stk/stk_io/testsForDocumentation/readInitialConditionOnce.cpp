@@ -27,8 +27,8 @@ namespace {
       stkIo.set_active_mesh(index);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
@@ -71,15 +71,14 @@ namespace {
       stkIo.set_active_mesh(index);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
       //+ The name of the field on the database is "temp"
       stk::io::MeshField input_field(temperature, "temp", stk::io::MeshField::CLOSEST);
-      input_field.set_read_once(true);
+      input_field.set_read_once(true);/*@\label{io:input:readonce}*/
       stkIo.add_input_field(input_field);
 
       //+ Read the field values from the database at time 2.0

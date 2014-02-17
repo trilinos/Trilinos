@@ -28,14 +28,13 @@ namespace {
       stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<int> &integer_field =
-	stkIo.meta_data().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "int_field", 1);
+      stk::mesh::Field<int> &integer_field = stkIo.meta_data().
+	declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "int_field", 1);
       stk::mesh::put_field(integer_field, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
       EXPECT_THROW(stkIo.add_input_field(stk::io::MeshField(integer_field, "int_field",
-							    stk::io::MeshField::LINEAR_INTERPOLATION)),
-		   std::exception);
+			 stk::io::MeshField::LINEAR_INTERPOLATION)), std::exception);
       //-END      
     }
     // ============================================================

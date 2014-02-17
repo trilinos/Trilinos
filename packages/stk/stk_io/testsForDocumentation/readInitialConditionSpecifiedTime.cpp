@@ -27,12 +27,12 @@ namespace {
       stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
-      stk::mesh::Field<double> &heat_flux =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "heat_flux", 1);
+      stk::mesh::Field<double> &heat_flux = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "heat_flux", 1);
       stk::mesh::put_field(heat_flux, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
@@ -83,20 +83,18 @@ namespace {
       stkIo.set_active_mesh(index);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
-      stk::mesh::Field<double> &heat_flux =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "heat_flux", 1);
+      stk::mesh::Field<double> &heat_flux = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "heat_flux", 1);
       stk::mesh::put_field(heat_flux, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
       // The name of the field on the database is "temp"
       stk::io::MeshField temp_field(temperature, "temp", stk::io::MeshField::CLOSEST);
-      temp_field.set_read_time(2.0);
+      temp_field.set_read_time(2.0);/*@\label{io:input:specifiedtime}*/
       stkIo.add_input_field(temp_field);
 
       // The name of the field on the database is "flux"

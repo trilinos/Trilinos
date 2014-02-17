@@ -62,7 +62,7 @@ namespace {
       //-BEGIN
       // ============================================================
       //+ EXAMPLE: 
-      //+ The input mesh database has 3 timesteps with times 0.0, 1.0, 2.0,
+      //+ The input mesh database has 3 timesteps with times 0.0, 10.0, 20.0,
       //+ The value of the field "temp" is equal to the time
       //+ Read the "temp" value at times 0.0 to 10.0 with an interval
       //+ of 0.25 (0.0, 0.25, 0.50, 0.75, ..., 10.0)
@@ -84,9 +84,9 @@ namespace {
       size_t idx = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.
+	meta_data().declare_field<stk::mesh::Field<double> >
+	(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
       stkIo.populate_bulk_data();
@@ -119,7 +119,7 @@ namespace {
 
 	// ============================================================
 	//+ VERIFICATION
-	// The value of the "temperature" field at all nodes should be 'time'
+	// The value of the "temperature" field at all nodes should be 'expected'
 	for(size_t i=0; i<nodes.size(); i++) {
 	  double *fieldData = stk::mesh::field_data(temperature, nodes[i]);
 	  EXPECT_DOUBLE_EQ(expected, *fieldData);

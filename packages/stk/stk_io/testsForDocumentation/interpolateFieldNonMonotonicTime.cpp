@@ -72,9 +72,8 @@ namespace {
       stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
       stkIo.populate_bulk_data();
