@@ -154,7 +154,7 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
   }
   for (j=1; j<=len; j++) {
     split(sortedValuesAndLabels[j],fields,"@");
-    printf("%60s  ==> ",fields[1]);
+    printf("%3d: %60s  ==> ",len-j+1,fields[1]);
     offset=2
     for (i in linalg) {
       runningTotals[i] += fields[offset]
