@@ -109,6 +109,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Teuchos               packages/teuchos                  PS
   ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
   RTOp                  packages/rtop                     PS
+  Gtest                 commonTools/gtest                 SS
   Kokkos                packages/kokkos                   PS
   Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
