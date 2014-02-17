@@ -127,7 +127,7 @@ function PrintTotalSetupTime()
 function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
 {
   if (length(linalg) == 1)
-    for (i in linalg) sortByLib = linalg[i]
+    for (i in linalg) libToSortOn = linalg[i]
   len=0
   for (i in timerLabels) {
     valuesAndLabels[len] = timerLabels[i];
