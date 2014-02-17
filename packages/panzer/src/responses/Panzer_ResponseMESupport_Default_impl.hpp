@@ -75,7 +75,7 @@ getVectorSpace() const
     if(this->vectorIsDistributed())
       vSpace_ = Thyra::defaultSpmdVectorSpace<double>(tComm_,this->localSizeRequired(),-1);
     else
-      vSpace_ = Thyra::defaultSpmdVectorSpace<double>(this->localSizeRequired());
+      vSpace_ = Thyra::locallyReplicatedDefaultSpmdVectorSpace<double>(tComm_,this->localSizeRequired());
   }
 
   return vSpace_;
