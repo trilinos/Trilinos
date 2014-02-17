@@ -1887,8 +1887,6 @@ namespace Tpetra {
   insertLocalIndices (const LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal> &indices)
   {
-    using Teuchos::ArrayView;
-    typedef LocalOrdinal LO;
     const char tfecfFuncName[] = "insertLocalIndices";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -1919,10 +1917,10 @@ namespace Tpetra {
       using Teuchos::Array;
       using Teuchos::toString;
       using std::endl;
-      typedef typename ArrayView<const LO>::size_type size_type;
+      typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type size_type;
 
       const map_type& colMap = * (getColMap ());
-      Array<LO> badColInds;
+      Array<LocalOrdinal> badColInds;
       bool allInColMap = true;
       for (size_type k = 0; k < indices.size (); ++k) {
         if (! colMap.isNodeLocalElement (indices[k])) {
@@ -3675,7 +3673,7 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  bool 
+  bool
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   checkSizes (const SrcDistObject& source)
   {
@@ -3692,9 +3690,9 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   copyAndPermute (const SrcDistObject& source,
-		  size_t numSameIDs,
-		  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-		  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
+                  size_t numSameIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -3705,7 +3703,7 @@ namespace Tpetra {
     typedef RowGraph<LO, GO, Node> row_graph_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error, 
+      permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
       ": permuteToLIDs and permuteFromLIDs must have the same size.");
     // Make sure that the source object has the right type.  We only
     // actually need it to be a RowGraph, with matching first three
@@ -3722,7 +3720,7 @@ namespace Tpetra {
     // communication format in any case.
     const row_graph_type* srcRowGraph = dynamic_cast<const row_graph_type*> (&source);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      srcRowGraph == NULL, std::invalid_argument, 
+      srcRowGraph == NULL, std::invalid_argument,
       ": The source object must be a RowGraph with matching first three "
       "template parameters.");
 
@@ -3747,16 +3745,16 @@ namespace Tpetra {
       // source graph is not a CrsGraph, we can't use view mode,
       // because RowGraph only provides copy mode access to the data.
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-	const GO gid = srcRowMap.getGlobalElement (myid);
-	size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (gid);
-	row_copy.resize (row_length);
-	size_t check_row_length = 0;
-	srcRowGraph->getGlobalRowCopy (gid, row_copy (), check_row_length);
-	this->insertGlobalIndices (gid, row_copy ());
+        const GO gid = srcRowMap.getGlobalElement (myid);
+        size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (gid);
+        row_copy.resize (row_length);
+        size_t check_row_length = 0;
+        srcRowGraph->getGlobalRowCopy (gid, row_copy (), check_row_length);
+        this->insertGlobalIndices (gid, row_copy ());
       }
     } else {
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-	const GO gid = srcRowMap.getGlobalElement (myid);
+        const GO gid = srcRowMap.getGlobalElement (myid);
         ArrayView<const GO> row;
         srcCrsGraph->getGlobalRowView (gid, row);
         this->insertGlobalIndices (gid, row);
@@ -3768,21 +3766,21 @@ namespace Tpetra {
     //
     if (src_filled || srcCrsGraph == NULL) {
       for (LO i = 0; i < permuteToLIDs.size (); ++i) {
-	const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
-	const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
-	size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (srcgid);
-	row_copy.resize (row_length);
-	size_t check_row_length = 0;
-	srcRowGraph->getGlobalRowCopy (srcgid, row_copy (), check_row_length);
-	this->insertGlobalIndices (mygid, row_copy ());
+        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
+        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
+        size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (srcgid);
+        row_copy.resize (row_length);
+        size_t check_row_length = 0;
+        srcRowGraph->getGlobalRowCopy (srcgid, row_copy (), check_row_length);
+        this->insertGlobalIndices (mygid, row_copy ());
       }
     } else {
       for (LO i = 0; i < permuteToLIDs.size (); ++i) {
-	const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
-	const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
-	ArrayView<const GO> row;
-	srcCrsGraph->getGlobalRowView (srcgid, row);
-	this->insertGlobalIndices (mygid, row);
+        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
+        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
+        ArrayView<const GO> row;
+        srcCrsGraph->getGlobalRowView (srcgid, row);
+        this->insertGlobalIndices (mygid, row);
       }
     }
   }
@@ -3821,10 +3819,10 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	Teuchos::Array<GlobalOrdinal>& exports,
-	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	size_t& constantNumPackets,
-	Distributor& distor) const
+        Teuchos::Array<GlobalOrdinal>& exports,
+        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+        size_t& constantNumPackets,
+        Distributor& distor) const
   {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
@@ -3879,11 +3877,11 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-		    const Teuchos::ArrayView<const GlobalOrdinal> &imports,
-		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-		    size_t constantNumPackets,
-		    Distributor& /* distor */,
-		    CombineMode /* CM */)
+                    const Teuchos::ArrayView<const GlobalOrdinal> &imports,
+                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                    size_t constantNumPackets,
+                    Distributor& /* distor */,
+                    CombineMode /* CM */)
   {
     // FIXME (mfh 02 Apr 2012) REPLACE combine mode has a perfectly
     // reasonable meaning, whether or not the matrix is fill complete.
