@@ -1410,8 +1410,11 @@ namespace stk {
 	// If want the optimization, call the population_mesh/populate_field_data methods separately.
 	bool delay_field_data_allocation = false;
 
+	//- This modifcation begin/end should not be needed, but a percept test fails without it...
+	bulk_data().modification_begin();
 	populate_mesh(delay_field_data_allocation);
 	populate_field_data();
+	bulk_data().modification_end();
       }
     
       void StkMeshIoBroker::add_input_field(const stk::io::MeshField &mesh_field)
