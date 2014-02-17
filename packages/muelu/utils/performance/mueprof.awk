@@ -17,7 +17,12 @@ BEGIN {
     possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
     possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
     possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
+    possibleTotalLabels[4] = "nalu MueLu/tpetra preconditioner setup";
+    possibleTotalLabels[5] = "nalu MueLu/epetra preconditioner setup";
     tt=""
+    # variable etDelta controls how delta in Epetra and Tpetra times is displayed
+    # set from mueprof.sh, values can be "subtract" or "divide"
+    # default is "subtract"
 }
 
 ###############################################################################
@@ -99,7 +104,10 @@ function PrintHeader(description,linalg)
     printf(" (total)");
   }
   if (length(linalg)>1)
-    printf("%13s  ","T/E ratio");
+    if (etDelta == "ratio")
+      printf("%13s  ","T/E ratio");
+    if (etDelta == "diff")
+      printf("%13s  ","T-E (sec.)");
   printf("\n%60s          -------------------------------------------------\n",space);
 }
 
@@ -154,7 +162,10 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
       offset++
     }
     if (fields[epetraInd] != 0 && length(linalg) > 1) {
-      printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
+      if (etDelta == "ratio")
+        printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
+      if (etDelta == "diff")
+        printf("%11.2f   ",fields[tpetraInd] - fields[epetraInd]);
     }
     printf("\n");
   }

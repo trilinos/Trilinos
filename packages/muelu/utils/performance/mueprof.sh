@@ -1,28 +1,12 @@
 #!/bin/sh
 #
-# bash script to compare Epetra and Tpetra timings from MueLu_ScalingTest.exe side-by-side.
+# bash script to compare Epetra and Tpetra timings side-by-side.
 #
 # syntax:
-#    mueprof.sh [-h] [-n] file
-#
-# prerequisites:
-#
-# 1) Timer parent/child relations must be written out by putting
-#
-#       MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
-#
-#    at the end of your program.
-#
-# optional arguments:
-#   -h           help
-#   -n k         analyze solver block k (default=1)
-#
-# required arguments:
-#
-#   file  epetra or tpetra screen dumps
+#    mueprof.sh [-h] [ARGS] file1 file2
 #
 # example:
-#    mueprof.sh screen.tpetra
+#    mueprof.sh screen.tpetra screen.epetra
 #
 # Borrowed the command line parsing from
 # http://blog.mafr.de/2007/08/05/cmdline-options-in-shell-scripts
@@ -31,15 +15,21 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=$(dirname $SCRIPT)
 
-USAGE="Usage: `basename $0` [-hn] file"
-OPTDESCR="\n  -h  help\n  -n k analyze solver block k (default k=1)\n"
+USAGE="Usage: `basename $0` [-h] [ARGS] file1 file2"
+OPTDESCR="\n\t-h \thelp\n\t-n \twhich solver block to analyze [1]\n
+          \t-s \twhich linear algebra lib to sort by: \"Epetra\",[\"Tpetra\"]\n
+          \t-d \thow to display delta in times: \"ratio\",[\"diff\"]\n"
 
 numReqd=1;
 blockNumber=1;
 sortByLib="Tpetra"
+deltaDisplay="diff"
 # Parse command line options.
-while getopts hn:s: OPT; do
+while getopts hn:s:d: OPT; do
     case "$OPT" in
+        d)
+            deltaDisplay=$OPTARG
+            ;;
         s)
             sortByLib=$OPTARG
             ;;
@@ -54,7 +44,6 @@ while getopts hn:s: OPT; do
         \?)
             # getopts issues an error message
             echo $USAGE >&2
-            echo "2"
             exit 1
             ;;
     esac
@@ -86,4 +75,4 @@ export AWKPATH
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -v "blockNumber=$blockNumber" -v "sortByLib=$sortByLib" -f $SCRIPTPATH/mueprof.awk $file1 $file2
+awk -v "blockNumber=$blockNumber" -v "sortByLib=$sortByLib" -v "etDelta=$deltaDisplay" -f $SCRIPTPATH/mueprof.awk $file1 $file2
