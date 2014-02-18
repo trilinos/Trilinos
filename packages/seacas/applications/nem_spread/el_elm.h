@@ -66,6 +66,7 @@
 #define TET8              511
 #define SHELL4            505
 #define SHELL8            510
+#define SHELL9            512
 #define SPHERE            515
 #define WEDGE6            520
 #define WEDGE15           521
