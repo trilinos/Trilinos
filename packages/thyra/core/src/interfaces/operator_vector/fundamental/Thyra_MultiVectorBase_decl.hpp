@@ -44,6 +44,7 @@
 
 #include "Thyra_LinearOpBase_decl.hpp"
 #include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
 
@@ -490,7 +491,8 @@ namespace Thyra {
  */
 template<class Scalar>
 class MultiVectorBase : virtual public LinearOpBase<Scalar>, 
-                        virtual public RowStatLinearOpBase<Scalar>
+                        virtual public RowStatLinearOpBase<Scalar>,
+                        virtual public ScaledLinearOpBase<Scalar>
 {
 public:
 
@@ -1093,6 +1095,18 @@ protected:
   virtual void getRowStatImpl(
     const RowStatLinearOpBaseUtils::ERowStat rowStat,
     const Ptr<VectorBase<Scalar> > &rowStatVec) const;
+
+  /** From ScaledLinearOpBase */
+  virtual bool supportsScaleLeftImpl() const;
+ 	
+  /** From ScaledLinearOpBase */
+  virtual bool supportsScaleRightImpl() const;
+ 	
+  /** From ScaledLinearOpBase */
+  virtual void scaleLeftImpl(const VectorBase< Scalar > &row_scaling);
+ 	
+  /** From ScaledLinearOpBase */
+  virtual void scaleRightImpl(const VectorBase< Scalar > &col_scaling);
 
   //@}
 
