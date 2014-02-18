@@ -103,6 +103,6 @@ namespace {
     }
     // ============================================================
     // Cleanup
-    // unlink(ic_name.c_str());
+    unlink(ic_name.c_str());
   }
 }

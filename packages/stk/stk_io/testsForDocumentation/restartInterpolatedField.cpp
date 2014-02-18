@@ -59,8 +59,8 @@ namespace {
       stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
@@ -116,9 +116,8 @@ namespace {
 
       stkIo.add_all_mesh_fields_as_input_fields();
 
-      stk::mesh::Field<double> &temperature =
-	stkIo.meta_data().declare_field<stk::mesh::Field<double> >
-	                                            (stk::topology::NODE_RANK, "temperature", 1);
+      stk::mesh::Field<double> &temperature = stkIo.meta_data().
+	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature", 1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
       // The name of the field on the initial condition database is "temp"
