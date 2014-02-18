@@ -204,7 +204,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListDimensionsConstructor, T )
 
   // Construct dimensions
   T localDim = 10;
-  Array< long long > dims(numDims);
+  Array< long int > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = localDim * axisCommSizes[axis];
 
@@ -437,7 +437,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListCommPadConstructor, T )
 
   // Construct dimensions
   T localDim = 10;
-  Array< long long > dims(numDims);
+  Array< long int > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
@@ -717,7 +717,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListBndryPadConstructor, T )
 
   // Construct dimensions
   T localDim = 10;
-  Array< long long > dims(numDims);
+  Array< long int > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = localDim * axisCommSizes[axis];
 
@@ -998,7 +998,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListPaddingConstructor, T )
 
   // Construct dimensions
   T localDim = 10;
-  Array< long long > dims(numDims);
+  Array< long int > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
