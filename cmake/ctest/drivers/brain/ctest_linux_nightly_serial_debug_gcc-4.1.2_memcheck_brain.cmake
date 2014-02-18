@@ -68,7 +68,7 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 
 # Explicitly enable the packages to be memory tested.
 #SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
-  Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
+#  Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
 
 #SET(EXTRA_EXCLUDE_PACKAGES Panzer)
 
