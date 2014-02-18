@@ -218,7 +218,8 @@ public:
     else {
       gs = -(Step<Real>::state_->gradientVec)->dot(s);
     }
-    if ( gs >= 0.0 || this->flagKrylov_ == 2 || this->edesc_ == DESCENT_STEEPEST ) {
+    if ( gs >= 0.0 || (this->flagKrylov_ == 2 && this->iterKrylov_ <= 1) 
+                   || this->edesc_ == DESCENT_STEEPEST ) {
       s.set(*(Step<Real>::state_->gradientVec));
       if ( con.isActivated() ) {
         Teuchos::RCP<Vector<Real> > d = x.clone();

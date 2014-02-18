@@ -138,6 +138,9 @@ public:
       p->scale(beta);
       p->axpy(1.0,*v);
     }
+    if ( flag == 2 ) {
+      s.set(g);
+    }
     if ( iter == this->maxit_ ) {
       flag = 1;
     }    
