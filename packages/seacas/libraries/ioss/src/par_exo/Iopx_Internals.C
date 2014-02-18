@@ -101,14 +101,18 @@ void Internals::update_last_time_attribute(double value)
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Internals::update_last_time_attribute()";
 
-  int status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
-			       NC_DOUBLE, 1, &value);
-  if (status != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to define 'last_written_time' attribute to file id %d",
-	    exodusFilePtr);
-    ex_err(routine,errmsg,status);
+  double tmp = 0.0;
+  int status = nc_get_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time", &tmp);
+  if (status == NC_NOERR && value > tmp) {
+    status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
+			     NC_DOUBLE, 1, &value);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define 'last_written_time' attribute to file id %d",
+	      exodusFilePtr);
+      ex_err(routine,errmsg,status);
+    }
   }
 }
 
@@ -682,7 +686,7 @@ int Internals::put_metadata(const Mesh &mesh)
   // For use later to determine whether a timestep is corrupt, we define an attribute
   // containing the last written time...
   {
-    double fake_time = -1.0;
+    double fake_time = -1.0e38;
     status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
 			     NC_DOUBLE, 1, &fake_time);
     if (status != NC_NOERR) {
