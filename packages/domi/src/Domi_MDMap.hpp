@@ -903,8 +903,8 @@ MDMap(TeuchosCommRCP teuchosComm,
   int numDims = _mdComm->getNumDims();
 
   // Check the global dimensions
-  Teuchos::Array< long long > dimensions =
-    plist.get("dimensions", Teuchos::Array< long long >());
+  Teuchos::Array< long int > dimensions =
+    plist.get("dimensions", Teuchos::Array< long int >());
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != dimensions.size(),
     InvalidArgument,
@@ -1016,12 +1016,12 @@ MDMap(MDCommRCP mdComm,
   int numDims = _mdComm->getNumDims();
 
   // Check the global dimensions
-  Teuchos::Array< long long > dimensions =
-    plist.get("dimensions", Teuchos::Array< long long >());
+  Teuchos::Array< long int > dimensions =
+    plist.get("dimensions", Teuchos::Array< long int >());
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != dimensions.size(),
     InvalidArgument,
-    "Size of dimensions does not match MDComm number of dimensions");
+    "Number of dimensions does not match MDComm number of dimensions");
   TEUCHOS_TEST_FOR_EXCEPTION(
     computeSize(dimensions) - 1 > std::numeric_limits< GlobalOrd >::max(),
     MapOrdinalError,
