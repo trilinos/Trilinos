@@ -544,6 +544,7 @@ namespace stk {
       //-END
     private:
       void create_ioss_region();
+      void create_bulk_data();
       void validate_output_file_index(size_t output_file_index) const;
       void validate_input_file_index(size_t input_file_index) const;
 

@@ -1319,27 +1319,7 @@ namespace stk {
       {
 	validate_input_file_index(m_active_mesh_index);
 
-	if (!meta_data().is_commit())
-	  meta_data().commit();
-
-
-	ThrowErrorMsgIf (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region()),
-			 "There is no Input mesh region associated with this Mesh Data.");
-
-	Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-	ThrowErrorMsgIf (region==NULL,
-			 "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
-
-	// Check if bulk_data is null; if so, create a new one...
-	if (Teuchos::is_null(m_bulk_data)) {
-	  set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
-								 , region->get_database()->util().communicator()
-#ifdef SIERRA_MIGRATION
-								 , false
-#endif
-								 , m_connectivity_map
-								 )));
-	}
+	create_bulk_data();
 
 	if (delay_field_data_allocation) {
 	  bulk_data().deactivate_field_updating();
@@ -1347,6 +1327,7 @@ namespace stk {
 
 	bool i_started_modification_cycle = bulk_data().modification_begin();
 
+	Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
 	bool ints64bit = db_api_int_size(region) == 8;
 	if (ints64bit) {
 	  int64_t zero = 0;
@@ -1400,10 +1381,36 @@ namespace stk {
 	}
       }
 
+      void StkMeshIoBroker::create_bulk_data()
+      {
+	if (!meta_data().is_commit())
+	  meta_data().commit();
+
+	ThrowErrorMsgIf (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region()),
+			 "There is no Input mesh region associated with this Mesh Data.");
+
+	Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
+	ThrowErrorMsgIf (region==NULL,
+			 "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
+
+	// Check if bulk_data is null; if so, create a new one...
+	if (Teuchos::is_null(m_bulk_data)) {
+	  set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
+								 , region->get_database()->util().communicator()
+#ifdef SIERRA_MIGRATION
+								 , false
+#endif
+								 , m_connectivity_map
+								 )));
+	}
+      }
+
       // ========================================================================
       void StkMeshIoBroker::populate_bulk_data()
       {
 	validate_input_file_index(m_active_mesh_index);
+
+	create_bulk_data();
 
 	// to preserve behavior for callers of this method, don't do the
 	// delay-field-data-allocation optimization.
