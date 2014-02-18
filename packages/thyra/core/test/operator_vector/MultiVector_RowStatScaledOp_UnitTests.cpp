@@ -115,11 +115,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, RowStat,
     put_scalar(std::pow(value,i),ptr.ptr());
   }
 
-  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,sv_1);
-  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,sv_2);
+  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,sv_1.ptr());
+  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,sv_2.ptr());
 
-  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM,sv_3);
-  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_COL_SUM,sv_4);
+  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM,sv_3.ptr());
+  mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_COL_SUM,sv_4.ptr());
 
   RCP<VectorBase<Scalar> > ref_range = Thyra::createMember(mv->range());
   RCP<VectorBase<Scalar> > ref_domain = Thyra::createMember(mv->domain());
@@ -168,7 +168,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
 {
   std::size_t numVecs = 5;
   Teuchos_Ordinal myRows = 10;
-  int numProcs = Teuchos::DefaultComm<Teuchos_Ordinal>::getComm()->getSize();
 
   RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(myRows);
 
