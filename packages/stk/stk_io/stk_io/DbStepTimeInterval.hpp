@@ -22,7 +22,7 @@ namespace stk {
 	size_t step_count = region->get_property("state_count").get_int();
 	for (size_t istep = 0; istep < step_count; istep++) {
 	  double state_time = region->get_state_time(istep+1);
-	  if (state_time <= time) {
+	  if (state_time < time) {
 	    if (state_time > t_before) {
 	      t_before = state_time;
 	      s_before = istep+1;
@@ -61,10 +61,10 @@ namespace stk {
       double t_analysis;  // Analysis time.
       double t_before;    // Time at step s_before; valid only if exists_before == true
       double t_after;     // Time at step s_after; valid only if exists_after == true
-      size_t s_before;    // Step before passed in time (1-based).
-      size_t s_after;     // Step after passed in time (1-based).
-      bool exists_before; // True if there is a db step with time <= passed in time
-      bool exists_after;  // True if there is a db step with time >= passed in time
+      size_t s_before;    // Step before t_analysis (1-based).
+      size_t s_after;     // Step after  t_analysis (1-based).
+      bool exists_before; // True if there is a db step with time <  t_analysis
+      bool exists_after;  // True if there is a db step with time >= t_analysis
     };
   }
 }

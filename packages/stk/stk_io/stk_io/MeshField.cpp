@@ -196,6 +196,8 @@ void MeshFieldPart::release_field_data()
 
 void MeshFieldPart::load_field_data(const DBStepTimeInterval &sti)
 {
+  // Use cached data if possible; avoid reading from disk...
+  
   if (sti.exists_before && m_preStep != sti.s_before) {
     assert(sti.s_before > 0);
 
@@ -204,6 +206,11 @@ void MeshFieldPart::load_field_data(const DBStepTimeInterval &sti)
       std::swap(m_preStep, m_postStep);
     }
     else {
+      // See if postStep can use my current data...
+      if (sti.exists_after && sti.s_after == m_preStep) {
+	m_postData.swap(m_preData);
+	std::swap(m_postStep, m_preStep);
+      }
       m_preStep = sti.s_before;
       sti.region->begin_state(m_preStep);
       m_ioEntity->get_field_data(m_dbName, m_preData);
