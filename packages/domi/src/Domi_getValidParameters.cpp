@@ -111,7 +111,9 @@ RCP< const ParameterList > getValidParameters()
       //(new ScalarOrArrayNumberValidator< int >(constPeriodicNumber));
       (new ArrayNumberValidator< int >(constPeriodicNumber));
 
-    int periodic = 0;
+    //int periodic = 0;
+    Array< int > periodic(1);
+    periodic[0] = 0;
     plist->set("periodic",
                periodic,
                "A scalar or an array of int flags specifying whether axes are "
