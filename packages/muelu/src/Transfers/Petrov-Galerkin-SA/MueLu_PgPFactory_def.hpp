@@ -61,13 +61,14 @@
 #include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_PgPFactory_decl.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_PgPFactory_decl.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -233,7 +234,7 @@ namespace MueLu {
       // prolongation factory is in prolongation mode
       Set(coarseLevel, "P", P_smoothed);
 
-      GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*P_smoothed, "P", params);
+      GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
@@ -244,7 +245,7 @@ namespace MueLu {
       RCP<Matrix> R = Utils2::Transpose(*P_smoothed, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
-      GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*R, "P", params);
+      GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*R, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))

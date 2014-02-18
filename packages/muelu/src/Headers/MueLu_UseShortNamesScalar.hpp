@@ -307,6 +307,10 @@ typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> 
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT
-typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
+typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
+#endif
+
+#ifdef MUELU_PERFUTILS_SHORT
+typedef MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PerfUtils;
 #endif

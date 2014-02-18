@@ -64,10 +64,11 @@
 #include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_RebalanceTransferFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -179,7 +180,7 @@ namespace MueLu {
 
         Set(coarseLevel, "P", rebalancedP);
 
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+        GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -222,7 +223,7 @@ namespace MueLu {
         }
         Set(coarseLevel, "R", rebalancedR);
 
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+        GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.

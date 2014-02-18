@@ -43,70 +43,39 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_EMINPFACTORY_DECL_HPP
-#define MUELU_EMINPFACTORY_DECL_HPP
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_EminPFactory_fwd.hpp"
+#include "MueLu_PerfUtils_def.hpp"
 
-#include "MueLu_CGSolver_fwd.hpp"
-#include "MueLu_Constraint_fwd.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_SteepestDescentSolver_fwd.hpp"
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::PerfUtils<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+#else
+#error
+#endif
 
-namespace MueLu {
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::PerfUtils<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+#else
+# warning To compile MueLu with 'long long int' support, please turn on HAVE_TEUCHOS_LONG_LONG_INT
+# endif
+#endif
 
-  /*!
-    @class EminPFactory class.
-    @brief Factory for building Energy Minimization prolongators.
-    @ingroup MueLuTransferClasses
-    */
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::PerfUtils<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
-  class EminPFactory : public PFactory {
-#undef MUELU_EMINPFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+template class MueLu::PerfUtils<double, int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps>;
 
-  public:
+#endif
 
-    //! @name Constructors/Destructors.
-    //@{
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+template class MueLu::PerfUtils<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
+#endif
 
-    //! @brief Constructor.
-    EminPFactory() { }
-
-    //! Destructor.
-    virtual ~EminPFactory() { }
-
-    //@}
-
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
-    //! @name Input
-    //@{
-
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
-
-    //@}
-
-    //! @name Build methods.
-    //@{
-
-    /*!
-      @brief Build method.
-
-      Builds energy minimization prolongator and returns it in <tt>coarseLevel</tt>.
-      */
-    void Build(Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
-
-    //@}
-
-  }; // class EminPFactory
-
-} // namespace MueLu
-
-#define MUELU_EMINPFACTORY_SHORT
-#endif // MUELU_EMINPFACTORY_DECL_HPP

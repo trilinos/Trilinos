@@ -65,12 +65,11 @@
 
 #include "MueLu_RebalanceBlockAcFactory_decl.hpp"
 
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
-
-#include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 namespace MueLu {
 
@@ -180,7 +179,7 @@ namespace MueLu {
           RCP<ParameterList> params = rcp(new ParameterList());
           params->set("printLoadBalancingInfo", true);
           std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") rebalanced:";
-          GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);
+          GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAii, ss2.str(), params);
         }
 
       }  // rebalance matrix block A(i,i)
@@ -189,7 +188,7 @@ namespace MueLu {
         /*RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") not rebalanced:";
-        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);*/
+        GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAii, ss2.str(), params);*/
       }
 
       // fix striding information for rebalanced diagonal block rebAii
@@ -261,7 +260,7 @@ namespace MueLu {
             RCP<ParameterList> params = rcp(new ParameterList());
             params->set("printLoadBalancingInfo", true);
             std::stringstream ss4; ss4 << "A(" << curBlockId << "," << j << ") rebalanced:";
-            GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss4.str(), params);
+            GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss4.str(), params);
           }
         } // rebalance matrix block A(i,j)
         else {
@@ -269,7 +268,7 @@ namespace MueLu {
           /*RCP<ParameterList> params = rcp(new ParameterList());
           params->set("printLoadBalancingInfo", true);
           std::stringstream ss2; ss2 << "A(" << curBlockId << "," << j << ") not rebalanced:";
-          GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
+          GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
         }
 
         subBlockRebA[curBlockId*bA->Cols() + j] = rebAij;
@@ -302,7 +301,7 @@ namespace MueLu {
             RCP<ParameterList> params = rcp(new ParameterList());
             params->set("printLoadBalancingInfo", true);
             std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") rebalanced:";
-            GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss2.str(), params);
+            GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);
           }
         } // rebalance matrix block A(1,0)
         else {
@@ -310,7 +309,7 @@ namespace MueLu {
           /*RCP<ParameterList> params = rcp(new ParameterList());
           params->set("printLoadBalancingInfo", true);
           std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") not rebalanced:";
-          GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
+          GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
         }
 
         subBlockRebA[i*bA->Cols() + curBlockId] = rebAij;

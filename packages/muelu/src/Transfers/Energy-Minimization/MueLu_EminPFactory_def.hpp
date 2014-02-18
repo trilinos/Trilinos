@@ -7,17 +7,14 @@
 
 #include "MueLu_EminPFactory_decl.hpp"
 
-#include "MueLu_Utilities.hpp"
-
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_PatternFactory.hpp"
-
-#include "MueLu_SteepestDescentSolver.hpp"
 #include "MueLu_CGSolver.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Constraint_fwd.hpp"
-
+#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PatternFactory.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_SteepestDescentSolver.hpp"
+#include "MueLu_TentativePFactory.hpp"
 
 namespace MueLu {
 
@@ -135,7 +132,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*P, "P", params);
+    GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*P, "P", params);
   }
 
 } // namespace MueLu

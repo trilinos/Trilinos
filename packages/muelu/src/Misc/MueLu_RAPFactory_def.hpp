@@ -59,9 +59,10 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -155,7 +156,7 @@ namespace MueLu {
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
+      GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A",           Ac);
       Set(coarseLevel, "RAP Pattern", Ac);

@@ -57,9 +57,10 @@
 #include <Xpetra_MatrixFactory.hpp>
 
 #include "MueLu_RebalanceAcFactory_decl.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 namespace MueLu {
 
@@ -112,7 +113,7 @@ namespace MueLu {
       if (!rebalancedAc.is_null()) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+        GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 
     } else {

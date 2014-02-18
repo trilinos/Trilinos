@@ -53,8 +53,10 @@
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_RAPShiftFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -138,7 +140,7 @@ namespace MueLu {
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
+      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A", Ac);
       Set(coarseLevel, "K", Kc);

@@ -43,98 +43,36 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SAPFACTORY_DECL_HPP
-#define MUELU_SAPFACTORY_DECL_HPP
-
-#include <string>
+#ifndef MUELU_PERFUTILS_DECL_HPP
+#define MUELU_PERFUTILS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SaPFactory_fwd.hpp"
 
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_ParameterListAcceptor.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
-#include "MueLu_TentativePFactory_fwd.hpp"
+#include <Teuchos_ParameterList.hpp>
+
+#include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
-  /*!
-    @class SaPFactory class.
-    @brief Factory for building Smoothed Aggregation prolongators.
-    @ingroup MueLuTransferClasses
-  */
-
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class SaPFactory : public PFactory {
-#undef MUELU_SAPFACTORY_SHORT
+  template <class Scalar,
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+  class PerfUtils {
+#undef MUELU_PERFUTILS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
-    //! @name Constructors/Destructors.
-    //@{
-
-    /*! @brief Constructor.
-      User can supply a factory for generating the tentative prolongator.
-    */
-    SaPFactory() { }
-
-    //! Destructor.
-    virtual ~SaPFactory() { }
-
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
-    //@}
-
-    //! Input
-    //@{
-
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
-
-    //@}
-
-    //! @name Build methods.
-    //@{
-
-    /*!
-      @brief Build method.
-
-      Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
-      //FIXME what does the return code mean (unclear in MueMat)?
-      */
-    void Build(Level& fineLevel, Level &coarseLevel) const;
-
-    void BuildP(Level &fineLevel, Level &coarseLevel) const; //Build()
-
-    //@}
-
-    //! @name Set methods.
-    //@{
-
-    //! Deprecated: Set prolongator smoother damping factor.
-    void SetDampingFactor(Scalar dampingFactor);
-
-    //! Deprecated: Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
-    //@}
-
-    //! @name Get methods.
-    //@{
-
-    //! Deprecated: Returns prolongator smoother damping factor.
-    Scalar GetDampingFactor();
-
-    //! Deprecated: Returns current view of diagonal.
-    std::string GetDiagonalView();
-
-    //@}
-
-  }; //class SaPFactory
+    static std::string CommPattern(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
+  };
 
 } //namespace MueLu
 
-#define MUELU_SAPFACTORY_SHORT
-#endif // MUELU_SAPFACTORY_DECL_HPP
+#define MUELU_PERFUTILS_SHORT
+#endif // MUELU_PERFUTILS_DECL_HPP

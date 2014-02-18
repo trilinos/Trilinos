@@ -64,14 +64,16 @@
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
-#include "MueLu_Utilities.hpp"
 #include "MueLu_TentativePFactory_decl.hpp"
+
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_NullspaceFactory.hpp" //FIXME
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -125,7 +127,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

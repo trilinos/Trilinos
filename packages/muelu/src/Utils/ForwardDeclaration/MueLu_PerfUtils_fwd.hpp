@@ -43,70 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_EMINPFACTORY_DECL_HPP
-#define MUELU_EMINPFACTORY_DECL_HPP
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_EminPFactory_fwd.hpp"
-
-#include "MueLu_CGSolver_fwd.hpp"
-#include "MueLu_Constraint_fwd.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_SteepestDescentSolver_fwd.hpp"
+#ifndef MUELU_PERFUTILS_FWD_HPP
+#define MUELU_PERFUTILS_FWD_HPP
 
 namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class PerfUtils;
+}
 
-  /*!
-    @class EminPFactory class.
-    @brief Factory for building Energy Minimization prolongators.
-    @ingroup MueLuTransferClasses
-    */
+#ifndef MUELU_PERFUTILS_SHORT
+#define MUELU_PERFUTILS_SHORT
+#endif
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
-  class EminPFactory : public PFactory {
-#undef MUELU_EMINPFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! @brief Constructor.
-    EminPFactory() { }
-
-    //! Destructor.
-    virtual ~EminPFactory() { }
-
-    //@}
-
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
-    //! @name Input
-    //@{
-
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
-
-    //@}
-
-    //! @name Build methods.
-    //@{
-
-    /*!
-      @brief Build method.
-
-      Builds energy minimization prolongator and returns it in <tt>coarseLevel</tt>.
-      */
-    void Build(Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
-
-    //@}
-
-  }; // class EminPFactory
-
-} // namespace MueLu
-
-#define MUELU_EMINPFACTORY_SHORT
-#endif // MUELU_EMINPFACTORY_DECL_HPP
+#endif // MUELU_PERFUTILS_FWD_HPP
