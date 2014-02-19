@@ -102,6 +102,43 @@ public:
    */
   MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source);
 
+  /** \brief Constructor with Teuchos::Comm and ParameterList
+   *
+   * \param teuchosComm [in] The Teuchos Communicator.  Note that an
+   *        MDComm and MDMap will be constructed from the information
+   *        in plist.
+   *
+   * \param plist [in] ParameterList with construction information
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <hr />
+   *        \endhtmlonly
+   *
+   * \param node [in] the Kokkos node of the map
+   */
+  MDVector(const TeuchosCommRCP teuchosComm,
+           Teuchos::ParameterList & plist,
+           const Teuchos::RCP< Node > & node =
+             Kokkos::DefaultNode::getDefaultNode());
+
+  /** \brief Constructor with MDComm and ParameterList
+   *
+   * \param mdComm [in] an RCP of an MDComm (multi-dimensional
+   *        communicator), on which this MDMap will be built.
+   *
+   * \param plist [in] ParameterList with construction information
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <hr />
+   *        \endhtmlonly
+   *
+   * \param node [in] the Kokkos node of the map
+   */
+  MDVector(const MDCommRCP mdComm,
+           Teuchos::ParameterList & plist,
+           const Teuchos::RCP< Node > & node =
+             Kokkos::DefaultNode::getDefaultNode());
+
   /** \brief Parent/single global ordinal sub-vector constructor
    *
    * \param parent [in] an MDVector, from which this MDVector will be
@@ -617,6 +654,72 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source) :
   _sliceBndryPad(source->_sliceBndryPad)
 {
   setObjectLabel("Domi::MDVector");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+MDVector(const TeuchosCommRCP teuchosComm,
+         Teuchos::ParameterList & plist,
+         const Teuchos::RCP< Node > & node) :
+  _teuchosComm(teuchosComm),
+  _mdMap(Teuchos::rcp(new MDMap< LocalOrd,
+                                 GlobalOrd,
+                                 Node >(teuchosComm, plist, node))),
+  _mdArrayRcp(),
+  _mdArrayView(),
+  _nextAxis(0),
+  _sliceBndryPad(_mdMap->getNumDims())
+{
+  typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
+  setObjectLabel("Domi::MDVector");
+
+  // Obtain the array of dimensions
+  int numDims = _mdMap->getNumDims();
+  Teuchos::Array< size_type > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = _mdMap->getLocalDim(axis);
+
+  // Resize the MDArrayRCP and set the MDArrayView
+  _mdArrayRcp.resize(dims);
+  _mdArrayView = _mdArrayRcp();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+MDVector(const MDCommRCP mdComm,
+         Teuchos::ParameterList & plist,
+         const Teuchos::RCP< Node > & node) :
+  _teuchosComm(mdComm->getTeuchosComm()),
+  _mdMap(Teuchos::rcp(new MDMap< LocalOrd,
+                                 GlobalOrd,
+                                 Node >(mdComm, plist, node))),
+  _mdArrayRcp(),
+  _mdArrayView(),
+  _nextAxis(0),
+  _sliceBndryPad(_mdMap->getNumDims())
+{
+  typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
+  setObjectLabel("Domi::MDVector");
+
+  // Obtain the array of dimensions
+  int numDims = _mdMap->getNumDims();
+  Teuchos::Array< size_type > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = _mdMap->getLocalDim(axis);
+
+  // Resize the MDArrayRCP and set the MDArrayView
+  _mdArrayRcp.resize(dims);
+  _mdArrayView = _mdArrayRcp();
 }
 
 ////////////////////////////////////////////////////////////////////////
