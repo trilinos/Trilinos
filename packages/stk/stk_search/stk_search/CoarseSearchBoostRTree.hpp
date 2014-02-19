@@ -21,6 +21,7 @@
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/timer.hpp>
+#include <boost/math/special_functions/fpclassify.hpp> //for isnan
 #include <boost/utility/enable_if.hpp>
 
 #include <stk_search/CoarseSearchGeometryToolkit.hpp>
@@ -143,13 +144,14 @@ struct IntersectPredicate
 
 } // namespace impl
 
-#if defined(__APPLE__) && !defined(isnan)
-  /* for Mac OSX 10, this isnan function may need to be manually declared;
-   * however, on some g++ versions, isnan is a macro so it doesn't need
-   * to be manually declared...
-   */
-  extern "C" int isnan(double value);
-#endif
+// #if defined(__APPLE__) && !defined(isnan)
+//   /* for Mac OSX 10, this isnan function may need to be manually declared;
+//    * however, on some g++ versions, isnan is a macro so it doesn't need
+//    * to be manually declared...
+//    */
+//   extern "C" int isnan(double value);
+// #endif
+using boost::math::isnan;
 
 template <typename CoordType, int Dimension>
 inline
