@@ -1044,12 +1044,13 @@ export EXTRA_LINK_FLAGS=&quot;`$MPI_BIN_DIR/mpiCC --showme:link`&quot;
 run command and the options it takes.  The built-in logic will try to find
 the right program and options but you will have to override them in many
 cases.</p>
-<p>MPI test and example executables are run as:</p>
+<p>MPI test and example executables are passed to CTest <tt class="docutils literal">ADD_TEST()</tt> as:</p>
 <pre class="literal-block">
-${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS} \
-  ${MPI_EXEC_NUMPROCS_FLAG} &lt;NP&gt; \
-  ${MPI_EXEC_POST_NUMPROCS_FLAGS} \
-  &lt;TEST_EXECUTABLE_PATH&gt; &lt;TEST_ARGS&gt;
+ADD_TEST(
+  ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
+  ${MPI_EXEC_NUMPROCS_FLAG} &lt;NP&gt;
+  ${MPI_EXEC_POST_NUMPROCS_FLAGS}
+  &lt;TEST_EXECUTABLE_PATH&gt; &lt;TEST_ARGS&gt; )
 </pre>
 <p>where <tt class="docutils literal">&lt;TEST_EXECUTABLE_PATH&gt;</tt>, <tt class="docutils literal">&lt;TEST_ARGS&gt;</tt>, and <tt class="docutils literal">&lt;NP&gt;</tt> are specific
 to the test being run.</p>
@@ -1082,15 +1083,18 @@ time.)</p>
 <tt class="docutils literal">&lt;NP&gt;</tt>.  The default value is based on the name of <tt class="docutils literal">${MPI_EXEC}</tt>, for
 example, which is <tt class="docutils literal"><span class="pre">-np</span></tt> for OpenMPI.)</p>
 <pre class="literal-block">
--D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=&quot;arg1 arg2 ... argn&quot;
+-D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=&quot;arg1;arg2;...;argn&quot;
 </pre>
 <p>(Other command-line arguments that must come <em>before</em> the numprocs
 argument.  The default is empty &quot;&quot;.)</p>
 <pre class="literal-block">
--D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING=&quot;arg1 arg2 ... argn&quot;
+-D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING=&quot;arg1;arg2;...;argn&quot;
 </pre>
 <p>(Other command-line arguments that must come <em>after</em> the numprocs
 argument.  The default is empty &quot;&quot;.)</p>
+<p>NOTE: Multiple arguments listed in <tt class="docutils literal">MPI_EXEC_PRE_NUMPROCS_FLAGS</tt> and
+<tt class="docutils literal">MPI_EXEC_POST_NUMPROCS_FLAGS</tt> must be quoted and seprated by <tt class="docutils literal">';'</tt> as
+these variables are interpreted as CMake arrays.</p>
 </blockquote>
 </div>
 <div class="section" id="configuring-for-openmp-support">
