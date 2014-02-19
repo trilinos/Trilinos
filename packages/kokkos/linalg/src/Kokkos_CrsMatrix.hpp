@@ -67,7 +67,7 @@
 #endif // ! _OPENMP
 
 #ifdef KOKKOS_USE_CUSPARSE
-#  include <cusparse_v2.h>
+#  include <cusparse.h>
 #  include <Kokkos_CrsMatrix_CuSparse.hpp>
 #endif // KOKKOS_USE_CUSPARSE
 
@@ -2281,7 +2281,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
     // that compares the Scalar and Device types to those accepted by
     // the TPL(s).
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
       return;
     }
 #endif // KOKKOS_USE_CUSPARSE
@@ -2304,7 +2304,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                const DomainVector& x)
   {
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
       return;
     }
 #endif // KOKKOS_USE_CUSPARSE
@@ -2343,7 +2343,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                const DomainVector& x)
   {
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
       return;
     }
 #endif // KOKKOSE_USE_CUSPARSE

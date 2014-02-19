@@ -40,7 +40,7 @@
 // ************************************************************************
 //@HEADER
 */
-#ifdef KOKKOS_CRSMATRIX_CUSPARSE_HPP_
+#ifndef KOKKOS_CRSMATRIX_CUSPARSE_HPP_
 #define KOKKOS_CRSMATRIX_CUSPARSE_HPP_
 
 /// \file Kokkos_CrsMatrix_CuSparse.hpp

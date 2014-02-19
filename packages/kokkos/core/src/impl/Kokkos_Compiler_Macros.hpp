@@ -127,8 +127,8 @@
 #if defined __NVCC__
   #define KOKKOS_DEVICE_COMPILER_NAME "NVIDIA NVCC"
   #define KOKKOS_DEVICE_COMPILER_VERSION __NVCC__
-  #if (!defined(KOKKOS_HAVE_UNROLL) && defined(__CUDA_ARCH__))
-  #define KOKKOS_HAVE_UNROLL 1
+  #if (!defined(KOKKOS_HAVE_PRAGMA_UNROLL) && defined(__CUDA_ARCH__))
+  #define KOKKOS_HAVE_PRAGMA_UNROLL 1
   #endif
 #endif
 
