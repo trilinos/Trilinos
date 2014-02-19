@@ -172,6 +172,294 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, dimensionsConstructor, Sca, Ord )
   TEST_COMPARE(std::abs(mdVector.meanValue()   - scalar), <, tolerance);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListDimensionsConstructor, Sca, Ord )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+
+  // Check that the axisCommSizes are completely specified
+  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    TEST_ASSERT(axisCommSizes[axis] > 0);
+  }
+
+  // Construct dimensions
+  Ord localDim = 10;
+  Array< long int > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * axisCommSizes[axis];
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("axis comm sizes", axisCommSizes);
+  plist.set("dimensions"     , dims         );
+
+  // Construct an MDVector
+  MDVector< Sca, Ord > mdVector(comm, plist);
+
+  // Perform unit tests of MDVector as a whole
+  TEST_ASSERT(mdVector.onSubcommunicator());
+  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_ASSERT(not mdVector.hasPadding());
+  TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDVector axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdVector.getAxisRank(axis);
+    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdVector.isPeriodic(axis));
+    TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis).stop(), dims[axis]);
+    TEST_EQUALITY(mdVector.getLocalDim(axis) , localDim);
+    Slice globalRankBounds = mdVector.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(), axisRank    *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localBounds  = mdVector.getLocalBounds(axis);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), localDim);
+    TEST_EQUALITY_CONST(mdVector.getLowerPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getUpperPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getCommPadSize(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getLowerBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getUpperBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getBndryPadSize(axis), 0);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListCommPadConstructor, Sca, Ord )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Construct dimensions
+  Ord localDim = 10;
+  Array< long int > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+
+  // Construct communication padding
+  Array< int > commPad(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    commPad[axis] = axis+1;
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("dimensions"       , dims   );
+  plist.set("communication pad", commPad);
+
+  // Construct an MDVector
+  MDVector< Sca, Ord > mdVector(mdComm, plist);
+
+  // Perform unit tests of MDVector as a whole
+  TEST_ASSERT(mdVector.onSubcommunicator());
+  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.hasPadding(), comm->getSize() > 1);
+  TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDVector axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdVector.getAxisRank(axis);
+    int lowerCommPad = 0;
+    if (axisRank > 0) lowerCommPad = commPad[axis];
+    int upperCommPad = 0;
+    if (axisRank < axisCommSizes[axis]-1) upperCommPad = commPad[axis];
+    Ord myDim = localDim + lowerCommPad + upperCommPad;
+
+    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdVector.isPeriodic(axis));
+    TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis).stop(), dims[axis]);
+    TEST_EQUALITY(mdVector.getLocalDim(axis,true ), myDim   );
+    TEST_EQUALITY(mdVector.getLocalDim(axis,false), localDim);
+    Slice globalRankBounds = mdVector.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(),  axisRank   *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localBounds  = mdVector.getLocalBounds(axis,true);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), myDim);
+    localBounds = mdVector.getLocalBounds(axis,false);
+    TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
+    TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
+    TEST_EQUALITY_CONST(mdVector.getLowerPad(axis), lowerCommPad);
+    TEST_EQUALITY_CONST(mdVector.getUpperPad(axis), upperCommPad);
+    TEST_EQUALITY_CONST(mdVector.getCommPadSize(axis), commPad[axis]);
+    TEST_EQUALITY_CONST(mdVector.getLowerBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getUpperBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getBndryPadSize(axis), 0);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListBndryPadConstructor, Sca, Ord )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+
+  // Construct dimensions
+  Ord localDim = 10;
+  Array< long int > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * axisCommSizes[axis];
+
+  // Construct boundary padding
+  Array< int > bndryPad(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    bndryPad[axis] = axis+1;
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("axis comm sizes", axisCommSizes);
+  plist.set("dimensions"     , dims         );
+  plist.set("boundary pad"   , bndryPad     );
+
+  // Construct an MDVector
+  MDVector< Sca, Ord > mdVector(comm, plist);
+
+  // Perform unit tests of MDVector as a whole
+  TEST_ASSERT(mdVector.onSubcommunicator());
+  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_ASSERT(mdVector.hasPadding());
+  TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDVector axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdVector.getAxisRank(axis);
+    int lowerBndryPad = 0;
+    if (axisRank == 0) lowerBndryPad = bndryPad[axis];
+    int upperBndryPad = 0;
+    if (axisRank == axisCommSizes[axis]-1) upperBndryPad = bndryPad[axis];
+    Ord myDim = localDim + lowerBndryPad + upperBndryPad;
+
+    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdVector.isPeriodic(axis));
+    TEST_EQUALITY(mdVector.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getGlobalDim(axis,false), dims[axis]               );
+    TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis,true ).start(), 0);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis,false).start(), bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis,true ).stop(), dims[axis]+
+                  2*bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis,false).stop(), dims[axis]+
+                  bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getLocalDim(axis,true ), myDim   );
+    TEST_EQUALITY(mdVector.getLocalDim(axis,false), localDim);
+    Slice globalRankBounds = mdVector.getGlobalRankBounds(axis,false);
+    Ord myStart = bndryPad[axis] +  axisRank    * localDim;
+    Ord myStop  = bndryPad[axis] + (axisRank+1) * localDim;
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop() , myStop );
+    globalRankBounds = mdVector.getGlobalRankBounds(axis,true);
+    if (axisRank == 0                    ) myStart -= bndryPad[axis];
+    if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop( ), myStop );
+    Slice localBounds  = mdVector.getLocalBounds(axis,true);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), myDim);
+    localBounds = mdVector.getLocalBounds(axis,false);
+    TEST_EQUALITY_CONST(localBounds.start(), lowerBndryPad);
+    TEST_EQUALITY(localBounds.stop(), lowerBndryPad+localDim);
+    TEST_EQUALITY(mdVector.getLowerPad(axis), lowerBndryPad);
+    TEST_EQUALITY(mdVector.getUpperPad(axis), upperBndryPad);
+    TEST_EQUALITY_CONST(mdVector.getCommPadSize(axis), 0);
+    TEST_EQUALITY(mdVector.getLowerBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getUpperBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getBndryPadSize(axis), bndryPad[axis]);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListPaddingConstructor, Sca, Ord )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Construct dimensions
+  Ord localDim = 10;
+  Array< long int > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+
+  // Construct communication and boundary padding
+  Array< int > commPad(numDims);
+  Array< int > bndryPad(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    commPad[axis]  = axis+1;
+    bndryPad[axis] = axis+2;
+  }
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("dimensions"       , dims    );
+  plist.set("communication pad", commPad );
+  plist.set("boundary pad"     , bndryPad);
+
+  // Construct an MDVector
+  MDVector< Sca, Ord > mdVector(mdComm, plist);
+
+  // Perform unit tests of MDVector as a whole
+  TEST_ASSERT(mdVector.onSubcommunicator());
+  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_ASSERT(mdVector.hasPadding());
+  TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDVector axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank     = mdVector.getAxisRank(axis);
+    int lowerCommPad = commPad[axis];
+    int upperCommPad = commPad[axis];
+    if (axisRank == 0                ) lowerCommPad = bndryPad[axis];
+    if (axisRank == axisCommSizes[axis]-1) upperCommPad = bndryPad[axis];
+    Ord myDim = localDim + lowerCommPad + upperCommPad;
+
+    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdVector.isPeriodic(axis));
+    TEST_EQUALITY(mdVector.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getGlobalDim(axis,false), dims[axis]               );
+    TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis,true ).start(), 0);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis,false).start(), bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis,true ).stop(), dims[axis]+
+                  2*bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis,false).stop(), dims[axis]+
+                  bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getLocalDim(axis,true ), myDim   );
+    TEST_EQUALITY(mdVector.getLocalDim(axis,false), localDim);
+    Slice globalRankBounds = mdVector.getGlobalRankBounds(axis,false);
+    Ord myStart = bndryPad[axis] +  axisRank    * localDim;
+    Ord myStop  = bndryPad[axis] + (axisRank+1) * localDim;
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop() , myStop );
+    globalRankBounds = mdVector.getGlobalRankBounds(axis,true);
+    if (axisRank == 0                    ) myStart -= bndryPad[axis];
+    if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop( ), myStop );
+    Slice localBounds  = mdVector.getLocalBounds(axis,true);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), myDim);
+    localBounds = mdVector.getLocalBounds(axis,false);
+    TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
+    TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
+    TEST_EQUALITY(mdVector.getLowerPad(axis), lowerCommPad);
+    TEST_EQUALITY(mdVector.getUpperPad(axis), upperCommPad);
+    TEST_EQUALITY(mdVector.getCommPadSize(axis), commPad[axis]);
+    TEST_EQUALITY(mdVector.getLowerBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getUpperBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdVector.getBndryPadSize(axis), bndryPad[axis]);
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -216,116 +504,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
   
 }
 
-// TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListDimensionsConstructor, Sca, Ord )
-// {
-//   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-//   // Note: axisCommSizes from command line should be fully specified
-//   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-
-//   // Check that the axisCommSizes are completely specified
-//   TEST_EQUALITY(axisCommSizes.size(), numDims)
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     TEST_ASSERT(axisCommSizes[axis] > 0);
-//   }
-
-//   // Construct dimensions
-//   Ord localDim = 10;
-//   Array< long long > dims(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//     dims[axis] = localDim * axisCommSizes[axis];
-
-//   // Construct a ParameterList
-//   Teuchos::ParameterList plist;
-//   plist.set("axis comm sizes", axisCommSizes);
-//   plist.set("dimensions"     , dims         );
-
-//   // Construct an MDMap
-//   MDMap< Ord > mdMap(comm, plist);
-
-//   // Perform unit tests of MDMap as a whole
-//   TEST_ASSERT(mdMap.onSubcommunicator());
-//   TEST_EQUALITY(mdMap.getNumDims(), numDims);
-//   TEST_ASSERT(not mdMap.hasPadding());
-//   TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
-
-//   // Perform unit tests of MDMap axis quantities
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
-//     TEST_ASSERT(not mdMap.isPeriodic(axis));
-//     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
-//     TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
-//     TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim);
-//     Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
-//     TEST_EQUALITY(globalRankBounds.start(), axisRank    *localDim);
-//     TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
-//     Slice localBounds  = mdMap.getLocalBounds(axis);
-//     TEST_EQUALITY_CONST(localBounds.start(), 0);
-//     TEST_EQUALITY(localBounds.stop(), localDim);
-//     TEST_EQUALITY_CONST(mdMap.getLowerPad(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getUpperPad(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getBndryPadSize(axis), 0);
-//   }
-
-//   // This data will only be used if HAVE_EPETRA or HAVE_TPETRA is defined
-//   Teuchos::Array<int> gstrides(numDims);
-//   Teuchos::Array<int> lstrides(numDims);
-//   gstrides[0] = 1;
-//   lstrides[0] = 1;
-//   for (int axis=1; axis < numDims; ++axis)
-//   {
-//     gstrides[axis] = dims[axis-1] * gstrides[axis-1];
-//     lstrides[axis] = localDim     * lstrides[axis-1];
-//   }
-//   int gll = 0;
-//   int gur = 0;
-//   int lur = 0;
-//   for (int axis=0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     gll += ( axisRank   *localDim  ) * gstrides[axis];
-//     gur += ((axisRank+1)*localDim-1) * gstrides[axis];
-//     lur += (localDim-1) * lstrides[axis];
-//   }
-
-// #ifdef HAVE_EPETRA
-//   Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
-//   TEST_EQUALITY(epetraMap->GID(  0), gll);
-//   TEST_EQUALITY(epetraMap->GID(lur), gur);
-
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraAxisMap(axis);
-//     TEST_EQUALITY(epetraMap->GID(         0),  axisRank   *localDim  );
-//     TEST_EQUALITY(epetraMap->GID(localDim-1), (axisRank+1)*localDim-1);
-//   }
-// #endif
-
-// #ifdef HAVE_TPETRA
-//   Teuchos::RCP< const Tpetra::Map<Ord, Ord> > tpetraMap =
-//     mdMap.getTpetraMap();
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(  0), gll);
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
-
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     Teuchos::RCP< const Tpetra::Map<Ord,Ord> > tpetraMap =
-//       mdMap.getTpetraAxisMap(axis);
-//     TEST_EQUALITY(tpetraMap->getGlobalElement(0), axisRank*localDim);
-//     TEST_EQUALITY(tpetraMap->getGlobalElement(localDim-1),
-//                   (axisRank+1)*localDim-1);
-//   }
-// #endif
-// }
-
 // TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, commPadConstructor, Sca, Ord )
 // {
 //   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -346,140 +524,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
 
 //   // Construct an MDMap
 //   MDMap< Ord > mdMap(mdComm, dims(), commPad());
-
-//   // Perform unit tests of MDMap as a whole
-//   TEST_ASSERT(mdMap.onSubcommunicator());
-//   TEST_EQUALITY(mdMap.getNumDims(), numDims);
-//   TEST_EQUALITY(mdMap.hasPadding(), comm->getSize() > 1);
-//   TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
-
-//   // Perform unit tests of MDMap axis quantities
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     int lowerCommPad = 0;
-//     if (axisRank > 0) lowerCommPad = commPad[axis];
-//     int upperCommPad = 0;
-//     if (axisRank < axisCommSizes[axis]-1) upperCommPad = commPad[axis];
-//     T myDim = localDim + lowerCommPad + upperCommPad;
-
-//     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
-//     TEST_ASSERT(not mdMap.isPeriodic(axis));
-//     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
-//     TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
-//     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
-//     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
-//     Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
-//     TEST_EQUALITY(globalRankBounds.start(),  axisRank   *localDim);
-//     TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
-//     Slice localBounds  = mdMap.getLocalBounds(axis,true);
-//     TEST_EQUALITY_CONST(localBounds.start(), 0);
-//     TEST_EQUALITY(localBounds.stop(), myDim);
-//     localBounds = mdMap.getLocalBounds(axis,false);
-//     TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
-//     TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
-//     TEST_EQUALITY_CONST(mdMap.getLowerPad(axis), lowerCommPad);
-//     TEST_EQUALITY_CONST(mdMap.getUpperPad(axis), upperCommPad);
-//     TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), commPad[axis]);
-//     TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
-//     TEST_EQUALITY_CONST(mdMap.getBndryPadSize(axis), 0);
-//   }
-
-//   // This data will only be used if HAVE_EPETRA or HAVE_TPETRA is defined
-//   Teuchos::Array<int> gstrides(numDims);
-//   Teuchos::Array<int> lstrides(numDims);
-//   gstrides[0] = 1;
-//   lstrides[0] = 1;
-//   for (int axis=1; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis-1);
-//     int myCommPad = 0;
-//     if (axisRank > 0) myCommPad += commPad[axis-1];
-//     if (axisRank != mdMap.getAxisCommSize(axis-1)-1)
-//       myCommPad += commPad[axis-1];
-//     gstrides[axis] = dims[axis-1]       * gstrides[axis-1];
-//     lstrides[axis] = (localDim+myCommPad) * lstrides[axis-1];
-//   }
-//   int gll = 0;
-//   int gur = 0;
-//   int lll = 0;
-//   int lur = 0;
-//   for (int axis=0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     gll += ( axisRank   *localDim) * gstrides[axis];
-//     gur += ((axisRank+1)*localDim-1) * gstrides[axis];
-//     if (axisRank == 0)
-//       lur += (localDim-1) * lstrides[axis];
-//     else
-//     {
-//       lll += commPad[axis] * lstrides[axis];
-//       lur += (localDim+commPad[axis]-1) * lstrides[axis];
-//     }
-//   }
-
-// #ifdef HAVE_EPETRA
-//   Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
-//   TEST_EQUALITY(epetraMap->GID(lll), gll);
-//   TEST_EQUALITY(epetraMap->GID(lur), gur);
-
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank  = mdMap.getAxisRank(axis);
-//     int myCommPad = 0;
-//     if (axisRank > 0) myCommPad = commPad[axis];
-//     Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraAxisMap(axis);
-//     TEST_EQUALITY(epetraMap->GID(0), axisRank*localDim-myCommPad);
-//     TEST_EQUALITY(epetraMap->GID(localDim+myCommPad-1), (axisRank+1)*localDim-1);
-//   }
-// #endif
-
-// #ifdef HAVE_TPETRA
-//   Teuchos::RCP< const Tpetra::Map<Ord,Ord> > tpetraMap = mdMap.getTpetraMap();
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
-
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank  = mdMap.getAxisRank(axis);
-//     int myCommPad = 0;
-//     if (axisRank > 0) myCommPad = commPad[axis];
-//     Teuchos::RCP< const Tpetra::Map<T> > tpetraMap =
-//       mdMap.getTpetraAxisMap(axis);
-//     TEST_EQUALITY(tpetraMap->getGlobalElement(0), axisRank*localDim-myCommPad);
-//     TEST_EQUALITY(tpetraMap->getGlobalElement(localDim+myCommPad-1),
-//                   (axisRank+1)*localDim-1);
-//   }
-// #endif
-// }
-
-// TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListCommPadConstructor, Sca, Ord )
-// {
-//   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-//   // Note: axisCommSizes from command line should be fully specified
-//   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-//   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
-
-//   // Construct dimensions
-//   Ord localDim = 10;
-//   Array< long long > dims(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//     dims[axis] = localDim * mdComm->getAxisCommSize(axis);
-
-//   // Construct communication padding
-//   Array< int > commPad(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//     commPad[axis] = axis+1;
-
-//   // Construct a ParameterList
-//   Teuchos::ParameterList plist;
-//   plist.set("dimensions"       , dims   );
-//   plist.set("communication pad", commPad);
-
-//   // Construct an MDMap
-//   MDMap< Ord > mdMap(mdComm, plist);
 
 //   // Perform unit tests of MDMap as a whole
 //   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -736,155 +780,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
 // #endif
 // }
 
-// TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListBndryPadConstructor, Sca, Ord )
-// {
-//   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-//   // Note: axisCommSizes from command line should be fully specified
-//   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-
-//   // Construct dimensions
-//   Ord localDim = 10;
-//   Array< long long > dims(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//     dims[axis] = localDim * axisCommSizes[axis];
-
-//   // Construct boundary padding
-//   Array< int > bndryPad(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//     bndryPad[axis] = axis+1;
-
-//   // Construct a ParameterList
-//   Teuchos::ParameterList plist;
-//   plist.set("axis comm sizes", axisCommSizes);
-//   plist.set("dimensions"     , dims         );
-//   plist.set("boundary pad"   , bndryPad     );
-
-//   // Construct an MDMap
-//   MDMap< Ord > mdMap(comm, plist);
-
-//   // Perform unit tests of MDMap as a whole
-//   TEST_ASSERT(mdMap.onSubcommunicator());
-//   TEST_EQUALITY(mdMap.getNumDims(), numDims);
-//   TEST_ASSERT(mdMap.hasPadding());
-//   TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
-
-//   // Perform unit tests of MDMap axis quantities
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     int lowerBndryPad = 0;
-//     if (axisRank == 0) lowerBndryPad = bndryPad[axis];
-//     int upperBndryPad = 0;
-//     if (axisRank == axisCommSizes[axis]-1) upperBndryPad = bndryPad[axis];
-//     T myDim = localDim + lowerBndryPad + upperBndryPad;
-
-//     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
-//     TEST_ASSERT(not mdMap.isPeriodic(axis));
-//     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
-//     TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis,true ).start(), 0);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).start(), bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis,true ).stop(), dims[axis]+
-//                   2*bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).stop(), dims[axis]+
-//                   bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
-//     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
-//     Slice globalRankBounds = mdMap.getGlobalRankBounds(axis,false);
-//     T myStart = bndryPad[axis] +  axisRank    * localDim;
-//     T myStop  = bndryPad[axis] + (axisRank+1) * localDim;
-//     TEST_EQUALITY(globalRankBounds.start(), myStart);
-//     TEST_EQUALITY(globalRankBounds.stop() , myStop );
-//     globalRankBounds = mdMap.getGlobalRankBounds(axis,true);
-//     if (axisRank == 0                    ) myStart -= bndryPad[axis];
-//     if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
-//     TEST_EQUALITY(globalRankBounds.start(), myStart);
-//     TEST_EQUALITY(globalRankBounds.stop( ), myStop );
-//     Slice localBounds  = mdMap.getLocalBounds(axis,true);
-//     TEST_EQUALITY_CONST(localBounds.start(), 0);
-//     TEST_EQUALITY(localBounds.stop(), myDim);
-//     localBounds = mdMap.getLocalBounds(axis,false);
-//     TEST_EQUALITY_CONST(localBounds.start(), lowerBndryPad);
-//     TEST_EQUALITY(localBounds.stop(), lowerBndryPad+localDim);
-//     TEST_EQUALITY(mdMap.getLowerPad(axis), lowerBndryPad);
-//     TEST_EQUALITY(mdMap.getUpperPad(axis), upperBndryPad);
-//     TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
-//     TEST_EQUALITY(mdMap.getLowerBndryPad(axis), bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getUpperBndryPad(axis), bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getBndryPadSize(axis), bndryPad[axis]);
-//   }
-
-//   // This data will only be used if HAVE_EPETRA or HAVE_TPETRA is defined
-//   Teuchos::Array<int> gstrides(numDims);
-//   Teuchos::Array<int> lstrides(numDims);
-//   gstrides[0] = 1;
-//   lstrides[0] = 1;
-//   for (int axis=1; axis < numDims; ++axis)
-//   {
-//     gstrides[axis] = (dims[axis-1]+2*bndryPad[axis-1]) * gstrides[axis-1];
-//     int myBndryPad = 0;
-//     int axisRank = mdMap.getAxisRank(axis-1);
-//     if (axisRank == 0) myBndryPad += bndryPad[axis-1];
-//     if (axisRank == mdMap.getAxisCommSize(axis-1)-1)
-//       myBndryPad += bndryPad[axis-1];
-//     lstrides[axis] = (localDim+myBndryPad) * lstrides[axis-1];
-//   }
-//   int gll = 0;
-//   int gur = 0;
-//   int lll = 0;
-//   int lur = 0;
-//   for (int axis=0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     gll += (axisRank*localDim+bndryPad[axis]) * gstrides[axis];
-//     gur += ((axisRank+1)*localDim+bndryPad[axis]-1) * gstrides[axis];
-//     if (axisRank == 0)
-//     {
-//       lll += bndryPad[axis] * lstrides[axis];
-//       lur += (localDim+bndryPad[axis]-1) * lstrides[axis];
-//     }
-//     else
-//       lur += (localDim-1) * lstrides[axis];
-//   }
-
-// #ifdef HAVE_EPETRA
-//   Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
-//   TEST_EQUALITY(epetraMap->GID(lll), gll);
-//   TEST_EQUALITY(epetraMap->GID(lur), gur);
-
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank  = mdMap.getAxisRank(axis);
-//     int myCommPad = 0;
-//     if (axisRank == 0) myCommPad = bndryPad[axis];
-//     Teuchos::RCP< const Epetra_Map > epetraMap =
-//       mdMap.getEpetraAxisMap(axis);
-//     TEST_EQUALITY(epetraMap->GID(myCommPad), axisRank*localDim+bndryPad[axis]);
-//     TEST_EQUALITY(epetraMap->GID(myCommPad+localDim-1),
-//                   bndryPad[axis]+(axisRank+1)*localDim-1);
-//   }
-// #endif
-
-// #ifdef HAVE_TPETRA
-//   Teuchos::RCP< const Tpetra::Map<Ord,Ord> > tpetraMap = mdMap.getTpetraMap();
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
-
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank  = mdMap.getAxisRank(axis);
-//     int myCommPad = 0;
-//     if (axisRank == 0) myCommPad = bndryPad[axis];
-//     Teuchos::RCP< const Tpetra::Map<Ord,Ord> > tpetraMap =
-//       mdMap.getTpetraAxisMap(axis);
-//     TEST_EQUALITY(tpetraMap->getGlobalElement(myCommPad),
-//                   axisRank*localDim+bndryPad[axis]);
-//     TEST_EQUALITY(tpetraMap->getGlobalElement(myCommPad+localDim-1),
-//                   bndryPad[axis]+(axisRank+1)*localDim-1);
-//   }
-// #endif
-// }
-
 // TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, paddingConstructor, Sca, Ord )
 // {
 //   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -909,143 +804,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
 
 //   // Construct an MDMap
 //   MDMap< Ord > mdMap(mdComm, dims(), commPad(), bndryPad());
-
-//   // Perform unit tests of MDMap as a whole
-//   TEST_ASSERT(mdMap.onSubcommunicator());
-//   TEST_EQUALITY(mdMap.getNumDims(), numDims);
-//   TEST_ASSERT(mdMap.hasPadding());
-//   TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
-
-//   // Perform unit tests of MDMap axis quantities
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     int axisRank     = mdMap.getAxisRank(axis);
-//     int lowerCommPad = commPad[axis];
-//     int upperCommPad = commPad[axis];
-//     if (axisRank == 0                ) lowerCommPad = bndryPad[axis];
-//     if (axisRank == axisCommSizes[axis]-1) upperCommPad = bndryPad[axis];
-//     T myDim = localDim + lowerCommPad + upperCommPad;
-
-//     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
-//     TEST_ASSERT(not mdMap.isPeriodic(axis));
-//     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
-//     TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis,true ).start(), 0);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).start(), bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis,true ).stop(), dims[axis]+
-//                   2*bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).stop(), dims[axis]+
-//                   bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
-//     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
-//     Slice globalRankBounds = mdMap.getGlobalRankBounds(axis,false);
-//     T myStart = bndryPad[axis] +  axisRank    * localDim;
-//     T myStop  = bndryPad[axis] + (axisRank+1) * localDim;
-//     TEST_EQUALITY(globalRankBounds.start(), myStart);
-//     TEST_EQUALITY(globalRankBounds.stop() , myStop );
-//     globalRankBounds = mdMap.getGlobalRankBounds(axis,true);
-//     if (axisRank == 0                    ) myStart -= bndryPad[axis];
-//     if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
-//     TEST_EQUALITY(globalRankBounds.start(), myStart);
-//     TEST_EQUALITY(globalRankBounds.stop( ), myStop );
-//     Slice localBounds  = mdMap.getLocalBounds(axis,true);
-//     TEST_EQUALITY_CONST(localBounds.start(), 0);
-//     TEST_EQUALITY(localBounds.stop(), myDim);
-//     localBounds = mdMap.getLocalBounds(axis,false);
-//     TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
-//     TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
-//     TEST_EQUALITY(mdMap.getLowerPad(axis), lowerCommPad);
-//     TEST_EQUALITY(mdMap.getUpperPad(axis), upperCommPad);
-//     TEST_EQUALITY(mdMap.getCommPadSize(axis), commPad[axis]);
-//     TEST_EQUALITY(mdMap.getLowerBndryPad(axis), bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getUpperBndryPad(axis), bndryPad[axis]);
-//     TEST_EQUALITY(mdMap.getBndryPadSize(axis), bndryPad[axis]);
-//   }
-
-//   // This data will only be used if HAVE_EPETRA or HAVE_TPETRA is defined
-//   Teuchos::Array<int> gstrides(numDims);
-//   Teuchos::Array<int> lstrides(numDims);
-//   gstrides[0] = 1;
-//   lstrides[0] = 1;
-//   for (int axis=1; axis < numDims; ++axis)
-//   {
-//     gstrides[axis] = (dims[axis-1]+2*bndryPad[axis-1]) * gstrides[axis-1];
-//     int myCommPad = 0;
-//     int axisRank  = mdMap.getAxisRank(axis-1);
-//     if (axisRank == 0)
-//       myCommPad += bndryPad[axis-1];
-//     else
-//       myCommPad += commPad[axis-1];
-//     if (axisRank == mdMap.getAxisCommSize(axis-1)-1)
-//       myCommPad += bndryPad[axis-1];
-//     else
-//       myCommPad += commPad[axis-1];
-//     lstrides[axis] = (localDim+myCommPad) * lstrides[axis-1];
-//   }
-//   int gll = 0;
-//   int gur = 0;
-//   int lll = 0;
-//   int lur = 0;
-//   for (int axis=0; axis < numDims; ++axis)
-//   {
-//     int axisRank = mdMap.getAxisRank(axis);
-//     gll += (axisRank*localDim+bndryPad[axis]) * gstrides[axis];
-//     gur += ((axisRank+1)*localDim+bndryPad[axis]-1) * gstrides[axis];
-//     if (axisRank == 0)
-//     {
-//       lll += bndryPad[axis] * lstrides[axis];
-//       lur += (localDim+bndryPad[axis]-1) * lstrides[axis];
-//     }
-//     else
-//     {
-//       lll += commPad[axis] * lstrides[axis];
-//       lur += (localDim+commPad[axis]-1) * lstrides[axis];
-//     }
-//   }
-
-// #ifdef HAVE_EPETRA
-//   Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
-//   TEST_EQUALITY(epetraMap->GID(lll), gll);
-//   TEST_EQUALITY(epetraMap->GID(lur), gur);
-// #endif
-
-// #ifdef HAVE_TPETRA
-//   Teuchos::RCP< const Tpetra::Map<Ord,Ord> > tpetraMap = mdMap.getTpetraMap();
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
-//   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
-// #endif
-// }
-
-// TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListPaddingConstructor, Sca, Ord )
-// {
-//   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-//   // Note: axisCommSizes from command line should be fully specified
-//   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-//   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
-
-//   // Construct dimensions
-//   Ord localDim = 10;
-//   Array< long long > dims(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//     dims[axis] = localDim * mdComm->getAxisCommSize(axis);
-
-//   // Construct communication and boundary padding
-//   Array< int > commPad(numDims);
-//   Array< int > bndryPad(numDims);
-//   for (int axis = 0; axis < numDims; ++axis)
-//   {
-//     commPad[axis]  = axis+1;
-//     bndryPad[axis] = axis+2;
-//   }
-
-//   // Construct a ParameterList
-//   Teuchos::ParameterList plist;
-//   plist.set("dimensions"       , dims    );
-//   plist.set("communication pad", commPad );
-//   plist.set("boundary pad"     , bndryPad);
-
-//   // Construct an MDMap
-//   MDMap< Ord > mdMap(mdComm, plist);
 
 //   // Perform unit tests of MDMap as a whole
 //   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -2281,14 +2039,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
 
 #define UNIT_TEST_GROUP( Sca, Ord ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, dimensionsConstructor, Sca, Ord ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListDimensionsConstructor, Sca, Ord ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListCommPadConstructor, Sca, Ord ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListBndryPadConstructor, Sca, Ord ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListPaddingConstructor, Sca, Ord ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, randomize, Sca, Ord ) // \
-  // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListDimensionsConstructor, Sca, Ord ) \
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, commPadConstructor, Sca, Ord ) \
-  // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListCommPadConstructor, Sca, Ord ) \
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, bndryPadConstructor, Sca, Ord ) \
-  // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListBndryPadConstructor, Sca, Ord ) \
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, paddingConstructor, Sca, Ord ) \
-  // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListPaddingConstructor, Sca, Ord ) \
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, indexes, Sca, Ord ) \
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, exceptions, Sca, Ord ) \
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, subMapLowerLeft, Sca, Ord )   \
