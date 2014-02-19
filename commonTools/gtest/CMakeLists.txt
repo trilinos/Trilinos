@@ -34,7 +34,7 @@ TRIBITS_ADD_LIBRARY(
   )
 
 #install gtest header into the correct subdir.
-INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/gtest/)
+INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/gtest/)
 
 
 
