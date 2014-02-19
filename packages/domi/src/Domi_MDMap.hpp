@@ -185,10 +185,10 @@ public:
    *        MDComm will be constructed from the information in plist.
    *
    * \param plist [in] ParameterList with construction information
-   * \htmlonly
-   * <iframe src="domi.xml" width="90%"height="400px"></iframe>
-   * <hr />
-   * \endhtmlonly
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <hr />
+   *        \endhtmlonly
    *
    * \param node [in] the Kokkos node of the map
    */
@@ -203,10 +203,10 @@ public:
    *        communicator), on which this MDMap will be built.
    *
    * \param plist [in] ParameterList with construction information
-   * \htmlonly
-   * <iframe src="domi.xml" width="90%"height="400px"></iframe>
-   * <hr />
-   * \endhtmlonly
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <hr />
+   *        \endhtmlonly
    *
    * \param node [in] the Kokkos node of the map
    */
