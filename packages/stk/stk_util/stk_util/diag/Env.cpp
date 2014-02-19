@@ -829,18 +829,17 @@ void ShutDownSierra(bool mpiInitFlag) {
   if (get_param("nosignal").empty())
     deactivate_signals();
 
-  mpih::Delete_Handles();
-
-  EnvData &env_data = EnvData::instance();
-  mpih::Keyval_delete(env_data.m_parallelComm);
-
-  reset(MPI_COMM_NULL);
+  if(mpiInitFlag) {
+    mpih::Delete_Handles();
 
 
+    EnvData &env_data = EnvData::instance();
+    mpih::Keyval_delete(env_data.m_parallelComm);
 
-  if (mpiInitFlag)
+    reset(MPI_COMM_NULL);
+
     MPI_Finalize();
-
+  }
 }
 
 
