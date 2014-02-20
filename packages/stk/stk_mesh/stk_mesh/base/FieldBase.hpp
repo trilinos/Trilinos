@@ -316,6 +316,15 @@ inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
 template<class FieldType>
 inline
 typename FieldTraits<FieldType>::data_type*
+field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord)  {
+  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[bucket_id];
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * bucket_ord);
+}
+
+
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
 field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord)  {
   ThrowAssert(f.entity_rank() == b.entity_rank());
   ThrowAssert(&f.get_mesh() == &b.mesh());
