@@ -141,10 +141,13 @@ namespace Tpetra {
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     using Teuchos::rcpFromRef;
+    using Teuchos::TypeNameTraits;
     using std::endl;
     const Teuchos::EVerbosityLevel vl = (verbLevel == Teuchos::VERB_DEFAULT) ?
       Teuchos::VERB_LOW : verbLevel;
-    const int myRank = getComm ()->getRank ();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap ()->getComm ();
+    const int myRank = comm.is_null () ? 0 : comm->getRank ();
+    const int numProcs = comm.is_null () ? 1 : comm->getSize ();
 
     if (vl != Teuchos::VERB_NONE) {
       Teuchos::OSTab tab0 (out);
@@ -186,9 +189,11 @@ namespace Tpetra {
                 << "Import buffer size (in packets): " << imports_.size ()
                 << endl;
           }
-          getComm ()->barrier (); // give output time to finish
-          getComm ()->barrier ();
-          getComm ()->barrier ();
+          if (! comm.is_null ()) {
+            comm->barrier (); // give output time to finish
+            comm->barrier ();
+            comm->barrier ();
+          }
         } // for each process rank p
       } // if vl > VERB_LOW
     } // if vl != VERB_NONE
@@ -862,7 +867,7 @@ namespace Tpetra {
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
             distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID), 1,
                                     host_numImportPacketsPerLID);
-            size_t totalImportPackets = 0
+            size_t totalImportPackets = 0;
             // FIXME (mfh 17 Feb 2014) This would be a good place for
             // a Kokkos reduction.  numImportPacketsPerLID_ has as
             // many entries as the number of LIDs on the calling
