@@ -12,21 +12,24 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG
   ctest_linux_nightly_serial_debug_gcc-4.6.3_cxx11_brain.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 240
+  RUN_SERIAL
+  TIMEOUT_MINUTES 360
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_MEMCHECK
   ctest_linux_nightly_serial_debug_gcc-4.1.2_memcheck_brain.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 240
+  RUN_SERIAL
+  TIMEOUT_MINUTES 360
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_NOEI
   ctest_linux_nightly_serial_development_debug_gcc_4.6.3_noei_brain.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 300
+  RUN_SERIAL
+  TIMEOUT_MINUTES 360
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
