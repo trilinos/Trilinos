@@ -661,15 +661,22 @@ namespace Tpetra {
           lastContiguousGID_ = indexBase;
         }
 
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          minMyGID_ == getInvalidGlobalIndex () ||
-          maxMyGID_ == getInvalidGlobalIndex (),
-          std::logic_error, "Tpetra::Details::Map noncontig ctor: The calling "
-          "process " << comm.getRank () << " owns " << myNumIndices_ << " (!= "
-          "0) global indices, but was unable to find the min or max global "
-          "index on this process.  Please report this bug to the Tpetra "
-          "developers.  Tell them that minMyGID_ == " << minMyGID_ << " and "
-          "maxMyGID_ == " << maxMyGID_ << ".");
+        // mfh 20 Feb 2014: Commenting out the exception test below
+        // fixes Bug 5401.  In particular, it needs to be OK to supply
+        // -1 as the min GID, even though Teuchos::OrdinalTraits<GO>
+        // for signed GO is -1 (which is actually annoying -- the most
+        // negative integer (e.g., INT_MIN for GO = int) would be
+        // better).
+        //
+        // TEUCHOS_TEST_FOR_EXCEPTION(
+        //   minMyGID_ == getInvalidGlobalIndex () ||
+        //   maxMyGID_ == getInvalidGlobalIndex (),
+        //   std::logic_error, "Tpetra::Details::Map noncontig ctor: The calling "
+        //   "process " << comm.getRank () << " owns " << myNumIndices_ << " (!= "
+        //   "0) global indices, but was unable to find the min or max global "
+        //   "index on this process.  Please report this bug to the Tpetra "
+        //   "developers.  Tell them that minMyGID_ == " << minMyGID_ << " and "
+        //   "maxMyGID_ == " << maxMyGID_ << ".");
 
         if (globalNumIndices_ == 0) {
           // mfh 10 Feb 2014: Users might want to execute the
