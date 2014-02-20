@@ -260,8 +260,7 @@ public:
   void truncatedCG( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                     const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
-
-    const Real gtol = std::min(this->tol2_,this->tol1_*gnorm);
+    const Real gtol = std::min(this->tol1_,this->tol2_*gnorm);
 
     // Old and New Step Vectors
     s.zero(); 
@@ -288,7 +287,6 @@ public:
 
     // Hessian Times Basis Vector
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    pObj.hessVec(*Hp,*p,x,tol);
 
     iter        = 0; 
     iflag       = 0;
@@ -302,8 +300,10 @@ public:
     this->pRed_ = 0.0;
 
     for (iter = 0; iter < this->maxit_; iter++) {
+      pObj.hessVec(*Hp,*p,x,tol);
+
       kappa = p->dot(*Hp);
-      if (kappa <= 0) {
+      if (kappa <= 0.0) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p);
         iflag = 2; 
@@ -318,7 +318,7 @@ public:
       if (s1norm2 >= del*del) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p);
-        iflag = 1; 
+        iflag = 3; 
         break;
       }
 
@@ -342,16 +342,15 @@ public:
       p->axpy(-1.0,*v);
       sMp    = beta*(sMp+alpha*pnorm2);
       pnorm2 = gv + beta*beta*pnorm2; 
-      pObj.hessVec(*Hp,*p,x,tol);
     }
     if (iflag > 0) {
       this->pRed_ += sigma*(gv-0.5*sigma*kappa);
     }
 
     if (iter == this->maxit_) {
-      iflag = 3;
+      iflag = 1;
     }
-    if (iflag != 3) { 
+    if (iflag != 1) { 
       iter++;
     }
 
@@ -362,7 +361,7 @@ public:
                          const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    const Real gtol = std::min(this->tol2_,this->tol1_*gnorm);
+    const Real gtol = std::min(this->tol1_,this->tol2_*gnorm);
 
     // Compute Cauchy Point
     Real scnorm = 0.0;
@@ -400,7 +399,6 @@ public:
 
     // Hessian Times Basis Vector
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    pObj.reducedHessVec(*Hp,*p,*xc,x,tol);
 
     iter        = 0; 
     iflag       = 0; 
@@ -414,6 +412,8 @@ public:
     this->pRed_ = 0.0;
 
     for (iter = 0; iter < this->maxit_; iter++) {
+      pObj.reducedHessVec(*Hp,*p,*xc,x,tol);
+
       kappa = p->dot(*Hp);
       if (kappa <= 0) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
@@ -430,7 +430,7 @@ public:
       if (s1norm2 >= del*del) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p);
-        iflag = 1; 
+        iflag = 3; 
         break;
       }
 
@@ -454,16 +454,15 @@ public:
       p->axpy(-1.0,*v);
       sMp    = beta*(sMp+alpha*pnorm2);
       pnorm2 = gv + beta*beta*pnorm2; 
-      pObj.reducedHessVec(*Hp,*p,*xc,x,tol);
     }
     if (iflag > 0) {
       this->pRed_ += sigma*(gv-0.5*sigma*kappa);
     }
 
     if (iter == this->maxit_) {
-      iflag = 3;
+      iflag = 1;
     }
-    if (iflag != 3) { 
+    if (iflag != 1) { 
       iter++;
     }
 
