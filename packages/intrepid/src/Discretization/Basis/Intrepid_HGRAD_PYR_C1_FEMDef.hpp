@@ -1,5 +1,9 @@
 #ifndef INTREPID_HGRAD_PYR_C1_FEMDEF_HPP
 #define INTREPID_HGRAD_PYR_C1_FEMDEF_HPP
+
+#include <limits>
+
+
 // @HEADER
 // ************************************************************************
 //
