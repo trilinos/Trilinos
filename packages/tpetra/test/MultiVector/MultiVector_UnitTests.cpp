@@ -70,6 +70,29 @@
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors
 
+
+// Macro that marks a function as "possibly unused," in order to
+// suppress build warnings.
+#if ! defined(TRILINOS_UNUSED_FUNCTION)
+#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#  elif defined(__clang__)
+#    if __has_attribute(unused)
+#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#    else
+#      define TRILINOS_UNUSED_FUNCTION
+#    endif // Clang has 'unused' attribute
+#  elif defined(__IBMCPP__)
+// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
+//
+// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
+#    define TRILINOS_UNUSED_FUNCTION
+#  else // some other compiler
+#    define TRILINOS_UNUSED_FUNCTION
+#  endif
+#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
+
+
 namespace Teuchos {
   template <>
   ScalarTraits<int>::magnitudeType
@@ -169,9 +192,9 @@ namespace {
   template <class Scalar>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol() { return Teuchos::ScalarTraits<Scalar>::eps(); }
   template <>
-  int testingTol<int>() { return 0; }
+  TRILINOS_UNUSED_FUNCTION int testingTol<int>() { return 0; }
   template <>
-  long testingTol<long>() { return 0; }
+  TRILINOS_UNUSED_FUNCTION long testingTol<long>() { return 0; }
 
   //
   // UNIT TESTS
