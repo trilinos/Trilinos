@@ -37,10 +37,11 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(AdvancedSet)
 
-
-SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
-
+ADVANCED_SET( ${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX ".exe"
+  CACHE STRING
+  "Default exec suffix on all platforms (can be overridden by each executable added)." )
 
 #
 # Process the COMM arguments

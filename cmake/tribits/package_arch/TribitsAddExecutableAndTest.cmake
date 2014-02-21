@@ -42,6 +42,11 @@ INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsAddTest)
 
 
+#
+# Helper Macros
+#
+
+
 MACRO(TRIBITS_FWD_PARSE_ARG  VAR_TO_SET_OUT  ARGNAME)
   IF (PARSE_${ARGNAME})
     SET(${VAR_TO_SET_OUT} ${${VAR_TO_SET_OUT}} ${ARGNAME} ${PARSE_${ARGNAME}}) 
