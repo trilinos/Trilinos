@@ -1840,10 +1840,12 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   # they are enabled or if any of their subpackages are enabled.
   #
 
+  INCLUDE(TribitsPackageMacros)
+  INCLUDE(TribitsSubPackageMacros)
+  INCLUDE(AddSubdirectories)
+
   SET(CONFIGURED_A_PACKAGE FALSE)
   SET(ENABLED_PACKAGE_LIBS_TARGETS)
-
-  INCLUDE(TribitsPackageMacros)
   
   SET(PACKAGE_IDX 0)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})

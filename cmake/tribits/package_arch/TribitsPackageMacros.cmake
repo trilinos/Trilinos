@@ -207,6 +207,13 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   # Set up parent package linkage varaibles
   TRIBITS_DEFINE_TARGET_VARS(${PACKAGE_NAME})
 
+  #
+  # Append the local package's cmake directory in order to help pull in 
+  # configure-time testing macros  
+  #
+
+  PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 ENDMACRO()
 
 
@@ -509,14 +516,6 @@ MACRO(TRIBITS_PROCESS_SUBPACKAGES)
   ENDFOREACH()
 
 ENDMACRO()
-
-
-#
-# Append the local package's cmake directory in order to help pull in 
-# configure-time testing macros
-#
-
-PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 
 ##################################################################
