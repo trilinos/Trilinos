@@ -42,9 +42,17 @@
 #ifndef DOMI_UTILS_HPP
 #define DOMI_UTILS_HPP
 
+// Domi includes
 #include "Domi_ConfigDefs.hpp"
+
+// Teuchos includes
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+
+#ifdef HAVE_MPI
+// MPI include
+#include "mpi.h"
+#endif
 
 namespace Domi
 {
@@ -272,6 +280,28 @@ computePeriodic(int numDims,
  */
 void splitStringOfIntsWithCommas(std::string data,
                                  Teuchos::Array< int > & result);
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_MPI
+
+/** \brief Return an MPI_Datatype, given its corresponding C/C++ type,
+           specified as template parameter T
+ */
+template< class T > MPI_Datatype mpiType();
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_MPI
+
+/** \brief Return an MPI flag for data layout, given its corresponding
+           Domi enumeration
+ */
+int mpiOrder(ELayout layout);
+
+#endif
 
 }       // End Domi namespace
 
