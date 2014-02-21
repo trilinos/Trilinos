@@ -165,6 +165,7 @@ private:
   //disallow copy and default constructors
   FieldBaseImpl();
   FieldBaseImpl( const FieldBase & );
+  FieldBaseImpl( const FieldBaseImpl & );
   FieldBaseImpl & operator = ( const FieldBaseImpl & );
 };
 
