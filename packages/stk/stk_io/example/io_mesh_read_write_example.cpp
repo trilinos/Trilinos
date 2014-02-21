@@ -101,8 +101,11 @@ namespace {
       std::cout << "Adding " << global_fields.size() << " global fields:\n";
     }
 
+    Teuchos::RCP<Ioss::Region> io_region = mesh_data.get_input_io_region();
+    ThrowRequire(!Teuchos::is_null(io_region));
+      
     for (size_t i=0; i < global_fields.size(); i++) {
-      const Ioss::Field &input_field = mesh_data.get_input_io_region()->get_fieldref(global_fields[i]);
+      const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
       std::cout << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
 
       if (input_field.raw_storage()->component_count() == 1) {
@@ -128,19 +131,19 @@ namespace {
     // to the results and restart output databases...
 
     // Determine number of timesteps on input database...
-    int timestep_count = mesh_data.get_input_io_region()->get_property("state_count").get_int();
+    int timestep_count = io_region->get_property("state_count").get_int();
 
     if (timestep_count == 0 ) {
       mesh_data.write_output_mesh(results_index);
     }
     else {
       for (int step=1; step <= timestep_count; step++) {
-	double time = mesh_data.get_input_io_region()->get_state_time(step);
+	double time = io_region->get_state_time(step);
 	if (step == timestep_count)
 	  interpolation_intervals = 1;
 	
 	int step_end = step < timestep_count ? step+1 : step;
-	double tend =  mesh_data.get_input_io_region()->get_state_time(step_end);
+	double tend =  io_region->get_state_time(step_end);
 	double tbeg = time;
 	double delta = (tend - tbeg) / static_cast<double>(interpolation_intervals);
 	

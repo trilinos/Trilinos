@@ -416,7 +416,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
 	stk::mesh::Part* const part = meta.get_part(entity->name());
-	assert(part != NULL);
+	ThrowRequire(part != NULL);
 
       const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
 
@@ -464,8 +464,8 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
 	stk::mesh::Part* const part = meta.get_part(entity->name());
-	assert(part != NULL);
-	assert(entity->field_exists("distribution_factors"));
+	ThrowRequire(part != NULL);
+	ThrowRequire(entity->field_exists("distribution_factors"));
 
 	stk::mesh::put_field(distribution_factors_field, *part);
 
@@ -491,7 +491,7 @@ namespace stk_example_io {
     stk::io::default_part_processing(blocks, meta, sset_rank);
 
     stk::mesh::Part* const fs_part = meta.get_part(sset->name());
-    assert(fs_part != NULL);
+    ThrowRequire(fs_part != NULL);
 
     stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
     bool surface_df_defined = false; // Has the surface df field been defined yet?
@@ -502,7 +502,7 @@ namespace stk_example_io {
       Ioss::SideBlock *side_block = sset->get_block(i);
       if (stk::io::include_entity(side_block)) {
 	stk::mesh::Part * const side_block_part = meta.get_part(side_block->name());
-	assert(side_block_part != NULL);
+	ThrowRequire(side_block_part != NULL);
 	meta.declare_part_subset(*fs_part, *side_block_part);
 
         const stk::mesh::EntityRank part_rank = side_block_part->primary_entity_rank();
@@ -592,7 +592,7 @@ namespace stk_example_io {
         const std::string &name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
-        assert(part != NULL);
+        ThrowRequire(part != NULL);
 
         const stk::topology topo = part->topology();
         if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -651,7 +651,7 @@ namespace stk_example_io {
         const std::string & name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
-        assert(part != NULL);
+        ThrowRequire(part != NULL);
         stk::mesh::PartVector add_parts( 1 , part );
 
         std::vector<int> node_ids ;
