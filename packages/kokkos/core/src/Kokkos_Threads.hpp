@@ -123,9 +123,6 @@ public:
   //! \name Function for the functor device interface */
   //@{
 
-  /** \TODO: compiler dependent implementation */
-  inline static void memory_fence() {};
-
   inline int league_rank() const ;
   inline int league_size() const ;
   inline int team_rank() const ;
@@ -188,7 +185,7 @@ public:
 
   /** \brief  Maximum size of a single thread team.
    *
-   *  If a parallel_{for,reduce,scan} operation requests a team_size that 
+   *  If a parallel_{for,reduce,scan} operation requests a team_size that
    *  does not satisfy the condition: 0 == team_max() % team_size
    *  then some threads will idle.
    */

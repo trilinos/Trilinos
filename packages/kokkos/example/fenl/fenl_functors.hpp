@@ -53,6 +53,7 @@
 #include <cmath>
 #include <limits>
 
+#include <Kokkos_Pair.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 
 #include <impl/Kokkos_Timer.hpp>
@@ -72,7 +73,7 @@ class NodeNodeGraph {
 public:
 
   typedef typename ElemNodeIdView::device_type device_type ;
-  typedef unsigned long key_type ;
+  typedef pair<unsigned,unsigned> key_type ;
 
   typedef Kokkos::UnorderedMap< key_type, void , device_type > SetType ;
   typedef typename CrsGraphType::row_map_type::non_const_type  RowMapType ;
@@ -236,9 +237,7 @@ public:
 
           const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-          const key_type key = (row_node < col_node) ?
-                              ( key_type(row_node) << 32 ) | key_type( col_node ) :
-                              ( key_type(col_node) << 32 ) | key_type( row_node ) ;
+          const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
 
           const typename SetType::insert_result result = node_node_set.insert( key );
 
@@ -256,8 +255,8 @@ public:
   {
     if ( node_node_set.valid_at(iset) ) {
       const key_type key = node_node_set.key_at(iset) ;
-      const unsigned row_node = key >> 32 ;
-      const unsigned col_node = key & ~0u ;
+      const unsigned row_node = key.first ;
+      const unsigned col_node = key.second ;
 
       {
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );

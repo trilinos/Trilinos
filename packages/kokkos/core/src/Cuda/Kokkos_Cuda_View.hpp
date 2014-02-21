@@ -185,7 +185,7 @@ struct CudaTextureFetch {
 
     template< typename iType >
     KOKKOS_INLINE_FUNCTION
-    double operator[]( const iType & i ) const
+    ValueType operator[]( const iType & i ) const
     {
   #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
   // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
