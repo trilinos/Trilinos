@@ -12,6 +12,7 @@ IF(Kokkos_ENABLE_Cuda)
 
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
   CUDA_COMPILE( OBJECTS_CUDA PerfTestCuda.cu )
 
   LIST( APPEND SOURCES PerfTestCuda.cpp )

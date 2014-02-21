@@ -16,6 +16,7 @@ ENDIF()
 IF(Kokkos_ENABLE_Cuda)
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} ${KokkosContainers_INCLUDE_DIRS} )
+  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
   CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
   LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )
 ENDIF()
