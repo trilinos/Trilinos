@@ -3,6 +3,7 @@
 
 #include <limits>
 
+using namespace std;
 
 // @HEADER
 // ************************************************************************
@@ -116,7 +117,7 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
   Scalar x = 0.0;                                    
   Scalar y = 0.0;   
   Scalar z = 0.0;
-  const Scalar eps = std::numeric_limits<Scalar>::epsilon( );
+  const Scalar eps = numeric_limits<Scalar>::epsilon( );
   
   switch (operatorType) {
     
@@ -127,7 +128,7 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         z = inputPoints(i0, 2);
         
         //be sure that the basis functions are defined when z is very close to 1.
-        z = std::min(z, 1-eps);
+        z = min(z, 1-eps);
 
 
         Scalar zTerm = 0.25/(1.0 - z);
@@ -152,7 +153,7 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
 
     	//be sure that the basis functions are defined when z is very close to 1.
     	//warning, the derivatives are discontinuous in (0, 0, 1)
-    	z = std::min(z, 1-eps);
+    	z = min(z, 1-eps);
 
 
     	Scalar zTerm = 0.25/(1.0 - z);
@@ -182,12 +183,12 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
       break;
       
     case OPERATOR_CURL:
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), invalid_argument,
                           ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
     case OPERATOR_DIV:
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), invalid_argument,
                           ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
       
@@ -199,7 +200,7 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
 
         //be sure that the basis functions are defined when z is very close to 1.
         //warning, the derivatives are discontinuous in (0, 0, 1)
-        z = std::min(z, 1-eps);
+        z = min(z, 1-eps);
 
 
         Scalar zTerm = 0.25/(1.0 - z);
@@ -266,7 +267,7 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
       }
       break;
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), invalid_argument,
                           ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): Invalid operator type");
   }
 }
@@ -278,7 +279,7 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                                                              const ArrayScalar &    inputPoints,
                                                              const ArrayScalar &    cellVertices,
                                                              const EOperator        operatorType) const {
-  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), logic_error,
                       ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): FEM Basis calling an FVD member function");
 }
 }// namespace Intrepid
