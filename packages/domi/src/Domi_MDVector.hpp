@@ -54,6 +54,21 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_CommHelpers.hpp"
+
+#ifdef OPEN_MPI
+// I provide dummy definitions for MPI structs so that
+// typeid(MPI_Datatype) and typeid(MPI_Request) will compile.
+// Defining empty structs like this should be fine since only the guts
+// of OpenMPI will ever see the real definitions.  This is a silly game
+// we are playing with the C++ type system here but it should work
+// just fine.
+struct ompi_datatype_t {};
+//struct ompi_request_t {};
+#endif
+
+using std::cout;
+using std::endl;
 
 namespace Domi
 {
@@ -504,12 +519,22 @@ public:
   /// Sum values of a locally replicated multivector across all processes.
   void reduce();
 
+  /// The simplest method for updating the communication padding.
+  /// This method will update the communication padding along all
+  /// axes.
+  void updateCommPad();
+
   /// Update the data in the communication padding along the specified
   /// axis
   void updateCommPad(int axis);
 
-  /// Update the communication padding along all axes
-  void updateCommPad();
+  /// Send the non-blocking updates for the communication padding
+  /// along the given axis
+  void startUpdateCommPad(int axis);
+
+  /// Receive non-blocking updates for the communication padding along
+  /// the given axis
+  void endUpdateCommPad(int axis);
 
   //@}
 
@@ -569,6 +594,43 @@ private:
   // boundary pad size, which we store internally here
   Teuchos::Array< int > _sliceBndryPad;
 
+  // Define a struct for storing all the information needed for a
+  // single message: a pointer to the buffer, a reference to the
+  // message's MPI data type, the rank of the communication partner,
+  // and the axis alng which we are communicating
+  struct MessageInfo
+  {
+    // Pointer to first element of data buffer
+    void *buffer;
+#ifdef HAVE_MPI
+    // MPI data type (strided vector)
+    Teuchos::RCP< MPI_Datatype > datatype;
+#endif
+    // Processor rank for communication partner
+    int proc;
+    // Communication is along this axis
+    int axis;
+  };
+
+  // An array of MessageInfo objects representing all active send
+  // buffers.  The outer array represents the axis and the inner
+  // 2-Tuple represents the lower and upper boundaries.
+  Teuchos::Array< Teuchos::Tuple< MessageInfo, 2 > > _sendMessages;
+
+  // An array of MessageInfo objects representing all active receive
+  // buffers.  The outer array represents the axis and the inner
+  // 2-Tuple represents the lower and upper boundaries.
+  Teuchos::Array< Teuchos::Tuple< MessageInfo, 2 > > _recvMessages;
+
+#ifdef HAVE_MPI
+  // An array of MPI_Request objects for supporting non-blocking sends
+  // and receives
+  Teuchos::Array< MPI_Request > _requests;
+#endif
+
+  // A private method to initialize the _sendMessages and
+  // _recvMessages arrays.  Should be called by each constructor.
+  void initializeMessages();
 };
 
 /////////////////////
@@ -589,7 +651,10 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(mdMap->getNumDims())
+  _sliceBndryPad(mdMap->getNumDims()),
+  _sendMessages(mdMap->getNumDims()),
+  _recvMessages(mdMap->getNumDims()),
+  _requests()
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
@@ -603,6 +668,9 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -619,7 +687,10 @@ MDVector(const Teuchos::RCP<
   _mdArrayRcp(source),
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
-  _sliceBndryPad(mdMap->getNumDims())
+  _sliceBndryPad(mdMap->getNumDims()),
+  _sendMessages(mdMap->getNumDims()),
+  _recvMessages(mdMap->getNumDims()),
+  _requests()
 {
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->getNumDims();
@@ -636,6 +707,9 @@ MDVector(const Teuchos::RCP<
       "Axis " << axis << ": MDMap dimension = " << _mdMap->getLocalDim(axis)
       << ", MDArray dimension = " << _mdArrayRcp.dimension(axis));
   }
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -651,9 +725,15 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source) :
   _mdArrayRcp(source._mdArrayRcp),
   _mdArrayView(source._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(source->_sliceBndryPad)
+  _sliceBndryPad(source->_sliceBndryPad),
+  _sendMessages(_mdMap->getNumDims()),
+  _recvMessages(_mdMap->getNumDims()),
+  _requests()
 {
   setObjectLabel("Domi::MDVector");
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -673,7 +753,10 @@ MDVector(const TeuchosCommRCP teuchosComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->getNumDims())
+  _sliceBndryPad(_mdMap->getNumDims()),
+  _sendMessages(_mdMap->getNumDims()),
+  _recvMessages(_mdMap->getNumDims()),
+  _requests()
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
@@ -687,6 +770,9 @@ MDVector(const TeuchosCommRCP teuchosComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -706,7 +792,10 @@ MDVector(const MDCommRCP mdComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->getNumDims())
+  _sliceBndryPad(_mdMap->getNumDims()),
+  _sendMessages(_mdMap->getNumDims()),
+  _recvMessages(_mdMap->getNumDims()),
+  _requests()
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
@@ -720,6 +809,9 @@ MDVector(const MDCommRCP mdComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -737,7 +829,10 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(parent.getNumDims())
+  _sliceBndryPad(parent.getNumDims()),
+  _sendMessages(parent.getNumDims()),
+  _recvMessages(parent.getNumDims()),
+  _requests()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -753,6 +848,9 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
     if (myAxis == axis) _mdArrayView = _mdArrayView[index];
     else                _mdArrayView = _mdArrayView[Slice()];
   }
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -770,7 +868,11 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   _mdMap(),
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
-  _nextAxis(0)
+  _nextAxis(0),
+  _sliceBndryPad(parent.getNumDims()),
+  _sendMessages(parent.getNumDims()),
+  _recvMessages(parent.getNumDims()),
+  _requests()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -787,6 +889,9 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
     if (myAxis == axis) _mdArrayView = _mdArrayView[slice];
     else                _mdArrayView = _mdArrayView[Slice()];
   }
+
+  // Initialize the communication padding messages
+  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1432,8 +1537,12 @@ template< class Scalar,
           class Node >
 void
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-updateCommPad(int axis)
+updateCommPad()
 {
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    updateCommPad(axis);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1444,8 +1553,97 @@ template< class Scalar,
           class Node >
 void
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-updateCommPad()
+updateCommPad(int axis)
 {
+  startUpdateCommPad(axis);
+  endUpdateCommPad(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+startUpdateCommPad(int axis)
+{
+  int rank    = _teuchosComm->getRank();
+  int numProc = _teuchosComm->getSize();
+  int tag;
+#ifdef HAVE_MPI
+  // Since HAVE_MPI is defined, we know that _teuchosComm points to a
+  // const Teuchos::MpiComm< int >.  We downcast, extract and
+  // dereference so that we can get access to the MPI_Comm used to
+  // construct it.
+  Teuchos::RCP< const Teuchos::MpiComm< int > > mpiComm =
+    Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm< int > >(_teuchosComm);
+  const Teuchos::OpaqueWrapper< MPI_Comm > & communicator =
+    *(mpiComm->getRawMpiComm());
+
+  // Post the non-blocking sends
+  MPI_Request request;
+  for (int boundary = 0; boundary < 2; ++boundary)
+  {
+    MessageInfo message = _sendMessages[axis][boundary];
+    if (message.proc >= 0)
+    {
+      tag = rank * numProc + message.proc;
+      if (MPI_Isend(message.buffer,
+                    1,
+                    *(message.datatype),
+                    message.proc,
+                    tag,
+                    communicator(),
+                    &request))
+        throw std::runtime_error("Domi::MDVector: Error in MPI_Isend");
+      _requests.push_back(request);
+    }
+  }
+
+  // Post the non-blocking receives
+  for (int boundary = 0; boundary < 2; ++boundary)
+  {
+    MessageInfo message = _recvMessages[axis][1];
+    if (message.proc >= 0)
+    {
+      tag = message.proc * numProc + rank;
+      if (MPI_Irecv(message.buffer,
+                    1,
+                    *(message.datatype),
+                    message.proc,
+                    tag,
+                    communicator(),
+                    &request))
+        throw std::runtime_error("Domi::MDVector: Error in MPI_Irecv");
+      _requests.push_back(request);
+    }
+  }
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+endUpdateCommPad(int axis)
+{
+#ifdef HAVE_MPI
+  if (_requests.size() > 0)
+  {
+    Teuchos::Array< MPI_Status > status(_requests.size());
+    if (MPI_Waitall(_requests.size(),
+                    &(_requests[0]),
+                    &(status[0]) ) )
+      throw std::runtime_error("Domi::MDVector: Error in MPI_Waitall");
+    _requests.clear();
+  }
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1486,6 +1684,175 @@ operator[](Slice slice) const
   if (newAxis >= result.getNumDims()) newAxis = 0;
   result._nextAxis = newAxis;
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+void
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+initializeMessages()
+{
+  // #define DOMI_MDVECTOR_OUTPUT_INITIALIZE
+
+  int ndims = getNumDims();
+  Teuchos::Array<int> sizes(ndims);
+  Teuchos::Array<int> subsizes(ndims);
+  Teuchos::Array<int> starts(ndims);
+  MessageInfo messageInfo;
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+  std::stringstream msg;
+#endif
+#ifdef HAVE_MPI
+  int order = mpiOrder(getLayout());
+  MPI_Datatype datatype = mpiType< Scalar >();
+#endif
+
+  // Loop over the axes we are going to send messages along
+  for (int msgAxis = 0; msgAxis < ndims; ++msgAxis)
+  {
+    // Set the initial values for sizes, subsizes and starts
+    for (int axis = 0; axis < ndims; ++axis)
+    {
+      sizes[axis]    = _mdArrayRcp.dimension(axis);
+      subsizes[axis] = _mdArrayView.dimension(axis);
+      starts[axis]   = 0;
+    }
+
+    // Set the lower receive and send messages
+    int proc = getLowerNeighbor(msgAxis);
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+    int rank = _teuchosComm->getRank();
+    msg << endl << rank << ": lower neighbor = " << proc << endl;
+    cout << msg.str();
+#endif
+    messageInfo.proc  = proc;
+    subsizes[msgAxis] = getLowerPad(msgAxis);
+    if (proc >= 0 && subsizes[msgAxis] > 0)
+    {
+      // Lower receive message
+      messageInfo.buffer = (void*) &getData().arrayView()[0];
+      messageInfo.axis   = msgAxis;
+#ifdef HAVE_MPI
+      {
+        Teuchos::RCP< MPI_Datatype > commPad = Teuchos::rcp(new MPI_Datatype);
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+        msg << endl << rank << ": Lower receive message:" << endl
+            << "  ndims = " << ndims << endl << "  sizes = " << sizes << endl
+            << "  subsizes = " << subsizes << endl << "  starts = " << starts
+            << endl << "  order = " << order << endl;
+        cout << msg.str();
+#endif
+        MPI_Type_create_subarray(ndims,
+                                 &sizes[0],
+                                 &subsizes[0],
+                                 &starts[0],
+                                 order,
+                                 datatype,
+                                 commPad.get());
+        MPI_Type_commit(commPad.get());
+        messageInfo.datatype = commPad;
+      }
+#endif
+    }
+    _recvMessages[msgAxis][0] = messageInfo;
+
+    // Lower send message
+    starts[msgAxis] = getLowerPad(msgAxis);
+    if (proc >= 0 && subsizes[msgAxis] > 0)
+    {
+#ifdef HAVE_MPI
+      {
+        Teuchos::RCP< MPI_Datatype > commPad = Teuchos::rcp(new MPI_Datatype);
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+        msg << endl << rank << ": Lower send message:" << endl << "  ndims = "
+            << ndims << endl << "  sizes = " << sizes << endl
+            << "  subsizes = " << subsizes << endl << "  starts = " << starts
+            << endl << "  order = " << order << endl;
+        cout << msg.str();
+#endif
+        MPI_Type_create_subarray(ndims,
+                                 &sizes[0],
+                                 &subsizes[0],
+                                 &starts[0],
+                                 order,
+                                 datatype,
+                                 commPad.get());
+        MPI_Type_commit(commPad.get());
+        messageInfo.datatype = commPad;
+      }
+#endif
+    }
+    _sendMessages[msgAxis][0] = messageInfo;
+
+    // Set the upper receive and send messages
+    proc = getUpperNeighbor(msgAxis);
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+    msg << endl << rank << ": upper neighbor = " << proc << endl;
+    cout << msg.str();
+#endif
+    subsizes[msgAxis] = getUpperPad(msgAxis);
+    starts[msgAxis]  = _mdArrayView.dimension(msgAxis) -
+                       getUpperPad(msgAxis);
+    messageInfo.proc = proc;
+    if (proc >= 0 && subsizes[msgAxis] > 0)
+    {
+      // Upper receive message
+#ifdef HAVE_MPI
+      {
+        Teuchos::RCP< MPI_Datatype > commPad = Teuchos::rcp(new MPI_Datatype);
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+        msg << endl << rank << ": Upper receive message:" << endl
+            << "  ndims = " << ndims << endl << "  sizes = " << sizes << endl
+            << "  subsizes = " << subsizes << endl << "  starts = " << starts
+            << endl << "  order = " << order << endl;
+        cout << msg.str();
+#endif
+        MPI_Type_create_subarray(ndims,
+                                 &sizes[0],
+                                 &subsizes[0],
+                                 &starts[0],
+                                 order,
+                                 datatype,
+                                 commPad.get());
+        MPI_Type_commit(commPad.get());
+        messageInfo.datatype = commPad;
+      }
+#endif
+    }
+    _recvMessages[msgAxis][1] = messageInfo;
+
+    // Upper send message
+    starts[msgAxis] -= getUpperPad(msgAxis);
+    if (proc >= 0 && subsizes[msgAxis] > 0)
+    {
+#ifdef HAVE_MPI
+      {
+        Teuchos::RCP< MPI_Datatype > commPad = Teuchos::rcp(new MPI_Datatype);
+#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+        msg << endl << rank << ": Upper send message:" << endl << "  ndims = "
+            << ndims << endl << "  sizes = " << sizes << endl
+            << "  subsizes = " << subsizes << endl << "  starts = " << starts
+            << endl << "  order = " << order << endl;
+        cout << msg.str();
+#endif
+        MPI_Type_create_subarray(ndims,
+                                 &sizes[0],
+                                 &subsizes[0],
+                                 &starts[0],
+                                 order,
+                                 datatype,
+                                 commPad.get());
+        MPI_Type_commit(commPad.get());
+        messageInfo.datatype = commPad;
+      }
+#endif
+    }
+    _sendMessages[msgAxis][1] = messageInfo;
+  }
 }
 
 }  // Namespace Domi
