@@ -198,13 +198,13 @@ namespace Tpetra {
       typedef GlobalToLocalTableFiller<LO, GO, DeviceType> functor_type;
       functor_type filler (glMap, entries, firstContiguousGID, lastContiguousGID);
 
-      const size_type numEntries = entries.dimension_0 ();
-      if (glMap.capacity () < numEntries) {
-        // Leave extra space to avoid excessive collisions.
-        const size_type newSize =
-          static_cast<size_type> (1.25 * static_cast<double> (numEntries));
-        //glMap.rehash (newSize);
-      }
+      //const size_type numEntries = entries.dimension_0 ();
+      // if (glMap.capacity () < numEntries) {
+      //   // Leave extra space to avoid excessive collisions.
+      //   const size_type newSize =
+      //     static_cast<size_type> (1.25 * static_cast<double> (numEntries));
+      //   //glMap.rehash (newSize);
+      // }
 
       MapData<LO, GO, DeviceType> result;
       Kokkos::parallel_reduce (entries.dimension_0 (), filler, result);
@@ -246,6 +246,8 @@ namespace Tpetra {
         globalNumIndices_ (0),
         myNumIndices_ (0),
         indexBase_ (0),
+        firstContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
+        lastContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
         minMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
         maxMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
         minAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
@@ -420,12 +422,12 @@ namespace Tpetra {
         globalNumIndices_ (globalNumIndices), // provisional, if invalid()
         myNumIndices_ (myNumIndices), // final
         indexBase_ (indexBase), // final
+        firstContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
+        lastContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         minMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // set below
         maxMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // set below
         minAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         maxAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
-        firstContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
-        lastContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         contiguous_ (true), // final
         distributed_ (true), // set below
         uniform_ (false) // final (conservative; we could try to detect this)
@@ -558,12 +560,12 @@ namespace Tpetra {
         globalNumIndices_ (globalNumIndices), // provisional, if invalid()
         myNumIndices_ (myGlobalIndices.dimension_0 ()), // final
         indexBase_ (indexBase), // final
+        firstContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
+        lastContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         minMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         maxMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         minAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         maxAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
-        firstContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
-        lastContiguousGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         lgMap_ (myGlobalIndices), // final (input assumed correct)
         contiguous_ (false), // final (conservative; we could try to detect this)
         distributed_ (true), // set below
@@ -599,13 +601,12 @@ namespace Tpetra {
           // host here is reading from a device View.
           firstContiguousGID_ = lgMap_(0);
           lastContiguousGID_ = firstContiguousGID_ + 1;
+          // By choosing LO so that it can count the local number of
+          // elements, the user asserts that it can fit any values in
+          // [0, myNumIndices_-1].  Thus, it's OK for i to be LO.
           LO i = 1;
           for ( ; i < myNumIndices_; ++i) {
             const GO curGid = lgMap_(i);
-            // By choosing LO so that it can count the local number of
-            // elements, the user asserts that it can fit any values in
-            // [0, myNumIndices_-1].  Thus, it's OK for i to be LO.
-            const LO curLid = static_cast<LO> (i);
             if (lastContiguousGID_ != curGid) break;
             ++lastContiguousGID_;
           }
@@ -787,7 +788,6 @@ namespace Tpetra {
 
             // FIXME (mfh 10 Feb 2014) We could combine the MIN
             // all-reduce above with the MIN all-reduce below.
-            bool global = false;
             if (comm.getSize () > 1) {
               // The communicator has more than one process, but that
               // doesn't necessarily mean the Map is distributed.
