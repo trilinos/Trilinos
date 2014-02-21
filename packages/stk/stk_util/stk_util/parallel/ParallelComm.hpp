@@ -297,8 +297,8 @@ public:
 private:
 
   CommGather();
-  CommGather( const CommBroadcast & );
-  CommGather & operator = ( const CommBroadcast & );
+  CommGather( const CommGather & );
+  CommGather & operator = ( const CommGather & );
 
   ParallelMachine m_comm ;
   int             m_size ;
