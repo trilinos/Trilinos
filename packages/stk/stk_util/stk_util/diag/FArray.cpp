@@ -17,7 +17,7 @@ FArrayBootstrap::~FArrayBootstrap()
 
 namespace {
 
-const char *ordinal[] = {"first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eight"};
+const char *ordinal[] = {"first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth"};
 
 } // namespace <unnamed>
 
@@ -31,7 +31,7 @@ array_dimension_error(
 {
   std::ostringstream os ;
   os << demangle(type.name()) << " ";
-  if (dimension > sizeof(ordinal)/sizeof(ordinal[0]))
+  if (dimension >= sizeof(ordinal)/sizeof(ordinal[0]))
     os << dimension;
   else
     os << ordinal[dimension];
