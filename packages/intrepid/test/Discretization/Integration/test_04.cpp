@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
                                      shards::getCellTopologyData< shards::Wedge<> >(),
                                      shards::getCellTopologyData< shards::Pyramid<> >() };
   // format of data files with analytic values
-  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
+  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
 
   // compute and compare integrals
   try {
