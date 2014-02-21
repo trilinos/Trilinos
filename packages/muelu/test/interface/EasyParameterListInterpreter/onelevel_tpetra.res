@@ -35,6 +35,6 @@ Level 0
  matrix rows    nnz  nnz/row procs
  A 0    9999  29995     3.00  1
  
- Smoother (level 0) pre  : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
+ Smoother (level 0) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  Smoother (level 0) post : no smoother
  

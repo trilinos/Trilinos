@@ -1,4 +1,5 @@
-smoother: type = CHEBYSHEV
+smoother: pre type = CHEBYSHEV
+smoother: post type = RILUK
 verbosity = test
 coarse: max size = 2000   [default]
 max levels = 10   [default]
@@ -11,12 +12,16 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: ratio eigenvalue = 20
- chebyshev: min diagonal value = 2.22045e-16   [default]
- chebyshev: degree = 1   [default]
- chebyshev: eigenvalue max iterations = 10   [default]
- chebyshev: zero starting solution = 1   [default]
- chebyshev: assume matrix does not change = 0   [default]
+ Setup Smoother (MueLu::Ifpack2Smoother{type = RILUK})
+ presmoother -> 
+  chebyshev: ratio eigenvalue = 20
+  chebyshev: min diagonal value = 2.22045e-16   [default]
+  chebyshev: degree = 1   [default]
+  chebyshev: eigenvalue max iterations = 10   [default]
+  chebyshev: zero starting solution = 1   [default]
+  chebyshev: assume matrix does not change = 0   [default]
+ postsmoother -> 
+  [empty list]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -66,12 +71,16 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: ratio eigenvalue = 20
- chebyshev: min diagonal value = 2.22045e-16   [default]
- chebyshev: degree = 1   [default]
- chebyshev: eigenvalue max iterations = 10   [default]
- chebyshev: zero starting solution = 1   [default]
- chebyshev: assume matrix does not change = 0   [default]
+ Setup Smoother (MueLu::Ifpack2Smoother{type = RILUK})
+ presmoother -> 
+  chebyshev: ratio eigenvalue = 20
+  chebyshev: min diagonal value = 2.22045e-16   [default]
+  chebyshev: degree = 1   [default]
+  chebyshev: eigenvalue max iterations = 10   [default]
+  chebyshev: zero starting solution = 1   [default]
+  chebyshev: assume matrix does not change = 0   [default]
+ postsmoother -> 
+  [empty list]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
@@ -138,9 +147,11 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+ Smoother (level 0) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+ Smoother (level 0) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+ Smoother (level 1) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+ Smoother (level 1) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother

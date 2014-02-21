@@ -1359,25 +1359,14 @@ std::string Relaxation<MatrixType>::description () const {
   // like everything on a single line, you should call describe()
   // instead.
   os << "\"Ifpack2::Relaxation\": {";
-  if (this->getObjectLabel () != "") {
-    os << "Label: \"" << this->getObjectLabel () << "\", ";
-  }
+
   os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
-
-  if (A_.is_null ()) {
-    os << "Matrix: null";
-  }
-  else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
-       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
-  }
 
   // It's useful to print this instance's relaxation method (Jacobi,
   // Gauss-Seidel, or symmetric Gauss-Seidel).  If you want more info
   // than that, call describe() instead.
-  os << "\"relaxation: type\": ";
+  os << "Type: ";
   if (PrecType_ == Ifpack2::Details::JACOBI) {
     os << "Jacobi";
   } else if (PrecType_ == Ifpack2::Details::GS) {
@@ -1386,6 +1375,22 @@ std::string Relaxation<MatrixType>::description () const {
     os << "Symmetric Gauss-Seidel";
   } else {
     os << "INVALID";
+  }
+
+  os  << ", " << "sweeps: " << NumSweeps_ << ", "
+      << "damping factor: " << DampingFactor_ << ", ";
+  if (DoL1Method_) {
+    os << "use l1: " << DoL1Method_ << ", "
+       << "l1 eta: " << L1Eta_ << ", ";
+  }
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
   os << "}";

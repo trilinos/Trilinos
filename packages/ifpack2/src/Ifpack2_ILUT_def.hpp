@@ -881,19 +881,21 @@ std::string ILUT<MatrixType>::description () const
   // like everything on a single line, you should call describe()
   // instead.
   os << "\"Ifpack2::ILUT\": {";
-  if (this->getObjectLabel () != "") {
-    os << "Label: \"" << this->getObjectLabel () << "\", ";
-  }
   os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  os << "Level-of-fill: " << getLevelOfFill() << ", "
+     << "absolute threshold: " << getAbsoluteThreshold() << ", "
+     << "relative threshold: " << getRelativeThreshold() << ", "
+     << "relaxation value: " << getRelaxValue() << ", ";
 
   if (A_.is_null ()) {
     os << "Matrix: null";
   }
   else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
-       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+    os << "Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
   os << "}";

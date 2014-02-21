@@ -147,11 +147,11 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) pre  : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 9999, global cols = 9999, global nnz  = 29995}
- Smoother (level 0) post : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 9999, Number of columns: 9999, Level of fill: 1, Absolute threshold: 0, Relative threshold: 1, Relax value: 0, nnz = 29995}
+ Smoother (level 0) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+ Smoother (level 0) post : "Ifpack2::ILUT": {Initialized: true, Computed: true, Level-of-fill: 1, absolute threshold: 0, relative threshold: 1, relaxation value: 0, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) pre  : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 3333, global cols = 3333, global nnz  = 9997}
- Smoother (level 1) post : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 3333, Number of columns: 3333, Level of fill: 1, Absolute threshold: 0, Relative threshold: 1, Relax value: 0, nnz = 9997}
+ Smoother (level 1) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+ Smoother (level 1) post : "Ifpack2::ILUT": {Initialized: true, Computed: true, Level-of-fill: 1, absolute threshold: 0, relative threshold: 1, relaxation value: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother
