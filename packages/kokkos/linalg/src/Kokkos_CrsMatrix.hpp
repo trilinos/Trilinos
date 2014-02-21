@@ -1872,7 +1872,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       return MV_MultiplyTranspose (a, y, a, A, x, 0, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, 0, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, 0, -1);
     else {
       a = aVector("a", numVecs);
@@ -1888,7 +1888,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, 1, -1);
     else {
       a = aVector("a", numVecs);
@@ -1899,12 +1899,12 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       Kokkos::deep_copy (a, h_a);
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 2);
     }
-  } else if (s_b == -1) {
+  } else if (s_b == static_cast<typename RangeVector::const_value_type> (-1)) {
     if (s_a == 0)
       return MV_MultiplyTranspose (a, y, a, A, x, -1, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, -1, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, -1, -1);
     else {
       a = aVector("a", numVecs);
@@ -1927,7 +1927,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       return MV_MultiplyTranspose (b, y, a, A, x, 2, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (b, y, a, A, x, 2, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (b, y, a, A, x, 2, -1);
     else {
       a = aVector("a", numVecs);
@@ -2364,7 +2364,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         return MV_Multiply (a, y, a, A, x, 0, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, 0, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, 0, -1);
       else {
         a = aVector("a", numVecs);
@@ -2380,7 +2380,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         return MV_Multiply (a, y, a, A, x, 1, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, 1, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, 1, -1);
       else {
         a = aVector("a", numVecs);
@@ -2391,12 +2391,12 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         Kokkos::deep_copy (a, h_a);
         return MV_Multiply (a, y, a, A, x, 1, 2);
       }
-    } else if (s_b == -1) {
+    } else if (s_b == static_cast<typename RangeVector::const_value_type> (-1)) {
       if (s_a == 0)
         return MV_Multiply (a, y, a, A, x, -1, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, -1, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, -1, -1);
       else {
         a = aVector("a", numVecs);
@@ -2419,7 +2419,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         return MV_Multiply (b, y, a, A, x, 2, 0);
       else if (s_a == 1)
         return MV_Multiply (b, y, a, A, x, 2, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (b, y, a, A, x, 2, -1);
       else {
         a = aVector("a", numVecs);
