@@ -1106,7 +1106,28 @@ namespace Tpetra {
     ArrayRCP<Array<T> > allocateValues2D () const;
 
     template <ELocalGlobal lg, class T>
-    RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, Array<T>& rowVals);
+    RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, Array<T>& rowVals)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
+      TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) ||
+			       (lg == GlobalIndices && ! isGloballyIndexed()) );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
+      TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
+#endif
+      // ArrayRCP::resize automatically copies over values on reallocation.
+      if (lg == LocalIndices) {
+	lclInds2D_[rowinfo.localRow].resize (newAllocSize);
+      }
+      else { // lg == GlobalIndices
+	gblInds2D_[rowinfo.localRow].resize (newAllocSize);
+      }
+      rowVals.resize (newAllocSize);
+      nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
+      rowinfo.allocSize = newAllocSize;
+      return rowinfo;
+    }
 
     //! \name Methods governing changes between global and local indices
     //@{
@@ -1129,17 +1150,124 @@ namespace Tpetra {
     //@{
 
     template<ELocalGlobal lg>
-    size_t filterIndices (const SLocalGlobalNCViews &inds) const;
+    size_t filterIndices (const SLocalGlobalNCViews &inds) const
+    {
+      const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &cmap = *colMap_;
+      Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
+      (void)cta_lg;
+      size_t numFiltered = 0;
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numFiltered_debug = 0;
+#endif
+      if (lg == GlobalIndices) {
+	ArrayView<GlobalOrdinal> ginds = inds.ginds;
+	typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin(),
+	  cptr = ginds.begin();
+	while (cptr != ginds.end()) {
+	  if (cmap.isNodeGlobalElement(*cptr)) {
+	    *fend++ = *cptr;
+#ifdef HAVE_TPETRA_DEBUG
+	    ++numFiltered_debug;
+#endif
+	  }
+	  ++cptr;
+	}
+	numFiltered = fend - ginds.begin();
+      }
+      else if (lg == LocalIndices) {
+	ArrayView<LocalOrdinal> linds = inds.linds;
+	typename ArrayView<LocalOrdinal>::iterator fend = linds.begin(),
+	  cptr = linds.begin();
+	while (cptr != linds.end()) {
+	  if (cmap.isNodeLocalElement(*cptr)) {
+	    *fend++ = *cptr;
+#ifdef HAVE_TPETRA_DEBUG
+	    ++numFiltered_debug;
+#endif
+	  }
+	  ++cptr;
+	}
+	numFiltered = fend - linds.begin();
+      }
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+#endif
+      return numFiltered;
+    }
+
 
     template<class T>
     size_t
     filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
-                                  const ArrayView<T>& vals) const;
+                                  const ArrayView<T>& vals) const
+    {
+      const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& cmap = *colMap_;
+      size_t numFiltered = 0;
+      typename ArrayView<T>::iterator fvalsend = vals.begin();
+      typename ArrayView<T>::iterator valscptr = vals.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numFiltered_debug = 0;
+#endif
+      typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
+      typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
+      while (cptr != ginds.end()) {
+	if (cmap.isNodeGlobalElement (*cptr)) {
+	  *fend++ = *cptr;
+	  *fvalsend++ = *valscptr;
+#ifdef HAVE_TPETRA_DEBUG
+	  ++numFiltered_debug;
+#endif
+	}
+	++cptr;
+	++valscptr;
+      }
+      numFiltered = fend - ginds.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+      TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+      const size_t numFilteredActual =
+	Teuchos::as<size_t> (fvalsend - vals.begin ());
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+#endif
+      return numFiltered;
+    }
+
     template<class T>
     size_t
     filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
-                                 const ArrayView<T>& vals) const;
-
+                                 const ArrayView<T>& vals) const
+    {
+      const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& cmap = *colMap_;
+      size_t numFiltered = 0;
+      typename ArrayView<T>::iterator fvalsend = vals.begin();
+      typename ArrayView<T>::iterator valscptr = vals.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numFiltered_debug = 0;
+#endif
+      typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
+      typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
+      while (cptr != linds.end()) {
+	if (cmap.isNodeLocalElement (*cptr)) {
+	  *fend++ = *cptr;
+	  *fvalsend++ = *valscptr;
+#ifdef HAVE_TPETRA_DEBUG
+	  ++numFiltered_debug;
+#endif
+	}
+	++cptr;
+	++valscptr;
+      }
+      numFiltered = fend - linds.begin();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+      TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+      const size_t numFilteredActual =
+	Teuchos::as<size_t> (fvalsend - vals.begin ());
+      TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+#endif
+      return numFiltered;
+    }
+    
     /// \brief Insert indices into the given row.
     ///
     /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
@@ -1266,8 +1394,25 @@ namespace Tpetra {
                           const Teuchos::ArrayView<Scalar>& rowVals,
                           const Teuchos::ArrayView<const LocalOrdinal>& inds,
                           const Teuchos::ArrayView<const Scalar>& newVals,
-                          BinaryFunction f) const;
-
+                          BinaryFunction f) const
+    {
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+      const size_t numElts = Teuchos::as<size_t> (inds.size ());
+      size_t hint = 0; // Guess for the current index k into rowVals
+      
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+      
+      for (size_t j = 0; j < numElts; ++j) {
+	const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
+	if (k != STINV) {
+	  rowVals[k] = f( rowVals[k], newVals[j] );
+	  hint = k+1;
+	}
+      }
+    }
+    
     /// \brief Transform the given values using global indices.
     ///
     /// \param rowInfo [in] Information about a given row of the graph.
@@ -1288,7 +1433,20 @@ namespace Tpetra {
                            const Teuchos::ArrayView<Scalar>& rowVals,
                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
                            const Teuchos::ArrayView<const Scalar>& newVals,
-                           BinaryFunction f) const;
+                           BinaryFunction f) const
+    {
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+      const size_t numElts = Teuchos::as<size_t> (inds.size ());
+      size_t hint = 0; // hint is a guess as to wheter the index is
+
+      for (size_t j = 0; j < numElts; ++j) {
+        const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
+        if (k != STINV) {
+          rowVals[k] = f( rowVals[k], newVals[j] );
+          hint = k+1;
+        }
+      }
+    }
 
     //@}
     //! \name Methods for sorting and merging column indices.
