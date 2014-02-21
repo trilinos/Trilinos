@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
                                      shards::getCellTopologyData< shards::Wedge<> >(),
                                      shards::getCellTopologyData< shards::Pyramid<> >() };
   // format of data files with analytic values
-  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
+  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
 
   // compute and compare integrals
   try {
@@ -232,13 +232,14 @@ int main(int argc, char *argv[]) {
             for (int zDeg=0; zDeg <= cubDeg-xDeg-yDeg; zDeg++) {
               double abstol = ( analyticInt[polyCt+offset][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyCt+offset][0]) );
               double absdiff = std::fabs(analyticInt[polyCt+offset][0] - testInt[cubDeg][polyCt]);
-              if (absdiff > abstol) {
+
                 *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
                            << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
                            << " * z^" << std::setw(2) << zDeg << ":" << "   "
                            << std::scientific << std::setprecision(16)
                            << testInt[cubDeg][polyCt] << "   " << analyticInt[polyCt+offset][0] << "   "
                            << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+                if (absdiff > abstol) {
                 errorFlag++;
                 *outStream << std::right << std::setw(118) << "^^^^---FAILURE!\n";
               }
