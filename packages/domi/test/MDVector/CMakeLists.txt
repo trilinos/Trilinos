@@ -499,3 +499,20 @@ TRIBITS_ADD_TEST(
 #   ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=16,1,1"
 #   STANDARD_PASS_OUTPUT
 #   )
+
+# Create the MDVector comm test executable
+TRIBITS_ADD_EXECUTABLE(
+  MDVector_CommTests
+  SOURCES
+    MDVector_CommTests.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_CommTests
+  NAME MDVector_CommTests_2D_2
+  COMM mpi
+  NUM_MPI_PROCS 2
+  ARGS "--test=0 --dims=6,10 --commPad=1"
+  STANDARD_PASS_OUTPUT
+  )
