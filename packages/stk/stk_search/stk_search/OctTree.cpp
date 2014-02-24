@@ -58,11 +58,10 @@ namespace {
     throw std::range_error( msg.str() );
   }
   
-  void throw_depth( const unsigned min_depth, const unsigned depth )
+  void throw_depth( const unsigned min_depth, const unsigned depth, const unsigned max_depth )
   {
-    const unsigned m = stk::OctTreeKey::MaxDepth ;
     std::ostringstream msg ;
-    msg << "OctTree.cpp: depth = " << depth << " is out of range [" << min_depth << ".." << m << "]" ;
+    msg << "OctTree.cpp: depth = " << depth << " is out of range [" << min_depth << ".." << max_depth << "]" ;
     throw std::range_error( msg.str() );
   }
 }
@@ -79,7 +78,7 @@ unsigned OctTreeKey::depth() const
 
 unsigned OctTreeKey::index( const unsigned Depth ) const
 {
-  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth ); }
+  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
 
   const unsigned which = ( Depth - 1 ) / IndexPerWord ;
   const unsigned shift = BitsPerWord -
@@ -90,7 +89,7 @@ unsigned OctTreeKey::index( const unsigned Depth ) const
 
 OctTreeKey & OctTreeKey::clear_index( const unsigned Depth )
 {
-  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth ); }
+  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
 
   const value_type m = MaskIndex ;
   const unsigned which = ( Depth - 1 ) / IndexPerWord ;
@@ -106,7 +105,7 @@ OctTreeKey & OctTreeKey::clear_index( const unsigned Depth )
 OctTreeKey &
 OctTreeKey::set_index( const unsigned Depth , const unsigned Index )
 {
-  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth ); }
+  if ( Depth < 1 || MaxDepth < Depth ) { throw_depth( 1, Depth, MaxDepth ); }
   if ( Index < 1 || 8        < Index ) { throw_index( Depth , Index ); }
 
   const value_type m = MaskIndex ;
@@ -165,7 +164,8 @@ bool OctTreeKey::intersect( const OctTreeKey & k ) const
 
 namespace {
 
-const unsigned tree_size[11] = {
+const unsigned TreeMaxDepth = 10;
+const unsigned tree_size[TreeMaxDepth+1] = {
   OctTreeSize< 0>::value ,
   OctTreeSize< 1>::value ,
   OctTreeSize< 2>::value ,
@@ -183,16 +183,16 @@ const unsigned tree_size[11] = {
 
 unsigned oct_tree_size( const unsigned Depth )
 {
-  if ( stk::OctTreeKey::MaxDepth < Depth )
-    { throw_depth( 0, Depth ); }
+  if ( TreeMaxDepth < Depth )
+    { throw_depth( 0, Depth, TreeMaxDepth ); }
 
   return tree_size[ Depth ];
 }
 
 unsigned oct_tree_offset( const unsigned Depth , const OctTreeKey & k )
 {
-  if ( stk::OctTreeKey::MaxDepth < Depth )
-    { throw_depth( 0, Depth ); }
+  if ( TreeMaxDepth < Depth )
+    { throw_depth( 0, Depth, TreeMaxDepth ); }
 
   unsigned index = 0 ;
 
