@@ -170,47 +170,92 @@ void splitStringOfIntsWithCommas(std::string data,
 
 #ifdef HAVE_MPI
 
-template<>
-MPI_Datatype mpiType<char              >() {return MPI_CHAR;              }
+// Specializations of mpiType<T> for all basic data types supported by
+// MPI
 
 template<>
-MPI_Datatype mpiType<signed char       >() {return MPI_SIGNED_CHAR;       }
+MPI_Datatype mpiType<char>()
+{
+  return MPI_CHAR;
+}
 
 template<>
-MPI_Datatype mpiType<unsigned char     >() {return MPI_UNSIGNED_CHAR;     }
+MPI_Datatype mpiType<signed char>()
+{
+  return MPI_SIGNED_CHAR;
+}
 
 template<>
-MPI_Datatype mpiType<short             >() {return MPI_SHORT;             }
+MPI_Datatype mpiType<unsigned char>()
+{
+  return MPI_UNSIGNED_CHAR;
+}
 
 template<>
-MPI_Datatype mpiType<unsigned short    >() {return MPI_UNSIGNED_SHORT;    }
+MPI_Datatype mpiType<short>()
+{
+  return MPI_SHORT;
+}
 
 template<>
-MPI_Datatype mpiType<int               >() {return MPI_INT;               }
+MPI_Datatype mpiType<unsigned short>()
+{
+  return MPI_UNSIGNED_SHORT;
+}
 
 template<>
-MPI_Datatype mpiType<unsigned int      >() {return MPI_UNSIGNED;          }
+MPI_Datatype mpiType<int>()
+{
+  return MPI_INT;
+}
 
 template<>
-MPI_Datatype mpiType<long              >() {return MPI_LONG;              }
+MPI_Datatype mpiType<unsigned int>()
+{
+  return MPI_UNSIGNED;
+}
 
 template<>
-MPI_Datatype mpiType<unsigned long     >() {return MPI_UNSIGNED_LONG;     }
+MPI_Datatype mpiType<long>()
+{
+  return MPI_LONG;
+}
 
 template<>
-MPI_Datatype mpiType<long long         >() {return MPI_LONG_LONG;         }
+MPI_Datatype mpiType<unsigned long>()
+{
+  return MPI_UNSIGNED_LONG;
+}
 
 template<>
-MPI_Datatype mpiType<unsigned long long>() {return MPI_UNSIGNED_LONG_LONG;}
+MPI_Datatype mpiType<long long>()
+{
+  return MPI_LONG_LONG;
+}
 
 template<>
-MPI_Datatype mpiType<float             >() {return MPI_FLOAT;             }
+MPI_Datatype mpiType<unsigned long long>()
+{
+  return MPI_UNSIGNED_LONG_LONG;
+}
 
 template<>
-MPI_Datatype mpiType<double            >() {return MPI_DOUBLE;            }
+MPI_Datatype mpiType<float>()
+{
+  return MPI_FLOAT;
+}
 
 template<>
-MPI_Datatype mpiType<long double       >() {return MPI_LONG_DOUBLE;       }
+MPI_Datatype mpiType<double>()
+{
+  return MPI_DOUBLE;
+}
+
+template<>
+MPI_Datatype mpiType<long double>()
+{
+  return MPI_LONG_DOUBLE;
+}
 
 #endif
 
@@ -220,9 +265,9 @@ MPI_Datatype mpiType<long double       >() {return MPI_LONG_DOUBLE;       }
 
 int mpiOrder(ELayout layout)
 {
-  if (layout == C_ORDER)
-    return MPI_ORDER_C;
-  return MPI_ORDER_FORTRAN;
+  int result = MPI_ORDER_FORTRAN;
+  if (layout == C_ORDER) result = MPI_ORDER_C;
+  return result;
 }
 
 #endif
