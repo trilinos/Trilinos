@@ -66,9 +66,11 @@ class MetaData ;  // Meta-data description of a mesh
  *          maintained as a vector of Part pointers.
  */
 typedef std::vector< Part * > PartVector;
+typedef std::vector< Bucket * > BucketVector;
 typedef std::vector< const Part * > ConstPartVector;
 typedef std::vector< unsigned > OrdinalVector;
 typedef std::vector< unsigned > PermutationIndexVector;
+typedef std::vector<Entity> EntityVector;
 
 class FieldBase;
 
@@ -97,9 +99,6 @@ typedef Property< void > PropertyBase ;
 
 class BulkData ; // Bulk-data of a mesh
 class Ghosting ;
-
-typedef std::vector<Bucket *> BucketVector;
-typedef std::vector<Entity> EntityVector;
 
 /** Change log to reflect change from before 'modification_begin'
   *  to the current status.

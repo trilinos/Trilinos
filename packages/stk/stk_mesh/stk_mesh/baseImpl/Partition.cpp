@@ -61,7 +61,7 @@ std::ostream &Partition::streamit(std::ostream &os) const
 std::ostream &Partition::dumpit(std::ostream &os) const
 {
   os << "{ Partition (rank = " << m_rank << ")  \n";
-  for (std::vector<Bucket *>::const_iterator b_i = begin(); b_i != end(); ++b_i)
+  for (BucketVector::const_iterator b_i = begin(); b_i != end(); ++b_i)
   {
     Bucket &b = **b_i;
     print(os, "  ", b );
@@ -295,7 +295,7 @@ void Partition::compress(bool force)
   // Copy the entities (but not their data) into a vector, where they will be sorted.
   //
   size_t new_i = 0;
-  for (std::vector<Bucket *>::iterator b_i = begin(); b_i != end(); ++b_i)
+  for (BucketVector::iterator b_i = begin(); b_i != end(); ++b_i)
   {
     Bucket &b = **b_i;
     size_t b_size = b.size();
@@ -312,7 +312,7 @@ void Partition::compress(bool force)
   // ceiling
   const size_t num_new_buckets = (num_entities + (m_repository->max_bucket_capacity - 1u)) / m_repository->max_bucket_capacity;
 
-  std::vector< Bucket * > tmp_buckets(num_new_buckets);
+  BucketVector tmp_buckets(num_new_buckets);
 
   size_t curr_entity = 0;
   for (size_t bi=0; bi<num_new_buckets; ++bi) {
@@ -340,7 +340,7 @@ void Partition::compress(bool force)
 
 
   //remove old buckets
-  for (std::vector<Bucket *>::iterator b_i = begin(); b_i != end(); ++b_i) {
+  for (BucketVector::iterator b_i = begin(); b_i != end(); ++b_i) {
     m_repository->deallocate_bucket(*b_i);
   }
 
@@ -371,13 +371,13 @@ void Partition::sort(bool force)
 
   std::vector<Entity> entities(m_size);
 
-  std::vector<Bucket *>::iterator buckets_begin, buckets_end;
+  BucketVector::iterator buckets_begin, buckets_end;
   buckets_begin = begin();
   buckets_end = end();
 
   // Copy all the entities in the Partition into a vector for sorting.
   size_t new_i = 0;
-  for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
+  for (BucketVector::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
   {
     Bucket &b = **b_i;
     size_t b_size = b.size();
@@ -426,7 +426,7 @@ void Partition::sort(bool force)
     }
   }
 
-  for (std::vector<Bucket *>::iterator bucket_itr = begin(); bucket_itr != buckets_end; ++bucket_itr)
+  for (BucketVector::iterator bucket_itr = begin(); bucket_itr != buckets_end; ++bucket_itr)
   {
     Bucket &curr_bucket = **bucket_itr;
     const unsigned n = *bucket_itr == orig_vacancy_bucket ? curr_bucket.size() -1 : curr_bucket.size(); // skip very last entity in partition

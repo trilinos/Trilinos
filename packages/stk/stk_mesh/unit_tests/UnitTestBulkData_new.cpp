@@ -133,7 +133,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 
   // Find a cell owned by this process
   stk::mesh::Entity cell_to_delete = stk::mesh::Entity();
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  stk::mesh::BucketVector::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
   while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
     stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
@@ -457,7 +457,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
 
   // Find a cell owned by this process
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  stk::mesh::BucketVector::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
   int send_rank = 0;
 
   std::vector<stk::mesh::EntityProc>  to_send;
@@ -535,7 +535,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 
   std::vector<stk::mesh::EntityProc>  to_send;
   std::vector<stk::mesh::EntityKey>   empty_vector;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk1.buckets(stk::topology::ELEM_RANK).begin();
+  stk::mesh::BucketVector::const_iterator cur_bucket = bulk1.buckets(stk::topology::ELEM_RANK).begin();
   int send_rank = 0;
   while ( cur_bucket != bulk1.buckets(stk::topology::ELEM_RANK).end() )
   {
@@ -583,7 +583,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
   std::vector<stk::mesh::EntityProc>  empty_send;
   std::vector<stk::mesh::EntityKey>   to_remove_not_ghosted;
   std::vector<stk::mesh::EntityKey>   empty_remove;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  stk::mesh::BucketVector::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
   int send_rank = 0;
   while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
@@ -775,9 +775,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   std::vector<stk::mesh::EntityProc>  add_send;
 
-  const std::vector<stk::mesh::Bucket*> & buckets = bulk.buckets( stk::topology::NODE_RANK );
+  const stk::mesh::BucketVector & buckets = bulk.buckets( stk::topology::NODE_RANK );
 
-  std::vector<stk::mesh::Bucket*>::const_iterator cur_bucket;
+  stk::mesh::BucketVector::const_iterator cur_bucket;
 
   cur_bucket = buckets.begin();
 

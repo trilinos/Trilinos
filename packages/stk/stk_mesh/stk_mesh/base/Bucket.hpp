@@ -487,8 +487,8 @@ struct BucketLess {
 };
 
 inline
-std::vector<Bucket*>::iterator
-lower_bound( std::vector<Bucket*> & v , const unsigned * key )
+BucketVector::iterator
+lower_bound( BucketVector & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
 
 struct BucketIdComparator

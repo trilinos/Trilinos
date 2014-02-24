@@ -29,7 +29,7 @@ struct ReversePartition
 {
   void operator()(impl::Partition& p)
   {
-    for (std::vector<stk::mesh::Bucket *>::iterator b_i = p.begin(); b_i != p.end(); ++b_i) {
+    for (stk::mesh::BucketVector::iterator b_i = p.begin(); b_i != p.end(); ++b_i) {
       stk::mesh::Bucket & b = **b_i;
 
       std::reverse(b.m_entities.begin(), b.m_entities.begin()+b.size());
@@ -182,7 +182,7 @@ void setFieldDataUsingEntityIDs(SelectorFixture& fix)
   for (size_t i = 0; i < num_partitions; ++i)
   {
     stk::mesh::impl::Partition &partition = *partitions[i];
-    for (std::vector<stk::mesh::Bucket *>::iterator bkt_i= partition.begin(); bkt_i != partition.end(); ++bkt_i)
+    for (stk::mesh::BucketVector::iterator bkt_i= partition.begin(); bkt_i != partition.end(); ++bkt_i)
     {
       stk::mesh::Bucket &bkt = **bkt_i;
       double *field_data = stk::mesh::field_data(fix.m_fieldABC, bkt, 0);
@@ -253,7 +253,7 @@ void check_test_partition_invariant(const SelectorFixture& fix,
                                     const stk::mesh::impl::Partition &partition)
 {
   const std::vector<unsigned> &partition_key = partition.get_legacy_partition_id();
-  for (std::vector<stk::mesh::Bucket *>::const_iterator bkt_i= partition.begin();
+  for (stk::mesh::BucketVector::const_iterator bkt_i= partition.begin();
        bkt_i != partition.end(); ++bkt_i)
   {
     const stk::mesh::Bucket &bkt = **bkt_i;

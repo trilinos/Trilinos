@@ -48,13 +48,13 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank,
  *          given selector instance), and sorted by ID.
  */
 unsigned count_selected_entities( const Selector & selector ,
-                                  const std::vector< Bucket * > & input_buckets );
+                                  const BucketVector & input_buckets );
 
 /** \brief  Get entities in selected buckets (selected by the
  *          given selector instance), and sorted by ID.
  */
 void get_selected_entities( const Selector & selector ,
-                            const std::vector< Bucket * > & input_buckets ,
+                            const BucketVector & input_buckets ,
                             std::vector< Entity> & entities );
 
 /** \} */

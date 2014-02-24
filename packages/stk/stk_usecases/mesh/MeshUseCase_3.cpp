@@ -193,7 +193,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 
   const BulkData & bulkData = mesh.m_bulkData ;
 
-  std::vector<Bucket *> element_buckets = bulkData.buckets( mesh.m_elem_rank );
+  BucketVector element_buckets = bulkData.buckets( mesh.m_elem_rank );
 
   // Create a pair containing Part and matching node_count
   typedef std::pair<Part*, unsigned> PartNodeCountPair;

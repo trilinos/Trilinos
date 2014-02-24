@@ -39,7 +39,7 @@ size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_p
 
   stk::mesh::Selector select_skin = skin_part & fem_meta.locally_owned_part()  ;
 
-  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
+  const stk::mesh::BucketVector& buckets = mesh.buckets( skin_rank );
 
   return count_selected_entities( select_skin, buckets);
 }
@@ -50,7 +50,7 @@ void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, Entit
 
   stk::mesh::Selector select_skin = skin_part & fem_meta.locally_owned_part()  ;
 
-  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
+  const stk::mesh::BucketVector& buckets = mesh.buckets( skin_rank );
 
   stk::mesh::EntityVector skin_entities;
 

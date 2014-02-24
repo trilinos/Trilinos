@@ -197,11 +197,11 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
   fixture.populate_bulk_data();
   stk::mesh::BulkData &bulk_data = fixture.bulk_data();
 
-  const std::vector< stk::mesh::Bucket * > & element_buckets
+  const stk::mesh::BucketVector & element_buckets
     = bulk_data.buckets( stk::topology::ELEMENT_RANK);
 
   // iterate elements and check num nodal relations
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator ib = element_buckets.begin() ;
+  for ( stk::mesh::BucketVector::const_iterator ib = element_buckets.begin() ;
         ib != element_buckets.end() ; ++ib ) {
     stk::mesh::Bucket & b = **ib ;
     const int length   = b.size();

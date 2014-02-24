@@ -322,7 +322,7 @@ public:
   /** \brief  Query all buckets of a given entity rank
    *  Don't call inside BucketRepository member functions!
    */
-  const std::vector<Bucket*> & buckets( EntityRank rank ) const
+  const BucketVector & buckets( EntityRank rank ) const
   { return m_bucket_repository.buckets(rank); }
 
   typedef impl::EntityRepository::const_iterator const_entity_iterator;

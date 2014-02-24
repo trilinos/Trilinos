@@ -142,10 +142,10 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
 
 
     // Iterate over all nodes by getting all node buckets and iterating over each bucket.
-    const std::vector<stk::mesh::Bucket*> & node_buckets =
+    const stk::mesh::BucketVector & node_buckets =
       m_bulkData.buckets( m_node_rank );
 
-    for ( std::vector<stk::mesh::Bucket*>::const_iterator
+    for ( stk::mesh::BucketVector::const_iterator
           node_bucket_it = node_buckets.begin() ;
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
 
@@ -194,13 +194,13 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     // and can be parallel inconsistent.  A user may communicate
     // field data as needed to force consistency.
 
-    const std::vector<stk::mesh::Bucket*> & elem_buckets =
+    const stk::mesh::BucketVector & elem_buckets =
       m_bulkData.buckets( m_elem_rank );
 
     // Volume field:
 
     // Iterate over all element buckets and populate volume field.
-    for ( std::vector<stk::mesh::Bucket*>::const_iterator
+    for ( stk::mesh::BucketVector::const_iterator
           element_bucket_it = elem_buckets.begin();
           element_bucket_it != elem_buckets.end() ; ++element_bucket_it ) {
 
@@ -444,14 +444,14 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
   const stk::mesh::BulkData & bulkData = mesh.m_bulkData ;
 
   // All element buckets:
-  const std::vector<stk::mesh::Bucket*> & elem_buckets =
+  const stk::mesh::BucketVector & elem_buckets =
     bulkData.buckets( mesh.m_elem_rank );
 
   // Verify coordinates_field by gathering the nodal coordinates
   // from each element's nodes.
 
   // Iterate over all element buckets
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( stk::mesh::BucketVector::const_iterator
         element_bucket_it = elem_buckets.begin();
         element_bucket_it != elem_buckets.end() ; ++element_bucket_it ) {
 
@@ -529,11 +529,11 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
     const ScalarFieldType & temperature_field = mesh.m_temperature_field ;
 
     // Get all node buckets
-    const std::vector<stk::mesh::Bucket*> & node_buckets =
+    const stk::mesh::BucketVector & node_buckets =
       bulkData.buckets( mesh.m_node_rank );
 
     // Iterate over all node buckets
-    for ( std::vector<stk::mesh::Bucket*>::const_iterator
+    for ( stk::mesh::BucketVector::const_iterator
           node_bucket_it = node_buckets.begin();
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
       const stk::mesh::Bucket & bucket = **node_bucket_it;

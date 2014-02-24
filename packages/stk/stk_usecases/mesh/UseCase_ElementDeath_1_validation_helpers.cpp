@@ -633,7 +633,7 @@ bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixtu
   int num_live[NUM_RANK] = {0, 0, 0, 0};
 
   for ( int i = 0; i < NUM_RANK ; ++i) {
-    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( stk::mesh::EntityRank(i) );
+    const stk::mesh::BucketVector& buckets = mesh.buckets( stk::mesh::EntityRank(i) );
     num_dead[i] = count_selected_entities( select_dead, buckets);
     num_live[i] = count_selected_entities( select_live, buckets);
   }

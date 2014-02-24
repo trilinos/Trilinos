@@ -167,7 +167,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinTwoStackedShells)
   //count number of sides in mesh
   {
     stk::mesh::Selector select_sides = fem_meta.locally_owned_part()  ;
-    const std::vector<stk::mesh::Bucket*>& side_buckets = bulk_data.buckets(side_rank);
+    const stk::mesh::BucketVector& side_buckets = bulk_data.buckets(side_rank);
     int num_sides = stk::mesh::count_selected_entities( select_sides, side_buckets);
 
 
@@ -248,7 +248,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
   //count number of sides in mesh
   {
     stk::mesh::Selector select_sides = fem_meta.locally_owned_part()  ;
-    const std::vector<stk::mesh::Bucket*>& side_buckets = bulk_data.buckets( side_rank);
+    const stk::mesh::BucketVector& side_buckets = bulk_data.buckets( side_rank);
     int num_sides = stk::mesh::count_selected_entities( select_sides, side_buckets);
 
 

@@ -109,7 +109,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
   {
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk_data);
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
-    const std::vector<stk::mesh::Bucket*>& buckets = bulk_data.buckets( static_cast<stk::mesh::EntityRank>(element_rank-1));
+    const stk::mesh::BucketVector& buckets = bulk_data.buckets( static_cast<stk::mesh::EntityRank>(element_rank-1));
     int num_skin_entities = stk::mesh::count_selected_entities( select_skin, buckets);
 
 
@@ -201,7 +201,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // Grab the skin entities
   stk::mesh::Selector skin_selector(skin_part);
-  const std::vector<stk::mesh::Bucket*>& edge_buckets = bulk_data.buckets(stk::topology::EDGE_RANK);
+  const stk::mesh::BucketVector& edge_buckets = bulk_data.buckets(stk::topology::EDGE_RANK);
   std::vector<stk::mesh::Entity> skin_entities;
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 

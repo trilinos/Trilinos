@@ -47,7 +47,7 @@ public:
    *
    *  Don't call inside BucketRepository member functions!
    */
-  const std::vector<Bucket*> & buckets( EntityRank rank ) const
+  const BucketVector & buckets( EntityRank rank ) const
   {
     ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
 
@@ -129,7 +129,7 @@ private:
 
   // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
   // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
-  std::vector< std::vector<Bucket*> >   m_buckets ;
+  std::vector< BucketVector >   m_buckets ;
 
   std::vector<std::vector<Partition *> > m_partitions;
   std::vector<bool> m_need_sync_from_partitions;
@@ -142,7 +142,7 @@ private:
 inline
 Bucket *BucketRepository::get_bucket(EntityRank entity_rank, int bucket_id) const
 {
-  const std::vector<Bucket *> & all_buckets_for_rank = m_buckets[entity_rank];
+  const BucketVector & all_buckets_for_rank = m_buckets[entity_rank];
   ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
   return all_buckets_for_rank[bucket_id];
 }

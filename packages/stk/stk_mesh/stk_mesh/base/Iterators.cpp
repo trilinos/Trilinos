@@ -5,7 +5,7 @@ namespace stk { namespace mesh { class Bucket; } }
 namespace stk {
 namespace mesh {
 
-SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector)
+SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector)
 {
   return std::make_pair(SelectedBucketVectorIterator(selector, buckets.begin(), buckets.end()),
                         SelectedBucketVectorIterator(buckets.end()));

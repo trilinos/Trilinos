@@ -263,12 +263,12 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
 };
 
 // Iterator for iterating over all entities within each bucket of a vector of buckets
-typedef TwoLevelIterator<std::vector<Bucket*>::const_iterator, BucketIterator> BucketVectorEntityIterator;
+typedef TwoLevelIterator<BucketVector::const_iterator, BucketIterator> BucketVectorEntityIterator;
 typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      BucketVectorEntityIteratorRange;
 
 // Iterator for iterating over selected buckets within a vector of buckets
-typedef SelectedBucketIterator<std::vector<Bucket*>::const_iterator>                      SelectedBucketVectorIterator;
-//typedef boost::filter_iterator<Selector, std::vector<Bucket*>::const_iterator>            SelectedBucketVectorIterator;
+typedef SelectedBucketIterator<BucketVector::const_iterator>                      SelectedBucketVectorIterator;
+//typedef boost::filter_iterator<Selector, BucketVector::const_iterator>            SelectedBucketVectorIterator;
 typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
@@ -276,7 +276,7 @@ typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketIterator>          
 typedef std::pair<SelectedBucketVectorEntityIterator, SelectedBucketVectorEntityIterator> SelectedBucketVectorEntityIteratorRange;
 
 // Iterator for iterating over all buckets in a vector of vectors of buckets
-typedef TwoLevelIterator<std::vector<std::vector<Bucket*> >::const_iterator, std::vector<Bucket*>::const_iterator> AllBucketsIterator;
+typedef TwoLevelIterator<std::vector<BucketVector >::const_iterator, BucketVector::const_iterator> AllBucketsIterator;
 typedef std::pair<AllBucketsIterator, AllBucketsIterator>                                                          AllBucketsRange;
 
 // Iterator for iterating over all *selected* buckets in a bucket range
@@ -298,7 +298,7 @@ typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIt
 //
 
 // Get a range allowing you iterate over selected buckets in a vector
-SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector);
+SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector);
 
 } //namespace mesh
 } //namespace stk

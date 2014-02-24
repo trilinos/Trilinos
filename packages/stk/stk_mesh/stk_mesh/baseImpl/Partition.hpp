@@ -85,11 +85,11 @@ public:
 
   size_t num_buckets() const { return m_buckets.size();}
 
-  inline std::vector<Bucket *>::iterator begin() { return m_buckets.begin(); }
-  inline std::vector<Bucket *>::iterator end() { return m_buckets.end(); }
+  inline BucketVector::iterator begin() { return m_buckets.begin(); }
+  inline BucketVector::iterator end() { return m_buckets.end(); }
 
-  inline std::vector<Bucket *>::const_iterator begin() const { return m_buckets.begin(); }
-  inline std::vector<Bucket *>::const_iterator end() const { return m_buckets.end(); }
+  inline BucketVector::const_iterator begin() const { return m_buckets.begin(); }
+  inline BucketVector::const_iterator end() const { return m_buckets.end(); }
 
   ////
   //// The following are used internally and for unit testing.
@@ -98,7 +98,7 @@ public:
   size_t compute_size()
   {
     size_t partition_size = 0;
-    for (std::vector<Bucket *>::const_iterator b_i = begin(), b_e = end(); b_i != b_e; ++b_i)
+    for (BucketVector::const_iterator b_i = begin(), b_e = end(); b_i != b_e; ++b_i)
     {
       partition_size += (*b_i)->size();
     }
@@ -132,7 +132,7 @@ private:
   std::vector<PartOrdinal> m_extPartitionKey;
 
   // Used if the set of buckets (not just bucket contents) are being modified.
-  std::vector<Bucket *> m_buckets;
+  BucketVector m_buckets;
 
   // Number of entities in this partition.
   size_t m_size;

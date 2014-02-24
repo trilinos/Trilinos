@@ -20,15 +20,11 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
-
-
-
-
-
 
 using stk::mesh::Part;
 using stk::mesh::Bucket;
@@ -46,6 +42,7 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
+using stk::mesh::BucketVector;
 using stk::mesh::fixtures::BoxFixture;
 
 namespace {
@@ -55,7 +52,7 @@ const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 void printBuckets(std::ostringstream& msg, BulkData& mesh)
 {
-  const std::vector<Bucket*> & buckets = mesh.buckets(NODE_RANK);
+  const BucketVector & buckets = mesh.buckets(NODE_RANK);
   for (unsigned i=0; i < buckets.size(); i++)
     {
       const Bucket& bucket = *buckets[i];
@@ -70,7 +67,7 @@ void printBuckets(std::ostringstream& msg, BulkData& mesh)
 
 static void checkBuckets( BulkData& mesh)
 {
-  const std::vector<Bucket*> & buckets = mesh.buckets(NODE_RANK);
+  const BucketVector & buckets = mesh.buckets(NODE_RANK);
   for (unsigned i=0; i < buckets.size(); i++)
     {
       Bucket* bucket = buckets[i];

@@ -41,9 +41,9 @@ bool comm_mesh_counts( const BulkData & M ,
   Part & owns = S.locally_owned_part();
 
   for ( EntityRank i = stk::topology::NODE_RANK ; i < entity_rank_count ; ++i ) {
-    const std::vector<Bucket*> & ks = M.buckets( i );
+    const BucketVector & ks = M.buckets( i );
 
-    std::vector<Bucket*>::const_iterator ik ;
+    BucketVector::const_iterator ik ;
 
     for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
       if ( has_superset( **ik , owns ) ) {

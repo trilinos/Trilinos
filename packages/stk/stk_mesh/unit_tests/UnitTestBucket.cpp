@@ -44,6 +44,7 @@ using stk::mesh::Selector;
 using stk::mesh::Field;
 using stk::mesh::FieldBase;
 using stk::mesh::put_field;
+using stk::mesh::BucketVector;
 
 typedef Field<double> ScalarFieldType;
 
@@ -174,9 +175,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
 
   bulk.modification_end();
 
-  const std::vector<Bucket*> & buckets = bulk.buckets( element_rank );
+  const BucketVector & buckets = bulk.buckets( element_rank );
 
-  std::vector<Bucket*>::const_iterator k;
+  BucketVector::const_iterator k;
 
   k = buckets.begin();
 
@@ -188,8 +189,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   get_involved_parts( union_parts2, **k, involved_parts);
 
   //test 3 covers first section of "if" statement in while loop
-  const std::vector<Bucket*> & buckets2 = bulk.buckets( NODE_RANK );
-  std::vector<Bucket*>::const_iterator k2;
+  const BucketVector & buckets2 = bulk.buckets( NODE_RANK );
+  BucketVector::const_iterator k2;
 
   k2 = buckets2.begin();
   get_involved_parts( union_parts, **k2, involved_parts);
@@ -254,9 +255,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   bulk.modification_end();
 
-  const std::vector<Bucket*> & buckets2 = bulk.buckets( element_rank );
+  const BucketVector & buckets2 = bulk.buckets( element_rank );
 
-  std::vector<Bucket*>::const_iterator k2;
+  BucketVector::const_iterator k2;
 
   k2 = buckets2.begin();
 

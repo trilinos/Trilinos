@@ -1638,7 +1638,7 @@ STKUNIT_UNIT_TEST( UnitTestingOfBulkData, test_total_field_data_footprint )
 
   // Alternative computation explicitly gathers buckets.
   size_t node_fields_footprint = 0;
-  const std::vector<stk::mesh::Bucket *> &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
+  const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
   for (size_t i = 0; i < node_buckets.size(); ++i)
   {
     node_fields_footprint +=
@@ -1660,11 +1660,11 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
   unsigned p_size = eMesh.parallel_size();
   static_cast<void>(p_size);
 
-  const std::vector<stk::mesh::Bucket*> & buckets = eMesh.buckets( stk::topology::NODE_RANK );
+  const stk::mesh::BucketVector & buckets = eMesh.buckets( stk::topology::NODE_RANK );
 
   enum Type{ Owned, Shared, Ghost };
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+  for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
   {
     {
       stk::mesh::Bucket & bucket = **k ;
@@ -1708,7 +1708,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
     if (sync_shared) stk::mesh::copy_owned_to_shared(eMesh, fields);
   }
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+  for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
   {
     {
       stk::mesh::Bucket & bucket = **k ;

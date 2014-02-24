@@ -28,7 +28,7 @@ unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
+  const stk::mesh::BucketVector& buckets = mesh.buckets( skin_rank );
 
   return count_selected_entities( select_skin, buckets);
 }

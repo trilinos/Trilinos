@@ -313,9 +313,9 @@ void Gear::turn( double /* turn_angle */ ) const
 #if 0
   const unsigned Length = 3 ;
 
-  const std::vector<stk::mesh::Bucket*> & ks = m_mesh->buckets( stk::mesh::Node );
-  const std::vector<stk::mesh::Bucket*>::const_iterator ek = ks.end();
-  std::vector<stk::mesh::Bucket*>::const_iterator ik = ks.begin();
+  const stk::mesh::BucketVector & ks = m_mesh->buckets( stk::mesh::Node );
+  const stk::mesh::BucketVector::const_iterator ek = ks.end();
+  stk::mesh::BucketVector::const_iterator ik = ks.begin();
   for ( ; ik != ek ; ++ik ) {
     stk::mesh::Bucket & k = **ik ;
     if ( k.has_superset( m_gear ) ) {

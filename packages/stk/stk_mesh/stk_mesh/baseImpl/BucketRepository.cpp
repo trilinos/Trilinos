@@ -249,7 +249,7 @@ void BucketRepository::internal_modification_end()
         from_rank < m_connectivity_map.m_map.size();
         ++from_rank)
   {
-    const std::vector<Bucket *> &buckets = m_buckets[from_rank];
+    const BucketVector &buckets = m_buckets[from_rank];
     unsigned num_buckets = buckets.size();
     for (unsigned j = 0; j < num_buckets; ++j)
     {
@@ -353,7 +353,7 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
   m_buckets[rank].resize(num_buckets);
 
   bool has_hole = false;
-  std::vector<Bucket *>::iterator bkts_i = m_buckets[rank].begin();
+  BucketVector::iterator bkts_i = m_buckets[rank].begin();
   for (size_t p_i = 0; p_i < num_partitions; ++p_i)
   {
     Partition &partition = *partitions[p_i];
@@ -390,7 +390,7 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
 {
 
   Bucket * new_bucket = bucket_allocator().allocate(1);
-  std::vector<Bucket *> &bucket_vec = m_buckets[arg_entity_rank];
+  BucketVector &bucket_vec = m_buckets[arg_entity_rank];
   const unsigned bucket_id = bucket_vec.size();
   try {
     new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map, bucket_id);
@@ -421,7 +421,7 @@ void BucketRepository::deallocate_bucket(Bucket *b)
 
 void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 {
-  std::vector<Bucket *> &buckets = m_buckets[entity_rank];
+  BucketVector &buckets = m_buckets[entity_rank];
   unsigned num_buckets = buckets.size();
   std::vector<unsigned> id_map(num_buckets);
 

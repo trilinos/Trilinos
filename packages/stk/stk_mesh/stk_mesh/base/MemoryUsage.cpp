@@ -87,7 +87,7 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
       }
     }
 
-    const std::vector<Bucket*>& buckets = bulk.buckets(rank_i);
+    const BucketVector& buckets = bulk.buckets(rank_i);
     mem_usage.bucket_counts[rank_i] = buckets.size();
     for(size_t b=0; b<buckets.size(); ++b) {
       Bucket& bucket = *buckets[b];

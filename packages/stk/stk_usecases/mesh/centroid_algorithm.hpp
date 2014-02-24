@@ -95,9 +95,9 @@ void centroid_algorithm(
 
   // Iterate the set of element buckets:
 
-  const std::vector<Bucket*> & buckets = bulkData.buckets( element_rank );
+  const BucketVector & buckets = bulkData.buckets( element_rank );
 
-  for ( std::vector<Bucket*>::const_iterator
+  for ( BucketVector::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
     Bucket & bucket = **k ;
 
@@ -146,9 +146,9 @@ bool centroid_algorithm_unit_test_dimensions(
 
   // Iterate the set of element buckets:
 
-  const std::vector<Bucket*> & buckets = bulkData.buckets( element_rank );
+  const BucketVector & buckets = bulkData.buckets( element_rank );
 
-  for ( std::vector<Bucket*>::const_iterator
+  for ( BucketVector::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
      Bucket & bucket = **k ;
 

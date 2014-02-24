@@ -28,13 +28,13 @@ namespace mesh {
 void get_entities( const BulkData & mesh , EntityRank entity_rank ,
                    std::vector< Entity> & entities )
 {
-  const std::vector<Bucket*> & ks = mesh.buckets( entity_rank );
+  const BucketVector & ks = mesh.buckets( entity_rank );
   entities.clear();
 
   size_t count = 0;
 
-  const std::vector<Bucket*>::const_iterator ie = ks.end();
-        std::vector<Bucket*>::const_iterator ik = ks.begin();
+  const BucketVector::const_iterator ie = ks.end();
+        BucketVector::const_iterator ik = ks.begin();
 
   for ( ; ik != ie ; ++ik ) { count += (*ik)->size(); }
 
@@ -55,12 +55,12 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank ,
 
 unsigned count_selected_entities(
   const Selector & selector ,
-  const std::vector< Bucket * > & input_buckets )
+  const BucketVector & input_buckets )
 {
   size_t count = 0;
 
-  const std::vector<Bucket*>::const_iterator ie = input_buckets.end();
-        std::vector<Bucket*>::const_iterator ik = input_buckets.begin();
+  const BucketVector::const_iterator ie = input_buckets.end();
+        BucketVector::const_iterator ik = input_buckets.begin();
 
   for ( ; ik != ie ; ++ik ) {
     const Bucket & k = ** ik ;
@@ -72,15 +72,15 @@ unsigned count_selected_entities(
 
 
 void get_selected_entities( const Selector & selector ,
-                            const std::vector< Bucket * > & input_buckets ,
+                            const BucketVector & input_buckets ,
                             std::vector< Entity> & entities )
 {
   size_t count = count_selected_entities(selector,input_buckets);
 
   entities.resize(count);
 
-  const std::vector<Bucket*>::const_iterator ie = input_buckets.end();
-        std::vector<Bucket*>::const_iterator ik = input_buckets.begin();
+  const BucketVector::const_iterator ie = input_buckets.end();
+        BucketVector::const_iterator ik = input_buckets.begin();
 
   for ( size_t j = 0 ; ik != ie ; ++ik ) {
     const Bucket & k = ** ik ;
@@ -111,9 +111,9 @@ void count_entities(
   for ( size_t i = 0 ; i < nranks ; ++i ) {
     count[i] = 0 ;
 
-    const std::vector<Bucket*> & ks = mesh.buckets( static_cast<EntityRank>(i) );
+    const BucketVector & ks = mesh.buckets( static_cast<EntityRank>(i) );
 
-    std::vector<Bucket*>::const_iterator ik ;
+    BucketVector::const_iterator ik ;
 
     for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
       if ( selector(**ik) ) {

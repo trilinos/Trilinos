@@ -1143,7 +1143,7 @@ void BulkData::allocate_field_data()
   //will allocate field-data for that bucket.
 
   for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
-    const std::vector<Bucket*>& buckets = this->buckets(rank);
+    const BucketVector& buckets = this->buckets(rank);
     for(size_t i=0; i<buckets.size(); ++i) {
       new_bucket_callback(rank, buckets[i]->supersets(), buckets[i]->capacity(), NULL);
     }
@@ -1451,7 +1451,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
     EntityRank rank = static_cast<EntityRank>(i);
     out << "  All " << rank_names[i] << " entities:" << std::endl;
 
-    const std::vector<Bucket*>& buckets = this->buckets(rank);
+    const BucketVector& buckets = this->buckets(rank);
     BOOST_FOREACH(Bucket* bucket, buckets) {
       out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
       PartVector supersets;
@@ -2152,10 +2152,10 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
   size_t comm_count = 0 ;
 
   for ( size_t itype = 0 ; itype < EntityRankEnd ; ++itype ) {
-    const std::vector< Bucket * > & all_buckets = M.buckets( static_cast<EntityRank>(itype) );
+    const BucketVector & all_buckets = M.buckets( static_cast<EntityRank>(itype) );
 
-    const std::vector<Bucket*>::const_iterator i_end = all_buckets.end();
-          std::vector<Bucket*>::const_iterator i     = all_buckets.begin();
+    const BucketVector::const_iterator i_end = all_buckets.end();
+          BucketVector::const_iterator i     = all_buckets.begin();
 
     while ( i != i_end ) {
       Bucket & bucket = **i ; ++i ;

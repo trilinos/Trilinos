@@ -647,7 +647,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 
   // Verify parallel consistent modification
   // First, loop over everythin in the modified buckets
-  std::vector<stk::mesh::Bucket *>::const_iterator  cur_modified_node_bucket = log.get_modified_buckets(0).begin();
+  stk::mesh::BucketVector::const_iterator  cur_modified_node_bucket = log.get_modified_buckets(0).begin();
   while ( cur_modified_node_bucket != log.get_modified_buckets(0).end() )
   {
     stk::mesh::BucketIterator  cur_modified_node = (*cur_modified_node_bucket)->begin();

@@ -246,7 +246,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
                               std::vector< stk::mesh::Part * >( 1 , & p1 ) );
   }
 
-  const std::vector< stk::mesh::Bucket *> & node_buckets =
+  const stk::mesh::BucketVector & node_buckets =
     bulk_data.buckets( NODE_RANK );
 
   unsigned num = stk::mesh::count_selected_entities(select_p0, node_buckets);
