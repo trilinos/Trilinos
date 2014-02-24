@@ -210,8 +210,15 @@ namespace Tpetra {
     //
     // Specialization of ZeroOp for a pair of two different types.
     //
+    // Note: "<::" is not a legal character combination for beginning
+    // a template argument list, even with C++11.  This is why we
+    // leave a space between the less-than sign and the double colon.
+    // We use the initial double colon to tell the compiler that we
+    // specifically want the TpetraExamples namespace declared above,
+    // and not some other TpetraExamples namespace (if one should
+    // exist) nested in the Tpetra namespace.
     template <class T1, class T2>
-    class ZeroOp<::TpetraExamples::Pair<T1,T2> > {
+    class ZeroOp< ::TpetraExamples::Pair<T1,T2> > {
     public:
       static inline ::TpetraExamples::Pair<T1,T2> identity () {
         return ::TpetraExamples::makePair (Teuchos::ScalarTraits<T1>::zero (),
