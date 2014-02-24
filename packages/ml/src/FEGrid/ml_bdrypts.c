@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -213,7 +213,7 @@ int ML_BdryPts_Copy_Dirichlet_GridToEqn(ML_BdryPts *ml_bc)
       ML_memory_free( (void**) &(ml_bc->Dirichlet_eqn_list) );
 
    ml_bc->Dirichlet_eqn_length = ml_bc->Dirichlet_grid_length;
-   ml_bc->Dirichlet_eqn_list = ml_bc->Dirichlet_grid_list; 
+   ml_bc->Dirichlet_eqn_list = ml_bc->Dirichlet_grid_list;
    ml_bc->Dirichlet_eqn_CreateOrDup = 2;
    return 0;
 }
@@ -233,7 +233,7 @@ int ML_BdryPts_ApplyZero_Dirichlet_Grid(ML_BdryPts *ml_bc, double *invec)
 
    length = ml_bc->Dirichlet_grid_length;
    list = ml_bc->Dirichlet_grid_list;
-   for ( i = 0; i < length; i++ ) invec[list[i]] = 0.0; 
+   for ( i = 0; i < length; i++ ) invec[list[i]] = 0.0;
    return 0;
 }
 
@@ -252,7 +252,7 @@ int ML_BdryPts_ApplyZero_Dirichlet_Eqn(ML_BdryPts *ml_bc, double *invec)
 
    length = ml_bc->Dirichlet_eqn_length;
    list = ml_bc->Dirichlet_eqn_list;
-   for ( i = 0; i < length; i++ ) invec[list[i]] = 0.0; 
+   for ( i = 0; i < length; i++ ) invec[list[i]] = 0.0;
    return 0;
 }
 

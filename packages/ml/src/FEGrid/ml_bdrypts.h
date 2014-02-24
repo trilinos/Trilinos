@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -47,7 +47,7 @@ struct ML_BdryPts_Struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-#endif 
+#endif
 
 extern int ML_BdryPts_Create(ML_BdryPts **);
 extern int ML_BdryPts_Init(ML_BdryPts *);

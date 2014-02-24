@@ -1,4 +1,4 @@
-/* 
+/*
  * Goal of this test:
  * - verify that ML is not using MPI functions outside the given communicator.
  *
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     GaleriList.set("ny", 10);
     GaleriList.set("mx", 1);
     GaleriList.set("my", 1);
-    
+
     Epetra_Map* Map = CreateMap("Cartesian2D", SerialComm, GaleriList);
     Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     ML_Epetra::SetDefaults("SA",MLList);
     MLList.set("ML output", 0);
 
-    ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+    ML_Epetra::MultiLevelPreconditioner* MLPrec =
       new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
     solver.SetPrecOperator(MLPrec);
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
   return(0);
 
-} // main driver 
+} // main driver
 
 #else
 

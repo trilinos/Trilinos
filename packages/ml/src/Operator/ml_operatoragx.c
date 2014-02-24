@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -35,15 +35,15 @@ int ML_OperatorAGX_Create(ML_OperatorAGX **opp)
    op->local_a       = 0;
    op->Nremote_rows  = 0;
    op->remote_ia     = 0;
-   op->remote_ja     = 0; 
-   op->remote_a      = 0; 
+   op->remote_ja     = 0;
+   op->remote_a      = 0;
    op->restrict_wgts = 0;
    op->ext_cnt       = 0;
    op->ext_ia        = 0;
    op->ext_ja        = 0;
    op->ext_a         = 0;
    op->ext2_cnt      = 0;
-   op->ext2_ptr      = 0; 
+   op->ext2_ptr      = 0;
    op->ext2_index    = 0;
    op->ext2_a        = 0;
    op->fnode_flag    = 0;
@@ -82,20 +82,20 @@ int ML_OperatorAGX_Destroy(ML_OperatorAGX **opp)
    op->ext_cnt      = 0;
    op->ext2_cnt     = 0;
    op->fnode_leng   = 0;
-   if (op->local_ia   != 0) ML_memory_free( (void **) &(op->local_ia) ); 
+   if (op->local_ia   != 0) ML_memory_free( (void **) &(op->local_ia) );
    if (op->local_ja   != 0) ML_memory_free( (void **) &(op->local_ja) );
    if (op->local_a    != 0) ML_memory_free( (void **) &(op->local_a) );
    if (op->remote_ia  != 0) ML_memory_free( (void **) &(op->remote_ia) );
    if (op->remote_ja  != 0) ML_memory_free( (void **) &(op->remote_ja) );
-   if (op->remote_a   != 0) ML_memory_free( (void **) &(op->remote_a) ); 
+   if (op->remote_a   != 0) ML_memory_free( (void **) &(op->remote_a) );
    if (op->ext_ia     != 0) ML_memory_free( (void **) &(op->ext_ia) );
-   if (op->ext_ja     != 0) ML_memory_free( (void **) &(op->ext_ja) ); 
-   if (op->ext_a      != 0) ML_memory_free( (void **) &(op->ext_a) ); 
-   if (op->ext2_ptr   != 0) ML_memory_free( (void **) &(op->ext2_ptr) ); 
-   if (op->ext2_index != 0) ML_memory_free( (void **) &(op->ext2_index) ); 
-   if (op->ext2_a     != 0) ML_memory_free( (void **) &(op->ext2_a) ); 
-   if (op->fnode_flag != 0) ML_memory_free( (void **) &(op->fnode_flag) ); 
-   if (op->restrict_wgts != 0) ML_memory_free((void **) &(op->restrict_wgts)); 
+   if (op->ext_ja     != 0) ML_memory_free( (void **) &(op->ext_ja) );
+   if (op->ext_a      != 0) ML_memory_free( (void **) &(op->ext_a) );
+   if (op->ext2_ptr   != 0) ML_memory_free( (void **) &(op->ext2_ptr) );
+   if (op->ext2_index != 0) ML_memory_free( (void **) &(op->ext2_index) );
+   if (op->ext2_a     != 0) ML_memory_free( (void **) &(op->ext2_a) );
+   if (op->fnode_flag != 0) ML_memory_free( (void **) &(op->fnode_flag) );
+   if (op->restrict_wgts != 0) ML_memory_free((void **) &(op->restrict_wgts));
    if (op->remote_restrict_wgts != 0) ML_free(op->remote_restrict_wgts);
    if (op->coarse_bdry_list!= 0) ML_free(op->coarse_bdry_list);
    op->remote_restrict_wgts = 0;
@@ -121,21 +121,21 @@ int ML_OperatorAGX_Print(ML_OperatorAGX *op)
       exit(1);
    }
    printf("**** Local operator : numrows = %d \n",op->Nlocal_rows);
-   for ( i = 0; i < op->Nlocal_rows; i++ ) 
+   for ( i = 0; i < op->Nlocal_rows; i++ )
    {
-      for (j=op->local_ia[i]; j<op->local_ia[i+1]; j++) 
+      for (j=op->local_ia[i]; j<op->local_ia[i+1]; j++)
          printf("   (%4d,%4d) = %e\n",i,op->local_ja[j],op->local_a[j]);
    }
    printf("**** Remote operator : numrows = %d \n",op->Nremote_rows);
-   for ( i = 0; i < op->Nremote_rows; i++ ) 
+   for ( i = 0; i < op->Nremote_rows; i++ )
    {
-      for (j=op->remote_ia[i]; j<op->remote_ia[i+1]; j++) 
+      for (j=op->remote_ia[i]; j<op->remote_ia[i+1]; j++)
          printf("   (%4d,%4d) = %e\n",i,op->remote_ja[j],op->remote_a[j]);
    }
    printf("**** Remote data : no. entries = %d \n",op->ext_cnt);
-   for ( i = 0; i < op->ext_cnt; i++ ) 
+   for ( i = 0; i < op->ext_cnt; i++ )
    {
-      printf("   (%4d,%4d) = %e\n", op->ext_ia[i], op->ext_ja[i], 
+      printf("   (%4d,%4d) = %e\n", op->ext_ia[i], op->ext_ja[i],
                                        op->ext_a[i]);
    }
    ML_CommInfoAGX_Print( op->com );
@@ -151,7 +151,7 @@ int ML_OperatorAGX_Print(ML_OperatorAGX *op)
 int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen,
                             double *dout)
 {
-   int     i, j, k, index, icnt, icnt2, cnum, leng; 
+   int     i, j, k, index, icnt, icnt2, cnum, leng;
    int     *send_proc = NULL, *recv_proc = NULL, *send_leng, *recv_leng = NULL;
    int ibegin, iend;
    int     pid, send_cnt, recv_cnt, mtype, step, istep, jstep;
@@ -211,11 +211,11 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
          iend   = oplocal->remote_ia[i+1];
          for ( k = 0; k < step; k++ ) send_buf[istep+k] = 0.0;
          for ( j = ibegin; j < iend; j++ )
-         { 
+         {
             cnum  = oplocal->remote_ja[j];
             mult  = oplocal->remote_a[j];
             jstep = cnum * step;
-            for ( k = 0; k < step; k++ ) 
+            for ( k = 0; k < step; k++ )
               send_buf[istep+k] += ( mult * din[jstep+k] );
          }
       }
@@ -232,7 +232,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
       ML_memory_alloc((void **) &send_leng,send_cnt*sizeof(int),"OP4");
       for ( i = 0; i < send_cnt; i++ )
          send_leng[i] = oplocal->com->send_ia[i+1] - oplocal->com->send_ia[i];
-   }   
+   }
 
    /* ----------------------------------------------------------------- */
    /* post a receive for incoming data                                  */
@@ -248,7 +248,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_irecvbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
+      comm->USR_irecvbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype,
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -266,7 +266,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
    {
       leng = send_leng[i] * sizeof(double) * step;
       pid  = send_proc[i];
-      comm->USR_sendbytes((void*)&(send_buf[icnt]), (unsigned int) leng, pid, mtype, 
+      comm->USR_sendbytes((void*)&(send_buf[icnt]), (unsigned int) leng, pid, mtype,
                           comm->USR_comm );
       icnt += (send_leng[i] * step);
    }
@@ -289,7 +289,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
          cnum  = oplocal->local_ja[j];
          mult  = oplocal->local_a[j];
          jstep = cnum * step;
-         for ( k = 0; k < step; k++ ) 
+         for ( k = 0; k < step; k++ )
             darray[k] += ( mult * din[jstep+k] );
       }
       istep = i * step;
@@ -307,7 +307,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
+      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype,
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -327,7 +327,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
          index = oplocal->com->recv_list[i];
          istep = i * step;
          jstep = index * step;
-         for ( k = 0; k < step; k++ ) 
+         for ( k = 0; k < step; k++ )
             dout[jstep+k] += recv_buf[istep+k];
       }
    }
@@ -338,7 +338,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
 
    icnt = oplocal->Nlocal_rows;
    for ( i = 0; i < icnt; i++ )
-   { 
+   {
       dtmp  = oplocal->restrict_wgts[i];
       istep = i * step;
       for ( k = 0; k < step; k++ ) dout[istep+k] *= dtmp;
@@ -362,10 +362,10 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
 /*  another data array                                                  */
 /* -------------------------------------------------------------------- */
 
-int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din, 
+int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
                               int outlen, double *dout)
 {
-   int    i, j, k, index, icnt, icnt2, rnum, leng; 
+   int    i, j, k, index, icnt, icnt2, rnum, leng;
    int    *send_proc = NULL, *recv_proc = NULL, *send_leng, *recv_leng = NULL;
    int    ibegin, iend;
    int    pid, send_cnt, recv_cnt, mtype, step, istep, jstep;
@@ -416,7 +416,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
       ML_memory_alloc( (void **) &send_leng,send_cnt*sizeof(int), "OP7");
       for ( i = 0; i < send_cnt; i++ )
          send_leng[i] = oplocal->com->recv_ia[i+1] - oplocal->com->recv_ia[i];
-   }   
+   }
 
    /* ----------------------------------------------------------------- */
    /* collect send data                                                 */
@@ -450,7 +450,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_irecvbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
+      comm->USR_irecvbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype,
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -468,7 +468,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
    {
       leng = send_leng[i] * sizeof(double) * step;
       pid  = send_proc[i];
-      comm->USR_sendbytes((void*)&(send_buf[icnt]), (unsigned int) leng, pid, mtype, 
+      comm->USR_sendbytes((void*)&(send_buf[icnt]), (unsigned int) leng, pid, mtype,
                           comm->USR_comm );
       icnt += (send_leng[i] * step);
    }
@@ -491,7 +491,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
          rnum  = oplocal->local_ja[j];
          mult  = oplocal->local_a[j];
          jstep = rnum * step;
-         for ( k = 0; k < step; k++ ) 
+         for ( k = 0; k < step; k++ )
             dout[jstep+k] += ( mult * din[istep+k] );
       }
    }
@@ -506,7 +506,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
+      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype,
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -531,7 +531,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
             rnum  = oplocal->remote_ja[j];
             mult  = oplocal->remote_a[j];
             jstep = rnum * step;
-            for ( k = 0; k < step; k++ ) 
+            for ( k = 0; k < step; k++ )
                dout[jstep+k] += ( mult * recv_buf[istep+k] );
          }
       }
@@ -558,8 +558,8 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
 /* Ray's version of getrows (This is the one to use for now.)           */
 /* ---------------------------------------------------------------------*/
 
-int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows, 
-                int requested_rows[], int allocated_space, int columns[], 
+int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
+                int requested_rows[], int allocated_space, int columns[],
                 double values[], int row_lengths[])
 {
    int            i, j, *ia, *ja, ncount;
@@ -640,7 +640,7 @@ int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
       }
 
       ML_OperatorAGX_Prolongate( coarse->Pmat,
-/* (void *) local_op, */ Nlocal*step, invec, 
+/* (void *) local_op, */ Nlocal*step, invec,
                            Nremote*step, outvec);
       ML_BdryPts_Get_Dirichlet_Grid_Info(coarse->BCs, &j, &dlist);
       for ( i = 0; i < Nremote*step; i++ )
@@ -649,7 +649,7 @@ int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
       else         coarse_bdry_list = 0;
       remote_restrict_wgts = (double *) ML_allocate((1+Nremote)*sizeof(double));
       if (remote_restrict_wgts == NULL) { printf("Out of space\n"); exit(1); }
-      
+
       coarse_bdry_leng = 0;
       ML_BdryPts_Get_Dirichlet_Grid_Info(coarse->BCs, &dlength, &dlist);
       if ( dlist != NULL) {
@@ -658,11 +658,11 @@ int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
       }
       for (i = 0; i < Nremote; i++) {
          remote_restrict_wgts[i] = outvec[i*step];
-         if (remote_restrict_wgts[i] < 0.0) 
+         if (remote_restrict_wgts[i] < 0.0)
             remote_restrict_wgts[i] = -remote_restrict_wgts[i];
       }
       for ( i = 0; i < Nremote*step; i++ )
-         if ( outvec[i] < 0.0 ) 
+         if ( outvec[i] < 0.0 )
 	    coarse_bdry_list[coarse_bdry_leng++]= i+Nlocal*step;
       if ( Nlocal > 0 ) {
          ML_free( new_local_ia );
@@ -734,8 +734,8 @@ int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
 /* Ray's version of getcols (This is the one to use for now.)           */
 /* ---------------------------------------------------------------------*/
 
-int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows, 
-                    int requested_rows[], int allocated_space, 
+int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows,
+                    int requested_rows[], int allocated_space,
                     int columns[], double values[], int row_lengths[])
 
 {
@@ -758,7 +758,7 @@ int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows,
    /* --------------------------------------------------------- */
    /* if column ordering has been done, return column           */
    /* --------------------------------------------------------- */
-   if ( local_op->ext_cnt == 0   || local_op->ext_ia == NULL || 
+   if ( local_op->ext_cnt == 0   || local_op->ext_ia == NULL ||
         local_op->ext_ja == NULL || local_op->ext_a  == NULL )
    {
       Nlocal   = local_op->Nlocal_rows;
@@ -809,9 +809,9 @@ int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows,
       ext_ja      = local_op->ext_ja;
       ext_ia      = local_op->ext_ia;
       ext_a       = local_op->ext_a;
-      ext_ja[0]   = 0; 
+      ext_ja[0]   = 0;
       for ( i = 1; i <= fnodes; i++ )
-         ext_ja[i] = patemp[i-1] + ext_ja[i-1]; 
+         ext_ja[i] = patemp[i-1] + ext_ja[i-1];
       for ( i = 0; i < Nlocal; i++ )
       {
          for ( j = local_ia[i]; j < local_ia[i+1]; j++ )
@@ -885,9 +885,9 @@ int ML_OperatorAGX_Clean_Getrows(ML_Operator **opp)
    op->coarse_bdry_list     = 0;
    op->coarse_bdry_leng     = -1;
    op->ext_cnt      = 0;
-   if (op->ext_ja     != 0) ML_memory_free( (void **) &(op->ext_ja) ); 
+   if (op->ext_ja     != 0) ML_memory_free( (void **) &(op->ext_ja) );
    if (op->ext_ia     != 0) ML_memory_free( (void **) &(op->ext_ia) );
-   if (op->ext_a      != 0) ML_memory_free( (void **) &(op->ext_a) ); 
+   if (op->ext_a      != 0) ML_memory_free( (void **) &(op->ext_a) );
    return 0;
 }
 
@@ -897,12 +897,12 @@ int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,
 {
    ML_CommInfoAGX *com;
    int            i, j, k, kk, flag, step;
-   int            send_count, recv_count, *send_data = NULL, *recv_data = NULL, 
+   int            send_count, recv_count, *send_data = NULL, *recv_data = NULL,
                   *neighbors = NULL, Nneighbors, *remap;
 
    step       = vop->AGX_stride;
    com        = vop->com;
- 
+
    /* convert between Charles communication information and RST's */
 
    send_count = 1;

@@ -38,7 +38,7 @@ if ( (fp3 = fopen("final","wb")) == NULL) {
 
     if ((flag1 != 0) && (string1[0] >= '0') && (string1[0] <= '9'))
        flag1 = sscanf(string1,"%d%d",&Nrows, &Nnzs);
-    else 
+    else
        flag1 = scanf("%d%d",&Nrows, &Nnzs);
 
     if (flag1 != 2) {
@@ -116,14 +116,14 @@ string[j] = ' ';
 		 	  low_col, Nrows);
           first_time = 0;
        }
-       if (low_row == current_row+1) 
+       if (low_row == current_row+1)
 #ifdef binary
           fwrite(&minusone, sizeof(int), 1, fp3);
 #elif
           printf("-1\n");
 #endif
        else if (low_row > current_row+1) {
-          if (first_time) 
+          if (first_time)
              fprintf(stderr,"Warning: Empty rows (e.g. %d)?\n",current_row+1);
 #ifdef binary
           fwrite(&minusone, sizeof(int), 1, fp3);
@@ -181,4 +181,4 @@ int mygetline(FILE *fp, char string[])
    if (i < 2) return(0);
    else return(1);
 }
- 
+

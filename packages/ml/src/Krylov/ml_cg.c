@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -66,7 +66,7 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    init_norm = res_norm;
    if ( comm->ML_mypid == 0 && print_freq > 0 && print_freq < 1000 )
        printf("ML_CG initial residual norm = %e \n", init_norm);
-   if ( init_norm == 0.0 ) 
+   if ( init_norm == 0.0 )
    {
       ML_free(r); ML_free(p); ML_free(ap);
       if ( precon != NULL ) ML_free(z);
@@ -85,13 +85,13 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    /* loop until convergence is achieved or maxit has been exceeded*/
    /* ----------------------------------------------------------------*/
 
-   while (converged == 0) 
+   while (converged == 0)
    {
-      while (res_norm > eps1 && its < maxiter) 
+      while (res_norm > eps1 && its < maxiter)
       {
          its++;
          if ( precfcn != NULL ) precfcn(precon,length,z,length,r);
-         if ( its > 1 && rho == 0.0 ) 
+         if ( its > 1 && rho == 0.0 )
          {
             printf("ML_CG breakdown (1).\n");
             exit(1);
@@ -103,13 +103,13 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
          for (i=0; i<length; i++) p[i] = beta * p[i] + z[i];
          ML_Operator_Apply(matrix, length, p, length, ap);
          sigma = ML_gdot(length, p, ap, comm);
-         if ( sigma == 0.0 ) 
+         if ( sigma == 0.0 )
          {
             printf("ML_CG breakdown (2).\n");
             exit(1);
          }
          alpha  = rho / sigma;
-         for (i=0; i<length; i++) 
+         for (i=0; i<length; i++)
          {
             sol[i] += alpha * p[i];
             r[i]   -= alpha * ap[i];
@@ -160,7 +160,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* ----------------------------------------------------------------*/
    /* get all parameters from parent object*/
    /* ----------------------------------------------------------------*/
-   
+
    matrix      = ML_Krylov_Get_Amatrix(data);
    comm        = ML_Krylov_Get_Comm(data);
    totallength = ML_Comm_GsumInt(comm, length);
@@ -186,7 +186,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
          exit(1);
       }
    }
-   ML_random_vec(r, length, comm); 
+   ML_random_vec(r, length, comm);
 
    /* ----------------------------------------------------------------*/
    /* retrieve diagonals                                              */
@@ -203,7 +203,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
            colInd = (int    *) ML_allocate( allocated * sizeof(int) );
            colVal = (double *) ML_allocate( allocated * sizeof(double) );
         }
-  
+
         sum = 0.0;
         for ( j = 0; j < ncnt; j++ ) {
            if ( colInd[j] == i ) scale[i]  = colVal[j];
@@ -212,7 +212,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 
         if ( sum == 0.0) { /* kludging this to handle Dirichlet BC's */
            scale[i] = 0.;  r[i] = 0; Nbc++;
-        } 
+        }
         else {
            if ( scale[i] > 0.0 ) scale[i]  = 1.0 / sqrt(scale[i]);
            else {  /* Something is strange. The diagonal should not be 0 or*/
@@ -321,7 +321,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* ----------------------------------------------------------------*/
    Tdiag       = (double *) ML_allocate((maxiter+1) * sizeof(double));
    Tsubdiag    = (double *) ML_allocate((maxiter+1) * sizeof(double));
-   for ( i = 0; i <= maxiter; i++ ) { 
+   for ( i = 0; i <= maxiter; i++ ) {
       Tdiag[i] = 1.; Tsubdiag[i] = 0.;
    }
 
@@ -330,7 +330,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       rhom1 = rho;
       rho = ML_gdot(length, r, r, comm);
       if (i == 0) beta = 0.0;
-      else 
+      else
       {
          beta = rho / rhom1;
          Tsubdiag[i-1] = -beta;
@@ -375,10 +375,10 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    }
    for ( i = 0; i < maxiter; i++ ) {
      Tdiag[i] = Tdiag[i] * rnorm_array[i] * rnorm_array[i];
-     if (i != maxiter-1) 
+     if (i != maxiter-1)
         Tsubdiag[i] = Tsubdiag[i] * rnorm_array[i] * rnorm_array[i+1];
    }
-   
+
    strcpy(EigsOnly,"N");
    DSTEQR_F77(EigsOnly,&maxiter,Tdiag,Tsubdiag, NULL, &one, NULL, &info);
    if (NegDefinite) for (i = 0; i < maxiter; i++) Tdiag[i] = -Tdiag[i];
@@ -483,8 +483,8 @@ int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data, int length, int sca
       }
       for (i = 0; i < length; i++) diag[i] = 1.;
    }
-   ML_random_vec(v1real, length, comm); 
-   ML_random_vec(v2imag, length, comm); 
+   ML_random_vec(v1real, length, comm);
+   ML_random_vec(v2imag, length, comm);
 
    /* ----------------------------------------------------------------*/
    /* retrieve the diagonals */
@@ -648,7 +648,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
          exit(1);
       }
    }
-   ML_random_vec(p, length, comm); 
+   ML_random_vec(p, length, comm);
 
    /* ----------------------------------------------------------------*/
    /* retrieve the diagonals */
@@ -694,7 +694,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 #if 0
            else if ( diag[i] < 0.0 ) {
              if (ML_Get_PrintLevel() > 0) {
-               if (level != -1) 
+               if (level != -1)
                  printf("%d : diagonal[%d] = %e < 0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, diag[i], level);
                else
                  printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
@@ -718,7 +718,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
      data->ML_eigen_max = 1.;
      data->ML_eigen_min = 1.;
      if ( length > 0 ) {
-      ML_free(ap); 
+      ML_free(ap);
       ML_free(p);
       ML_free(diag);
      }
@@ -736,7 +736,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    data->ML_eigen_max = 1.0/norm;
    data->ML_eigen_min = 0.; /* no estimate for smallest eigenvalue */
    if ( length > 0 )    {
-      ML_free(ap); 
+      ML_free(ap);
       ML_free(p);
       ML_free(diag);
    }

@@ -68,11 +68,11 @@ int my_comm(double *vec, void *idata)
    ghost_value = get_boundary(vec, data->from_size, data->processor_info);
 
    if (proc_id == 0) {
-      if ( data->from_size <=  data->to_size) 
+      if ( data->from_size <=  data->to_size)
          vec[data->from_size] = ghost_value;
    }
    else {
-      if ( data->from_size >=  data->to_size) 
+      if ( data->from_size >=  data->to_size)
          vec[data->from_size] = ghost_value;
    }
    return 0;
@@ -129,7 +129,7 @@ int mysmooth(ML_Smoother *mydata, int leng1, double x[], int leng2, double rhs[]
    struct data *data;
    double ghost;
    ML_Smoother *smoo_in;
-   
+
    smoo_in = (ML_Smoother *) mydata;
    data    = (struct data *) ML_Get_MySmootherData(smoo_in);
    size    = data->size;
@@ -197,7 +197,7 @@ int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    struct data *mydata;
    ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) data; 
+   mat_in = (ML_Operator *) data;
    mydata = (struct data *) ML_Get_MyGetrowData(mat_in);
    Nrow = mydata->to_size;
    proc   = mydata->processor_info[PROC_ID];
@@ -211,7 +211,7 @@ int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
       if (row !=  Nrow-1) row_lengths[i]++;
       else if ((Nprocs==2)&&(proc==0)) row_lengths[i]++;
       if (allocated_space < ncount+row_lengths[i]) return(0);
-      
+
       columns[ncount] = row; values[ncount++] = 2.;
       if (row !=      0 ) { columns[ncount] = row-1; values[ncount++] = -1.;}
       else if (proc == 1) { columns[ncount] =  Nrow; values[ncount++] = -1.;}
@@ -230,7 +230,7 @@ int myRgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int proc;
    ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) data; 
+   mat_in = (ML_Operator *) data;
    mydata = (struct data *) ML_Get_MyGetrowData(mat_in);
    Nrow = mydata->to_size;
    proc   = mydata->processor_info[PROC_ID];
@@ -297,7 +297,7 @@ extern void sample3(struct data *Afine_data, struct data *Acoarse_data,
 	     struct data  *Rmat_data, struct data    *Pmat_data,
 	     double *sol, double *rhs );
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
    struct data  Rmat_data, Pmat_data, Afine_data, Acoarse_data;
    int          processor_info[2], i;
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
    MPI_Init(&argc,&argv);
    MPI_Comm_size(MPI_COMM_WORLD, &(processor_info[NUM_PROCS]) );
-   MPI_Comm_rank(MPI_COMM_WORLD, &(processor_info[PROC_ID  ]) );    
+   MPI_Comm_rank(MPI_COMM_WORLD, &(processor_info[PROC_ID  ]) );
 #else
    processor_info[PROC_ID  ] = 0;
    processor_info[NUM_PROCS] = 1;
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
    Pmat_data.to_size           = Nfine;
    Pmat_data.processor_info    = processor_info;
 
-    sample1(&Afine_data, &Acoarse_data, &Rmat_data, &Pmat_data, sol, rhs);   
+    sample1(&Afine_data, &Acoarse_data, &Rmat_data, &Pmat_data, sol, rhs);
 
    free(sol); free(rhs);
 #ifdef ML_MPI
@@ -396,7 +396,7 @@ void sample3(struct data *Afine_data, struct data *Acoarse_data,
 
    ML_Iterate(my_ml, sol, rhs);
    ML_Destroy(&my_ml);
-   
+
 }
 
 void sample1(struct data *Afine_data, struct data *Acoarse_data,

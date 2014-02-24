@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -76,7 +76,7 @@ int solve(Epetra_RowMatrix&A, const bool UseIFPACK = true)
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   if (Comm.MyPID() == 0)
     cout << "TEST PASSED!" << endl;
   exit(EXIT_SUCCESS);
@@ -167,4 +167,4 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
-#endif 
+#endif

@@ -11,7 +11,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 
@@ -39,7 +39,7 @@ namespace Teuchos {
 namespace MLAPI {
 
 //! Performs a triple matrix-matrix product, res = R * A *P.
-Operator GetRAP(const Operator& R, const Operator& A, 
+Operator GetRAP(const Operator& R, const Operator& A,
                 const Operator& P);
 
 //! Returns a newly created transpose of \c A.

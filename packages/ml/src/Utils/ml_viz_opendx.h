@@ -1,6 +1,6 @@
 /********************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */   
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /********************************************************************* */
@@ -24,7 +24,7 @@ extern "C" {
  extern int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 				      char base_filename[],
 				      ML_Comm * comm, double * vector);
-  
+
 
 #ifndef ML_CPP
 #ifdef __cplusplus

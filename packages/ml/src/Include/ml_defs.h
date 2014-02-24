@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef __MLDEFS__
 #define __MLDEFS__
@@ -150,7 +150,7 @@
 /*ms*/
 
 /* RST: These are for doing block diagonal scaling of a matrix */
-#define ROW_SCALE_WITH_D     1 
+#define ROW_SCALE_WITH_D     1
 #define ROW_SCALE_WITH_DT    2
 #define COL_SCALE_WITH_D     3
 #define COL_SCALE_WITH_DT    4

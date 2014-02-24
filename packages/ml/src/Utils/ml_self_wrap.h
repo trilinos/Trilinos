@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_SELF_WRAP
 #define ML_SELF_WRAP
@@ -30,7 +30,7 @@ void ML_Smoother_Clean_Self(void * Self_Handle);
 #endif
 #endif
 
-int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post, 
+int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post,
                          int niters, Teuchos::ParameterList& List,
                          const Epetra_Comm& Comm);
 

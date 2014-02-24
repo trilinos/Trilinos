@@ -1,6 +1,6 @@
 /********************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */   
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef __MLVIZSTATS__
@@ -26,10 +26,10 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
 		     ml_operator.h */
   /* Stuff for Zoltan */
   int zoltan_type;
-  int zoltan_estimated_its; 
+  int zoltan_estimated_its;
   int zoltan_timers;
   int smoothing_steps;
-  
+
 } ML_Aggregate_Viz_Stats;
 /*ms*/
 

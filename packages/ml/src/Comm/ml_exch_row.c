@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include <math.h>
@@ -10,19 +10,19 @@
 #include "ml_memory.h"
 /******************************************************************************/
 /******************************************************************************
-  Routine to exchange rows between neighboring processors. 
+  Routine to exchange rows between neighboring processors.
   Note: It is useful that matrix columns have a unique global id (that
         is column numbers are not local columns but instead unique global
         values that can be deciphered on other processors).
-  The rows which are exchanged are given by comm_info. The exchange is done in 
-  the following steps: 
+  The rows which are exchanged are given by comm_info. The exchange is done in
+  the following steps:
 
   1) Count number of matrix rows that will be send and received by this node.
-  2) Compute row lengths of rows to be sent. Communicate the length 
+  2) Compute row lengths of rows to be sent. Communicate the length
      information so processors know how big the rows they will receive are.
   3) Send column information for the new rows. Append received rows onto
      the end of the matrix.
-  4) Send row information for the new rows. Append received rows onto the 
+  4) Send row information for the new rows. Append received rows onto the
      end of the matrix.
   5) Create an ML_matrix structure and fill it so that it corresponds to
      the appended matrix (with the newly received rows).
@@ -31,30 +31,30 @@
 
         i) rcv_list given and received values over-write existing values
 
-           We effectively move the appended rows into the matrix. This is done 
+           We effectively move the appended rows into the matrix. This is done
            by creating a 'map' array which indicates that the ith row is stored
-           in map[i]. In this way, the appended matrix is not really altered 
-           internally. However, ML_matrix_get_row() will know how to correctly 
-           access the ith row. 
+           in map[i]. In this way, the appended matrix is not really altered
+           internally. However, ML_matrix_get_row() will know how to correctly
+           access the ith row.
 
-       ii) rows can be remapped. That is, row[k] can now be referred to by 
-           row[j]. 
+       ii) rows can be remapped. That is, row[k] can now be referred to by
+           row[j].
 
            We effectively move rows around. This is done in a fashion similar
-           to 6i) using the array 'remap' passed in by the user.  
+           to 6i) using the array 'remap' passed in by the user.
            Note: remap[i] = -1 indictes that the ith row is empty.
-           
+
       iii) rcv_list is given and received values add with existing values.
 
            We effectively take the appended rows and add them in with the
-           original rows according to the receive list. This is done by 
+           original rows according to the receive list. This is done by
            creating a new little matrix and appending it to the original
            matrix given by the user. The new little matrix contains the
            sums corresponding to all the received rows. Once these sums are
            created the received rows (obtained in steps 3-5 are removed).
            Finally, a map array is created so that the correct row is referenced
-           by ML_matrix_get_row(). 
-     
+           by ML_matrix_get_row().
+
   Author:          Ray S. Tuminaro, SNL, 9222
   =======
 
@@ -69,14 +69,14 @@
                    remapped according to comm_info.
 
   comm_info        On input, structure (set using ML_CommInfoOP_Set_neighbors()
-                   and ML_CommInfoOP_Set_exch_info()) containing communication 
+                   and ML_CommInfoOP_Set_exch_info()) containing communication
                    info.
 
 *******************************************************************************/
 
 
 #define ML_FUNCTION_NAME "ML_exchange_rows"
-void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended, 
+void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
                       ML_CommInfoOP *comm_info)
 {
 
@@ -99,13 +99,13 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
 
   comm        = Pmatrix->comm;
   Nrows       = Pmatrix->getrow->Nrows;
-  Nneighbors  = comm_info->N_neighbors; 
+  Nneighbors  = comm_info->N_neighbors;
   if (Pmatrix->getrow->pre_comm != NULL) {
     ML_CommInfoOP_Compute_TotalRcvLength(Pmatrix->getrow->pre_comm);
 
-    if (Pmatrix->N_total_cols_est < Pmatrix->invec_leng + 
+    if (Pmatrix->N_total_cols_est < Pmatrix->invec_leng +
 	Pmatrix->getrow->pre_comm->total_rcv_length) {
-      Pmatrix->N_total_cols_est = Pmatrix->invec_leng + 
+      Pmatrix->N_total_cols_est = Pmatrix->invec_leng +
 	Pmatrix->getrow->pre_comm->total_rcv_length;
     }
   }
@@ -117,13 +117,13 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   Nrows_send = 0;
   Nghost = 0;
   nonNULL_rcv_list = 0;
-  for (i = 0; i < Nneighbors; i++) 
+  for (i = 0; i < Nneighbors; i++)
   {
-     Nrows_send += comm_info->neighbors[i].N_send; 
+     Nrows_send += comm_info->neighbors[i].N_send;
      Nrows_new  += comm_info->neighbors[i].N_rcv;
-     if ((comm_info->neighbors[i].N_rcv != 0) && 
+     if ((comm_info->neighbors[i].N_rcv != 0) &&
          (comm_info->neighbors[i].rcv_list != NULL)) nonNULL_rcv_list = 1;
-     if (comm_info->neighbors[i].rcv_list != NULL) 
+     if (comm_info->neighbors[i].rcv_list != NULL)
      {
         rcv_list_exists = 1;
         for (j = 0; j < comm_info->neighbors[i].N_rcv; j++) {
@@ -154,24 +154,24 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
 #else
   dtemp  = (double *) ML_allocate((Nrows+Nghost + 1)*sizeof(double));
 #endif
-  
-  if (dtemp == NULL) 
+
+  if (dtemp == NULL)
   {
      pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d + %d doubles\n",mypid,__FILE__,__LINE__,ML_FUNCTION_NAME,Nrows,Nghost);
   }
-   
+
   for (j = 0; j < Nrows+Nghost + 1; j++) dtemp[j] = -1.;
   total_send = 0;
-  for (i = 0; i < Nneighbors; i++) 
+  for (i = 0; i < Nneighbors; i++)
   {
-     for (ii = 0; ii < comm_info->neighbors[i].N_send; ii++ ) 
+     for (ii = 0; ii < comm_info->neighbors[i].N_send; ii++ )
      {
         j = (comm_info->neighbors[i]).send_list[ii];
-        if (j > Nrows) 
+        if (j > Nrows)
         {
            pr_error("Error: the %dth element sent to %d is greater than the total number of local elements: %d vs. %d\n", ii+1,comm_info->neighbors[i].ML_id,j, Nrows);
         }
-        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &dummy2, 
+        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &dummy2,
                           &dummy1, &row_length, 0);
 
         dtemp[j] = (double) row_length;
@@ -188,9 +188,9 @@ send to the same value `ML_ADD'. I'm not really sure if Kenneth Massey's
 example (with nonutilized ghost variables still works
 */
 
-  for (i = 0; i < Nneighbors; i++) 
+  for (i = 0; i < Nneighbors; i++)
   {
-     for (ii = 0; ii < comm_info->neighbors[i].N_send; ii++ ) 
+     for (ii = 0; ii < comm_info->neighbors[i].N_send; ii++ )
      {
        j = (comm_info->neighbors[i]).send_list[ii];
        dtemp[j] = -1.;
@@ -201,7 +201,7 @@ example (with nonutilized ghost variables still works
 /*
   j = 0;
 */
-  for (i = 0 ; i < Nrows_new ; i++ ) 
+  for (i = 0 ; i < Nrows_new ; i++ )
   {
      while (dtemp[j] == -1.) j++;
      rowptr_new[i] = (int) dtemp[j];
@@ -213,12 +213,12 @@ example (with nonutilized ghost variables still works
 
   j = rowptr_new[0];
   rowptr_new[0] = 0;
-  if (allocated_space-2 > Pmatrix->max_nz_per_row) 
+  if (allocated_space-2 > Pmatrix->max_nz_per_row)
      Pmatrix->max_nz_per_row = allocated_space;
 
   max_per_row = Pmatrix->max_nz_per_row;
 
-  for (i = 1 ; i < Nrows_new; i++) 
+  for (i = 1 ; i < Nrows_new; i++)
   {
      k = rowptr_new[i];
      rowptr_new[i] = rowptr_new[i-1] + j;
@@ -230,12 +230,12 @@ example (with nonutilized ghost variables still works
 
   /* compute number of nonzeros to receive from each neighbor */
 
-  if (rcv_list_exists == 0) 
+  if (rcv_list_exists == 0)
   {
      k = 0;
-     for (j = 0; j < Nneighbors; j++) 
+     for (j = 0; j < Nneighbors; j++)
      {
-        actual_recv_length[j] = rowptr_new[k + comm_info->neighbors[j].N_rcv] - 
+        actual_recv_length[j] = rowptr_new[k + comm_info->neighbors[j].N_rcv] -
                              rowptr_new[k];
         k += comm_info->neighbors[j].N_rcv;
      }
@@ -249,16 +249,16 @@ example (with nonutilized ghost variables still works
   /* dummy1 was allocated with a length that may no longer be correct */
   if (dummy1) ML_free(dummy1);
   dummy1 = (double *) ML_allocate(allocated_space*sizeof(double));
-  if (dummy1 == NULL) 
+  if (dummy1 == NULL)
     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d ints (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
 
   /* pack up the integer information to be sent and send it */
 
   i = 0; k = 0;
-  for (ii = 0; ii < Nneighbors; ii++) 
+  for (ii = 0; ii < Nneighbors; ii++)
   {
      start_send_proc[ii]  = i;
-     for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++) 
+     for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++)
      {
         j = comm_info->neighbors[ii].send_list[jj];
         ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &ibuff,
@@ -266,25 +266,25 @@ example (with nonutilized ghost variables still works
         i += row_length;
      }
      actual_send_length[ii] = i - start_send_proc[ii];
-  } 
+  }
   neighbor    = (int *) ML_allocate(Nneighbors*sizeof(int));
-  if ((Nneighbors != 0) && (neighbor == NULL)) 
+  if ((Nneighbors != 0) && (neighbor == NULL))
   {
      printf("Not enough space in ML_exchange_rows\n");
      printf("   tried to allocate %d ints for neighbor\n",Nneighbors);
      exit(1);
   }
-  for (i = 0; i < Nneighbors; i++) 
+  for (i = 0; i < Nneighbors; i++)
      neighbor[i] = comm_info->neighbors[i].ML_id;
 
-  if (rcv_list_exists) 
+  if (rcv_list_exists)
   {
      j = Nrows;
      i = 0; count = 0;
-     for (ii = 0; ii < Nneighbors; ii++) 
+     for (ii = 0; ii < Nneighbors; ii++)
      {
         actual_recv_length[ii] = 0;
-        for (jj = 0 ; jj < comm_info->neighbors[ii].N_rcv; jj++) 
+        for (jj = 0 ; jj < comm_info->neighbors[ii].N_rcv; jj++)
         {
            while (dtemp[j] == -1.) j++;
 /*
@@ -306,28 +306,28 @@ example (with nonutilized ghost variables still works
 
   ML_CommInfoOp_IncrementMessageTag(comm_info);
 
-  ML_splitup_big_msg(Nneighbors,(char *) ibuff,(char *) cols_new, 
-                     sizeof(int), start_send_proc, actual_send_length, 
-                     actual_recv_length, neighbor, comm_info->message_tag, 
+  ML_splitup_big_msg(Nneighbors,(char *) ibuff,(char *) cols_new,
+                     sizeof(int), start_send_proc, actual_send_length,
+                     actual_recv_length, neighbor, comm_info->message_tag,
                      &total_num_recv, comm);
   ML_free(ibuff);
   dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
-  if (dbuff == NULL) 
+  if (dbuff == NULL)
     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
 
   /* pack up the float information to be sent and send it */
 
   i = 0; k = 0;
-  for (ii = 0; ii < Nneighbors; ii++) 
+  for (ii = 0; ii < Nneighbors; ii++)
   {
-     for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++) 
+     for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++)
      {
         j = comm_info->neighbors[ii].send_list[jj];
         ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, (int**) &dummy1,
                           &dbuff, &row_length, i);
         i += row_length;
-     } 
-  } 
+     }
+  }
   ML_free(dummy1);
   vals_new = (double *) ML_allocate( (total_recv+1)*sizeof(double));
   if (vals_new == NULL) {
@@ -338,9 +338,9 @@ example (with nonutilized ghost variables still works
 
 
   ML_CommInfoOp_IncrementMessageTag(comm_info);
-  ML_splitup_big_msg(Nneighbors,(char *) dbuff,(char *) vals_new, 
-                     sizeof(double), start_send_proc, actual_send_length, 
-                     actual_recv_length, neighbor, comm_info->message_tag, 
+  ML_splitup_big_msg(Nneighbors,(char *) dbuff,(char *) vals_new,
+                     sizeof(double), start_send_proc, actual_send_length,
+                     actual_recv_length, neighbor, comm_info->message_tag,
                      &total_num_recv, comm);
 
   ML_free(neighbor);
@@ -362,7 +362,7 @@ example (with nonutilized ghost variables still works
   /* received in the expanded matrix. This is a total   */
   /* guess.                                             */
 
-  if (Pmatrix->N_total_cols_est != -1) 
+  if (Pmatrix->N_total_cols_est != -1)
     (*Pappended)->N_total_cols_est = Pmatrix->N_total_cols_est;
   else
     (*Pappended)->N_total_cols_est = Pmatrix->invec_leng;
@@ -370,27 +370,27 @@ example (with nonutilized ghost variables still works
   (*Pappended)->N_total_cols_est += count/4;
 
   ML_Operator_Set_1Levels(*Pappended, Pmatrix->from, Pmatrix->to);
-  ML_Operator_Set_ApplyFuncData(*Pappended,Pmatrix->invec_leng, 
+  ML_Operator_Set_ApplyFuncData(*Pappended,Pmatrix->invec_leng,
                              /* Nrows+Nrows_new, */ Nrows+Nrows_new,
                              (void*)temp,Nrows+Nrows_new,NULL,0);
 
   ML_Operator_Set_Getrow(*Pappended, Nrows + Nrows_new, CSR_getrow);
   (*Pappended)->max_nz_per_row = max_per_row;
-  if (Pmatrix->N_nonzeros >= 0) 
+  if (Pmatrix->N_nonzeros >= 0)
      (*Pappended)->N_nonzeros     = Pmatrix->N_nonzeros + rowptr_new[Nrows_new];
 
 
-  (*Pappended)->sub_matrix = Pmatrix; 
+  (*Pappended)->sub_matrix = Pmatrix;
 
   if (Pmatrix->getrow->row_map == NULL)
      (*Pappended)->getrow->row_map = NULL;
-  else 
+  else
   {
-     (*Pappended)->getrow->row_map = 
+     (*Pappended)->getrow->row_map =
            (int *) ML_allocate((*Pappended)->getrow->Nrows* sizeof(int));
-     for (i =0; i < Nrows; i++) 
+     for (i =0; i < Nrows; i++)
         (*Pappended)->getrow->row_map[i] = Pmatrix->getrow->row_map[i];
-     for (i =Nrows; i < Nrows + Nrows_new; i++) 
+     for (i =Nrows; i < Nrows + Nrows_new; i++)
         (*Pappended)->getrow->row_map[i] = i;
   }
 
@@ -398,10 +398,10 @@ example (with nonutilized ghost variables still works
   /* Pmatrix, set or change the map to reflect this.                     */
 
   remap = comm_info->remap;
-  if (remap != NULL ) 
+  if (remap != NULL )
   {
      newmap = (int *) ML_allocate(((*Pappended)->getrow->Nrows+1)*sizeof(int));
-     if (newmap == NULL) 
+     if (newmap == NULL)
      {
         printf("Not enough space in ML_exchange_rows for remap\n");
         printf("   tried to allocate %d ints for newmap\n",
@@ -410,16 +410,16 @@ example (with nonutilized ghost variables still works
      }
      for (i = 0; i < Nrows; i++) newmap[i] = -1;
      orig_map = (*Pappended)->getrow->row_map;
-     if (orig_map == NULL) 
+     if (orig_map == NULL)
      {
         for (i = Nrows; i < (*Pappended)->getrow->Nrows; i++) newmap[i] = i;
         for (i = 0; i < Nrows; i++) {
            if (remap[i] != -1) newmap[remap[i]] = i;
         }
      }
-     else 
+     else
      {
-        for (i = Nrows; i < (*Pappended)->getrow->Nrows; i++) 
+        for (i = Nrows; i < (*Pappended)->getrow->Nrows; i++)
         newmap[i] = orig_map[i];
         for (i = 0; i < Nrows; i++)
            if (remap[i] != -1) newmap[remap[i]] = orig_map[i];
@@ -432,7 +432,7 @@ example (with nonutilized ghost variables still works
   /* then simply remap the received rows of the matrix to reflect    */
   /* the receive list.                                               */
 
-  if ( (nonNULL_rcv_list == 1) && (comm_info->add_rcvd == 0)) 
+  if ( (nonNULL_rcv_list == 1) && (comm_info->add_rcvd == 0))
   {
 #if defined(HxVE_ML_PARMETIS)
     j = (*Pappended)->getrow->Nrows;
@@ -442,24 +442,24 @@ example (with nonutilized ghost variables still works
      newmap = (int *) ML_allocate( (Nrows + Nghost) * sizeof(int));
      for (i = Nrows; i < Nrows + Nghost; i++) newmap[i] = -1;
 #endif
-     
+
      orig_map = (*Pappended)->getrow->row_map;
-     if (orig_map == NULL) 
+     if (orig_map == NULL)
      {
         for (i = 0; i < Nrows; i++) newmap[i] = i;
      }
-     else 
+     else
      {
-        for (i = 0; i < (*Pappended)->getrow->Nrows; i++) 
+        for (i = 0; i < (*Pappended)->getrow->Nrows; i++)
         {
            if (orig_map[i] < Nrows)  newmap[i] = orig_map[i];
         }
         if (Pmatrix->getrow->row_map != orig_map) ML_free(orig_map);
      }
      ii = Nrows;
-     for (i = 0; i < comm_info->N_neighbors; i++) 
+     for (i = 0; i < comm_info->N_neighbors; i++)
      {
-        for (j = 0; j < comm_info->neighbors[i].N_rcv; j++) 
+        for (j = 0; j < comm_info->neighbors[i].N_rcv; j++)
         {
            newmap[comm_info->neighbors[i].rcv_list[j]] = ii++;
         }
@@ -467,20 +467,20 @@ example (with nonutilized ghost variables still works
      (*Pappended)->getrow->row_map = newmap;
   }
 
-  if ( (nonNULL_rcv_list == 1) && (comm_info->add_rcvd == 1)) 
+  if ( (nonNULL_rcv_list == 1) && (comm_info->add_rcvd == 1))
   {
      ML_add_appended_rows(comm_info,*Pappended, Nrows, Nrows_new,
                           rowptr_new[Nrows_new]);
   }
 
   /* Count the number of rows */
-  if ((*Pappended)->getrow->row_map != NULL) 
+  if ((*Pappended)->getrow->row_map != NULL)
   {
-     for (i = (*Pappended)->getrow->Nrows - 1; i >= 0; i--) 
+     for (i = (*Pappended)->getrow->Nrows - 1; i >= 0; i--)
      {
-        if ((*Pappended)->getrow->row_map[i] != -1) break; 
+        if ((*Pappended)->getrow->row_map[i] != -1) break;
      }
-     /* Should probably try and work in an ML call here */ 
+     /* Should probably try and work in an ML call here */
      (*Pappended)->getrow->Nrows = i+1;
      (*Pappended)->outvec_leng   = i+1;
   }
@@ -497,7 +497,7 @@ example (with nonutilized ghost variables still works
 /*
  * On input, 'matrix' has been appended with rows that have been received
  * from other processors. This routine will modify 'matrix' so that those
- * new rows are placed (actually added) into the matrix according to the 
+ * new rows are placed (actually added) into the matrix according to the
  * row numbers given in the receive list. If a row already exists, then
  * the received row will be added to the already existing row.
  *
@@ -515,7 +515,7 @@ example (with nonutilized ghost variables still works
  *                    and instead added to the row that corresponds to the
  *                    receive list.
  *
- *    orig_rows       On input, number of rows in the non-appended portion of 
+ *    orig_rows       On input, number of rows in the non-appended portion of
  *                    the matrix.
  *
  *    total_rcvd      On input, the number of rows appended to the matirx.
@@ -525,7 +525,7 @@ example (with nonutilized ghost variables still works
  ******************************************************************************/
 
 #define ML_FUNCTION_NAME "ML_add_appended_rows"
-void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix, 
+void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                           int orig_rows, int total_rcvd, int appended_nzs)
 {
 
@@ -542,7 +542,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
    parent = matrix;
 
    /* determine number of new rows (N_append_rows) in the resulting matrix */
- 
+
    N_append_rows = total_rcvd;
    row_ids = (int *) ML_allocate(N_append_rows*sizeof(int));
    i = 0;
@@ -552,7 +552,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
    ML_az_sort(row_ids, N_append_rows, NULL, NULL);
    ML_rm_duplicates(row_ids, &N_append_rows);
    ML_free(row_ids);
- 
+
    /* allocate space */
 
    max_nz_per_row  = matrix->max_nz_per_row;
@@ -565,12 +565,12 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 
    if (matrix->getrow->row_map != NULL) {
       for (i = 0; i <  matrix->getrow->Nrows; i++) {
-         if (matrix->getrow->row_map[i] < orig_rows) 
+         if (matrix->getrow->row_map[i] < orig_rows)
             row_map[i] = matrix->getrow->row_map[i];
       }
    }
    else for (i = 0; i <  orig_rows; i++) row_map[i] = i;
-         
+
    /* Allocate space for the matrix. Since 'total' is just an */
    /* estimate of the space needed, we will reduce 'total' if */
    /* we are unsuccessful allocating space.                   */
@@ -617,7 +617,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
             /* get matrix row in appended portion of matrix */
 
 
-            itemp = matrix->getrow->row_map;  matrix->getrow->row_map = NULL; 
+            itemp = matrix->getrow->row_map;  matrix->getrow->row_map = NULL;
                                           /* kludge: we don't want to use    */
                                           /* row_map to get at appended rows */
             row_request = i+orig_rows;
@@ -645,7 +645,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                         ML_sum_duplicates(accum_col, accum_val, &Ncols);
                         if (Ncols + max_nz_per_row > accum_size/2) {
                            accum_size += (Ncols + max_nz_per_row)*2;
-                           ML_expand_accum(accum_size, &accum_col, &accum_val, 
+                           ML_expand_accum(accum_size, &accum_col, &accum_val,
                                            Ncols);
                         }
                      }
@@ -673,7 +673,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                /* create sub_matrix object */
 
                total_nz += next_nz;
-               temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+               temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
                                                             ML_CSR_MSRdata));
                temp->columns          = Ccol;
                temp->values           = Cval;
@@ -874,7 +874,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    upper = lower + max_per_proc;
 
    omatrix->num_rigid = omatrix->num_PDEs = num_PDEs = imatrix->num_rigid;
-   
+
    allocated = imatrix->N_nonzeros+2;
    rowptr = (int   *)  ML_allocate( (1+imatrix->getrow->Nrows)*sizeof(int));
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
@@ -909,7 +909,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
       lowest = (int) floor( .000001 + ((double)bindx[i])/ ((double) num_PDEs) );
       lowest *= num_PDEs;
       for (j = 0; j < num_PDEs; j++) {
-         count++;      
+         count++;
          if (i < Nexternal) {
             if (bindx[i] == lowest+j) i++;
          }
@@ -987,8 +987,8 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
 
    ML_CommInfoOP_GenUsingGIDExternals(Nexternal, externals, max_per_proc,omatrix);
 
-   ML_free(externals);  
-   
+   ML_free(externals);
+
 }
 #ifdef ML_FUNCTION_NAME
 #undef ML_FUNCTION_NAME
@@ -1038,7 +1038,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 
    Nexternal = 0;
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
-      ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val, 
+      ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val,
                         &row_length, Nexternal);
       k = 0;
       for (j = 0; j < row_length; j++) {
@@ -1060,7 +1060,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
       lowest = (int) floor( .000001 + ((double)bindx[i])/ ((double) num_PDEs) );
       lowest *= num_PDEs;
       for (j = 0; j < num_PDEs; j++) {
-         count++;      
+         count++;
          if (i < Nexternal) {
             if (bindx[i] == lowest+j) i++;
          }
@@ -1094,11 +1094,11 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    val   = (double *)  ML_allocate( allocated*sizeof(double));
 
    /* need extra room (2) for diagonal guy and wasted space */
-  
+
    bindx[0] = imatrix->getrow->Nrows+1;
    next_nz = bindx[0];
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
-      ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val, 
+      ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val,
                         &row_length, next_nz);
       ii = next_nz;
 
@@ -1116,7 +1116,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
             else col = j + imatrix->getrow->Nrows;
          }
          if (col == i) { val[i] = dtemp; }
-         else 
+         else
             if (dtemp != 0.) { bindx[next_nz] = col; val[next_nz++] = dtemp; }
       }
       bindx[i+1] = next_nz;
@@ -1132,10 +1132,10 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 
    omatrix->data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Operator_Set_1Levels(omatrix, imatrix->from, imatrix->to);
-   ML_Operator_Set_ApplyFuncData(omatrix, imatrix->invec_leng, 
-                             imatrix->getrow->Nrows, (void*)temp, 
+   ML_Operator_Set_ApplyFuncData(omatrix, imatrix->invec_leng,
+                             imatrix->getrow->Nrows, (void*)temp,
                              imatrix->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, imatrix->getrow->Nrows, 
+   ML_Operator_Set_Getrow(omatrix, imatrix->getrow->Nrows,
 		          MSR_getrows);
    omatrix->max_nz_per_row = max_per_row;
    omatrix->N_nonzeros     = N_nonzeros;
@@ -1157,16 +1157,16 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 
    1) determine the number of neighbors to which we send information as well as
       the number of neighbors from which we receive information.  These two
-      should be the same. If they are not, we will set up things so that we 
+      should be the same. If they are not, we will set up things so that we
       send 0 length messages to processors from which we receive (but have no
       information to send them).
    2) determine the total number of unknowns that we must send out.  Using this
       information we allocate space.
-   3) Initialize the communication operator for 'matrix' so that it contains 
-      the number of messages to be sent/received, the node numbers of the 
-      processors to which we must send and receive, the length of the messages 
-      that we must send and that we expect to receive from each neighbor, 
-      and finally, a list of the indices of the elements that will be send to 
+   3) Initialize the communication operator for 'matrix' so that it contains
+      the number of messages to be sent/received, the node numbers of the
+      processors to which we must send and receive, the length of the messages
+      that we must send and that we expect to receive from each neighbor,
+      and finally, a list of the indices of the elements that will be send to
       other processors (in the order that they will be sent).
 
 
@@ -1177,13 +1177,13 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
   Parameter list:
   ===============
 
-  N_external:      Number of external elements on this processor. 
+  N_external:      Number of external elements on this processor.
 
   external:        List (global indices) of external elements on this node.
                    This list should be ordered so that all externals from
-                   the same processor appear consecutively. It is assumed 
-                   that the global elements are defined as 
-                   gid = lid + max_per_proc*proc_id 
+                   the same processor appear consecutively. It is assumed
+                   that the global elements are defined as
+                   gid = lid + max_per_proc*proc_id
                    (normally computed by ML_create_unique_col_id).
 
   max_per_proc     Maximum number of local elements per processor
@@ -1191,13 +1191,13 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 
   matrix           On input, matrix for which we wish to compute communication
                    information. On output, matrix->getrow->pre_comm is
-                   set so that local communications can be performed on 
+                   set so that local communications can be performed on
                    the matrix.
-                  
+
 *****************************************************************************/
 
 #define ML_FUNCTION_NAME "ML_CommInfoOP_GenUsingGIDExternals"
-void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[], 
+void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
 					int max_per_proc, ML_Operator *matrix)
 
 {
@@ -1240,7 +1240,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
     neigh_proc  = external[i]/max_per_proc;
     if ( neigh_proc >= nprocs ) {
        printf("%d : ML_CommInfoOP_GenUsingGIDExternals warning : index out of bound \
-             = %d(%d) %d %d(%d)\n", proc, neigh_proc, nprocs, max_per_proc, 
+             = %d(%d) %d %d(%d)\n", proc, neigh_proc, nprocs, max_per_proc,
              external[i], i);
        exit(1);
     }
@@ -1300,7 +1300,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   length = 0;
   for (i = 0; i < num_send_neighbors; i++) {
     partner = -1;
-    comm->USR_irecvbytes((void *) external, (unsigned int) length, &partner, 
+    comm->USR_irecvbytes((void *) external, (unsigned int) length, &partner,
                          &type, comm->USR_comm, request+i);
   }
 
@@ -1317,7 +1317,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   length = 0;
   for (i = 0; i < num_send_neighbors; i++) {
     partner = -1;
-    comm->USR_cheapwaitbytes((void *) external, (unsigned int) length, &partner, &type, 
+    comm->USR_cheapwaitbytes((void *) external, (unsigned int) length, &partner, &type,
                         comm->USR_comm, request+i);
     if (partner != -1) neighbors[num_recv_neighbors++] = partner;
   }
@@ -1347,8 +1347,8 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = sizeof(int);
     partner    = neighbors[i];
-    comm->USR_irecvbytes((void *) &(send_lengths[i]), 
-		   (unsigned int) length, 
+    comm->USR_irecvbytes((void *) &(send_lengths[i]),
+		   (unsigned int) length,
                    &partner, &type, comm->USR_comm, request+i);
   }
 
@@ -1364,7 +1364,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
 
     rcv_lengths[i] = length;
 
-    comm->USR_sendbytes((void *) &length, sizeof(int), neighbors[i], type, 
+    comm->USR_sendbytes((void *) &length, sizeof(int), neighbors[i], type,
                         comm->USR_comm);
   }
 
@@ -1373,7 +1373,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = sizeof(int);
     partner    = neighbors[i];
-    comm->USR_cheapwaitbytes((void *) &(send_lengths[i]), (unsigned int) length, 
+    comm->USR_cheapwaitbytes((void *) &(send_lengths[i]), (unsigned int) length,
                  &partner, &type, comm->USR_comm, request+i);
   }
 
@@ -1393,7 +1393,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = rcv_lengths[i] * sizeof(int);
     partner    = neighbors[i];
-    comm->USR_sendbytes((void *) &(external[start]), (unsigned int) length, 
+    comm->USR_sendbytes((void *) &(external[start]), (unsigned int) length,
                         partner, type, comm->USR_comm);
     start     += rcv_lengths[i];
   }
@@ -1404,7 +1404,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = send_lengths[i] * sizeof(int);
     partner    = neighbors[i];
-    comm->USR_cheapwaitbytes((void *) &(send2_ptr[start]), (unsigned int) length, &partner, &type, 
+    comm->USR_cheapwaitbytes((void *) &(send2_ptr[start]), (unsigned int) length, &partner, &type,
                         comm->USR_comm, request+i);
     start += send_lengths[i];
   }
@@ -1419,14 +1419,14 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
    rcv_list = (int *) ML_allocate( (total+1)*sizeof(int));
    for (i = 0; i < total; i++) rcv_list[i] = i + matrix->invec_leng;
 
-   ML_CommInfoOP_Set_neighbors(&(matrix->getrow->pre_comm), 
-                               num_recv_neighbors, neighbors, 
+   ML_CommInfoOP_Set_neighbors(&(matrix->getrow->pre_comm),
+                               num_recv_neighbors, neighbors,
                                ML_OVERWRITE, NULL, 0);
    count  = 0;
    count2 = 0;
    for (i = 0; i < num_recv_neighbors; i++) {
       ML_CommInfoOP_Set_exch_info(matrix->getrow->pre_comm,
-                                  neighbors[i], rcv_lengths[i], 
+                                  neighbors[i], rcv_lengths[i],
 				  &(rcv_list[count2]),
                                   send_lengths[i], &(send2_ptr[count]));
       count  += send_lengths[i];
@@ -1456,7 +1456,7 @@ void ML_convert_data_org(ML_Operator *matrix, int data_org[],
 
 
 
-    ML_CommInfoOP_Set_neighbors( &(matrix->getrow->pre_comm), 
+    ML_CommInfoOP_Set_neighbors( &(matrix->getrow->pre_comm),
 			   data_org[ML_N_neigh],&(data_org[ML_neighbors]),
                            add_or_not, remap, leng);
 
@@ -1465,16 +1465,16 @@ void ML_convert_data_org(ML_Operator *matrix, int data_org[],
 
     if (rcv_list == NULL) {
        for (i = 0; i < data_org[ML_N_neigh]; i++) {
-          ML_CommInfoOP_Set_exch_info(matrix->getrow->pre_comm, 
-		    data_org[ML_neighbors+i], data_org[ML_rec_length+i], NULL, 
+          ML_CommInfoOP_Set_exch_info(matrix->getrow->pre_comm,
+		    data_org[ML_neighbors+i], data_org[ML_rec_length+i], NULL,
 		    data_org[ML_send_length+i], &(data_org[count]));
           count += data_org[ML_send_length+i];
        }
     }
     else {
        for (i = 0; i < data_org[ML_N_neigh]; i++) {
-          ML_CommInfoOP_Set_exch_info(matrix->getrow->pre_comm, 
-		    data_org[ML_neighbors+i], data_org[ML_rec_length+i], 
+          ML_CommInfoOP_Set_exch_info(matrix->getrow->pre_comm,
+		    data_org[ML_neighbors+i], data_org[ML_rec_length+i],
 		    &(rcv_list[count2]), data_org[ML_send_length+i],
 		    &(data_org[count]));
           count2 += data_org[ML_rec_length+i];

@@ -115,14 +115,14 @@ int ML_Comm_Set_UsrComm( ML_Comm *com_ptr, USR_COMM com )
    }
    com_ptr->USR_comm = com;
 #ifdef ML_MPI
-   /* 
-      Assuming that com_ptr was created previously with ML_Comm_Create 
-      all data should be ok except the following which always refer to  
-      MPI_COMM_WORLD in ML_Comm_Create 
+   /*
+      Assuming that com_ptr was created previously with ML_Comm_Create
+      all data should be ok except the following which always refer to
+      MPI_COMM_WORLD in ML_Comm_Create
    */
    MPI_Comm_size(com, &(com_ptr->ML_nprocs));
    MPI_Comm_rank(com, &(com_ptr->ML_mypid));
-#endif   
+#endif
    return 0;
 }
 
@@ -461,7 +461,7 @@ int ML_Comm_GappendBigInt(ML_Comm *com_ptr, ml_big_int *vals, int *cur_length,
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-	 com_ptr->USR_cheapwaitbytes((void*) vals, (unsigned int) k, &partner, &msgtype, 
+	 com_ptr->USR_cheapwaitbytes((void*) vals, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -583,7 +583,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
 #else
                                     (void *)&Request );
 #endif
-	 com_ptr->USR_cheapwaitbytes((void*) vals, (unsigned int) k, &partner, &msgtype, 
+	 com_ptr->USR_cheapwaitbytes((void*) vals, (unsigned int) k, &partner, &msgtype,
                                     com_ptr->USR_comm,
 #ifdef ML_CPP
                                     &Request );

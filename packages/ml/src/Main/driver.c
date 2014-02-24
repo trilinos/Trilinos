@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,8 +34,8 @@ void main(int argc, char *argv[])
          scanf("%d", &scheme);
       } else scheme = 1;
    }
-   MPI_Bcast(&method, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-   MPI_Bcast(&scheme, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+   MPI_Bcast(&method, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&scheme, 1, MPI_INT, 0, MPI_COMM_WORLD);
    if ( method != 1 && method != 2 ) method = 1;
    if ( scheme < 1 || scheme > 2 ) scheme = 1;
 

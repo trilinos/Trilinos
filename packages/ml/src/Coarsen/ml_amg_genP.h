@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -31,7 +31,7 @@ extern "C" {
 /* functions called by users                                            */
 /* -------------------------------------------------------------------- */
 
-extern int ML_Gen_MGHierarchy_UsingAMG(ML *, int start, 
+extern int ML_Gen_MGHierarchy_UsingAMG(ML *, int start,
                        int increment_or_decrement, ML_AMG *);
 
 /* ******************************************************************** */
@@ -45,8 +45,8 @@ extern int ML_AMG_Gen_MGHierarchy(ML *, int fine_level,
 extern int ML_AMG_Gen_Prolongator(ML*,int ,int,void *data,ML_AMG*);
 extern int ML_AMG_Increment_Level(ML *,int level,ML_Operator *Amat,ML_AMG*);
 extern int ML_AMG_Decrement_Level(ML *,int level,ML_Operator *Amat,ML_AMG*);
-extern int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows, 
-               int requested_rows[], int allocated_space, int columns[], 
+extern int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows,
+               int requested_rows[], int allocated_space, int columns[],
                double values[], int row_lengths[]);
 
 #ifndef ML_CPP

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef _MLREADER_
@@ -36,18 +36,18 @@ extern "C"
 #endif
 #endif
 
-extern void ML_Reader_GetGeneralSpecs(FILE *ifp, 
+extern void ML_Reader_GetGeneralSpecs(FILE *ifp,
                                       struct reader_context *context);
-extern int  ML_Reader_LookFor(FILE *ifp, char *string, char input[], 
+extern int  ML_Reader_LookFor(FILE *ifp, char *string, char input[],
                               int ch_term);
 extern int  ML_Reader_ReadString(FILE *ifp, char string[], int);
 extern void ML_Reader_Strip(char string[]);
-extern void ML_Reader_GetSolutionSpecs(FILE *ifp, 
+extern void ML_Reader_GetSolutionSpecs(FILE *ifp,
                             struct reader_context *context);
-extern void ML_Reader_GetAggregationSpecs(FILE *ifp, 
+extern void ML_Reader_GetAggregationSpecs(FILE *ifp,
                             struct reader_context *context);
 extern void ML_Reader_InitContext(struct reader_context *context);
-extern void ML_Reader_ReadInput(char *cmd_file_name, 
+extern void ML_Reader_ReadInput(char *cmd_file_name,
                                  struct reader_context **context);
 
 extern int ML_strcmp(char *input, char *string);

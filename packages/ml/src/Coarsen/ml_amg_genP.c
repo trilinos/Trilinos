@@ -29,7 +29,7 @@
 /* call second level routine to do coarsening based on traversal scheme      */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start, 
+int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
                                 int increment_or_decrement, ML_AMG *amg)
 {
    int    i, j, level, idata=0, nrows, blksize;
@@ -88,9 +88,9 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
       level = ML_AMG_Gen_MGHierarchy(ml, start, ML_AMG_Decrement_Level,
                      ML_AMG_Gen_Prolongator, NULL, ml_amg);
    }
-   else 
+   else
    {
-      if ( ml->comm->ML_mypid == 0 ) 
+      if ( ml->comm->ML_mypid == 0 )
          printf("ML_Gen_MGHierarchy_UsingAMG : unknown inc_or_dec choice\n");
       exit(1);
    }
@@ -141,7 +141,7 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
    level = fine_level;
    next  = next_level(ml, level, &(ml->Amat[fine_level]), amg);
 
-   while (next >= 0) 
+   while (next >= 0)
    {
       flag = user_gen_prolongator(ml,level,next,(void*)&(ml->Amat[level]),amg);
       if (flag < 0) break;
@@ -205,7 +205,7 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    Pmatrix = ML_Operator_Create(ml->comm);
    Ncoarse  = ML_AMG_Coarsen(amg, Amat, &Pmatrix, ml->comm);
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
-   if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel()) 
+   if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
       printf("AMG at level %2d = %d\n", level, gNcoarse);
    if ( gNcoarse == 0 || (1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05 )
    {
@@ -216,7 +216,7 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator_Set_ApplyFuncData(AMGIdentity, Amat->invec_leng,
                                   Amat->outvec_leng, (void*) Amat,
                                   Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AMGIdentity, Amat->getrow->Nrows, 
+   ML_Operator_Set_Getrow(AMGIdentity, Amat->getrow->Nrows,
                           ML_AMG_Identity_Getrows);
    ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),Amat->getrow->pre_comm);
    ML_2matmult(AMGIdentity, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
@@ -274,11 +274,11 @@ int ML_AMG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
 /* getrow function for identity matrix                                       */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows, 
-           int requested_rows[], int allocated_space, int columns[], 
+int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows,
+           int requested_rows[], int allocated_space, int columns[],
            double values[], int row_lengths[])
 {
-   if (N_requested_rows > 1) 
+   if (N_requested_rows > 1)
    {
       printf("Too bad. This routine only works with 1 row at a time\n");
       exit(1);

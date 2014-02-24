@@ -142,8 +142,8 @@ int Poisson_matvec(ML_Operator *mat_in, int in_length, double p[], int out_lengt
    double new_p[5];
 
    itemp = (int *) ML_Get_MyMatvecData(mat_in);
-   
-   proc  = *itemp; 
+
+   proc  = *itemp;
 
    for (i = 0; i < in_length; i++) new_p[i] = p[i];
    Poisson_comm(new_p, &proc);
@@ -171,7 +171,7 @@ int Poisson_comm(double x[], void *A_data)
    MPI_Request request;
 
    itemp = (int *) A_data;
-   proc  = *itemp; 
+   proc  = *itemp;
 
    length = 2;
    if (proc == 0) {

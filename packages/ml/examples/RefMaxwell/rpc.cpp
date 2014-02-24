@@ -77,7 +77,7 @@ void rpc_test_additive(Epetra_ActiveComm & Comm, const Epetra_CrsMatrix &S,Epetr
               const Epetra_Vector &x_exact,const Epetra_Vector &x0,const Epetra_Vector &b);
 
 
-int main(int argc, char* argv[]){ 
+int main(int argc, char* argv[]){
   char *dir;
   int rv,slen;
   /* Initialize */
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]){
   }
   else dir=new char[80];
 
-   
+
   /* I can't believe that Epetra_Comm doesn't support moving strings */
   //NTS: This bombs with path names below 5 characters
 #ifdef USE_MPI
@@ -112,8 +112,8 @@ int main(int argc, char* argv[]){
 
   /* Cleanup*/
   if(Comm.MyPID()!=0) delete dir;
-  
-  
+
+
 #ifdef USE_MPI
   MPI_Finalize();
 #endif
@@ -168,7 +168,7 @@ void matrix_read(Epetra_ActiveComm &Comm){
 #endif
 
 
-  
+
  /* Fix up the column maps (since ML needs all the columns, and Epetra doesn't
     supply them).
 
@@ -185,15 +185,15 @@ void matrix_read(Epetra_ActiveComm &Comm){
 #else
   SM=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*SMe,SM_CMT));
 #endif
-  
-  
+
+
   /* Build SM  (pavel matrices) or Ms (alegra)*/
 #ifdef PAVEL
   SM=new Epetra_CrsMatrix(*S);
   EpetraExt::MatrixMatrix::Add(*Ms,false,1,*SM,1);
 #else
-  Ms=new Epetra_CrsMatrix(*SM);  
-  EpetraExt::MatrixMatrix::Add(*S,false,-1,*Ms,1);  
+  Ms=new Epetra_CrsMatrix(*SM);
+  EpetraExt::MatrixMatrix::Add(*S,false,-1,*Ms,1);
 #endif
 
   /* Optimize the storage*/
@@ -206,8 +206,8 @@ void matrix_read(Epetra_ActiveComm &Comm){
 
 
   /* Build LHS/RHS */
-  Epetra_Map EdgeMap=SM->DomainMap();  
-  Epetra_Vector rhs(EdgeMap,false);  
+  Epetra_Map EdgeMap=SM->DomainMap();
+  Epetra_Vector rhs(EdgeMap,false);
   Epetra_Vector lhs(EdgeMap,true);
   Epetra_Vector x_exact(EdgeMap,false);
   x_exact.PutScalar(1.0);
@@ -218,35 +218,35 @@ void matrix_read(Epetra_ActiveComm &Comm){
   Epetra_Vector ones(NodeMap),diag(NodeMap),invdiag(NodeMap);
   ones.PutScalar(1.0);
   M0->Multiply(false,ones,diag);
-  
+
   Epetra_CrsMatrix M0inve(Copy,NodeMap,1);
   invdiag.Reciprocal(diag);
   for(int i=0;i<M0inve.NumMyRows();i++){
     int gid=NodeMap.GID(i);
     M0inve.InsertGlobalValues(gid,1,&(invdiag[i]),&gid);
-  }/*end for*/  
+  }/*end for*/
   M0inve.FillComplete();
   M0inve.OptimizeStorage();
 
-  
+
   /* Remap this bad boy */
-  Epetra_CrsMatrix * M0inv=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(M0inve,M0inv_CMT));  
+  Epetra_CrsMatrix * M0inv=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(M0inve,M0inv_CMT));
   M0inv->OptimizeStorage();
 
   /* Read in coordinates*/
   Epetra_MultiVector *coords;
   MatlabFileToMultiVector("coord_node.txt",NodeMap,dim,coords);
-  
+
   /* Tests */
   rpc_test_212(Comm,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs);
   //  rpc_test_additive(Comm,*S,*SM,*Ms,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs);
-  
+
   /* Cleanup */
   // The CrsMatrix_SolverMap cleans up the non-E matrices.  I'd call this
   // "convenient," but that would be a savage, savage, lie.
   delete M0; delete M1e;
-  delete D0e;delete Se; 
-  delete coords; 
+  delete D0e;delete Se;
+  delete coords;
 #ifdef PAVEL
   delete SM;
   delete Mse;
@@ -256,7 +256,7 @@ void matrix_read(Epetra_ActiveComm &Comm){
 #endif
 
 
-} 
+}
 
 
 
@@ -268,7 +268,7 @@ void matrix_read(Epetra_ActiveComm &Comm){
 /******************************************/
 void rpc_test_additive(Epetra_ActiveComm &Comm,
               const Epetra_CrsMatrix &S,
-              Epetra_CrsMatrix &SM,              
+              Epetra_CrsMatrix &SM,
               const Epetra_CrsMatrix &Ms,
               const Epetra_CrsMatrix &M1,
               const Epetra_CrsMatrix &M0inv,
@@ -277,33 +277,33 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
               const Epetra_Vector &x_exact,
               const Epetra_Vector &x0,
               const Epetra_Vector &b){
-  
+
   int smooth=3;
-  
+
   printf("[%d] RPC: Building Teuchos Lists\n",Comm.MyPID());
-  /* Build Teuchos List: (1,1) */  
+  /* Build Teuchos List: (1,1) */
   Teuchos::ParameterList List11;
   SetDefaultsSA(List11);
   List11.set("cycle applications",1);
   List11.set("aggregation: type","Uncoupled");
   List11.set("PDE equations",dim);
-  List11.set("smoother: type","symmetric Gauss-Seidel");  
+  List11.set("smoother: type","symmetric Gauss-Seidel");
   List11.set("smoother: sweeps",smooth);
   List11.set("x-coordinates",coords[0]);
   List11.set("y-coordinates",coords[1]);
   if(dim==3) List11.set("z-coordinates",coords[2]);
   else List11.set("z-coordinates",(double*)0);
   List11.set("output",10);
-  
-  /* Build Teuchos List: (2,2) */  
-  Teuchos::ParameterList List22;  
+
+  /* Build Teuchos List: (2,2) */
+  Teuchos::ParameterList List22;
   List22.set("cycle applications",1);
   List22.set("smoother: type","symmetric Gauss-Seidel");
   List22.set("smoother: sweeps",smooth);
   List22.set("x-coordinates",coords[0]);
-  List22.set("y-coordinates",coords[1]); 
+  List22.set("y-coordinates",coords[1]);
   if(dim==3) List22.set("z-coordinates",coords[2]);
-  else List22.set("z-coordinates",(double*)0); 
+  else List22.set("z-coordinates",(double*)0);
   List22.set("output",10);
 
   /* Build Teuchos List: Fine Smoother */
@@ -312,10 +312,10 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   ListSM.set("subsmoother: type","symmetric Gauss-Seidel");
   ListSM.set("subsmoother: edge sweeps",smooth);
   ListSM.set("subsmoother: node sweeps",smooth);
-  ListSM.set("zero starting solution",false);  
+  ListSM.set("zero starting solution",false);
 
-  
-  /* Build Teuchos List: Overall */  
+
+  /* Build Teuchos List: Overall */
   Teuchos::ParameterList ListRF;
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
@@ -323,12 +323,12 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   ListRF.set("refmaxwell: 22list",List22);
   ListRF.set("refmaxwell: mode","additive");
   ListRF.set("refmaxwell: additive smoother",ListSM);
-  
+
   /* Build the (1,1) Block preconditioner */
   printf("[%d] RPC: Building the RexMaxwellPreconditioner\n",Comm.MyPID());
   ML_reseed_random_vec(8675309);
   RefMaxwellPreconditioner PrecRF(SM,D0,Ms,M0inv,M1,ListRF);
-  
+
   /* Build Sample Vector */
   Epetra_Vector x0_(x0);
 
@@ -349,7 +349,7 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   else if (type == "gmres") solver.SetAztecOption(AZ_solver, AZ_gmres);
   else if (type == "gmres_condnum") solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
   else if (type == "fixed point") solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
-  
+
   /* Set solver options - Convergence Criterion*/
   if(conv == "r0") solver.SetAztecOption(AZ_conv,AZ_r0);
   else if(conv == "rhs") solver.SetAztecOption(AZ_conv,AZ_rhs);
@@ -365,14 +365,14 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
 
   /* Check out the solution */
   double nxe,nd;
-  x_exact.Norm2(&nxe);  
+  x_exact.Norm2(&nxe);
   Epetra_Vector diff(x_exact);
   diff.Update(1.0,x0_,-1.0);
-  diff.Norm2(&nd);  
+  diff.Norm2(&nd);
   if(Comm.MyPID()==0) printf("||sol-exact||/||exact||=%6.4e\n",nd/nxe);
-  
+
 }/*end rpc_test_additive*/
-            
+
 
 
 /******************************************/
@@ -380,7 +380,7 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
 /******************************************/
 void rpc_test_212(Epetra_ActiveComm &Comm,
               const Epetra_CrsMatrix &S,
-              Epetra_CrsMatrix &SM,              
+              Epetra_CrsMatrix &SM,
               const Epetra_CrsMatrix &Ms,
               const Epetra_CrsMatrix &M1,
               const Epetra_CrsMatrix &M0inv,
@@ -389,18 +389,18 @@ void rpc_test_212(Epetra_ActiveComm &Comm,
               const Epetra_Vector &x_exact,
               const Epetra_Vector &x0,
               const Epetra_Vector &b){
-  
+
 
   int smooth=3;
-  
+
   printf("[%d] RPC: Building Teuchos Lists\n",Comm.MyPID());
-  /* Build Teuchos List: (1,1) */  
+  /* Build Teuchos List: (1,1) */
   Teuchos::ParameterList List11;
   SetDefaultsSA(List11);
   List11.set("cycle applications",1);
   List11.set("aggregation: type","Uncoupled");
   List11.set("PDE equations",dim);
-  List11.set("smoother: type","MLS");  
+  List11.set("smoother: type","MLS");
   List11.set("smoother: sweeps",smooth);
   List11.set("smoother: MLS polynomial order",smooth);
   List11.set("eigen-analysis: type", "power-method");
@@ -411,9 +411,9 @@ void rpc_test_212(Epetra_ActiveComm &Comm,
   if(dim==3) List11.set("z-coordinates",coords[2]);
   else List11.set("z-coordinates",(double*)0);
   List11.set("output",10);
-  
-  /* Build Teuchos List: (2,2) */  
-  Teuchos::ParameterList List22;  
+
+  /* Build Teuchos List: (2,2) */
+  Teuchos::ParameterList List22;
   List22.set("cycle applications",1);
   List22.set("smoother: type","MLS");
   List22.set("smoother: sweeps",smooth);
@@ -421,26 +421,26 @@ void rpc_test_212(Epetra_ActiveComm &Comm,
   List22.set("smoother: MLS alpha",30.0001);
   List22.set("coarse: type","MLS");
   List22.set("coarse: MLS polynomial order",smooth);
-  List22.set("eigen-analysis: type", "power-method");  
+  List22.set("eigen-analysis: type", "power-method");
   List22.set("x-coordinates",coords[0]);
-  List22.set("y-coordinates",coords[1]); 
+  List22.set("y-coordinates",coords[1]);
   if(dim==3) List22.set("z-coordinates",coords[2]);
-  else List22.set("z-coordinates",(double*)0); 
+  else List22.set("z-coordinates",(double*)0);
   List22.set("output",10);
 
-  /* Build Teuchos List: Overall */  
+  /* Build Teuchos List: Overall */
   Teuchos::ParameterList ListRF;
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");
   ListRF.set("refmaxwell: 22list",List22);
   ListRF.set("refmaxwell: mode","212");
-  
+
   /* Build the (1,1) Block preconditioner */
   printf("[%d] RPC: Building the RexMaxwellPreconditioner\n",Comm.MyPID());
   ML_reseed_random_vec(8675309);
   RefMaxwellPreconditioner PrecRF(SM,D0,Ms,M0inv,M1,ListRF);
-  
+
   /* Build Sample Vector */
   Epetra_Vector x0_(x0);
   //  Epetra_Vector x_exact(EdgeMap,true);
@@ -466,7 +466,7 @@ void rpc_test_212(Epetra_ActiveComm &Comm,
   else if (type == "gmres") solver.SetAztecOption(AZ_solver, AZ_gmres);
   else if (type == "gmres_condnum") solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
   else if (type == "fixed point") solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
-  
+
   /* Set solver options - Convergence Criterion*/
   if(conv == "r0") solver.SetAztecOption(AZ_conv,AZ_r0);
   else if(conv == "rhs") solver.SetAztecOption(AZ_conv,AZ_rhs);
@@ -482,23 +482,23 @@ void rpc_test_212(Epetra_ActiveComm &Comm,
 
   /* Check out the solution */
   double nxe,nd;
-  x_exact.Norm2(&nxe);  
+  x_exact.Norm2(&nxe);
   Epetra_Vector diff(x_exact);
   diff.Update(1.0,x0_,-1.0);
-  diff.Norm2(&nd);  
+  diff.Norm2(&nd);
   if(Comm.MyPID()==0) printf("||sol-exact||/||exact||=%6.4e\n",nd/nxe);
-  
+
 }/*end rpc_test_212*/
-             
-                 
+
+
 /******************************************/
 /******************************************/
 /******************************************/
-                 
+
 void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os) {
   int MyPID = A.RowMap().Comm().MyPID();
   int NumProc = A.RowMap().Comm().NumProc();
-       
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyRows1 = A.NumMyRows();
@@ -507,14 +507,14 @@ void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os) {
       double * Values  = new double[MaxNumIndices];
       int NumIndices;
       int i, j;
-      
+
       for (i=0; i<NumMyRows1; i++) {
 	int Row = A.GRID(i); // Get global row number
 	A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Values, Indices);
-        
-	for (j = 0; j < NumIndices ; j++) {   
+
+	for (j = 0; j < NumIndices ; j++) {
 	  os.width(10);
-	  os <<  Row +1; os << "    ";	
+	  os <<  Row +1; os << "    ";
 	  os.width(10);
 	  os <<  Indices[j]+1; os << "    ";
 	  os.width(20);os.precision(16);os.setf(ios_base::scientific,ios_base::floatfield);
@@ -522,23 +522,23 @@ void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os) {
 	  os << endl;
 	}/*end for*/
       }/*end for*/
-			
+
       delete [] Indices;
       delete [] Values;
-      
-      os << flush;      
+
+      os << flush;
     }/*end if*/
     // Do a few global ops to give I/O a chance to complete
     A.RowMap().Comm().Barrier();
     A.RowMap().Comm().Barrier();
     A.RowMap().Comm().Barrier();
   }/*end for*/
-	
+
   return;
 }/*end Epetra_CrsMatrix_Print*/
- 
 
-             
+
+
 Epetra_RowMatrix* ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
                                            EpetraExt::CrsMatrix_SolverMap &transform){
     Epetra_RowMatrix *B;
@@ -557,7 +557,7 @@ Epetra_RowMatrix* ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
       printf("** Transforming column map of matrix\n");
     else
       printf("** Leaving column map of matrix unchanged\n");
-    
+
     return B;
 } //ModifyEpetraMatrixColMap()
 
@@ -572,11 +572,11 @@ void MVOUT(const Epetra_MultiVector & A, ostream & os){
   int NumProc=A.Map().Comm().NumProc();
   int MyPID  =A.Map().Comm().MyPID();
   int NumVectors=A.NumVectors();
-  
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int MyLength = A.MyLength();
-      for (i=0; i<MyLength; i++) {        
+      for (i=0; i<MyLength; i++) {
 	for (j = 0; j < NumVectors ; j++) {
           os.width(20);
           os.precision(16);
@@ -586,7 +586,7 @@ void MVOUT(const Epetra_MultiVector & A, ostream & os){
         }
         os<<endl;
       }/*end for*/
-      os << flush;      
+      os << flush;
     }/*end if*/
     // Do a few global ops to give I/O a chance to complete
     A.Map().Comm().Barrier();
@@ -594,7 +594,7 @@ void MVOUT(const Epetra_MultiVector & A, ostream & os){
     A.Map().Comm().Barrier();
   }/*end for*/
 #endif
-  
+
 }/*end MultiVectorToMatlabFile*/
 
 
@@ -608,7 +608,7 @@ void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx){
 }/* end MVOUT2*/
 
 
-              
+
 /******************************************/
 /******************************************/
 /******************************************/
@@ -616,15 +616,15 @@ void IVOUT(const Epetra_IntVector & A, ostream & os){
   int i;
   int NumProc=A.Map().Comm().NumProc();
   int MyPID  =A.Map().Comm().MyPID();
-  
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int MyLength = A.MyLength();
-      for (i=0; i<MyLength; i++) {        
+      for (i=0; i<MyLength; i++) {
           os.width(20);
           os << A[i]<<endl;
       }
-      os << flush;      
+      os << flush;
     }/*end if*/
     // Do a few global ops to give I/O a chance to complete
     A.Map().Comm().Barrier();
@@ -633,7 +633,7 @@ void IVOUT(const Epetra_IntVector & A, ostream & os){
   }/*end for*/
 }/*end MultiVectorToMatlabFile*/
 
-              
+
 /******************************************/
 /******************************************/
 /******************************************/
@@ -659,7 +659,7 @@ int MatlabFileToMultiVector( const char *filename, const Epetra_BlockMap & map, 
   map.Comm().ScanSum(&numMyPoints, &offset, 1); // ScanSum will compute offsets for us
   offset -= numMyPoints; // readjust for my PE
   if(map.Comm().NumProc() == 1) offset=0;//CMS
-  
+
   // Now construct vector/multivector
   if (N==1)
     A = new Epetra_Vector(map);
@@ -673,7 +673,7 @@ int MatlabFileToMultiVector( const char *filename, const Epetra_BlockMap & map, 
     if(fgets(line, lineLength, handle)==0) return(-3);
   for (int i=0; i<numMyPoints; i++) {
     for (int j=0; j<N; j++) {
-      double * v = Ap[j];    
+      double * v = Ap[j];
       // Now read in each value and store to the local portion of the the  if the row is owned.
       double V;
       if(fscanf(handle, "%le ", &V)==0) return(-5);
@@ -682,6 +682,6 @@ int MatlabFileToMultiVector( const char *filename, const Epetra_BlockMap & map, 
   }
 
   if (fclose(handle)) return(-1);
-  
+
   return(0);
 }

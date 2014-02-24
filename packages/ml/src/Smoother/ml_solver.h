@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -21,7 +21,7 @@
 #include "superlu_ddefs.h"
 #endif
 
-typedef struct ML_Lugrid_Struct 
+typedef struct ML_Lugrid_Struct
 {
 #ifdef DSUPERLU
   gridinfo_t grid;
@@ -29,7 +29,7 @@ typedef struct ML_Lugrid_Struct
   int count;
 } ML_Lugrid;
 
-typedef struct ML_Solver_Struct 
+typedef struct ML_Solver_Struct
 {
    int          ML_id;               /* ID for the Solver structure     */
    int          reuse_flag;          /* flag for internal use           */

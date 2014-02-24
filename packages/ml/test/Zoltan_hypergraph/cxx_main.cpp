@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Goal of this example is to present the basic usage of
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }
-    
+
   Epetra_Vector LHS(*Map); LHS.Random();
   Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 #endif
 
   // =========================== begin of ML part ===========================
-  
+
 #ifdef ML_SCALING
   timeVec[precBuild].value = MPI_Wtime();
 #endif
@@ -157,7 +157,7 @@ RCP<std::vector<double> >
    m_smootherAztecParams = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
 //int             m_smootherAztecOptions[AZ_OPTIONS_SIZE];
 //double          m_smootherAztecParams[AZ_PARAMS_SIZE];
-  
+
 std::string smootherType("Aztec");
 AZ_defaults(&(*m_smootherAztecOptions)[0],&(*m_smootherAztecParams)[0]);
 (*m_smootherAztecOptions)[AZ_precond]         = AZ_dom_decomp;
@@ -179,13 +179,13 @@ bool smootherAztecAsSolver = true;
 MLList.set("smoother: Aztec options",m_smootherAztecOptions);
 MLList.set("smoother: Aztec params",m_smootherAztecParams);
 MLList.set("smoother: type",smootherType.c_str());
-MLList.set("smoother: Aztec as solver", smootherAztecAsSolver); 
+MLList.set("smoother: Aztec as solver", smootherAztecAsSolver);
 
-MLList.set("ML print initial list", 0); 
-MLList.set("ML print final list", 0); 
+MLList.set("ML print initial list", 0);
+MLList.set("ML print final list", 0);
 */
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // verify unused parameters on process 0 (put -1 to print on all
@@ -196,7 +196,7 @@ MLList.set("ML print final list", 0);
 #endif
 
   // =========================== end of ML part =============================
-  
+
 #ifdef ML_SCALING
   timeVec[solve].value = MPI_Wtime();
 #endif
@@ -210,12 +210,12 @@ MLList.set("ML print final list", 0);
 
   // destroy the preconditioner
   delete MLPrec;
-  
+
   // compute the real residual
 
   double residual;
   LHS.Norm2(&residual);
-  
+
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
   }

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -43,7 +43,7 @@ typedef struct ML_1Level_Struct ML_1Level;
 /* multilevel environment.                                              */
 /* -------------------------------------------------------------------- */
 
-struct ML_1Level_Struct 
+struct ML_1Level_Struct
 {
    int          id, levelnum;
    ML_Operator  *Amat, *Rmat, *Pmat;

@@ -1,17 +1,17 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*****************************************************************************/
 /*                                                                           *
  *  This file contains routines for reading input to drive ML from a file.   *
- *  These routines work with the example 'ml_readfile.c'.                    * 
+ *  These routines work with the example 'ml_readfile.c'.                    *
  *  The current input file has the following form:                           *
  *                                                                           *
 #
-#  Test input file ML 
-#       
-# Notes: 
+#  Test input file ML
+#
+# Notes:
 #   1) Captilization should not matter
 #   2) Lines starting with # are comments
 #   3) Parallel Partitioning File is not used
@@ -19,10 +19,10 @@
 #   4) comments in [] indicate available options.
 #   5) The matrix must be stored in a file according
 #      to Aztec's AZ_read_msr() format.
-#   6) Including the file 'rhsfile' will cause this 
+#   6) Including the file 'rhsfile' will cause this
 #      data (stored in Aztec's AZ_read_msr() format)
 #      to be used as righthand side.
-#   7) Including the file 'initguessfile' will cause this 
+#   7) Including the file 'initguessfile' will cause this
 #      data (stored in Aztec's AZ_read_msr() format)
 #      to be used as righthand side.
 #   8) rigid body mode information can be input by
@@ -31,15 +31,15 @@
 #      starts from 0 and increases. Each file
 #      should contain 1 rigid body mode.
 #   9) The utility ml/util/az_capt2read.c can be used
-#      to convert matlab type '*.dat' data into 
+#      to convert matlab type '*.dat' data into
 #      AZ_read_msr() format.
 #
 -----------------------------------------------
       General Problem Specifications
 -----------------------------------------------
 Number of DOF per node       = 1
-Parallel Partitioning File   = myfile  
-Output Frequency             = 2       
+Parallel Partitioning File   = myfile
+Output Frequency             = 2
 Tolerance                    = 1.0e-11
 Print Level                  = 1
 #                              [0,1,...]
@@ -48,7 +48,7 @@ Print Level                  = 1
       Solution Specifications
 -----------------------------------------------
 Max Number of Levels         = 4
-Type of Smoother             = SymGaussSeidel 
+Type of Smoother             = SymGaussSeidel
 #                              [Parasails, GaussSeidel, SymGaussSeidel, Poly,
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 7
@@ -58,7 +58,7 @@ Coarse grid solver           = SuperLU
 #                               SuperLU]
 Coarse Grid iterations       = 1
 Outer Iteration              = Cg
-#                              [Cg, Bicgstab, Tfqmr, Gmres] 
+#                              [Cg, Bicgstab, Tfqmr, Gmres]
 
 -----------------------------------------------
       Aggregation Specifications
@@ -67,7 +67,7 @@ Type of Aggregation          = Mis
 #                              [Mis, Uncoupled, Coupled]
 Aggregate threshold          = 0.0
 Max coarse size              = 30
-Smoothed aggregation damping = 1.5 
+Smoothed aggregation damping = 1.5
 Spectral norm calculation    = Anorm
 #                              [Anorm, Calc]
 # end of inputfile
@@ -103,7 +103,7 @@ void ML_Reader_ReadInput(char *cmd_file_name, struct reader_context **context)
 
 
   /*********************** BEGIN EXECUTION ***********************************/
-  
+
   *context =(struct reader_context *) ML_allocate(sizeof(struct reader_context));
   ML_Reader_InitContext(*context);
 
@@ -307,7 +307,7 @@ int ML_Reader_ReadString(FILE *ifp, char string[], int ch)
           && (new_ch != '\n')
           && (new_ch != EOF) ) {
     if ((new_ch >= 'A') && (new_ch <= 'Z'))
-       new_ch = 'a' + new_ch - 'A'; 
+       new_ch = 'a' + new_ch - 'A';
     string[i++] = new_ch;
   }
 
@@ -593,7 +593,7 @@ void ML_Reader_GetAggregationSpecs(FILE *ifp, struct reader_context *context)
 void ML_Reader_InitContext(struct reader_context *context)
 {
 /* Initialize the context used for keeping track of multigrid input options */
-   
+
    context->id            = 0;
    context->N_levels      = 0;
    context->nsmooth       = 0;
@@ -630,13 +630,13 @@ int ML_strcmp(char *input, char *string)
   i = 0;
   while ((input_copy[i] != '\0') && (input_copy[i] != '\n')) {
     if ((input_copy[i] >= 'A') && (input_copy[i] <= 'Z'))
-       input_copy[i] = 'a' + input_copy[i] - 'A'; 
+       input_copy[i] = 'a' + input_copy[i] - 'A';
     i++;
   }
   i = 0;
   while ((string_copy[i] != '\0') && (string_copy[i] != '\n')) {
     if ((string_copy[i] >= 'A') && (string_copy[i] <= 'Z'))
-       string_copy[i] = 'a' + string_copy[i] - 'A'; 
+       string_copy[i] = 'a' + string_copy[i] - 'A';
     i++;
   }
 

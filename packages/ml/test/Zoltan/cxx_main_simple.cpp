@@ -37,7 +37,7 @@ extern "C" {
 int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 				  int N_parts,
 				  int graph_decomposition[],
-				  double bdry_nodes[], double old_x[], 
+				  double bdry_nodes[], double old_x[],
 				  double old_y[], double old_z[],
 				  int current_level);
 }
@@ -45,18 +45,18 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   int nx = 4;
   int ny = nx;
   Epetra_Time Time(Comm);
-  
+
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size",nx * ny);
 
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 #endif
 
   return(0);
-  
+
 }
 
 #else
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
-  
+
   return 0;
 }
 

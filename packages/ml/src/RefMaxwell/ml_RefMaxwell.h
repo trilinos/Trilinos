@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef ML_REFMAXWELL_H
@@ -21,7 +21,7 @@
 
 #define ENABLE_MS_MATRIX
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_common.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -45,7 +45,7 @@ namespace ML_Epetra
   int SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWrite=true);
 
 
-  
+
   /*! The preconditioner(s) for the Eddy Current Maxwell's equations using
     compatible discretizations (edge elements).  Since the preconditioners
     involve both an edge and nodal component, different combinations of additive
@@ -54,7 +54,7 @@ namespace ML_Epetra
     The sublists "refmaxwell: 11list" and "refmaxwell: 22list" will be passed on
     to the edge and nodal sub-solvers appropriately.
 
-    
+
     Detail on this preconditioner can be found in Bochev, Hu, Siefert and
     Tuminaro, 2007.
   */
@@ -63,7 +63,7 @@ namespace ML_Epetra
   public:
 
     //@{ \name Constructors.
-    
+
     //! Constructs a RefMaxwellPreconditioner.
     // WARNING: All of these matrices will be shallow pointed to.  Please be
     //sure the matrices last until after RefMaxwellPreconditioner does.
@@ -78,27 +78,27 @@ namespace ML_Epetra
                              const Teuchos::ParameterList& List,
                              const bool ComputePrec = true);
     //@}
-    
+
 
     //! @name Destructor
-    //@{ 
+    //@{
     //! Destructor
     ~RefMaxwellPreconditioner();
     //@}
 
-    
+
     //@{ \name Mathematical functions.
-    
+
     //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
       return(-1);}
-    
+
     //! Apply the preconditioner w/ RHS B and get result X
     int ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
-    
+
     //@}
 
-    
+
     //@{ \name Attribute access functions
 
     //! Computes the multilevel hierarchy.
@@ -106,12 +106,12 @@ namespace ML_Epetra
       specified in the input ParameterList), or takes default values otherwise, and creates the ML
       objects for aggregation and hierarchy. Allocated data can be freed used DestroyPreconditioner(),
       or by the destructor,
-      
+
       In a Newton-type procedure, several linear systems have to be solved, Often, these systems
-      are not too different. In this case, it might be convenient to keep the already 
+      are not too different. In this case, it might be convenient to keep the already
       computed preconditioner (with hierarchy, coarse solver, smoothers), and use it to
-      precondition the next linear system. ML offers a way to determine whether the 
-      already available preconditioner is "good enough" for the next linear system. 
+      precondition the next linear system. ML offers a way to determine whether the
+      already available preconditioner is "good enough" for the next linear system.
       The user should proceed as follows:
       - define \c "reuse: enable" == \c true
       - solve the first linear system. ML tries to estimate the rate of convergence, and record it;
@@ -141,16 +141,16 @@ namespace ML_Epetra
 
     //! Returns the current UseTranspose setting.
     bool UseTranspose() const {return(false);};
-  
+
     //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
     bool HasNormInf() const{return(false);};
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
     const Epetra_Comm& Comm() const{return(*Comm_);};
-  
+
     //! Returns the Epetra_Map object associated with the domain of this operator.
     const Epetra_Map& OperatorDomainMap() const {return(*DomainMap_);};
-  
+
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map& OperatorRangeMap() const {return(*RangeMap_);};
 
@@ -161,11 +161,11 @@ namespace ML_Epetra
 
   private:
 
-    //@{ \name Internal functions   
+    //@{ \name Internal functions
 
     //! Sets the Edge Smoother (if needed)
     int SetEdgeSmoother(Teuchos::ParameterList &List_);
-    
+
     //! Implicitly applies in the inverse in a 2-1-2 format
     int ApplyInverse_Implicit_212(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
 
@@ -177,15 +177,15 @@ namespace ML_Epetra
 
 
     //@}
-    
-    //@{ \name Internal data    
-    
+
+    //@{ \name Internal data
+
     //! Matrix: S+M1(sigma)
     const Epetra_CrsMatrix * SM_Matrix_;
     //! Matrix: T or D0 w/ dirichlet nodes and edges zero'd
     Epetra_CrsMatrix * D0_Matrix_;
     //! Matrix: D0 w/ nothing zero'd
-    const Epetra_CrsMatrix * D0_Clean_Matrix_;      
+    const Epetra_CrsMatrix * D0_Clean_Matrix_;
 #ifdef ENABLE_MS_MATRIX
     //! Matrix: M1(sigma)
     const Epetra_CrsMatrix * Ms_Matrix_;
@@ -203,36 +203,36 @@ namespace ML_Epetra
 #ifdef HAVE_ML_EPETRAEXT
     //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap SM_Matrix_Trans_;
-    //! Structure for compatibility between Epetra and ML column maps.    
+    //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap D0_Matrix_Trans_;
-    //! Structure for compatibility between Epetra and ML column maps.    
+    //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap D0_Clean_Matrix_Trans_;
-    //! Structure for compatibility between Epetra and ML column maps.    
+    //! Structure for compatibility between Epetra and ML column maps.
 #ifdef ENABLE_MS_MATRIX
     EpetraExt::CrsMatrix_SolverMap Ms_Matrix_Trans_;
 #endif
     //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap M0inv_Matrix_Trans_;
-    //! Structure for compatibility between Epetra and ML column maps.    
+    //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap M1_Matrix_Trans_;
-    //! Structure for compatibility between Epetra and ML column maps.   
+    //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap TMT_Matrix_Trans_;
     //! Structure for compatibility between Epetra and ML column maps.
-    EpetraExt::CrsMatrix_SolverMap TMT_Agg_Matrix_Trans_;    
+    EpetraExt::CrsMatrix_SolverMap TMT_Agg_Matrix_Trans_;
 #endif
 
 
-    
+
     //! Dirichelt Edges
-    int* BCrows; 
+    int* BCrows;
     int numBCrows;
     bool HasOnlyDirichletNodes;
-    
+
     //! Vector: Diagonal of reformulated operator
     Epetra_Vector* Diagonal_;
     //! (1,1) Block Operator
     Teuchos::RCP<Epetra_Operator> Operator11_;
-    
+
     //! (1,1) Block Preconditioner
     ML_Preconditioner * EdgePC;
     //! (2,2) Block Preconditioner
@@ -244,23 +244,23 @@ namespace ML_Epetra
     MultiLevelPreconditioner *PostEdgeSmoother;
 #ifdef HAVE_ML_IFPACK
     Epetra_Operator *IfSmoother;
-#endif    
+#endif
 
     //! Solver mode
     std::string mode;
 
     //! Aggregation info
     bool aggregate_with_sigma;
-   
+
     //! Mass lumping
-    bool lump_m1;   
+    bool lump_m1;
 
     // EXPERIMENTAL: Local nodal subsolver
     bool use_local_nodal_solver;
     MultiLevelPreconditioner *LocalNodalSolver;
     const Epetra_CrsMatrix* NodesToLocalNodes;
     Epetra_CrsMatrix* LocalNodalMatrix;
-    
+
     //! Domain Map
     const Epetra_Map* DomainMap_;
     //! Range Map
@@ -294,7 +294,7 @@ namespace ML_Epetra
     int NumConstructions_;
     //! CPU time for construction of the preconditioner.
     double ConstructionTime_;
-    //@}        
+    //@}
   };// end RefMaxwellPreconditioner
 }//end namespace ML_Epetra
 

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Goal of this example if to show how to use ML with Epetra_VbrMatrix's.
@@ -41,7 +41,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -54,17 +54,17 @@ int main(int argc, char *argv[])
   // Galeri documentation for more details.
   // This matrix is a simple VBR matrix, constructed by replicating
   // a point-matrix on each unknown. This example is
-  // useful to test the vector capabilities of ML, or to debug 
+  // useful to test the vector capabilities of ML, or to debug
   // code for vector problems. The number of equations is here
   // hardwired as 5, but any positive number (including 1) can be
   // specified.
   //
   // NOTE: The epetra interface of ML has only limited capabilites
-  // for matrices with variable block size (that is, 
-  // best is if the number of equations for 
+  // for matrices with variable block size (that is,
+  // best is if the number of equations for
   // each block row is constant). If you are interested in variable
   // block capabilites, please contact the ML developers.
-  
+
   int NumPDEEqns = 5;
 
   // build up a 9-point Laplacian in 2D. This stencil will lead to
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     nx = (int) strtol(argv[1],NULL,10);
   else
     nx = 16;
-  
+
   Teuchos::ParameterList GaleriList;
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx * Comm.NumProc());
@@ -102,18 +102,18 @@ int main(int argc, char *argv[])
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   // create a parameter list for ML options
   ParameterList MLList;
 
   // set defaults for classic smoothed aggregation
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   // overwrite some parameters. Please refer to the user's guide
   // for more information
   // some of the parameters do not differ from their default value,
   // and they are here reported for the sake of clarity
-  
+
   // maximum number of levels
   MLList.set("max levels",5);
   MLList.set("increasing or decreasing","increasing");
@@ -124,18 +124,18 @@ int main(int argc, char *argv[])
   // schemes, they should be used only for the finest level. `MIS' and
   // `ParMETIS' are global aggregation schemes (meaning that the
   // aggregates can span across processes), and should be reserved for
-  // coarsest levels. 
+  // coarsest levels.
   // Note also that `Uncoupled' and `MIS' will always try to create
   // aggregates of diameter 3 (in the graph sense), while `METIS' and
   // `ParMETIS' can generate aggregates of any size.
 
   MLList.set("aggregation: type (level 0)", "Uncoupled");
   MLList.set("aggregation: type (level 1)", "MIS");
-  
+
   // this is recognized by `METIS' and `ParMETIS' only
   MLList.set("aggregation: nodes per aggregate", 9);
-  
-  // smoother is Gauss-Seidel. Example file 
+
+  // smoother is Gauss-Seidel. Example file
   // ml_2level_DD.cpp shows how to use
   // AZTEC's preconditioners as smoothers
   MLList.set("smoother: type","Gauss-Seidel");
@@ -143,33 +143,33 @@ int main(int argc, char *argv[])
   // use both pre and post smoothing. Non-symmetric problems may take
   // advantage of pre-smoothing or post-smoothing only.
   MLList.set("smoother: pre or post", "both");
-  
+
   // solve with serial direct solver KLU
   MLList.set("coarse: type","Amesos-KLU");
-  
+
   // create the preconditioner object and compute hierarchy
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
 
-  // solve with 500 iterations and 1e-5 tolerance  
+  // solve with 500 iterations and 1e-5 tolerance
   solver.Iterate(500, 1e-7);
 
   delete MLPrec;
-  
-  // compute the real residual. 
+
+  // compute the real residual.
 
   double residual;
   LHS.Norm2(&residual);
-  
-  if (Comm.MyPID() == 0) 
+
+  if (Comm.MyPID() == 0)
   {
     cout << "||b-Ax||_2 = " << residual << endl;
   }
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_FAILURE);
 }
 #endif

@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -10,7 +10,7 @@
 // the corresponding SERIAL Epetra_CrsMatrix. Then matrix is then
 // distributed over all the available processes, to obtain a
 // DISTRIBUTED matrix that can be solved with all the available
-// processes. 
+// processes.
 //
 // The matrix must be stored in an ASCII file (specified by the first
 // argument of the command line), which contains the following lines:
@@ -65,7 +65,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -78,11 +78,11 @@ int main(int argc, char *argv[])
   int Offset;
   std::ifstream data_file;
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
   {
     // proc 0 reads the number of rows, columns, nonzero elements
     // The matrix is supposed to be square (otherwise ML doesn't work)
-    
+
     char *FileName = argv[1];
     if (FileName == 0)
     {
@@ -111,15 +111,15 @@ int main(int argc, char *argv[])
   }
   else
     NumRows = 0;
-  
+
   // creates a map with all elements on proc 0
   Epetra_Map* SerialMap = new Epetra_Map(-1,NumRows,0,Comm);
   Epetra_CrsMatrix* SerialMatrix = new Epetra_CrsMatrix(Copy,*SerialMap,0);
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
   {
     // now proc 0 read the actual matrix, element by element
-    for (int i = 0 ; i < NumElements ; ++i) 
+    for (int i = 0 ; i < NumElements ; ++i)
     {
       int row;
       int col;
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
         std::cout << ", col = " << col << ", while NumRows = " << NumRows << std::endl;
         exit(EXIT_FAILURE);
       }
-             
+
       data_file >> val;
       row -= Offset;
       col -= Offset;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 #if 0
     // The matrix can still be modified here, for example this is to
     // add or insert a diagonal value
-    for (int i = 0 ; i < NumRows ; ++i) 
+    for (int i = 0 ; i < NumRows ; ++i)
     {
       double value = 3.99476e+16;
       if (SerialMatrix->SumIntoGlobalValues(i, 1, &value, &i))
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix* DistributedMatrix = 0;
 
   // Distributes the matrix but only if necessary
-  
+
   if (Comm.NumProc() > 1)
   {
     // need to create the distributed map, this
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 
     DistributedMatrix = new Epetra_CrsMatrix(Copy, *DistributedMap,0);
 
-    // creates the import 
+    // creates the import
     Epetra_Import Importer(*DistributedMap,*SerialMap);
 
     ML_CHK_ERR(DistributedMatrix->Import(*SerialMatrix, Importer, Insert));
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
                                                 // systems.
   MLList.set("aggregation: threshold", 0.0);
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*DistributedMatrix, MLList);
 
   // =========================== end of ML part =============================
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   LHS.PutScalar(0.0);                       // zero starting solution
   LHSexact.Random();                        // random exact solution
   DistributedMatrix->Multiply(false,LHSexact,RHS);
-  
+
   Epetra_LinearProblem Problem(DistributedMatrix,&LHS,&RHS);
   AztecOO solver(Problem);
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPrec);
 
   // solve with 500 iterations and 1e-12 as tolerance on the
-  // relative residual  
+  // relative residual
   solver.Iterate(500, 1e-8);
 
   // delete the preconditioner. Do it BEFORE calling MPI_Finalize

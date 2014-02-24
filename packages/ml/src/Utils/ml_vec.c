@@ -1,10 +1,10 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
-/* Functions for manipulating DVector objects                           */ 
+/* Functions for manipulating DVector objects                           */
 /* ******************************************************************** */
 /* Author        : Charles Tong (LLNL)                                  */
 /* Date          : August, 1998                                         */
@@ -48,12 +48,12 @@ int ML_DVector_Init(ML_DVector *vec)
 /* deallocate the Vector structure                                      */
 /* -------------------------------------------------------------------- */
 
-int ML_DVector_Destroy( ML_DVector **vec ) 
+int ML_DVector_Destroy( ML_DVector **vec )
 {
    ML_DVector *vec2;
 
    vec2 = (*vec);
-   if ( vec2->ML_id != ML_ID_VEC ) 
+   if ( vec2->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_Destroy : wrong object. \n");
       exit(1);
@@ -69,9 +69,9 @@ int ML_DVector_Destroy( ML_DVector **vec )
 /* deallocate the Vector structure                                      */
 /* -------------------------------------------------------------------- */
 
-int ML_DVector_Clean( ML_DVector *vec ) 
+int ML_DVector_Clean( ML_DVector *vec )
 {
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_DestroyData : wrong object. \n");
       exit(1);
@@ -94,12 +94,12 @@ int ML_DVector_LoadData( ML_DVector *vec, int n, double *data )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_LoadData : wrong object (%d).\n",vec->ML_id);
       exit(1);
    }
-   if ( n < 0 ) 
+   if ( n < 0 )
    {
       printf("ML_DVector_LoadData : length < 0. \n");
       exit(1);
@@ -109,7 +109,7 @@ int ML_DVector_LoadData( ML_DVector *vec, int n, double *data )
    /* deallocate previous vector                            */
    /* ----------------------------------------------------- */
 
-   if ( vec->VecData != NULL && vec->SetOrLoad == 2 ) 
+   if ( vec->VecData != NULL && vec->SetOrLoad == 2 )
    {
       ML_memory_free( (void **) &(vec->VecData) );
    }
@@ -136,12 +136,12 @@ int  ML_DVector_SetData( ML_DVector *vec, int n, double *data )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_SetData : wrong object. \n");
       exit(1);
    }
-   if ( n < 0 ) 
+   if ( n < 0 )
    {
       printf("ML_DVector_SetData : length < 0. \n");
       exit(1);
@@ -170,7 +170,7 @@ int  ML_DVector_SetData( ML_DVector *vec, int n, double *data )
 
 int  ML_DVector_GetLength( ML_DVector *vec )
 {
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_GetLength : wrong object. \n");
       exit(1);
@@ -190,12 +190,12 @@ int  ML_DVector_GetData( ML_DVector *vec, int *n, double *data )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_GetData : wrong object. \n");
       exit(1);
    }
-   if ( vec->VecData == NULL ) 
+   if ( vec->VecData == NULL )
    {
       printf("ML_DVector_GetData : no data. \n");
       exit(1);
@@ -221,7 +221,7 @@ int  ML_DVector_GetDataPtr( ML_DVector *vec, double **data )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_GetDataPtr : wrong object (%d). \n", vec->ML_id);
       exit(1);
@@ -242,7 +242,7 @@ int  ML_DVector_GetDataPtr( ML_DVector *vec, double **data )
 
 int  ML_DVector_Check( ML_DVector *vec )
 {
-   if ( vec->ML_id != ML_ID_VEC ) 
+   if ( vec->ML_id != ML_ID_VEC )
       printf("ML_DVector_Check : wrong ID %ld (%d).\n",(long int) vec,vec->ML_id);
    else
       printf("ML_DVector_Check : passed (%ld) \n", (long int) vec );
@@ -262,8 +262,8 @@ int ML_DVector_Copy( ML_DVector *src, ML_DVector *dest )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-#ifdef ML_VECTOR_DEBUG 
-   if ( src->ML_id != ML_ID_VEC || dest->ML_id != ML_ID_VEC ) 
+#ifdef ML_VECTOR_DEBUG
+   if ( src->ML_id != ML_ID_VEC || dest->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_Copy : wrong object (%d). \n", src->ML_id);
       exit(1);
@@ -295,8 +295,8 @@ int ML_DVector_Scale( double alpha, ML_DVector *src )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-#ifdef ML_VECTOR_DEBUG 
-   if ( src->ML_id != ML_ID_VEC ) 
+#ifdef ML_VECTOR_DEBUG
+   if ( src->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_Scale : wrong object (%d). \n", src->ML_id);
       exit(1);
@@ -322,8 +322,8 @@ int ML_DVector_Axpy( double alpha, ML_DVector *src, ML_DVector *dest )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-#ifdef ML_VECTOR_DEBUG 
-   if ( src->ML_id != ML_ID_VEC || dest->ML_id != ML_ID_VEC ) 
+#ifdef ML_VECTOR_DEBUG
+   if ( src->ML_id != ML_ID_VEC || dest->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_Axpy : wrong object (%d). \n", src->ML_id);
       exit(1);
@@ -355,8 +355,8 @@ int ML_DVector_Aypx( double alpha, ML_DVector *src, ML_DVector *dest )
    /* error checking                                        */
    /* ----------------------------------------------------- */
 
-#ifdef ML_VECTOR_DEBUG 
-   if ( src->ML_id != ML_ID_VEC || dest->ML_id != ML_ID_VEC ) 
+#ifdef ML_VECTOR_DEBUG
+   if ( src->ML_id != ML_ID_VEC || dest->ML_id != ML_ID_VEC )
    {
       printf("ML_DVector_Aypx : wrong object (%d). \n", src->ML_id);
       exit(1);

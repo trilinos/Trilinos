@@ -52,20 +52,20 @@ int main(int argc, char *argv[]) {
   int numElePerDirection = 101;
 
   if (argc > 1) sscanf(argv[1],"%d",&numElePerDirection);
-   
+
   int numNodes = (numElePerDirection - 1)*(numElePerDirection - 1);
 
-  // Determine the number of processors to use in each coordinate 
+  // Determine the number of processors to use in each coordinate
   // direction. The general idea is to try and use about the same
   // number of processors in each direction.
 
   int numProcXDirection = (int)ceil(sqrt((double)(numProc)));
   int numProcYDirection = numProcXDirection;
   while ( numProcYDirection*numProcXDirection != numProc ) {
-     numProcXDirection--; 
-     numProcYDirection = numProc/numProcXDirection; 
+     numProcXDirection--;
+     numProcYDirection = numProc/numProcXDirection;
   }
-  int nx = numElePerDirection-1; 
+  int nx = numElePerDirection-1;
   int ny = nx;
 
   // Figure out how many local points in this processor and determine the
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   Epetra_Map Map(numNodes,  NumMyElements, &MyGlobalElements[0], 0, Comm);
 
 
-  // Define the matrix A from the discretization of Laplace equation 
+  // Define the matrix A from the discretization of Laplace equation
   // with homogeneous Dirichlet condition (using square Q1 elements)
 
   Epetra_CrsMatrix A(Copy, Map, 0);
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
   solver.SetPrecOperator(MLPrec);
 
   // solve with 500 iterations and 1e-12 as tolerance on the
-  // relative residual  
+  // relative residual
 
   solver.Iterate(500, 1e-8);
  // delete the preconditioner. Do it BEFORE calling MPI_Finalize
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 

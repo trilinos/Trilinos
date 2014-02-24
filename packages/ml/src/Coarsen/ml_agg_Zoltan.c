@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ************************************************************************* */
@@ -24,7 +24,7 @@
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
@@ -119,18 +119,18 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   /* Fix the output level */
   char str[80];
   if (ML_Get_PrintLevel() > 9) strcpy(str,"1");
-  else strcpy(str,"0");   
+  else strcpy(str,"0");
 
   if (Zoltan_Set_Param(zz, "DEBUG_LEVEL", str) == ZOLTAN_FATAL) {
     printf("fatal(0)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
   }
-  
+
   /* Set the load-balance method */
   if(zoltan_type == ML_ZOLTAN_TYPE_RCB) strcpy(str,"RCB");
-#ifdef HAVE_ML_ZOLTAN_THREE  
+#ifdef HAVE_ML_ZOLTAN_THREE
   else if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH) strcpy(str,"hypergraph");
-  else if(zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH) strcpy(str,"hypergraph");  
+  else if(zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH) strcpy(str,"hypergraph");
   else {
     printf("fatal(1) no valid zoltan type set\n");
     return 0;
@@ -139,44 +139,44 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   if(!A->comm->ML_mypid && zoltan_type != ML_ZOLTAN_TYPE_RCB) printf("ML-Zoltan: Zoltan 3.0 support not enabled, resetting method to RCB\n");
   strcpy(str,"RCB");
 #endif
-  
+
   if (Zoltan_Set_Param(zz, "LB_METHOD", str) == ZOLTAN_FATAL) {
     printf("fatal(1)  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
-  }  
+  }
 
   /* Zoltan Timers & Output */
   if(zoltan_timers == 1){
     if (Zoltan_Set_Param(zz, "USE_TIMERS", "0") == ZOLTAN_FATAL) {
       printf("fatal(1)  error returned from Zoltan_Set_Param(USE_TIMERS)\n");
       return 0;
-    }  
+    }
     if (Zoltan_Set_Param(zz, "FINAL_OUTPUT", "1") == ZOLTAN_FATAL) {
       printf("fatal(1)  error returned from Zoltan_Set_Param(FINAL_OUTPUT)\n");
       return 0;
-    }  
+    }
   }
 
 
   /* Hypergraph parameters */
 #ifdef HAVE_ML_ZOLTAN_THREE
-  if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH){    
+  if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH){
     /* Set the repartitioning flag */
     if (Zoltan_Set_Param(zz, "LB_APPROACH", "repartition") == ZOLTAN_FATAL) {
       printf("fatal(1)  error returned from Zoltan_Set_Param(LB_APPROACH)\n");
       return 0;
-    }  
+    }
   }
   else if (zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
     /* Set the fast repartitioning flag */
     if (Zoltan_Set_Param(zz, "LB_APPROACH", "fast_repartition") == ZOLTAN_FATAL) {
       printf("fatal(1)  error returned from Zoltan_Set_Param(LB_APPROACH)\n");
       return 0;
-    }  
+    }
   }
-  
+
   if(zoltan_type == ML_ZOLTAN_TYPE_HYPERGRAPH || zoltan_type == ML_ZOLTAN_TYPE_FAST_HYPERGRAPH){
-    /* Set the repartitioning multiplier (aka alpha) */    
+    /* Set the repartitioning multiplier (aka alpha) */
     sprintf(str,"%d",(int)(zoltan_estimated_its*rows_per_amalgamated_row*(smoothing_steps+1)*sizeof(double)));
     if (Zoltan_Set_Param(zz, "PHG_REPART_MULTIPLIER",str) == ZOLTAN_FATAL) {
       printf("fatal(1)  error returned from Zoltan_Set_Param(PHG_REPART_MULTIPLIER)\n");
@@ -185,7 +185,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
   }
 
 #endif
-  
+
   /*
    * Set the callback functions
    */
@@ -255,7 +255,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
                      (void *) A) == ZOLTAN_FATAL) {
       printf("fatal(10)  error returned from Zoltan_Set_Fn()\n");
       return 0;
-    }       
+    }
   }
 #endif
   return(1);
@@ -274,7 +274,7 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
   ZOLTAN_ID_PTR import_lids = NULL;  /* Local indices to objs to be imported */
   int   *import_procs = NULL;        /* Proc IDs of procs owning objs to be
                                         imported.                            */
-  int   *import_to_part = NULL;      /* Partition #s to which imported objs 
+  int   *import_to_part = NULL;      /* Partition #s to which imported objs
                                         should be assigned.                  */
   ZOLTAN_ID_PTR export_gids = NULL;  /* Global nums of objs to be exported   */
   ZOLTAN_ID_PTR export_lids = NULL;  /* local indices to objs to be exported */
@@ -296,9 +296,9 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
   Zoltan_Set_Param(zz,"num_global_partitions", value);
 
   /*
-   * Call Zoltan to compute a new decomposition. 
+   * Call Zoltan to compute a new decomposition.
    * The result is given as export and/or import lists.
-   * If you need only the export lists, perform the 
+   * If you need only the export lists, perform the
    * following call before this function:
    *   Zoltan_Set_Param(zz, "RETURN_LISTS", "EXPORT");
    *
@@ -336,7 +336,7 @@ static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
     printf("[Proc %1d] My data to export are:\n", myrank);
     for (k=0; k<num_exported; k++){
       ptr = (int *) &export_gids[num_gid_entries*k];
-      printf("[Proc %1d] Export (%d,%d) to proc %d\n", myrank, 
+      printf("[Proc %1d] Export (%d,%d) to proc %d\n", myrank,
          *ptr, *(ptr+1), export_procs[k]);
     }
 #endif
@@ -384,7 +384,7 @@ void ML_get_entries(void *data, int num_gid_entries, int num_lid_entries,
   int allocated, *bindx, row_length;
   double *val;
 
-  *ierr = ZOLTAN_OK; 
+  *ierr = ZOLTAN_OK;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -410,7 +410,7 @@ void ML_get_entries(void *data, int num_gid_entries, int num_lid_entries,
     ML_get_matrix_row(A, 1, &k, &allocated, &bindx, &val,
                         &row_length, 0);
     wgt[k] = row_length;
-    
+
   }
   ML_free(bindx);
   ML_free(val);
@@ -435,7 +435,7 @@ void ML_get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
               int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
               int num_dim, double *coor, int *ierr)
 {
-  ML_Operator* A; 
+  ML_Operator* A;
   int k;
 
   *ierr = ZOLTAN_OK;
@@ -459,9 +459,9 @@ void ML_get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#ifdef HAVE_ML_ZOLTAN_THREE  
+#ifdef HAVE_ML_ZOLTAN_THREE
 void ML_zoltan_hg_size_cs_fn(void *data, int *num_lists, int *num_pins, int *format, int *ierr){
-  ML_Operator* A; 
+  ML_Operator* A;
   *ierr = ZOLTAN_OK;
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -490,16 +490,16 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
     *ierr = ZOLTAN_FATAL;
     return;
   }
-  
+
   A = (ML_Operator*) data;
-  N= A->getrow->Nrows; 
+  N= A->getrow->Nrows;
 
   /* Use getrow to pull all the data over */
-  values =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
-  pin_ids =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
+  values =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));
+  pin_ids =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));
 
   for(i=0;i<N;i++) {
-    vtxedge_GID[i] = (ZOLTAN_ID_TYPE) (i + MLZ_offset);   
+    vtxedge_GID[i] = (ZOLTAN_ID_TYPE) (i + MLZ_offset);
     vtxedge_ptr[i]=rowtotal;
     rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,pin_ids,values,&rowlength);
     if(rv==0) {printf("ML: Out of space in getrow i=%d/%d",i,N);fflush(stdout);*ierr=ZOLTAN_FATAL;}
@@ -509,10 +509,10 @@ void ML_zoltan_hg_cs_fn(void *data, int num_gid_entries, int num_vtx_edge, int n
   }
   /* Note: vtxedge_ptr does not have the extra "N+1" element that regular CSR
      matrices have. */
-  
+
   /* Reindex to global IDs */
-  for(i=0;i<num_pins;i++) pin_GID[i]=MLZ_indices[pin_GID[i]];    
-  
+  for(i=0;i<num_pins;i++) pin_GID[i]=MLZ_indices[pin_GID[i]];
+
   ML_free(values);
   ML_free(pin_ids);
 }
@@ -530,25 +530,25 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
   double *values;
   int i,N,maxnz,rowlength,rv;
   struct ML_CSR_MSRdata *input_matrix;
-  
+
   *ierr = ZOLTAN_OK;
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return;
   }
-  
+
   A = (ML_Operator*) data;
-  N= A->getrow->Nrows; 
+  N= A->getrow->Nrows;
   /* Get the row lengths --- use special purpose code for MSR matrices,
      just call the getrow routine for everything else */
   /*  if(A->getrow->func_ptr==MSR_getrows){
       input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(A);
-      for(i=0;i<N;i++) 
+      for(i=0;i<N;i++)
       sizes[i] = (input_matrix->columns[i+1] - input_matrix->columns[i] + 1)* (sizeof(double)+sizeof(int));
       }
       else{*/
-    indices =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));  
-    values  =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));  
+    indices =(int*) ML_allocate(A->max_nz_per_row*sizeof(int));
+    values  =(double*) ML_allocate(A->max_nz_per_row*sizeof(double));
     for(i=0;i<N;i++) {
       rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
       if(rv==0) {printf("ML: Out of space in getrow i=%d/%d",i,N);fflush(stdout);*ierr=ZOLTAN_FATAL;}
@@ -581,14 +581,14 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
  \param N_nonzeros () -
 
  \param current_level (In) -
- 
+
 */
 /* ------------------------------------------------------------------------ */
 
 int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 				  int N_parts,
 				  int graph_decomposition[],
-				  double bdry_nodes[], double old_x[], 
+				  double bdry_nodes[], double old_x[],
 				  double old_y[], double old_z[],
 				  int current_level,
                                   int zoltan_type, int zoltan_estimated_its,
@@ -604,31 +604,31 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   float version;
   int error;
   MPI_Comm Zoltan_SubComm = comm->USR_comm;
-  int color = MPI_UNDEFINED; 
+  int color = MPI_UNDEFINED;
 
   /* ------------------- execution begins --------------------------------- */
 
   t0 = GetClock();
-  
+
   Nrows = Amatrix->getrow->Nrows;
-  
+
   /* ********************************************************************** */
   /* some general variables                                                 */
   /* ********************************************************************** */
-  
+
   if (old_z)
     MLZ_dim = 3;
   else if (old_y)
     MLZ_dim = 2;
-  else if (old_x) 
+  else if (old_x)
     MLZ_dim = 1;
-  else 
+  else
     MLZ_dim = 0;
 
   MLZ_dim = ML_Comm_GmaxInt(Amatrix->comm, MLZ_dim);
 
   if (MLZ_dim == 0) {
-    if (Amatrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0) 
+    if (Amatrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0)
       printf("ML*WRN* ML_DecomposeGraph_with_Zoltan: No coordinates given.\nML*WRN* Giving up on repartitioning.\n");
     return(-1);
   }
@@ -668,11 +668,11 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 
   /* Define Subcommunicator */
   if (Nrows > 0) color = 0;
-  MPI_Comm_split(comm->USR_comm,color,comm->ML_mypid,&Zoltan_SubComm);  
+  MPI_Comm_split(comm->USR_comm,color,comm->ML_mypid,&Zoltan_SubComm);
 
   if (Nrows > 0){
     /* BEGIN OF ZOLTAN CALL */
-    
+
     /*  Initialize Zoltan. It will start MPI if we haven't already. */
     /*  Do this only once. */
 
@@ -686,7 +686,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
     /*
      *  Create a Zoltan structure.
      */
-    if ((zz = Zoltan_Create(Zoltan_SubComm)) == NULL) {    
+    if ((zz = Zoltan_Create(Zoltan_SubComm)) == NULL) {
       printf("fatal(11)  NULL returned from Zoltan_Create()\n");
       goto End;
     }
@@ -699,56 +699,56 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
     Zoltan_Set_Param(zz, "num_gid_entries", "1");
     Zoltan_Set_Param(zz, "num_lid_entries", "0");
     Zoltan_Set_Param(zz, "obj_weight_dim", "1");
-    
+
     /*
      *  Set up Zoltan query functions for our Matrix data structure.
      */
-    
+
     if (!setup_zoltan(zz, Amatrix,zoltan_type, zoltan_estimated_its,zoltan_timers,
 		      smoothing_steps, rows_per_amalgamated_row)){
       printf("fatal(12) Error returned from setup_zoltan\n");
       goto End;
     }
-  
+
     /*
      * Run Zoltan to compute a new load balance.
      * Data migration may also happen here.
      */
     /* Uncomment the next line to produce debugging information.*/
-    
+
     /*Zoltan_Generate_Files(zz, "ZoltanDebugging", 1, 1, 0, 0);*/
     if (!run_zoltan(N_parts, zz, Amatrix, Nrows, graph_decomposition,
 		    comm->ML_mypid)) {
       printf("fatal(13) Error returned from run_zoltan\n");
       goto End;
     }
-    
-    
+
+
   End:
     /* Destroy Zoltan structure */
     Zoltan_Destroy(&zz);
-    
+
     /* END OF ZOLTAN CALL */
     /* ------------------- that's all folks --------------------------------- */
-    
+
   }
-  
+
   t0 = GetClock() - t0;
 
   if ( mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
-   
+
     printf("Zoltan (level %d) : time required = %e\n",
 	   current_level,
 	   t0 );
   }
 
-  
+
   /* Cleanup */
   free(MLZ_indices);
 
   if(Nrows > 0)
     MPI_Comm_free(&Zoltan_SubComm);
-  
+
   /* returns the *global* number of partitions */
   return(N_parts);
 #else
@@ -764,17 +764,17 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 
   return(1);
 #endif
-  
+
 } /* ML_DecomposeGraph_with_Zoltan */
 
 /* ======================================================================== */
 /*!
- \brief create non-smoothed aggregates using Zoltan. 
+ \brief create non-smoothed aggregates using Zoltan.
 
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
+int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 			       ML_Operator **Pmatrix, ML_Comm *comm)
 {
 
@@ -801,7 +801,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
    ML_Aggregate_Viz_Stats *grid_info;
-   
+
 #if defined(OUTPUT_AGGREGATES) || defined(DDEBUG) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
    FILE *fp;
    char fname[80];
@@ -827,15 +827,15 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double* old_x = NULL;
    double* old_y = NULL;
    double* old_z = NULL;
-   
+
    /* ------------------- execution begins --------------------------------- */
 
    sprintf( str, "Zoltan (level %d) :", ml_ag->cur_level );
-   
+
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
-   
+
    mypid                   = comm->ML_mypid;
    Nprocs                  = comm->ML_nprocs;
    epsilon                 = ml_ag->threshold;
@@ -855,11 +855,11 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #else
    Nrows_global = Nrows;
 #endif
-   
+
    /* ============================================================= */
    /* check the system size versus null dimension size              */
    /* ============================================================= */
-     
+
    if ( Nrows % num_PDE_eqns != 0 )
    {
       printf("*ML*ERR* : Nrows must be multiples of num_PDE_eqns.\n");
@@ -869,7 +869,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
 
    Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
-   
+
    /* ============================================================= */
    /* set up the threshold for weight-based coarsening              */
    /* ============================================================= */
@@ -890,7 +890,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 		 "WARNING: Now proceeding -- with fingers crossed\n" );
       }
    }
-   
+
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
    Nrows_global /= num_PDE_eqns;
@@ -929,17 +929,17 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if( rowi_col != NULL ) ML_free(rowi_col );
    if( rowi_val != NULL ) ML_free(rowi_val );
-   
+
    i = ML_Comm_GsumInt(comm, N_bdry_nodes);
-   
+
    if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
      printf("%s # bdry (block) nodes = %d, # (block) nodes = %d\n",
 	    str,
 	    i, Nrows_global);
    }
-   
+
    /* communicate the boundary information */
-   
+
    ML_exchange_bdry(starting_amalg_bdry,Amatrix->getrow->pre_comm,
 		    Nrows,comm, ML_OVERWRITE,NULL);
 
@@ -955,9 +955,9 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if ( nbytes > 0 ) starting_decomposition = (int *)ML_allocate(nbytes);
    else              starting_decomposition = NULL;
-   
+
    if( starting_decomposition == NULL && nbytes > 0 ) {
-     
+
      fprintf( stderr,
 	      "*ML*ERR* not enough memory to allocated %d bytes\n"
 	      "*ML*ERR* (file %s, line %d)\n",
@@ -970,23 +970,23 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ********************************************************************** */
    /* Retrive the user's defined data. If not set, pick up default settings  */
    /* ********************************************************************** */
-     
+
    aggr_options = (ML_Aggregate_Options *) ml_ag->aggr_options;
-   
+
    if( aggr_options == NULL ) {
 
      if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
        printf("%s Using default values\n",
 	      str );
      }
-    
+
      optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
      starting_aggr_count = (int)1.0*Nrows_global/optimal_value;
      if( starting_aggr_count < 1 ) starting_aggr_count = 1;
      /* 'sto xxxcio e` un po` piu` difficile, non ne ho idea, piglio
 	a caso... */
      desired_aggre_per_proc = ML_max( 128, Nrows );
-       
+
    } else {
 
      /* ******************************************************************** */
@@ -1013,9 +1013,9 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        starting_aggr_count = i;
 #endif
        break;
-       
+
      case ML_NUM_GLOBAL_AGGREGATES:
-       
+
        starting_aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
        if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Requested %d global aggregates\n",
@@ -1024,7 +1024,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        }
 
        break;
-       
+
      case ML_NUM_NODES_PER_AGGREGATE:
 
        starting_aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
@@ -1034,14 +1034,14 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 		 str,
 		 starting_aggr_count );
        }
-       
+
        if( starting_aggr_count >= Nrows_global) {
 
 	 i = starting_aggr_count;
 
 	 starting_aggr_count = Nrows/OPTIMAL_VALUE;
 	 if( starting_aggr_count == 0) starting_aggr_count = 1;
-	 
+
 	 if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
 		    "%s WARNING : # nodes per aggregate (%d) > # nodes (%d)\n"
@@ -1059,9 +1059,9 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 if( starting_aggr_count == 0 ) starting_aggr_count = 1;
 
        }
-       
+
        break;
-       
+
      } /* switch */
 
      /* reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag; */
@@ -1070,7 +1070,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
      if( desired_aggre_per_proc <= 0 )
        desired_aggre_per_proc = OPTIMAL_LOCAL_COARSE_SIZE;
-     
+
    } /* if( aggr_options == NULL )*/
 
    if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
@@ -1081,8 +1081,8 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf("%s Objective : %d aggregates on each process\n",
 	    str,
 	    desired_aggre_per_proc );
-   } 
-   
+   }
+
    grid_info = (ML_Aggregate_Viz_Stats *) Amatrix->to->Grid->Grid;
    N_dimensions = grid_info->Ndim;
    old_x = grid_info->x;
@@ -1142,7 +1142,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				   grid_info->zoltan_timers,
                                    grid_info->smoothing_steps,
                                    nullspace_dim);
-   
+
    /* From now on the code should not change because of Zoltan
     * until the next Zoltan comment (marked with `RAY')... */
 
@@ -1154,12 +1154,12 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	      __LINE__ );
      exit( EXIT_FAILURE );
    }
-   
-   if( mypid == 0 && 7 < ML_Get_PrintLevel() ) 
+
+   if( mypid == 0 && 7 < ML_Get_PrintLevel() )
      printf("%s Using %d aggregates (globally)\n",
 	    str,
 	    starting_aggr_count );
-   
+
    if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
      printf("%s # aggre/ # (block) rows = %7.3f %%  (= %d/%d)\n",
 	    str,
@@ -1167,18 +1167,18 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    starting_aggr_count,
 	    Nrows_global);
    }
-   
+
    /* ********************************************************************** */
    /* compute operator complexity                                            */
    /* ********************************************************************** */
-   
+
    Nnonzeros2 = ML_Comm_GsumDouble( comm, Nnonzeros2);
 
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
      printf("%s Total (block) nnz = %g ( = %5.2f/(block)row)\n",
 	    str,
 	    Nnonzeros2,1.0*Nnonzeros2/Nrows_global);
-   
+
    if ( ml_ag->operator_complexity == 0.0 ) {
       ml_ag->fine_complexity = Nnonzeros2;
       ml_ag->operator_complexity = Nnonzeros2;
@@ -1186,15 +1186,15 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    else ml_ag->operator_complexity += Nnonzeros2;
 
    /* FIXME: erase meeeeeeeee
-      fix aggr_index for num_PDE_eqns > 1 
-   
+      fix aggr_index for num_PDE_eqns > 1
+
    for (i = Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
    }
    */
-   
+
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
    /* who will be able to analyze and visualize this after the construction  */
@@ -1204,7 +1204,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* I set the pointers using the ML_Aggregate_Info structure. This is      */
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
-   
+
    if( Amatrix->to->Grid->Grid != NULL ) {
 
      graph_decomposition = (int *) ML_allocate(sizeof(int)*Nrows );
@@ -1229,7 +1229,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      aggr_viz_and_stats->Naggregates = starting_aggr_count;
      aggr_viz_and_stats->local_or_global = ML_GLOBAL_INDICES;
      aggr_viz_and_stats->is_filled = ML_YES;
-     
+
    }
 
    /* ********************************************************************** */
@@ -1257,15 +1257,15 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	      __LINE__ );
      exit( EXIT_FAILURE );
    }
-   
+
    ML_DecomposeGraph_BuildOffsets( Nrows, starting_offset, Nprocs,
 				   Amatrix->comm->USR_comm);
-   
+
    /* ********************************************************************** */
    /* Compute how many nodes are contained in each aggregate. This will be   */
    /* done for all the aggregates (so some communications will occur).       */
    /* ********************************************************************** */
-   
+
    ML_CountNodesPerAggre( Nrows, starting_decomposition,
 			  starting_aggr_count, nodes_per_aggre,
 			  Amatrix->comm->USR_comm );
@@ -1286,7 +1286,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 					reordered_offset, mypid );
 
    new_Nrows = reordered_offset[mypid+1] - reordered_offset[mypid];
-   
+
    i = 0;
    if( new_Nrows > 0 ) i++;
 
@@ -1300,8 +1300,8 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf( "%s Processes with at least 1 row at next level = %d\n",
 	     str,
 	     j );
-   } 
-   
+   }
+
    reordered_decomposition = (int *) ML_allocate( sizeof(int) * (Nrows+1) );
    if( reordered_decomposition == NULL ) {
      fprintf( stderr,
@@ -1317,7 +1317,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  reordered_decomposition, Nrows,
 				  starting_aggr_count, nodes_per_aggre,
 				  Amatrix->comm->USR_comm );
-   
+
    /* ********************************************************************** */
    /* Finally, built the operator QQ, moving from the reorderd decomposition */
    /* to the starting one. So, QQ will be applied to vectors (or matrices)   */
@@ -1346,12 +1346,12 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 exit( EXIT_FAILURE );
        }
      }
-       
+
      i = 1;
    }
 
    reordered_amalg_bdry = (double *) ML_allocate(sizeof(double)*(new_Nrows+1));
-   
+
 #ifdef ML_WITH_EPETRA
    if( nullspace_dim != num_PDE_eqns ) {
      printf("---------> Never tested with nullspace_dim != num_PDE_eqns\n"
@@ -1364,7 +1364,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 		  Amatrix->comm->USR_comm,
 		  comm );
 #else
-   if( mypid == 0 ) 
+   if( mypid == 0 )
      fprintf( stderr,
 	      "*ML*ERR* Sorry, you cannot redistribute matrices within the Zoltan\n"
 	      "*ML*ERR* aggregation without epetra. Please recompile using epetra...\n" );
@@ -1398,7 +1398,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ********************************************************************** */
 
    nbytes = sizeof(int) * new_Nrows * num_PDE_eqns;
-   
+
    if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
    else              aggr_index = NULL;
 
@@ -1431,7 +1431,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        exit( EXIT_FAILURE );
      }
    }
-   
+
    if (nodes_per_aggre != NULL) {
      ML_free( nodes_per_aggre );
      nodes_per_aggre = NULL;
@@ -1454,24 +1454,24 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
 
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
-   
+
    new_Nrows  *= num_PDE_eqns;
    Nrows_global  *= num_PDE_eqns;
 
    /* count the size of each aggregate. Now all aggregates are local */
-   
+
    aggr_cnt_array = (int *) ML_allocate(sizeof(int)*aggr_count);
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
-   for (i = 0; i < new_Nrows; i++) 
-      if (aggr_index[i] >= 0) 
+   for (i = 0; i < new_Nrows; i++)
+      if (aggr_index[i] >= 0)
          aggr_cnt_array[aggr_index[i]]++;
 
    /* ============================================================= */
    /* Form tentative prolongator                                    */
    /* ============================================================= */
-   
+
    Ncoarse = aggr_count;
-   
+
    /* ============================================================= */
    /* check and copy aggr_index                                     */
    /* ------------------------------------------------------------- */
@@ -1480,11 +1480,11 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = new_Nrows * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
    count = aggr_count;
-   for ( i = 0; i < new_Nrows; i+=num_PDE_eqns ) 
+   for ( i = 0; i < new_Nrows; i+=num_PDE_eqns )
    {
       if ( aggr_index[i] >= 0 )
       {
-         for ( j = 0; j < num_PDE_eqns; j++ ) 
+         for ( j = 0; j < num_PDE_eqns; j++ )
             ml_ag->aggr_info[level][i+j] = aggr_index[i];
          if (aggr_index[i] >= count) count = aggr_index[i] + 1;
       }
@@ -1501,39 +1501,39 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* set up the new operator                                       */
    /* ------------------------------------------------------------- */
 
-   for ( i = 0; i < new_Nrows; i++ ) 
+   for ( i = 0; i < new_Nrows; i++ )
    {
-      if ( aggr_index[i] >= Ncoarse ) 
+      if ( aggr_index[i] >= Ncoarse )
       {
          printf("*ML*WRN* index out of bound %d = %d (%d)\n"
 		"*ML*WRN* (file %s, line %d)\n",
-		i, aggr_index[i], 
+		i, aggr_index[i],
                 Ncoarse,
 		__FILE__,
 		__LINE__ );
       }
    }
-   nbytes = ( new_Nrows + 1 ) * sizeof(int); 
+   nbytes = ( new_Nrows + 1 ) * sizeof(int);
    ML_memory_alloc((void**)&(new_ia), nbytes, "AIA");
-   nbytes = new_Nrows * nullspace_dim * sizeof(int); 
+   nbytes = new_Nrows * nullspace_dim * sizeof(int);
    ML_memory_alloc((void**)&(new_ja), nbytes, "AJA");
-   nbytes = new_Nrows * nullspace_dim * sizeof(double); 
+   nbytes = new_Nrows * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
 
    /* ------------------------------------------------------------- */
    /* set up the space for storing the new null space               */
    /* ------------------------------------------------------------- */
-   
+
    nbytes = Ncoarse * nullspace_dim * nullspace_dim * sizeof(double);
    if( nbytes != 0 ) {
      ML_memory_alloc((void**)&(new_null),nbytes,"AGr");
-     for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
+     for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
        new_null[i] = 0.0;
    } else {
      new_null = NULL;
    }
-   
+
    /* ------------------------------------------------------------- */
    /* initialize the row pointer for the CSR prolongation operator  */
    /* (each row will have at most nullspace_dim nonzero entries)    */
@@ -1556,23 +1556,23 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ------------------------------------------------------------- */
 
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLs");
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       rows_in_aggs[i] = (int *) ML_allocate(aggr_cnt_array[i]*sizeof(int));
       aggr_cnt_array[i] = 0;
-      if (rows_in_aggs[i] == NULL) 
+      if (rows_in_aggs[i] == NULL)
       {
          printf("*ML*ERR* couldn't allocate memory in CoarsenZoltan\n");
          exit(1);
       }
    }
-   for (i = 0; i < new_Nrows; i+=num_PDE_eqns) 
+   for (i = 0; i < new_Nrows; i+=num_PDE_eqns)
    {
       if ( aggr_index[i] >= 0 && aggr_index[i] < aggr_count)
       {
          for (j = 0; j < num_PDE_eqns; j++)
          {
-            index = aggr_cnt_array[aggr_index[i]]++; 
+            index = aggr_cnt_array[aggr_index[i]]++;
             rows_in_aggs[aggr_index[i]][index] = i + j;
          }
       }
@@ -1586,7 +1586,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ------------------------------------------------------------- */
 
    max_agg_size = 0;
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
    }
@@ -1596,17 +1596,17 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = nullspace_dim * sizeof(double);
    if( nbytes > 0 ) ML_memory_alloc((void**)&tmp_vect, nbytes, "AGv");
    else             tmp_vect = NULL;
-   
+
    lwork  = nullspace_dim;
    nbytes = nullspace_dim * sizeof(double);
    if( nbytes > 0 ) ML_memory_alloc((void**)&work, nbytes, "AGw");
    else             work = NULL;
-  
+
    /* ------------------------------------------------------------- */
    /* perform block QR decomposition                                */
    /* ------------------------------------------------------------- */
-     
-   for (i = 0; i < aggr_count; i++) 
+
+   for (i = 0; i < aggr_count; i++)
    {
       /* ---------------------------------------------------------- */
       /* set up the matrix we want to decompose into Q and R:       */
@@ -1614,7 +1614,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       length = aggr_cnt_array[i];
 
-      if (new_nullspace_vect == NULL) 
+      if (new_nullspace_vect == NULL)
       {
          for (j = 0; j < (int) length; j++)
          {
@@ -1630,16 +1630,16 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             }
          }
       }
-      else 
+      else
       {
-	
-	for (k = 0; k < nullspace_dim; k++) 
+
+	for (k = 0; k < nullspace_dim; k++)
          {
-	   
+
             for (j = 0; j < (int) length; j++)
             {
                index = rows_in_aggs[i][j];
-	       
+
                if ( reordered_amalg_bdry[index/num_PDE_eqns] == 1.0) qr_tmp[k*length+j] = 0.;
                else {
                   if (index < new_Nrows) {
@@ -1663,21 +1663,21 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       /* ---------------------------------------------------------- */
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
 			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0)
 	  pr_error("ErrOr in CoarsenZoltan : "
 		   "dgeqrf returned a non-zero %d %d\n",
 		   aggr_cnt_array[i],i);
 
-	if (work[0] > lwork) 
+	if (work[0] > lwork)
 	  {
-	    lwork=(int) work[0]; 
+	    lwork=(int) work[0];
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
 	  }
 	else lwork=(int) work[0];
-		 
+
 	/* ---------------------------------------------------------- */
 	/* the upper triangle of qr_tmp is now R, so copy that into   */
 	/* the new nullspace                                          */
@@ -1685,9 +1685,9 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 	for (j = 0; j < nullspace_dim; j++)
 	  for (k = j; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
 	      qr_tmp[j+aggr_cnt_array[i]*k];
-		 
+
 	/* ---------------------------------------------------------- */
 	/* to get this block of P, need to run qr_tmp through another */
 	/* LAPACK function:                                           */
@@ -1709,9 +1709,9 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	  pr_error("Error in CoarsenZoltan: dorgqr returned a non-zero\n");
 	}
 
-	if (work[0] > lwork) 
+	if (work[0] > lwork)
 	  {
-	    lwork=(int) work[0]; 
+	    lwork=(int) work[0];
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
 	  }
@@ -1733,13 +1733,13 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    if ( index < new_Nrows )
 	      {
 		index3 = new_ia[index];
-		for (k = 0; k < nullspace_dim; k++) 
+		for (k = 0; k < nullspace_dim; k++)
 		  {
 		    new_ja [index3+k] = i * nullspace_dim + k;
 		    new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
 		  }
 	      }
-	    else 
+	    else
 	      {
 		fprintf( stderr,
 			 "*ML*ERR* error in QR factorization within Zoltan\n" );
@@ -1754,7 +1754,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	/* prolongator????                                                  */
 	for (j = 0; j < nullspace_dim; j++)
 	  for (k = 0; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
 	      qr_tmp[j+aggr_cnt_array[i]*k];
 	for (j = 0; j < aggr_cnt_array[i]; j++) {
 	  index = rows_in_aggs[i][j];
@@ -1768,14 +1768,14 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       }
 
    } /* for( i over aggregates ) */
-   
-   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
+
+   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim,
                               new_null, Ncoarse*nullspace_dim);
    if( new_null != NULL ) {
      ML_memory_free( (void **) &new_null);
      new_null = NULL;
    }
-   
+
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
    /* ------------------------------------------------------------- */
@@ -1786,21 +1786,21 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    csr_data->values  = new_val;
 
    Pstart = ML_Operator_Create( Amatrix->comm );
-			       
-   ML_Operator_Set_ApplyFuncData( Pstart, nullspace_dim*Ncoarse, new_Nrows, 
+
+   ML_Operator_Set_ApplyFuncData( Pstart, nullspace_dim*Ncoarse, new_Nrows,
                                   csr_data, new_Nrows, NULL, 0);
    Pstart->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
 
    Pstart->getrow->pre_comm = ML_CommInfoOP_Create();
-   
+
    ML_Operator_Set_Getrow((Pstart), new_Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc(Pstart, CSR_matvec);
    Pstart->max_nz_per_row = 1;
 
    Pmatrix2 = ML_Operator_Create( Amatrix->comm );
-   
+
    ML_2matmult(QQ, Pstart, Pmatrix2, ML_CSR_MATRIX );
-   
+
 
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
    ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->BCs);
@@ -1810,7 +1810,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    else                   ML_Operator_Set_Label(Pmatrix2,"unknown");
 /* this must be set so that the hierarchy generation does not abort early
    in adaptive SA */
-   Pmatrix2->num_PDEs = nullspace_dim;   
+   Pmatrix2->num_PDEs = nullspace_dim;
 
 
    ML_Operator_Clean( *Pmatrix );
@@ -1818,7 +1818,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    memcpy((void *) *Pmatrix, (void *)Pmatrix2, sizeof(ML_Operator));
    /* FIXME : am I ok  ????? */
    ML_free(Pmatrix2);
-      
+
    /* ********************************************************************** */
    /* I have to destroy the tentative local matrix, and the redistribution   */
    /* matrix QQ. This is actually an ML_Operator on the top of an Epetra     */
@@ -1826,13 +1826,13 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* memory interally used by Epetra.                                       */
    /* ********************************************************************** */
 
-   ML_Operator_Destroy( &Pstart ); 
+   ML_Operator_Destroy( &Pstart );
    ML_Operator_Destroy( &QQ );
 
 #ifdef ML_WITH_EPETRA
    ML_DestroyQ( );
 #endif
-   
+
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
@@ -1855,7 +1855,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
 
    aggr_curr = aggr_head;
-   while ( aggr_curr != NULL ) 
+   while ( aggr_curr != NULL )
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;

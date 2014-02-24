@@ -1,6 +1,6 @@
 /********************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */   
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /********************************************************************* */
@@ -19,7 +19,7 @@ extern "C" {
 
   /* function ML_Aggregate_VizAndStats_Setup and ML_Aggregate_VizAndStats_Clean
      are declared in ml_aggregate.h */
-     
+
   extern void ML_Aggregate_ComputeRadius( ML_Aggregate_Viz_Stats finer_level,
  					  ML_Aggregate_Viz_Stats coarser_level,
 					  double R[] );
@@ -66,7 +66,7 @@ extern "C" {
   extern int ML_Aggregate_Stats_CopyCoordinates( ML *ml, ML_Aggregate *ag,
 						   double *x, double *y, double *z);
   extern int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag);
-  extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice, 
+  extern int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 			      double *, char * base_filename, int level);
   extern int ML_Aggregate_Viz_Amalgamate( ML *ml, ML_Aggregate *ag);
   extern int ML_Aggregate_Viz_UnAmalgamate( ML *ml, ML_Aggregate *ag);

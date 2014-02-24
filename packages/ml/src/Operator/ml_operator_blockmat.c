@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_operator_blockmat.h"
 /*****************************************************************/
@@ -10,7 +10,7 @@
 /*                    |   M    Ke  |  | y |   =   | c |          */
 /* to solve the problem                                          */
 /*                    (Ke + i M ) (x + i y) = b + i c            */
-/* where Ke and M are ML Operators.                               */ 
+/* where Ke and M are ML Operators.                               */
 /*****************************************************************/
 
 int ML_Operator_blockmat_matvec(ML_Operator *data, int inlen, double invec[],
@@ -39,7 +39,7 @@ int ML_Operator_blockmat_matvec(ML_Operator *data, int inlen, double invec[],
   /***********/
   /* multiply by (2,2) block (stiffness)*/
   ML_Operator_blockmat_data->Ke_matvec((ML_Operator *) ML_Operator_blockmat_data->Ke_matvec_data, inlen/2,
-				     &(invec[inlen/2]), outlen/2, 
+				     &(invec[inlen/2]), outlen/2,
 				     &(outvec[outlen/2]));
   /* multiply by (2,1) block (mass)*/
   if (ML_Operator_blockmat_data->M_matvec != NULL) {
@@ -149,7 +149,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
   {
     /* (1,1) block */
     status = ML_Operator_blockmat_data->Ke_getrow((ML_Operator *) ML_Operator_blockmat_data->Ke_getrow_data,
-				      N_requested, requested_rows, allocated, 
+				      N_requested, requested_rows, allocated,
 				      columns, values, row_lengths);
 
     if (status == 0) return(status);
@@ -167,7 +167,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
       /* (1,2) block */
       status = ML_Operator_blockmat_data->M_getrow((ML_Operator *) ML_Operator_blockmat_data->M_getrow_data,
 				      N_requested, requested_rows, allocated -
-				      row_lengths[0], 
+				      row_lengths[0],
 				      workcol, workval, work_lengths);
 
       if (status == 0) return(status);
@@ -188,9 +188,9 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
 
     /* (2,1) block */
     if (ML_Operator_blockmat_data->M_getrow != NULL) {
-      status = ML_Operator_blockmat_data->M_getrow((ML_Operator *) 
+      status = ML_Operator_blockmat_data->M_getrow((ML_Operator *)
 		                      ML_Operator_blockmat_data->M_getrow_data,
-				      N_requested, &newrow, allocated, 
+				      N_requested, &newrow, allocated,
 				      columns, values, row_lengths);
 
       if (status == 0) return(status);
@@ -206,7 +206,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
     /* (2,2) block */
     status = ML_Operator_blockmat_data->Ke_getrow((ML_Operator *) ML_Operator_blockmat_data->Ke_getrow_data,
 					N_requested, &newrow, allocated-
-					row_lengths[0], 
+					row_lengths[0],
 					workcol, workval, work_lengths);
 
     if (status == 0) return(status);
@@ -229,7 +229,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
     columns[i + row_lengths[0]] = workcol[i];
     values[i + row_lengths[0]] = workval[i];
   }
-  row_lengths[0] += work_lengths[0]; 
+  row_lengths[0] += work_lengths[0];
 
   return(1);
 }
@@ -293,9 +293,9 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
   if (M != NULL) {
     ML_Operator_blockmat_data->M_matvec = M->matvec->func_ptr;
     ML_Operator_blockmat_data->M_matvec_data = M;
-  } 
-  ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*Ke->invec_leng, 
-				scale_fact*Ke->outvec_leng, 
+  }
+  ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*Ke->invec_leng,
+				scale_fact*Ke->outvec_leng,
 				ML_Operator_blockmat_data,
 				scale_fact*Ke->outvec_leng,
 				ML_Operator_blockmat_matvec,0);
@@ -319,12 +319,12 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   if (Ke->getrow->pre_comm != NULL) {
     ML_Operator_blockmat_data->Ke_comm_data = Ke->getrow->pre_comm;
-    ML_CommInfoOP_Generate( &(blockmat->getrow->pre_comm), 
-			    ML_Operator_blockmat_comm, blockmat, 
+    ML_CommInfoOP_Generate( &(blockmat->getrow->pre_comm),
+			    ML_Operator_blockmat_comm, blockmat,
 			    Ke->comm, 2*Ke->invec_leng, 2*Nghost);
 
   }
-  else blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
+  else blockmat->getrow->pre_comm = ML_CommInfoOP_Create();
 
   blockmat->data_destroy = ML_Operator_blockmatdata_Destroy;
 

@@ -14,7 +14,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 namespace Teuchos {
@@ -28,7 +28,7 @@ class MultiVector;
 
 //! Builds the tentative prolongator using aggregation.
 void GetPtent(const Operator& A, Teuchos::ParameterList& List,
-              const MultiVector& ThisNS, 
+              const MultiVector& ThisNS,
               Operator& Ptent, MultiVector& NextNS);
 
 //! Builds the tentative prolongator with default null space.
@@ -36,9 +36,9 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List, Operator& Ptent);
 
 /*!
 \brief Builds the tentative prolongator using aggregation.
-       
+
 Build Ptent and NextNS as usual but as Epetra objects.
-  
+
 \param A (in): Matrix to be aggregated on
 \param List (in): ParameterList containing ML options
 \param thisns (in): nullspace in format ML accepts
@@ -52,14 +52,14 @@ Build Ptent and NextNS as usual but as Epetra objects.
 \author Michael Gee (gee@lnm.mw.tum.de)
 */
 void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
-              double* thisns, Teuchos::RCP<Epetra_CrsMatrix>& Ptent, 
+              double* thisns, Teuchos::RCP<Epetra_CrsMatrix>& Ptent,
               Teuchos::RCP<Epetra_MultiVector>& NextNS, const int domainoffset = 0);
 
 /*!
 \brief Builds the tentative prolongator using aggregation.
-       
+
 Build Ptent and NextNS as usual but as Epetra objects.
-  
+
 \param A (in): Matrix to be aggregated on
 \param List (in): ParameterList containing ML options
 \param thisns (in): nullspace in format ML accepts
@@ -72,20 +72,20 @@ Build Ptent and NextNS as usual but as Epetra objects.
 \author Michael Gee (gee@lnm.mw.tum.de)
 */
 void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
-              double* thisns, Teuchos::RCP<Epetra_CrsMatrix>& Ptent, 
+              double* thisns, Teuchos::RCP<Epetra_CrsMatrix>& Ptent,
               const int domainoffset = 0);
 
 /*!
 \brief Call ML aggregation on A according to parameters supplied in List. Return
        aggregates in aggrinfo
-       
+
        On input, map of aggrinfo has to map row map of A. On output, aggrinfo[i]
        contains number of aggregate the row belongs to, where aggregates are
-       numbered starting from 0. 
+       numbered starting from 0.
        Return value is the processor-local number of aggregates build.
        If aggrinfo[i] >= return-value, then i is a processor local row
        of a row that ML has detected to be on a Dirichlet BC.
-       
+
 \param A (in): Matrix to be aggregated on
 \param List (in): ParameterList containing ML options
 \param thisns (in): nullspace
@@ -103,16 +103,16 @@ int GetAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
 /*!
 \brief Call ML aggregation on A according to parameters supplied in List. Return
        aggregates in aggrinfo
-       
+
        On input, map of aggrinfo has to map row map of A. On output, aggrinfo[i]
        contains number of global aggregate the row belongs to, where aggregates are
-       numbered starting from 0 globally. 
+       numbered starting from 0 globally.
        Return value is the processor-local number of aggregates build.
        If aggrinfo[i] < 0, then i is a processor local row
        that ML has detected to be on a Dirichlet BC.
        if aggrinfo[i] >= 0, then i is a processor local row and aggrinfo[i] is
        a global aggregate id.
-       
+
 \param A (in): Matrix to be aggregated on
 \param List (in): ParameterList containing ML options
 \param thisns (in): nullspace

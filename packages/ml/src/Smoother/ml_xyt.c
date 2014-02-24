@@ -1,12 +1,12 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_operator.h"
 #include "ml_xyt.h"
 #include "ml_utils.h"
 #include "ml_memory.h"
- 
+
 void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
         ML_Operator **matvec_data) {
@@ -185,12 +185,12 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    for (i = 0; i < getrow_comm->N_neighbors; i++)
       neighbors[i] = getrow_comm->neighbors[i].ML_id;
 
-   ML_CommInfoOP_Set_neighbors( &(omatrix->getrow->pre_comm), 
+   ML_CommInfoOP_Set_neighbors( &(omatrix->getrow->pre_comm),
 			        getrow_comm->N_neighbors, neighbors,
 	                        ML_OVERWRITE, NULL, 0);
    ML_free(neighbors);
    for (i = 0; i < getrow_comm->N_neighbors; i++)
-      ML_CommInfoOP_Set_exch_info(omatrix->getrow->pre_comm, 
+      ML_CommInfoOP_Set_exch_info(omatrix->getrow->pre_comm,
 			getrow_comm->neighbors[i].ML_id,
                         getrow_comm->neighbors[i].N_rcv,
                         getrow_comm->neighbors[i].rcv_list,
@@ -208,7 +208,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
 
 
-int ML_xytComm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
+int ML_xytComm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
                     int total_length,int sub_mask)
 {
    int     mask, partner, hbit, msgtype, msgbase=145;
@@ -266,7 +266,7 @@ if ((sub_mask & partner) == sub_cube) {
      */
 
 if ((sub_mask & partner) == sub_cube) {
-    if (com_ptr->USR_sendbytes((void *) vals, (*cur_length)*sizeof(int), 
+    if (com_ptr->USR_sendbytes((void *) vals, (*cur_length)*sizeof(int),
 			       partner, msgtype, com_ptr->USR_comm)) {
       (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
       exit(-1);
@@ -307,7 +307,7 @@ if ((sub_mask & partner) == sub_cube) {
         exit(-1);
       }
 
-      if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), 
+      if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int),
 			partner, msgtype, com_ptr->USR_comm)) {
         (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
         exit(-1);
@@ -354,7 +354,7 @@ if ((sub_mask & partner) == sub_cube) {
 
   if (mypid & nprocs_small) {
 if ((sub_mask & partner) == sub_cube) {
-    nbytes = com_ptr->USR_waitbytes((void *) vals, total_length*sizeof(int), 
+    nbytes = com_ptr->USR_waitbytes((void *) vals, total_length*sizeof(int),
 #ifdef ML_CPP
                     &partner , &msgtype, com_ptr->USR_comm, &Request);
 #else
@@ -433,7 +433,7 @@ int CSRxyt_submv(ML_Operator *Amat, double p[], double ap[])
         sum  += val[k] * p[bindx[k]];
      }
      ap[i] = sum;
-   
+
   }
   return(1);
 }
@@ -738,7 +738,7 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
   ML_avoid_unused_param( (void *) ml);
   ML_avoid_unused_param( (void *) &i);
 #endif
-  
+
   return 0;
 }
 

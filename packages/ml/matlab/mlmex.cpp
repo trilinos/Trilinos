@@ -1,12 +1,12 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* This file provides a simple MEX interface to use ML in MATLAB.  This code is
    was originally based off of AdaptiveSA.cpp by Marzio Sala (although the two
    are radically different at this point), and is intended to be used with its
-   MATLAB front-end ml.m. 
+   MATLAB front-end ml.m.
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
@@ -21,7 +21,7 @@
    07/22/2010 - Adding ability to handle nested parameter lists via cell arrays
                 (e.g. for sending in an ifpack list).
    05/22/2007 - Added fix for when mwIndex and int are not the same size data
-                structure (this occurs on 64 bit architectures).    
+                structure (this occurs on 64 bit architectures).
    10/12/2006 - Bug fixed for error tolerance for ISINT checks.
    10/09/2006 - Bug fixed where specifying coordinates for aggregation would not
                 work in 2D.
@@ -34,8 +34,8 @@
    08/07/2006 - Added status checking functionality.
    08/03/2006 - Added functionality to allow ML to have multiple systems ready
                 to be solved at once.  This entailed adding the system handle stuff.
-   05/22/2006 - Teuchos-friendly version 
-   05/16/2006 - Initial Version 
+   05/22/2006 - Teuchos-friendly version
+   05/16/2006 - Initial Version
 */
 
 #include <stdio.h>
@@ -96,7 +96,7 @@ void csc_print(int n,int *rowind,int* colptr, double* vals){
   int i,j;
   for(i=0;i<n;i++)
     for(j=colptr[i];j<colptr[i+1];j++)
-      mexPrintf("%d %d %20.16e\n",rowind[j],i,vals[j]);  
+      mexPrintf("%d %d %20.16e\n",rowind[j],i,vals[j]);
 }/*end if*/
 #endif
 
@@ -117,7 +117,7 @@ void csc_print(int n,int *rowind,int* colptr, double* vals){
 int* mwIndex_to_int(int N, mwIndex* mwi_array){
   int i,*rv = new int[N];
   for(i=0;i<N;i++)
-    rv[i] = (int)mwi_array[i];  
+    rv[i] = (int)mwi_array[i];
   return rv;
 }
 
@@ -163,10 +163,10 @@ Epetra_CrsMatrix * epetra_setup_from_prhs(const mxArray * mxa, bool rewrap_ints)
     delete [] colptr;
   }
   return A;
-}    
+}
 
 /*******************************/
-int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL, Epetra_CrsMatrix *A, Epetra_Operator * Prec, 
+int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL, Epetra_CrsMatrix *A, Epetra_Operator * Prec,
 			       double*b, double*x,int &iters){
 
   int i, N=A->NumMyRows();
@@ -192,7 +192,7 @@ int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL,
   string type     = tmp.get("krylov: type", "gmres");
   int    output   = tmp.get("krylov: output level",10);
   int    kspace   = tmp.get("krylov: kspace",30);
-  string conv     = tmp.get("krylov: conv", "r0");  
+  string conv     = tmp.get("krylov: conv", "r0");
 
   /* Set solver options - Solver type*/
   if (type == "cg") solver.SetAztecOption(AZ_solver, AZ_cg);
@@ -201,7 +201,7 @@ int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL,
   else if (type == "gmres_condnum") solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
   else if (type == "fixed point") solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
   //  else ML_THROW("krylov: type has incorrect value (" + type + ")", -1);
-  
+
   /* Set solver options - Convergence Criterion*/
   if(conv == "r0") solver.SetAztecOption(AZ_conv,AZ_r0);
   else if(conv == "rhs") solver.SetAztecOption(AZ_conv,AZ_rhs);
@@ -219,7 +219,7 @@ int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL,
 
   /* Fill Solution */
   for(i=0;i<N;i++) x[i]=LHS[i];
-  
+
   /* Solver Output */
   iters=solver.NumIters();
   return IS_TRUE;
@@ -264,11 +264,11 @@ public:
   /* size - Number of stored problems
      Returns: num_probs
   */
-  int size();  
+  int size();
 
   /* Returns the status of all members of the list
      Returns IS_TRUE
-  */  
+  */
   int status_all();
 
 protected:
@@ -307,13 +307,13 @@ mlapi_data_pack::~mlapi_data_pack(){
 */
 int mlapi_data_pack::status(){
   mexPrintf("**** Problem ID %d [MLAPI] ****\n",id);
-  if(A) mexPrintf("Matrix: %dx%d w/ %d nnz\n",A->NumGlobalRows(),A->NumGlobalCols(),A->NumGlobalNonzeros()); 
+  if(A) mexPrintf("Matrix: %dx%d w/ %d nnz\n",A->NumGlobalRows(),A->NumGlobalCols(),A->NumGlobalNonzeros());
   mexPrintf(" Operator complexity = %e\n",operator_complexity);
   if(List){mexPrintf("Parameter List:\n");List->print(cout,1);}
   mexPrintf("\n");
   return IS_TRUE;
 }/*end status*/
-                                      
+
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
@@ -330,14 +330,14 @@ int mlapi_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
 
   int i,j;
   /* Initialize the workspace and set the output level */
-  Init();  
+  Init();
 
   /* Define the space for fine level vectors and operators */
   FineSpace=new Space(N);
-  
+
   /* Do the matrix assembly --- Someone should really come up with a better way
      of doing this.  Argh! */
-  A=new DistributedMatrix(*FineSpace,*FineSpace); 
+  A=new DistributedMatrix(*FineSpace,*FineSpace);
   for(i=0;i<N;i++)
     for(j=colptr[i];j<colptr[i+1];j++)
       (*A)(rowind[j],i)=vals[j];
@@ -351,14 +351,14 @@ int mlapi_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
 
   /* Allocate Memory */
   Prec=new MultiLevelAdaptiveSA(*A,*List,numpdes,cutoff);
-    
+
   /* Build the Heirarchy */
-  if(adaptivevecs>0) Prec->AdaptCompute(UseDefaultNullSpace,adaptivevecs);    
+  if(adaptivevecs>0) Prec->AdaptCompute(UseDefaultNullSpace,adaptivevecs);
   else Prec->Compute();
 
   operator_complexity=Prec->GetComplexity();
   printf("Smoothed Aggregation: operator complexity = %e\n",operator_complexity);
-  
+
   Finalize();
   return IS_TRUE;
 }/*end setup*/
@@ -379,14 +379,14 @@ int mlapi_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
 */
 int mlapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
   int i;
-  Init();   
+  Init();
   MultiVector LHS(A->GetDomainSpace());
   MultiVector RHS(A->GetRangeSpace());
 
   /* Create the new Teuchos List */
   Teuchos::ParameterList tmp=*List;
   tmp.setParameters(*TPL);
-  
+
   /* Fill LHS/RHS */
   LHS=0;
   for(i=0;i<N;i++) RHS(i)=b[i];
@@ -394,13 +394,13 @@ int mlapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*
 #ifdef VERBOSE_OUTPUT
   tmp.print(cout,0,true);
 #endif
-  
+
   /* Do the solve */
   Krylov(*A,LHS,RHS,*Prec,tmp);
 
   /* Fill Solution */
   for(i=0;i<N;i++) x[i]=LHS(i);
-  
+
   Finalize();
 
   iters=-1;
@@ -426,7 +426,7 @@ ml_epetra_data_pack::~ml_epetra_data_pack(){
 */
 int ml_epetra_data_pack::status(){
   mexPrintf("**** Problem ID %d [ML_Epetra] ****\n",id);
-  if(A) mexPrintf("Matrix: %dx%d w/ %d nnz\n",A->NumGlobalRows(),A->NumGlobalCols(),A->NumMyNonzeros()); 
+  if(A) mexPrintf("Matrix: %dx%d w/ %d nnz\n",A->NumGlobalRows(),A->NumGlobalCols(),A->NumMyNonzeros());
   mexPrintf(" Operator complexity = %e\n",operator_complexity);
   if(List){mexPrintf("Parameter List:\n");List->print(cout,1);}
   mexPrintf("\n");
@@ -448,17 +448,17 @@ int ml_epetra_data_pack::status(){
 */
 int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
   /* Matrix Fill */
-  A=epetra_setup(N,N,rowind,colptr,vals);  
+  A=epetra_setup(N,N,rowind,colptr,vals);
 
   /* Allocate Memory */
-  Prec=new MultiLevelPreconditioner(*A, *List,false);  
-  
+  Prec=new MultiLevelPreconditioner(*A, *List,false);
+
   /* Build the Heirarchy */
   Prec->ComputePreconditioner();
 
   /* Pull Operator Complexity */
   operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
-  
+
   return IS_TRUE;
 }/*end setup*/
 
@@ -503,7 +503,7 @@ ml_maxwell_data_pack::~ml_maxwell_data_pack(){
 */
 int ml_maxwell_data_pack::status(){
   mexPrintf("**** Problem ID %d [RefMaxwell] ****\n",id);
-  if(EdgeMatrix) mexPrintf("Matrix: %dx%d w/ %d nnz\n",EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumMyNonzeros()); 
+  if(EdgeMatrix) mexPrintf("Matrix: %dx%d w/ %d nnz\n",EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumMyNonzeros());
   mexPrintf(" Operator complexity = %e\n",operator_complexity);
   if(List){mexPrintf("Parameter List:\n");List->print(cout,1);}
   mexPrintf("\n");
@@ -544,14 +544,14 @@ int ml_maxwell_data_pack::setup_preconditioner(){
   List11c_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
 
   // To avoid having to grab other inputs...
-  List->set("refmaxwell: disable addon",true); 
+  List->set("refmaxwell: disable addon",true);
 
   if(EdgeMatrix->NumGlobalRows() != GradMatrix->NumGlobalRows() ||
      NodeMatrix->NumGlobalRows() != GradMatrix->NumGlobalCols()){
     printf("Global: EdgeMatrix = %dx%d[%d] NodeMatrix=%dx%d[%d] GradMatrix=%dx%d[%d]\n",
 	   EdgeMatrix->NumGlobalRows(),EdgeMatrix->NumGlobalCols(),EdgeMatrix->NumGlobalNonzeros(),
 	   NodeMatrix->NumGlobalRows(),NodeMatrix->NumGlobalCols(),NodeMatrix->NumGlobalNonzeros(),
-	   GradMatrix->NumGlobalRows(),GradMatrix->NumGlobalCols(),GradMatrix->NumGlobalNonzeros());    
+	   GradMatrix->NumGlobalRows(),GradMatrix->NumGlobalCols(),GradMatrix->NumGlobalNonzeros());
     mexErrMsgTxt("Error: Matrix mismatch\n");
     operator_complexity=-1;
     return IS_FALSE;
@@ -561,12 +561,12 @@ int ml_maxwell_data_pack::setup_preconditioner(){
   for(int i=0; i<DummyMatrix->NumMyRows(); i++) {
     int GID=DummyMatrix->GRID(i);
     double one=1.0;
-    DummyMatrix->InsertGlobalValues(GID,1,&one,&GID);    
+    DummyMatrix->InsertGlobalValues(GID,1,&one,&GID);
   }
   DummyMatrix->FillComplete();
- 
 
-  /* Build Hierarchy */  
+
+  /* Build Hierarchy */
 #ifdef ENABLE_MS_MATRIX
   DummyMatrix2=new Epetra_CrsMatrix(*EdgeMatrix);
   Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*DummyMatrix2,*NodeMatrix,*DummyMatrix,*List);
@@ -576,7 +576,7 @@ int ml_maxwell_data_pack::setup_preconditioner(){
 
   /* Pull Operator Complexity */
   double nnz;
-  Prec->Complexities(operator_complexity,nnz);  
+  Prec->Complexities(operator_complexity,nnz);
 
   return IS_TRUE;
 }
@@ -627,7 +627,7 @@ ml_data_pack_list::~ml_data_pack_list(){
 int ml_data_pack_list::add(ml_data_pack *D){
   int idx_prev=0;
   ml_data_pack *iprev, *icurr;
-  
+
   if(!L){L=D;D->next=NULL;D->id=1;}
   else {
     /* Find the first numbering gap + add in D appropriately */
@@ -637,7 +637,7 @@ int ml_data_pack_list::add(ml_data_pack *D){
     D->id=idx_prev+1;
     D->next=icurr;
     num_probs++;
-  }/*end if*/  
+  }/*end if*/
   return D->id;
 }/*end add*/
 
@@ -652,7 +652,7 @@ ml_data_pack* ml_data_pack_list::find(int id){
   ml_data_pack *rv;
   for(rv=L;rv && rv->id<id;rv=rv->next);
   if(rv && rv->id==id) return rv;
-  else return NULL;  
+  else return NULL;
 }/*end find*/
 
 
@@ -672,7 +672,7 @@ int ml_data_pack_list::remove(int id){
     else iprev->next=icurr->next;
     delete icurr;
     return IS_TRUE;
-  }/*end else*/    
+  }/*end else*/
 }/*end remove*/
 
 
@@ -684,7 +684,7 @@ int ml_data_pack_list::size(){return num_probs;}
 
 /* Returns the status of all members of the list
    Returns IS_TRUE
-*/  
+*/
 int ml_data_pack_list::status_all(){
   ml_data_pack *curr;
   for(curr=L;curr;curr=curr->next)
@@ -710,14 +710,14 @@ int ml_data_pack_list::status_all(){
 void mlmex_aggregate(int N,int *colptr, int* rowind, double*vals, Teuchos::ParameterList* List, int* agg){
   ml_epetra_data_pack DPK;
   MultiLevelPreconditioner *Prec;
-  
+
   /* Minimize work*/
   List->set("max levels",2);
-  
+
   /* Setup a datapack */
   DPK.List=List;
   DPK.setup(N,rowind,colptr,vals);
-  
+
   /* Pull the aggregates (by reference) */
   Prec=DPK.GetPreconditioner();
 
@@ -739,7 +739,7 @@ void mlmex_aggregate(int N,int *colptr, int* rowind, double*vals, Teuchos::Param
    Parameters:
    nrhs    - Number of program inputs [I]
    prhs    - The problem inputs [I]
-   Return value: Which mode to run the program in.  
+   Return value: Which mode to run the program in.
 */
 
 MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
@@ -748,7 +748,7 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
   /* Check for mode */
   if(nrhs==0)
     mexErrMsgTxt("Error: Invalid Inputs\n");
-  
+
   /* Pull mode data from 1st Input */
   modes=mxGetPr(prhs[0]);
 
@@ -760,7 +760,7 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
       else
 	rv=MODE_SETUP;
     }
-    else mexErrMsgTxt("Error: Invalid input for setup\n");    
+    else mexErrMsgTxt("Error: Invalid input for setup\n");
     break;
   case MODE_SOLVE:
     if(nrhs>2&&mxIsNumeric(prhs[1])&&!mxIsSparse(prhs[2])&&mxIsNumeric(prhs[2])) rv=MODE_SOLVE;
@@ -779,8 +779,8 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
     else mexErrMsgTxt("Error: Extraneous args for status\n");
     break;
   case MODE_AGGREGATE:
-    if(nrhs>1&&mxIsSparse(prhs[1])) rv=MODE_AGGREGATE; 
-    else mexErrMsgTxt("Error: Invalid input for aggregate\n");      
+    if(nrhs>1&&mxIsSparse(prhs[1])) rv=MODE_AGGREGATE;
+    else mexErrMsgTxt("Error: Invalid input for aggregate\n");
     break;
   default:
     printf("Mode number = %d\n",(int)modes[0]);
@@ -805,7 +805,7 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
   int i,M,N, *opt_int;
   char *opt_char;
   double *opt_float;
-  string opt_str;  
+  string opt_str;
   Teuchos::ParameterList sublist;
   mxArray *cell1,*cell2;
 
@@ -813,7 +813,7 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
   cid=mxGetClassID(prhs);
   M=mxGetM(prhs);
   N=mxGetN(prhs);
-  
+
   /* Add to the Teuchos list */
   switch(cid){
   case mxCHAR_CLASS:
@@ -828,7 +828,7 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
     // Single or double
     //NTS: Does not deal with complex args
     opt_float=mxGetPr(prhs);
-    if(M==1 && N==1 && ISINT(opt_float[0])) {     
+    if(M==1 && N==1 && ISINT(opt_float[0])) {
       List.set(option_name, (int)opt_float[0]);
     }/*end if*/
     else if(M==1 && N==1){
@@ -836,7 +836,7 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
     }/*end if*/
     else if(M==0 || N==0){
       List.set(option_name,(double*)NULL);
-    }  
+    }
     else{
       List.set(option_name, opt_float);
     }/*end else*/
@@ -855,8 +855,8 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
   case mxUINT32_CLASS:
     // Integer
     opt_int=(int*)mxGetData(prhs);
-    if(M==1 && N==1) List.set(option_name, opt_int[0]);      
-    else List.set(option_name, opt_int);      
+    if(M==1 && N==1) List.set(option_name, opt_int[0]);
+    else List.set(option_name, opt_int);
     break;
     // NTS: 64-bit ints will break on a 32-bit machine.  We
     // should probably detect machine type, or somthing, but that would
@@ -871,19 +871,19 @@ void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArr
 	mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
       opt_char=mxArrayToString(cell1);
       parse_list_item(sublist,opt_char,cell2);
-      List.set(option_name,sublist);      
+      List.set(option_name,sublist);
       mxFree(opt_char);
     }
     break;
   case mxINT64_CLASS:
-  case mxUINT64_CLASS:      
+  case mxUINT64_CLASS:
   case mxFUNCTION_CLASS:
   case mxUNKNOWN_CLASS:
-  case mxSTRUCT_CLASS:      
+  case mxSTRUCT_CLASS:
   default:
     mexPrintf("Error parsing input option: %s [type=%d]\n",option_name,cid);
-    mexErrMsgTxt("Error: An input option is invalid!\n");      
-  };        
+    mexErrMsgTxt("Error: An input option is invalid!\n");
+  };
 }
 
 
@@ -904,7 +904,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
   for(int i=0;i<nrhs;i+=2){
     if(i==nrhs-1 || !mxIsChar(prhs[i]))
       mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
-    
+
     /* What option are we setting? */
     option_name=mxArrayToString(prhs[i]);
 
@@ -912,7 +912,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
     parse_list_item(*TPL,option_name,prhs[i+1]);
 
     /* Free memory */
-    mxFree(option_name);   
+    mxFree(option_name);
   }/*end for*/
 
   return TPL;
@@ -942,15 +942,15 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   bool rewrap_ints=false;
   ml_maxwell_data_pack * Dhat=0;
   Epetra_CrsMatrix * A;
-  
+
   /* Sanity Check Input */
   mode=sanity_check(nrhs,prhs);
 
   /* Set flag if mwIndex and int are not the same size */
   /* NTS: This can be an issue on 64 bit architectures */
   if(sizeof(int)!=sizeof(mwIndex)) rewrap_ints=true;
-    
-  
+
+
   switch(mode){
   case MODE_SETUP:
     if(!PROBS) PROBS=new ml_data_pack_list;
@@ -967,8 +967,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     intf=List->get(MLMEX_INTERFACE,"epetra");
     if(intf=="mlapi") D=new mlapi_data_pack();
     else D=new ml_epetra_data_pack();
-    D->List=List;    
-    
+    D->List=List;
+
     /* Pull Matrix - CSC Format */
     vals=mxGetPr(prhs[1]);
     if(rewrap_ints){
@@ -979,7 +979,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
       rowind=(int*)mxGetIr(prhs[1]);
       colptr=(int*)mxGetJc(prhs[1]);
     }
-      
+
     /* Construct the Heirarchy */
     D->setup(nr,rowind,colptr,vals);
 
@@ -996,21 +996,21 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
       delete [] rowind;
       delete [] colptr;
     }
-    
+
     /* Lock so we can keep the memory for the heirarchy */
     mexLock();
     break;
   case MODE_SETUP_MAXWELL:
     if(!PROBS) PROBS=new ml_data_pack_list;
-    
+
     /* Teuchos List*/
     if(nrhs>4) List=build_teuchos_list(nrhs-4,&(prhs[4]));
     else List=new Teuchos::ParameterList;
 
     /* Setup matrices*/
     Dhat=new ml_maxwell_data_pack();
-    Dhat->List=List;    
-    
+    Dhat->List=List;
+
     Dhat->setup_matrix("EdgeMatrix",prhs[1],rewrap_ints);
     Dhat->setup_matrix("NodeMatrix",prhs[2],rewrap_ints);
     Dhat->setup_matrix("GradMatrix",prhs[3],rewrap_ints);
@@ -1025,19 +1025,19 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     id=(int*)mxGetData(plhs[0]);id[0]=rv;
     if(nlhs>1) plhs[1]=mxCreateDoubleScalar(Dhat->operator_complexity);
 
-    
+
     /* Lock so we can keep the memory for the heirarchy */
     mexLock();
     break;
   case MODE_SOLVE:
     /* Are there problems set up? */
-    if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");    
+    if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");
 
     /* Get the Problem Handle */
     id=(int*)mxGetData(prhs[1]);
     D=PROBS->find(id[0]);
-    if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");    
-        
+    if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");
+
     /* Pull Problem Size */
     nr=mxGetM(prhs[2]);
     A = D->GetMatrix();
@@ -1048,18 +1048,18 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     /* Teuchos List*/
     if(nrhs>4) List=build_teuchos_list(nrhs-3,&(prhs[3]));
     else List=new Teuchos::ParameterList;
-    
+
     /* Allocate Solution Space */
     plhs[0]=mxCreateDoubleMatrix(nr,1,mxREAL);
     x=mxGetPr(plhs[0]);
-    
+
     /* Sanity Check Matrix / RHS */
     if(nr!=A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
       mexErrMsgTxt("Error: Size Mismatch in Input\n");
 
-    /* Run Solver */  
+    /* Run Solver */
     D->solve(List,A,b,x,iters);
-    
+
     /* Output Iteration Count */
     if(nlhs>1){
       plhs[1]=mxCreateDoubleScalar((double)iters);
@@ -1072,16 +1072,16 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     break;
   case MODE_SOLVE_NEWMATRIX:
     /* Are there problems set up? */
-    if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");    
+    if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");
 
     /* Get the Problem Handle */
     id=(int*)mxGetData(prhs[1]);
     D=PROBS->find(id[0]);
-    if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");    
-        
+    if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");
+
     /* Pull Problem Size */
     nr=mxGetM(prhs[2]);
-    nc=mxGetN(prhs[2]);    
+    nc=mxGetN(prhs[2]);
     if(nr!=D->NumMyRows() && nc!=D->NumMyCols()) mexErrMsgTxt("Error: Problem size mismatch.\n");
 
     /* Pull RHS */
@@ -1090,11 +1090,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     /* Teuchos List*/
     if(nrhs>4) List=build_teuchos_list(nrhs-4,&(prhs[4]));
     else List=new Teuchos::ParameterList;
-    
+
     /* Allocate Solution Space */
     plhs[0]=mxCreateDoubleMatrix(nr,1,mxREAL);
     x=mxGetPr(plhs[0]);
-    
+
     /* Sanity Check Matrix / RHS */
     if(nr != nc || nr != (int)mxGetM(prhs[2]))
       mexErrMsgTxt("Error: Size Mismatch in Input\n");
@@ -1102,9 +1102,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     // Grab the input matrix
     A=epetra_setup_from_prhs(prhs[2],rewrap_ints);
 
-    /* Run Solver */  
+    /* Run Solver */
     D->solve(List,A,b,x,iters);
-    
+
     /* Output Iteration Count */
     if(nlhs>1){
       plhs[1]=mxCreateDoubleScalar((double)iters);
@@ -1129,29 +1129,29 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
       if(rv) mexUnlock();
     }/*end elseif*/
     else rv=0;
-    
+
     /* Set return value */
     plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
-    id=(int*)mxGetData(plhs[0]);id[0]=rv;    
+    id=(int*)mxGetData(plhs[0]);id[0]=rv;
     break;
 
   case MODE_STATUS:
     if(PROBS && nrhs==1){
       /* Status check on all problems */
-      rv=PROBS->status_all();      
+      rv=PROBS->status_all();
     }/*end if*/
     else if(PROBS && nrhs==2){
       /* Status check one problem */
       id=(int*)mxGetData(prhs[1]);
       D=PROBS->find(id[0]);
-      if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");      
-      rv=D->status();      
+      if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");
+      rv=D->status();
     }/*end elseif*/
     else rv=0;
-    
+
     /* Set return value */
     plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
-    id=(int*)mxGetData(plhs[0]);id[0]=rv;    
+    id=(int*)mxGetData(plhs[0]);id[0]=rv;
     break;
 
   case MODE_AGGREGATE:
@@ -1173,12 +1173,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
       rowind=(int*)mxGetIr(prhs[1]);
       colptr=(int*)mxGetJc(prhs[1]);
     }
-    
+
     /* Allocate space for aggregate / return value */
     plhs[0]=mxCreateNumericMatrix(nr,1,mxINT32_CLASS,mxREAL);
     agg=(int*)mxGetData(plhs[0]);
-    
-    /* Do aggregation only */   
+
+    /* Do aggregation only */
     mlmex_aggregate(nr,colptr,rowind,vals,List,agg);
 
     /* Cleanup */
@@ -1187,11 +1187,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
       delete [] rowind;
       delete [] colptr;
     }
-    
-    break;    
+
+    break;
   default:
     mexErrMsgTxt("Error: Generic\n");
-  };  
+  };
 }/*end mexFunction*/
 
 #else

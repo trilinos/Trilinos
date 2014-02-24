@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Goal of this example is to present the usage of the
@@ -10,7 +10,7 @@
 // the resulting ML preconditioner within AztecOO.
 //
 // This file creates a matrix from the Galeri package,
-// then solves the corresponding linear system using ML as a preconditioner. 
+// then solves the corresponding linear system using ML as a preconditioner.
 //
 // From the command line, you may try something like that:
 // $ mpirun -np 4 ./ml_operator.exe
@@ -50,17 +50,17 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   Epetra_Time Time(Comm);
 
-  // Creates the linear problem using the Galeri package. 
+  // Creates the linear problem using the Galeri package.
   // The grid has nx x ny nodes, divided into
   // mx x my subdomains, each assigned to a different processor.
   int nx = 8;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
   // Construct a solver object for this problem
   AztecOO solver(Problem);
-  
+
   // ================= MultiLevelOperator SECTION ========================
 
   // this is the "developers' way": each of the ML components
@@ -91,10 +91,10 @@ int main(int argc, char *argv[])
   // ML_Epetra::MultiLevelPreconditioner class.
 
   int nLevels = 10;            // maximum number of levels
-  int maxMgLevels = 6;         // 
+  int maxMgLevels = 6;         //
   ML_Set_PrintLevel(10);       // print level (0 silent, 10 verbose)
   ML* ml_handle;               // container of all ML' data
-  
+
   ML_Create(&ml_handle, maxMgLevels);
 
   // convert to epetra matrix, put finest matrix into
@@ -102,13 +102,13 @@ int main(int argc, char *argv[])
   // is only wrapped (that is, a suitable getrow() function is used),
   // so data in the linear system matrix are NOT replicated.
   EpetraMatrix2MLMatrix(ml_handle, maxMgLevels-1, A);
-  
+
   // create an Aggregate object; this will contain information
   // about the aggregation process for each level
   ML_Aggregate *agg_object;
   ML_Aggregate_Create(&agg_object);
-  
-  // select coarsening scheme. 
+
+  // select coarsening scheme.
   ML_Aggregate_Set_CoarsenScheme_Uncoupled(agg_object);
 
   // generate the hierarchy. We decided to use decreasing ordering;
@@ -127,22 +127,22 @@ int main(int argc, char *argv[])
 
   // simple coarse solver. You may want to use Amesos to access
   // to a large variety of direct solvers, serial and parallel
-  ML_Gen_Smoother_GaussSeidel(ml_handle, coarsestLevel, ML_BOTH, 
+  ML_Gen_Smoother_GaussSeidel(ml_handle, coarsestLevel, ML_BOTH,
                               nits, ML_DEFAULT);
- 
+
   // generate the solver
   ML_Gen_Solver(ml_handle, ML_MGV, maxMgLevels-1, coarsestLevel);
- 
+
   // create an Epetra_Operator based on the previously created
   // hierarchy
   MultiLevelOperator MLPrec(ml_handle, Comm, *Map, *Map);
 
   // ========== End of MultiLevelOperator SECTION ========================
-  
+
   // tell AztecOO to use ML as preconditioner with GMRES, output
   // every 16 iterations, then solve with 500 maximum iterations and
   // tolerance of 1e-5.
-  
+
   solver.SetPrecOperator(&MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 16);
@@ -152,8 +152,8 @@ int main(int argc, char *argv[])
 
   double residual;
   LHS.Norm2(&residual);
-  
-  if (Comm.MyPID() == 0) 
+
+  if (Comm.MyPID() == 0)
   {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "Total Time = " << Time.ElapsedTime() << endl;
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 #endif

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 //@HEADER
 
@@ -44,7 +44,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Creates the linear problem using the Galeri package. 
+  // Creates the linear problem using the Galeri package.
   int nx = 32;
   int ny = 32 * Comm.NumProc();
 
@@ -75,16 +75,16 @@ int main(int argc, char *argv[])
   // =============================== //
   // Create the ML + IFPACK smoother //
   // =============================== //
-  
+
   ML_Epetra::SetDefaults("DD",MLList);
   MLList.set("smoother: pre or post", "post");
   MLList.set("PDE equations", 1);
-  
+
   // fix the smoother to be IFPACK; can be set using (level X) syntax
   MLList.set("smoother: type","IFPACK");
 
-  // now we have to specify which IFPACK preconditioner should be 
-  // built. Any value that is valid for the IFPACK factory. We also need 
+  // now we have to specify which IFPACK preconditioner should be
+  // built. Any value that is valid for the IFPACK factory. We also need
   // to define the overlap (>= 0).
 
   MLList.set("smoother: ifpack type", "ILU");
@@ -94,13 +94,13 @@ int main(int argc, char *argv[])
   // smoother are inserted in IFPACKList. In this case, we specify the fill-in
   // factor. For a list of supported parameters, please consult the IFPACK
   // documentation. For example, IFPACK preconditioner "Amesos" or
-  // "Amesos stand-alone" can be used to solve with an LU 
+  // "Amesos stand-alone" can be used to solve with an LU
   // factorization on each domain.
   MLList.sublist("smoother: ifpack list").set("fact: level-of-fill", 5);
 
   // we can now build the preconditioner...
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // ... and solve the linear system
@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 
-#endif 
+#endif

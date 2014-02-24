@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ************************************************************************* */
@@ -15,7 +15,7 @@
 /* Note that the two versions of ParMETIS seems to require the METIS library */
 /* included in the distribution of ParMETIS, so you may need to change the   */
 /* library you are linking while switching from version 2.x to 3.x.          */
-/* A typical configure script may read as follows:                           
+/* A typical configure script may read as follows:
 
 ./configure \
  --prefix=/home/msala/Trilinos/LINUX_MPI/ \
@@ -50,7 +50,7 @@
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
@@ -76,7 +76,7 @@ extern ML_Operator * ML_BuildQ( int StartingNumElements,
 				USR_COMM mpi_communicator,
 				ML_Comm *ml_communicator );
 extern void ML_DestroyQ(void);
-  
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
@@ -126,7 +126,7 @@ int OPTIMAL_LOCAL_COARSE_SIZE = 128;
 
   For multi-process runs, it is suggested to set the output level to 0
   on all processes, except one.
-  
+
 */
 /* ------------------------------------------------------------------------ */
 
@@ -148,43 +148,43 @@ int ML_Aggregate_Set_ParMETISDebugLevel(int level)
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value ) 
+int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value )
 {
 
    if( PARMETIS_DEBUG_LEVEL == 3 ) {
      printf("*ML*DBG* Entering ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate'\n");
      printf("*ML*DBG* with input value %d\n", optimal_value);
    }
-  
+
   if( optimal_value <= 1 && 9 < ML_Get_PrintLevel() ) {
     fprintf( stderr,
 	     "*ML*WRN* invalid parameter for OptimalValue (%d)\n"
 	     "*ML*WRN* (must be greater than 1)\n",
 	     optimal_value );
   }
-  
+
   OPTIMAL_VALUE = optimal_value;
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Exiting ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate'\n");
   }
-  
+
   return 0;
-  
+
 } /* ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate */
 
-int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( ) 
+int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( )
 {
   return OPTIMAL_VALUE;
 }
 
-int ML_Aggregate_Set_OptimalReqLocalCoarseSize( int value ) 
+int ML_Aggregate_Set_OptimalReqLocalCoarseSize( int value )
 {
   OPTIMAL_LOCAL_COARSE_SIZE = value;
   return 0;
 }
 
-int ML_Aggregate_Get_OptimalReqLocalCoarseSize( int value ) 
+int ML_Aggregate_Get_OptimalReqLocalCoarseSize( int value )
 {
   return( OPTIMAL_LOCAL_COARSE_SIZE );
 }
@@ -192,7 +192,7 @@ int ML_Aggregate_Get_OptimalReqLocalCoarseSize( int value )
 /* ======================================================================== */
 /*!
  \brief Set the required number of aggregates to be assigned to each processor.
- 
+
  This function is used to set the required number of aggregates to be
  assigned to each processor. The logic behind is to put \c
  desired_aggre_per_proc if possible, so that the workload on a subset of
@@ -207,7 +207,7 @@ int ML_Aggregate_Get_OptimalReqLocalCoarseSize( int value )
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag, 
+int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag,
 					 int level,
 					 int desired_aggre_per_proc )
 {
@@ -215,16 +215,16 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag,
   int i;
   ML_Aggregate_Options *pointer = NULL;
   double debug_starting_time = 0.;
-  
+
   /* ------------------- execution begins --------------------------------- */
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Entering `ML_Aggregate_Set_ReqLocalCoarseSize'\n");
     printf("*ML*DBG* with input value level=%d, desired_aggre_per_proc=%d\n",
 	   level, desired_aggre_per_proc);
-    debug_starting_time = GetClock(); 
+    debug_starting_time = GetClock();
   }
-  
+
   /* ********************************************************************** */
   /* control on the input parameters                                        */
   /* ********************************************************************** */
@@ -243,14 +243,14 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag,
 	     __LINE__ );
     exit( EXIT_FAILURE );
   }
-  
+
   /* ********************************************************************** */
   /* take the pointer from the ag object. If it is NULL, this is the first  */
   /* time that this function is called, so allocate memory for all levels   */
   /* ********************************************************************** */
 
   pointer = (ML_Aggregate_Options *)ag->aggr_options;
-  
+
   if( pointer == NULL ) {
     ML_memory_alloc((void**)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
 		    "aggr_options");
@@ -267,12 +267,12 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag,
     /* ******************************************************************** */
     /* set to the default values                                            */
     /* ******************************************************************** */
-    
+
     ML_Aggregate_Options_Defaults( pointer, Nlevels );
-    
+
     ag->aggr_options = (void *)pointer;
   }
-  
+
   if( level >= 0 ) {
     pointer[level].desired_aggre_per_proc = desired_aggre_per_proc;
   } else {
@@ -287,7 +287,7 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag,
   }
 
   return 0;
-  
+
 } /* ML_Aggregate_Set_ReqLocalCoarseSize */
 
 /* ********************************************************************** */
@@ -302,21 +302,21 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag,
 int ML_BuildReorderedOffset( int starting_offset[],
 				    int desired_aggre_per_proc, int Nprocs,
 				    int nodes_per_aggre[], int Naggregates,
-				    int reordered_offset[], int mypid ) 
+				    int reordered_offset[], int mypid )
 {
 
   int i, iaggre, aggre_owner;
   int mod;
   int local_aggre = 0;
   double debug_starting_time = 0.;
-  
+
   /* ------------------- execution begins --------------------------------- */
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Entering `ML_BuildReorderedOffset'\n");
     printf("*ML*DBG* with input desired_aggre_per_proc=%d\n",
 	   desired_aggre_per_proc);
-    debug_starting_time = GetClock(); 
+    debug_starting_time = GetClock();
   }
 
   /* ********************************************************************** */
@@ -326,16 +326,16 @@ int ML_BuildReorderedOffset( int starting_offset[],
   /* equal to the total number of aggregates.                               */
   /* ********************************************************************** */
 
-  if( mypid == 0 && 8 < ML_Get_PrintLevel() ) 
+  if( mypid == 0 && 8 < ML_Get_PrintLevel() )
     printf( "ParMETIS : Next-level matrix will have %d rows per process\n",
 	    Naggregates / Nprocs+1 );
-  
+
   if( desired_aggre_per_proc * Nprocs < Naggregates ) {
     mod = Naggregates % Nprocs;
     if( mod != 0 ) mod = 1;
     desired_aggre_per_proc = Naggregates / Nprocs+mod;
   }
-  
+
   for( i=0 ; i<Nprocs+1 ; i++ ) {
     reordered_offset[i] = 0;
   }
@@ -348,7 +348,7 @@ int ML_BuildReorderedOffset( int starting_offset[],
 	       "*ML*ERR* owner is %d, while Nprocs =%d\n"
 	       "*ML*ERR* (file %s, line %d)\n",
 	       iaggre,
-	       aggre_owner, Nprocs, 
+	       aggre_owner, Nprocs,
 	       __FILE__,
 	       __LINE__ );
       exit( EXIT_FAILURE );
@@ -368,7 +368,7 @@ int ML_BuildReorderedOffset( int starting_offset[],
   }
 
   return local_aggre;
-  
+
 } /* ML_BuildReorderedOffset */
 
 int ML_BuildReorderedDecomposition( int starting_decomposition[],
@@ -382,14 +382,14 @@ int ML_BuildReorderedDecomposition( int starting_decomposition[],
   int Nprocs;
   int * count = NULL,  * offset = NULL, * offset2 = NULL;
   double debug_starting_time = 0.;
-  
+
   /* ------------------- execution begins --------------------------------- */
-  
+
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Entering `ML_BuildReorderedDecomposition'\n");
     printf("*ML*DBG* with Nrows=%d, Naggregates=%d\n",
 	   Nrows, Naggregates);
-    debug_starting_time = GetClock(); 
+    debug_starting_time = GetClock();
   }
 
 #ifdef ML_MPI
@@ -403,14 +403,14 @@ int ML_BuildReorderedDecomposition( int starting_decomposition[],
   count = (int *) ML_allocate( sizeof(int) * Naggregates );
   offset = (int *) ML_allocate( sizeof(int) * Naggregates );
   offset2 = (int *) ML_allocate( sizeof(int) * Naggregates );
-  
+
   for( i=0 ; i<Naggregates ; i++ ) {
     count[i] = 0;
     offset[i] = 0;
     offset2[i] = 0;
   }
-  
-  
+
+
   for( i=0 ; i<Nrows ; i++ ) {
     iaggre = starting_decomposition[i];
     count[iaggre]++;
@@ -420,7 +420,7 @@ int ML_BuildReorderedDecomposition( int starting_decomposition[],
 #ifdef ML_MPI
   MPI_Scan( count, offset, Naggregates, MPI_INT, MPI_SUM, comm);
   for( i=0 ; i<Naggregates ; i++ ) offset[i] -= count[i];
-#endif  
+#endif
 
   for( i=0 ; i<Naggregates ; i++ ) count[i] = 0, offset2[i] = 0;
 
@@ -458,7 +458,7 @@ int ML_BuildReorderedDecomposition( int starting_decomposition[],
  filling it with numerical values), then calls ParMETIS_NodeND to compute a
  reordering which reduces the fill-in during LU factorizations. It is
  just a LOCAL reordering.
- 
+
 */
 /* ------------------------------------------------------------------------ */
 
@@ -507,7 +507,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int skip_check = 0;
   double t0;
   double debug_starting_time = 0.;
-  
+
   /* ------------------- execution begins --------------------------------- */
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
@@ -518,23 +518,23 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   }
 
   t0 = GetClock();
-  
+
   /* ********************************************************************** */
   /* some general variables                                                 */
   /* ********************************************************************** */
-  
+
   Nrows = Amatrix->getrow->Nrows;
   /* Nghosts = Amatrix->getrow->pre_comm->total_rcv_length; */
 #ifdef ML_MPI
   orig_comm = Amatrix->comm->USR_comm;
 #endif
-  
+
 #ifdef ML_MPI
   MPI_Allreduce( &Nrows, &j, 1, MPI_INT, MPI_SUM, orig_comm );
 #else
   j = Nrows;
 #endif
-  
+
   if( N_parts <= 0 ) N_parts = 1;
 
 #ifdef MAYBE
@@ -550,7 +550,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     }
   }
 #endif
-  
+
   /* ********************************************************************** */
   /* no need to call parmetis if only one aggregate is required.            */
   /* ********************************************************************** */
@@ -572,18 +572,18 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
   offsets = (int     *) ML_allocate( sizeof(int) * (N_procs+1) );
   vtxdist = (indextype *) ML_allocate( sizeof(indextype) * (N_procs+1) );
-  
+
   ML_DecomposeGraph_BuildOffsets( Nrows, offsets, N_procs,
 				  Amatrix->comm->USR_comm );
 
   proc_with_parmetis = (int *) ML_allocate( sizeof(int) * N_procs );
-  
+
   N_procs_with_parmetis = 0;
   vtxdist[0] = 0;
   for( i=1 ; i<N_procs+1 ; i++ ) {
     j = offsets[i]-offsets[i-1];
     if( j>0 ) {
-      proc_with_parmetis[N_procs_with_parmetis] = i-1;  
+      proc_with_parmetis[N_procs_with_parmetis] = i-1;
       vtxdist[1+N_procs_with_parmetis++] = (indextype)offsets[i];
     }
   }
@@ -592,15 +592,15 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     printf("*ML*DBG* Including %d processes of %d in ParMETISComm\n",
 	   N_procs_with_parmetis, N_procs );
   }
-    
+
   if( Nrows > 0 ) {
-    
+
     /* construct the CSR graph information of the LOCAL matrix
        using the get_row function */
-    
+
     xadj    = (indextype *) ML_allocate ((Nrows+1)*sizeof(indextype));
     adjncy  = (indextype *) ML_allocate ((N_nonzeros+1)*sizeof(indextype));
-    
+
     if(  xadj==NULL || adjncy==NULL ) {
       fprintf( stderr,
 	       "on proc %d, not enought space for %d bytes.\n"
@@ -609,19 +609,19 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	       __FILE__,
 	       __LINE__);
       exit( EXIT_FAILURE );
-    
+
     }
-    
+
     xadj[0] = 0;
     count = 0;
-    
+
     for (i = 0; i < Nrows; i++ ) {
 
       if( bdry_nodes[i] != 1.0 ) {
-	
+
 	ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
 			  &rowi_N, 0);
-	
+
 	xadj[i+1] = xadj[i];
 	for( j=0 ; j<rowi_N ; j++ ) {
 	  jj = rowi_col[j];
@@ -629,12 +629,12 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	    adjncy[count++] = global_numbering[jj];
 	    xadj[i+1]++;
 	  }
-	} 
+	}
       }   else {
 	xadj[i+1] = xadj[i];
-      }   
+      }
     }
-    
+
     if( count > N_nonzeros ) {
       fprintf( stderr,
 	       "*ML_WRN* on proc %d, count > N_nonzeros (%d>%d)\n"
@@ -653,10 +653,10 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   /* Nrows == 0 (this can happen is nodes have already been redistributed   */
   /* to a subset of processors, but that was not the last level).           */
   /* ********************************************************************** */
-  
+
   part = (indextype *) ML_allocate( sizeof(indextype) * (Nrows+1));
   tpwgts = (float *) ML_allocate( sizeof(float) * N_parts );
-  
+
   if( N_parts == 1 ) {
 
     /* should never be used here, print out something */
@@ -664,31 +664,31 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     for( i=0 ; i<Nrows ; i++ )
       part[i] = 0;
     edgecut = 0;
-    
+
   } else {
-      
+
     /* set parameters for ParMETIS */
-      
+
     wgtflag = (indextype *) ML_allocate (4*sizeof(indextype));
     options = (int *)     ML_allocate (4*sizeof(int));
-      
+
     wgtflag[0] = 0;    /* no weights */
     numflag    = 0;    /* C style */
     options[0] = 0;    /* default options */
-    
+
     ncon = 1;          /* number of weights of each vertex */
-      
+
     /* fraction of vertex weight that should be distributed to
        each subdomain for each balance constraint */
-      
+
     for( i=0 ; i<N_parts ; i++ )
       tpwgts[i] = 1.0/N_parts;
-      
+
     /* imbalance tolerance for each vertex weight, 1 is the perfect
        balance and N_parts being perfect imbalance */
-      
+
     ubvec = 1.05;
-      
+
   }
 
   /* ********************************************************************** */
@@ -714,13 +714,13 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 
 #ifdef ML_MPI
   MPI_Comm_group( orig_comm, &orig_group );
-  
+
   MPI_Group_incl( orig_group, N_procs_with_parmetis,
 		  proc_with_parmetis, &parmetis_group );
-  
+
   MPI_Comm_create( orig_comm, parmetis_group, &ParMETISComm );
 #endif
-  
+
   /* Only processes belonging to ParMETISComm will enter this `if'          */
 
   if( Nrows > 0 ) {
@@ -730,7 +730,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
     while( ok == 0 ) {
 
       for( i=0 ; i<Nrows ; i++ ) part[i] = -7;
-      skip_check = 0; 
+      skip_check = 0;
 
 #if defined(HAVE_ML_PARMETIS)  && defined(ML_MPI)
       /* never tested right now... */
@@ -754,10 +754,10 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
       ok = 1;
       skip_check = 1;
 #endif
-      
+
       ok = 1;
 
-#ifdef ML_MPI      
+#ifdef ML_MPI
       if( skip_check == 0 ) {
 
 	/* **************************************************************** */
@@ -775,10 +775,10 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 	  if( j<0 || j>= N_parts ) {
 	    ok = 0;
 	    break;
-	  } 
+	  }
 	  else nodes_per_aggre[j]++;
 	}
-	
+
 	MPI_Allreduce( nodes_per_aggre, nodes_per_aggre2,
 		       N_parts, MPI_INT, MPI_SUM, ParMETISComm );
 	for( i=0 ; i<N_parts ; i++ ) {
@@ -787,7 +787,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 	    break;
 	  }
 	}
-	
+
 	if( ok == 0 ) {
 	  if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	    printf( "*ML*WRN* input value of N_parts (%d) does not assure "
@@ -797,7 +797,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 	  }
 	  N_parts = N_parts/2;
 	}
-	
+
 	if( N_parts == 0 ) {
 	  if( mypid == 0 && 9 < ML_Get_PrintLevel()) {
 	    fprintf( stderr,
@@ -815,7 +815,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 	/* handle the case N_parts = 1 separately. Do not recall parMETIS */
 	/* in this case, simply put everything to zero and continue       */
 	/* ************************************************************** */
-	
+
 	if( N_parts == 1 ) {
 	  for( i=0 ; i<Nrows ; i++ ) part[i] = 0;
 	  ok = 1;
@@ -829,14 +829,14 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 	  ML_free( nodes_per_aggre2 );
 	  nodes_per_aggre2 = NULL;
 	}
-	
+
       } /* if( skip_check == 1 ) */
 #endif
-      
+
     } /* while( ok == 0 ) */
 #ifdef ML_MPI
     MPI_Group_free( &parmetis_group );
-    MPI_Comm_free( &ParMETISComm );      
+    MPI_Comm_free( &ParMETISComm );
 #endif
   } /* if( Nrows>0 ) */
 
@@ -844,10 +844,10 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 
   /* ------------------- that's all folks --------------------------------- */
 
-  if( global_numbering != NULL ) ML_free( global_numbering ); 
-  if( rowi_col != NULL ) ML_free(rowi_col); rowi_col = NULL; 
+  if( global_numbering != NULL ) ML_free( global_numbering );
+  if( rowi_col != NULL ) ML_free(rowi_col); rowi_col = NULL;
   if( rowi_val != NULL ) ML_free(rowi_val); rowi_val = NULL;
-  allocated = 0; 
+  allocated = 0;
   if( part               != NULL ) ML_free( part );
   if( proc_with_parmetis != NULL ) ML_free( proc_with_parmetis );
   if( offsets            != NULL ) ML_free( offsets );
@@ -857,17 +857,17 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
   if( options            != NULL ) ML_free( options );
   if( xadj               != NULL ) ML_free( xadj );
   if( adjncy             != NULL ) ML_free( adjncy );
-  
+
   t0 = GetClock() - t0;
 
   if ( mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
-   
+
     printf("ParMETIS (level %d) : time required = %e\n",
 	   current_level,
 	   t0 );
-    
+
   }
-  
+
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Exiting `ML_DecomposeGraph_with_ParMETIS'\n");
     printf("*ML*DBG* With N_parts = %d\n", N_parts);
@@ -875,7 +875,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
   }
 
   return N_parts;
-  
+
 } /* ML_DecomposeGraph_with_ParMETIS */
 
 /* ======================================================================== */
@@ -893,7 +893,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
+int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  ML_Operator **Pmatrix, ML_Comm *comm)
 {
    unsigned int nbytes, length;
@@ -917,7 +917,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double Nnonzeros2 = 0;
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
-   
+
    /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef CLEAN_DEBUG
    char tlabel[80];
@@ -926,7 +926,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #ifdef DDEBUG
    int curagg,myagg,*good,*bad, kk;
 #endif
-   
+
 #if defined(OUTPUT_AGGREGATES) || defined(DDEBUG) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
    FILE *fp;
    char fname[80];
@@ -949,7 +949,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double * new_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
    double debug_starting_time = 0.;
-   
+
    /* ------------------- execution begins --------------------------------- */
 
    if( PARMETIS_DEBUG_LEVEL == 3 ) {
@@ -958,11 +958,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
 
    sprintf( str, "ParMETIS (level %d) :", ml_ag->cur_level );
-   
+
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
-   
+
    mypid                   = comm->ML_mypid;
    Nprocs                  = comm->ML_nprocs;
    epsilon                 = ml_ag->threshold;
@@ -982,11 +982,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #else
    Nrows_global = Nrows;
 #endif
-   
+
    /* ============================================================= */
    /* check the system size versus null dimension size              */
    /* ============================================================= */
-     
+
    if ( Nrows % num_PDE_eqns != 0 )
    {
       printf("*ML*ERR* : Nrows must be multiples of num_PDE_eqns.\n");
@@ -996,7 +996,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
 
    Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
-   
+
    /* ============================================================= */
    /* set up the threshold for weight-based coarsening              */
    /* ============================================================= */
@@ -1017,7 +1017,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 		 "WARNING: Now proceeding -- with fingers crossed\n" );
       }
    }
-   
+
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
    Nrows_global /= num_PDE_eqns;
@@ -1053,15 +1053,15 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    Nnonzeros2 = ML_Operator_ComputeNumNzs(Amatrix);
 
    i = ML_Comm_GsumInt(comm, N_bdry_nodes);
-   
+
    if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
      printf("%s # bdry (block) nodes = %d, # (block) nodes = %d\n",
 	    str,
 	    i, Nrows_global);
    }
-   
+
    /* communicate the boundary information */
-   
+
    ML_exchange_bdry(starting_amalg_bdry,Amatrix->getrow->pre_comm,
 		    Nrows,comm, ML_OVERWRITE,NULL);
 
@@ -1076,9 +1076,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if ( nbytes > 0 ) starting_decomposition = (int *)ML_allocate(nbytes);
    else              starting_decomposition = NULL;
-   
+
    if( starting_decomposition == NULL && nbytes > 0 ) {
-     
+
      fprintf( stderr,
 	      "*ML*ERR* not enough memory to allocated %d bytes\n"
 	      "*ML*ERR* (file %s, line %d)\n",
@@ -1091,23 +1091,23 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ********************************************************************** */
    /* Retrive the user's defined data. If not set, pick up default settings  */
    /* ********************************************************************** */
-     
+
    aggr_options = (ML_Aggregate_Options *) ml_ag->aggr_options;
-   
+
    if( aggr_options == NULL ) {
 
      if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
        printf("%s Using default values\n",
 	      str );
      }
-    
+
      optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
      starting_aggr_count = (int)1.0*Nrows_global/optimal_value;
      if( starting_aggr_count < 1 ) starting_aggr_count = 1;
      /* 'sto xxxcio e` un po` piu` difficile, non ne ho idea, piglio
 	a caso... */
      desired_aggre_per_proc = ML_max( 128, Nrows );
-       
+
    } else {
 
      /* ******************************************************************** */
@@ -1134,9 +1134,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        starting_aggr_count = i;
 #endif
        break;
-       
+
      case ML_NUM_GLOBAL_AGGREGATES:
-       
+
        starting_aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
        if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Requested %d global aggregates\n",
@@ -1145,7 +1145,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        }
 
        break;
-       
+
      case ML_NUM_NODES_PER_AGGREGATE:
 
        starting_aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
@@ -1155,14 +1155,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 		 str,
 		 starting_aggr_count );
        }
-       
+
        if( starting_aggr_count >= Nrows_global) {
 
 	 i = starting_aggr_count;
 
 	 starting_aggr_count = Nrows/OPTIMAL_VALUE;
 	 if( starting_aggr_count == 0) starting_aggr_count = 1;
-	 
+
 	 if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
 		    "%s WARNING : # nodes per aggregate (%d) > # nodes (%d)\n"
@@ -1180,9 +1180,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 if( starting_aggr_count == 0 ) starting_aggr_count = 1;
 
        }
-       
+
        break;
-       
+
      } /* switch */
 
      /* reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag; */
@@ -1191,7 +1191,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
      if( desired_aggre_per_proc <= 0 )
        desired_aggre_per_proc = OPTIMAL_LOCAL_COARSE_SIZE;
-     
+
    } /* if( aggr_options == NULL )*/
 
    if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
@@ -1202,14 +1202,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf("%s Objective : %d aggregates on each process\n",
 	    str,
 	    desired_aggre_per_proc );
-   } 
-   
+   }
+
    starting_aggr_count =
      ML_DecomposeGraph_with_ParMETIS( Amatrix, starting_aggr_count,
 				      starting_decomposition,
 				      starting_amalg_bdry,
 				      (int)Nnonzeros2, ml_ag->cur_level );
-   
+
    if( starting_aggr_count <= 0 ) {
      fprintf( stderr,
 	      "*ML*ERR* Something went *very* wrong in ParMETIS...\n"
@@ -1218,12 +1218,12 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	      __LINE__ );
      exit( EXIT_FAILURE );
    }
-   
-   if( mypid == 0 && 7 < ML_Get_PrintLevel() ) 
+
+   if( mypid == 0 && 7 < ML_Get_PrintLevel() )
      printf("%s Using %d aggregates (globally)\n",
 	    str,
 	    starting_aggr_count );
-   
+
    if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
      printf("%s # aggre/ # (block) rows = %7.3f %%  (= %d/%d)\n",
 	    str,
@@ -1231,18 +1231,18 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    starting_aggr_count,
 	    Nrows_global);
    }
-   
+
    /* ********************************************************************** */
    /* compute operator complexity                                            */
    /* ********************************************************************** */
-   
+
    Nnonzeros2 = ML_Comm_GsumDouble(comm, Nnonzeros2 + N_bdry_nodes);
 
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
      printf("%s Total (block) nnz = %g ( = %5.2f/(block)row)\n",
 	    str,
 	    Nnonzeros2,1.0*Nnonzeros2/Nrows_global);
-   
+
    if ( ml_ag->operator_complexity == 0.0 ) {
       ml_ag->fine_complexity = Nnonzeros2;
       ml_ag->operator_complexity = (double)Nnonzeros2;
@@ -1250,15 +1250,15 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    else ml_ag->operator_complexity += (double)Nnonzeros2;
 
    /* FIXME: erase meeeeeeeee
-      fix aggr_index for num_PDE_eqns > 1 
-   
+      fix aggr_index for num_PDE_eqns > 1
+
    for (i = Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
    }
    */
-   
+
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
    /* who will be able to analyze and visualize this after the construction  */
@@ -1268,7 +1268,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* I set the pointers using the ML_Aggregate_Info structure. This is      */
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
-   
+
    if( Amatrix->to != NULL && Amatrix->to->Grid != NULL &&
        Amatrix->to->Grid->Grid != NULL ) {
 
@@ -1293,7 +1293,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      aggr_viz_and_stats->Naggregates = starting_aggr_count;
      aggr_viz_and_stats->local_or_global = ML_GLOBAL_INDICES;
      aggr_viz_and_stats->is_filled = ML_YES;
-     
+
    }
 
    /* ********************************************************************** */
@@ -1321,15 +1321,15 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	      __LINE__ );
      exit( EXIT_FAILURE );
    }
-   
+
    ML_DecomposeGraph_BuildOffsets( Nrows, starting_offset, Nprocs,
 				   Amatrix->comm->USR_comm);
-   
+
    /* ********************************************************************** */
    /* Compute how many nodes are contained in each aggregate. This will be   */
    /* done for all the aggregates (so some communications will occur).       */
    /* ********************************************************************** */
-   
+
    ML_CountNodesPerAggre( Nrows, starting_decomposition,
 			  starting_aggr_count, nodes_per_aggre,
 			  Amatrix->comm->USR_comm );
@@ -1350,7 +1350,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 					 reordered_offset, mypid );
 
    new_Nrows = reordered_offset[mypid+1] - reordered_offset[mypid];
-   
+
    i = 0;
    if( new_Nrows > 0 ) i++;
 
@@ -1364,8 +1364,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf( "%s Processes with at least 1 row at next level = %d\n",
 	     str,
 	     j );
-   } 
-   
+   }
+
    reordered_decomposition = (int *) ML_allocate( sizeof(int) * (Nrows+1) );
    if( reordered_decomposition == NULL ) {
      fprintf( stderr,
@@ -1381,7 +1381,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				   reordered_decomposition, Nrows,
 				   starting_aggr_count, nodes_per_aggre,
 				   Amatrix->comm->USR_comm );
-   
+
    /* ********************************************************************** */
    /* Finally, built the operator QQ, moving from the reorderd decomposition */
    /* to the starting one. So, QQ will be applied to vectors (or matrices)   */
@@ -1410,12 +1410,12 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 exit( EXIT_FAILURE );
        }
      }
-       
+
      i = 1;
    }
 
    reordered_amalg_bdry = (double *) ML_allocate(sizeof(double)*(new_Nrows+1));
-   
+
 #ifdef ML_WITH_EPETRA
    if( nullspace_dim != num_PDE_eqns ) {
      printf("---------> Never tested with nullspace_dim != num_PDE_eqns\n"
@@ -1428,7 +1428,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 		   Amatrix->comm->USR_comm,
 		   comm );
 #else
-   if( mypid == 0 ) 
+   if( mypid == 0 )
      fprintf( stderr,
 	      "*ML*ERR* Sorry, you cannot redistribute matrices within the ParMETIS\n"
 	      "*ML*ERR* aggregation without epetra. Please recompile using epetra...\n" );
@@ -1455,14 +1455,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      ML_free( reordered_offset );
      reordered_offset = NULL;
    }
-          
+
    /* ********************************************************************** */
    /* Now reallocating aggr_index so that we can build the prolongator       */
    /* as if all the aggregates were local. Need some reallocations here.     */
    /* ********************************************************************** */
 
    nbytes = sizeof(int) * new_Nrows * num_PDE_eqns;
-   
+
    if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
    else              aggr_index = NULL;
 
@@ -1477,12 +1477,12 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /*
      if( mypid < 5 && 8 < ML_Get_PrintLevel() ) {
      printf("ML_Aggregate_CoarsenParMETIS (level %d) : Assigning %d aggregates to each process\n",
-	    ml_ag->cur_level, 
-	    
+	    ml_ag->cur_level,
+
 
    }
    */
-   
+
    if( new_Nrows != 0 ) {
 
      jj = 0;
@@ -1504,7 +1504,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        exit( EXIT_FAILURE );
      }
    }
-   
+
    if( nodes_per_aggre != NULL ) {
      ML_free( nodes_per_aggre );
      nodes_per_aggre = NULL;
@@ -1527,24 +1527,24 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
 
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
-   
+
    new_Nrows  *= num_PDE_eqns;
    Nrows_global  *= num_PDE_eqns;
 
    /* count the size of each aggregate. Now all aggregates are local */
-   
+
    aggr_cnt_array = (int *) ML_allocate(sizeof(int)*aggr_count);
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
-   for (i = 0; i < new_Nrows; i++) 
-      if (aggr_index[i] >= 0) 
+   for (i = 0; i < new_Nrows; i++)
+      if (aggr_index[i] >= 0)
          aggr_cnt_array[aggr_index[i]]++;
 
    /* ============================================================= */
    /* Form tentative prolongator                                    */
    /* ============================================================= */
-   
+
    Ncoarse = aggr_count;
-   
+
    /* ============================================================= */
    /* check and copy aggr_index                                     */
    /* ------------------------------------------------------------- */
@@ -1553,11 +1553,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = new_Nrows * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
    count = aggr_count;
-   for ( i = 0; i < new_Nrows; i+=num_PDE_eqns ) 
+   for ( i = 0; i < new_Nrows; i+=num_PDE_eqns )
    {
       if ( aggr_index[i] >= 0 )
       {
-         for ( j = 0; j < num_PDE_eqns; j++ ) 
+         for ( j = 0; j < num_PDE_eqns; j++ )
             ml_ag->aggr_info[level][i+j] = aggr_index[i];
          if (aggr_index[i] >= count) count = aggr_index[i] + 1;
       }
@@ -1574,39 +1574,39 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* set up the new operator                                       */
    /* ------------------------------------------------------------- */
 
-   for ( i = 0; i < new_Nrows; i++ ) 
+   for ( i = 0; i < new_Nrows; i++ )
    {
-      if ( aggr_index[i] >= Ncoarse ) 
+      if ( aggr_index[i] >= Ncoarse )
       {
          printf("*ML*WRN* index out of bound %d = %d (%d)\n"
 		"*ML*WRN* (file %s, line %d)\n",
-		i, aggr_index[i], 
+		i, aggr_index[i],
                 Ncoarse,
 		__FILE__,
 		__LINE__ );
       }
    }
-   nbytes = ( new_Nrows + 1 ) * sizeof(int); 
+   nbytes = ( new_Nrows + 1 ) * sizeof(int);
    ML_memory_alloc((void**)&(new_ia), nbytes, "AIA");
-   nbytes = new_Nrows * nullspace_dim * sizeof(int); 
+   nbytes = new_Nrows * nullspace_dim * sizeof(int);
    ML_memory_alloc((void**)&(new_ja), nbytes, "AJA");
-   nbytes = new_Nrows * nullspace_dim * sizeof(double); 
+   nbytes = new_Nrows * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
 
    /* ------------------------------------------------------------- */
    /* set up the space for storing the new null space               */
    /* ------------------------------------------------------------- */
-   
+
    nbytes = Ncoarse * nullspace_dim * nullspace_dim * sizeof(double);
    if( nbytes != 0 ) {
      ML_memory_alloc((void**)&(new_null),nbytes,"AGr");
-     for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
+     for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
        new_null[i] = 0.0;
    } else {
      new_null = NULL;
    }
-   
+
    /* ------------------------------------------------------------- */
    /* initialize the row pointer for the CSR prolongation operator  */
    /* (each row will have at most nullspace_dim nonzero entries)    */
@@ -1629,23 +1629,23 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ------------------------------------------------------------- */
 
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLs");
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       rows_in_aggs[i] = (int *) ML_allocate(aggr_cnt_array[i]*sizeof(int));
       aggr_cnt_array[i] = 0;
-      if (rows_in_aggs[i] == NULL) 
+      if (rows_in_aggs[i] == NULL)
       {
          printf("*ML*ERR* couldn't allocate memory in CoarsenParMETIS\n");
          exit(1);
       }
    }
-   for (i = 0; i < new_Nrows; i+=num_PDE_eqns) 
+   for (i = 0; i < new_Nrows; i+=num_PDE_eqns)
    {
       if ( aggr_index[i] >= 0 && aggr_index[i] < aggr_count)
       {
          for (j = 0; j < num_PDE_eqns; j++)
          {
-            index = aggr_cnt_array[aggr_index[i]]++; 
+            index = aggr_cnt_array[aggr_index[i]]++;
             rows_in_aggs[aggr_index[i]][index] = i + j;
          }
       }
@@ -1659,7 +1659,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ------------------------------------------------------------- */
 
    max_agg_size = 0;
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
    }
@@ -1669,17 +1669,17 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = nullspace_dim * sizeof(double);
    if( nbytes > 0 ) ML_memory_alloc((void**)&tmp_vect, nbytes, "AGv");
    else             tmp_vect = NULL;
-   
+
    lwork  = nullspace_dim;
    nbytes = nullspace_dim * sizeof(double);
    if( nbytes > 0 ) ML_memory_alloc((void**)&work, nbytes, "AGw");
    else             work = NULL;
-  
+
    /* ------------------------------------------------------------- */
    /* perform block QR decomposition                                */
    /* ------------------------------------------------------------- */
-     
-   for (i = 0; i < aggr_count; i++) 
+
+   for (i = 0; i < aggr_count; i++)
    {
       /* ---------------------------------------------------------- */
       /* set up the matrix we want to decompose into Q and R:       */
@@ -1687,7 +1687,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       length = aggr_cnt_array[i];
 
-      if (new_nullspace_vect == NULL) 
+      if (new_nullspace_vect == NULL)
       {
          for (j = 0; j < (int) length; j++)
          {
@@ -1703,16 +1703,16 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             }
          }
       }
-      else 
+      else
       {
-	
-	for (k = 0; k < nullspace_dim; k++) 
+
+	for (k = 0; k < nullspace_dim; k++)
          {
-	   
+
             for (j = 0; j < (int) length; j++)
             {
                index = rows_in_aggs[i][j];
-	       
+
                if ( reordered_amalg_bdry[index/num_PDE_eqns] == 1.0) qr_tmp[k*length+j] = 0.;
                else {
                   if (index < new_Nrows) {
@@ -1736,21 +1736,21 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       /* ---------------------------------------------------------- */
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
 			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0)
 	  pr_error("ErrOr in CoarsenParMETIS : "
 		   "dgeqrf returned a non-zero %d %d\n",
 		   aggr_cnt_array[i],i);
 
-	if (work[0] > lwork) 
+	if (work[0] > lwork)
 	  {
-	    lwork=(int) work[0]; 
+	    lwork=(int) work[0];
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
 	  }
 	else lwork=(int) work[0];
-		 
+
 	/* ---------------------------------------------------------- */
 	/* the upper triangle of qr_tmp is now R, so copy that into   */
 	/* the new nullspace                                          */
@@ -1758,9 +1758,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 	for (j = 0; j < nullspace_dim; j++)
 	  for (k = j; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
 	      qr_tmp[j+aggr_cnt_array[i]*k];
-		 
+
 	/* ---------------------------------------------------------- */
 	/* to get this block of P, need to run qr_tmp through another */
 	/* LAPACK function:                                           */
@@ -1782,9 +1782,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	  pr_error("Error in CoarsenParMETIS: dorgqr returned a non-zero\n");
 	}
 
-	if (work[0] > lwork) 
+	if (work[0] > lwork)
 	  {
-	    lwork=(int) work[0]; 
+	    lwork=(int) work[0];
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
 	  }
@@ -1806,13 +1806,13 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    if ( index < new_Nrows )
 	      {
 		index3 = new_ia[index];
-		for (k = 0; k < nullspace_dim; k++) 
+		for (k = 0; k < nullspace_dim; k++)
 		  {
 		    new_ja [index3+k] = i * nullspace_dim + k;
 		    new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
 		  }
 	      }
-	    else 
+	    else
 	      {
 		fprintf( stderr,
 			 "*ML*ERR* error in QR factorization within ParMETIS\n" );
@@ -1827,7 +1827,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	/* prolongator????                                                  */
 	for (j = 0; j < nullspace_dim; j++)
 	  for (k = 0; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
 	      qr_tmp[j+aggr_cnt_array[i]*k];
 	for (j = 0; j < aggr_cnt_array[i]; j++) {
 	  index = rows_in_aggs[i][j];
@@ -1841,14 +1841,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       }
 
    } /* for( i over aggregates ) */
-   
-   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
+
+   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim,
                               new_null, Ncoarse*nullspace_dim);
    if( new_null != NULL ) {
      ML_memory_free( (void **) &new_null);
      new_null = NULL;
    }
-   
+
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
    /* ------------------------------------------------------------- */
@@ -1859,21 +1859,21 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    csr_data->values  = new_val;
 
    Pstart = ML_Operator_Create( Amatrix->comm );
-			       
-   ML_Operator_Set_ApplyFuncData( Pstart, nullspace_dim*Ncoarse, new_Nrows, 
+
+   ML_Operator_Set_ApplyFuncData( Pstart, nullspace_dim*Ncoarse, new_Nrows,
                                   csr_data, new_Nrows, NULL, 0);
    Pstart->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
 
    Pstart->getrow->pre_comm = ML_CommInfoOP_Create();
-   
+
    ML_Operator_Set_Getrow((Pstart), new_Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc(Pstart, CSR_matvec);
    Pstart->max_nz_per_row = 1;
 
    Pmatrix2 = ML_Operator_Create( Amatrix->comm );
-   
+
    ML_2matmult(QQ, Pstart, Pmatrix2, ML_CSR_MATRIX );
-   
+
    ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
    ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->BCs);
    if ((*Pmatrix)->label != NULL) {
@@ -1891,7 +1891,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    memcpy((void *) *Pmatrix, (void *)Pmatrix2, sizeof(ML_Operator));
    /* FIXME : am I ok  ????? */
    ML_free(Pmatrix2);
-      
+
    /* ********************************************************************** */
    /* I have to destroy the tentative local matrix, and the redistribution   */
    /* matrix QQ. This is actually an ML_Operator on the top of an Epetra     */
@@ -1899,13 +1899,13 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* memory interally used by Epetra.                                       */
    /* ********************************************************************** */
 
-   ML_Operator_Destroy( &Pstart ); 
+   ML_Operator_Destroy( &Pstart );
    ML_Operator_Destroy( &QQ );
 
 #ifdef ML_WITH_EPETRA
    ML_DestroyQ( );
 #endif
-   
+
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
@@ -1928,7 +1928,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
 
    aggr_curr = aggr_head;
-   while ( aggr_curr != NULL ) 
+   while ( aggr_curr != NULL )
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;
@@ -1964,14 +1964,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 				 int Naggre, int * NnodesPerAggre,
-				 USR_COMM Comm) 
+				 USR_COMM Comm)
 {
-  
+
   int i, iaggre;
   int * count = NULL;
   int mypid;
   double debug_starting_time = 0.;
-  
+
   /* ------------------- execution begins --------------------------------- */
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
@@ -1996,9 +1996,9 @@ int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 #else
   mypid = 0;
 #endif
-  
+
   for( i=0 ; i<Naggre; i++ ) count[i] = 0;
-  
+
   for( i=0 ; i<Nrows ; i++ ) {
     iaggre = GraphDecomposition[i];
     if( iaggre > Naggre || iaggre < 0 ) {
@@ -2051,5 +2051,5 @@ int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
   }
 
   return 0;
-  
+
 } /* ML_CountNodesPerAggre */

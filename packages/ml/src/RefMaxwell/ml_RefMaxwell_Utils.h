@@ -15,7 +15,7 @@ namespace ML_Epetra
 
   // Output an Epetra_IntVector
   void IVOUT(const Epetra_IntVector & A, const char *of);
-    
+
   // Getrow that replaces all non-zero entries with ones
   int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
 		      int allocated_space, int columns[], double values[], int row_lengths[]);
@@ -25,7 +25,7 @@ namespace ML_Epetra
 				 ML_Aggregate_Struct *& MLAggr,ML_Operator *&P, int &NumAggregates);
 }
 
-    
+
 
 
 #endif

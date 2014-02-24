@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_EPETRA_H
 #define ML_EPETRA_H
@@ -11,7 +11,7 @@
   { if (ml_err != 0) { \
     std::cerr << "ML::ERROR:: " << ml_err << ", " \
       << __FILE__ << ", line " << __LINE__ << std::endl; } \
-      return(ml_err);  } 
+      return(ml_err);  }
 
 // prints out an error message if variable is not zero,
 // and return this value.
