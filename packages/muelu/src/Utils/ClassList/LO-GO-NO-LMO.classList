@@ -2,6 +2,7 @@ Aggregates
 AggregationPhase1Algorithm
 AggregationPhase2aAlgorithm
 AggregationPhase2bAlgorithm
+AggregationPhase3Algorithm
 AmalgamationInfo
 CoupledAggregationCommHelper
 CoupledAggregationFactory
