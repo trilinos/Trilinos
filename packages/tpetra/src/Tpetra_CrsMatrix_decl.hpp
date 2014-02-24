@@ -857,7 +857,7 @@ namespace Tpetra {
     getAllValues (ArrayRCP<const size_t>& rowPointers,
                   ArrayRCP<const LocalOrdinal>& columnIndices,
                   ArrayRCP<const Scalar>& values) const;
-    
+
 
     //@}
     //! @name Transformational methods
@@ -1495,12 +1495,12 @@ namespace Tpetra {
     template <class DomainScalar, class RangeScalar>
     void
     reorderedLocalGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-			       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-			       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-			       const ArrayView<LocalOrdinal> & rowIndices,
-			       const RangeScalar& dampingFactor,
-			       const KokkosClassic::ESweepDirection direction) const;
-    
+                               MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                               const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                               const ArrayView<LocalOrdinal> & rowIndices,
+                               const RangeScalar& dampingFactor,
+                               const KokkosClassic::ESweepDirection direction) const;
+
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
     /// X is required to be post-imported, i.e., described by the
@@ -1661,7 +1661,7 @@ namespace Tpetra {
     /// \param D [in] Inverse of diagonal entries of the matrix A.
     /// \param rowIndices [in] Ordered list of indices on which to execute GS.
     /// \param dampingFactor [in] SOR damping factor.  A damping
-    ///   factor of one results in Gauss-Seidel.    
+    ///   factor of one results in Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward, Backward, or
     ///   Symmetric.
     /// \param numSweeps [in] Number of sweeps.  We count each
@@ -1706,12 +1706,12 @@ namespace Tpetra {
     /// produce different results.
     void
     reorderedGaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-			  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-			  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-			  const ArrayView<LocalOrdinal> & rowIndices,
-			  const Scalar& dampingFactor,
-			  const ESweepDirection direction,
-			  const int numSweeps) const;
+                          MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                          const ArrayView<LocalOrdinal> & rowIndices,
+                          const Scalar& dampingFactor,
+                          const ESweepDirection direction,
+                          const int numSweeps) const;
 
     /// \brief Version of gaussSeidel(), with fewer requirements on X.
     ///
@@ -1725,7 +1725,7 @@ namespace Tpetra {
     ///   result multivector(s).
     /// \param B [in] Right-hand side(s), in the range Map.
     /// \param D [in] Inverse of diagonal entries of the matrix,
-    ///   in the row Map.    
+    ///   in the row Map.
     /// \param dampingFactor [in] SOR damping factor.  A damping
     ///   factor of one results in Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward, Backward, or
@@ -1781,13 +1781,13 @@ namespace Tpetra {
     /// \pre No other argument aliases X.
     void
     reorderedGaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-			      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-			      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-			      const ArrayView<LocalOrdinal> & rowIndices,
-			      const Scalar& dampingFactor,
-			      const ESweepDirection direction,
-			      const int numSweeps,
-			      const bool zeroInitialGuess) const;
+                              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+                              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+                              const ArrayView<LocalOrdinal> & rowIndices,
+                              const Scalar& dampingFactor,
+                              const ESweepDirection direction,
+                              const int numSweeps,
+                              const bool zeroInitialGuess) const;
 
     /// \brief Implementation of RowMatrix::add: return <tt>alpha*A + beta*this</tt>.
     ///
@@ -1940,9 +1940,9 @@ namespace Tpetra {
     template<class TransferType>
     Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     transferAndFillComplete (const TransferType& rowTransfer,
-			     const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
-			     const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
-			     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+                             const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+                             const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+                             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
 
     // We forbid copy construction by declaring this method private
@@ -2176,6 +2176,15 @@ namespace Tpetra {
         }
       }
     }
+
+
+  private:
+    /// \brief Special case of insertGlobalValues for when globalRow
+    ///   is <i>not<i> owned by the calling process.
+    void
+    insertNonownedGlobalValues (const GlobalOrdinal globalRow,
+                                const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+                                const Teuchos::ArrayView<const Scalar>& values);
 
   protected:
     // useful typedefs
@@ -2415,6 +2424,21 @@ namespace Tpetra {
     /// These data are cleared by globalAssemble(), once it finishes
     /// redistributing them to their owning processes.
     ///
+    /// For a given nonowned global row gRow which was given to
+    /// insertGlobalValues() or sumIntoGlobalValues(),
+    /// <tt>nonlocals_[gRow].first[k]</tt> is the column index of an
+    /// inserted entry, and <tt>nonlocals_[gRow].second[k]</tt> is its
+    /// value.  Duplicate column indices for the same row index are
+    /// allowed and will be summed during globalAssemble().
+    ///
+    /// This used to be a map from GlobalOrdinal to (GlobalOrdinal,
+    /// Scalar) pairs.  This makes gcc issue a "note" about the ABI of
+    /// structs containing std::complex members changing.  CDash
+    /// reports this as a warning, even though it's a "note," not a
+    /// warning.  However, I don't want it to show up, so I rearranged
+    /// the map's value type to a pair of arrays, rather than an array
+    /// of pairs.
+    ///
     /// \note For Epetra developers: Tpetra::CrsMatrix corresponds
     ///   more to Epetra_FECrsMatrix than to Epetra_CrsMatrix.  The
     ///   insertGlobalValues() method in Tpetra::CrsMatrix, unlike
@@ -2422,7 +2446,8 @@ namespace Tpetra {
     ///   insertion into rows which are not owned by the calling
     ///   process.  The globalAssemble() method redistributes these
     ///   to their owning processes.
-    std::map<GlobalOrdinal, Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
+    std::map<GlobalOrdinal, std::pair<Teuchos::Array<GlobalOrdinal>,
+                                      Teuchos::Array<Scalar> > > nonlocals_;
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///
