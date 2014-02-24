@@ -5,8 +5,6 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -18,57 +16,18 @@ INCLUDE(TribitsLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/..)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-
 #
 # Core headers
 #
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-FormatTime.hpp
-FormatMemorySize.hpp
+FILE(GLOB HEADERS *.hpp *.h)
+FILE(GLOB SOURCES *.cpp)
 
-CPUTime.hpp
-Demangle.hpp
-LogControl.hpp
-OutputLog.hpp
-ProductRegistry.hpp
-ReportHandler.hpp
-RuntimeDoomed.hpp
-RuntimeMessage.hpp
-RuntimeWarning.hpp
-WallTime.hpp
-  )
-
-IF ( TPL_ENABLE_BoostLib )
-  APPEND_SET(HEADERS ProgramOptions.hpp)
-ENDIF()
-
-APPEND_SET(SOURCES
-FormatTime.cpp
-FormatMemorySize.cpp
-
-CPUTime.cpp
-Demangle.cpp
-LogControl.cpp
-OutputLog.cpp
-ProductRegistry.cpp
-ReportHandler.cpp
-RuntimeDoomed.cpp
-RuntimeMessage.cpp
-RuntimeWarning.cpp
-WallTime.cpp
-  )
-
-IF ( TPL_ENABLE_BoostLib )
-  APPEND_SET(SOURCES ProgramOptions.cpp)
-ENDIF()
-
-
-IF (TPL_ENABLE_MPI)
+IF(NOT ${PACKAGE_NAME}_ENABLE_BoostLib)
+  LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/ProgramOptions.hpp")
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ProgramOptions.cpp")
 ENDIF()
 
 #

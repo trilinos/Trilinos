@@ -5,8 +5,6 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -22,12 +20,7 @@ SET(HEADERS_IMPL "")
 SET(SOURCES_IMPL "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-# INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
-# INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../stk_util)
-# INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/..)
-
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 #
 # Core headers
 #
