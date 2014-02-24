@@ -70,6 +70,9 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
   size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
   get_memory_high_water_mark_across_processors(comm, hwm_max, hwm_min, hwm_avg);
 
+  size_t avail_max = 0, avail_min = 0, avail_avg = 0;
+  get_memory_available_across_processors(comm, avail_max, avail_min, avail_avg);
+
   double max_time = 0.0, min_time = 0.0, avg_time = 0.0;
   get_max_min_avg(comm, time_on_this_proc, max_time, min_time, avg_time);
 
@@ -82,6 +85,10 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Min High-water memory usage " << hwm_min / bytes_in_MB << " MB" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg High-water memory usage " << hwm_avg / bytes_in_MB << " MB" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Max High-water memory usage " << hwm_max / bytes_in_MB << " MB\n" << std::endl;
+
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Min Available memory " << avail_min / bytes_in_MB << " MB" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg Available memory " << avail_avg / bytes_in_MB << " MB" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Max Available memory " << avail_max / bytes_in_MB << " MB\n" << std::endl;
 
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Min No-output time " << min_time << " sec" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg No-output time " << avg_time << " sec" << std::endl;

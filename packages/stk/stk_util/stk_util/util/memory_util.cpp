@@ -114,6 +114,38 @@ void get_memory_usage(size_t & now, size_t & hwm)
 #endif
 }
 
+// return memory available
+void get_memory_available(size_t & avail)
+{
+  avail = 0;
+
+#if defined (PROCFS)
+  std::string memtotal;
+  std::string line(128,'\0');
+
+  /* Read available memory size data from /proc/meminfo
+   */
+  std::ifstream proc_meminfo("/proc/meminfo");
+  if (!proc_meminfo) return;
+
+  while (memtotal.empty())
+  {
+    if(!std::getline(proc_meminfo, line)) return;
+
+    /* Find MemTotal */
+    else if (line.substr(0, 9) == "MemTotal:")
+    {
+      memtotal = line.substr(10);
+      std::istringstream iss(memtotal);
+      iss >> avail;
+      avail *= 1024;
+    }
+  }
+  proc_meminfo.close();
+#endif
+}
+
+
 void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max, size_t& hwm_min, size_t& hwm_avg)
 {
   size_t now = 0;
@@ -121,6 +153,14 @@ void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max
   stk::get_memory_usage(now, hwm);
 
   get_max_min_avg(comm, hwm, hwm_max, hwm_min, hwm_avg);
+}
+
+void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, size_t& avail_min, size_t& avail_avg)
+{
+  size_t avail = 0;
+  stk::get_memory_available(avail);
+
+  get_max_min_avg(comm, avail, avail_max, avail_min, avail_avg);
 }
 
 std::string human_bytes(size_t arg_bytes)
