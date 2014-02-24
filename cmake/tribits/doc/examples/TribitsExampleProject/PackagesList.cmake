@@ -54,5 +54,5 @@ SET( ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   SimpleCxx               packages/simple_cxx                 PS
   MixedLanguage           packages/mixed_language             PS
   PackageWithSubpackages  packages/package_with_subpackages   PS
-  WrapExternal            packages/wrap_external              PS
+  WrapExternal            packages/wrap_external              EX
   )
