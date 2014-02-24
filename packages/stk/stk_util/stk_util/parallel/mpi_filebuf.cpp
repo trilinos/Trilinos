@@ -148,8 +148,10 @@ mpi_filebuf * mpi_filebuf::open(
       // Note that file is double-opened.  Aprepro uses an std::fstream
       std::fstream infile(file_name, std::fstream::in);
       if (!infile.good()) {
+	if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
+	if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
 	std::cerr << "APREPRO: Could not open file: " << file_name << std::endl;
-	return 0;
+	return NULL;
       }
 
       SEAMS::Aprepro aprepro;
