@@ -158,20 +158,23 @@ namespace ROL {
     Teuchos::RCP<Secant<Real> >      secant_;
     bool useSecantPrecond_;
     bool useSecantHessVec_;
+    Real eps_;
 
   public:
     ProjectedObjective( Objective<Real> &obj, Constraints<Real> &con, Secant<Real> &secant, 
-                        bool useSecantPrecond = false, bool useSecantHessVec = false ) {
+                        bool useSecantPrecond = false, bool useSecantHessVec = false, Real eps = 0.0 ) {
       obj_              = Teuchos::rcp(&obj,    false);
       con_              = Teuchos::rcp(&con,    false);
       secant_           = Teuchos::rcp(&secant, false);
       useSecantPrecond_ = useSecantPrecond;
       useSecantHessVec_ = useSecantHessVec;
+      eps_              = eps;
     }
 
-    void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    void update( const Vector<Real> &x, bool flag = true, int iter = -1, Real eps = 0.0 ) {
       this->obj_->update(x,flag,iter);
       this->con_->update(x,flag,iter);
+      if ( std::abs(eps) >= ROL_EPSILON ) { this->eps_ = eps; }
     }
 
     Real value( const Vector<Real> &x, Real &tol ) {
@@ -210,13 +213,20 @@ namespace ROL {
                          const Vector<Real> &d, const Vector<Real> &x, Real &tol ) {
       if ( this->con_->isActivated() ) {
         Teuchos::RCP<Vector<Real> > vnew = x.clone();
-        vnew->set(v);                         // Set vnew to v
-        this->con_->pruneActive(*vnew,d,p);   // Remove elements of vnew corresponding to binding set
-        this->hessVec(Hv,*vnew,x,tol);        // Apply full Hessian to reduced vector
-        this->con_->pruneActive(Hv,d,p);      // Remove elements of Hv corresponding to binding set
-        vnew->set(v);                         // Set vnew to v
-        this->con_->pruneInactive(*vnew,d,p); // Remove Elements of vnew corresponding to complement of binding set
-        Hv.plus(*vnew);                       // Fill complement of binding set elements in Hp with v
+        // Set vnew to v
+        vnew->set(v);
+        // Remove elements of vnew corresponding to binding set
+        this->con_->pruneActive(*vnew,d,p,this->eps_);
+        // Apply full Hessian to reduced vector
+        this->hessVec(Hv,*vnew,x,tol);
+        // Remove elements of Hv corresponding to binding set
+        this->con_->pruneActive(Hv,d,p,this->eps_);
+        // Set vnew to v
+        vnew->set(v);                             
+        // Remove Elements of vnew corresponding to complement of binding set
+        this->con_->pruneInactive(*vnew,d,p,this->eps_); 
+        // Fill complement of binding set elements in Hp with v
+        Hv.plus(*vnew);                           
       }
       else {
         this->hessVec(Hv,v,x,tol);
@@ -237,13 +247,20 @@ namespace ROL {
                          const Vector<Real> &x, Real &tol ) {
       if ( this->con_->isActivated() ) {
         Teuchos::RCP<Vector<Real> > vnew = x.clone();
-        vnew->set(v);                       // Set vnew to v
-        this->con_->pruneActive(*vnew,p);   // Remove elements of vnew corresponding to binding set
-        this->hessVec(Hv,*vnew,x,tol);      // Apply full Hessian to reduced vector
-        this->con_->pruneActive(Hv,p);      // Remove elements of Hv corresponding to binding set
-        vnew->set(v);                       // Set vnew to v
-        this->con_->pruneInactive(*vnew,p); // Remove Elements of vnew corresponding to complement of binding set
-        Hv.plus(*vnew);                     // Fill complement of binding set elements in Hp with v
+        // Set vnew to v
+        vnew->set(v);
+        // Remove elements of vnew corresponding to binding set
+        this->con_->pruneActive(*vnew,p,this->eps_);
+        // Apply full Hessian to reduced vector
+        this->hessVec(Hv,*vnew,x,tol);
+        // Remove elements of Hv corresponding to binding set
+        this->con_->pruneActive(Hv,p,this->eps_);
+        // Set vnew to v
+        vnew->set(v);
+        // Remove Elements of vnew corresponding to complement of binding set
+        this->con_->pruneInactive(*vnew,p,this->eps_);
+        // Fill complement of binding set elements in Hp with v
+        Hv.plus(*vnew);
       }
       else {
         this->hessVec(Hv,v,x,tol);
@@ -274,13 +291,20 @@ namespace ROL {
                             const Vector<Real> &d, const Vector<Real> &x, Real &tol ) {
       if ( this->con_->isActivated() ) {
         Teuchos::RCP<Vector<Real> > vnew = x.clone();
-        vnew->set(v);                         // Set vnew to v
-        this->con_->pruneActive(*vnew,d,p);   // Remove elements of vnew corresponding to binding set
-        this->invHessVec(Hv,*vnew,x,tol);     // Apply full Hessian to reduced vector
-        this->con_->pruneActive(Hv,d,p);      // Remove elements of Hv corresponding to binding set
-        vnew->set(v);                         // Set vnew to v
-        this->con_->pruneInactive(*vnew,d,p); // Remove Elements of vnew corresponding to complement of binding set
-        Hv.plus(*vnew);                       // Fill complement of binding set elements in Hv with v
+        // Set vnew to v
+        vnew->set(v);
+        // Remove elements of vnew corresponding to binding set
+        this->con_->pruneActive(*vnew,d,p,this->eps_);
+        // Apply full Hessian to reduced vector
+        this->invHessVec(Hv,*vnew,x,tol);
+        // Remove elements of Hv corresponding to binding set
+        this->con_->pruneActive(Hv,d,p,this->eps_);
+        // Set vnew to v
+        vnew->set(v);
+        // Remove Elements of vnew corresponding to complement of binding set
+        this->con_->pruneInactive(*vnew,d,p,this->eps_);
+        // Fill complement of binding set elements in Hv with v
+        Hv.plus(*vnew);
       }
       else {
         this->invHessVec(Hv,v,x,tol);
@@ -301,13 +325,20 @@ namespace ROL {
                             const Vector<Real> &x, Real &tol ) {
       if ( this->con_->isActivated() ) {
         Teuchos::RCP<Vector<Real> > vnew = x.clone();
-        vnew->set(v);                       // Set vnew to v
-        this->con_->pruneActive(*vnew,p);   // Remove elements of vnew corresponding to binding set
-        this->invHessVec(Hv,*vnew,x,tol);   // Apply full Hessian to reduced vector
-        this->con_->pruneActive(Hv,p);      // Remove elements of Hv corresponding to binding set
-        vnew->set(v);                       // Set vnew to v
-        this->con_->pruneInactive(*vnew,p); // Remove Elements of vnew corresponding to complement of binding set
-        Hv.plus(*vnew);                     // Fill complement of binding set elements in Hv with v
+        // Set vnew to v
+        vnew->set(v);
+        // Remove elements of vnew corresponding to binding set
+        this->con_->pruneActive(*vnew,p,this->eps_);
+        // Apply full Hessian to reduced vector
+        this->invHessVec(Hv,*vnew,x,tol);
+        // Remove elements of Hv corresponding to binding set
+        this->con_->pruneActive(Hv,p,this->eps_);
+        // Set vnew to v
+        vnew->set(v);
+        // Remove Elements of vnew corresponding to complement of binding set
+        this->con_->pruneInactive(*vnew,p,this->eps_);
+        // Fill complement of binding set elements in Hv with v
+        Hv.plus(*vnew);
       }
       else {
         this->invHessVec(Hv,v,x,tol);
@@ -337,13 +368,20 @@ namespace ROL {
                          const Vector<Real> &d, const Vector<Real> &x, Real &tol ) {
       if ( this->con_->isActivated() ) {
         Teuchos::RCP<Vector<Real> > vnew = x.clone();
-        vnew->set(v);                         // Set vnew to v
-        this->con_->pruneActive(*vnew,d,p);   // Remove elements of vnew corresponding to binding set
-        this->precond(Mv,*vnew,x,tol);        // Apply full Hessian to reduced vector
-        this->con_->pruneActive(Mv,d,p);      // Remove elements of Mv corresponding to binding set
-        vnew->set(v);                         // Set vnew to v
-        this->con_->pruneInactive(*vnew,d,p); // Remove Elements of vnew corresponding to complement of binding set
-        Mv.plus(*vnew);                       // Fill complement of binding set elements in Mv with v
+        // Set vnew to v
+        vnew->set(v);
+        // Remove elements of vnew corresponding to binding set
+        this->con_->pruneActive(*vnew,d,p,this->eps_);
+        // Apply full Hessian to reduced vector
+        this->precond(Mv,*vnew,x,tol);
+        // Remove elements of Mv corresponding to binding set
+        this->con_->pruneActive(Mv,d,p,this->eps_);
+        // Set vnew to v
+        vnew->set(v);
+        // Remove Elements of vnew corresponding to complement of binding set
+        this->con_->pruneInactive(*vnew,d,p,this->eps_);
+        // Fill complement of binding set elements in Mv with v
+        Mv.plus(*vnew);
       }
       else {
         this->precond(Mv,v,x,tol);
@@ -364,13 +402,20 @@ namespace ROL {
                          const Vector<Real> &x, Real &tol ) {
       if ( this->con_->isActivated() ) {
         Teuchos::RCP<Vector<Real> > vnew = x.clone();
-        vnew->set(v);                       // Set vnew to v
-        this->con_->pruneActive(*vnew,p);   // Remove elements of vnew corresponding to binding set
-        this->precond(Mv,*vnew,x,tol);      // Apply full Hessian to reduced vector
-        this->con_->pruneActive(Mv,p);      // Remove elements of Mv corresponding to binding set
-        vnew->set(v);                       // Set vnew to v
-        this->con_->pruneInactive(*vnew,p); // Remove Elements of vnew corresponding to complement of binding set
-        Mv.plus(*vnew);                     // Fill complement of binding set elements in Mv with v
+        // Set vnew to v
+        vnew->set(v);
+        // Remove elements of vnew corresponding to binding set
+        this->con_->pruneActive(*vnew,p,this->eps_);
+        // Apply full Hessian to reduced vector
+        this->precond(Mv,*vnew,x,tol);
+        // Remove elements of Mv corresponding to binding set
+        this->con_->pruneActive(Mv,p,this->eps_);
+        // Set vnew to v
+        vnew->set(v);
+        // Remove Elements of vnew corresponding to complement of binding set
+        this->con_->pruneInactive(*vnew,p,this->eps_);
+        // Fill complement of binding set elements in Mv with v
+        Mv.plus(*vnew);
       }
       else {
         this->precond(Mv,v,x,tol);
@@ -382,19 +427,19 @@ namespace ROL {
     } 
 
     void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {
-      this->con_->pruneActive(v,g,x);
+      this->con_->pruneActive(v,g,x,this->eps_);
     }
 
     void pruneActive( Vector<Real> &v, const Vector<Real> &x ) {
-      this->con_->pruneActive(v,x);
+      this->con_->pruneActive(v,x,this->eps_);
     }
 
     void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {
-      this->con_->pruneInactive(v,g,x);
+      this->con_->pruneInactive(v,g,x,this->eps_);
     }
 
     void pruneInactive( Vector<Real> &v, const Vector<Real> &x ) {
-      this->con_->pruneInactive(v,x);
+      this->con_->pruneInactive(v,x,this->eps_);
     }
 
     bool isFeasible( const Vector<Real> &v ) {

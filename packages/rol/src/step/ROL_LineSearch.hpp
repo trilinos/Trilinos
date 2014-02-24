@@ -68,6 +68,9 @@ private:
   bool useralpha_;
   int algo_iter_;
 
+  Teuchos::RCP<Vector<Real> > grad_;
+  Real eps_;
+
   void updateIterate(Vector<Real> &xnew, const Vector<Real> &x, const Vector<Real> &s, Real alpha, 
                      Constraints<Real> &con ) {
     xnew.set(x); 
@@ -117,6 +120,12 @@ public:
     }
   }
 
+  void setData( const Teuchos::RCP<Vector<Real> > &grad, const Real eps = 0.0 ) { 
+    this->grad_ = grad->clone();
+    this->grad_->set(*grad);
+    this->eps_ = eps;
+  }
+
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                const Real fold, const Real sgold, const Real fnew, 
                const Vector<Real> &x, const Vector<Real> &s, 
@@ -125,8 +134,35 @@ public:
 
     // Check Armijo Condition
     bool armijo = false;
-    if ( fnew <= fold + this->c1_*alpha*sgold ) {
-      armijo = true;
+    if ( con.isActivated() ) {
+      Real gs = 0.0;
+      Teuchos::RCP<Vector<Real> > d = x.clone();
+      if ( this->edesc_ == DESCENT_STEEPEST ) {
+        this->updateIterate(*d,x,s,alpha,con);
+        d->scale(-1.0);
+        d->plus(x);
+        gs = -s.dot(*d);
+      }
+      else {
+        d->set(s);
+        d->scale(-1.0);
+        con.pruneActive(*d,*(this->grad_),x,this->eps_);
+        gs = alpha*(this->grad_)->dot(*d);
+        d->zero();
+        this->updateIterate(*d,x,s,alpha,con);
+        d->scale(-1.0);
+        d->plus(x);
+        con.pruneInactive(*d,*(this->grad_),x,this->eps_);
+        gs += (this->grad_)->dot(*d);
+      }
+      if ( fnew <= fold - this->c1_*gs ) {
+        armijo = true;
+      }
+    }
+    else {
+      if ( fnew <= fold + this->c1_*alpha*sgold ) {
+        armijo = true;
+      }
     }
 
     // Check Maximum Iteration

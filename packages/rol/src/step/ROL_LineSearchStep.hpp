@@ -89,6 +89,8 @@ private:
   bool useSecantHessVec_;
   bool useSecantPrecond_;
 
+  bool useProjectedGrad_;
+
   std::vector<bool> useInexact_;
 
 public:
@@ -111,6 +113,7 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
      
     // Initialize Linesearch Object
+    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
     // Initialize Krylov Object
@@ -161,6 +164,7 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
 
     // Initialize Linesearch Object
+    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
     // Initialize Krylov Object
@@ -192,7 +196,11 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
-    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
+    Real eps = 0.0;
+    if ( con.isActivated() ) {
+      eps = algo_state.gnorm;
+    }
+    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
 
     // Compute step s
     if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
@@ -211,9 +219,30 @@ public:
     Real gs = 0.0;
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > d = x.clone();
-      d->set(s);
-      con.pruneActive(*d,s,x);
-      gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+      if ( this->edesc_ == DESCENT_STEEPEST ) {
+        d->set(x);
+        d->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        con.project(*d);
+        d->scale(-1.0);
+        d->plus(x);
+        //d->set(s);
+        //con.pruneActive(*d,s,x,eps);
+        //con.pruneActive(*d,*(Step<Real>::state_->gradientVec),x,eps);
+        gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+      }
+      else {
+        d->set(s);
+        con.pruneActive(*d,*(Step<Real>::state_->gradientVec),x,eps);
+        gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+        d->set(x);
+        d->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        con.project(*d);
+        d->scale(-1.0);
+        d->plus(x);
+        con.pruneInactive(*d,*(Step<Real>::state_->gradientVec),x,eps);
+        gs -= (Step<Real>::state_->gradientVec)->dot(*d);
+        this->lineSearch_->setData((Step<Real>::state_->gradientVec),eps);
+      }
     }
     else {
       gs = -(Step<Real>::state_->gradientVec)->dot(s);
@@ -286,12 +315,20 @@ public:
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
     if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > xnew = x.clone();
-      xnew->set(x);
-      xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
-      con.project(*xnew);
-      xnew->axpy(-1.0,x);
-      algo_state.gnorm = xnew->norm();
+      if ( this->useProjectedGrad_ ) {
+        Teuchos::RCP<Vector<Real> > pg = x.clone();
+        pg->set(*(Step<Real>::state_->gradientVec));
+        con.computeProjectedGradient( *pg, x );
+        algo_state.gnorm = pg->norm();
+      }
+      else {
+        Teuchos::RCP<Vector<Real> > xnew = x.clone();
+        xnew->set(x);
+        xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        con.project(*xnew);
+        xnew->axpy(-1.0,x);
+        algo_state.gnorm = xnew->norm();
+      }
     }
     else {
       algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();

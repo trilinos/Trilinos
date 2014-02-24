@@ -124,64 +124,36 @@ namespace ROL {
     Constraints_HS2() {
       x2_lo_ = 1.5;
     }
-     
     void project( Vector<Real> &x ) {
       Teuchos::RCP<std::vector<Real> > ex =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
       (*ex)[1] = std::max(this->x2_lo_,(*ex)[1]);
     }
-
     bool isFeasible( const Vector<Real> &x ) {
       Teuchos::RCP<const std::vector<Real> > ex =
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       return ((*ex)[1] >= this->x2_lo_);
     }
-
-    void pruneActive(Vector<Real> &v, const Vector<Real> &x) {
+    void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
       Teuchos::RCP<const std::vector<Real> > ex = 
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      if ( (*ex)[1] <= this->x2_lo_ ) {
+      if ( (*ex)[1] <= this->x2_lo_+eps ) {
         (*ev)[1] = 0.0;
       } 
     } 
-        
-    void pruneInactive(Vector<Real> &v, const Vector<Real> &x) {
-      Teuchos::RCP<const std::vector<Real> > ex = 
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<std::vector<Real> > ev =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      (*ev)[0] = 0.0;
-      if ( !( (*ex)[1] <= this->x2_lo_ ) ) {
-        (*ev)[1] = 0.0;
-      }
-    }    
-
-    void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x) {
+    void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
       Teuchos::RCP<const std::vector<Real> > ex = 
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > eg =
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      if ( (*ex)[1] <= this->x2_lo_ && (*eg)[1] > 0.0 ) {
+      if ( (*ex)[1] <= this->x2_lo_+eps && (*eg)[1] > 0.0 ) {
         (*ev)[1] = 0.0;
       } 
     } 
-        
-    void pruneInactive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x) {
-      Teuchos::RCP<const std::vector<Real> > ex = 
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > eg = 
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
-      Teuchos::RCP<std::vector<Real> > ev =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      (*ev)[0] = 0.0;
-      if ( !( (*ex)[1] <= this->x2_lo_ && (*eg)[1] > 0.0 ) ) {
-        (*ev)[1] = 0.0;
-      }
-    }    
   };  
 
   template<class Real>

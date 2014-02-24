@@ -148,10 +148,35 @@ public:
       }
     }
 
+    // Check Sufficient Decrease in the Reduced Quadratic Model
+    bool decr = true;
+    if ( pObj.isConActivated() ) { 
+      // Compute Criticality Measure || x - P( x - g ) ||
+      Teuchos::RCP<Vector<Real> > pg = x.clone();
+      pg->set(x);
+      pg->axpy(-1.0,g);
+      pObj.project(*pg);
+      pg->scale(-1.0);
+      pg->plus(x);
+      Real pgnorm = pg->norm();
+      // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
+      pg->set(g);
+      pObj.pruneActive(*pg,g,x);
+      Real lam = std::min(1.0, del/pg->norm());
+      pg->scale(-lam);
+      pg->plus(x);
+      pObj.project(*pg);
+      pg->scale(-1.0);
+      pg->plus(x);      
+      pgnorm *= pg->norm();
+      // Sufficient decrease?
+      decr = ( aRed >= 0.1*this->eta0_*pgnorm );
+    }
+    
     // Accept or Reject Step and Update Trust Region
-    if ((rho < this->eta0_ && flagTR == 0) || flagTR >= 2 ) {      // Step Rejected 
+    if ((rho < this->eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
       fnew = fold;
-      if (rho < 0.0) {  
+      if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
         Real gs = g.dot(s);
         Teuchos::RCP<Vector<Real> > Hs = x.clone();
         pObj.hessVec(*Hs,s,x,tol);
@@ -161,15 +186,13 @@ public:
         Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold+gs)+this->eta2_*modelVal-fnew);
         del  = std::min(this->gamma1_*snorm,std::max(this->gamma0_,theta)*del);
       }
-      else { 
+      else { // Shrink trust-region radius
         del = this->gamma1_*snorm; 
       } 
     }
     else if ((rho >= this->eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
       x.axpy(1.0,s);
-    }
-    if ((rho >= this->eta0_ && flagTR != 3) || flagTR == 1) {
-      if (rho >= this->eta2_) {
+      if (rho >= this->eta2_) { // Increase trust-region radius
         del = std::min(this->gamma2_*del,this->delmax_);
       }
     }
@@ -182,12 +205,18 @@ public:
       this->cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
     }
     else if ( this->etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      this->truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+      if ( pObj.isConActivated() ) {
+        pObj.computeProjectedStep(s,x);
+      }
+#if 0
       if ( pObj.isConActivated() ) {
         this->truncatedCG_proj(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
       }
       else {
-        this->truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+        this->truncatedCG(s,snorm,del,iflag,iter,x,grad,grad,gnorm,pObj);
       }
+#endif
     }
     else if ( this->etr_ == TRUSTREGION_DOGLEG ) {
       this->dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
@@ -195,6 +224,7 @@ public:
     else if ( this->etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
       this->doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
     }
+#if 0
     // If constraints are active, then determine a feasible step
     if ( pObj.isConActivated() && this->etr_ != TRUSTREGION_CAUCHYPOINT ) {
       // Compute projected step stmp = P( x + alpha*s ) - x and xtmp = x + stmp
@@ -239,6 +269,7 @@ public:
       s.set(*stmp);
       this->pRed_ = -val;
     }
+#endif
   }
 
   void cauchypoint( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
@@ -273,11 +304,15 @@ public:
     // Gradient Vector
     Teuchos::RCP<Vector<Real> > g = x.clone(); 
     g->set(grad);
+    if ( pObj.isConActivated() ) {
+      pObj.pruneActive(*g,grad,x);
+    }
     Real normg = gnorm;
 
     // Preconditioned Gradient Vector
     Teuchos::RCP<Vector<Real> > v  = x.clone();
-    pObj.precond(*v,*g,x,tol);
+    //pObj.precond(*v,*g,x,tol);
+    pObj.reducedPrecond(*v,*g,x,grad,x,tol);
 
     // Basis Vector
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
@@ -300,7 +335,8 @@ public:
     this->pRed_ = 0.0;
 
     for (iter = 0; iter < this->maxit_; iter++) {
-      pObj.hessVec(*Hp,*p,x,tol);
+      //pObj.hessVec(*Hp,*p,x,tol);
+      pObj.reducedHessVec(*Hp,*p,x,grad,x,tol);
 
       kappa = p->dot(*Hp);
       if (kappa <= 0.0) {
@@ -333,7 +369,8 @@ public:
         break;
       }
 
-      pObj.precond(*v,*g,x,tol);
+      //pObj.precond(*v,*g,x,tol);
+      pObj.reducedPrecond(*v,*g,x,grad,x,tol);
       tmp   = gv; 
       gv    = v->dot(*g);
       beta  = gv/tmp;    
@@ -357,6 +394,7 @@ public:
     snorm = s.norm();
   }
 
+#if 0
   void truncatedCG_proj( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                          const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
@@ -468,6 +506,7 @@ public:
 
     snorm = s.norm();
   }
+#endif
 
   void dogleg( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {

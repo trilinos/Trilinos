@@ -82,32 +82,44 @@ public:
                 v is the vector to be pruned 
                 g is the gradient of the objective function at x
                 x is the optimization variable
+                eps is the active set tolerance
   */
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {}
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x ) {}
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
 
   /** \brief Remove the inactive set variables.
                 v is the vector to be pruned 
                 g is the gradient of the objective function at x
                 x is the optimization variable
+                eps is the active set tolerance
   */
-  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) { 
+  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
     tmp->set(v);
-    this->pruneActive(*tmp,g,x);
+    this->pruneActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
   }
-  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &x ) { 
+  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
     tmp->set(v);
-    this->pruneActive(*tmp,x);
+    this->pruneActive(*tmp,x,eps);
     v.axpy(-1.0,*tmp);
   }
-  
+ 
   /** \brief Check if the vector, v, is feasible
   */
   virtual bool isFeasible( const Vector<Real> &v ) { return true; }
 
+  /** \brief Compute projected gradient.
+  *             g is the gradient of the objective function at x
+  *             x is the optimization variable
+  */
+  void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
+    Teuchos::RCP<Vector<Real> > tmp = g.clone();
+    tmp->set(g);
+    this->pruneActive(g,*tmp,x);
+  }
+ 
   /** \brief Compute projected step P(x+v)-x.
                v is the step vector
                x is the optimization variables

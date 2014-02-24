@@ -72,6 +72,8 @@ private:
   bool useSecantHessVec_;
   bool useSecantPrecond_;
 
+  bool useProjectedGrad_;
+
   Real              del_;        // Trust-Region Radius
   std::vector<bool> useInexact_; // Inexactness Information
   int               TRflag_  ;   // Trust-Region Exit Flag
@@ -79,6 +81,9 @@ private:
   int               TR_ngrad_;   // Trust-Region Gradient Evaluation Number
   int               CGflag_;     // CG Termination Flag
   int               CGiter_;     // CG Iteration Count
+
+  Real              alpha_init_; // Initial Line Search Parameter for Projected Methods
+  int               max_fval_;   // Maximum Function Evaluations for Line Search              
 
 public:
 
@@ -100,7 +105,10 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
      
     // Initialize Trust Region Subproblem Solver Object
-    trustRegion_ = Teuchos::rcp( new TrustRegion<Real>(parlist) );
+    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
+    max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
+    alpha_init_       = parlist.get("Initial Linesearch Parameter", 1.0);
+    trustRegion_      = Teuchos::rcp( new TrustRegion<Real>(parlist) );
 
     // Secant Parameters
     secant_ = Teuchos::null;
@@ -128,7 +136,10 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
      
     // Initialize Trust Region Subproblem Solver Object
-    trustRegion_ = Teuchos::rcp( new TrustRegion<Real>(parlist) );
+    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
+    max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
+    alpha_init_       = parlist.get("Initial Linesearch Parameter", 1.0);
+    trustRegion_      = Teuchos::rcp( new TrustRegion<Real>(parlist) );
   }
 
   /** \brief Initialize step.
@@ -197,7 +208,12 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
-    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
+    Real eps = 0.0;
+    if ( con.isActivated() ) {
+      eps = algo_state.gnorm;
+    }
+    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
+    //ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
     this->CGflag_ = 0;
     this->CGiter_ = 0;
     this->trustRegion_->run(s,algo_state.snorm,this->del_,this->CGflag_,this->CGiter_,
@@ -209,8 +225,20 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
-    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
+    Real eps = 0.0;
+    if ( con.isActivated() ) {
+      eps = algo_state.gnorm;
+    }
+    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
 
+    // Store previous step for constraint computations
+    Teuchos::RCP<Vector<Real> > xold;
+    if ( con.isActivated() ) {
+      xold = x.clone();
+      xold->set(x);
+    }
+
+    // Update trust-region information
     this->TRflag_   = 0;
     this->TR_nfval_ = 0;
     this->TR_ngrad_ = 0;
@@ -223,31 +251,83 @@ public:
     algo_state.ngrad += this->TR_ngrad_;
     algo_state.iter++;
 
-
-    // Compute new gradient
+    // Compute new gradient and update secant storage
     Teuchos::RCP<Vector<Real> > gp;
     if ( this->TRflag_ == 0 || this->TRflag_ == 1 ) {  
+      // Perform line search (smoothing) to ensure decrease 
+      if ( con.isActivated() ) {
+        // Compute new gradient
+        gp = x.clone(); 
+        obj.gradient(*gp,x,tol);
+        algo_state.ngrad++;
+        // Compute smoothed step
+        Real alpha = 1.0;
+        Teuchos::RCP<Vector<Real> > xnew = x.clone();
+        xnew->set(x);
+        xnew->axpy(-alpha*this->alpha_init_,*gp);
+        con.project(*xnew);
+        // Compute new objective value
+        Real ftmp = obj.value(*xnew,tol);
+        algo_state.nfval++;
+        // Perform smoothing
+        int cnt = 0;
+        alpha = 1.0/this->alpha_init_;
+        while ( (fnew-ftmp) <= 1.e-4*(fnew-fold) ) { 
+          xnew->set(x);
+          xnew->axpy(-alpha*this->alpha_init_,*gp);
+          con.project(*xnew);
+          ftmp = obj.value(*xnew,tol);
+          algo_state.nfval++;
+          if ( cnt >= this->max_fval_ ) {
+            break;
+          }
+          alpha *= 0.5;
+        }
+        // Store objective function and iteration information
+        fnew = ftmp;
+        x.set(*xnew);
+      }
+      // Update Objective Function
       obj.update(x,true,algo_state.iter);
+      // Store previous gradient for secant update
       if ( this->secant_ != Teuchos::null ) {
         gp = x.clone();
         gp->set(*(Step<Real>::state_->gradientVec));
       }
+      // Compute new gradient
       obj.gradient(*(Step<Real>::state_->gradientVec),x,tol);
       algo_state.ngrad++;
+      // Update secant information
       if ( this->secant_ != Teuchos::null ) {
-        secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
+        if ( con.isActivated() ) { // Compute new constrained step
+          Teuchos::RCP<Vector<Real> > st;
+          st->set(x);
+          st->axpy(-1.0,*xold);
+          secant_->update(*(Step<Real>::state_->gradientVec),*gp,*st,algo_state.snorm,algo_state.iter+1);
+        }
+        else {
+          secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
+        }
       }
     }    
   
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
     if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > xnew = x.clone();
-      xnew->set(x);
-      xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
-      con.project(*xnew);
-      xnew->axpy(-1.0,x);
-      algo_state.gnorm = xnew->norm();
+      if ( this->useProjectedGrad_ ) {
+        Teuchos::RCP<Vector<Real> > pg = x.clone();
+        pg->set(*(Step<Real>::state_->gradientVec));
+        con.computeProjectedGradient( *pg, x );
+        algo_state.gnorm = pg->norm();
+      }
+      else {
+        Teuchos::RCP<Vector<Real> > xnew = x.clone();
+        xnew->set(x);
+        xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        con.project(*xnew);
+        xnew->axpy(-1.0,x);
+        algo_state.gnorm = xnew->norm();
+      }
     }
     else {
       algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
