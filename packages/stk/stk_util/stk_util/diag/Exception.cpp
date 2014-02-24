@@ -96,10 +96,12 @@ throw_copy(
   if (!exception)
     exception = ParallelThrowRegistry::instance().findException(typeid(Exception));
 
-  exception->clear();
-  *exception << x.what() << append_message;
+  if (exception) {
+    exception->clear();
+    *exception << x.what() << append_message;
 
-  exception->throw_copy();
+    exception->throw_copy();
+  }
 }
 
 
@@ -121,14 +123,12 @@ set_exception(
   if (!registered_exception)
     registered_exception = ParallelThrowRegistry::instance().findException(typeid(Exception));
 
-  registered_exception->setDescription(x.what());
-  registered_exception->setTraceback(Diag::Traceback::printTraceback(Diag::Traceback::snapshot()));
+  if (registered_exception) {
+    registered_exception->setDescription(x.what());
+    registered_exception->setTraceback(Diag::Traceback::printTraceback(Diag::Traceback::snapshot()));
 
-//  std::cerr << "Exception " << demangle(typeid(*registered_exception).name()) << " will be thrown from processor " << Env::parallel_rank() << " on the next MPIH function:" << std::endl
-//	    << registered_exception->getDescription() << std::endl
-//	    << registered_exception->getTraceback() << std::endl;
-
-  mpih::Set_Local_Handle(const_cast<ExParallel &>(*registered_exception));
+    mpih::Set_Local_Handle(const_cast<ExParallel &>(*registered_exception));
+  }
 }
 
 
@@ -141,14 +141,12 @@ set_exception(
   if (!registered_exception)
     registered_exception = ParallelThrowRegistry::instance().findException(typeid(Exception));
 
-  registered_exception->setDescription(x.getDescription());
-  registered_exception->setTraceback(Diag::Traceback::printTraceback(Diag::Traceback::snapshot()));
+  if (registered_exception) {
+    registered_exception->setDescription(x.getDescription());
+    registered_exception->setTraceback(Diag::Traceback::printTraceback(Diag::Traceback::snapshot()));
 
-//  std::cerr << "Exception " << demangle(typeid(*registered_exception).name()) << " will be thrown from processor " << Env::parallel_rank() << " on the next MPIH function:" << std::endl
-//	    << registered_exception->getDescription() << std::endl
-//	    << registered_exception->getTraceback() << std::endl;
-
-  mpih::Set_Local_Handle(const_cast<ExParallel &>(*registered_exception));
+    mpih::Set_Local_Handle(const_cast<ExParallel &>(*registered_exception));
+  }
 }
 
 
