@@ -41,6 +41,7 @@
 TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES NIGHTLY
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/RawHelloWorld
@@ -59,13 +60,13 @@ TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
       ": test .*  Passed"
       ": unit_test .*  Passed"
       "100% tests passed, 0 tests failed out of 2"
-  CATEGORIES NIGHTLY
   )
 
 
 TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES NIGHTLY
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
@@ -84,5 +85,46 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
       ": HelloWorld_hello_world .*  Passed"
       ": HelloWorld_unit_tests .*  Passed"
       "100% tests passed, 0 tests failed out of 2"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PS
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
   CATEGORIES NIGHTLY
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Explicitly enabled packages on input .by user.:  0"
+      "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
+      "Enabling all packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
+      "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
+      "Setting TribitsExProj_ENABLE_MixedLanguage=ON"
+      "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"
+      "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
+      "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
+      "Final set of non-enabled packages:  WrapExternal 1"
+      "Configuring done"
+      "Generating done"
+      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject"
+  TEST_1 CMND make
+    ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target simplecxx"
+      "Built target mixedlanguage"
+      "Built target pws_a"
+      "Built target pws_b"
+      "Built target pws_c"
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+    PASS_REGULAR_EXPRESSION_ALL
+      "SimpleCxx_HelloWorldTests .* Passed"
+      "MixedLanguage_RayTracerTests .* Passed"
+      "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
+      "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
+      "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
+      "100% tests passed, 0 tests failed out of 5"
   )
