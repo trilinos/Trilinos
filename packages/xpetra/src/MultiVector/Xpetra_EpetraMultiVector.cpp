@@ -226,8 +226,11 @@ namespace Xpetra {
   }
   //
 
-  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec){
-    return rcp(new EpetraMultiVector(vec));
+  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec) {
+    if (!vec.is_null())
+      return rcp(new EpetraMultiVector(vec));
+
+    return Teuchos::null;
   }
 
 
