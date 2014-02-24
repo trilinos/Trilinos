@@ -106,8 +106,8 @@ namespace {
 	if (time >= 2.0)
 	  expected_value = 2.0;
 		
-	for(size_t i=0; i<nodes.size(); i++) {
-	  double *fieldData = stk::mesh::field_data(temperature, nodes[i]);
+	for(size_t j=0; j<nodes.size(); j++) {
+	  double *fieldData = stk::mesh::field_data(temperature, nodes[j]);
 	  EXPECT_DOUBLE_EQ(expected_value, *fieldData);
 	}
       }

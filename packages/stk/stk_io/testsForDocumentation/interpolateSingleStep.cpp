@@ -90,8 +90,8 @@ namespace {
 	// ============================================================
 	//+ VERIFICATION
 	// The value of the "temperature" field at all nodes should be 1.0
-	for(size_t i=0; i<nodes.size(); i++) {
-	  double *fieldData = stk::mesh::field_data(temperature, nodes[i]);
+	for(size_t j=0; j<nodes.size(); j++) {
+	  double *fieldData = stk::mesh::field_data(temperature, nodes[j]);
 	  EXPECT_DOUBLE_EQ(1.0, *fieldData);
 	}
       }
