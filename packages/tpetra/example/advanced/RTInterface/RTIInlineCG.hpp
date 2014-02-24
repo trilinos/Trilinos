@@ -272,13 +272,13 @@ class CGDriver {
 
     testPassed = true;
 
-    // choose a solution, compute a right-hand-side
-    auto x = Tpetra::createVector<S>(A->getDomainMap()),
-         b = Tpetra::createVector<S>(A->getDomainMap()),
-      xhat = Tpetra::createVector<S>(A->getDomainMap());
-    x->randomize();
-    A->apply(*x,*b);
-    TPETRA_BINARY_TRANSFORM(xhat, b,    b); // xhat = b
+    // Choose a random exact solution and compute a right-hand-side from it.
+    auto x = Tpetra::createVector<S> (A->getDomainMap ());
+    auto b = Tpetra::createVector<S> (A->getRangeMap ());
+    auto xhat = Tpetra::createVector<S> (A->getRangeMap());
+    x->randomize ();
+    A->apply (*x, *b);
+    TPETRA_BINARY_TRANSFORM(xhat, b, b); // xhat := b
     os << "Chose exact solution and computed right-hand side" << endl;
     {
       Teuchos::OSTab tab2 (os);
@@ -286,7 +286,7 @@ class CGDriver {
       Teuchos::OSTab tab3 (os);
       os << "Exact solution 2-norm: " << x->norm2 () << endl
          << "Right-hand side 2-norm: " << b->norm2 () << endl
-         << "Initial guess 2-norm (should be same as right-hand side 2-norm): "
+         << "Right-hand side copy 2-norm (should be same as right-hand side 2-norm): "
          << xhat->norm2 () << endl;
     }
 
