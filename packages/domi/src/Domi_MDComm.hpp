@@ -161,10 +161,10 @@ public:
    * \param teuchosComm [in] The Teuchos Communicator
    *
    * \param plist [in] ParameterList with construction information
-   * \htmlonly
-   * <iframe src="domi.xml" width="90%"height="400px"></iframe>
-   * <hr />
-   * \endhtmlonly
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <hr />
+   *        \endhtmlonly
    */
   MDComm(const TeuchosCommRCP teuchosComm,
          Teuchos::ParameterList & plist);
