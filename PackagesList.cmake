@@ -105,7 +105,7 @@ INCLUDE(TribitsListHelpers)
 #
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  TrilinosFramework     cmake                             PS # Only tests, no libraries/capabilities!
+  TriBITS               cmake/tribits                     PS # Only tests, no libraries/capabilities!
   Teuchos               packages/teuchos                  PS
   ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
   Sacado                packages/sacado                   PS
