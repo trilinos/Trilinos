@@ -110,7 +110,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PS
       "Final set of non-enabled packages:  WrapExternal 1"
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject"
+      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PS"
   TEST_1 CMND make
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
@@ -127,4 +127,41 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PS
       "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
       "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
       "100% tests passed, 0 tests failed out of 5"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES NIGHTLY
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=OFF
+      -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=OFF
+      -DTribitsExProj_ENABLE_WrapExternal=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Explicitly enabled packages on input .by user.:  WrapExternal 1"
+      "Explicitly disabled packages on input .by user or by default.:  0"
+      "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON because WrapExternal has an optional dependence on PackageWithSubpackages"
+      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA=ON because PackageWithSubpackages has an optional dependence on PackageWithSubpackagesSubpackageA"
+      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageB=ON because PackageWithSubpackages has an optional dependence on PackageWithSubpackagesSubpackageB"
+      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageC=ON because PackageWithSubpackages has an optional dependence on PackageWithSubpackagesSubpackageC"
+      "Setting TribitsExProj_ENABLE_SimpleCxx=ON because PackageWithSubpackagesSubpackageA has an optional dependence on SimpleCxx"
+      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages WrapExternal 3"
+      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal 6"
+      "Final set of non-enabled packages:  MixedLanguage 1"
+      "Configuring done"
+      "Generating done"
+      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_WrapExternal"
+  TEST_1 CMND make
+    ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target WrapExternal_run_external_func"
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+    PASS_REGULAR_EXPRESSION_ALL
+      "WrapExternal_run_external_func .* Passed"
+      "100% tests passed, 0 tests failed out of 1"
   )
