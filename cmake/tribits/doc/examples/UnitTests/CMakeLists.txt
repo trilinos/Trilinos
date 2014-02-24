@@ -61,3 +61,28 @@ TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
       "100% tests passed, 0 tests failed out of 2"
   CATEGORIES NIGHTLY
   )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    PASS_REGULAR_EXPRESSION_ALL
+      "Configuring done"
+      "Generating done"
+      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsHelloWorld"
+  TEST_1 CMND make
+    ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target hello_world_lib"
+      "Built target hello_world"
+      "Built target HelloWorld_unit_tests"
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+    PASS_REGULAR_EXPRESSION_ALL
+      ": HelloWorld_hello_world .*  Passed"
+      ": HelloWorld_unit_tests .*  Passed"
+      "100% tests passed, 0 tests failed out of 2"
+  CATEGORIES NIGHTLY
+  )
