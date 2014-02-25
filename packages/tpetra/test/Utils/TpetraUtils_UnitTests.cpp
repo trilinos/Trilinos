@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -90,7 +90,7 @@ namespace Teuchos {
     const int n = a1.size();
     // Compare sizes
     if (as<int>(a2.size()) != n) {
-      out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
+      out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
         << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
       return false;
     }
@@ -139,15 +139,15 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( TpetraUtils, Sort2, T1, T2 )
   {
     const int NUMENTRIES = 20;
-    typedef typename Array<T1>::iterator IT1;
-    typedef typename Array<T2>::iterator IT2;
+    // typedef typename Array<T1>::iterator IT1;
+    // typedef typename Array<T2>::iterator IT2;
     Array<T1> arr1(NUMENTRIES);
     Array<T2> arr2(NUMENTRIES);
     for (Teuchos_Ordinal i=0; i<NUMENTRIES; ++i) {
@@ -181,8 +181,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( TpetraUtils, Sort3, T1, T2 )
   {
     const int NUMENTRIES = 20;
-    typedef typename Array<T1>::iterator IT1;
-    typedef typename Array<T2>::iterator IT2;
+    // typedef typename Array<T1>::iterator IT1;
+    // typedef typename Array<T2>::iterator IT2;
     Array<T1> arr1(NUMENTRIES),
               arr3(NUMENTRIES);
     Array<T2> arr2(NUMENTRIES);
@@ -236,7 +236,7 @@ namespace {
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 

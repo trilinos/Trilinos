@@ -948,19 +948,18 @@ std::string RILUK<MatrixType>::description () const
   // like everything on a single line, you should call describe()
   // instead.
   os << "\"Ifpack2::RILUK\": {";
-  if (this->getObjectLabel () != "") {
-    os << "Label: \"" << this->getObjectLabel () << "\", ";
-  }
   os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  os << "Level-of-fill: " << getLevelOfFill() << ", ";
 
   if (A_.is_null ()) {
     os << "Matrix: null";
   }
   else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
-       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+    os << "Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
   os << "}";

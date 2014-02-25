@@ -55,12 +55,13 @@
 
 #include "MueLu_SaPFactory_decl.hpp"
 
-#include "MueLu_Level.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -176,7 +177,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+    GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 

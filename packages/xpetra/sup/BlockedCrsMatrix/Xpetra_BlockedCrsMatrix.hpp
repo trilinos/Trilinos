@@ -78,9 +78,9 @@
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
-/** \file Xpetra_Matrix.hpp
+/** \file Xpetra_BlockedCrsMatrix.hpp
 
-  Declarations for the class Xpetra::Matrix.
+  Declarations for the class Xpetra::BlockedCrsMatrix.
 */
 namespace Xpetra {
 
@@ -823,11 +823,11 @@ private:
     B->scale(scalarB);
 
     size_t MaxNumEntries = std::max(A->getNodeMaxNumRowEntries(),B->getNodeMaxNumRowEntries());
-    std::vector<GlobalOrdinal> vecIndices(MaxNumEntries);
-    std::vector<Scalar>        vecValues (MaxNumEntries);
+    std::vector<LocalOrdinal> vecIndices(MaxNumEntries);
+    std::vector<Scalar>       vecValues (MaxNumEntries);
 
-    const Teuchos::ArrayView<GlobalOrdinal> Indices(&vecIndices[0], vecIndices.size());
-    const Teuchos::ArrayView<Scalar>        Values (&vecValues[0],  vecValues.size());
+    const Teuchos::ArrayView<LocalOrdinal> Indices(&vecIndices[0], vecIndices.size());
+    const Teuchos::ArrayView<Scalar>       Values (&vecValues[0],  vecValues.size());
     size_t NumEntries;
 
     Teuchos::ArrayView<const GlobalOrdinal> MyGlobalRowIds = A->getRowMap()->getNodeElementList(); // global row ids

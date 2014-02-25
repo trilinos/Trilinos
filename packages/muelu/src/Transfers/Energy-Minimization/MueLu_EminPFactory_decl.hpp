@@ -47,12 +47,14 @@
 #define MUELU_EMINPFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_Constraint_fwd.hpp"
-#include "MueLu_SteepestDescentSolver_fwd.hpp"
+#include "MueLu_EminPFactory_fwd.hpp"
+
 #include "MueLu_CGSolver_fwd.hpp"
+#include "MueLu_Constraint_fwd.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_PFactory.hpp"
+#include "MueLu_SteepestDescentSolver_fwd.hpp"
 
 namespace MueLu {
 

@@ -1,6 +1,63 @@
 #include "aprepro.h"
 
 namespace SEAMS {
+  extern SEAMS::Aprepro *aprepro;
+
+  double array_interpolate(const array *arr, double row, double col)
+  {
+    /*
+     * Bilinear interpolation.
+     * Assumes equal grid spacing over the range
+     * (0.0 -> rows-1) (0.0 -> cols-1)
+     */
+  
+    int irl = row;
+    int irh = irl+1;
+    int icl = col;
+    int ich = icl+1;
+
+    int cols = arr->cols;
+    int rows = arr->rows;
+
+    double value = 0.0;
+  
+    if (irh < rows && ich < cols) {
+      double v11 = arr->data[irl*cols+icl];
+      double v21 = arr->data[irh*cols+icl];
+      double v12 = arr->data[irl*cols+ich];
+      double v22 = arr->data[irh*cols+ich];
+      value =
+	v11 * (irh - row) * (ich - col) + v21 * (row - irl) * (ich - col) +
+	v12 * (irh - row) * (col - icl) + v22 * (row - irl) * (col - icl);
+    }
+    else {
+      aprepro->error("Row or Column index out of range"); 
+    }
+    return value;
+  }
+
+  double array_value(array *arr, double row, double col)
+  {
+    double value = 0.0;
+    int cols = arr->cols;
+    int rows = arr->rows;
+    if (row >= 0 && row < rows && col >= 0 && col < cols) {
+      if (row != (int)row || col != (int)col) {
+	value = array_interpolate(arr, row, col);
+      }
+      else {
+	int irow = row;
+	int icol = col;
+	int offset = irow*cols+icol;
+	value = arr->data[offset];
+      }
+    }
+    else {
+      aprepro->error("Row or Column index out of range"); 
+    }
+    return value;
+  }
+
   array *array_add(const array *a, const array *b)
   {
     array *array_data = new array(a->rows, a->cols);

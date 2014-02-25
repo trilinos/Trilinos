@@ -54,10 +54,12 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
-#include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_BlockedRAPFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_RAPFactory_decl.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -138,7 +140,7 @@ namespace MueLu {
     if (checkAc_)
       CheckMainDiagonal(bAc);
 
-    GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*bAc, "Ac (blocked)");
+    GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*bAc, "Ac (blocked)");
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 

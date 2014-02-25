@@ -62,12 +62,12 @@
 #include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_RebalanceBlockInterpolationFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_HierarchyHelpers.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -179,7 +179,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss2; ss2 << "P(" << curBlockId << "," << curBlockId << ") rebalanced:";
-      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Pii, ss2.str(), params);
+      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*Pii, ss2.str(), params);
 
       // store rebalanced P block
       subBlockRebP.push_back(Pii);
@@ -188,7 +188,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss; ss << "P(" << curBlockId << "," << curBlockId << ") not rebalanced:";
-      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Pii, ss.str(), params);
+      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*Pii, ss.str(), params);
       // store rebalanced P block
       subBlockRebP.push_back(Pii);
     }

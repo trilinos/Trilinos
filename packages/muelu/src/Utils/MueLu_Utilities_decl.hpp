@@ -53,18 +53,18 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_CrsMatrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
 namespace Xpetra {
@@ -98,15 +98,15 @@ namespace Tpetra {
 
 #endif
 
-// MPI helper
+namespace MueLu {
+
+// MPI helpers
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 #define minAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
 #define maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
-
-namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
   //defined after Utils class
@@ -377,11 +377,6 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
-
-    /*! @brief print matrix info
-    */
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
-
   }; // class Utils
 
 #ifdef HAVE_MUELU_EPETRA

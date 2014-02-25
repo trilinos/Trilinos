@@ -35,13 +35,14 @@ ENDIF()
 #
 # Tests
 #
+
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
   # Test that demangling is enabled, otherwise the test would fail even is they are logically correct.
   # NOTE:
   # A the moment, the test environment for Trilinos on software is set incorrectly, and
   # results in not setting the value correctly.
-  IF (HAVE_GCC_ABI_DEMANGLE STREQUAL "1")
+  IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "ON") )
 
     IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
         ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)

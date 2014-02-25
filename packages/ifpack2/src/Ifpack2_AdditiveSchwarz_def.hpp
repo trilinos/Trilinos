@@ -1075,7 +1075,9 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description () const
     out << "Label: \"" << this->getObjectLabel () << "\"";
   }
   out << ", Initialized: " << (isInitialized () ? "true" : "false")
-      << ", Computed: " << (isComputed () ? "true" : "false");
+      << ", Computed: " << (isComputed () ? "true" : "false")
+      << ", Overlap level: " << OverlapLevel_
+      << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"";
 
   if (Matrix_.is_null ()) {
     out << ", Matrix: null";

@@ -399,20 +399,19 @@ std::string Chebyshev<MatrixType>::description () const {
   // like everything on a single line, you should call describe()
   // instead.
   out << "\"Ifpack2::Chebyshev\": {";
-  if (this->getObjectLabel () != "") {
-    out << "Label: \"" << this->getObjectLabel () << "\", ";
-  }
   out << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
       << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  out << impl_.description() << ", ";
 
   if (impl_.getMatrix ().is_null ()) {
     out << "Matrix: null";
   }
   else {
-    out << "Matrix: not null"
-        << ", Global matrix dimensions: ["
+    out << "Global matrix dimensions: ["
         << impl_.getMatrix ()->getGlobalNumRows () << ", "
-        << impl_.getMatrix ()->getGlobalNumCols () << "]";
+        << impl_.getMatrix ()->getGlobalNumCols () << "]"
+        << ", Global nnz: " << impl_.getMatrix ()->getGlobalNumEntries();
   }
 
   out << "}";

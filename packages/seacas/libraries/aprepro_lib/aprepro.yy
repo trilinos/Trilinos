@@ -323,18 +323,7 @@ exp:	  NUM			{ $$ = $1; 				}
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }
         | bool QUEST exp COLON exp   { $$ = ($1) ? ($3) : ($5);              }
-        | AVAR LBRACK exp COMMA exp RBRACK { array *arr = $1->value.avar;
-                                      int cols = arr->cols;
-                                      int rows = arr->rows;
-                                      if ($3 < rows && $5 < cols) {
-                                        int offset = $3*cols+$5;
-                                        $$ = $1->value.avar->data[offset];
-                                      }
-                                      else {
-                                        yyerror(aprepro, "Row or Column index out of range"); 
-                                        yyerrok;
-                                      }
-                                    }
+        | AVAR LBRACK exp COMMA exp RBRACK { $$ = array_value($1->value.avar, $3, $5); }
         | AVAR LBRACK exp COMMA exp RBRACK EQUAL exp 
                                   { $$ = $8;
                                     array *arr = $1->value.avar;

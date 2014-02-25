@@ -57,10 +57,10 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
 
+#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \

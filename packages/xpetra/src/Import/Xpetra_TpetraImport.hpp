@@ -63,7 +63,7 @@ namespace Xpetra {
   const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &);
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& import);
   //
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -166,9 +166,12 @@ namespace Xpetra {
     return *tpetraImport.getTpetra_Import();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
-    return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(import));
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& import) {
+    if (!import.is_null())
+      return rcp(new TpetraImport<LocalOrdinal,GlobalOrdinal,Node>(import));
+
+    return Teuchos::null;
   }
   //
 

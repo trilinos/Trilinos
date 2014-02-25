@@ -24,12 +24,6 @@ namespace Xpetra {
   RCP< const Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > toTpetra(const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph);
   //
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatOps>
-  class CrsMatrix;
-#endif
-
   $TMPL_TEMPLATE_PARAM
   class $TMPL_CLASS
   $TMPL_INHERITANCE
