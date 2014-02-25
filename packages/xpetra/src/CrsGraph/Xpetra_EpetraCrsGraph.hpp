@@ -63,17 +63,8 @@ namespace Xpetra {
   // TODO: move that elsewhere
   RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph& graph);
   const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph);
-  //
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatOps>
-  class CrsMatrix;
-#endif
-
-  class EpetraCrsGraph
-    : public CrsGraph<int, int>
-  {
+  class EpetraCrsGraph : public CrsGraph<int, int> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;

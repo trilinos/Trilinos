@@ -70,18 +70,9 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP< const Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > toTpetra(const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > >& graph);
-  //
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatOps>
-  class CrsMatrix;
-#endif
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class TpetraCrsGraph
-    : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-  {
+  class TpetraCrsGraph : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
     // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsGraphClass;
