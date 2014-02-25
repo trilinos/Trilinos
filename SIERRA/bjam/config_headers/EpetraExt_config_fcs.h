@@ -75,11 +75,4 @@
 /* define if we want to use MPI */
 #define HAVE_MPI
 
-#ifndef EPETRAEXT_DEPRECATED
-#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define EPETRAEXT_DEPRECATED  __attribute__((__deprecated__))
-#  else
-#    define EPETRAEXT_DEPRECATED
-#  endif
-#endif
-
+#define EPETRAEXT_DEPRECATED
