@@ -31,6 +31,16 @@
 #include <stk_expreval/Evaluator.hpp>
 #include <stk_expreval/Lexer.hpp>
 
+namespace {
+struct expression_evaluation_exception : public virtual std::exception
+{
+  virtual const char* what() const throw() {
+    return "Error evaluating expressions";
+  }
+};
+
+}
+
 namespace stk {
 namespace expreval {
 
@@ -223,7 +233,7 @@ Node::eval() const
       int argc = 0;
       for (Node *arg = m_right; arg; arg = arg->m_right)
       {
-	argv[argc++] = arg->m_left->eval();
+        argv[argc++] = arg->m_left->eval();
       }
 
       for(unsigned int i=0; i<Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
@@ -236,7 +246,7 @@ Node::eval() const
     }
 
   default: // Unknown opcode
-    throw std::runtime_error("Evaluation error");
+    throw expression_evaluation_exception();
   }
 }
 
@@ -930,7 +940,16 @@ Eval::evaluate() const
   if (!m_parseStatus)
     throw std::runtime_error(std::string("Expression '") + m_expression + "' did not parse successfully");
 
-  return m_headNode->eval();
+  double returnValue;
+  try
+  {
+    returnValue = m_headNode->eval();
+  }
+  catch(expression_evaluation_exception &)
+  {
+    throw std::runtime_error(std::string("Expression '") + m_expression + "' did not evaluate successfully");
+  }
+  return returnValue;
 }
 
 bool
