@@ -42,6 +42,9 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
+// Teuchos
+#include "Teuchos_XMLParameterListCoreHelpers.hpp"
+
 // Tpetra
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"

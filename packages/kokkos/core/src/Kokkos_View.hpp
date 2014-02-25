@@ -282,9 +282,11 @@ struct ViewEnableArrayOper<
 namespace Kokkos {
 
 struct AllocateWithoutInitializing {};
+struct ViewWithoutManaging {};
 
 namespace {
 const AllocateWithoutInitializing allocate_without_initializing = AllocateWithoutInitializing();
+const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
 }
 
 /** \class View
@@ -419,6 +421,7 @@ private:
   typename traits::value_type * m_ptr_on_device ;
   typename traits::shape_type   m_shape ;
   stride_type                   m_stride ;
+  Impl::ViewTracking< traits >  m_tracking ;
 
 public:
 
@@ -478,7 +481,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
+  ~View() { m_tracking.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -610,15 +613,37 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
+            Impl::is_same<T,typename traits::const_value_type>::value )
+          &&
+          ( ! traits::is_managed )
+        ), const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
       typedef typename traits::shape_type  shape_type_ ;
 
       shape_type_::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
+      m_tracking = false ;
+    }
+
+  explicit inline
+  View( const ViewWithoutManaging & ,
+        typename traits::value_type * ptr ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 )
+    : m_ptr_on_device(ptr)
+    {
+      typedef typename traits::shape_type  shape_type_ ;
+
+      shape_type_::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      stride_type::assign_no_padding( m_stride , m_shape );
+      m_tracking = false ;
     }
 
   //------------------------------------

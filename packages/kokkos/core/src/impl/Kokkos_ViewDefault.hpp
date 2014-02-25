@@ -72,7 +72,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     typedef typename View<DT,DL,DD,DM,Specialize>::shape_type   shape_type ;
     typedef typename View<DT,DL,DD,DM,Specialize>::stride_type  stride_type ;
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -80,9 +80,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     stride_type::assign( dst.m_stride , src.m_stride.value );
 
+    dst.m_tracking = src.m_tracking ;
+
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    Impl::ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -104,11 +106,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape , 1 , i0 );
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     dst.m_ptr_on_device = src.m_ptr_on_device + i0 ;
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -134,7 +138,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape , 2 , i0 , i1 );
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device = src.m_ptr_on_device + i0 + src.m_stride.value * i1 ;
@@ -143,7 +149,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + i1 + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -170,7 +176,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape, 3, i0, i1, i2 );
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device =
@@ -186,7 +194,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
           i1 ) + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -214,7 +222,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape, 4, i0, i1, i2, i3 );
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device =
@@ -232,7 +242,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
           i1 )) + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -261,7 +271,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape, 5, i0, i1, i2, i3, i4);
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device =
@@ -281,7 +293,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
           i1 ))) + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -311,7 +323,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape, 6, i0, i1, i2, i3, i4, i5);
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device =
@@ -333,7 +347,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
           i1 )))) + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -364,7 +378,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape, 7, i0, i1, i2, i3, i4, i5, i6 );
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device =
@@ -388,7 +404,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
           i1 ))))) + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -420,7 +436,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     assert_shape_bounds( src.m_shape, 8, i0, i1, i2, i3, i4, i5, i6, i7 );
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
 
     if ( is_left ) {
       dst.m_ptr_on_device =
@@ -445,7 +463,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
           i1 )))))) + i0 * src.m_stride.value ;
     }
 
-    ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -470,7 +488,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     //typedef typename traits_type::shape_type shape_type ; // unused
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -479,10 +497,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       assert_shape_bounds( src.m_shape , 1 , range.first );
       assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
 
+      dst.m_tracking = src.m_tracking ;
       dst.m_shape.N0 = range.second - range.first ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -508,12 +527,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
+    dst.m_tracking      = src.m_tracking ;
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i1 ;
 
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -538,12 +558,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
+    dst.m_tracking      = src.m_tracking ;
     dst.m_shape.N0      = src.m_shape.N1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i0 ;
 
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -568,14 +589,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
+    dst.m_tracking      = src.m_tracking ;
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_shape.N1      = 1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i1 ;
     dst.m_stride        = src.m_stride;
 
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -600,14 +622,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
+    dst.m_tracking      = src.m_tracking ;
     dst.m_shape.N0      = 1 ;
     dst.m_shape.N1      = src.m_shape.N1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i0 ;
     dst.m_stride        = src.m_stride;
 
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
   //------------------------------------
   /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
@@ -632,7 +655,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     typedef typename traits_type::shape_type shape_type ;
     typedef typename View<DT,DL,DD,DM,Specialize>::stride_type stride_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
     stride_type::assign( dst.m_stride , 0 );
@@ -648,9 +671,10 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
       stride_type::assign( dst.m_stride , src.m_stride.value );
 
+      dst.m_tracking      = src.m_tracking ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride.value ;
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -676,7 +700,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     //typedef typename traits_type::shape_type shape_type ; // unused
     enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_shape.N1      = 0 ;
@@ -690,6 +714,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = range1.second - range1.first ;
       dst.m_stride   = src.m_stride ;
+      dst.m_tracking = src.m_tracking ;
 
       if ( left ) {
         // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
@@ -700,7 +725,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
         dst.m_ptr_on_device = src.m_ptr_on_device + range0.first * dst.m_stride.value + range1.first ;
       }
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -726,7 +751,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     //typedef typename traits_type::shape_type shape_type ; // unused
     enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_shape.N1      = 0 ;
@@ -740,6 +765,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       dst.m_shape.N0 = src.m_shape.N0 ;
       dst.m_shape.N1 = range1.second - range1.first ;
       dst.m_stride   = src.m_stride ;
+      dst.m_tracking = src.m_tracking ;
 
       if ( left ) {
         // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
@@ -751,7 +777,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       }
 
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -777,7 +803,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     //typedef typename traits_type::shape_type shape_type ; // unused
     enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_shape.N1      = 0 ;
@@ -791,6 +817,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = src.m_shape.N1 ;
       dst.m_stride   = src.m_stride ;
+      dst.m_tracking = src.m_tracking ;
 
       if ( left ) {
         // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
@@ -801,7 +828,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
         dst.m_ptr_on_device = src.m_ptr_on_device + range0.first * dst.m_stride.value ;
       }
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
   //------------------------------------
