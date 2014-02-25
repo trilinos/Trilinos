@@ -85,6 +85,26 @@ private:
   Real              alpha_init_; // Initial Line Search Parameter for Projected Methods
   int               max_fval_;   // Maximum Function Evaluations for Line Search              
 
+  Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, Constraints<Real> &con ) {
+    if ( con.isActivated() ) {
+      Teuchos::RCP<Vector<Real> > xnew = x.clone();
+      if ( this->useProjectedGrad_ ) {
+        xnew->set(g);
+        con.computeProjectedGradient( *xnew, x );
+      }
+      else {
+        xnew->set(x);
+        xnew->axpy(-1.0,g);
+        con.project(*xnew);
+        xnew->axpy(-1.0,x);
+      }
+      return xnew->norm();
+    }
+    else {
+      return g.norm();
+    }
+  }
+
 public:
 
   virtual ~TrustRegionStep() {}
@@ -157,6 +177,10 @@ public:
     state->descentVec  = x.clone();
     state->gradientVec = x.clone();
 
+    if ( con.isActivated() ) {
+      con.project(x);
+    }
+
     obj.update(x,true,algo_state.iter);    
     if ( this->useInexact_[1] ) {
       Real gtol = 2.0*this->del_;
@@ -165,33 +189,14 @@ public:
         gtol = std::min(algo_state.gnorm,this->del_);
         obj.gradient(*(state->gradientVec),x,gtol);
         algo_state.ngrad++;
-        algo_state.gnorm = (state->gradientVec)->norm();
+        algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
       }  
     }
     else {
       Real gtol = std::sqrt(ROL_EPSILON);
       obj.gradient(*(state->gradientVec),x,gtol);
       algo_state.ngrad++;
-      if ( con.isActivated() ) {
-        if ( this->useProjectedGrad_ ) {
-          Teuchos::RCP<Vector<Real> > pg = x.clone();
-          pg->set(*(Step<Real>::state_->gradientVec));
-          con.computeProjectedGradient( *pg, x );
-          algo_state.gnorm = pg->norm();
-        }
-        else {
-          Teuchos::RCP<Vector<Real> > xnew = x.clone();
-          xnew->set(x);
-          xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
-          con.project(*xnew);
-          xnew->axpy(-1.0,x);
-          algo_state.gnorm = xnew->norm();
-        }
-      }
-      else {
-        algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
-      }
-      //algo_state.gnorm = (state->gradientVec)->norm();
+      algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
     }
     algo_state.snorm = 1.e10;
     algo_state.value = obj.value(x,ftol);
