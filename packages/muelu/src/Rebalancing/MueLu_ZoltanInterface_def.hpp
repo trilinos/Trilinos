@@ -69,33 +69,32 @@ namespace MueLu {
  RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",          Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "(advanced) Factory computing the number of partition.");
+    validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
 
     return validParamList;
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
-    Input(currentLevel, "number of partitions");
-  } //DeclareInput()
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>      A             = Get< RCP<Matrix> >     (level, "A");
-    RCP<MultiVector> Coords        = Get< RCP<MultiVector> >(level, "Coordinates");
-    GO               numPartitions = Get<GO>                (level, "number of partitions");
+    RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
+    RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<const Map> rowMap        = A->getRowMap();
-    size_t problemDimension      = Coords->getNumVectors();
+    RCP<MultiVector> Coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    size_t           dim      = Coords->getNumVectors();
 
-    if (numPartitions == 1) {
+    GO               numParts = level.Get<GO>("number of partitions");
+
+    if (numParts == 1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
@@ -126,13 +125,11 @@ namespace MueLu {
     if (GetVerbLevel() & Statistics1) zoltanObj_->Set_Param("debug_level", "1");
     else                              zoltanObj_->Set_Param("debug_level", "0");
 
-    std::stringstream ss;
-    ss << numPartitions;
-    zoltanObj_->Set_Param("num_global_partitions", ss.str());
+    zoltanObj_->Set_Param("num_global_partitions", toString(numParts));
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
-    zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &problemDimension);
+    zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &dim);
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry,     (void *) Coords.get());
 
     // Data pointers that Zoltan requires.

@@ -84,7 +84,6 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >   ("Coordinates",            Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >   ("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
     validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
     validParamList->set< RCP<const ParameterList> > ("ParameterList",          Teuchos::null, "Zoltan2 parameters");
 
@@ -93,22 +92,23 @@ namespace MueLu {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
-    Input(currentLevel, "number of partitions");
-  } //DeclareInput()
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>           A = Get< RCP<Matrix> >     (level, "A");
-    RCP<MultiVector> coords = Get< RCP<MultiVector> >(level, "Coordinates");
-    GO             numParts = Get<GO>                (level, "number of partitions");
+    RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
+    RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<const Map> rowMap = A->getRowMap();
-    RCP<const Map> map    = coords->getMap();
+    RCP<MultiVector> coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    RCP<const Map>   map      = coords->getMap();
+
+    GO               numParts = level.Get<GO>("number of partitions");
+
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError,
                                "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 

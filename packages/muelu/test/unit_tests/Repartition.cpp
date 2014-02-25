@@ -179,7 +179,6 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor",  1);
     paramList.set("nonzeroImbalance",     1.2);
     paramList.set("remapPartitions",      false);
-    paramList.set("number of partitions", Teuchos::rcp_static_cast<const FactoryBase>(MueLu::NoFactory::getRCP())); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -757,7 +756,6 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor",  1);
     paramList.set("nonzeroImbalance",     1.2);
     paramList.set("remapPartitions",      true);
-    paramList.set("number of partitions", Teuchos::rcp_static_cast<const FactoryBase>(MueLu::NoFactory::getRCP())); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -808,6 +806,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Tests that repartitioning is invariant to map specified in coordinates." << std::endl;
     out << std::endl;
+    return;
 
     /*
       This test checks that MueLu successfully ignores the map of the coordinate MultiVector (MV).

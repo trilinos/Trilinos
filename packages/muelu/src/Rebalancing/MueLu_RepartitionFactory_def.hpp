@@ -96,18 +96,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
 
-    // By default, the generating factory is 'this, not Teuchos::null, which means that neither user defined data nor FactoryManager
-    // are used, which is unusual. That is because this class actually computes the number of partitions internally.
-    //
-    // However, one can specify the number of partitions to override this behaviour. In order to manually set the "number of partitions"
-    // entry in the level by doing one of these alternatives:
-    //    *) level.Set("numbers of partitions");
-    //       myRepartitionFact.set< RCP<FactoryBase> >("number of partitions", Teuchos::null);
-    //    *) level.Set("numbers of partitions", myRepartitionFact)
-    // and doing appropriate requests
-    RCP<const FactoryBase> rcpThis = rcpFromRef(*this);
-    validParamList->set< RCP<const FactoryBase> >("number of partitions", rcpThis, "(advanced) Factory computing the number of partition. By default, an appropriate number of partition is computed internally.");
-
     return validParamList;
   }
 
@@ -115,7 +103,6 @@ namespace MueLu {
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Partition");
-    Input(currentLevel, "number of partitions");
   }
 
   template<class T> class MpiTypeTraits            { public: static MPI_Datatype getType(); };
@@ -233,8 +220,8 @@ namespace MueLu {
     // FIXME Quick way to figure out how many partitions there should be (same algorithm as ML)
     // FIXME Should take into account nnz? Perhaps only when user is using min #nnz per row threshold.
     GO numPartitions;
-    if (IsAvailable(currentLevel, "number of partitions")) {
-      numPartitions = Get<GO>(currentLevel, "number of partitions");
+    if (currentLevel.IsAvailable("number of partitions")) {
+      numPartitions = currentLevel.Get<GO>("number of partitions");
       GetOStream(Warnings0, 0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
 
     } else {
@@ -248,7 +235,7 @@ namespace MueLu {
       }
       numPartitions = std::min(numPartitions, Teuchos::as<GO>(numProcs));
 
-      Set(currentLevel, "number of partitions", numPartitions);
+      currentLevel.Set("number of partitions", numPartitions, NoFactory::get());
     }
     GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
 
