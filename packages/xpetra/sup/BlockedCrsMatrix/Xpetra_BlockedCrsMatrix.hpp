@@ -832,7 +832,7 @@ private:
 
     Teuchos::ArrayView<const GlobalOrdinal> MyGlobalRowIds = A->getRowMap()->getNodeElementList(); // global row ids
 
-    if(scalarA)
+    if(scalarA != ScalarTraits< Scalar >::zero())
     {
       for(size_t i=0; i<A->getNodeNumRows(); ++i)
       {
