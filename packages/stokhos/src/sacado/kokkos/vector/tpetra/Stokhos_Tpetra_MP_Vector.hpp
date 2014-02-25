@@ -71,10 +71,13 @@ template <typename Node>
 struct DeviceForNode {
   typedef Kokkos::Serial type;
 };
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 template <typename Device>
 struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
+#endif
 
 }
 

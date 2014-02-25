@@ -494,7 +494,7 @@ IF(Stokhos_ENABLE_Sacado)
           DEPLIBS stokhos kokkoscore kokkoslinalg
           )
 
-        IF (Kokkos_ENABLE_Pthread)
+        IF (Kokkos_ENABLE_Pthread AND KokkosClassic_ENABLE_KokkosCompat)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_Threads
             SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp

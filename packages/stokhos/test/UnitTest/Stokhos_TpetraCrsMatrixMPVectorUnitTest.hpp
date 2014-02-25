@@ -971,7 +971,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
-  using Teuchos::getParametersFromXmlFile;
 
   const LocalOrdinal VectorSize = 3;
   typedef typename Stokhos::DeviceForNode<Node>::type Device;
