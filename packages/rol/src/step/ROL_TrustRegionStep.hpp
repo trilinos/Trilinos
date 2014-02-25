@@ -172,7 +172,26 @@ public:
       Real gtol = std::sqrt(ROL_EPSILON);
       obj.gradient(*(state->gradientVec),x,gtol);
       algo_state.ngrad++;
-      algo_state.gnorm = (state->gradientVec)->norm();
+      if ( con.isActivated() ) {
+        if ( this->useProjectedGrad_ ) {
+          Teuchos::RCP<Vector<Real> > pg = x.clone();
+          pg->set(*(Step<Real>::state_->gradientVec));
+          con.computeProjectedGradient( *pg, x );
+          algo_state.gnorm = pg->norm();
+        }
+        else {
+          Teuchos::RCP<Vector<Real> > xnew = x.clone();
+          xnew->set(x);
+          xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+          con.project(*xnew);
+          xnew->axpy(-1.0,x);
+          algo_state.gnorm = xnew->norm();
+        }
+      }
+      else {
+        algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
+      }
+      //algo_state.gnorm = (state->gradientVec)->norm();
     }
     algo_state.snorm = 1.e10;
     algo_state.value = obj.value(x,ftol);
@@ -282,6 +301,7 @@ public:
             break;
           }
           alpha *= 0.5;
+          cnt++;
         }
         // Store objective function and iteration information
         fnew = ftmp;

@@ -127,7 +127,7 @@ public:
 
     // Compute Ratio of Actual and Predicted Reduction
     Real aRed = fold - fnew;
-    Real rho  = 0.0;  
+    Real rho  = 0.0; 
     if ((std::abs(aRed) < this->eps_) && (std::abs(this->pRed_) < this->eps_)) {
       rho = 1.0; 
       flagTR = 0;
@@ -150,7 +150,7 @@ public:
 
     // Check Sufficient Decrease in the Reduced Quadratic Model
     bool decr = true;
-    if ( pObj.isConActivated() ) { 
+    if ( pObj.isConActivated() && (std::abs(aRed) > this->eps_) ) { 
       // Compute Criticality Measure || x - P( x - g ) ||
       Teuchos::RCP<Vector<Real> > pg = x.clone();
       pg->set(x);
@@ -304,10 +304,11 @@ public:
     // Gradient Vector
     Teuchos::RCP<Vector<Real> > g = x.clone(); 
     g->set(grad);
+    Real normg = gnorm;
     if ( pObj.isConActivated() ) {
       pObj.pruneActive(*g,grad,x);
+      normg = g->norm();
     }
-    Real normg = gnorm;
 
     // Preconditioned Gradient Vector
     Teuchos::RCP<Vector<Real> > v  = x.clone();

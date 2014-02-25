@@ -92,6 +92,18 @@ int main(int argc, char *argv[]) {
     ROL::StatusTest<RealT> status(gtol,stol,maxit);
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
+      if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
+        parlist->set("Initial Linesearch Parameter",1.e-4);
+        parlist->set("Initial Trust-Region Radius",1.e1);
+      }
+      else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
+        parlist->set("Initial Linesearch Parameter",1.0);
+        parlist->set("Initial Trust-Region Radius",1.e3);
+      }
+      else {
+        parlist->set("Initial Linesearch Parameter",1.0);
+        parlist->set("Initial Trust-Region Radius",1.e1);
+      }
       *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
 
       // Initial Guess Vector 
