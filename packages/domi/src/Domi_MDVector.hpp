@@ -449,6 +449,26 @@ public:
    */
   MDArrayView< const Scalar > getData() const;
 
+  /** \brief Get a non-const view of the lower padding data along the
+             given axis as an MDArrayView
+   */
+  MDArrayView< Scalar > getLowerPadDataNonConst(int axis);
+
+  /** \brief Get a const view of the lower padding data along the
+             given axis as an MDArrayView
+   */
+  MDArrayView< const Scalar > getLowerPadData(int axis) const;
+
+  /** \brief Get a non-const view of the upper padding data along the
+             given axis as an MDArrayView
+   */
+  MDArrayView< Scalar > getUpperPadDataNonConst(int axis);
+
+  /** \brief Get a const view of the upper padding data along the
+             given axis as an MDArrayView
+   */
+  MDArrayView< const Scalar > getUpperPadData(int axis) const;
+
   //@}
 
   /** \name Mathematical methods */
@@ -842,12 +862,8 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
                                                         axis,
                                                         index));
   // Take a slice of this MDVector's MDArrayView
-  int numDims = parent->getNumDims();
-  for (int myAxis=0; myAxis < numDims; ++myAxis)
-  {
-    if (myAxis == axis) _mdArrayView = _mdArrayView[index];
-    else                _mdArrayView = _mdArrayView[Slice()];
-  }
+  MDArrayView< Scalar > newView(_mdArrayView, axis, index);
+  _mdArrayView = newView;
 
   // Initialize the communication padding messages
   initializeMessages();
@@ -883,12 +899,8 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
                                                         slice,
                                                         bndryPad));
   // Take a slice of this MDVector's MDArrayView
-  int numDims = parent->getNumDims();
-  for (int myAxis=0; myAxis < numDims; ++myAxis)
-  {
-    if (myAxis == axis) _mdArrayView = _mdArrayView[slice];
-    else                _mdArrayView = _mdArrayView[Slice()];
-  }
+  MDArrayView< Scalar > newView(_mdArrayView, axis, slice);
+  _mdArrayView = newView;
 
   // Initialize the communication padding messages
   initializeMessages();
@@ -1215,6 +1227,71 @@ MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getData() const
 {
   return _mdArrayView.getConst();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDArrayView< Scalar >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getLowerPadDataNonConst(int axis)
+{
+  MDArrayView< Scalar > newArrayView(_mdArrayView,
+                                     axis,
+                                     Slice(getLowerPad()));
+  return newArrayView;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDArrayView< const Scalar >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getLowerPadData(int axis) const
+{
+  MDArrayView< Scalar > newArrayView = getLowerPadDataNonConst();
+  return newArrayView.getConst();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDArrayView< Scalar >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getUpperPadDataNonConst(int axis)
+{
+  LocalOrd n   = getLocalDim(axis);
+  int      pad = getUpperPad();
+  Slice slice;
+  if (pad == 0) slice = Slice(n,n);
+  else          slice = Slice(n-pad,n);
+  MDArrayView< Scalar > newArrayView(_mdArrayView,
+                                     axis,
+                                     slice);
+  return newArrayView;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDArrayView< const Scalar >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+getUpperPadData(int axis) const
+{
+  MDArrayView< Scalar > newArrayView = getUpperPadDataNonConst();
+  return newArrayView.getConst();
 }
 
 ////////////////////////////////////////////////////////////////////////
