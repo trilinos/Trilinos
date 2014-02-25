@@ -79,7 +79,7 @@ struct SparseRowView< Kokkos::CrsMatrix< Sacado::MP::Vector<Storage>,
                              SizeType> MatrixType;
   typedef typename MatrixType::values_type values_type;
   typedef typename MatrixType::index_type index_type;
-  typedef typename values_type::sacado_mp_vector_view_type scalar_type;
+  typedef typename values_type::view_value_type scalar_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
 
 private:
@@ -134,7 +134,7 @@ struct SparseRowViewConst< Kokkos::CrsMatrix< Sacado::MP::Vector<Storage>,
                              SizeType> MatrixType;
   typedef typename MatrixType::values_type values_type;
   typedef typename MatrixType::index_type index_type;
-  typedef typename values_type::sacado_mp_vector_view_type scalar_type;
+  typedef typename values_type::view_value_type scalar_type;
   typedef const typename MatrixType::non_const_ordinal_type ordinal_type;
 
 private:
@@ -396,15 +396,15 @@ public:
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0) {
       if (is_cuda)
-        threads_per_vector = x.static_storage_size();
+        threads_per_vector = x.sacado_size();
       else
         threads_per_vector = 1;
     }
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.static_storage_size() / threads_per_vector;
+    size_type num_per_thread = x.sacado_size() / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.static_storage_size(),
+      num_per_thread * threads_per_vector != x.sacado_size(),
       std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
@@ -642,15 +642,15 @@ public:
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0) {
       if (is_cuda)
-        threads_per_vector = x.static_storage_size();
+        threads_per_vector = x.sacado_size();
       else
         threads_per_vector = 1;
     }
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.static_storage_size() / threads_per_vector;
+    size_type num_per_thread = x.sacado_size() / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.static_storage_size(),
+      num_per_thread * threads_per_vector != x.sacado_size(),
       std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 

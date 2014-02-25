@@ -640,8 +640,7 @@ public:
     // and thus 8 or 6 blocks per SM.  We use these values by default if
     // the user-specified block dimensions are zero
 
-    const typename input_vector_type::array_type xa( x );
-    const size_type value_dimension = xa.dimension_1();
+    const size_type value_dimension = x.sacado_size();
 
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0)
@@ -785,8 +784,6 @@ public:
                         Device,
                         OutputMemory > output_vector_type;
 
-  static const unsigned NumPerThread = MatrixStorage::static_size;
-
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
                      output_vector_type & y )
@@ -799,8 +796,7 @@ public:
     // and thus 8 or 6 blocks per SM.  We use these values by default if
     // the user-specified block dimensions are zero
 
-    const typename input_vector_type::array_type xa( x );
-    const size_type value_dimension = xa.dimension_1();
+    const size_type value_dimension = x.sacado_size();
 
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0)

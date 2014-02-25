@@ -119,6 +119,7 @@ namespace Sacado {
 
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
+      typedef typename storage_type::device_type device_type;
       typedef typename storage_type::pointer pointer;
       typedef typename storage_type::volatile_pointer volatile_pointer;
       typedef typename storage_type::const_pointer const_pointer;
@@ -168,6 +169,13 @@ namespace Sacado {
       //! Constructor with specified size \c sz
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
+       */
+      KOKKOS_INLINE_FUNCTION
+      Vector(ordinal_type sz, pointer v, bool owned) : s(sz,v,owned) {}
+
+      //! Constructor for creating a view out of pre-allocated memory
+      /*!
+       * This does not do any initialization of the coefficients.
        */
       KOKKOS_INLINE_FUNCTION
       Vector(ordinal_type sz, const value_type& x) : s(sz,x) {}
@@ -341,28 +349,68 @@ namespace Sacado {
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator=(const Vector& x) {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return *this;
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator=(const volatile Vector& x) {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return *this;
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator=(const Vector& x) volatile {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return const_cast<Vector&>(*this);
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator=(const volatile Vector& x) volatile {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return const_cast<Vector&>(*this);
       }
 
@@ -1027,6 +1075,20 @@ namespace Sacado {
 
       return is;
     }
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+
+    /**\brief  Define a partition of a View of Sacado::MP::Vector type */
+    struct VectorPartition {
+      unsigned begin ;
+      unsigned end ;
+
+      template< typename iType0 , typename iType1 >
+      KOKKOS_INLINE_FUNCTION
+      VectorPartition( const iType0 & i0 , const iType1 & i1 ) :
+        begin(i0), end(i1) {}
+    };
 
   } // namespace MP
 

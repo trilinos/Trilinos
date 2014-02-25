@@ -370,6 +370,9 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
       sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
+      sacado/kokkos/vector/Kokkos_View_MP_Vector_Contiguous.hpp
+      sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
+      sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
       sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
       )
     IF (Stokhos_ENABLE_KokkosLinAlg)
