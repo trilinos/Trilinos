@@ -332,32 +332,50 @@ int main(int argc, char *argv[])
       // from this method, communication padding points should now
       // have values that correspond to their global IDs.  Boundary
       // padding points should still be equal to -1.
-      cout << pid << ": " << mdArray << endl;
       mdVector.updateCommPad();
-      cout << pid << ": updateCommPad() completed" << endl;
-      cout << pid << ": " << mdArray << endl;
 
-//       // Check the MdVector values
-//       if (numDims == 2)
-//       {
-// 	Domi::Ordinal i0;
-// 	Domi::Ordinal j0;
-//         Teuchos::Tuple< int, 2 > myCommPad;
-
-// 	// Interior data should be unchanged
-// 	for (int j = 0; j < mdVector.getLocalOwnDims(1); ++j)
-// 	{
-// 	  for (int i = 0; i < mdVector.getLocalOwnDims(0); ++i)
-// 	  {
-// 	    Domi::Ordinal lid = mdMap->getLocalElement(tuple(i,j));
-// 	    Domi::Ordinal gid = mdMap->getGlobalElement(lid);
-// 	    if (verbose)
-// 	      cout << pid << ": mdVector(" << i << "," << j << ") = "
-//                    << mdVector(i,j) << " (should be " << gid << ")"
-//                    << endl;
-// 	    assert(mdVector(i,j) == gid);
-// 	  }
-// 	}
+      // Check the owned, non-padding values.  Interior data should be
+      // unchanged
+      if (numDims == 2)
+      {
+        Domi::Slice iBounds = mdVector.getLocalBounds(0);
+        Domi::Slice jBounds = mdVector.getLocalBounds(1);
+	for (int j = jBounds.start(); j < jBounds.stop(); ++j)
+	{
+	  for (int i = iBounds.start(); i < iBounds.stop(); ++i)
+	  {
+	    int    lid = mdMap->getLocalIndex(tuple(i,j));
+	    double gid = (double) mdMap->getGlobalIndex(lid);
+	    if (verbose)
+	      cout << pid << ": mdVector(" << i << "," << j << ") = "
+                   << mdArray(i,j) << " (should be " << gid << ")"
+                   << endl;
+	    assert(mdArray(i,j) == gid);
+	  }
+	}
+      }
+      else  // 3D
+      {
+        Domi::Slice iBounds = mdVector.getLocalBounds(0);
+        Domi::Slice jBounds = mdVector.getLocalBounds(1);
+        Domi::Slice kBounds = mdVector.getLocalBounds(2);
+	for (int k = kBounds.start(); k < kBounds.stop(); ++k)
+	{
+          for (int j = jBounds.start(); j < jBounds.stop(); ++j)
+          {
+            for (int i = iBounds.start(); i < iBounds.stop(); ++i)
+            {
+              int    lid = mdMap->getLocalIndex(tuple(i,j,k));
+              double gid = (double) mdMap->getGlobalIndex(lid);
+              if (verbose)
+                cout << pid << ": mdVector(" << i << "," << j << "," << k
+                     << ") = " << mdArray(i,j) << " (should be " << gid << ")"
+                     << endl;
+              assert(mdArray(i,j,k) == gid);
+            }
+	  }
+	}
+      }
 
 // #if 0
 // 	// Left bndryPad points should still be -1
@@ -855,7 +873,8 @@ int main(int argc, char *argv[])
 
 //        }
     }
-    cout << "Test " << test << " passed on processor " << pid << endl;
+    cout << "Test " << test << ": End Result: TEST PASSED on processor "
+         << pid << endl;
   }
   catch (Teuchos::CommandLineProcessor::HelpPrinted &e)
   {
