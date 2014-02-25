@@ -179,6 +179,32 @@ public:
    */
   MDArrayView(const MDArrayView< T > & array);
 
+  /* \brief Parent/single index sub-array view constructor
+   *
+   * \param parent [in] an MDArrayView, from which this MDArrayView
+   *        will be derived
+   *
+   * \param axis [in] the axis to which this index ordinal applies
+   *
+   * \param index [in] the ordinal that defines this sub-array
+   */
+  MDArrayView(const MDArrayView< T > & parent,
+              int axis,
+              size_type index);
+
+  /* \brief Parent/single slice sub-array view constructor
+   *
+   * \param parent [in] an MDArrayView, from which this MDArrayView
+   *        will be derived
+   *
+   * \param axis [in] the axis to which this index ordinal applies
+   *
+   * \param slice [in] the slice that defines this sub-array
+   */
+  MDArrayView(const MDArrayView< T > & parent,
+              int axis,
+              Slice slice);
+
   /** \brief Assignment operator
    *
    * \param array [in] The source <tt>MDArrayView</tt> to be copied
@@ -711,6 +737,78 @@ MDArrayView< T >::MDArrayView(const MDArrayView< T > & array) :
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
+MDArrayView< T >::MDArrayView(const MDArrayView< T > & parent,
+                              int axis,
+                              size_type index) :
+  _dimensions(),
+  _strides(),
+  _array(),
+  _layout(parent._layout),
+  _ptr(),
+  _next_axis(0)
+{
+#ifdef DOMI_ENABLE_ABC
+  parent.assertIndex(index, axis);
+#endif
+  using std::cout;
+  using std::endl;
+  // Find the offset to the new MDArrayView
+  size_type offset = index * parent._strides[axis];
+  // Compute the dimensions of the new MDArrayView
+  size_type n = parent._dimensions.size();
+  // Compute the new dimensions and strides
+  if (n == 1)
+  {
+    _dimensions.push_back(1);
+    _strides.push_back(1);
+  }
+  else
+  {
+    for (int myAxis = 0; myAxis < n; myAxis++)
+      if (myAxis != axis)
+      {
+	_dimensions.push_back(parent._dimensions[myAxis]);
+	_strides.push_back(parent._strides[myAxis]);
+      }
+  }
+  // Compute the new MDArrayView and pointer
+  _array = parent._array.view(offset,
+                              computeSize(_dimensions(),
+                                          _strides()));
+  _ptr = _array.getRawPtr();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >::MDArrayView(const MDArrayView< T > & parent,
+                              int axis,
+                              Slice slice) :
+  _dimensions(parent._dimensions),
+  _strides(parent._strides),
+  _array(),
+  _layout(parent._layout),
+  _ptr(),
+  _next_axis(0)
+{
+  // Note: the Slice.bounds() method produces safe indexes
+  Slice bounds = slice.bounds(_dimensions[axis]);
+  // Find the offset to the new MDArrayView
+  size_type offset = bounds.start() * _strides[axis];
+  // Compute the dimensions of the new MDArrayView
+  _dimensions[axis] = (bounds.stop() - bounds.start()) / bounds.step();
+  // Compute the strides of the new MDArrayView
+  _strides[axis] *= bounds.step();
+  // Compute the new MDArrayView and pointer
+  _array = parent._array.view(offset,
+                              computeSize(_dimensions(),
+                                          _strides()));
+  _ptr = _array.getRawPtr();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
 MDArrayView< T > &
 MDArrayView< T >::operator=(const MDArrayView< T > & array)
 {
@@ -921,37 +1019,8 @@ template< typename T >
 MDArrayView< T >
 MDArrayView< T >::operator[](MDArrayView< T >::size_type i)
 {
-#ifdef DOMI_ENABLE_ABC
-  assertIndex(i, _next_axis);
-#endif
-  // Find the offset to the new MDArrayView
-  size_type offset = i * _strides[_next_axis];
-  // Compute the dimensions of the new MDArrayView
-  size_type n = _dimensions.size();
-  Teuchos::Array< size_type > newDims;
-  Teuchos::Array< size_type > newStrides;
-  if (n == 1)
-  {
-    newDims.resize(1);
-    newDims[0] = 1;
-    newStrides.resize(1);
-    newStrides[0] = 1;
-  }
-  else
-  {
-    for (int axis = 0; axis < n; axis++)
-      if (axis != _next_axis)
-      {
-	newDims.push_back(_dimensions[axis]);
-	newStrides.push_back(_strides[axis]);
-      }
-  } 
   // Construct the new MDArrayView
-  Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
-                                                                 newStrides()));
-  MDArrayView< T > result(buffer, newDims, _layout);
-  // Correct the strides of the new MDArrayView
-  result._strides = newStrides;
+  MDArrayView< T > result(*this, _next_axis, i);
   // Correct the next axis of the new MDArrayView
   result._next_axis = _next_axis;
   // Return the result
@@ -964,37 +1033,8 @@ template< typename T >
 const MDArrayView< T >
 MDArrayView< T >::operator[](MDArrayView< T >::size_type i) const
 {
-#ifdef DOMI_ENABLE_ABC
-  assertIndex(i, _next_axis);
-#endif
-  // Find the offset to the new MDArrayView
-  size_type offset = i * _strides[_next_axis];
-  // Compute the dimensions of the new MDArrayView
-  size_type n = _dimensions.size();
-  Teuchos::Array< size_type > newDims;
-  Teuchos::Array< size_type > newStrides;
-  if (n == 1)
-  {
-    newDims.resize(1);
-    newDims[0] = 1;
-    newStrides.resize(1);
-    newStrides[0] = 1;
-  }
-  else
-  {
-    for (int axis = 0; axis < n; axis++)
-      if (axis != _next_axis)
-      {
-	newDims.push_back(_dimensions[axis]);
-	newStrides.push_back(_strides[axis]);
-      }
-  } 
   // Construct the new MDArrayView
-  Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
-                                                                 newStrides()));
-  MDArrayView< T > result(buffer, newDims, _layout);
-  // Correct the strides of the new MDArrayView
-  result._strides = newStrides;
+  MDArrayView< T > result(*this, _next_axis, i);
   // Correct the next axis of the new MDArrayView
   result._next_axis = _next_axis;
   // Return the result
@@ -1007,22 +1047,8 @@ template< typename T >
 MDArrayView< T >
 MDArrayView< T >::operator[](Slice s)
 {
-  // Note: the Slice.bounds() method produces safe indexes
-  Slice bounds = s.bounds(_dimensions[_next_axis]);
-  // Find the offset to the new MDArrayView
-  size_type offset = bounds.start() * _strides[_next_axis];
-  // Compute the dimensions of the new MDArrayView
-  Teuchos::Array< size_type > newDims(_dimensions);
-  newDims[_next_axis] = (bounds.stop() - bounds.start()) / bounds.step();
-  // Compute the strides of the new MDArrayView
-  Teuchos::Array< size_type > newStrides(_strides);
-  newStrides[_next_axis] *= bounds.step();
   // Construct the new MDArrayView
-  Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
-                                                          newStrides()));
-  MDArrayView< T > result(buffer, newDims, _layout);
-  // Correct the strides of the new MDArrayView
-  result._strides = newStrides;
+  MDArrayView< T > result(*this, _next_axis, s);
   // Correct the next axis of the new MDArrayView
   result._next_axis = _next_axis + 1;
   if (result._next_axis >= _dimensions.size())
@@ -1037,22 +1063,8 @@ template< typename T >
 const MDArrayView< T >
 MDArrayView< T >::operator[](Slice s) const
 {
-  // Note: the Slice.bounds() method produces safe indexes
-  Slice bounds = s.bounds(_dimensions[_next_axis]);
-  // Find the offset to the new MDArrayView
-  size_type offset = bounds.start() * _strides[_next_axis];
-  // Compute the dimensions of the new MDArrayView
-  Teuchos::Array< size_type > newDims(_dimensions);
-  newDims[_next_axis] = (bounds.stop() - bounds.start()) / bounds.step();
-  // Compute the strides of the new MDArrayView
-  Teuchos::Array< size_type > newStrides(_strides);
-  newStrides[_next_axis] *= bounds.step();
   // Construct the new MDArrayView
-  Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
-                                                          newStrides()));
-  MDArrayView< T > result(buffer, newDims, _layout);
-  // Correct the strides of the new MDArrayView
-  result._strides = newStrides;
+  MDArrayView< T > result(*this, _next_axis, s);
   // Correct the next axis of the new MDArrayView
   result._next_axis = _next_axis + 1;
   if (result._next_axis >= _dimensions.size())
