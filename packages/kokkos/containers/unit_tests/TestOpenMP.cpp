@@ -85,10 +85,6 @@ protected:
   static void TearDownTestCase()
   {
     Kokkos::OpenMP::finalize();
-
-    omp_set_num_threads(0);
-
-    ASSERT_EQ( 1 , omp_get_max_threads() );
   }
 };
 

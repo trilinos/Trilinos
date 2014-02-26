@@ -260,27 +260,6 @@ KOKKOS_FORCEINLINE_FUNCTION
 bool operator>= (const pair<T1,void>& lhs, const pair<T1,void>& rhs)
 { return !(lhs<rhs); }
 
-//
-// Specialization of hash for Kokkos::pair.
-//
-template <class T1, class T2>
-struct hash< pair<T1,T2> >
-{
-  typedef pair<T1,T2> argument_type;
-  typedef pair<T1,T2> first_argument_type;
-  typedef uint32_t second_argument_type;
-  typedef uint32_t result_type;
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  uint32_t operator()( const pair<T1,T2> & p, uint32_t seed = 0u) const
-  {
-    hash<T1> hash1;
-    hash<T2> hash2;
-    return hash1(p.first, hash2(p.second,seed));
-  }
-};
-
-
 } // namespace Kokkos
 
 

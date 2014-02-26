@@ -149,14 +149,16 @@ enum UnorderedMapOpStatus
 /// \tparam Device The Kokkos Device type.
 ///
 /// \tparam Hasher Definition of the hash function for instances of
-///   <tt>Key</tt>.  If you rely on the default template parameter for
-///   \c Hasher, then there must be a specialization of Kokkos::hash for
-///   \c Key (without the \c const, if \c Key is const).
+///   <tt>Key</tt>.  The default will calculate a bitwise hash.
+///
+/// \tparam EqualTo Definition of the equality function for instances of
+///   <tt>Key</tt>.  The default will do a bitwise equality comparison.
+///
 template <   typename Key
            , typename Value
            , typename Device
-           , typename Hasher = hash<typename Impl::remove_const<Key>::type>
-           , typename EqualTo = equal_to<typename Impl::remove_const<Key>::type>
+           , typename Hasher = pod_hash<typename Impl::remove_const<Key>::type>
+           , typename EqualTo = pod_equal_to<typename Impl::remove_const<Key>::type>
         >
 class UnorderedMap
 {
@@ -491,6 +493,7 @@ public:
 
           // Set key and value
           m_keys[new_index] = k;
+          //safe_store(&m_keys[new_index], k);
           if (!is_set) { m_values[new_index] = v; }
 
           // Do not proceed until key and value are updated in global memory
@@ -670,40 +673,42 @@ private: // private member functions
   {
     size_type new_index = invalid_index ;
 
+    bool * const has_failed_inserts = & m_scalars().has_failed_inserts;
+
     if ( is_insertable_map ) {
 
       const size_type num_blocks = m_available_indexes.size();
 
       // Search blocks for a free entry.
       // If a failed insert is encountered by any thread then abort the search.
-      for ( size_type i=0; new_index == invalid_index &&
-                           i < num_blocks &&
-                           ! m_scalars().has_failed_inserts ; ++i ) {
-
+      for ( size_type i=0; new_index == invalid_index && i < num_blocks && !*has_failed_inserts ; ++i )
+      {
         const size_type curr_block = (starting_block + i) % num_blocks;
 
         size_type * available_ptr = &m_available_indexes[curr_block];
 
-        size_type available ;
+        size_type old_available = safe_load(available_ptr);
 
-        // Search current block for an available entry.
-        while ( new_index == invalid_index && ( 0u < ( available = safe_load(available_ptr) ) ) ) {
+        while ( new_index == invalid_index && ( 0u < old_available ) && !*has_failed_inserts ) {
+          // Search current block for an available entry.
+          const size_type available = old_available;
 
           // Offset of first set bit in 'available':
           const int offset = Impl::find_first_set(available) - 1;
 
           // Try to unset that bit:
-          const size_type claim = available & ~(static_cast<size_type>(1) << offset);
+          const size_type new_available = available & ~(static_cast<size_type>(1) << offset);
 
-          if (atomic_compare_exchange_strong(available_ptr,available,claim)) {
+          old_available = atomic_compare_exchange(available_ptr, available, new_available);
+          if ( available == old_available) {
             new_index = (curr_block << Impl::power_of_two<block_size>::value) + offset;
           }
         }
       }
 
       if ( new_index == invalid_index ) {
-        if (!m_scalars().has_failed_inserts) {
-          m_scalars().has_failed_inserts = true;
+        if (*has_failed_inserts) {
+          *has_failed_inserts = true;
         }
         atomic_fetch_add(&m_failed_insert_scratch[starting_block],1u);
       }
@@ -721,14 +726,15 @@ private: // private member functions
     const size_type offset = i & (block_size-1u);
     const size_type increment = static_cast<size_type>(1) << offset;
 
-    size_type * block_ptr = &m_available_indexes[block];
-    size_type available = safe_load(block_ptr);
-    size_type new_available = available | increment;
+    size_type * available_ptr = &m_available_indexes[block];
+    size_type old_available = safe_load(available_ptr);
+    size_type available;
 
-    while (!atomic_compare_exchange_strong(block_ptr,available,new_available)) {
-      available = safe_load(block_ptr);
-      new_available = available | increment;
-    }
+    do {
+      available = old_available;
+      const size_type new_available = available | increment;
+      old_available = atomic_compare_exchange(available_ptr, available, new_available);
+    } while (old_available != available);
 
     return true;
   }
