@@ -47,6 +47,7 @@
 
 // Domi includes
 #include "Domi_Exceptions.hpp"
+#include "Domi_Utils.hpp"
 
 namespace Domi
 {
@@ -261,7 +262,12 @@ MDRevIterator< MDARRAY >::MDRevIterator(const MDARRAY & mdarray,
   if (end_index)
     assign_end_index();
   else
-    assign_begin_index();
+  {
+    if (computeSize(_dimensions) == 0)
+      assign_end_index();
+    else
+      assign_begin_index();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

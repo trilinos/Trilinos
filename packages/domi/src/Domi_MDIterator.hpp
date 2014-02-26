@@ -47,6 +47,7 @@
 
 // Domi includes
 #include "Domi_Exceptions.hpp"
+#include "Domi_Utils.hpp"
 
 namespace Domi
 {
@@ -130,7 +131,7 @@ public:
   /** \brief Index constructor
    *
    *  \param mdarray [in] The multi-dimensional array object on which
-   *         will be iterated.
+   *         the iterator will act upon
    *
    *  \param index [in] A Teuchos::ArrayView that specifies where the
    *         internal index of the iterator should start.
@@ -259,7 +260,12 @@ MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
   if (end_index)
     assign_end_index();
   else
-    _index.assign(_dimensions.size(), 0);
+  {
+    if (computeSize(_dimensions) == 0)
+      assign_end_index();
+    else
+      _index.assign(_dimensions.size(), 0);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
