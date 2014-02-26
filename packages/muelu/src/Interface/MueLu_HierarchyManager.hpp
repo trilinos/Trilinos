@@ -121,6 +121,13 @@ namespace MueLu {
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
+#ifdef HAVE_MUELU_DEBUG
+      // Reset factories' data used for debugging
+      for (int i = 0; i < levelManagers_.size(); i++)
+        levelManagers_[i]->ResetDebugData();
+
+#endif
+
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
       RCP<Level>  l  = H.GetLevel(0);
