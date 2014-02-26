@@ -872,7 +872,27 @@ void build_test_map(const RCP<const MapType> & oldMap, RCP<MapType> & newMap) {
   } 
 }
 
+// ===============================================================================
+template<class ImportType, class MapType>
+void build_remote_only_map(const RCP<const ImportType> & Import, RCP<MapType> & newMap) {
+  typedef typename MapType::local_ordinal_type LO;
+  typedef typename MapType::local_ordinal_type GO;
+  if(Import.is_null()) return;
 
+  RCP<const MapType> targetMap = Import->getTargetMap();
+  size_t NumRemotes = Import->getNumRemoteIDs();
+  ArrayView<const LO> oldRemoteLIDs = Import->getRemoteLIDs();
+  Array<GO> newRemoteGIDs(NumRemotes);
+
+  for(size_t i=0; i < NumRemotes; i++)
+    newRemoteGIDs[i] = targetMap->getGlobalElement(oldRemoteLIDs[i]);
+    
+  const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+  newMap = rcp(new MapType(INVALID,newRemoteGIDs,targetMap->getIndexBase(),targetMap->getComm(),targetMap->getNode()));
+}
+
+
+// ===============================================================================
  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar )  {
    RCP<const Comm<int> > Comm = getDefaultComm();
    typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
@@ -1723,10 +1743,70 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
     total_err+=test_err;
   }
 
+  TEST_EQUALITY(total_err,0);
+}
 
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RemoteOnlyImport, Basic, Ordinal )  {
+// Test the remotePIDs Tpetra::Import constructor   
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::Vector<double,Ordinal,Ordinal, Node> VectorType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;  
+  RCP<CrsMatrixType> A,B;
 
+  RCP<const ImportType> Import1, Import2;
+  RCP<VectorType> SourceVector, TargetVector, TestVector;
+  RCP<MapType> Map0;
+  int total_err=0;
+  int test_err=0;
+
+  // Build the sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+
+  // Grab its importer
+  Import1 = A->getGraph()->getImporter();
+
+  // Only test in parallel
+  if(Comm->getSize()==1) { TEST_EQUALITY(0,0); return;}
+
+  // Build the remote-only map
+  build_remote_only_map<ImportType,MapType>(Import1,Map0);
+
+  // Vectors
+  SourceVector = rcp(new VectorType(Import1->getSourceMap()));
+  TargetVector = rcp(new VectorType(Import1->getTargetMap()));
+  TestVector   = rcp(new VectorType(Map0));
+  
+  /////////////////////////////////////////////////////////
+  // Test #1: Import & Compare
+  /////////////////////////////////////////////////////////
+  {
+    // Import reference vector
+    Teuchos::ScalarTraits< double >::seedrandom(24601);
+    SourceVector->randomize();
+    TargetVector->doImport(*SourceVector,*Import1,Tpetra::INSERT);
+    
+    // Build remote-only import
+    Import2 = Import1->createRemoteOnlyImporter(Map0);
+    
+    // Do remote-only import
+    TestVector->doImport(*SourceVector,*Import2,Tpetra::INSERT);    
+
+    // Compare vector output
+    Teuchos::ArrayRCP<const double> view1 = TargetVector->get1dView();
+    Teuchos::ArrayRCP<const double> view2 = TestVector->get1dView();
+    double diff=0;
+    size_t NumComps = Map0->getNodeNumElements();
+    for(size_t i=0; i < NumComps; i++) {
+      size_t j = (size_t) Import1->getTargetMap()->getLocalElement(Map0->getGlobalElement((Ordinal)i));
+      diff += std::abs( view1[j] - view2[i] );
+    }
+    test_err = (diff > 1e-10) ? 1 : 0;
+    total_err+=test_err;
+  }
   TEST_EQUALITY(total_err,0);
 }
 
@@ -1740,7 +1820,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, GetPids, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, PackAndPrepareWithOwningPIDs, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import, AdvancedConstructors, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import, AdvancedConstructors, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RemoteOnlyImport, Basic, ORDINAL )
 
 #   define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrixImportExport, doImport, ORDINAL, SCALAR ) \

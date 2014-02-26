@@ -321,6 +321,14 @@ namespace Tpetra {
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
+    /// \brief Returns an importer that contains only the remote entries of this
+    ///
+    /// Returns an importer that contains only the remote entries of this importer.  
+    /// It is expected that remoteTarget represents such a map.
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImporter (const Teuchos::RCP<const map_type>& remoteTarget) const;
+
+
     //@}
     //! @name I/O Methods
     //@{
