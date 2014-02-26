@@ -260,16 +260,14 @@ int main(int argc, char *argv[]) {
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
   RCP<Hierarchy> H;
-  for (int i=0; i< numRebuilds+1; ++i) {
+  for (int i = 0; i <= numRebuilds; i++) {
+    A->SetMaxEigenvalueEstimate(-one);
+
     H = mueLuFactory->CreateHierarchy();
     H->GetLevel(0)->Set("A",           A);
     H->GetLevel(0)->Set("Nullspace",   nullspace);
     H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
-
-    if (i<numRebuilds)
-      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
   }
 
   comm->barrier();
