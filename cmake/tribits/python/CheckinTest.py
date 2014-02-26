@@ -1830,7 +1830,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
     inOptions.ctestOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.ctestOptions
 
   assertExtraBuildConfigFiles(inOptions.extraBuilds)
-  assertExtraBuildConfigFiles(inOptions.ssExtraBuilds)
+  assertExtraBuildConfigFiles(inOptions.stExtraBuilds)
 
   if not inOptions.skipDepsUpdate:
     removeIfExists(getProjectDependenciesXmlFileName(inOptions.projectName))
@@ -1869,17 +1869,17 @@ def checkinTest(baseDir, inOptions, configuration={}):
       buildTestCaseList,
       buildname,
       buildname in requestedDefaultBuilds,
-      ["PS"],
+      ["PT"],
       True,
       False,
       commonConfigOptions + buildopts)
       
-  if inOptions.ssExtraBuilds:
-    for ssExtraBuild in inOptions.ssExtraBuilds.split(','):
+  if inOptions.stExtraBuilds:
+    for ssExtraBuild in inOptions.stExtraBuilds.split(','):
       setBuildTestCaseInList(buildTestCaseList, ssExtraBuild, True,
-        ["PS", "SS"],  False, True, [])
+        ["PT", "ST"],  False, True, [])
 
-  allValidPackageTypesList = ["PS", "SS", "EX"]
+  allValidPackageTypesList = ["PT", "ST", "EX"]
 
   if inOptions.extraBuilds:
     for extraBuild in inOptions.extraBuilds.split(','):

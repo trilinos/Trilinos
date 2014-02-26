@@ -41,8 +41,8 @@
 # Only for unit testing
 
 SET(extraTrilinosRepo_TPLS_FINDMODS_CLASSIFICATIONS
-  ExtraTPL1    cmake/    SS
-  ExtraTPL2    cmake/    PS
+  ExtraTPL1    cmake/    ST
+  ExtraTPL2    cmake/    PT
   )
 
 # NOTE: the files cmake/FindTPLExtraTPL[1,2] don't actually exit butr this

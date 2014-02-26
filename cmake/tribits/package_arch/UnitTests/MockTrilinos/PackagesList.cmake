@@ -46,34 +46,34 @@ INCLUDE(TribitsListHelpers)
 
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  TrilinosFramework   cmake                           PS
-  Teuchos             packages/teuchos                PS
-  RTOp                packages/rtop                   PS
-  Epetra              packages/epetra                 PS 
-  Zoltan              packages/zoltan                 PS
-  Shards              packages/shards                 PS
-  Triutils            packages/triutils               PS
-  Tpetra              packages/tpetra                 PS
-  EpetraExt           packages/epetraext              PS
+  TrilinosFramework   cmake                           PT
+  Teuchos             packages/teuchos                PT
+  RTOp                packages/rtop                   PT
+  Epetra              packages/epetra                 PT 
+  Zoltan              packages/zoltan                 PT
+  Shards              packages/shards                 PT
+  Triutils            packages/triutils               PT
+  Tpetra              packages/tpetra                 PT
+  EpetraExt           packages/epetraext              PT
   Stokhos             packages/stokhos                EX
-  Sacado              packages/sacado                 SS
-  Thyra               packages/thyra                  PS
-  Isorropia           packages/isorropia              PS
-  AztecOO             packages/aztecoo                PS
-  Galeri              packages/galeri                 PS
-  Amesos              packages/amesos                 PS
-  Intrepid            packages/intrepid               PS
-  Ifpack              packages/ifpack                 PS
-  ML                  packages/ml                     PS
-  Belos               packages/belos                  SS
-  Stratimikos         packages/stratimikos            PS
-  RBGen               packages/rbgen                  PS
-  Phalanx             packages/phalanx                SS
-  Panzer              packages/panzer                 SS
+  Sacado              packages/sacado                 ST
+  Thyra               packages/thyra                  PT
+  Isorropia           packages/isorropia              PT
+  AztecOO             packages/aztecoo                PT
+  Galeri              packages/galeri                 PT
+  Amesos              packages/amesos                 PT
+  Intrepid            packages/intrepid               PT
+  Ifpack              packages/ifpack                 PT
+  ML                  packages/ml                     PT
+  Belos               packages/belos                  ST
+  Stratimikos         packages/stratimikos            PT
+  RBGen               packages/rbgen                  PT
+  Phalanx             packages/phalanx                ST
+  Panzer              packages/panzer                 ST
   )
 
-# NOTE: Sacado is really PS but for testing purpose it is made SS
-# NOTE: Belos is really PS but for testing purpose it is made SS
+# NOTE: Sacado is really PT but for testing purpose it is made ST
+# NOTE: Belos is really PT but for testing purpose it is made ST
 
 PACKAGE_DISABLE_ON_PLATFORMS(ML BadSystem1)
 PACKAGE_DISABLE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)

@@ -40,7 +40,7 @@
 %
 
 \title{
-TriBITS Lifecycle Model \\[2ex] Version 1.0 \\[2ex] \large A
+TriBITS Lifecycle Model \\[2ex] Version 1.1 \\[2ex] \large A
 Lean/Agile Software Lifecycle Model for Research-based Computational
 Science and Engineering Software }
 \author{
@@ -53,7 +53,7 @@ Roscoe A. Bartlett \\ Oak Ridge National Laboratory\footnote{Oak Ridge National 
 % Set some things we need for SAND reports. These are mandatory
 %
 \SANDnum{SAND2012-0561}
-\SANDprintDate{February 2012}
+\SANDprintDate{March 2014}
 \SANDauthor{
 Roscoe A. Bartlett \\ Michael A. Heroux \\ James M. Willenbring }
 
@@ -249,23 +249,23 @@ The short list of relevant core TriBITS software engineering processes and pract
 
 \begin{compactitem}
 
-{}\item Official separation of TriBITS project code into Primary Stable (PS), Secondary Stable (SS), and Experimental (EX) for testing purposes (see definition of PS, SS, and EX in text box below).
+{}\item Official separation of TriBITS project code into test groups Primary Tested (PT), Secondary Tested (ST), and Experimental (EX) (see definition of PT, ST, and EX in text box below).
 
 {}\item Partitioning of software into different packages (and subpackages) with carefully controlled and managed dependencies between the pieces of software.
 
-{}\item Synchronous (pre-push) CI testing of PS tested code using the Python tool checkin-test.py.
+{}\item Synchronous (pre-push) CI testing of PT tested code using the Python tool checkin-test.py.
 
-{}\item Asynchronous (post-push) CI testing of PS and SS tested code using package-based CTest driver posting results to CDash\footnote{CDash (www.cdash.org) is an open source, web-based software testing server. CDash aggregates, analyzes and displays the results of software testing processes submitted from clients located around the world. Developers depend on CDash to convey the state of a software system, and to continually improve its quality. CDash is a part of a larger software process that integrates Kitware's CMake, CTest, and CPack tools, as well as other external packages used to design, manage and maintain large-scale software systems.}.
+{}\item Asynchronous (post-push) CI testing of PT and ST tested code using package-based CTest driver posting results to CDash\footnote{CDash (www.cdash.org) is an open source, web-based software testing server. CDash aggregates, analyzes and displays the results of software testing processes submitted from clients located around the world. Developers depend on CDash to convey the state of a software system, and to continually improve its quality. CDash is a part of a larger software process that integrates Kitware's CMake, CTest, and CPack tools, as well as other external packages used to design, manage and maintain large-scale software systems.}.
 
-{}\item Increasingly more extensive automated nightly regression testing and portability testing (on a growing list of platforms) of PS and SS tested code posting results to CDash.
+{}\item Increasingly more extensive automated nightly regression testing and portability testing (on a growing list of platforms) of PT and ST tested code posting results to CDash.
 
 {}\item Strong compiler warnings enabled with g++ flags such \ttt{-ansi} \ttt{-pedantic} \ttt{-Wall} \ttt{-Wshadow} \ttt{-Woverloaded-virtual}.
 
-{}\item strong policies on the maintenance of 100\% clean PS and SS builds and tests for all Nightly and CI builds.
+{}\item Strong policies on the maintenance of 100\% clean PT and ST builds and tests for all Nightly and CI builds.
 
 \end{compactitem}
 
-The official segregation of (Primary and Secondary) Stable tested code from Experimental code allows the development team to define and enforce fairly rigorous policies on keeping Stable code building and having all the tests of Stable features run successfully.  This is maintained through the synchronous (pre-push) CI and asynchronous (post-poss) CI testing tools and processes and strong peer pressure to keep PS and SS code builds and tests 100\% clean.  However, with respect to lifecycle, having 100\% clean tests means very little if test coverage is low (which is the case for many existing packages). Technically speaking, Stable code with test coverage not near 100\% at all times means the code is not meeting basic Agile development standards (see {}\cite{XP2} and {}\cite{CodeComplete2nd04}).  The distinction between PS, SS, and EX code in the TriBITS system has to do with the commitment of the development team to maintain (or not, in the EX case) the status of builds and passing tests on various platforms and has nothing to do with the assumed quality of the software.  Official assignments and metrics of software quality in projects like Trilinos are currently non-existent (but this current document is trying to change that).
+The official segregation of Primary Tested (PT) and Secondary Tested (ST) code from Experimental (non-tested) code allows the development team to define and enforce fairly rigorous policies on keeping important code building and having all the tests of important software run successfully.  This is maintained through the synchronous (pre-push) CI and asynchronous (post-poss) CI testing tools and processes and strong peer pressure to keep PT and ST code builds and tests 100\% clean.  However, with respect to lifecycle, having 100\% clean tests means very little if test coverage is low.  Technically speaking, Tested code with test coverage not near 100\% means the code is not meeting basic Agile development standards (see {}\cite{XP2} and {}\cite{CodeComplete2nd04}).  The distinction between PT, ST, and EX code in the TriBITS system has to do with the commitment of the development team to maintain (or not, in the EX case) the status of builds and passing tests on various platforms and has nothing to do with the assumed maturity or quality of the software.  For example, it may be very important for a given project to keep the build and tests running at all times for a new very experimental research code but that code will be very inmature (using the criterial defined in this document)  Official assignments and metrics of software quality in projects like Trilinos are currently non-existent (but this current document is trying to change that).
 
 %\begin{wrapfigure}{r}{0.5\textwidth}
 \begin{figure}
@@ -275,13 +275,13 @@ The official segregation of (Primary and Secondary) Stable tested code from Expe
 \begin{minipage}[b]{\textwidth}
 %\raggedright
 
-{}\textbf{Defined: PS, SS, and EX tested code:}
+{}\textbf{Defined: PT, ST, and EX tested code:}
 
-{}\textbf{PS} (Primary Stable) tested code has minimal outside dependencies (currently, PS code in can only maximally have required dependencies on the external TPLs BLAS, LAPACK, and MPI) and represents critical functionality such that if broken would hamper core development efforts for many developers.
+{}\textbf{PT} (Primary Tested) code has minimal outside dependencies, PT TPLs, and represents critical functionality such that if broken would hamper core development efforts for many developers. (Examples of PT TPLs include BLAS, LAPACK, and MPI.)
 
-{}\textbf{SS} (Secondary Stable) tested code has dependencies on more than just the minimal set of TPLs (such as depending on Boost) or is code that does not represent critical functionality such that if broken would significantly hamper the work of other developers.  Most SS code is tested by the asynchronous CI server for the primary development platform after commits are pushed to the main development repository.  SS code is also tested nightly on many platforms.
+{}\textbf{ST} (Secondary Tested) code has dependencies on more than just the minimal set of PT TPLs (such as depending on Boost) or is code that does not represent critical functionality such that if broken would significantly hamper the work of other developers.  Most ST code is tested by the asynchronous CI server for the primary development platform after commits are pushed to the main development repository.  ST code is also tested nightly on many platforms.
 
-{}\textbf{EX} (Experimental) (non-)tested code is not PS or SS code and not tested in any official testing process.
+{}\textbf{EX} (Experimental) (non-)tested code is not PT or ST code and not tested in any official testing process by by the project.  Developers of EX code do their own testing on the side.
 
 \end{minipage}
 } %fbox
@@ -311,7 +311,7 @@ The proposed lifecycle phases / maturity levels / classifications are:
 
 {}\item Does not provide sufficient unit (or otherwise) testing to demonstrate correctness.
 
-{}\item Could be categorized as SS code with respect to CI and nightly testing, but in general would be considered to be untested EX code.
+{}\item Could be categorized as ST code with respect to CI and nightly testing, but in general would be considered to be untested EX code.
 
 {}\item Often has a messy design and code base.
 
@@ -334,7 +334,7 @@ manner.
 
 {}\item Strong unit and verification tests (i.e.\ proof of correctness) are written as the code/algorithms are being developed (near 100\% line coverage).  This does not necessarily need to have a much higher initial cost (see side-note on Page~\pageref{levels_of_unit_testing}) but it may be big change for a typical programmer.
 
-{}\item Could be treated as PS or SS code with respect to testing.
+{}\item Could be treated as PT or ST code with respect to testing.
 
 {}\item Has a very clean design and code base maintained through Agile practices of emergent design and constant refactoring.
 

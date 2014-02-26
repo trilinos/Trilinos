@@ -264,8 +264,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON -DTrilinos_ENABLE_AztecOO:BOOL=OFF
     -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "WARNING: Not Setting Trilinos_ENABLE_Belos=ON even though Stratimikos has an optional dependence on Belos because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
-    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Intrepid has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Belos=ON even though Stratimikos has an optional dependence on Belos because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Intrepid has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 17"
   )
 
@@ -518,11 +518,33 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
-  EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges
-  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  EnableAllPackages_EnableSecondaryTestedCode_EnableAllOptionalPackges
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
     "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
+  )
+
+
+# Deprecated ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE!
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges_BackwardCompatible
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
+    "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
+  )
+
+
+# Test that deprecated Trilinos_ENABLE_SECONDARY_STABLE_CODE is not set when
+# Trilinos_ENABLE_SECONDARY_TESTED_CODE is also being set.
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_EnableSecondaryTestedCode_EnableSecondaryStableCode_EnableAllOptionalPackges
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON  -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+    -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "ERROR: Can.t set deprecated Trilinos_ENABLE_SECONDARY_STABLE_CODE"
   )
 
 
@@ -605,7 +627,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Stalix 1"
     "Explicitly disabled packages on input .* Stokhos 1"
-    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Stalix has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Stalix has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
     "Setting Trilinos_ENABLE_Tpetra=ON because Stalix has an optional dependence on Tpetra"
     "Setting Trilinos_ENABLE_Thyra=ON because Stalix has an optional dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Sacado Thyra Stalix 10"

@@ -161,9 +161,21 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllSecondaryTested
+  ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 23"
+    "Final set of non-enabled packages:  Stokhos 1"
+  )
+
+
+# Test backward compatibility for ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllSecondaryStable
   ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 23"
     "Final set of non-enabled packages:  Stokhos 1"
@@ -277,8 +289,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  EnableAllSecondaryStable_EnableStokhos
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ADDITIONAL_PACKAGES=Stokhos
+  EnableAllSecondaryTested_EnableStokhos
+  ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON Trilinos_ADDITIONAL_PACKAGES=Stokhos
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling explicitly set package Stokhos"
     "Explicitly enabled packages on input .*  Stokhos 1"
@@ -293,8 +305,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableAllSecondaryStable
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
+  CI_EnableAllSecondaryTested
+  ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
   PASS_REGULAR_EXPRESSION_ALL
     "EXECUTE_PROCESS.+git.+preCopyrightTrilinos.+preCopyrightTrilinos.update.out"
     "Explicitly enabled packages on input .*  0"
@@ -315,17 +327,17 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 # Check with an extra repo enabled and assert all of the internal logic
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  CI_EnableAllSecondaryStable_EnableStalix
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
+  CI_EnableAllSecondaryTested_EnableStalix
+  ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
     Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/MockTrilinos/preCopyrightTrilinos'"
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.reset.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.clean.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.update.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
     "EXECUTE_PROCESS.COMMAND;/somebasedir/git.log.--pretty=format:.*.-C.HEAD..ORIG_HEAD.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY;.*/tribits/package_arch/UnitTests/MockTrilinos/preCopyrightTrilinos."
     "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
-    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/Dakota.update.out."
+    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
     "EXECUTE_PROCESS.echo.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY.*/tribits/package_arch/UnitTests/MockTrilinos/packages/TriKota/Dakota."
     ".... preCopyrightTrilinos updates."
     "... Dakota cloned version."
@@ -349,8 +361,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
-  Nightly_EnableAllSecondaryStable
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+  Nightly_EnableAllSecondaryTested
+  ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
   PASS_REGULAR_EXPRESSION_ALL
     "EXECUTE_PROCESS.+git.+preCopyrightTrilinos.+preCopyrightTrilinos.update.out"
     "EXECUTE_PROCESS.+git.+extraTrilinosRepo.+extraTrilinosRepo.update.out"
@@ -377,7 +389,7 @@ IF (PYTHON_EXECUTABLE)
     COPY_FILES
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
     PASS_REGULAR_EXPRESSION_ALL
       "Final set of enabled packages:  0"
@@ -391,7 +403,7 @@ IF (PYTHON_EXECUTABLE)
     COPY_FILES
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ARGS  Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS  Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous  CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
@@ -412,7 +424,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
       Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
@@ -438,7 +450,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Thyra.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
       CTEST_UPDATE_RETURN_VAL=1
@@ -464,7 +476,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.ThyraCoreLibs.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
       CTEST_UPDATE_RETURN_VAL=1
@@ -490,7 +502,7 @@ IF (PYTHON_EXECUTABLE)
     COPY_FILES
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
@@ -517,7 +529,7 @@ IF (PYTHON_EXECUTABLE)
     COPY_FILES
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=2
     PASS_REGULAR_EXPRESSION_ALL
@@ -543,7 +555,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Stokhos.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Stalix.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.none.txt failedPackages.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
@@ -566,7 +578,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teko.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL
@@ -597,7 +609,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL
@@ -617,7 +629,7 @@ IF (PYTHON_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Stokhos.Stalix.txt failedPackages.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
       CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
     PASS_REGULAR_EXPRESSION_ALL

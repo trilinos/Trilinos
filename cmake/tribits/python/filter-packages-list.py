@@ -59,7 +59,7 @@ clp.add_option(
 
 clp.add_option(
   "--keep-types", dest="keepTypes", type="string", default="",
-  help="List of types to keep (i.e. \"PS,SS,EX\"." )
+  help="List of types to keep (i.e. \"PT,ST,EX\"." )
 
 clp.add_option(
   "--deps-xml-file", dest="depsXmlFile", type="string",

@@ -41,7 +41,7 @@
 # Only for unit testing
 
 SET(preCopyrightTrilinos_TPLS_FINDMODS_CLASSIFICATIONS
-  TekoDepTPL    cmake/    PS
+  TekoDepTPL    cmake/    PT
   )
 
 # Above, the file cmake/FindTPLTekoDepTPL.cmake does not actually exit but it

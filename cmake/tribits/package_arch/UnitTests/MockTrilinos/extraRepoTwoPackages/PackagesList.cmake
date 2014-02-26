@@ -41,6 +41,6 @@
 INCLUDE(TribitsListHelpers)
 
 SET( extraRepoTwoPackages_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Ex2Package1     package1   PS
-  Ex2Package2     package2   SS
+  Ex2Package1     package1   PT
+  Ex2Package2     package2   ST
   )

@@ -39,12 +39,12 @@
 
 
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  CoreLibs  src  PS  REQUIRED
-  GoodStuff  src/good_stuff  SS  OPTIONAL
+  CoreLibs  src  PT  REQUIRED
+  GoodStuff  src/good_stuff  ST  OPTIONAL
   CrazyStuff  src/crazy_stuff  EX  OPTIONAL
-  Epetra  adapters/epetra  PS  OPTIONAL
-  EpetraExt  adapters/epetraext  PS  OPTIONAL
-  Tpetra  adapters/tpetra  PS  OPTIONAL
+  Epetra  adapters/epetra  PT  OPTIONAL
+  EpetraExt  adapters/epetraext  PT  OPTIONAL
+  Tpetra  adapters/tpetra  PT  OPTIONAL
   )
 
 # NOTE: The above subpackages automatically become required and optional LIB

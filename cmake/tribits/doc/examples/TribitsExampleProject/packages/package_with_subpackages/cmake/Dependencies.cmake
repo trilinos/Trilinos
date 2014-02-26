@@ -1,6 +1,6 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  SubpackageA   A   PS  REQUIRED
-  SubpackageB   B   PS  REQUIRED
-  SubpackageC   C   PS  REQUIRED
+  SubpackageA   A   PT  REQUIRED
+  SubpackageB   B   PT  REQUIRED
+  SubpackageC   C   PT  REQUIRED
   )
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()

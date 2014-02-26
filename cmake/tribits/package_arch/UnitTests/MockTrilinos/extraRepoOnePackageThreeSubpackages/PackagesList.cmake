@@ -41,5 +41,5 @@
 INCLUDE(TribitsListHelpers)
 
 SET( extraRepoOnePackageThreeSubpackages_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  extraRepoOnePackageThreeSubpackages   .     PS
+  extraRepoOnePackageThreeSubpackages   .     PT
   )

@@ -88,7 +88,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   )
 
 
-TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PS
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
@@ -110,7 +110,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PS
       "Final set of non-enabled packages:  WrapExternal 1"
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PS"
+      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
   TEST_1 CMND make
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL

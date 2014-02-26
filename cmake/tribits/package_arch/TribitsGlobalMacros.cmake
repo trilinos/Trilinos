@@ -138,7 +138,7 @@ ENDMACRO()
 MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   SET( ${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF CACHE BOOL
-    "Enable all packages (Primary Stable and perhaps Secondary Stable packages)." )
+    "Enable all packages PT packages (ST packages as well if ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE is true)." )
   
   SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON CACHE BOOL
     "Recursively enable all optional packages for set of enabled packages." )
@@ -316,15 +316,24 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ENDIF()
   ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
      ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
-    "Allow secondary stable packages and code to be implicitly enabled." )
+    "Generate packages dependency data-structures needed for depenency export files." )
 
-  IF ("${${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT}" STREQUAL "")
-    SET(${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT OFF)
+  # ${PROJECT_NAME}_ELEVATE_SS_TO_PS is depreciated!
+  IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("-- " "WARNING: ${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT is depricated."
+        "  Use ${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT instead!")
+    ENDIF()
+    SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT ON)
   ENDIF()
-  ADVANCED_SET( ${PROJECT_NAME}_ELEVATE_SS_TO_PS
-    ${${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT}
+
+  IF ("${${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT OFF)
+  ENDIF()
+  ADVANCED_SET( ${PROJECT_NAME}_ELEVATE_ST_TO_PT
+    ${${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT}
     CACHE BOOL
-    "Elevate all defined SS SE packages to PS packages." )
+    "Elevate all defined ST SE packages to PT packages." )
 
   IF ("${${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT OFF)
@@ -342,8 +351,8 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Excluded disabled packages from the CPack-generated distribution.")
 
-  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
-    "Allow secondary stable packages and code to be implicitly enabled." )
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF CACHE BOOL
+    "Allow Secondary Tested (ST) packages and code to be implicitly enabled." )
   
   ADVANCED_SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY CACHE STRING
     "List of categories of tests to enable: '${${PROJECT_NAME}_VALID_CATEGORIES_STR}' (default NIGHLY)."
@@ -692,7 +701,7 @@ FUNCTION(TRIBITS_DUMP_DEPS_XML_FILE)
     #PRINT_VAR(PACKAGE_DIR)
     
     APPEND_STRING_VAR(DEPS_XML
-      "  <Package name=\"${TRIBITS_PACKAGE}\" dir=\"${PACKAGE_DIR}\" type=\"${${TRIBITS_PACKAGE}_CLASSIFICATION}\">\n")
+      "  <Package name=\"${TRIBITS_PACKAGE}\" dir=\"${PACKAGE_DIR}\" type=\"${${TRIBITS_PACKAGE}_TESTGROUP}\">\n")
 
     TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} LIB_REQUIRED_DEP_PACKAGES DEPS_XML)
     TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} LIB_OPTIONAL_DEP_PACKAGES DEPS_XML)
@@ -1819,15 +1828,21 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     IF (PROCESS_PACKAGE)
 
       IF (${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR)
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+          PRINT_VAR(${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR)
+        ENDIF()
         IF(IS_ABSOLUTE ${${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR})
           SET(${TRIBITS_PACKAGE}_BINARY_DIR ${${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR})
         ELSE()
-          SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR})
+          SET(${TRIBITS_PACKAGE}_BINARY_DIR
+            ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR})
         ENDIF()
       ELSE()
         SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
       ENDIF()
-      #PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
+      ENDIF()
 
     ENDIF()
 
@@ -1868,6 +1883,11 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
       IF (NOT EXISTS ${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt)
         MESSAGE(FATAL_ERROR
           "Error, the file ${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt does not exist!")
+      ENDIF()
+
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        PRINT_VAR(${TRIBITS_PACKAGE}_SOURCE_DIR)
+        PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
       ENDIF()
 
       ADD_SUBDIRECTORY(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
@@ -2192,25 +2212,6 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
       ${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}LibraryDepends.cmake )
   ENDIF()
 
-ENDMACRO()
-
-
-#
-#  Macro that allows packages to easily make a feature SS for development
-#  builds and PS for release builds
-#.
-#  The OUTPUT_VAR is set to ON or OFF based on the configure state. In
-#  development mode it will be set to ON only if SS code is enabled, 
-#  otherwise it is set to OFF. In release mode it is always set to ON.
-#  This allows some sections of PROJECT_NAME to be considered SS for 
-#  development mode reducing testing time, while still having important
-#  functionality available to users by default
-MACRO(TRIBITS_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
-  IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-    SET(${OUTPUT_VAR} ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE})
-  ELSE()
-    SET(${OUTPUT_VAR} ON)
-  ENDIF()
 ENDMACRO()
 
 

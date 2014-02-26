@@ -209,7 +209,7 @@ b) Configuring <Project> to test all effects of changing a given package(s)::
   depend on <TRIBITS_PACKAGE> in this case.  This speeds up and robustifies
   pre-checkin testing.
 
-c) Configuring to build all stable packages with tests and examples::
+c) Configuring to build all packages with tests and examples::
 
     $ ./do-configure \
        -D <Project>_ENABLE_ALL_PACKAGES:BOOL=ON \
@@ -223,8 +223,8 @@ c) Configuring to build all stable packages with tests and examples::
   <Project>_ENABLE_TESTS:BOOL=ON.
 
   NOTE: By default, setting <Project>_ENABLE_ALL_PACKAGES=ON only enables
-  Primary Stable Code.  To have this also enable all secondary stable code,
-  you must also you must set <Project>_ENABLE_SECONDARY_STABLE_CODE=ON.
+  primary tested (PT) code.  To have this also enable all secondary tested
+  (ST) code, one must also set <Project>_ENABLE_SECONDARY_TESTED_CODE=ON.
 
 d) Disable a package and all its dependencies::
 
@@ -1538,7 +1538,7 @@ Currently, this options includes::
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_ENABLE_SECONDARY_STABLE_CODE OFF )
+  SET_DEFAULT_AND_FROM_ENV( <Project>_ENABLE_SECONDARY_TESTED_CODE OFF )
   SET_DEFAULT_AND_FROM_ENV( <Project>_ADDITIONAL_PACKAGES "" )
   SET_DEFAULT_AND_FROM_ENV( <Project>_EXCLUDE_PACKAGES "" )
   SET_DEFAULT_AND_FROM_ENV( <Project>_BRANCH "" )

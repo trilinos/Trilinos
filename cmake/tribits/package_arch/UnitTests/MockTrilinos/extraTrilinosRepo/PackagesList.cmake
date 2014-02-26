@@ -41,5 +41,5 @@
 INCLUDE(TribitsListHelpers)
 
 SET( extraTrilinosRepo_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  ExtraPack         extrapack     SS
+  ExtraPack         extrapack     ST
   )

@@ -41,23 +41,23 @@
 # Just used for unit testing
 
 SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
-  MPI            cmake/TPLs/    PS
-  BLAS           cmake/TPLs/    PS
-  LAPACK         cmake/TPLs/    PS
-  Boost          cmake/TPLs/    SS
-  Scotch         cmake/TPLs/    SS
+  MPI            cmake/TPLs/    PT
+  BLAS           cmake/TPLs/    PT
+  LAPACK         cmake/TPLs/    PT
+  Boost          cmake/TPLs/    ST
+  Scotch         cmake/TPLs/    ST
   METIS          cmake/TPLs/    TS
-  ParMETIS       cmake/TPLs/    SS
-  CppUnit        cmake/TPLs/    SS
-  ADOLC          cmake/TPLs/    SS
+  ParMETIS       cmake/TPLs/    ST
+  CppUnit        cmake/TPLs/    ST
+  ADOLC          cmake/TPLs/    ST
   ADIC           cmake/TPLs/    EX
-  TVMET          cmake/TPLs/    SS
-  y12m           cmake/TPLs/    SS
-  SuperLUDist    cmake/TPLs/    SS
-  SuperLU        cmake/TPLs/    SS
-  UMFPACK        cmake/TPLs/    SS
+  TVMET          cmake/TPLs/    ST
+  y12m           cmake/TPLs/    ST
+  SuperLUDist    cmake/TPLs/    ST
+  SuperLU        cmake/TPLs/    ST
+  UMFPACK        cmake/TPLs/    ST
   AMD            cmake/TPLs/    TS
-  PETSC          cmake/TPLs/    SS
-  MUMPS          cmake/TPLs/    SS
-  DUMMY          cmake/TPLs/    SS
+  PETSC          cmake/TPLs/    ST
+  MUMPS          cmake/TPLs/    ST
+  DUMMY          cmake/TPLs/    ST
   )

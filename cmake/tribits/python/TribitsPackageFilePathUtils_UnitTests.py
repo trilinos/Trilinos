@@ -236,51 +236,51 @@ class testProjectPackageFilePathUtils(unittest.TestCase):
 class testFilterPackagesList(unittest.TestCase):
 
 
-  def test_get_PS(self):
+  def test_get_PT(self):
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
         " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
-        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS",
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PT",
         True),
       "Teuchos,Thyra"
       )
 
 
-  def test_get_PS_SS(self):
+  def test_get_PT_ST(self):
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
         " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
-        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS,SS",
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PT,ST",
         True),
       "Teuchos,Thyra,Phalanx"
       )
 
 
-  def test_get_PS_SS_EX(self):
+  def test_get_PT_ST_EX(self):
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
         " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
-        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS,SS,EX",
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PT,ST,EX",
         True),
       "Teuchos,Thyra,Phalanx,Stokhos"
       )
 
 
-  def test_get_SS(self):
+  def test_get_ST(self):
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
         " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
-        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=SS",
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=ST",
         True),
       "Phalanx"
       )
 
 
-  def test_get_PS_EX(self):
+  def test_get_PT_EX(self):
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/filter-packages-list.py" \
         " --deps-xml-file="+testingTrilinosDepsXmlInFile+"" \
-        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PS,EX",
+        " --input-packages-list=Teuchos,Thyra,Phalanx,Stokhos --keep-types=PT,EX",
         True),
       "Teuchos,Thyra,Stokhos"
       )

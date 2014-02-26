@@ -282,20 +282,20 @@ out) that you would need to set out.  Any CMake cache variables listed in
 these files will be read into and passed on the configure line to 'cmake'.
 
 WARNING: Please do not add any CMake cache variables than what are needed to
-get the MPI_DEBUG and SERIAL_RELEASE builds to work.  Adding other
-enables/disables will make the builds non-standard and break the Primary
-Stable build.  The goal of these configuration files is to allow you to
-specify the minimum environment to find MPI, your compilers, and the required
-TPLs (e.g. BLAS, LAPACK, etc.).  If you need to fudge what packages are
-enabled, please use the script arguments --enable-packages,
---disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages to
-control this, not the *.config files!
+get the Primary Tested (PT) --default-builds builds to work.  Adding other
+enables/disables will make the builds non-standard and break these PT builds.
+The goal of these configuration files is to allow you to specify the minimum
+environment to find MPI, your compilers, and the required TPLs (e.g. BLAS,
+LAPACK, etc.).  If you need to fudge what packages are enabled, please use the
+script arguments --enable-packages, --disable-packages,
+--no-enable-fwd-packages, and/or --enable-all-packages to control this, not
+the *.config files!
 
 WARNING: Please do not add any CMake cache variables in the *.config files
 that will alter what packages or TPLs are enabled or what tests are run.
 Actually, the script will not allow you to change TPL enables in these
 standard *.config files because to do so deviates from a consistent build
-configuration for Primary Stable Code.
+configuration for Primary Tested (PT) Code.
 
 NOTE: All tentatively-enabled TPLs (e.g. Pthreads and BinUtils) are hard
 disabled in order to avoid different behaviors between machines where they
@@ -304,7 +304,7 @@ would be enabled and machines where they would be disabled.
 NOTE: If you want to add extra build/test cases that do not conform to
 the standard build/test configurations described above, then you need
 to create extra builds with the --extra-builds and/or
---ss-extra-builds options (see below).
+--st-extra-builds options (see below).
 
 NOTE: Before running this script, you should first do an 'eg status' and 'eg
 diff --name-status origin..' and examine what files are changed to make sure
@@ -418,10 +418,10 @@ Common Use Cases (examples):
 
 (*) Adding extra build/test cases:
 
-  Often you will be working on Secondary Stable Code or Experimental Code and
-  want to include the testing of this in your pre-checkin testing along with
-  the standard MPI_DEBUG and SERIAL_RELEASE build/test cases which can only
-  include Primary Stable Code.  In this case you can run with:
+  Often you will be working on Secondary Tested (ST) Code or Experimental (EX)
+  Code and want to include the testing of this in your pre-checkin testing
+  along with the standard --default-builds build/test cases which can only
+  include Primary Tested (PT) Code.  In this case you can run with:
   
     ../checkin-test.py --extra-builds=<BUILD1>,<BUILD2>,... [other options]
   
@@ -519,29 +519,29 @@ that is not sufficient, send email to trilinos-framework@software.sandia.gov
 to ask for help.
 
 
-Handling of PS, SS, and EX Code in built-in and extra builds:
+Handling of PT, ST, and EX Code in built-in and extra builds:
 -------------------------------------------------------------
 
-This script will only process PS (Primary Stable) packages in the default
+This script will only process PT (Primary Tested) packages in the default
 MPI_DEBUG and SERIAL_RELEASE builds.  This is to avoid problems of
-side-effects of turning on SS packages that would impact PS packages (e.g. SS
-Phalanx getting enabled that enables SS Boost which turns on support for Boost
-in PS Teuchos producing different code which might work but the pure PS build
+side-effects of turning on ST packages that would impact PT packages (e.g. ST
+Phalanx getting enabled that enables ST Boost which turns on support for Boost
+in PT Teuchos producing different code which might work but the pure PT build
 without Boost of Teuchos may actually be broken and not know it).  Therefore,
-any non-PS packages that are enabled (either implicity through changed files
+any non-PT packages that are enabled (either implicity through changed files
 or explicitly in --enable-packages) will be turned off in the MP_DEBUG and
-SERIAL_RELEASE builds.  If none of the enabled packages are PS, then they will
+SERIAL_RELEASE builds.  If none of the enabled packages are PT, then they will
 all be disabled and the MPI_DEBUG and SERIAL_RELEASE builds will be skipped.
 
-In order to better support the development of SS and EX packages, this script
+In order to better support the development of ST and EX packages, this script
 allows you to define some extra builds that will be invoked and used to
 determine overall pass/fail before a potential push.  The option
---ss-extra-builds is used to specify extra builds that will test SS packages
-(and also PS packages if any are enabled).  If only PS packages are enabled
-then the builds specified in --ss-extra-builds will still be run.  The
-reasoning is that PS packages may contain extra SS features and therefore if
-the goal is to test these SS builds it is desirable to also run these builds
-because they also my impact downstream SS packages.
+--st-extra-builds is used to specify extra builds that will test ST packages
+(and also PT packages if any are enabled).  If only PT packages are enabled
+then the builds specified in --st-extra-builds will still be run.  The
+reasoning is that PT packages may contain extra ST features and therefore if
+the goal is to test these ST builds it is desirable to also run these builds
+because they also my impact downstream ST packages.
 
 Finally, the option --extra-builds will test all enabled packages, including
 EX packages, reguardless of their categorization.  Therefore, when using
@@ -551,43 +551,43 @@ change an EX package, it will be enabled in --extra-builds builds.
 A few use cases might help better demonstrate the behavior.  Consider
 the following input arguments specifying extra builds
 
-  --ss-extra-builds=MPI_DEBUG_SS --extra-builds=INTEL_DEBUG
+  --st-extra-builds=MPI_DEBUG_ST --extra-builds=INTEL_DEBUG
 
-with the packages Techos, Phalanx, and Meros where Teuchos is PS, Phalanx is
-SS, and Meros is EX.
+with the packages Techos, Phalanx, and Meros where Teuchos is PT, Phalanx is
+ST, and Meros is EX.
 
 Here is what packages would be enabled in each of the builds
-MPI_DEBUG, SERIAL_RELEASE, MPI_DEBUG_SS, and INTEL_DEBUG and which
+MPI_DEBUG, SERIAL_RELEASE, MPI_DEBUG_ST, and INTEL_DEBUG and which
 builds would be skipped:
 
 A) --enable-packages=Teuchos:
    MPI_DEBUG:       [Teuchos]
    SERIAL_RELEASE:  [Teuchos]
-   MPI_DEBUG_SS:    [Teuchos]
+   MPI_DEBUG_ST:    [Teuchos]
    INTEL_DEBUG:     [Teuchos]     Always enabled!
 
 B) --enable-packages=Phalanx:
-   MPI_DEBUG:       []            Skipped, no PS packages!
-   SERIAL_RELEASE:  []            Skipped, no PS packages!
-   MPI_DEBUG_SS:    [Phalanx]
+   MPI_DEBUG:       []            Skipped, no PT packages!
+   SERIAL_RELEASE:  []            Skipped, no PT packages!
+   MPI_DEBUG_ST:    [Phalanx]
    INTEL_DEBUG:     [Phalanx]
 
 C) --enable-packages=Meros:
-   MPI_DEBUG:       []            Skipped, no PS packages!
-   SERIAL_RELEASE:  []            Skipped, no PS packages!
-   MPI_DEBUG_SS:    []            Skipped, no PS or SS packages!
+   MPI_DEBUG:       []            Skipped, no PT packages!
+   SERIAL_RELEASE:  []            Skipped, no PT packages!
+   MPI_DEBUG_ST:    []            Skipped, no PT or ST packages!
    INTEL_DEBUG:     [Meros]
 
 D) --enable-packages=Teuchos,Phalanx:
    MPI_DEBUG:       [Teuchos]
    SERIAL_RELEASE:  [Teuchos]
-   MPI_DEBUG_SS:    [Teuchos,Phalanx]
+   MPI_DEBUG_ST:    [Teuchos,Phalanx]
    INTEL_DEBUG:     [Teuchos,Phalanx]
 
 E) --enable-packages=Teuchos,Phalanx,Meros:
    MPI_DEBUG:       [Teuchos]
    SERIAL_RELEASE:  [Teuchos]
-   MPI_DEBUG_SS:    [Teuchos,Phalanx]
+   MPI_DEBUG_ST:    [Teuchos,Phalanx]
    INTEL_DEBUG:     [Teuchos,Phalanx,Meros]
 
 Tthe --extra-builds=INTEL_DEBUG build is always performed with all of the
@@ -821,11 +821,15 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
       +" local custom builds." )
 
   clp.add_option(
-    "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
-    help="List of comma-separated SS extra build names.  For each of the build names in" \
-    +" --ss-extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
+    "--st-extra-builds", dest="stExtraBuilds", type="string", default="",
+    help="List of comma-separated ST extra build names.  For each of the build names in" \
+    +" --st-extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
     +" the local directory along side the COMMON.config file that defines the special" \
     +" build options for the extra build." )
+
+  clp.add_option(
+    "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
+    help="DEPRICATED!  Use --st-extra-builds instead!." )
 
   clp.add_option(
     "--extra-builds", dest="extraBuilds", type="string", default="",
@@ -1057,7 +1061,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --no-show-all-tests \\"
   if options.withoutDefaultBuilds:
     print "  --without-default-builds \\" 
-  print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
+  print "  --st-extra-builds='"+options.stExtraBuilds+"' \\"
   print "  --extra-builds='"+options.extraBuilds+"' \\"
   print "  --send-email-to='"+options.sendEmailTo+"' \\"
   if options.skipCaseSendEmail:
@@ -1107,6 +1111,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --push \\"
   if options.executeOnReadyToPush:
     print "  --execute-on-ready-to-push=("+options.executeOnReadyToPush+") \\"
+  if options.ssExtraBuilds:
+    print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
+    print "\nWARNING: --ss-extra-builds is deprecated!  Use --st-extra-builds instead!"
+    if options.stExtraBuilds:
+      print "ERROR: Can't set deprecated --ss-extra-builds and --st-extra-builds together!"
+      sys.exit(3)
+    options.stExtraBuilds = options.ssExtraBuilds
 
 
   #
@@ -1145,6 +1156,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
     print "\nFinal time:", getCmndOutput("date",True)
 
+    if options.ssExtraBuilds:
+      print "\n***"
+      print "*** FINAL WARNING: stop using deprecated --ss-extra-builds!  Use --st-extra-builds instead!"
+      print "***"
+
     if success:
       print "\nREQUESTED ACTIONS: PASSED\n"
       return True
@@ -1153,6 +1169,9 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
       return False
   else:
     return True
+
+
+
 
 
 def getConfigurationSearchPaths():

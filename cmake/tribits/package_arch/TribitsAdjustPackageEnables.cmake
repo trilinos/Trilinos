@@ -55,6 +55,43 @@ INCLUDE(MessageWrapper)
 INCLUDE(DualScopeSet)
 INCLUDE(ParseVariableArguments)
 
+
+#
+# @MACRO: TRIBITS_SET_ST_FOR_DEV_MODE
+#
+# Function that allows packages to easily make a feature ST for development
+# builds and PT for release builds by default.
+#
+# Usage::
+#
+#   TRIBITS_SET_ST_FOR_DEV_MODE(OUTPUT_VAR)
+#
+# ${OUTPUT_VAR} is set to ON or OFF based on the configure state. In
+# development mode it will be set to ON only if ST code is enabled, 
+# otherwise it is set to OFF. In release mode it is always set to ON.
+# This allows some sections of a TriBITS package to be considered ST for 
+# development mode reducing testing time, while still having important
+# functionality available to users by default in a release.
+#
+FUNCTION(TRIBITS_SET_ST_FOR_DEV_MODE  OUTPUT_VAR)
+  IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+    SET(OUTPUT_VAL ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE})
+  ELSE()
+    SET(OUTPUT_VAL ON)
+  ENDIF()
+  SET(${OUTPUT_VAR} ${OUTPUT_VAL} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+# For backward compatibility
+MACRO(TRIBITS_SET_SS_FOR_DEV_MODE  OUTPUT_VAR)
+  MESSAGE(WARNING
+    "WARNING: TRIBITS_SET_SS_FOR_DEV_MODE() is deprecated,"
+    " use TRIBITS_SET_ST_FOR_DEV_MODE() instead!")
+  TRIBITS_SET_ST_FOR_DEV_MODE(${OUTPUT_VAR})
+ENDMACRO()
+
+
 #
 # Function that creates error message about missing/misspelled package.
 #
@@ -267,16 +304,26 @@ ENDMACRO()
 #      [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
 #      )
 #
-
+# Only direct package dependenices need to be listed.  Indirect package
+# dependencies are are automatically handled.  For example, if this SE package
+# directly depends on PKG2 which depends on PKG1 (but this SE package does not
+# directly depend on anything in PKG1) then this package only needs to list a
+# dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
+# automatically by the TriBITS dependency tracking system.
+#
+# However, currently, all TPL dependendies must be listed, even the indirect
+# ones.  This is a requirement that will be dropped in the future.
+#
 # The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
 # dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
 # implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
-# dependeices.
+# dependencies.
 #
-# The dependencies within a single varible do not need to be listed in any
-# order.  For example if PKG2 depends on PKG1, and this given SE package
-# depends on both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
-# "LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise for TPLs.
+# The dependencies within a single list do not need to be listed in any order.
+# For example if PKG2 depends on PKG1, and this given SE package depends on
+# both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
+# "LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
+# not important.
 #
 # NOTE: All this macro really does is to just define the variables:
 # * LIB_REQUIRED_DEP_PACKAGES
@@ -429,6 +476,8 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
       #PRINT_VAR(SUBPACKAGE_NAME_IDX)
       LIST(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_NAME_IDX} SUBPACKAGE_NAME )
       #PRINT_VAR(SUBPACKAGE_NAME)
+
+      SET(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${SUBPACKAGE_NAME})
  
       # SUBPACKAGE_DIR     
       MATH(EXPR SUBPACKAGE_DIR_IDX "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_DIR_OFFSET}")
@@ -443,6 +492,11 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
       LIST(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_CLASSIFICATION_IDX}
         SUBPACKAGE_CLASSIFICATION )
       #PRINT_VAR(SUBPACKAGE_CLASSIFICATION)
+
+      # ToDo: Parse out TESTGROUP and MATURITYLEVEL (Trilinos #6042)
+      SET(SUBPACKAGE_TESTGROUP ${SUBPACKAGE_CLASSIFICATION})
+
+      TRIBITS_UPDATE_PS_PT_SS_ST(Subpackage ${SUBPACKAGE_FULLNAME} SUBPACKAGE_TESTGROUP)
  
       # SUBPACKAGE_OPTREQ     
       MATH(EXPR SUBPACKAGE_OPTREQ_IDX
@@ -451,8 +505,6 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
       LIST(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_OPTREQ_IDX}
         SUBPACKAGE_OPTREQ )
       #PRINT_VAR(SUBPACKAGE_OPTREQ)
-
-      SET(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${SUBPACKAGE_NAME})
 
       # Determine if this subpackage exists
       SET(SUBPACKAGE_FULL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/${PACKAGE_DIR}/${SUBPACKAGE_DIR})
@@ -481,7 +533,7 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
   
         # Set up the input options for this subpackage
         TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS(${SUBPACKAGE_FULLNAME}
-          ${SUBPACKAGE_CLASSIFICATION})
+          ${SUBPACKAGE_TESTGROUP})
   
         #PRINT_VAR(${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
 
@@ -1649,7 +1701,6 @@ ENDMACRO()
 MACRO(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME)
 
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
   #PRINT_VAR(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE)
   #PRINT_VAR(${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
 
@@ -1670,7 +1721,7 @@ MACRO(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME)
     ENDIF()
 
     # Enable the package if the user directly specified the optional package
-    # enable reguardless if it is PS or SS or even EX.
+    # enable reguardless if it is PT or ST or even EX.
     IF (${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
       MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
         " because ${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON")
@@ -1863,6 +1914,24 @@ ENDMACRO()
 #
 
 MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
+
+  # Provide backward compatible support for ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE
+  IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
+    IF (${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE)
+      MESSAGE(FATAL_ERROR
+        "ERROR: Can't set deprecated ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE and"
+        " ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE at the same time!")
+    ENDIF()
+      MESSAGE(
+        "WARNING: ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!"
+        "  Use ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE instead!")
+    SET(${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE ON)
+  ENDIF()
+
+  # We must set ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE since many
+  # TriBITS packages expect this to be set!
+  SET(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE
+    ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE})
 
   IF (${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES)
     MESSAGE("")

@@ -66,7 +66,7 @@ MACRO(UNITTEST_HELPER_READ_AND_PROESS_PACKAGES)
   TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO_NAME} ${EXTRA_REPO_DIR})
   TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
   SET_DEFAULT(${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF)
-  SET_DEFAULT(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF)
+  SET_DEFAULT(${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF)
   SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
   TRIBITS_ADJUST_PACKAGE_ENABLES(TRUE)
  
@@ -96,15 +96,15 @@ MESSAGE("The inner test project: PROJECT_NAME = ${PROJECT_NAME}")
 MESSAGE("The inner tets project: ${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Teuchos             packages/teuchos                PS
-  RTOp                packages/rtop                   PS
+  Teuchos             packages/teuchos                PT
+  RTOp                packages/rtop                   PT
   )
 
 SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
-  MPI            cmake/TPLs/    PS
-  BLAS           cmake/TPLs/    PS
-  LAPACK         cmake/TPLs/    PS
-  Boost          cmake/TPLs/    SS
+  MPI            cmake/TPLs/    PT
+  BLAS           cmake/TPLs/    PT
+  LAPACK         cmake/TPLs/    PT
+  Boost          cmake/TPLs/    ST
   )
 
 SET(EXTRA_REPO_NAME extraRepoTwoPackages)
