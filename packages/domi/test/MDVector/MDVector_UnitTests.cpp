@@ -157,8 +157,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, dimensionsConstructor, Sca, Ord )
   for (typename MDArrayView< Sca >::iterator it = data.begin();
        it != data.end(); ++it)
     TEST_EQUALITY(*it, scalar);
+  Sca interiorScalar = 9;
+  mdVector.putScalar(interiorScalar, false);  // false = exclude padding
+  cData = mdVector.getData(false);
+  for (typename MDArrayView< Sca >::const_iterator it = cData.cbegin();
+       it != cData.cend(); ++it)
+    TEST_EQUALITY(*it, interiorScalar);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    cData = mdVector.getLowerPadData(axis);
+    for (typename MDArrayView< Sca >::const_iterator it = cData.cbegin();
+         it != cData.cend(); ++it)
+      TEST_EQUALITY(*it, scalar);
+    cData = mdVector.getUpperPadData(axis);
+    for (typename MDArrayView< Sca >::const_iterator it = cData.cbegin();
+         it != cData.cend(); ++it)
+      TEST_EQUALITY(*it, scalar);
+  }
 
   // Test dot product and norms
+  mdVector.putScalar(scalar);
   Sca norm1 = scalar * Domi::computeSize(dims);
   Sca dot   = scalar * norm1 ;
   Sca norm2 = Teuchos::ScalarTraits< Sca >::squareroot(dot);
