@@ -695,14 +695,14 @@ public:
   static const bool is_complex = true;
 
   static bool isInf (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isinf (real (x)) || isinf (imag (x));
 #else
     return std::isinf (real (x)) || std::isinf (imag (x));
 #endif // __CUDACC__
   }
   static bool isNan (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isnan (real (x)) || isnan (imag (x));
 #else
     return std::isnan (real (x)) || std::isnan (imag (x));
@@ -968,14 +968,14 @@ public:
   static const bool is_complex = false;
 
   static bool isInf (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isinf (x);
 #else
     return std::isinf (x);
 #endif // __CUDACC__
   }
   static bool isNan (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isnan (x);
 #else
     return std::isnan (x);
