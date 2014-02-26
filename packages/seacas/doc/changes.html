@@ -117,8 +117,15 @@
 	  <tr><td>2012-09-14</td>
 	  <td>grepos</td><td>1.64</td>
 
-	  <td>Added <tt>move global|local node {id} to|by {x} {y} {z}</tt> command so user can 
-	    specify exact location of a node in the mesh.
+         <td>Grepos has a node move The syntax is:
+             <tt>move {global|local} node {id} {to|by} {x} {y} {z}</tt>
+           <ul>
+             <li>The <tt>{global|local}</tt> specifies whether the node map is used or not.</li>
+             <li>The <tt>{to|by}</tt> specifies absolute or relative movement.
+               <ul>
+                 <li>to -- move to that position</li>
+                 <li>by -- delta from current position</li></ul></li></ul>
+	  </td>
 	  </tr>
 
 	  <tr><td>2012-09-07</td>
@@ -478,7 +485,7 @@
     <address><a href="mailto:gdsjaar@sandia.gov">Gregory D Sjaardema</a></address>
 <!-- Created: Tue Nov 17 07:07:27 MST 2009 -->
 <!-- hhmts start -->
-Last modified: Tue Feb 25 15:34:20 MST 2014
+Last modified: Wed Feb 26 08:16:30 MST 2014
 <!-- hhmts end -->
   </body>
 </html>
