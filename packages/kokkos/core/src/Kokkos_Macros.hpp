@@ -222,17 +222,6 @@ namespace Kokkos { typedef HostSpace ExecutionSpace ; }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __GNUC__ ) /* GNU C   */ || \
-    defined( __GNUG__ ) /* GNU C++ */ || \
-    defined( __clang__ )
-
-#define KOKKOS_MAY_ALIAS __attribute__((__may_alias__))
-
-#else
-
-#define KOKKOS_MAY_ALIAS
-
-#endif
 
 #endif /* #ifndef KOKKOS_MACROS_HPP */
 

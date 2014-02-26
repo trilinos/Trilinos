@@ -110,59 +110,6 @@
 
 namespace Kokkos {
 
-template <typename T>
-KOKKOS_FORCEINLINE_FUNCTION
-T volatile_load(T const volatile * const src_ptr)
-{
-  typedef uint64_t KOKKOS_MAY_ALIAS T64;
-  typedef uint32_t KOKKOS_MAY_ALIAS T32;
-  typedef uint16_t KOKKOS_MAY_ALIAS T16;
-  typedef uint8_t  KOKKOS_MAY_ALIAS T8;
-
-  enum {
-    NUM_8  = sizeof(T),
-    NUM_16 = NUM_8 / 2,
-    NUM_32 = NUM_8 / 4,
-    NUM_64 = NUM_8 / 8
-  };
-
-  union {
-    T   const volatile * const ptr;
-    T64 const volatile * const ptr64;
-    T32 const volatile * const ptr32;
-    T16 const volatile * const ptr16;
-    T8  const volatile * const ptr8;
-  } src = {src_ptr};
-
-  T result;
-
-  union {
-    T   * const ptr;
-    T64 * const ptr64;
-    T32 * const ptr32;
-    T16 * const ptr16;
-    T8  * const ptr8;
-  } dst = {&result};
-
-  for (int i=0; i < NUM_64; ++i) {
-    dst.ptr64[i] = src.ptr64[i];
-  }
-
-  if ( NUM_64*2 < NUM_32 ) {
-    dst.ptr32[NUM_64*2] = src.ptr32[NUM_64*2];
-  }
-
-  if ( NUM_32*2 < NUM_16 ) {
-    dst.ptr16[NUM_32*2] = src.ptr16[NUM_32*2];
-  }
-
-  if ( NUM_16*2 < NUM_8 ) {
-    dst.ptr8[NUM_16*2] = src.ptr8[NUM_16*2];
-  }
-
-  return result;
-}
-
 
 inline
 const char * atomic_query_version()
@@ -214,7 +161,17 @@ const char * atomic_query_version()
 //
 // void memory_fence() {...};
 #include "impl/Kokkos_Memory_Fence.hpp"
+
 //----------------------------------------------------------------------------
+// Provide volatile_load and safe_load
+//
+// T volatile_load(T const volatile * const ptr);
+//
+// T const& safe_load(T const * const ptr);
+// XEON PHI
+// T safe_load(T const * const ptr
+
+#include "impl/Kokkos_Volatile_Load.hpp"
 
 #endif /* KOKKOS_ATOMIC_HPP */
 

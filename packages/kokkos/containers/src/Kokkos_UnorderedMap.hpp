@@ -453,17 +453,17 @@ public:
 
       size_type * curr_ptr = &m_hash_lists[ hash_value % m_hash_lists.size() ];
 
-      size_type curr  = volatile_load(curr_ptr);
+      size_type curr  = safe_load(curr_ptr);
       size_type new_index = invalid_index;
 
       do {
         {
           // Continue searching the unordered list for this key,
           // list will only be appended during insert phase.
-          // Need volatile_load as other threads will be appending.
-          while (curr != invalid_index && !m_equal_to( volatile_load(&m_keys[curr]), k) ) {
+          // Need safe_load as other threads will be appending.
+          while (curr != invalid_index && !m_equal_to( safe_load(&m_keys[curr]), k) ) {
             curr_ptr = &m_next_index[curr];
-            curr = volatile_load(curr_ptr);
+            curr = safe_load(curr_ptr);
           }
         }
 
@@ -687,7 +687,7 @@ private: // private member functions
         size_type available ;
 
         // Search current block for an available entry.
-        while ( new_index == invalid_index && ( 0u < ( available = volatile_load(available_ptr) ) ) ) {
+        while ( new_index == invalid_index && ( 0u < ( available = safe_load(available_ptr) ) ) ) {
 
           // Offset of first set bit in 'available':
           const int offset = Impl::find_first_set(available) - 1;
@@ -722,11 +722,11 @@ private: // private member functions
     const size_type increment = static_cast<size_type>(1) << offset;
 
     size_type * block_ptr = &m_available_indexes[block];
-    size_type available = volatile_load(block_ptr);
+    size_type available = safe_load(block_ptr);
     size_type new_available = available | increment;
 
     while (!atomic_compare_exchange_strong(block_ptr,available,new_available)) {
-      available = volatile_load(block_ptr);
+      available = safe_load(block_ptr);
       new_available = available | increment;
     }
 
