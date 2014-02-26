@@ -51,6 +51,7 @@
 #include "Teuchos_DebugDefaultAsserts.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TypeTraits.hpp"
 
 namespace {
   // Set the Belos solver's parameter list to scale its residual norms
