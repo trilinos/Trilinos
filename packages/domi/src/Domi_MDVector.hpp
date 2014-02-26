@@ -1314,7 +1314,12 @@ MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 dot(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & a) const
 {
   typedef typename MDArrayView< const Scalar >::iterator iterator;
-  // \todo Add macro-protected array bounds checking
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    _mdMap != a._mdMap,
+    MDMapError,
+    "MDMap of calling MDVector and argument 'a' are different");
+
   MDArrayView< const Scalar > aView = a.getData();
   Scalar local_dot = 0;
   iterator a_it = aView.begin();
@@ -1407,7 +1412,12 @@ normWeighted(const MDVector< Scalar,
                              Node > & weights) const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
-  // \todo Add macro-protected array bounds checking
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    _mdMap != weights._mdMap,
+    MDMapError,
+    "MDMap of calling MDVector and argument 'weights' are different");
+
   MDArrayView< const Scalar > wView = weights.getData();
   mag local_wNorm = 0;
   typename MDArrayView< const Scalar >::iterator w_it = wView.begin();
