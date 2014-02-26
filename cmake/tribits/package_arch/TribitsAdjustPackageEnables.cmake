@@ -53,6 +53,7 @@ INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(SetDefault)
 INCLUDE(MessageWrapper)
 INCLUDE(DualScopeSet)
+INCLUDE(ParseVariableArguments)
 
 #
 # Function that creates error message about missing/misspelled package.
@@ -246,6 +247,77 @@ MACRO(TRIBITS_PREP_TO_READ_DEPENDENCIES)
   DECLARE_UNDEFINED(TEST_OPTIONAL_DEP_TPLS "")
 
 ENDMACRO()
+
+
+#
+# @MACRO: TRIBITS_DEFINE_PACKAGE_DEPENDENCIES
+#
+# Define the dependenices for a given TriBITS SE package.
+#
+# Usage::
+#
+#   TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+#      [LIB_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
+#      [LIB_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
+#      [TEST_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
+#      [TEST_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
+#      [LIB_REQUIRED_TPLS <tpl1> <tpl2> ...]
+#      [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
+#      [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
+#      [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
+#      )
+#
+
+# The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
+# dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
+# implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
+# dependeices.
+#
+# The dependencies within a single varible do not need to be listed in any
+# order.  For example if PKG2 depends on PKG1, and this given SE package
+# depends on both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
+# "LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise for TPLs.
+#
+# NOTE: All this macro really does is to just define the variables:
+# * LIB_REQUIRED_DEP_PACKAGES
+# * LIB_OPTIONAL_DEP_PACKAGES
+# * TEST_REQUIRED_DEP_PACKAGES
+# * TEST_OPTIONAL_DEP_PACKAGES
+# * LIB_REQUIRED_DEP_TPLS
+# * LIB_OPTIONAL_DEP_TPLS
+# * TEST_REQUIRED_DEP_TPLS
+# * TEST_OPTIONAL_DEP_TPLS
+#
+# which are then read by the TriBITS cmake code to build the package
+# dependency graph.  The advantage of using this macro instead of just
+# directly setting the varibles is that you only need to list the dependencies
+# you have.  Otherwise, you need to set all of these varibles, even those that
+# are empty.  This is a error checking property of the TriBITS system to avoid
+# misspelling the names of these variables.
+# 
+MACRO(TRIBITS_DEFINE_PACKAGE_DEPENDENCIES)
+
+  PARSE_ARGUMENTS(
+     #prefix
+     PARSE
+     #lists
+     "LIB_REQUIRED_PACKAGES;LIB_OPTIONAL_PACKAGES;TEST_REQUIRED_PACKAGES;TEST_OPTIONAL_PACKAGES;LIB_REQUIRED_TPLS;LIB_OPTIONAL_TPLS;TEST_REQUIRED_TPLS;TEST_OPTIONAL_TPLS"
+     #options
+     ""
+     ${ARGN}
+     )
+
+  SET(LIB_REQUIRED_DEP_PACKAGES ${PARSE_LIB_REQUIRED_PACKAGES})
+  SET(LIB_OPTIONAL_DEP_PACKAGES ${PARSE_LIB_OPTIONAL_PACKAGES})
+  SET(TEST_REQUIRED_DEP_PACKAGES ${PARSE_TEST_REQUIRED_PACKAGES})
+  SET(TEST_OPTIONAL_DEP_PACKAGES ${PARSE_TEST_OPTIONAL_PACKAGES})
+  SET(LIB_REQUIRED_DEP_TPLS ${PARSE_LIB_REQUIRED_TPLS})
+  SET(LIB_OPTIONAL_DEP_TPLS ${PARSE_LIB_OPTIONAL_TPLS})
+  SET(TEST_REQUIRED_DEP_TPLS ${PARSE_TEST_REQUIRED_TPLS})
+  SET(TEST_OPTIONAL_DEP_TPLS ${PARSE_TEST_OPTIONAL_TPLS})
+
+ENDMACRO()
+
 
 
 MACRO(TRIBITS_SAVE_OFF_DEPENENCIES_VARS  POSTFIX)
