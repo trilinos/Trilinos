@@ -41,7 +41,7 @@ ELSE()
   CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
   # TriBITS is the only package so just enabled it!
-  SET(TriBITS_ENABLE_TriBITS ON)
+  SET(${PROJECT_NAME}_ENABLE_TriBITS ON)
 
   SET(TriBITS_PROCESSED_BASED_PROJECT ON)
 
@@ -55,3 +55,5 @@ ENDIF()
 # PackagesList.cmake you just need to use a different binary directory.  That
 # is all!  In fact, this tribits directory shows how the same directory can be
 # used for a TriBITS package, a TriBITS repository, and a TriBITS project!
+# However, you can't name the project the same as the package since this will
+# try to create two targets with the name ${PROJECT_NAME}_libs.
