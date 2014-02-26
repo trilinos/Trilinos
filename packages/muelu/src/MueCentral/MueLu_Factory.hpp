@@ -176,8 +176,14 @@ namespace MueLu {
     mutable        multipleCallCheckEnum multipleCallCheck_;
     static         multipleCallCheckEnum multipleCallCheckGlobal_;
     mutable int    lastLevelID_;
+#else
+  public:
+    void EnableMultipleCallCheck() const       { }
+    void DisableMultipleCallCheck() const      { }
+    void ResetDebugData() const                { }
+    static void EnableMultipleCheckGlobally()  { }
+    static void DisableMultipleCheckGlobally() { }
 #endif
-
   }; //class Factory
 
 } //namespace MueLu
