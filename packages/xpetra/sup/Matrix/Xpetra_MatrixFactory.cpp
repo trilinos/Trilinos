@@ -51,7 +51,6 @@
 
 namespace Xpetra {
 
-#ifdef HAVE_XPETRA_EXPERIMENTAL
   RCP<Xpetra::Matrix<double,int,int> > MatrixFactory2<double,int,int>::BuildCopy(const RCP<const Matrix> A) {
     RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
     if (oldOp == Teuchos::null)
@@ -83,7 +82,6 @@ namespace Xpetra {
 
     return Teuchos::null;  // make compiler happy
   }
-#endif // ifdef HAVE_XPETRA_EXPERIMENTAL
 
 } // namespace Xpetra
 

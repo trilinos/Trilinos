@@ -325,12 +325,9 @@ namespace Xpetra {
 
     //@}
 
-#ifdef HAVE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
     : mtx_(matrix.mtx_->template clone<Node>(rcp(new Node()))) { }
-#endif
-
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
