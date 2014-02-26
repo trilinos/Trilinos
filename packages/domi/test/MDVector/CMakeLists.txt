@@ -510,9 +510,45 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
   MDVector_CommTests
-  NAME MDVector_CommTests_2D_2
+  NAME MDVector_CommTests_2D_1_2
   COMM mpi
   NUM_MPI_PROCS 2
-  ARGS "--test=0 --dims=6,10 --commPad=1"
+  ARGS "--commPad=1,1 --axisCommSizes=1,2"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_CommTests
+  NAME MDVector_CommTests_2D_2_1
+  COMM mpi
+  NUM_MPI_PROCS 2
+  ARGS "--commPad=1,1 --axisCommSizes=2,1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_CommTests
+  NAME MDVector_CommTests_2D_1_4
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--commPad=1,1 --axisCommSizes=1,4"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_CommTests
+  NAME MDVector_CommTests_2D_2_2
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--commPad=1,1 --axisCommSizes=2"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_CommTests
+  NAME MDVector_CommTests_2D_4_1
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--commPad=1,1 --axisCommSizes=4,1"
   STANDARD_PASS_OUTPUT
   )
