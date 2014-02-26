@@ -328,8 +328,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
-    : mtx_(matrix.mtx_->template convert<Scalar>()) {
-    }
+    : mtx_(matrix.mtx_->template clone<Node>(rcp(new Node()))) { }
 #endif
 
 
