@@ -434,7 +434,7 @@ public:
 
   /** \brief Get the storage order
    */
-  ELayout getLayout() const;
+  Layout getLayout() const;
 
   //@}
 
@@ -1197,7 +1197,7 @@ template< class Scalar,
           class LocalOrd,
           class GlobalOrd,
           class Node >
-ELayout
+Layout
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getLayout() const
 {

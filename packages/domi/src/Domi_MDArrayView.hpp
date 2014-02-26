@@ -146,7 +146,7 @@ public:
    */
   MDArrayView(const Teuchos::ArrayView< T > & array,
 	      const Teuchos::ArrayView< size_type > & dims,
-	      const ELayout layout = DEFAULT_ORDER);
+	      const Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with a source <tt>Teuchos::ArrayView</tt>,
    *   dimensions, strides, and optional storage order
@@ -171,7 +171,7 @@ public:
   MDArrayView(const Teuchos::ArrayView< T > & array,
 	      const Teuchos::Array< size_type > & dims,
               const Teuchos::Array< size_type > & strides,
-	      const ELayout layout = DEFAULT_ORDER);
+	      const Layout layout = DEFAULT_ORDER);
 
   /** \brief Copy constructor
    *
@@ -249,7 +249,7 @@ public:
 
   /** \brief Return the storage order
    */
-  inline ELayout layout() const;
+  inline Layout layout() const;
 
   /** \brief Return whether the MDArrayView is contiguous in memory
    */
@@ -649,7 +649,7 @@ private:
   Teuchos::Array< size_type > _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::ArrayView< T >     _array;
-  ELayout                     _layout;
+  Layout                      _layout;
   T *                         _ptr;
   int                         _next_axis;
 
@@ -687,7 +687,7 @@ MDArrayView(Teuchos::ENull null_arg) :
 template< typename T >
 MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
 			      const Teuchos::ArrayView< size_type > & dims,
-			      const ELayout layout) :
+			      const Layout layout) :
   _dimensions(dims),
   _strides(computeStrides(dims, layout)),
   _array(array),
@@ -707,7 +707,7 @@ template< typename T >
 MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
 			      const Teuchos::Array< size_type > & dims,
 			      const Teuchos::Array< size_type > & strides,
-			      const ELayout layout) :
+			      const Layout layout) :
   _dimensions(dims),
   _strides(strides),
   _array(array),
@@ -885,7 +885,7 @@ MDArrayView< T >::arrayView() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-ELayout
+Layout
 MDArrayView< T >::layout() const
 {
   return _layout;

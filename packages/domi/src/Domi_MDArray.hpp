@@ -174,7 +174,7 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  *
  * There are various other optional arguments that can be passed to
  * the <tt>MDArray</tt> constructors.  These include a flag for
- * storage order, of enumerated type <tt>ELayout</tt>, and a default
+ * storage order, of enumerated type <tt>Layout</tt>, and a default
  * fill value of type <tt>T</tt>.
  *
  * \section Domi_MDArray_Indexing MDArray Indexing
@@ -321,7 +321,7 @@ public:
    */
   inline MDArray(const Teuchos::ArrayView< size_type > & dims,
 		 const value_type & value,
-		 const ELayout layout = DEFAULT_ORDER);
+		 const Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order,
    *         with optional default value
@@ -338,7 +338,7 @@ public:
    *        <tt>MDArray</tt>
    */
   inline MDArray(const Teuchos::ArrayView< size_type > & dims,
-		 const ELayout layout,
+		 const Layout layout,
 		 const value_type & value = value_type());
 
   /** \brief Copy constructor
@@ -391,7 +391,7 @@ public:
 
   /** \brief Return the storage order
    */
-  inline const ELayout layout() const;
+  inline const Layout layout() const;
 
   //@}
 
@@ -858,7 +858,7 @@ private:
   Teuchos::Array< size_type > _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::Array< T >         _array;
-  ELayout                     _layout;
+  Layout                      _layout;
   T *                         _ptr;
 
   // Used for array bounds checking
@@ -896,7 +896,7 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims) :
 template< typename T >
 MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
 		      const value_type & value,
-		      const ELayout layout) :
+		      const Layout layout) :
   _dimensions(dims),
   _strides(computeStrides(dims, layout)),
   _array(computeSize(dims), value),
@@ -909,7 +909,7 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
 
 template< typename T >
 MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
-		      const ELayout layout,
+		      const Layout layout,
 		      const value_type & value) :
   _dimensions(dims),
   _strides(computeStrides(dims, layout)),
@@ -1014,7 +1014,7 @@ MDArray< T >::array() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const ELayout
+const Layout
 MDArray< T >::layout() const
 {
   return _layout;
@@ -1629,9 +1629,9 @@ MDArray< T >::swap(MDArray<T> & a)
   Teuchos::swap(_strides,    a._strides   );
   Teuchos::swap(_array,      a._array     );
   // Perform a raw swap of the storage order
-  ELayout tmp = _layout;
-  _layout     = a._layout;
-  a._layout   = tmp;
+  Layout tmp = _layout;
+  _layout    = a._layout;
+  a._layout  = tmp;
   // Make sure the pointers are correct
   _ptr   = _array.getRawPtr();
   a._ptr = a._array.getRawPtr();

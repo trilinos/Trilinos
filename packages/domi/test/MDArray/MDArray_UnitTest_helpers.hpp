@@ -59,7 +59,7 @@ extern int nlevs;
 template< class T >
 Domi::MDArray< T > generateMDArray(const int nrows_in,
                                    const int ncols_in,
-                                   Domi::ELayout layout =
+                                   Domi::Layout layout =
                                      Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -81,7 +81,7 @@ template< class T >
 Domi::MDArray< T > generateMDArray(const int nrows_in,
                                    const int ncols_in,
                                    const int nlevs_in,
-                                   Domi::ELayout layout =
+                                   Domi::Layout layout =
                                      Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -104,7 +104,7 @@ Domi::MDArray< T > generateMDArray(const int nrows_in,
 template< class T >
 Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
                                          const int ncols_in,
-                                         Domi::ELayout layout =
+                                         Domi::Layout layout =
                                            Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -126,7 +126,7 @@ template< class T >
 Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
                                          const int ncols_in,
                                          const int nlevs_in,
-                                         Domi::ELayout layout =
+                                         Domi::Layout layout =
                                            Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;

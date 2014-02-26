@@ -175,7 +175,7 @@ public:
           Teuchos::ArrayView< int >(),
         const Teuchos::ArrayView< int > & bndryPad =
           Teuchos::ArrayView< int >(),
-        const ELayout layout = DEFAULT_ORDER,
+        const Layout layout = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
 
@@ -537,7 +537,7 @@ public:
 
   /** \brief Get the storage order
    */
-  ELayout getLayout() const;
+  Layout getLayout() const;
 
   //@}
 
@@ -736,7 +736,7 @@ private:
   Teuchos::Array< padding > _bndryPad;
 
   // The storage order
-  ELayout _layout;
+  Layout _layout;
 
   // The Kokkos node type
   Teuchos::RCP< Node > _node;
@@ -813,7 +813,7 @@ MDMap(const MDCommRCP mdComm,
       const Teuchos::ArrayView< GlobalOrd > & dimensions,
       const Teuchos::ArrayView< int > & commPad,
       const Teuchos::ArrayView< int > & bndryPad,
-      const ELayout layout,
+      const Layout layout,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
   _globalDims(mdComm->getNumDims()),
@@ -1810,7 +1810,7 @@ isBndryPad(Teuchos::ArrayView< LocalOrd > index) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class LocalOrd, class GlobalOrd, class Node >
-ELayout
+Layout
 MDMap< LocalOrd, GlobalOrd, Node >::getLayout() const
 {
   return _layout;

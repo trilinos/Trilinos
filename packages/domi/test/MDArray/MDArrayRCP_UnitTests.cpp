@@ -151,19 +151,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, copyConstructor, T )
   typedef typename MDArrayRCP< T >::size_type size_type;
   MDArrayRCP< T > mdar1(tuple< size_type >(2,3), 2);
   MDArrayRCP< T > mdar2(mdar1);
-  TEST_EQUALITY(mdar1.num_dims(),      mdar2.num_dims()     );
-  TEST_EQUALITY(mdar1.dimension(0),    mdar2.dimension(0)   );
-  TEST_EQUALITY(mdar1.dimension(1),    mdar2.dimension(1)   );
-  TEST_EQUALITY(mdar1.size(),          mdar2.size()         );
-  TEST_EQUALITY(mdar1.strides()[0],    mdar2.strides()[0]   );
-  TEST_EQUALITY(mdar1.strides()[1],    mdar2.strides()[1]   );
-  TEST_EQUALITY(mdar1.layout(), mdar2.layout());
-  TEST_EQUALITY(mdar1(0,0),            mdar2(0,0)           );
-  TEST_EQUALITY(mdar1(1,0),            mdar2(1,0)           );
-  TEST_EQUALITY(mdar1(0,1),            mdar2(0,1)           );
-  TEST_EQUALITY(mdar1(1,1),            mdar2(1,1)           );
-  TEST_EQUALITY(mdar1(0,2),            mdar2(0,2)           );
-  TEST_EQUALITY(mdar1(1,2),            mdar2(1,2)           );
+  TEST_EQUALITY(mdar1.num_dims(),   mdar2.num_dims()  );
+  TEST_EQUALITY(mdar1.dimension(0), mdar2.dimension(0));
+  TEST_EQUALITY(mdar1.dimension(1), mdar2.dimension(1));
+  TEST_EQUALITY(mdar1.size(),       mdar2.size()      );
+  TEST_EQUALITY(mdar1.strides()[0], mdar2.strides()[0]);
+  TEST_EQUALITY(mdar1.strides()[1], mdar2.strides()[1]);
+  TEST_EQUALITY(mdar1.layout(),     mdar2.layout()    );
+  TEST_EQUALITY(mdar1(0,0),         mdar2(0,0)        );
+  TEST_EQUALITY(mdar1(1,0),         mdar2(1,0)        );
+  TEST_EQUALITY(mdar1(0,1),         mdar2(0,1)        );
+  TEST_EQUALITY(mdar1(1,1),         mdar2(1,1)        );
+  TEST_EQUALITY(mdar1(0,2),         mdar2(0,2)        );
+  TEST_EQUALITY(mdar1(1,2),         mdar2(1,2)        );
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperator, T )
@@ -221,23 +221,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, assignmentOperator, T )
   typedef typename MDArrayRCP< T >::size_type size_type;
   MDArrayRCP< T > mdar1(tuple< size_type >(2,2,2), 8);
   MDArrayRCP< T > mdar2 = mdar1;
-  TEST_EQUALITY(mdar1.num_dims(),      mdar2.num_dims()     );
-  TEST_EQUALITY(mdar1.dimension(0),    mdar2.dimension(0)   );
-  TEST_EQUALITY(mdar1.dimension(1),    mdar2.dimension(1)   );
-  TEST_EQUALITY(mdar1.dimension(2),    mdar2.dimension(2)   );
-  TEST_EQUALITY(mdar1.size(),          mdar2.size()         );
-  TEST_EQUALITY(mdar1.strides()[0],    mdar2.strides()[0]   );
-  TEST_EQUALITY(mdar1.strides()[1],    mdar2.strides()[1]   );
-  TEST_EQUALITY(mdar1.strides()[2],    mdar2.strides()[2]   );
-  TEST_EQUALITY(mdar1.layout(), mdar2.layout());
-  TEST_EQUALITY(mdar1(0,0,0),          mdar2(0,0,0)         );
-  TEST_EQUALITY(mdar1(1,0,0),          mdar2(1,0,0)         );
-  TEST_EQUALITY(mdar1(0,1,0),          mdar2(0,1,0)         );
-  TEST_EQUALITY(mdar1(1,1,0),          mdar2(1,1,0)         );
-  TEST_EQUALITY(mdar1(0,0,1),          mdar2(0,0,1)         );
-  TEST_EQUALITY(mdar1(1,0,1),          mdar2(1,0,1)         );
-  TEST_EQUALITY(mdar1(0,1,1),          mdar2(0,1,1)         );
-  TEST_EQUALITY(mdar1(1,1,1),          mdar2(1,1,1)         );
+  TEST_EQUALITY(mdar1.num_dims(),   mdar2.num_dims()  );
+  TEST_EQUALITY(mdar1.dimension(0), mdar2.dimension(0));
+  TEST_EQUALITY(mdar1.dimension(1), mdar2.dimension(1));
+  TEST_EQUALITY(mdar1.dimension(2), mdar2.dimension(2));
+  TEST_EQUALITY(mdar1.size(),       mdar2.size()      );
+  TEST_EQUALITY(mdar1.strides()[0], mdar2.strides()[0]);
+  TEST_EQUALITY(mdar1.strides()[1], mdar2.strides()[1]);
+  TEST_EQUALITY(mdar1.strides()[2], mdar2.strides()[2]);
+  TEST_EQUALITY(mdar1.layout(),     mdar2.layout()    );
+  TEST_EQUALITY(mdar1(0,0,0),       mdar2(0,0,0)      );
+  TEST_EQUALITY(mdar1(1,0,0),       mdar2(1,0,0)      );
+  TEST_EQUALITY(mdar1(0,1,0),       mdar2(0,1,0)      );
+  TEST_EQUALITY(mdar1(1,1,0),       mdar2(1,1,0)      );
+  TEST_EQUALITY(mdar1(0,0,1),       mdar2(0,0,1)      );
+  TEST_EQUALITY(mdar1(1,0,1),       mdar2(1,0,1)      );
+  TEST_EQUALITY(mdar1(0,1,1),       mdar2(0,1,1)      );
+  TEST_EQUALITY(mdar1(1,1,1),       mdar2(1,1,1)      );
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing4D, T )

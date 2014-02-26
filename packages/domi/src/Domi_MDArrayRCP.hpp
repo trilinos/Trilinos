@@ -185,7 +185,7 @@ public:
    */
   inline MDArrayRCP(const Teuchos::ArrayView< T > & array,
 		    const Teuchos::ArrayView< size_type > & dims,
-		    ELayout layout = DEFAULT_ORDER);
+		    Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions, default value and optional
    *  storage order flag.
@@ -204,7 +204,7 @@ public:
    */
   inline explicit MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 			     const T & val = T(),
-			     ELayout layout = DEFAULT_ORDER);
+			     Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order flag.
    *
@@ -219,7 +219,7 @@ public:
    * This constructor allocates new memory and takes ownership of it.
    */
   inline explicit MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
-			     ELayout layout);
+			     Layout layout);
 
   /** \brief Shallow copy constructor
    *
@@ -279,7 +279,7 @@ public:
 
   /** \brief Return the storage order
    */
-  inline const ELayout layout() const;
+  inline const Layout layout() const;
 
   //@}
 
@@ -790,7 +790,7 @@ private:
   Teuchos::Array< size_type > _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::ArrayRCP< T >      _array;
-  ELayout                     _layout;
+  Layout                      _layout;
   T *                         _ptr;
 
   // Used for array bounds checking
@@ -816,7 +816,7 @@ MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
 			    const Teuchos::ArrayView< size_type > & dims,
-			    ELayout layout) :
+			    Layout layout) :
   _dimensions(dims),
   _strides(computeStrides(dims, layout)),
   _array(array.getRawPtr(), 0, array.size(), false),
@@ -834,7 +834,7 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 			    const T & val,
-			    ELayout layout) :
+			    Layout layout) :
   _dimensions(dims),
   _strides(computeStrides(dims, layout)),
   _array(computeSize(dims), val),
@@ -847,7 +847,7 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
-			    ELayout layout) :
+			    Layout layout) :
   _dimensions(dims),
   _strides(computeStrides(dims, layout)),
   _array(computeSize(dims)),
@@ -964,7 +964,7 @@ MDArrayRCP< T >::arrayRCP() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const ELayout
+const Layout
 MDArrayRCP< T >::layout() const
 {
   return _layout;

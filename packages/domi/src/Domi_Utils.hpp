@@ -63,7 +63,7 @@ namespace Domi
  *  Note that there are only two orderings supported, but multiple
  *  ways to refer to them.
  */
-enum ELayout
+enum Layout
 {
   /** \brief C order, in which the last index varies fastest */
   C_ORDER             = 0,
@@ -118,7 +118,7 @@ struct remove_const< const T >
  */
 template< typename T >
 Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
-                                   const ELayout layout)
+                                   const Layout layout)
 {
   typedef typename Teuchos::Array< T >::size_type size_type;
   size_type n = dimensions.size();
@@ -147,7 +147,7 @@ Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
 template< typename T >
 Teuchos::Array< T >
 computeStrides(const Teuchos::Array< T > & dimensions,
-               const ELayout layout)
+               const Layout layout)
 {
   // In the MDArray<T>(const MDArrayView<T> &) constructor, I try to
   // pass the MDArrayView dimensions to computeStrides(), but they
@@ -299,7 +299,7 @@ template< class T > MPI_Datatype mpiType();
 /** \brief Return an MPI flag for data layout, given its corresponding
            Domi enumeration
  */
-int mpiOrder(ELayout layout);
+int mpiOrder(Layout layout);
 
 #endif
 

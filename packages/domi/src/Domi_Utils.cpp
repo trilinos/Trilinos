@@ -263,7 +263,7 @@ MPI_Datatype mpiType<long double>()
 
 #ifdef HAVE_MPI
 
-int mpiOrder(ELayout layout)
+int mpiOrder(Layout layout)
 {
   int result = MPI_ORDER_FORTRAN;
   if (layout == C_ORDER) result = MPI_ORDER_C;

@@ -219,7 +219,7 @@ private:
 
   // A copy of the storage order of the multi-dimensional array being
   // iterated
-  ELayout _layout;
+  Layout _layout;
 
   // The multi-dimensional index of the current iterate
   Teuchos::Array< size_type > _index;
