@@ -469,7 +469,7 @@ public:
    * Note that the returned padding can be either communication
    * padding or boundary padding as appropriate.
    */
-  int getLowerPad(int axis) const;
+  int getLowerPadSize(int axis) const;
 
   /** \brief Get the size of the upper padding along the given axis
    *
@@ -479,7 +479,7 @@ public:
    * Note that the returned padding can be either communication
    * padding or boundary padding as appropriate.
    */
-  int getUpperPad(int axis) const;
+  int getUpperPadSize(int axis) const;
 
   /** \brief Get the communication padding size along the given axis
    *
@@ -1661,7 +1661,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::hasPadding() const
 
 template< class LocalOrd, class GlobalOrd, class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getLowerPad(int axis) const
+MDMap< LocalOrd, GlobalOrd, Node >::getLowerPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1677,7 +1677,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getLowerPad(int axis) const
 
 template< class LocalOrd, class GlobalOrd, class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getUpperPad(int axis) const
+MDMap< LocalOrd, GlobalOrd, Node >::getUpperPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1768,12 +1768,12 @@ isCommPad(Teuchos::ArrayView< LocalOrd > index) const
     // processor that contains communication padding
     if (getLowerNeighbor(axis) >= 0)
     {
-      if (index[axis] < getLowerPad(axis))
+      if (index[axis] < getLowerPadSize(axis))
         result = true;
     }
     if (getUpperNeighbor(axis) >= 0)
     {
-      if (index[axis] >= getLocalDim(axis,true) - getUpperPad(axis))
+      if (index[axis] >= getLocalDim(axis,true) - getUpperPadSize(axis))
         result = true;
     }
   }
@@ -1795,12 +1795,12 @@ isBndryPad(Teuchos::ArrayView< LocalOrd > index) const
     // contains a boundary
     if (getLowerNeighbor(axis) == -1)
     {
-      if (index[axis] < getLowerPad(axis))
+      if (index[axis] < getLowerPadSize(axis))
         result = true;
     }
     if (getUpperNeighbor(axis) == -1)
     {
-      if (index[axis] >= getLocalDim(axis,true) - getUpperPad(axis))
+      if (index[axis] >= getLocalDim(axis,true) - getUpperPadSize(axis))
         result = true;
     }
   }

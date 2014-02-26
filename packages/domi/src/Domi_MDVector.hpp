@@ -382,7 +382,7 @@ public:
    * Note that the returned padding can be either communication
    * padding or boundary padding as appropriate.
    */
-  int getLowerPad(int axis) const;
+  int getLowerPadSize(int axis) const;
 
   /** \brief Get the size of the upper padding along the given axis
    *
@@ -392,7 +392,7 @@ public:
    * Note that the returned padding can be either communication
    * padding or boundary padding as appropriate.
    */
-  int getUpperPad(int axis) const;
+  int getUpperPadSize(int axis) const;
 
   /** \brief Get the communication padding size along the given axis
    *
@@ -1121,9 +1121,9 @@ template< class Scalar,
           class Node >
 int
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getLowerPad(int axis) const
+getLowerPadSize(int axis) const
 {
-  return _mdMap->getLowerPad(axis);
+  return _mdMap->getLowerPadSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1134,9 +1134,9 @@ template< class Scalar,
           class Node >
 int
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getUpperPad(int axis) const
+getUpperPadSize(int axis) const
 {
-  return _mdMap->getUpperPad(axis);
+  return _mdMap->getUpperPadSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1219,8 +1219,8 @@ getDataNonConst(bool includePadding)
   MDArrayView< Scalar > newArray(_mdArrayView);
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    int lo = getLowerPad(axis);
-    int hi = getLocalDim(axis,true) - getUpperPad(axis);
+    int lo = getLowerPadSize(axis);
+    int hi = getLocalDim(axis,true) - getUpperPadSize(axis);
     newArray = MDArrayView< Scalar >(newArray, axis, Slice(lo,hi));
   }
   return newArray;
@@ -1241,8 +1241,8 @@ getData(bool includePadding) const
   MDArrayView< Scalar > newArray(_mdArrayView);
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    int lo = getLowerPad(axis);
-    int hi = getLocalDim(axis,true) - getUpperPad(axis);
+    int lo = getLowerPadSize(axis);
+    int hi = getLocalDim(axis,true) - getUpperPadSize(axis);
     newArray = MDArrayView< Scalar >(newArray, axis, Slice(lo,hi));
   }
   return newArray.getConst();
@@ -1260,7 +1260,7 @@ getLowerPadDataNonConst(int axis)
 {
   MDArrayView< Scalar > newArrayView(_mdArrayView,
                                      axis,
-                                     Slice(getLowerPad(axis)));
+                                     Slice(getLowerPadSize(axis)));
   return newArrayView;
 }
 
@@ -1276,7 +1276,7 @@ getLowerPadData(int axis) const
 {
   MDArrayView< const Scalar > newArrayView(_mdArrayView.getConst(),
                                            axis,
-                                           Slice(getLowerPad(axis)));
+                                           Slice(getLowerPadSize(axis)));
   return newArrayView;
 }
 
@@ -1291,7 +1291,7 @@ MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getUpperPadDataNonConst(int axis)
 {
   LocalOrd n   = getLocalDim(axis,true);
-  int      pad = getUpperPad(axis);
+  int      pad = getUpperPadSize(axis);
   Slice slice;
   if (pad) slice = Slice(n-pad,n);
   else     slice = Slice(n-1,n-1);
@@ -1312,7 +1312,7 @@ MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getUpperPadData(int axis) const
 {
   LocalOrd n   = getLocalDim(axis,true);
-  int      pad = getUpperPad(axis);
+  int      pad = getUpperPadSize(axis);
   Slice slice;
   if (pad) slice = Slice(n-pad,n);
   else     slice = Slice(n-1,n-1);
@@ -1867,7 +1867,7 @@ initializeMessages()
 #endif
 
     // Fix the subsize along this message axis
-    subsizes[msgAxis] = getLowerPad(msgAxis);
+    subsizes[msgAxis] = getLowerPadSize(msgAxis);
     // Fix the proc if the subsize is zero
     if (subsizes[msgAxis] == 0) proc = -1;
     // Assign the non-MPI members of messageInfo
@@ -1907,7 +1907,7 @@ initializeMessages()
     _recvMessages[msgAxis][0] = messageInfo;
 
     // Lower send message
-    starts[msgAxis] = getLowerPad(msgAxis);
+    starts[msgAxis] = getLowerPadSize(msgAxis);
     if (proc >= 0)
     {
 
@@ -1946,9 +1946,9 @@ initializeMessages()
         << proc << endl;
 #endif
 
-    subsizes[msgAxis] = getUpperPad(msgAxis);
+    subsizes[msgAxis] = getUpperPadSize(msgAxis);
     starts[msgAxis]  = _mdArrayView.dimension(msgAxis) -
-                       getUpperPad(msgAxis);
+                       getUpperPadSize(msgAxis);
     if (subsizes[msgAxis] == 0) proc = -1;
     messageInfo.proc = proc;
     if (proc >= 0)
@@ -1983,7 +1983,7 @@ initializeMessages()
     _recvMessages[msgAxis][1] = messageInfo;
 
     // Upper send message
-    starts[msgAxis] -= getUpperPad(msgAxis);
+    starts[msgAxis] -= getUpperPadSize(msgAxis);
     if (proc >= 0)
     {
 
