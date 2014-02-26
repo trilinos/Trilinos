@@ -1241,7 +1241,7 @@ getLowerPadDataNonConst(int axis)
 {
   MDArrayView< Scalar > newArrayView(_mdArrayView,
                                      axis,
-                                     Slice(getLowerPad()));
+                                     Slice(getLowerPad(axis)));
   return newArrayView;
 }
 
@@ -1255,8 +1255,10 @@ MDArrayView< const Scalar >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getLowerPadData(int axis) const
 {
-  MDArrayView< Scalar > newArrayView = getLowerPadDataNonConst();
-  return newArrayView.getConst();
+  MDArrayView< const Scalar > newArrayView(_mdArrayView.getConst(),
+                                           axis,
+                                           Slice(getLowerPad(axis)));
+  return newArrayView;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1269,11 +1271,11 @@ MDArrayView< Scalar >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getUpperPadDataNonConst(int axis)
 {
-  LocalOrd n   = getLocalDim(axis);
-  int      pad = getUpperPad();
+  LocalOrd n   = getLocalDim(axis,true);
+  int      pad = getUpperPad(axis);
   Slice slice;
-  if (pad == 0) slice = Slice(n,n);
-  else          slice = Slice(n-pad,n);
+  if (pad) slice = Slice(n-pad,n);
+  else     slice = Slice(n-1,n-1);
   MDArrayView< Scalar > newArrayView(_mdArrayView,
                                      axis,
                                      slice);
@@ -1290,8 +1292,15 @@ MDArrayView< const Scalar >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 getUpperPadData(int axis) const
 {
-  MDArrayView< Scalar > newArrayView = getUpperPadDataNonConst();
-  return newArrayView.getConst();
+  LocalOrd n   = getLocalDim(axis,true);
+  int      pad = getUpperPad(axis);
+  Slice slice;
+  if (pad) slice = Slice(n-pad,n);
+  else     slice = Slice(n-1,n-1);
+  MDArrayView< const Scalar > newArrayView(_mdArrayView.getConst(),
+                                           axis,
+                                           slice);
+  return newArrayView;
 }
 
 ////////////////////////////////////////////////////////////////////////
