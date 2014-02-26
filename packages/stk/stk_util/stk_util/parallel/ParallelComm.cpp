@@ -330,8 +330,12 @@ CommBuffer * CommBuffer::allocate(
 CommAll::~CommAll()
 {
   try {
-    CommBuffer::deallocate( m_size , m_send );
-    if ( 1 < m_size ) { CommBuffer::deallocate( m_size , m_recv ); }
+    if ( m_recv == m_send ) {
+      CommBuffer::deallocate( m_size , m_send );
+    } else {
+      CommBuffer::deallocate( m_size , m_send );
+      CommBuffer::deallocate( m_size , m_recv );
+    }
   } catch(...){}
   m_comm = parallel_machine_null();
   m_size = 0 ;
