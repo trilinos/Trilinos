@@ -68,7 +68,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef typename View<DT,DL,DD,DM,Specialize>::shape_type   shape_type ;
     typedef typename View<DT,DL,DD,DM,Specialize>::stride_type  stride_type ;
 
@@ -102,7 +102,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
                   ), unsigned >::type i0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
 
     assert_shape_bounds( src.m_shape , 1 , i0 );
 
@@ -131,7 +131,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   ), unsigned >::type i0 ,
                   const unsigned i1 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -169,7 +169,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const unsigned i1 ,
                   const unsigned i2 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -215,7 +215,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const unsigned i2 ,
                   const unsigned i3 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -264,7 +264,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const unsigned i3 ,
                   const unsigned i4 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -316,7 +316,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const unsigned i4 ,
                   const unsigned i5 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -371,7 +371,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const unsigned i5 ,
                   const unsigned i6 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -429,7 +429,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const unsigned i6 ,
                   const unsigned i7 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef ViewTraits<ST,SL,SD,SM> src_traits ;
 
     enum { is_left = is_same< typename src_traits::array_layout , LayoutLeft >::value };
@@ -485,7 +485,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
     //typedef typename traits_type::shape_type shape_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
@@ -525,7 +525,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -556,7 +556,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), ALL >::type & )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -587,7 +587,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -620,7 +620,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), ALL >::type & )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 

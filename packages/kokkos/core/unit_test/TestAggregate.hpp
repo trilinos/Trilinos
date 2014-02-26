@@ -261,7 +261,7 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
                     )>::type * = 0
                   )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    //typedef ViewTraits<DT,DL,DD,DM> dst_traits ; // unused
     typedef typename View<DT,DL,DD,DM,ViewDefault>::shape_type   shape_type ;
     typedef typename View<DT,DL,DD,DM,ViewDefault>::stride_type  stride_type ;
 

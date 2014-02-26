@@ -290,7 +290,7 @@ struct ViewAssignment< ViewCudaTexture , ViewCudaTexture , void >
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
     typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type    shape_type ;
@@ -327,7 +327,7 @@ struct ViewAssignment< ViewCudaTexture , ViewDefault , void >
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    // typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
     typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type  shape_type ;

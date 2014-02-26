@@ -211,7 +211,7 @@ struct ViewAssignment< ViewDefault , ViewTileLeftFast, void >
                              typename View<ST,SL,SD,SM,ViewTileLeftFast>::tile_type >::value
                   ), unsigned >::type i1 )
   {
-    typedef View<DT,DL,DD,DM,ViewDefault> DstViewType ;
+    //typedef View<DT,DL,DD,DM,ViewDefault> DstViewType ; // unused
     //typedef typename DstViewType::shape_type    shape_type ; // unused
     //typedef typename DstViewType::memory_space  memory_space ; // unused
     //typedef typename DstViewType::memory_traits memory_traits ; // unused
