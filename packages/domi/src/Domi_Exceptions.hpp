@@ -105,6 +105,20 @@ public:
   { }
 };
 
+/** \brief MDMap Error exception type
+ */
+class MDMapError : public std::runtime_error
+{
+public:
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  MDMapError(std::string msg) :
+    std::runtime_error(msg)
+  { }
+};
+
 }
 
 #endif
