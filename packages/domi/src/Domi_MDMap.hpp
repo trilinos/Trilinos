@@ -519,6 +519,14 @@ public:
    */
   int getBndryPadSize(int axis) const;
 
+  /* \brief Return whether given local index is in the boundary
+   *        padding
+   *
+   * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
+   *        (i,j,k) for 3D, etc)
+   */
+  bool isBndryPad(Teuchos::ArrayView< LocalOrd > index) const;
+
   /** \brief Get the storage order
    */
   ELayout getLayout() const;
@@ -1735,6 +1743,33 @@ MDMap< LocalOrd, GlobalOrd, Node >::getBndryPadSize(int axis) const
     getNumDims() << ")");
 #endif
   return _bndryPadSizes[axis];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+bool
+MDMap< LocalOrd, GlobalOrd, Node >::
+isBndryPad(Teuchos::ArrayView< LocalOrd > index) const
+{
+  bool result = false;
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    // Check the ranks of the lower and upper neighbor processors.  If
+    // either of these values is -1, then we are on a processor that
+    // contains a boundary
+    if (getLowerNeighbor(axis) == -1)
+    {
+      if (index[axis] < getLowerPad(axis))
+        result = true;
+    }
+    if (getUpperNeighbor(axis) == -1)
+    {
+      if (index[axis] >= getLocalDim(axis,true) - getUpperPad(axis))
+        result = true;
+    }
+  }
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////
