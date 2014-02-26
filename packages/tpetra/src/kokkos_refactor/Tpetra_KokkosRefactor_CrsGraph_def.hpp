@@ -1627,12 +1627,12 @@ namespace Tpetra {
     using Teuchos::as;
     const char tfecfFuncName[] = "getGlobalRowView()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() == true, std::runtime_error,
+      isLocallyIndexed (), std::runtime_error,
       ": The graph is locally indexed, so we cannot return a view with global "
       "column indices.  Use getGlobalRowCopy() instead.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasRowInfo() == false, std::runtime_error,
+      ! hasRowInfo (), std::runtime_error,
       ": graph row information was deleted at fillComplete().");
 
     // isNodeGlobalElement() requires a global to local lookup anyway,
@@ -2351,8 +2351,13 @@ namespace Tpetra {
 
     // allocate if unallocated
     if (! indicesAreAllocated()) {
-      // allocate global, in case we do not have a column map
-      allocateIndices( GlobalIndices );
+      if (hasColMap ()) {
+        // We have a column Map, so use local indices.
+        allocateIndices (LocalIndices);
+      } else {
+        // We don't have a column Map, so use global indices.
+        allocateIndices (GlobalIndices);
+      }
     }
 
     // If true, the caller promises that no process did nonlocal
@@ -2383,9 +2388,11 @@ namespace Tpetra {
     if (! hasColMap()) {
       makeColMap();
     }
-    if (isGloballyIndexed()) {
-      makeIndicesLocal();
-    }
+
+    // Make indices local, if they aren't already.
+    // The method doesn't do any work if the indices are already local.
+    makeIndicesLocal ();
+
     if (! isSorted()) {
       sortAllIndices();
     }
@@ -2609,6 +2616,18 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::replaceColMap(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap)
+  {
+    // NOTE: This safety check matches the code, but not the documentation of Crsgraph
+    const char tfecfFuncName[] = "replaceColMap()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() || isGloballyIndexed(),  std::runtime_error, " requires matching maps and non-static graph.");
+    colMap_ = newColMap;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >  & newImporter)
   {
     const char tfecfFuncName[] = "replaceDomainMapAndImporter()";
@@ -2781,7 +2800,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     // All nodes must be in the same index state.
     // Update index state by checking isLocallyIndexed/Global on all nodes
-    computeIndexState();
+    /*computeIndexState();
     const char tfecfFuncName[] = "makeIndicesLocal";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed() && isGloballyIndexed(), std::logic_error,
@@ -2789,7 +2808,7 @@ namespace Tpetra {
       "processes, or global on all processes.");
     // If user has not prescribed a column Map, create one from indices.
     // If we already have a column Map, this call won't do anything.
-    makeColMap ();
+    makeColMap ();*/
     // Transform indices to local index space
     const size_t nlrs = getNodeNumRows();
 
