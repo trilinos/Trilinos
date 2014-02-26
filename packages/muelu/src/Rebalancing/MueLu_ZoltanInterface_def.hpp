@@ -237,7 +237,7 @@ namespace MueLu {
     } else {
       LO numBlockElements = numElements / blockSize;
 
-      for (size_t i = 0; i < numBlockElements; i++) {
+      for (LO i = 0; i < numBlockElements; i++) {
         // Assign zoltan GID to the first row GID in the block
         // NOTE: Zoltan GIDs are different from GIDs in the Coordinates vector
         gids[i]    = as<ZOLTAN_ID_TYPE>(mapGIDs[i*blockSize]);
