@@ -443,11 +443,11 @@ public:
 
   /** \brief Get a non-const view of the data as an MDArrayView
    */
-  MDArrayView< Scalar > getDataNonConst();
+  MDArrayView< Scalar > getDataNonConst(bool includePadding = true);
 
   /** \brief Get a const view of the data as an MDArrayView
    */
-  MDArrayView< const Scalar > getData() const;
+  MDArrayView< const Scalar > getData(bool includePadding = true) const;
 
   /** \brief Get a non-const view of the lower padding data along the
              given axis as an MDArrayView
@@ -526,7 +526,8 @@ public:
   //@{
 
   /// Set all values in the multivector with the given value. 
-  void putScalar(const Scalar & value);
+  void putScalar(const Scalar & value,
+                 bool includePadding = true);
 
   /// Set all values in the multivector to pseudorandom numbers. 
   void randomize();
@@ -1211,9 +1212,18 @@ template< class Scalar,
           class Node >
 MDArrayView< Scalar >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getDataNonConst()
+getDataNonConst(bool includePadding)
 {
-  return _mdArrayView;
+  if (includePadding)
+    return _mdArrayView;
+  MDArrayView< Scalar > newArray(_mdArrayView);
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    int lo = getLowerPad(axis);
+    int hi = getLocalDim(axis,true) - getUpperPad(axis);
+    newArray = MDArrayView< Scalar >(newArray, axis, Slice(lo,hi));
+  }
+  return newArray;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1224,9 +1234,18 @@ template< class Scalar,
           class Node >
 MDArrayView< const Scalar >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getData() const
+getData(bool includePadding) const
 {
-  return _mdArrayView.getConst();
+  if (includePadding)
+    return _mdArrayView.getConst();
+  MDArrayView< Scalar > newArray(_mdArrayView);
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    int lo = getLowerPad(axis);
+    int hi = getLocalDim(axis,true) - getUpperPad(axis);
+    newArray = MDArrayView< Scalar >(newArray, axis, Slice(lo,hi));
+  }
+  return newArray.getConst();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1602,10 +1621,12 @@ template< class Scalar,
           class Node >
 void
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-putScalar(const Scalar & value)
+putScalar(const Scalar & value,
+          bool includePadding)
 {
-  for (typename MDArrayView< Scalar >::iterator it = _mdArrayView.begin();
-       it != _mdArrayView.end(); ++it)
+  MDArrayView< Scalar > newArray = getDataNonConst(includePadding);
+  for (typename MDArrayView< Scalar >::iterator it = newArray.begin();
+       it != newArray.end(); ++it)
     *it = value;
 }
 
