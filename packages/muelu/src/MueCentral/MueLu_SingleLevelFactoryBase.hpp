@@ -93,9 +93,9 @@ namespace MueLu {
 
     //!
     virtual void CallBuild(Level& requestedLevel) const {
-      int levelID = requestedLevel.GetLevelID();
 #ifdef HAVE_MUELU_DEBUG
       // We cannot call Build method twice for the same level, but we can call it multiple times for different levels
+      int levelID = requestedLevel.GetLevelID();
       TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (multipleCallCheckGlobal_ == ENABLED) && (lastLevelID_ == levelID),
                                  Exceptions::RuntimeError,
                                  this->ShortClassName() << "::Build() called twice for the same level (levelID=" << levelID
