@@ -584,7 +584,6 @@ namespace Iopx {
 
     if (!is_input() && exodus_file_ptr < 0) {
       // File didn't exist above, but this OK if is an output file. See if we can create it...
-      io_word_size = cpu_word_size;
       int mode = 0;
       if (int_byte_size_api() == 8)
         mode |= EX_ALL_INT64_DB;
@@ -1791,7 +1790,7 @@ namespace Iopx {
           // Determine how many side blocks compose this side set.
 
           int64_t number_sides = decomp->side_sets[iss].ioss_count();
-          number_distribution_factors = decomp->side_sets[iss].df_count();
+	  // FIXME: Support-  number_distribution_factors = decomp->side_sets[iss].df_count();
 
           Ioss::Int64Vector element(number_sides);
           Ioss::Int64Vector sides(number_sides);
@@ -5998,7 +5997,6 @@ namespace Iopx {
               // Next three attributes are offset from node to CG
               block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
                                            Ioss::Field::ATTRIBUTE, my_element_count, offset));
-              offset += 3;
             }
           }
 

@@ -508,7 +508,6 @@ int Internals::write_meta_data(Mesh &mesh)
 
 
   // NON-Define mode output...
-  size_t my_proc = parallelUtil.parallel_rank();
   ierr=put_non_define_data(mesh);
   if (ierr != EX_NOERR) return(ierr);
 
@@ -981,8 +980,8 @@ int Internals::put_metadata(const Mesh &mesh)
   }
 
   // ========================================================================
-  status = define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
-				  mesh.dimensionality, numdimdim, namestrdim);
+  status += define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
+				   mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR) return EX_FATAL;
 
   return(EX_NOERR);
