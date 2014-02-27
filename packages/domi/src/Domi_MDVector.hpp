@@ -109,7 +109,7 @@ public:
    */
   MDVector(const Teuchos::RCP<
              const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
-           const MDArrayView< const Scalar > & source);
+           const MDArrayView< Scalar > & source);
 
   /** \brief Copy constructor
    *
@@ -703,7 +703,7 @@ template< class Scalar,
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 MDVector(const Teuchos::RCP<
            const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
-         const MDArrayView< const Scalar > & source) :
+         const MDArrayView< Scalar > & source) :
   _mdMap(mdMap),
   _mdArrayRcp(source),
   _mdArrayView(_mdArrayRcp()),
@@ -716,7 +716,7 @@ MDVector(const Teuchos::RCP<
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->getNumDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numDims != _mdArrayRcp.getNumDims(),
+    numDims != _mdArrayRcp.num_dims(),
     InvalidArgument,
     "MDMap and source array do not have the same number of dimensions");
 
