@@ -213,6 +213,16 @@ void volatile_store(T volatile * const dst_ptr, T const * const src_ptr)
 
 template <typename T>
 KOKKOS_FORCEINLINE_FUNCTION
+void volatile_store(T volatile * dst_ptr, T const volatile & src)
+{ volatile_store(dst_ptr, &src); }
+
+template <typename T>
+KOKKOS_FORCEINLINE_FUNCTION
+void volatile_store(T volatile * dst_ptr, T const & src)
+{ volatile_store(dst_ptr, &src); }
+
+template <typename T>
+KOKKOS_FORCEINLINE_FUNCTION
 T safe_load(T const * const ptr)
 {
 #if !defined( __MIC__ )
