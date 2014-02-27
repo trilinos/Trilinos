@@ -1790,7 +1790,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RemoteOnlyImport, Basic, Ordinal )  {
     TargetVector->doImport(*SourceVector,*Import1,Tpetra::INSERT);
     
     // Build remote-only import
-    Import2 = Import1->createRemoteOnlyImporter(Map0);
+    Import2 = Import1->createRemoteOnlyImport(Map0);
     
     // Do remote-only import
     TestVector->doImport(*SourceVector,*Import2,Tpetra::INSERT);    

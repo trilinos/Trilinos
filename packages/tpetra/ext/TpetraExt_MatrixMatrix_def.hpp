@@ -185,7 +185,7 @@ void Multiply(
   }
 
   //Now import any needed remote rows and populate the Bview struct.
-  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview);
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter());
 
 
   //If the result matrix C is not already FillComplete'd, we will do a
@@ -1009,8 +1009,9 @@ template<class Scalar,
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview)
-{
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview,
+  RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter)
+{  
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM I&X Alloc")));
@@ -1116,14 +1117,22 @@ void import_and_extract_views(
 #endif
 
     // Create an importer with target-map MremoteRowMap and source-map Mrowmap.
-    Import<LocalOrdinal, GlobalOrdinal, Node> importer(Mrowmap, MremoteRowMap);
+    //    Import<LocalOrdinal, GlobalOrdinal, Node> importer(Mrowmap, MremoteRowMap);
+    RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > importer;
+
+    if(!prototypeImporter.is_null() && prototypeImporter->getSourceMap()->isSameAs(*Mrowmap) && prototypeImporter->getTargetMap()->isSameAs(*targetMap))
+      importer = prototypeImporter->createRemoteOnlyImport(MremoteRowMap);
+    else if(prototypeImporter.is_null())
+      importer=rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(Mrowmap, MremoteRowMap));
+    else
+      throw std::runtime_error("prototypeImporter->SourceMap() does not match M.getRowMap()!");
 
 #ifdef ENABLE_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM I&X Import-3")));
 #endif
 
     // Now create a new matrix into which we can import the remote rows of M that we need.
-    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),importer,M.getDomainMap(),M.getRangeMap(),Teuchos::null);
+    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),*importer,M.getDomainMap(),M.getRangeMap(),Teuchos::null);
 
 #ifdef ENABLE_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM I&X Import-4")));
