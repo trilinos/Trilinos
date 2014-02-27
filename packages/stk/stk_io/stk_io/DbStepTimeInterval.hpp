@@ -6,8 +6,9 @@
 
 namespace stk {
   namespace io {
-    struct DBStepTimeInterval
+    class DBStepTimeInterval
     {
+    public:
       DBStepTimeInterval(Ioss::Region *region, double time)
 	: region(region),
 	  t_analysis(time),

@@ -66,16 +66,6 @@ namespace {
     return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
   }
 
-  std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
-  {
-    std::string dbName(db_name);
-    if ( db_name.empty() )
-      {
-        dbName = field.name();
-      }
-    return dbName;
-  }
-
   std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
                                                                            const boost::any &value)
   {
@@ -361,31 +351,6 @@ namespace {
       type << "Real[" << component_count << "]";
       internal_add_global(region, globalVarName, type.str(), dataType);
     }
-  }
-
-  int find_closest_step(Ioss::Region *region, double time)
-  {
-    int step_count = region->get_property("state_count").get_int();
-    if (step_count == 0) {
-      std::ostringstream msg ;
-      msg << " ERROR: Input database '" << region->get_database()->get_filename()
-          << "' has no transient data.";
-      throw std::runtime_error( msg.str() );
-    }
-
-    double delta_min = 1.0e30;
-    int    step_min  = 0;
-    for (int istep = 0; istep < step_count; istep++) {
-      double state_time = region->get_state_time(istep+1);
-      double delta = state_time - time;
-      if (delta < 0.0) delta = -delta;
-      if (delta < delta_min) {
-        delta_min = delta;
-        step_min  = istep;
-        if (delta == 0.0) break;
-      }
-    }
-    return step_min+1;
   }
 
   void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
@@ -1079,17 +1044,6 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
 
 // ========================================================================
-void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
-                    stk::mesh::EntityRank part_type,
-                    Ioss::GroupingEntity *io_entity,
-                    Ioss::Field::RoleType filter_role,
-                    const stk::mesh::Selector *subset_selector=NULL)
-{
-  std::vector<stk::io::FieldAndName> namedFields;
-  stk::io::getNamedFields(bulk.mesh_meta_data(), io_entity, namedFields);
-  put_field_data(bulk, part, part_type, io_entity, namedFields, filter_role, subset_selector);
-}
-
 void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     stk::mesh::EntityRank part_type,
                     Ioss::GroupingEntity *io_entity,
