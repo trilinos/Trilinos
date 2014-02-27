@@ -1781,6 +1781,10 @@ namespace Tpetra {
           Distributor& distor) const;
 
     //@}
+
+    //! Get the Kokkos local values
+    t_ValuesType getLocalValuesView() const { return k_values1D_; }
+
   private:
     // Friend declaration for nonmember function.
     template<class CrsMatrixType>

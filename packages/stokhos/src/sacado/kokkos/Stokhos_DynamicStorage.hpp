@@ -88,43 +88,43 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const ordinal_type& sz,
                    const value_type& x = value_type(0.0)) :
-      sz_(sz), is_owned_(true) {
+      sz_(sz), is_view_(false) {
       coeff_ = ds::get_and_fill(sz_, x);
     }
 
     //! Constructor for creating a view
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const ordinal_type& sz, pointer v, bool owned) :
-      coeff_(v), sz_(sz), is_owned_(owned) {}
+      coeff_(v), sz_(sz), is_view_(!owned) {}
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const DynamicStorage& s) :
-      sz_(s.sz_), is_owned_(true) {
+      sz_(s.sz_), is_view_(false) {
       coeff_ = ds::get_and_fill(s.coeff_, sz_);
     }
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const volatile DynamicStorage& s) :
-      sz_(s.sz_), is_owned_(true) {
+      sz_(s.sz_), is_view_(false) {
       coeff_ = ds::get_and_fill(s.coeff_, sz_);
     }
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
     ~DynamicStorage() {
-      if (is_owned_) ds::destroy_and_release(coeff_, sz_);
+      if (!is_view_) ds::destroy_and_release(coeff_, sz_);
     }
 
     //! Assignment operator
-    // To do:  add error check if is_owned == false && s.sz_ > sz_
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
     KOKKOS_INLINE_FUNCTION
     DynamicStorage& operator=(const DynamicStorage& s) {
       if (&s != this) {
         // Only reallocate if we own the array and the sizes
         // differ
-        if (is_owned_ && s.sz_ != sz_) {
+        if (!is_view_ && s.sz_ != sz_) {
           ds::destroy_and_release(coeff_, sz_);
           coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
           sz_ = s.sz_;
@@ -137,13 +137,13 @@ namespace Stokhos {
     }
 
     //! Assignment operator
-    // To do:  add error check if is_owned == false && s.sz_ > sz_
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
     KOKKOS_INLINE_FUNCTION
     DynamicStorage& operator=(const volatile DynamicStorage& s) {
       if (&s != this) {
         // Only reallocate if we own the array and the sizes
         // differ
-        if (is_owned_ && s.sz_ != sz_) {
+        if (!is_view_ && s.sz_ != sz_) {
           ds::destroy_and_release(coeff_, sz_);
           coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
           sz_ = s.sz_;
@@ -156,13 +156,13 @@ namespace Stokhos {
     }
 
     //! Assignment operator
-    // To do:  add error check if is_owned == false && s.sz_ > sz_
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
     KOKKOS_INLINE_FUNCTION
-    volatile DynamicStorage& operator=(const DynamicStorage& s) volatile {
+    /*volatile*/ DynamicStorage& operator=(const DynamicStorage& s) volatile {
       if (&s != this) {
         // Only reallocate if we own the array and the sizes
         // differ
-        if (is_owned_ && s.sz_ != sz_) {
+        if (!is_view_ && s.sz_ != sz_) {
           ds::destroy_and_release(coeff_, sz_);
           coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
           sz_ = s.sz_;
@@ -171,18 +171,18 @@ namespace Stokhos {
           ds::copy(s.coeff_, coeff_, s.sz_);
         }
       }
-      return *this;
+      return const_cast<DynamicStorage&>(*this);
     }
 
     //! Assignment operator
-    // To do:  add error check if is_owned == false && s.sz_ > sz_
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
     KOKKOS_INLINE_FUNCTION
-    volatile DynamicStorage&
+    /*volatile*/ DynamicStorage&
     operator=(const volatile DynamicStorage& s) volatile {
       if (&s != this) {
         // Only reallocate if we own the array and the sizes
         // differ
-        if (is_owned_ && s.sz_ != sz_) {
+        if (!is_view_ && s.sz_ != sz_) {
           ds::destroy_and_release(coeff_, sz_);
           coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
           sz_ = s.sz_;
@@ -191,7 +191,7 @@ namespace Stokhos {
           ds::copy(s.coeff_, coeff_, s.sz_);
         }
       }
-      return *this;
+      return const_cast<DynamicStorage&>(*this);
     }
 
     //! Initialize values to a constant value
@@ -239,13 +239,13 @@ namespace Stokhos {
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) {
-      if (is_owned_ && sz != sz_) {
+      if (!is_view_ && sz != sz_) {
         value_type *coeff_new = ds::get_and_fill(sz);
         if (sz > sz_)
           ds::copy(coeff_, coeff_new, sz_);
         else
           ds::copy(coeff_, coeff_new, sz);
-        if (is_owned_)
+        if (!is_view_)
           ds::destroy_and_release(coeff_, sz_);
         coeff_ = coeff_new;
         sz_ = sz;
@@ -255,13 +255,13 @@ namespace Stokhos {
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) volatile {
-      if (is_owned_ && sz != sz_) {
+      if (!is_view_ && sz != sz_) {
         value_type *coeff_new = ds::get_and_fill(sz);
         if (sz > sz_)
           ds::copy(coeff_, coeff_new, sz_);
         else
           ds::copy(coeff_, coeff_new, sz);
-        if (is_owned_)
+        if (!is_view_)
           ds::destroy_and_release(coeff_, sz_);
         coeff_ = coeff_new;
         sz_ = sz;
@@ -272,22 +272,22 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
                       const ordinal_type& stride, bool owned) {
-      if (is_owned_)
+      if (!is_view_)
         ds::destroy_and_release(coeff_, sz_);
       coeff_ = v;
       sz_ = sz;
-      is_owned_ = owned;
+      is_view_ = !owned;
     }
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
                       const ordinal_type& stride, bool owned) volatile {
-      if (is_owned_)
+      if (!is_view_)
         ds::destroy_and_release(coeff_, sz_);
       coeff_ = v;
       sz_ = sz;
-      is_owned_ = owned;
+      is_view_ = !owned;
     }
 
     //! Return size
@@ -360,7 +360,7 @@ namespace Stokhos {
     ordinal_type sz_;
 
     //! Do we own the array
-    bool is_owned_;
+    bool is_view_;
 
   };
 

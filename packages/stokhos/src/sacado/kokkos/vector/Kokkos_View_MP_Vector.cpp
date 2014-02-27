@@ -39,25 +39,10 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_UnitTestRepository.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+namespace Kokkos {
 
-#include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
+  // Global vector size to be used in code that hasn't been refactored
+  // into passing the vector size (e.g., Tpetra)
+  unsigned global_sacado_mp_vector_size = 0;
 
-#include "Kokkos_SerialNode.hpp"
-
-// Instantiate tests for serial node
-// Only static storage as dynamic has no chance of working without
-// KokkosRefactor
-using KokkosClassic::SerialNode;
-CRSMATRIX_MP_VECTOR_TESTS_N_SFS( SerialNode )
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  // Run tests
-  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  return ret;
 }

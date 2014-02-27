@@ -47,12 +47,14 @@
 
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
-// Instantiate test for serial node
+// Instantiate tests for serial node
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> ThreadsWrapperNode;
-CRSMATRIX_MP_VECTOR_TESTS_SLGN( double, int, int, ThreadsWrapperNode )
+CRSMATRIX_MP_VECTOR_TESTS_N( ThreadsWrapperNode )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  Kokkos::global_sacado_mp_vector_size = VectorSize;
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

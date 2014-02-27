@@ -483,6 +483,8 @@ public:
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
@@ -513,6 +515,8 @@ public:
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
@@ -542,6 +546,8 @@ public:
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
@@ -574,6 +580,8 @@ public:
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
@@ -607,6 +615,8 @@ public:
       shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size = Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_allocation.assign(ptr);
     }
@@ -1367,13 +1377,13 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       assert_shape_bounds( src.m_shape , 1 , range.first );
       assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
 
-      dst.m_shape.N0 = range.second - range.first ;
+      dst.m_shape.N0      = range.second - range.first ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range.first ;
-      dst.m_stride = src.m_stride ;
+      dst.m_stride       = src.m_stride ;
       dst.m_storage_size = src.m_storage_size ;
-      dst.m_sacado_size = dst.m_sacado_size;
+      dst.m_sacado_size  = src.m_sacado_size;
 
       dst.m_tracking.increment( dst.m_ptr_on_device );
     }
@@ -1405,9 +1415,11 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
 
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
-    dst.m_stride = src.m_stride ;
-    dst.m_storage_size = src.m_storage_size ;
-    dst.m_sacado_size = dst.m_sacado_size;
+    dst.m_allocation.m_scalar_ptr_on_device =
+      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 ;
+    dst.m_stride        = src.m_stride ;
+    dst.m_storage_size  = src.m_storage_size ;
+    dst.m_sacado_size   = src.m_sacado_size;
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
@@ -1441,9 +1453,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 ;
-    dst.m_stride = src.m_stride ;
-    dst.m_storage_size = src.m_storage_size ;
-    dst.m_sacado_size = dst.m_sacado_size;
+    dst.m_stride        = src.m_stride ;
+    dst.m_storage_size  = src.m_storage_size ;
+    dst.m_sacado_size   = src.m_sacado_size;
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
@@ -1491,7 +1503,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + dst.m_shape.N0 * range1.first ;
       dst.m_storage_size = src.m_storage_size ;
-      dst.m_sacado_size = dst.m_sacado_size;
+      dst.m_sacado_size = src.m_sacado_size;
 
       // LayoutRight won't work with how we are currently using the stride
 
@@ -1542,7 +1554,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range0.first ;
       dst.m_storage_size = src.m_storage_size ;
-      dst.m_sacado_size = dst.m_sacado_size;
+      dst.m_sacado_size = src.m_sacado_size;
 
       // LayoutRight won't work with how we are currently using the stride
 
@@ -1686,6 +1698,138 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 } // namespace Impl
 
 } // namespace Kokkos
+
+/*
+namespace Kokkos {
+namespace Impl {
+
+ template< class FunctorType , class Ordinal, class Value, class Device >
+ struct ReduceAdapter< FunctorType,
+                       Sacado::MP::Vector< Stokhos::DynamicStorage<Ordinal,Value,Device> > >
+{
+  typedef Stokhos::DynamicStorage<Ordinal,Value,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> ScalarType;
+  enum { StaticValueSize = sizeof(ScalarType) };
+
+  typedef ScalarType & reference_type  ;
+  typedef ScalarType * pointer_type  ;
+  typedef ScalarType   scalar_type  ;
+
+  KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p ) {
+    ScalarType *m = (ScalarType*) p;
+    new (m) ScalarType;
+    return *m;
+  }
+
+  KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p , unsigned i ) {
+    ScalarType *m = (ScalarType*) p;
+    new (m+i) ScalarType;
+    return m[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION static
+  pointer_type pointer( reference_type p ) { return & p ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_count( const FunctorType & ) { return 1 ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_size( const FunctorType & ) { return sizeof(ScalarType); }
+
+  KOKKOS_INLINE_FUNCTION static
+  void copy( const FunctorType & , void * const dst , const void * const src )
+    { *((scalar_type*)dst) = *((const scalar_type*)src); }
+
+  KOKKOS_INLINE_FUNCTION static
+  void join( const FunctorType & f , volatile void * update , volatile const void * input )
+    { f.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void final( const F & f ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    FunctorHasFinal<F>::value )
+                                >::type * p )
+    { f.final( *((ScalarType *) p ) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void final( const F & ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    ! FunctorHasFinal<F>::value )
+                                >::type * )
+    {}
+};
+
+template< class FunctorType , class Ordinal, class Value, class Device >
+struct ReduceAdapter< FunctorType,
+                       Sacado::MP::Vector< Stokhos::DynamicStorage<Ordinal,Value,Device> >[] >
+{
+  typedef Stokhos::DynamicStorage<Ordinal,Value,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> ScalarType;
+  enum { StaticValueSize = 0 };
+
+  typedef ScalarType * reference_type  ;
+  typedef ScalarType * pointer_type  ;
+  typedef ScalarType   scalar_type  ;
+
+  KOKKOS_INLINE_FUNCTION static
+  ScalarType * reference( void * p ) {
+    ScalarType *m = (ScalarType*) p;
+    new (m) ScalarType;
+    return m;
+  }
+
+  KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p , unsigned i ) {
+    ScalarType *m = (ScalarType*) p;
+    new (m+i) ScalarType;
+    return m+i;
+  }
+
+  KOKKOS_INLINE_FUNCTION static
+  pointer_type pointer( reference_type p ) { return p ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_count( const FunctorType & f ) { return f.value_count ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_size( const FunctorType & f ) { return f.value_count * sizeof(ScalarType); }
+
+  KOKKOS_INLINE_FUNCTION static
+  void copy( const FunctorType & f , void * const dst , const void * const src )
+    {
+      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
+        ((scalar_type*)dst)[i] = ((const scalar_type*)src)[i];
+      }
+    }
+
+  KOKKOS_INLINE_FUNCTION static
+  void join( const FunctorType & f , volatile void * update , volatile const void * input )
+    { f.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void final( const F & f ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    FunctorHasFinal<F>::value )
+                                >::type * p )
+    { f.final( ((ScalarType *) p ) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void final( const F & ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    ! FunctorHasFinal<F>::value )
+                                >::type * )
+    {}
+};
+
+}
+}
+*/
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

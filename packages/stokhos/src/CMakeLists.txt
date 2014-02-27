@@ -375,6 +375,9 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
       sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
       )
+    SET(SOURCES ${SOURCES}
+      sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
+      )
     IF (Stokhos_ENABLE_KokkosLinAlg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       SET(HEADERS ${HEADERS}
