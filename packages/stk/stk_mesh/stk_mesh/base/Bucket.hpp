@@ -177,7 +177,10 @@ public:
   size_t capacity() const { return m_capacity ; }
 
   /** \brief  Query the i^th entity */
-  Entity operator[] ( size_t i ) const { return m_entities[i]; }
+  Entity operator[] ( size_t i ) const {
+    ThrowAssertMsg( i < m_entities.size(), "Index " << i << " is out of bounds");
+    return m_entities[i];
+  }
 
   ConnectivityType connectivity_type(EntityRank rank) const;
 
