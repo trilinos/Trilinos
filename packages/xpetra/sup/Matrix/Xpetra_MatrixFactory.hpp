@@ -89,6 +89,11 @@ namespace Xpetra {
       return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc, pftype) );
     }
 
+    //! Constructor specifying graph
+    static RCP<Matrix> Build(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null) {
+      return rcp(new CrsMatrixWrap(graph, paramList));
+    }
+
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
     static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
       Teuchos::ArrayRCP<const Scalar>         vals             = diagonal->getData(0);

@@ -153,6 +153,16 @@ public:
     CreateDefaultView();
   }
 
+  CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(graph, paramList);
+
+    // Default view
+    CreateDefaultView();
+  }
+
   //! Destructor
   virtual ~CrsMatrixWrap() {}
 
