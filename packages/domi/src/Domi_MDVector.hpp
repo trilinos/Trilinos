@@ -746,7 +746,7 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source) :
   _mdArrayRcp(source._mdArrayRcp),
   _mdArrayView(source._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(source->_sliceBndryPad),
+  _sliceBndryPad(source._sliceBndryPad),
   _sendMessages(_mdMap->getNumDims()),
   _recvMessages(_mdMap->getNumDims()),
   _requests()
