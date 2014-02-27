@@ -127,54 +127,55 @@ namespace MueLu {
     const bool   keepProc0           = pL.get<bool>  ("alwaysKeepProc0");
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
-    RCP<Matrix>            A         = Get< RCP<Matrix> >(currentLevel, "A");
-    RCP<const Map>         rowMap    = A->getRowMap();
-    GO                     indexBase = rowMap->getIndexBase();
-    Xpetra::UnderlyingLib  lib       = rowMap->lib();
-
-    RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
-    RCP<const Teuchos::Comm<int> > comm = origComm->duplicate();
-    int myRank   = comm->getRank();
-    int numProcs = comm->getSize();
-
-    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
     // ======================================================================================================
     // Determine whether partitioning is needed
     // ======================================================================================================
-    // We repartition if the following expression is true: !test1 && !test2 && (test3 || test4)
-    //
     // NOTE: most tests include some global communication, which is why we currently only do tests until we make
     // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
     // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
-    bool test1 = false, test2 = false, test3 = false, test4 = false;
-    std::string msg1, msg2, msg3, msg4;
 
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
-      test1 = true;
+      GetOStream(Statistics0, 0) << "Repartitioning?  NO:" <<
+          "\n  current level = " << toString(currentLevel.GetLevelID()) <<
+          ", first level where repartitioning can happen is " + toString(startLevel) << std::endl;
 
-      msg1 = "\n  current level = " + toString(currentLevel.GetLevelID()) + ", first level where repartitioning can happen is " + toString(startLevel);
+      Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+      return;
     }
+
+    RCP<const Map> rowMap = A->getRowMap();
+
+    // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
+    // a synchronization point. However, as we do sumAll afterwards anyway, it
+    // does not matter.
+    RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
+    RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
 
     // Test 2: check whether A is actually distributed, i.e. more than one processor owns part of A
     // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
     // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
-    if (!test1) {
+    {
       int numActiveProcesses = 0;
       sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
-      if (numActiveProcesses == 1)
-        test2 = true;
+      if (numActiveProcesses == 1) {
+        GetOStream(Statistics0, 0) << "Repartitioning?  NO:" <<
+            "\n  # processes with rows = " << toString(numActiveProcesses) << std::endl;
 
-      msg2 = "\n  # processes with rows = " + toString(numActiveProcesses);
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
+      }
     }
+
+    bool test3 = false, test4 = false;
+    std::string msg3, msg4;
 
     // Test3: check whether number of rows on any processor satisfies the minimum number of rows requirement
     // NOTE: Test2 ensures that repartitionning is not done when there is only one processor (it may or may not satisfy Test3)
-    if (!test1 && !test2 && minRowsPerProcessor > 0) {
+    if (minRowsPerProcessor > 0) {
       LO numMyRows = Teuchos::as<LO>(A->getNodeNumRows()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
       LO haveFewRows = (numMyRows < minRowsPerProcessor ? 1 : 0), numWithFewRows = 0;
       sumAll(comm, haveFewRows, numWithFewRows);
@@ -190,7 +191,7 @@ namespace MueLu {
     }
 
     // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
-    if (!test1 && !test2 && !test3) {
+    if (!test3) {
       GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
       maxAll(comm, numMyNnz,                           maxNnz);
       minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
@@ -202,17 +203,23 @@ namespace MueLu {
       msg4 = "\n  nonzero imbalance = " + toString(imbalance) + ", max allowable = " + toString(nonzeroImbalance);
     }
 
-    if (test1 || test2 || (!test3 && !test4)) {
-      GetOStream(Statistics0, 0) << "Repartitioning?  NO:";
-      if      (test1) GetOStream(Statistics0,0) << msg1        << std::endl;
-      else if (test2) GetOStream(Statistics0,0) << msg2        << std::endl;
-      else            GetOStream(Statistics0,0) << msg3 + msg4 << std::endl;
+    if (!test3 && !test4) {
+      GetOStream(Statistics0, 0) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
 
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
     }
 
     GetOStream(Statistics0,0) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
+
+    GO                     indexBase = rowMap->getIndexBase();
+    Xpetra::UnderlyingLib  lib       = rowMap->lib();
+    int myRank   = comm->getRank();
+    int numProcs = comm->getSize();
+
+    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
     // ======================================================================================================
     // Calculate number of partitions
