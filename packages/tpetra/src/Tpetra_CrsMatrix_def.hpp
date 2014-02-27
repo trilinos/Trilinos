@@ -2238,7 +2238,6 @@ namespace Tpetra {
     using std::pair;
     typedef GlobalOrdinal GO;
     typedef typename Array<GO>::size_type size_type;
-    typedef typename Array<pair<GO, Scalar> >::const_iterator NLRITER;
     // nonlocals_ contains the entries stored by previous calls to
     // insertGlobalValues() for nonowned rows.
     typedef std::map<GO, pair<Array<GO>, Array<Scalar> > > nonlocals_map_type;
