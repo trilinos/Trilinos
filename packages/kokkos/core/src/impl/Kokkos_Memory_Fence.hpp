@@ -1,11 +1,12 @@
-// @HEADER
-// ***********************************************************************
+/*
+//@HEADER
+// ************************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,51 +35,38 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
-// ***********************************************************************
-// @HEADER
+// ************************************************************************
+//@HEADER
+*/
 
-#ifndef STOKHOS_TPETRA_MP_VECTOR_HPP
-#define STOKHOS_TPETRA_MP_VECTOR_HPP
+#if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_MEMORY_FENCE )
+#define KOKKOS_MEMORY_FENCE
 
-// This header file should be included whenever compiling any Tpetra
-// code with Stokhos scalar types
+namespace Kokkos {
 
-// MP includes and specializations
-#include "Stokhos_Sacado_Kokkos.hpp"
+//----------------------------------------------------------------------------
 
-// Kokkos includes
-#include "KokkosClassic_config.h"
-#include "Kokkos_Serial.hpp"
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-#include "Kokkos_BufferMacros.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "KokkosCompat_View.hpp"
-#include "KokkosCompat_View_def.hpp"
+KOKKOS_FORCEINLINE_FUNCTION
+void memory_fence()
+{
+#if defined( KOKKOS_ATOMICS_USE_CUDA )
+  __threadfence();
+#elif defined( KOKKOS_ATOMICS_USE_GCC ) && !defined( __INTEL_COMPILER )
+  __sync_synchronize();
+#elif defined( __INTEL_COMPILER ) || defined( KOKKOS_ATOMICS_USE_INTEL )
+  _mm_mfence();
+#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
+  #pragma omp flush
+
+#else
+ #error "Error: memory_fence() not defined"
 #endif
-
-// Kokkos-Linalg
-#include "Tpetra_config.h"
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#endif
-
-namespace Stokhos {
-
-// Traits for determining device type from node type
-template <typename Node>
-struct DeviceForNode {
-  typedef Kokkos::Serial type;
-};
-
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-template <typename Device>
-struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
-  typedef Device type;
-};
-#endif
-
 }
 
-#endif // STOKHOS_TPETRA_MP_VECTOR_HPP
+} // namespace kokkos
+
+#endif
+
+

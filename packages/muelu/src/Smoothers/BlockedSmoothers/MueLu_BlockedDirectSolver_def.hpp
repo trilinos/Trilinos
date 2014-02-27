@@ -228,19 +228,11 @@ namespace MueLu {
   void BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    // extract parameters from internal parameter list
-    const ParameterList & pL = Factory::GetParameterList();
-
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
-    if (verbLevel & Debug) {
-    }
-
-    if (verbLevel & Debug) {
+    if (verbLevel & Debug)
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
-    }
   }
 
 } // namespace MueLu

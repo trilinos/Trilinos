@@ -1001,6 +1001,14 @@ namespace Tpetra {
      */
     ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
 
+    /// \brief Replace the current colMap with the given object.
+    ///
+    /// \param newColMap [in] New colMap.  Must be nonnull.
+    ///
+    /// \pre The matrix must have no entries inserted yet
+    void
+    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
+
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
     /// \warning This method is ONLY for use by experts.

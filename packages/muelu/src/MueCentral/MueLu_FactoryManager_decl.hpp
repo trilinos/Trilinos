@@ -142,6 +142,10 @@ namespace MueLu {
 
     void Clean() const { defaultFactoryTable_.clear(); }
 
+#ifdef HAVE_MUELU_DEBUG
+    void ResetDebugData() const;
+#endif
+
     void Print() const;
 
   private:

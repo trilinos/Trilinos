@@ -1387,6 +1387,52 @@ namespace Tpetra {
 
     return unionImport;
   }
+
+
+
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  createRemoteOnlyImport(const Teuchos::RCP<const map_type>& remoteTarget) const 
+  {
+    size_t NumRemotes = getNumRemoteIDs();
+    // Sanity Check
+    if(NumRemotes != remoteTarget->getNodeNumElements())
+      throw std::runtime_error("createRemoteOnlyImporter: remoteTarget map ID count doesn't match.");
+      
+    // Compute the new Remote LIDs
+    Teuchos::ArrayView<const LocalOrdinal> oldRemoteLIDs = getRemoteLIDs();
+    Teuchos::Array<LocalOrdinal>           newRemoteLIDs(NumRemotes);
+    for(size_t i=0; i < NumRemotes; i++) {
+      newRemoteLIDs[i] = remoteTarget->getLocalElement(getTargetMap()->getGlobalElement(oldRemoteLIDs[i]));
+
+      // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
+      if(i>0 && newRemoteLIDs[i] < newRemoteLIDs[i-1])
+	throw std::runtime_error("createRemoteOnlyImporter: this and remoteTarget order don't match.");
+    }
+
+    // Copy ExportPIDs and such
+    // NOTE: Be careful: The Import constructor we use does a "swap" for most of the LID/PID lists and the Distributor, meaning it
+    // ruins the existing object if we pass things in directly.  Hence we copy them first.
+    Teuchos::Array<int> newExportPIDs(getExportPIDs());
+    Teuchos::Array<int> newExportLIDs(getExportLIDs());
+    Teuchos::Array<LocalOrdinal> dummy;
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > newImport;
+    Distributor newDistor(getDistributor());
+
+    newImport = Teuchos::rcp(new Import<LocalOrdinal,GlobalOrdinal,Node>(getSourceMap(),remoteTarget,
+									 Teuchos::as<size_t>(0),
+									 dummy,
+									 dummy,
+									 newRemoteLIDs,
+									 newExportLIDs,
+									 newExportPIDs,
+									 newDistor));
+    return newImport;
+  }
+  
 } // namespace Tpetra
 
 // Explicit instantiation macro.

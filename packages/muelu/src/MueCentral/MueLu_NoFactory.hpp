@@ -98,6 +98,9 @@ namespace MueLu {
     static const NoFactory* get();
 
     //@}
+#ifdef HAVE_MUELU_DEBUG
+    void ResetDebugData() const { }
+#endif
 
   private:
     static RCP<const NoFactory> noFactory_; // static NoFactory instance for user defined "factories"

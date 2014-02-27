@@ -48,7 +48,7 @@ struct pair
   /// This calls the copy constructors of T1 and T2.  It won't compile
   /// if those copy constructors are not defined and public.
   KOKKOS_FORCEINLINE_FUNCTION
-  pair(const first_type & f, const second_type & s)
+  pair(first_type const& f, second_type const& s)
     : first(f), second(s)
   {}
 
@@ -86,7 +86,7 @@ struct pair
   /// This is <i>not</i> a device function; you may not call it on a
   /// CUDA device.  It is meant to be called on the host, if the user
   /// wants an std::pair instead of a Kokkos::pair.
-  /// 
+  ///
   /// \note This is not a conversion operator, since defining a
   ///   conversion operator made the relational operators have
   ///   ambiguous definitions.
@@ -158,9 +158,9 @@ pair<T1,T2> make_pair (T1 x, T2 y)
 ///
 ///   // This assigns to both count and success.
 ///   Kokkos::tie (count, success) = someFunction ();
-/// 
+///
 ///   if (! success) {
-///     // ... Some operation failed; 
+///     // ... Some operation failed;
 ///     //     take corrective action ...
 ///   }
 ///   return count;
@@ -274,8 +274,8 @@ struct hash< pair<T1,T2> >
   KOKKOS_FORCEINLINE_FUNCTION
   uint32_t operator()( const pair<T1,T2> & p, uint32_t seed = 0u) const
   {
-    typedef hash<T1> hash1;
-    typedef hash<T2> hash2;
+    hash<T1> hash1;
+    hash<T2> hash2;
     return hash1(p.first, hash2(p.second,seed));
   }
 };

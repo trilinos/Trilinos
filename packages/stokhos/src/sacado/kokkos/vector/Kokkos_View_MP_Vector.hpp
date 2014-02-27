@@ -179,6 +179,7 @@ private:
   typename traits::shape_type                  m_shape ;
   stride_type                                  m_stride ;
   typename traits::device_type::size_type      m_storage_size ;
+  Impl::ViewTracking< traits >                 m_tracking ;
 
   typedef Stokhos::ViewStorage<
     typename stokhos_storage_type::ordinal_type ,
@@ -300,7 +301,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
+  ~View() { m_tracking.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -944,6 +945,7 @@ private:
   typename traits::value_type  * m_ptr_on_device ;
   typename traits::shape_type    m_shape ;
   unsigned                       m_stride ;
+  Impl::ViewTracking< traits >   m_tracking ;
 
   // original_static_dimension = m_stride * StokhosStorageStaticDimension
   // m_stride = 1 for original allocation.
@@ -1076,7 +1078,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
+  ~View() { m_tracking.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -1848,7 +1850,7 @@ struct ViewAssignment< ViewSpecializeSacadoMPVector , ViewSpecializeSacadoMPVect
     typedef typename dst_type::shape_type                   shape_type ;
     typedef typename dst_type::stride_type                  stride_type ;
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -1858,8 +1860,9 @@ struct ViewAssignment< ViewSpecializeSacadoMPVector , ViewSpecializeSacadoMPVect
 
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
+    dst.m_tracking      = src.m_tracking ;
 
-    Impl::ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1953,7 +1956,7 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
     typedef View<DT,DL,DD,DM,specialize>   dst_type ;
     typedef typename dst_type::shape_type  shape_type ;
 
-    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -1961,8 +1964,9 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
 
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
+    dst.m_tracking      = src.m_tracking ;
 
-    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -2050,7 +2054,7 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
     typedef View<DT,DL,DD,DM,specialize> dst_type ;
     typedef typename dst_type::shape_type shape_type ;
 
-    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -2059,11 +2063,12 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
       assert_shape_bounds( src.m_shape , 1 , range.first );
       assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
 
-      dst.m_shape.N0 = range.second - range.first ;
+      dst.m_shape.N0      = range.second - range.first ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
-      dst.m_stride = src.m_stride ;
+      dst.m_stride        = src.m_stride ;
+      dst.m_tracking      = src.m_tracking ;
 
-      ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -2089,13 +2094,14 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
     dst.m_stride = src.m_stride ;
+    dst.m_tracking = src.m_tracking ;
 
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -2120,14 +2126,15 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_shape.N1      = 1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
     dst.m_stride = src.m_stride ;
+    dst.m_tracking = src.m_tracking ;
 
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -2153,7 +2160,7 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     typedef typename traits_type::shape_type shape_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_shape.N1      = 0 ;
@@ -2167,13 +2174,14 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
       dst.m_shape.N0 = src.m_shape.N0 ;
       dst.m_shape.N1 = range1.second - range1.first ;
       dst.m_stride   = src.m_stride ;
+      dst.m_tracking = src.m_tracking ;
 
       // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
       dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_shape.N0 * range1.first ;
 
       // LayoutRight won't work with how we are currently using the stride
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -2200,7 +2208,7 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     typedef typename traits_type::shape_type shape_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_shape.N1      = 0 ;
@@ -2214,13 +2222,14 @@ struct ViewAssignment< ViewSpecializeSacadoMPVectorStatic , ViewSpecializeSacado
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = src.m_shape.N1 ;
       dst.m_stride   = src.m_stride ;
+      dst.m_tracking = src.m_tracking ;
 
       // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
       dst.m_ptr_on_device = src.m_ptr_on_device + range0.first ;
 
       // LayoutRight won't work with how we are currently using the stride
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+      dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
 };
@@ -2245,17 +2254,18 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVector , void >
     typedef typename dst_type::shape_type   dst_shape_type ;
     typedef typename dst_type::stride_type  dst_stride_type ;
 
-    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.rement( dst.m_ptr_on_device );
 
     dst_shape_type::assign( dst.m_shape,
                             src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                             src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
     dst_stride_type::assign( dst.m_stride , src.m_stride.value );
+    dst.m_tracking = src.m_tracking ;
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 };
 
@@ -2287,7 +2297,7 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
 #endif
     }
 
-    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     unsigned dims[8];
     dims[0] = src.m_shape.N0;
@@ -2318,10 +2328,11 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
     //                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
     dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+    dst.m_tracking = src.m_tracking ;
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -2360,7 +2371,7 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
 #endif
     }
 
-    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     // Create flattened shape
     unsigned dims[8];
@@ -2388,11 +2399,12 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoMPVectorStatic , void >
 
     // No padding in dst to be consistent with src
     dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+    dst.m_tracking = src.m_tracking ;
 
     dst.m_ptr_on_device =
       reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 };
 

@@ -105,8 +105,7 @@ namespace MueLu {
     std::ostringstream out;
 
     RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
-    int myRank   = comm->getRank();
-    int numProcs = comm->getSize();
+    int myRank = comm->getRank();
 
     out << msgTag << " " << myRank << ":";
 

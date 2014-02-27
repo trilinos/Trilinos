@@ -132,7 +132,6 @@ namespace Xpetra {
   };
 #define XPETRA_MATRIXFACTORY_SHORT
 
-#ifdef HAVE_XPETRA_EXPERIMENTAL
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
@@ -194,8 +193,6 @@ namespace Xpetra {
   };
 
 #define XPETRA_MATRIXFACTORY2_SHORT
-
-#endif // ifdef HAVE_XPETRA_EXPERIMENTAL
 
 }
 

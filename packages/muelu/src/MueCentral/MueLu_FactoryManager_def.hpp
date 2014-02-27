@@ -132,7 +132,6 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
-      if (varName == "number of partitions")            return GetFactory("Importer");
 
       if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
@@ -192,6 +191,21 @@ namespace MueLu {
     for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
       fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
   }
+
+#ifdef HAVE_MUELU_DEBUG
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResetDebugData() const {
+    std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
+
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
+      if (!it->second.is_null())
+        it->second->ResetDebugData();
+
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
+      if (!it->second.is_null())
+        it->second->ResetDebugData();
+  }
+#endif
 
 } // namespace MueLu
 

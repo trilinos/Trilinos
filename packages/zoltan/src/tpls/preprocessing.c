@@ -144,6 +144,8 @@ int Zoltan_Preprocess_Graph(
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
+    printf("Third party library real type is %zd-byte real number\n",
+           sizeof(realtype));
     printf("Third party library index type is %zd-byte integer\n",
            sizeof(indextype));
 #ifdef TPL_INTEGRAL_WEIGHT

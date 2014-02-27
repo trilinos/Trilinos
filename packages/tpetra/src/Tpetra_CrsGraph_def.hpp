@@ -2926,17 +2926,18 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeIndicesLocal()
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeIndicesLocal ()
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "makeIndicesLocal";
-#endif
+#endif // HAVE_TPETRA_DEBUG
 
     // Transform indices to local index space
-    const size_t nlrs = getNodeNumRows();
-    if (isGloballyIndexed() && nlrs > 0) {
+    const size_t nlrs = getNodeNumRows ();
+    if (isGloballyIndexed () && nlrs > 0) {
       // allocate data for local indices
       if (getProfileType() == StaticProfile) {
         // If GO and LO are the same size, we can reuse the existing
@@ -2948,7 +2949,7 @@ namespace Tpetra {
         else {
           lclInds1D_ = LocalMatOps::template allocStorage<LO> (getRowMap ()->getNode (), rowPtrs_ ());
         }
-        for (size_t r = 0; r < getNodeNumRows (); ++r) {
+        for (size_t r = 0; r < nlrs; ++r) {
           const size_t offset   = rowPtrs_[r];
           const size_t numentry = numRowEntries_[r];
           for (size_t j = 0; j < numentry; ++j) {

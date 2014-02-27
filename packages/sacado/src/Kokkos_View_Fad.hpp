@@ -157,6 +157,7 @@ private:
   typename traits::shape_type                  m_shape ;
   stride_type                                  m_stride ;
   typename traits::device_type::size_type      m_storage_size ;
+  Impl::ViewTracking< traits >                 m_tracking ;
 
 public:
 
@@ -246,7 +247,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
+  ~View() { m_tracking.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -951,7 +952,7 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
     typedef typename dst_type::shape_type                   shape_type ;
     typedef typename dst_type::stride_type                  stride_type ;
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -961,8 +962,9 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
 
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
+    dst.m_tracking      = src.m_tracking ;
 
-    Impl::ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1050,7 +1052,7 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
     typedef typename dst_type::shape_type   dst_shape_type ;
     typedef typename dst_type::stride_type  dst_stride_type ;
 
-    ViewTracking< dst_type >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst_shape_type::assign( dst.m_shape,
                             src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -1060,7 +1062,9 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    Impl::ViewTracking< dst_type >::increment( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 };
 
