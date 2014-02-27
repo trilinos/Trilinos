@@ -61,6 +61,7 @@ using Teuchos::Tuple;
 using Teuchos::rcp;
 typedef Domi::Ordinal Ordinal;
 using Domi::TeuchosCommRCP;
+using Domi::MDArray;
 using Domi::MDArrayView;
 using Domi::Slice;
 const Ordinal & Default = Domi::Slice::Default;
@@ -188,6 +189,87 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, dimensionsConstructor, Sca, Ord )
   TEST_COMPARE(std::abs(mdVector.normWeighted(mdVector) -
                         std::pow(scalar, 3./2.)        ), <, tolerance);
   TEST_COMPARE(std::abs(mdVector.meanValue()   - scalar), <, tolerance);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, initializationConstructor, Sca, Ord )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Check that the axisCommSizes are completely specified
+  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    TEST_ASSERT(axisCommSizes[axis] > 0);
+  }
+
+  // Construct dimensions
+  Ord localDim = 10;
+  Array< Ord > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+
+  // Construct an MDMap
+  typedef Teuchos::RCP< MDMap< Ord > > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap< Ord >(mdComm, dims()));
+
+  // Construct an MDArrayView with initialization values
+  typedef typename MDArray< Sca >::size_type size_type;
+  Array< size_type > initDims;
+  Sca scalar = 2;
+  for (int axis = 0; axis < numDims; ++axis)
+    initDims.push_back(mdMap->getLocalDim(axis,true));
+  MDArray< Sca > initVals(initDims(), scalar);
+
+  // Construct an MDVector using the initialization values
+  MDVector< Sca, Ord > mdVector(mdMap, initVals);
+
+  // Perform unit tests of MDVector as a whole
+  TEST_ASSERT(mdVector.onSubcommunicator());
+  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_ASSERT(not mdVector.hasPadding());
+  TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDVector axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdVector.getAxisRank(axis);
+    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdVector.isPeriodic(axis));
+    TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdVector.getGlobalBounds(axis).stop(), dims[axis]);
+    TEST_EQUALITY(mdVector.getLocalDim(axis) , localDim);
+    Slice globalRankBounds = mdVector.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(), axisRank    *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localBounds  = mdVector.getLocalBounds(axis);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), localDim);
+    TEST_EQUALITY_CONST(mdVector.getLowerPadSize(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getUpperPadSize(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getCommPadSize(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getLowerBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getUpperBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdVector.getBndryPadSize(axis), 0);
+  }
+
+  // Perform tests of MDVector data
+  MDArrayView< const Sca > cData = mdVector.getData();
+  MDArrayView< Sca > data = mdVector.getDataNonConst();
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    TEST_EQUALITY(cData.dimension(axis), localDim);
+    TEST_EQUALITY(data.dimension(axis), localDim);
+  }
+  for (typename MDArrayView< Sca >::const_iterator it = cData.cbegin();
+       it != cData.cend(); ++it)
+    TEST_EQUALITY(*it, scalar);
+  for (typename MDArrayView< Sca >::iterator it = data.begin();
+       it != data.end(); ++it)
+    TEST_EQUALITY(*it, scalar);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, pListDimensionsConstructor, Sca, Ord )
@@ -2057,6 +2139,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MDVector, randomize, Sca, Ord )
 
 #define UNIT_TEST_GROUP( Sca, Ord ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, dimensionsConstructor, Sca, Ord ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, initializationConstructor, Sca, Ord ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListDimensionsConstructor, Sca, Ord ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListCommPadConstructor, Sca, Ord ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MDVector, pListBndryPadConstructor, Sca, Ord ) \
