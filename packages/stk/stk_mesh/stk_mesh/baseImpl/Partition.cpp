@@ -223,6 +223,9 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
   if ( NOT_last_entity_in_last_bucket )
   {
     // Copy last entity to spot being vacated.
+#ifndef NDEBUG
+    last->begin(); // prevent unsafe iteration error
+#endif
     Entity e_swap = (*last)[ last->size() - 1 ];
     bucket.overwrite_entity(ordinal, e_swap );
 
@@ -435,6 +438,9 @@ void Partition::sort(bool force)
       for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr ) {
 	ThrowAssert(sorted_ent_vector_itr != entities.end());
 
+#ifndef NDEBUG
+        curr_bucket.begin(); // prevent unsafe iteration error
+#endif
 	Entity curr_entity = curr_bucket[curr_bucket_ord];
 	ThrowAssert(m_mesh.is_valid(curr_entity));
 

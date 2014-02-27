@@ -256,6 +256,10 @@ void BucketRepository::internal_modification_end()
       ThrowAssert(buckets[j] != NULL);
       Bucket &bucket = *buckets[j];
 
+#ifndef NDEBUG
+      bucket.begin(); // ensure modify-during-iteration flags are reset
+#endif
+
       // Update the hop-saving connectivity data on this bucket.
       //
       for (EntityRank to_rank = stk::topology::NODE_RANK;

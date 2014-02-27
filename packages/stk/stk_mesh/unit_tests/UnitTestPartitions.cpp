@@ -494,6 +494,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
 
     // Remove last entity in a bucket.
     stk::mesh::Bucket &bkt_1 = **partition.begin();
+    bkt_1.begin(); // prevent unsafe iteration error
     stk::mesh::Entity e_last_in_1 = bkt_1[bkt_1.size() - 1];
     partition.remove(e_last_in_1);
     ++num_removed;

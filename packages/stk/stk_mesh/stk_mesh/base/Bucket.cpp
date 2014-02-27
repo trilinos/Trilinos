@@ -264,6 +264,9 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_dynamic_other_connectivity(arg_entity_rank, &m_mesh)
   , m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part()))
   , m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part()))
+#ifndef NDEBUG
+  , m_modified_during_iteration(false)
+#endif
 {
   ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 
@@ -620,6 +623,10 @@ void Bucket::add_entity(Entity entity)
 
   ++m_size;
 
+#ifndef NDEBUG
+  m_modified_during_iteration = true;
+#endif
+
   AddEntityFunctor functor;
   modify_all_connectivity(functor);
 }
@@ -656,6 +663,10 @@ void Bucket::remove_entity()
   --m_size;
   initialize_slot(m_size, Entity());
 
+#ifndef NDEBUG
+  m_modified_during_iteration = true;
+#endif
+
   RemoveEntityFunctor functor;
   modify_all_connectivity(functor);
 }
@@ -674,6 +685,10 @@ void Bucket::copy_entity(Entity entity)
   reset_entity_location(entity, m_size);
 
   ++m_size;
+
+#ifndef NDEBUG
+  m_modified_during_iteration = true;
+#endif
 
   // Unfortunately, we had to copy/paste modify_connectivity to allow dynamic->fixed moves. The
   // modify_connectivity framework couldn't elegantly handle this case.
@@ -745,6 +760,10 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVe
 
   const MeshIndex from_index = m_mesh.mesh_index(entity);
   reset_entity_location(entity, to_ordinal, fields);
+
+#ifndef NDEBUG
+  m_modified_during_iteration = true;
+#endif
 
   impl::OverwriteEntityFunctor functor(from_index.bucket_ordinal, to_ordinal);
   modify_all_connectivity(functor, from_index.bucket);
