@@ -337,16 +337,17 @@ ul.auto-toc {
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="auto-toc simple">
-<li><a class="reference internal" href="#introduction" id="id1">1&nbsp;&nbsp;&nbsp;Introduction</a></li>
-<li><a class="reference internal" href="#structure-of-a-tribits-project" id="id2">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></li>
-<li><a class="reference internal" href="#appendix" id="id3">3&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id4">3.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#introduction" id="id3">1&nbsp;&nbsp;&nbsp;Introduction</a></li>
+<li><a class="reference internal" href="#structure-of-a-tribits-project" id="id4">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></li>
+<li><a class="reference internal" href="#references" id="id5">3&nbsp;&nbsp;&nbsp;References</a></li>
+<li><a class="reference internal" href="#appendix" id="id6">4&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id7">4.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<h1><a class="toc-backref" href="#id1">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
+<h1><a class="toc-backref" href="#id3">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
 <p>This document describes the usage of the TriBITS (Tribal Build, Integration,
 Test System) to develop software projects.  An initial overview of TriBITS is
 provided in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document
@@ -356,14 +357,62 @@ how to use the TriBITS system to create a CMake build system for a set of
 compiled software packages.</p>
 </div>
 <div class="section" id="structure-of-a-tribits-project">
-<h1><a class="toc-backref" href="#id2">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></h1>
+<h1><a class="toc-backref" href="#id4">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></h1>
 <p>???</p>
 </div>
+<div class="section" id="references">
+<h1><a class="toc-backref" href="#id5">3&nbsp;&nbsp;&nbsp;References</a></h1>
+<table class="docutils citation" frame="void" id="scale" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[SCALE]</a></td><td><a class="reference external" href="http://scale.ornl.gov/">http://scale.ornl.gov/</a></td></tr>
+</tbody>
+</table>
+</div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id3">3&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id6">4&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id4">3.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
-<p>Blah blah blah ...</p>
+<h2><a class="toc-backref" href="#id7">4.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<p>TriBITS started development in November 2007 as a set of helper macros to
+provide a CMake build system for a small subset of packages in Trilinos.  The
+initial goal was to just to support a native Windows build (using Visual C++)
+to compile and install these few Trilinos packages on Windows for usage by
+another project (the Sandia Titan project which included VTK).  At that time,
+Trilinos was using a highly customized autotools build system.  Initially,
+this CMake system was just a set of macros to streamline creating executables
+and tests.  Some of the conventions started in that early effort (e.g. naming
+convensions of variables and macros where functions use upper case like old
+FORTRAN and variables are mixed case) were continued in later efforts and are
+reflected in the current.  Then, stating in early 2008, a more detailed
+evaluation was performed to see if Trilinos should swtich over to CMake as the
+default (and soon only) supported build and test system (see &quot;Why CMake?&quot; in
+<a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a>).  This lead to the
+initial implementation of a scalable package-based architecture (PackageArch)
+for the Trilinos CMake project in late 2008.  This Trilinos CMake PackageArch
+system evolved over the next few years with development in the system slowing
+into 2010.  This Trilinos CMake build system was then adopted as the build
+infrastructure for the CASL VERA effort in 2011 where CASL VERA packages were
+treated as add-on Trilinos packages (see Section ???).  Over the next year,
+there was significant development of the system to support larger multi-repo
+projects in support of CASL VERA.  That lead to the decision to formally
+generalize the Trilinos CMake PackageArch build system outside of Trilinos and
+the name TriBITS was formally adopted in November 2011.  Work to refactor the
+Trilinos CMake system into a general reusable stand-alone CMake-based build
+system started in October 2011 and an initial implementation was complete in
+December 2011 when it was used for the CASL VERA build system.  In early 2012,
+the ORNL CASL-related projects Denovo and SCALE <a class="citation-reference" href="#scale" id="id2">[SCALE]</a> adopted TriBITS as
+their native development build systems.  Shortly after TriBITS was adopted the
+native build system for the the CASL-related Univeristy of Michigan code MPACT
+[???].  In addition to being used in CASL, all of these codes also have a
+significant life outside of CASL.  Becuase they used the same TriBITS build
+system, it proved relatively easy to keep these various codes integrated
+together in the CASL VERA code meta-build.  At the same time, TriBITS well
+served the independent development teams and non-CASL projects independnet
+from CASL VERA.  Since this, TriBITS was further extended and refined, driven
+by CASL VERA development and expansion.  Independently, an early version of
+TriBITS from 2012 was adopted by the LiveV
+projectfootnote{<a class="reference external" href="https://github.com/lifev/cmake">https://github.com/lifev/cmake</a>} which was forked and extended
+independently.</p>
 </div>
 </div>
 </div>
