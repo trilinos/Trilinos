@@ -75,6 +75,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosContainers=ON"
   "-DTrilinos_ENABLE_KokkosLinalg=ON"
   "-DTrilinos_ENABLE_KokkosClassic=ON"
+  "-DTrilinos_ENABLE_KokkosMpiComm=ON"
   "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
