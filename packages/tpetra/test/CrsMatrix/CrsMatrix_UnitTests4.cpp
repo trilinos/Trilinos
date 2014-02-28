@@ -540,19 +540,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ThreeArraysESFC, LO, GO, Scalar, Node )
   {
 
-    // CrT: 02/03/2014 Disable test for Wrapper nodes
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#ifdef KOKKOS_HAVE_PTHREAD
-    if(Node::name()==Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads>::name()) return;
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-    if(Node::name()==Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP>::name()) return;
-#endif
-#ifdef KOKKOS_HAVE_CUDA
-    if(Node::name()==Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda>::name()) return;
-#endif
-#endif
-
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -622,18 +609,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, SetAllValues, LO, GO, Scalar, Node )
   {
 
-    // CrT: 02/03/2014 Disable test for Wrapper nodes
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#ifdef KOKKOS_HAVE_PTHREAD
-    if(Node::name()==Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads>::name()) return;
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-    if(Node::name()==Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP>::name()) return;
-#endif
-#ifdef KOKKOS_HAVE_CUDA
-    if(Node::name()==Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda>::name()) return;
-#endif
-#endif
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
