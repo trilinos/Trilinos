@@ -54,6 +54,10 @@
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector, etc
 
+#ifdef STK_MESH_TRACE_ENABLED
+#include <stk_mesh/base/DiagWriter.hpp>
+#endif
+
 namespace stk {
 namespace mesh {
 

@@ -12,9 +12,12 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityProc, EntityState
 #include <string>                       // for string
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_util/diag/Writer.hpp"     // for operator<<, Writer
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_mesh/baseImpl/Partition.hpp"
 
+#ifdef STK_MESH_TRACE_ENABLED
+#include <stk_util/util/Bootstrap.hpp>
+#endif
 
 namespace stk {
 namespace mesh {
@@ -68,29 +71,6 @@ stk::Bootstrap x(&bootstrap);
 
 } // namespace <unnamed>
 
-
-#endif
-
-std::string log_to_str(EntityState log)
-{
-  if (log == 0) {
-    return "Not changed";
-  }
-  else if (log == 1) {
-    return "Created";
-  }
-  else if (log == 2) {
-    return "Modified";
-  }
-  else if (log == 3) {
-    return "Marked deleted";
-  }
-  else {
-    ThrowRequireMsg(false, "Unknown log " << log);
-  }
-  return "";
-}
-
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
 {
   return writer << "Part[" << part.name() << ", " << part.mesh_meta_data_ordinal() << "]";
@@ -105,6 +85,26 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 {
   return writer << "EntityProc[entity:" << entity_proc.first.local_offset() << ", proc: " << entity_proc.second << "]";
 }
+
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Bucket& bucket)
+{
+  std::ostringstream out;
+  out << bucket;
+  return writer << out.str();
+}
+
+namespace impl {
+
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Partition& partition)
+{
+  std::ostringstream out;
+  out << partition;
+  return writer << out.str();
+}
+
+}
+
+#endif
 
 } // namespace mesh
 } // namespace stk

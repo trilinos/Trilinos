@@ -782,7 +782,7 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   if ( !result.second) {
     // An existing entity, the owner must match.
     require_entity_owner( declared_entity , m_parallel_rank );
-    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << declared_entity);
+    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << entity_key(declared_entity));
   }
 
   //------------------------------
@@ -798,7 +798,7 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   if ( result.second ) {
     this->set_parallel_owner_rank(declared_entity, m_parallel_rank);
     set_synchronized_count(declared_entity, m_sync_count);
-    DiagIfWatching(LOG_ENTITY, key, "new entity: " << declared_entity);
+    DiagIfWatching(LOG_ENTITY, key, "new entity: " << entity_key(declared_entity));
   }
 
   m_check_invalid_rels = true;
@@ -842,7 +842,7 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 bool BulkData::destroy_entity( Entity entity )
 {
   TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
 
   require_ok_to_modify();
 
@@ -5406,7 +5406,7 @@ void BulkData::change_entity_parts( Entity entity,
                                     bool always_propagate_internal_changes)
 {
   TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
 
   require_ok_to_modify();
 
@@ -5517,7 +5517,7 @@ void BulkData::internal_change_entity_parts(
   bool always_propagate_internal_changes )
 {
   TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "add_parts: " << add_parts);
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "remove_parts: " << remove_parts);
 
@@ -5678,7 +5678,7 @@ void BulkData::internal_propagate_part_changes(
   TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
       LOG_ENTITY,
       entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "Removed: " << removed);
 
   m_check_invalid_rels = false;

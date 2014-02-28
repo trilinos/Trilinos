@@ -1,8 +1,18 @@
 #ifndef stk_mesh_DiagWriter_h
 #define stk_mesh_DiagWriter_h
 
+#include <sstream>
+
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+
+#ifdef STK_MESH_TRACE_ENABLED
+#include <stk_mesh/base/DiagWriter_fwd.hpp>
+#include <stk_util/diag/Writer.hpp>
+#include <stk_util/diag/Trace.hpp>
+#include <stk_util/diag/WriterParser.hpp>
+#endif
+
 namespace stk { namespace diag { class Writer; } }
 namespace stk { namespace mesh { class Part; } }
 
@@ -12,6 +22,10 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {
+
+namespace impl {
+class Partition;
+}
 
 #ifdef STK_MESH_TRACE_ENABLED
 
@@ -53,8 +67,6 @@ public:
   {}
 };
 
-#endif // STKMESH_TRACE_ENABLED
-
 // If Writer does not know how to output an object you want to trace, you
 // can address that here by defining an operator<< for that object. Note
 // that Writer handles vectors and pointers automatically.
@@ -65,9 +77,15 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key);
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc);
 
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Bucket& bucket);
+
+namespace impl {
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Partition& partition);
+}
+
+#endif // STKMESH_TRACE_ENABLED
+
 } // namespace mesh
 } // namespace stk
-
-
 
 #endif // stk_mesh_DiagWriter_h

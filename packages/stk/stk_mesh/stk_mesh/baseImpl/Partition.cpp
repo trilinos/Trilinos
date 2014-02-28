@@ -11,6 +11,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Trace.hpp"      // for DiagIf, DiagIfWatching, etc
+#include "stk_mesh/base/DiagWriter.hpp" // for DiagIf, DiagIfWatching, etc
 #include "stk_mesh/base/Types.hpp"      // for PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
