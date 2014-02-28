@@ -73,7 +73,6 @@ namespace Tpetra {
     staticGraph_ = myGraph_;
     resumeFill (params);
     checkInternalState ();
-    std::cout<<"USING KokkosRefactor_CrsMatrix"<<std::endl;
   }
 
   template <class Scalar,
@@ -598,7 +597,6 @@ namespace Tpetra {
         h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
       }
       Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
-      std::cout << std::endl;
 
       k_inds = typename Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
       inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
@@ -648,9 +646,7 @@ namespace Tpetra {
       // specified StaticProfile in the constructor and fixed the
       // number of matrix entries in each row, but didn't fill all
       // those entries.
-      std::cout << "Static profile: start something" << std::endl;
       if (nodeNumEntries_ != nodeNumAllocated_) {
-        std::cout << "NotUPS " << (numRowEntries_.size () + 1) << std::endl;
         // We have to pack the 1-D storage, since the user didn't fill
         // up all requested storage.  We compute the row offsets
         // (ptrs) from numRowEntries_, which has the true number of
@@ -3517,7 +3513,6 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef Scalar ST;
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix::gaussSeidelCopy: cannot call this method until "
@@ -3637,7 +3632,7 @@ namespace Tpetra {
         // the same, so X_domainMap _is_ X_colMap.
         X_domainMap = X_colMap;
         if (! zeroInitialGuess) { // Don't copy if zero initial guess
-          *X_domainMap = X; // Copy X into constant stride multivector
+          deep_copy(*X_domainMap , X); // Copy X into constant stride multivector
         }
         copyBackOutput = true; // Don't forget to copy back at end.
         TPETRA_EFFICIENCY_WARNING(
@@ -3727,7 +3722,7 @@ namespace Tpetra {
       // use the cached row Map multivector to store a constant stride
       // copy of B.
       RCP<MV> B_in_nonconst = getRowMapMultiVector (B, true);
-      *B_in_nonconst = B;
+      deep_copy(*B_in_nonconst, B);
       B_in = rcp_const_cast<const MV> (B_in_nonconst);
 
       TPETRA_EFFICIENCY_WARNING(
@@ -3784,7 +3779,7 @@ namespace Tpetra {
     }
 
     if (copyBackOutput) {
-      X = *X_domainMap; // Copy result back into X.
+      deep_copy(X , *X_domainMap); // Copy result back into X.
     }
   }
 
