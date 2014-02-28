@@ -857,27 +857,11 @@ void mult_A_B(
       combined_values[ii] = C_row_i[ii];
     }
     last_index = C_row_i_length;
-
-      //
-      //Now put the C_row_i values into C.
-      //
-      // We might have to revamp this later.
-    /*if (!onlyCalculateStructure)
-    {
-      C_filled ?
-        C.sumIntoGlobalValues(
-          global_row,
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
-          onlyCalculateStructure ? null :
-          C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
-        :
-        C.insertGlobalValues(
-          global_row,
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
-          onlyCalculateStructure ? null :
-          C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
-    }*/
-
+    
+    //
+    //Now put the C_row_i values into C.
+    //
+    // We might have to revamp this later.
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
