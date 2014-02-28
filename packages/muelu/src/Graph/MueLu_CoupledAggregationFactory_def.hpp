@@ -94,7 +94,7 @@ namespace MueLu {
     Set(currentLevel, "Aggregates", aggregates);
 
     if (IsPrint(Statistics0)) {
-      aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
+      aggregates->describe(GetOStream(Statistics0), getVerbLevel());
     }
 
   }

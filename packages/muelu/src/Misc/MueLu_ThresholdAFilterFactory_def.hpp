@@ -111,7 +111,7 @@ namespace MueLu {
 
     Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
 
-    GetOStream(Statistics0, 0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
+    GetOStream(Statistics0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
 
     currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<OMatrix>(Aout), this);
   }

@@ -157,13 +157,13 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node,
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss2; ss2 << "R(" << curBlockId << "," << curBlockId << ") rebalanced:";
-      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebRii, ss2.str(), params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebRii, ss2.str(), params);
     } else {
       rebRii = Rii;
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss2; ss2 << "R(" << curBlockId << "," << curBlockId << ") not rebalanced:";
-      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebRii, ss2.str(), params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebRii, ss2.str(), params);
     }
 
     // fix striding information for rebalanced diagonal block rebRii

@@ -229,7 +229,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EasyParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix& A) const {
     if (A.GetFixedBlockSize() != blockSize_)
-      this->GetOStream(Warnings0,  0) << "Warning: setting matrix block size to " << blockSize_ << " (value of \"number of equations\" parameter in the list) "
+      this->GetOStream(Warnings0) << "Warning: setting matrix block size to " << blockSize_ << " (value of \"number of equations\" parameter in the list) "
           << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
     A.SetFixedBlockSize(blockSize_);
   }

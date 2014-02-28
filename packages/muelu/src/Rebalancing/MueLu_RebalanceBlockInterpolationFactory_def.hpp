@@ -179,7 +179,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss2; ss2 << "P(" << curBlockId << "," << curBlockId << ") rebalanced:";
-      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*Pii, ss2.str(), params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*Pii, ss2.str(), params);
 
       // store rebalanced P block
       subBlockRebP.push_back(Pii);
@@ -188,7 +188,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss; ss << "P(" << curBlockId << "," << curBlockId << ") not rebalanced:";
-      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*Pii, ss.str(), params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*Pii, ss.str(), params);
       // store rebalanced P block
       subBlockRebP.push_back(Pii);
     }

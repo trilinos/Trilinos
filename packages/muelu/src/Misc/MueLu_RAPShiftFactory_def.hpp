@@ -101,8 +101,8 @@ namespace MueLu {
 
       {
         SubFactoryMonitor subM(*this, "MxM: K x P", coarseLevel);
-        KP = Utils::Multiply(*K, false, *P, false, KP, GetOStream(Statistics2, 0));
-        MP = Utils::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2, 0));
+        KP = Utils::Multiply(*K, false, *P, false, KP, GetOStream(Statistics2));
+        MP = Utils::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2));
         Set(coarseLevel, "AP Pattern", KP);
       }
 
@@ -119,20 +119,20 @@ namespace MueLu {
       bool doFillComplete=true;
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (KP) (implicit)", coarseLevel);
-        Kc = Utils::Multiply(*P, true, *KP, false, Kc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
-        Mc = Utils::Multiply(*P, true, *MP, false, Mc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
+        Kc = Utils::Multiply(*P, true, *KP, false, Kc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
+        Mc = Utils::Multiply(*P, true, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
       }
       else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
         SubFactoryMonitor m2(*this, "MxM: R x (KP) (explicit)", coarseLevel);
-        Kc = Utils::Multiply(*R, false, *KP, false, Kc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
-        Mc = Utils::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
+        Kc = Utils::Multiply(*R, false, *KP, false, Kc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
+        Mc = Utils::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
       }
 
       // recombine to get K+shift*M
       int level     = coarseLevel.GetLevelID();
       Scalar shift  = shifts_[level];
-      Utils2::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2, 0));
+      Utils2::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
       Ac->fillComplete();
 
       if (checkAc_)
@@ -140,7 +140,7 @@ namespace MueLu {
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A", Ac);
       Set(coarseLevel, "K", Kc);
@@ -154,7 +154,7 @@ namespace MueLu {
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
         RCP<const FactoryBase> fac = *it;
-        GetOStream(Runtime0, 0) << "RAPShiftFactory: call transfer factory: " << fac->description() << std::endl;
+        GetOStream(Runtime0) << "RAPShiftFactory: call transfer factory: " << fac->description() << std::endl;
         fac->CallBuild(coarseLevel);
         // AP (11/11/13): I am not sure exactly why we need to call Release, but we do need it to get rid
         // of dangling data for CoordinatesTransferFactory
@@ -188,8 +188,8 @@ namespace MueLu {
       GO lZeroDiagsGO = lZeroDiags; /* LO->GO conversion */
       GO gZeroDiags = 0;
       sumAll(comm, lZeroDiagsGO, gZeroDiags);
-      if(repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPShiftFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-      else                     GetOStream(Warnings0,0) << "RAPShiftFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+      if(repairZeroDiagonals_) GetOStream(Warnings0) << "RAPShiftFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+      else                     GetOStream(Warnings0) << "RAPShiftFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
   }
 

@@ -143,7 +143,7 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bui
 
   Set(currentLevel, "Aggregates", aggregates);
 
-  GetOStream(Statistics0, 0) << aggregates->description() << std::endl;
+  GetOStream(Statistics0) << aggregates->description() << std::endl;
 }
 
 } //namespace MueLu

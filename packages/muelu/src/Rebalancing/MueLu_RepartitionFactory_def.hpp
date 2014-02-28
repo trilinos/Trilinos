@@ -138,7 +138,7 @@ namespace MueLu {
 
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
-      GetOStream(Statistics0, 0) << "Repartitioning?  NO:" <<
+      GetOStream(Statistics0) << "Repartitioning?  NO:" <<
           "\n  current level = " << toString(currentLevel.GetLevelID()) <<
           ", first level where repartitioning can happen is " + toString(startLevel) << std::endl;
 
@@ -162,7 +162,7 @@ namespace MueLu {
       sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
       if (numActiveProcesses == 1) {
-        GetOStream(Statistics0, 0) << "Repartitioning?  NO:" <<
+        GetOStream(Statistics0) << "Repartitioning?  NO:" <<
             "\n  # processes with rows = " << toString(numActiveProcesses) << std::endl;
 
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
@@ -204,13 +204,13 @@ namespace MueLu {
     }
 
     if (!test3 && !test4) {
-      GetOStream(Statistics0, 0) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
+      GetOStream(Statistics0) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
 
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
     }
 
-    GetOStream(Statistics0,0) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
+    GetOStream(Statistics0) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
 
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
@@ -229,7 +229,7 @@ namespace MueLu {
     GO numPartitions;
     if (currentLevel.IsAvailable("number of partitions")) {
       numPartitions = currentLevel.Get<GO>("number of partitions");
-      GetOStream(Warnings0, 0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
+      GetOStream(Warnings0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
 
     } else {
       if (Teuchos::as<GO>(A->getGlobalNumRows()) < minRowsPerProcessor) {
@@ -244,7 +244,7 @@ namespace MueLu {
 
       currentLevel.Set("number of partitions", numPartitions, NoFactory::get());
     }
-    GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
+    GetOStream(Statistics0) << "Number of partitions to use = " << numPartitions << std::endl;
 
     // ======================================================================================================
     // Construct decomposition vector
@@ -255,14 +255,14 @@ namespace MueLu {
       // (this is mostly done to avoid extra output messages, as even if we didn't skip there is a shortcut
       // in Zoltan[12]Interface).
       // TODO: We can probably skip more work in this case (like building all extra data structures)
-      GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
+      GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
 
     } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
 
       if (decomposition.is_null()) {
-        GetOStream(Warnings0, 0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
+        GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
       }
@@ -370,7 +370,7 @@ namespace MueLu {
       if (oldPartId == 0) {
         // Somebody owns a part with id 0. That means the processor 0 gets some data, even if it does
         // not have any originally. Our work is done.
-        GetOStream(Statistics0, 0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
+        GetOStream(Statistics0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
             " as processor 0 already receives some data" << std::endl;
 
       } else if (oldPartId == Teuchos::OrdinalTraits<GO>::max()) {
@@ -415,7 +415,7 @@ namespace MueLu {
           // Something weird is going on. This probably means that everybody does not keep any of its data
         }
 
-        GetOStream(Statistics0, 0) << "Remapping part " << oldPartId << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
+        GetOStream(Statistics0) << "Remapping part " << oldPartId << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
 
         // Swap partitions
         // If a processor has a part of partition with id = oldPartId, that means that it sends data to it, unless
@@ -446,7 +446,7 @@ namespace MueLu {
     if (IsPrint(Statistics2)) {
       size_t numLocalKept = myGIDs.size(), numGlobalKept, numGlobalRows = A->getGlobalNumRows();
       sumAll(comm, numLocalKept, numGlobalKept);
-      GetOStream(Statistics2,0) << "Unmoved rows: " << numGlobalKept << " / " << numGlobalRows << " (" << 100*Teuchos::as<double>(numGlobalKept)/numGlobalRows << "%)" << std::endl;
+      GetOStream(Statistics2) << "Unmoved rows: " << numGlobalKept << " / " << numGlobalRows << " (" << 100*Teuchos::as<double>(numGlobalKept)/numGlobalRows << "%)" << std::endl;
     }
 
     int numSend = sendMap.size(), numRecv;
@@ -528,7 +528,7 @@ namespace MueLu {
     // ======================================================================================================
     if (IsPrint(Statistics2)) {
       // Print the grid of processors
-      GetOStream(Statistics2, 0) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
+      GetOStream(Statistics2) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
 
       char amActive = (myGIDs.size() ? 1 : 0);
       std::vector<char> areActive(numProcs, 0);
@@ -538,11 +538,11 @@ namespace MueLu {
       for (int proc = 0; proc < numProcs; proc += rowWidth) {
         for (int j = 0; j < rowWidth; j++)
           if (proc + j < numProcs)
-            GetOStream(Statistics2,0) << (areActive[proc + j] ? "+" : ".");
+            GetOStream(Statistics2) << (areActive[proc + j] ? "+" : ".");
           else
-          GetOStream(Statistics2,0) << " ";
+          GetOStream(Statistics2) << " ";
 
-        GetOStream(Statistics2,0) << "      " << proc << ":" << std::min(proc + rowWidth, numProcs) - 1 << std::endl;
+        GetOStream(Statistics2) << "      " << proc << ":" << std::min(proc + rowWidth, numProcs) - 1 << std::endl;
       }
     }
 
@@ -657,20 +657,20 @@ namespace MueLu {
         numMatched++;
       }
     }
-    GetOStream(Statistics0, 0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
+    GetOStream(Statistics0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4 [optional]: Keep processor 0
     if (keepProc0) {
       if (matchedRanks[0] == 0) {
         // Reassign partition to processor 0
         // The hope is that partition which we mapped last has few elements in it
-        GetOStream(Statistics0, 0) << "Remapping part " << lastMatchedPart << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
+        GetOStream(Statistics0) << "Remapping part " << lastMatchedPart << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
         matchedRanks[match[lastMatchedPart]] = 0;       // unassign processor which was matched to lastMatchedPart part
         matchedRanks[0] = 1;                            // assign processor 0
         match[lastMatchedPart] = 0;                     // match part to processor 0
 
       } else {
-        GetOStream(Statistics0, 0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
+        GetOStream(Statistics0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
             " as processor 0 already receives some data" << std::endl;
       }
     }

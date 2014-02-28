@@ -134,14 +134,14 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one()) {
-          GetOStream(Statistics1, 0) << "Calculating max eigenvalue estimate now" << std::endl;
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now" << std::endl;
           Magnitude stopTol = 1e-4;
           lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
-          GetOStream(Statistics1, 0) << "Using cached max eigenvalue estimate" << std::endl;
+          GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics0, 0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+        GetOStream(Statistics0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
       {
@@ -149,7 +149,7 @@ namespace MueLu {
         Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
 
 	SC omega = dampingFactor / lambdaMax;
-	finalP=Utils::Jacobi(omega,*invDiag,*A, *Ptent, finalP,GetOStream(Statistics2,0));
+	finalP=Utils::Jacobi(omega,*invDiag,*A, *Ptent, finalP,GetOStream(Statistics2));
       }
 
     } else {
@@ -177,7 +177,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 

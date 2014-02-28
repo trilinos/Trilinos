@@ -84,9 +84,9 @@ namespace MueLu {
       default:
         break;
     }
-    GetOStream(Runtime1, 0) << "Ordering:                  " << orderingType << std::endl;
-    GetOStream(Runtime1, 0) << "Min nodes per aggregate:   " << minNodesPerAggregate_ << std::endl;
-    GetOStream(Runtime1, 0) << "Max nbrs already selected: " << maxNeighAlreadySelected_ << std::endl;
+    GetOStream(Runtime1) << "Ordering:                  " << orderingType << std::endl;
+    GetOStream(Runtime1) << "Min nodes per aggregate:   " << minNodesPerAggregate_ << std::endl;
+    GetOStream(Runtime1) << "Max nbrs already selected: " << maxNeighAlreadySelected_ << std::endl;
 
     /* Create Aggregation object */
     my_size_t nAggregates = 0;
@@ -305,7 +305,7 @@ namespace MueLu {
         sumAll(comm, localReady, globalReady);
 
         if(globalReady > 0)
-          GetOStream(Warnings0, 0) << "Warning: " << globalReady << " READY nodes left" << std::endl;
+          GetOStream(Warnings0) << "Warning: " << globalReady << " READY nodes left" << std::endl;
       }
 
       if (IsPrint(Statistics1)) {
@@ -320,12 +320,12 @@ namespace MueLu {
         // Compute 'globalNRows'
         GO globalNRows; sumAll(comm, (GO)nRows, globalNRows);
 
-        GetOStream(Statistics1, 0) << "Nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
+        GetOStream(Statistics1) << "Nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
       }
 
       if (IsPrint(Statistics1)) {
         GO nAggregatesGlobal; sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
-        GetOStream(Statistics1, 0) << "Total aggregates = " << nAggregatesGlobal << std::endl;
+        GetOStream(Statistics1) << "Total aggregates = " << nAggregatesGlobal << std::endl;
       }
 
     } // verbose

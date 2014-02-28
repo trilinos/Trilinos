@@ -96,7 +96,7 @@ namespace MueLu {
       // This timer can only be destroyed if it is not in the stack
       if (isPaused()) {
         // error message because cannot throw an exception in destructor
-        GetOStream(Errors, 0) << "MutuallyExclusiveTime::~MutuallyExclusiveTime(): Error: destructor called on a paused timer." << std::endl;
+        GetOStream(Errors) << "MutuallyExclusiveTime::~MutuallyExclusiveTime(): Error: destructor called on a paused timer." << std::endl;
         //TODO: Even if timing results will be wrong, the timer can be removed from the stack to avoid a segmentation fault.
       }
 
@@ -115,12 +115,12 @@ namespace MueLu {
 
       // pause currently running timer
       if (!timerStack_.empty()) {
-        GetOStream(Debug, 0) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
+        GetOStream(Debug) << "pausing parent timer " << timerStack_.top()->name_ << std::endl;
         timerStack_.top()->pause();
-        GetOStream(Debug, 0) << "starting child timer " << this->name_ << std::endl;
+        GetOStream(Debug) << "starting child timer " << this->name_ << std::endl;
         myParent_[this->name_] = timerStack_.top()->name_;
       } else {
-        GetOStream(Debug, 0) << "starting orphan timer " << this->name_ << std::endl;
+        GetOStream(Debug) << "starting orphan timer " << this->name_ << std::endl;
         myParent_[this->name_] = "no parent";
       }
 
@@ -146,7 +146,7 @@ namespace MueLu {
       double r = timer_->stop();
 
       if (!timerStack_.empty()) {
-            GetOStream(Debug, 0) << "resuming timer " << timerStack_.top()->name_ << std::endl;
+            GetOStream(Debug) << "resuming timer " << timerStack_.top()->name_ << std::endl;
             timerStack_.top()->resume();
       }
 

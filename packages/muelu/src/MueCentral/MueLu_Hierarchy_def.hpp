@@ -91,7 +91,7 @@ namespace MueLu {
     int levelID = LastLevelID() + 1; // ID of the inserted level
 
     if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
-      GetOStream(Warnings1, 0) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
+      GetOStream(Warnings1) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
                                << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
 
     Levels_.push_back(level);
@@ -338,7 +338,7 @@ namespace MueLu {
 
     const int lastLevel = startLevel + numDesiredLevels - 1;
     int iLevel = 0;  // counter for the current number of multigrid levels after Setup phase
-    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel
+    GetOStream(Runtime0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel
         << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
     Clear();
@@ -364,13 +364,13 @@ namespace MueLu {
 
     std::ostringstream ss;
     print(ss, GetVerbLevel());
-    GetOStream(Statistics0,0) << ss.str();
+    GetOStream(Statistics0) << ss.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
     if (GetNumberOfLevels())
-      GetOStream(Runtime0, 0) << "Clearing old data (if any)" << std::endl;
+      GetOStream(Runtime0) << "Clearing old data (if any)" << std::endl;
 
     for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->Clear();
@@ -378,7 +378,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExpertClear() {
-    GetOStream(Runtime0, 0) << "Clearing old data (expert)" << std::endl;
+    GetOStream(Runtime0) << "Clearing old data (expert)" << std::endl;
     for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->ExpertClear();
   }
@@ -427,7 +427,7 @@ namespace MueLu {
     if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
       rn = Utils::ResidualNorm(*A, X, B);
-      GetOStream(Statistics1, 0) << "iter:    "
+      GetOStream(Statistics1) << "iter:    "
                                  << std::setiosflags(std::ios::left)
                                  << std::setprecision(3) << 0 // iter 0
                                  << "           residual = "
@@ -470,7 +470,7 @@ namespace MueLu {
           emptySolve = false;
         }
         if (emptySolve == true)
-          GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
+          GetOStream(Warnings0) << "Warning: No coarse grid solver" << std::endl;
 
       } else {
         // on intermediate levels we do cycles
@@ -485,7 +485,7 @@ namespace MueLu {
             RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
             preSmoo->Apply(X, B, zeroGuess);
           } else {
-            GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
 
@@ -562,7 +562,7 @@ namespace MueLu {
             postSmoo->Apply(X, B, false);
 
           } else {
-            GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
           }
         }
       }
@@ -571,7 +571,7 @@ namespace MueLu {
       if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
         Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
         rn = Utils::ResidualNorm(*A, X, B);
-        GetOStream(Statistics1, 0) << "iter:    "
+        GetOStream(Statistics1) << "iter:    "
                                    << std::setiosflags(std::ios::left)
                                    << std::setprecision(3) << i
                                    << "           residual = "
@@ -781,7 +781,7 @@ namespace MueLu {
     std::ofstream out(dumpFile_.c_str());
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
 #else
-    GetOStream(Errors,0) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
+    GetOStream(Errors) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
 #endif
   }
 
@@ -812,7 +812,7 @@ namespace MueLu {
     }
 
     if (canReplaceMap) {
-      GetOStream(Runtime1, 0) << "Replacing coordinate map" << std::endl;
+      GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
       if (blkSize == 1)
         nodeMap = A->getRowMap();
       else {

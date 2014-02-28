@@ -121,7 +121,7 @@ namespace MueLu {
                                + toString(rowMap->getNodeNumElements()/blkSize) + "The vector length should be the same as the number of mesh points.");
 #ifdef HAVE_MUELU_DEBUG
     GO indexBase = rowMap->getIndexBase();
-    GetOStream(Runtime0,0) << "Checking consistence of row and coordinates maps" << std::endl;
+    GetOStream(Runtime0) << "Checking consistence of row and coordinates maps" << std::endl;
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
     ArrayView<const GO> coordsElements = map   ->getNodeElementList();
@@ -147,7 +147,7 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     int rowWeight = pL.get<int>("rowWeight");
-    GetOStream(Runtime0,0) << "Using weights formula: nnz + " << rowWeight << std::endl;
+    GetOStream(Runtime0) << "Using weights formula: nnz + " << rowWeight << std::endl;
 
     Array<SC> weightsPerRow(numElements);
     for (LO i = 0; i < numElements; i++) {
@@ -178,7 +178,7 @@ namespace MueLu {
     }
     Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
-    GetOStream(Runtime0,0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
+    GetOStream(Runtime0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
 
     const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
     TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" &&

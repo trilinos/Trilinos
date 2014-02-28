@@ -107,10 +107,10 @@ namespace MueLu {
         stridedblocksize = fullblocksize;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Runtime1, 0) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
+      GetOStream(Runtime1) << "AmalagamationFactory::Build():" << " found fullblocksize=" << fullblocksize << " and stridedblocksize=" << stridedblocksize << " from strided maps. offset=" << offset << std::endl;
 
     } else {
-      GetOStream(Warnings0, 0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+      GetOStream(Warnings0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
     }
     // TODO: maybe no striding information on coarser levels -> misuse nullspace vector?
 

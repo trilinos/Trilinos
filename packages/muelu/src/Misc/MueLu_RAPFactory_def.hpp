@@ -120,7 +120,7 @@ namespace MueLu {
 
       // Reuse pattern if available (multiple solve)
       if (coarseLevel.IsAvailable("AP Pattern", this)) {
-        GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern" << std::endl;
+        GetOStream(Runtime0) << "Ac: Using previous AP pattern" << std::endl;
 
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
       }
@@ -128,13 +128,13 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2,0));
+        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2));
       }
       Set(coarseLevel, "AP Pattern", AP);
 
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP Pattern", this)) {
-        GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern" << std::endl;
+        GetOStream(Runtime0) << "Ac: Using previous RAP pattern" << std::endl;
 
         Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
       }
@@ -146,19 +146,19 @@ namespace MueLu {
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-        Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
+        Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2), true, doOptimizedStorage);
 
       } else {
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
-        Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
+        Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2), true, doOptimizedStorage);
       }
 
       CheckRepairMainDiagonal(Ac);
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A",           Ac);
       Set(coarseLevel, "RAP Pattern", Ac);
@@ -170,7 +170,7 @@ namespace MueLu {
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
         RCP<const FactoryBase> fac = *it;
-        GetOStream(Runtime0, 0) << "RAPFactory: call transfer factory: " << fac->description() << std::endl;
+        GetOStream(Runtime0) << "RAPFactory: call transfer factory: " << fac->description() << std::endl;
         fac->CallBuild(coarseLevel);
         // Coordinates transfer is marginally different from all other operations
         // because it is *optional*, and not required. For instance, we may need
@@ -282,7 +282,7 @@ namespace MueLu {
 
     // print some output
     if (IsPrint(Warnings0))
-      GetOStream(Warnings0,0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
+      GetOStream(Warnings0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
           << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
 
 #ifdef HAVE_MUELU_DEBUG // only for debugging

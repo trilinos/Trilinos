@@ -125,7 +125,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << levelID);
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
 
-      GetOStream(Test,0) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;
+      GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;
     }
 
     //@}

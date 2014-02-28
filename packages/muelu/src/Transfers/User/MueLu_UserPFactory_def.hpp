@@ -130,7 +130,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
   }
 
 

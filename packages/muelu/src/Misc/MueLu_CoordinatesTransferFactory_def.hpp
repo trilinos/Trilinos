@@ -89,7 +89,7 @@ namespace MueLu {
   void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    GetOStream(Runtime0, 0) << "Transferring coordinates" << std::endl;
+    GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
     const ParameterList  & pL = GetParameterList();
     int                 writeStart = pL.get< int >("write start");

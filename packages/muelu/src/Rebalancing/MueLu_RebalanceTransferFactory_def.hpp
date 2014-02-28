@@ -180,7 +180,7 @@ namespace MueLu {
 
         Set(coarseLevel, "P", rebalancedP);
 
-        GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -223,7 +223,7 @@ namespace MueLu {
         }
         Set(coarseLevel, "R", rebalancedR);
 
-        GetOStream(Statistics1, 0) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.

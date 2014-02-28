@@ -85,7 +85,7 @@ namespace MueLu {
       // Reuse data
       P0          = coarseLevel.Get<RCP<Matrix> >("P0", this);
       Niterations = pL.get<int>("Reuse Niterations");
-      GetOStream(Runtime0, 0) << "Reusing P0" << std::endl;
+      GetOStream(Runtime0) << "Reusing P0" << std::endl;
 
     } else {
       // Construct data
@@ -101,13 +101,13 @@ namespace MueLu {
     if (coarseLevel.IsAvailable("Constraint0", this)) {
       // Reuse data
       X = coarseLevel.Get<RCP<Constraint> >("Constraint0", this);
-      GetOStream(Runtime0, 0) << "Reusing Constraint0" << std::endl;
+      GetOStream(Runtime0) << "Reusing Constraint0" << std::endl;
 
     } else {
       // Construct data
       X = Get< RCP<Constraint> >(coarseLevel, "Constraint");
     }
-    GetOStream(Runtime0,0) << "Number of emin iterations = " << Niterations << std::endl;
+    GetOStream(Runtime0) << "Number of emin iterations = " << Niterations << std::endl;
 
 
     RCP<Matrix> P;
@@ -132,7 +132,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
   }
 
 } // namespace MueLu

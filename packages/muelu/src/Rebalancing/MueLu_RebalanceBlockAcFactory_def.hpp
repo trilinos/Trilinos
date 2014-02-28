@@ -166,7 +166,7 @@ namespace MueLu {
 
         ParameterList XpetraList;
         //if (pL.get<bool>("useSubcomm") == true) {
-          //GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+          //GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
           XpetraList.set("Restrict Communicator",false /*true*/ /*XXX*/);
         //}
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
@@ -179,7 +179,7 @@ namespace MueLu {
           RCP<ParameterList> params = rcp(new ParameterList());
           params->set("printLoadBalancingInfo", true);
           std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") rebalanced:";
-          GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAii, ss2.str(), params);
+          GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAii, ss2.str(), params);
         }
 
       }  // rebalance matrix block A(i,i)
@@ -188,7 +188,7 @@ namespace MueLu {
         /*RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") not rebalanced:";
-        GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAii, ss2.str(), params);*/
+        GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAii, ss2.str(), params);*/
       }
 
       // fix striding information for rebalanced diagonal block rebAii
@@ -260,7 +260,7 @@ namespace MueLu {
             RCP<ParameterList> params = rcp(new ParameterList());
             params->set("printLoadBalancingInfo", true);
             std::stringstream ss4; ss4 << "A(" << curBlockId << "," << j << ") rebalanced:";
-            GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss4.str(), params);
+            GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss4.str(), params);
           }
         } // rebalance matrix block A(i,j)
         else {
@@ -268,7 +268,7 @@ namespace MueLu {
           /*RCP<ParameterList> params = rcp(new ParameterList());
           params->set("printLoadBalancingInfo", true);
           std::stringstream ss2; ss2 << "A(" << curBlockId << "," << j << ") not rebalanced:";
-          GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
+          GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
         }
 
         subBlockRebA[curBlockId*bA->Cols() + j] = rebAij;
@@ -301,7 +301,7 @@ namespace MueLu {
             RCP<ParameterList> params = rcp(new ParameterList());
             params->set("printLoadBalancingInfo", true);
             std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") rebalanced:";
-            GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);
+            GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);
           }
         } // rebalance matrix block A(1,0)
         else {
@@ -309,7 +309,7 @@ namespace MueLu {
           /*RCP<ParameterList> params = rcp(new ParameterList());
           params->set("printLoadBalancingInfo", true);
           std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") not rebalanced:";
-          GetOStream(Statistics0, 0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
+          GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
         }
 
         subBlockRebA[i*bA->Cols() + curBlockId] = rebAij;
@@ -416,7 +416,7 @@ namespace MueLu {
 
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it2 = rebalanceFacts_.begin(); it2 != rebalanceFacts_.end(); ++it2) {
-        GetOStream(Runtime0, 0) << "RebalanceBlockedAc: call rebalance factory " << (*it2).get() << ": " << (*it2)->description() << std::endl;
+        GetOStream(Runtime0) << "RebalanceBlockedAc: call rebalance factory " << (*it2).get() << ": " << (*it2)->description() << std::endl;
         (*it2)->CallBuild(coarseLevel);
       }
     }

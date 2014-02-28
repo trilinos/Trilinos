@@ -77,14 +77,14 @@ namespace MueLu {
 
   void Level::SetLevelID(int levelID) {
     if (levelID_ != -1 && levelID_ != levelID)
-      GetOStream(Warnings1, 0) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
+      GetOStream(Warnings1) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
 
     levelID_ = levelID;
   }
 
   void Level::SetPreviousLevel(const RCP<Level> & previousLevel) {
     if (previousLevel_ != Teuchos::null && previousLevel_ != previousLevel)
-      GetOStream(Warnings1, 0) << "Warning: Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
+      GetOStream(Warnings1) << "Warning: Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
 
     previousLevel_ = previousLevel;
   }
@@ -296,8 +296,8 @@ namespace MueLu {
             // were unable to do that, for instance, if the data was outstanding
             // request
             if (IsKey(factory, ename)) {
-              GetOStream(Errors, 0) << "Level::Clear found Internal data inconsistency" << std::endl;
-              print(GetOStream(Errors, 0), VERB_EXTREME);
+              GetOStream(Errors) << "Level::Clear found Internal data inconsistency" << std::endl;
+              print(GetOStream(Errors), VERB_EXTREME);
 
               throw Exceptions::RuntimeError("Level::Clear found Internal data inconsistency");
             }

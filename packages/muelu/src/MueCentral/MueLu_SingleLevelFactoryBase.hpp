@@ -107,7 +107,7 @@ namespace MueLu {
 #endif
       Build(requestedLevel);
 
-      GetOStream(Test,0) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
+      GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
     }
 
     //!

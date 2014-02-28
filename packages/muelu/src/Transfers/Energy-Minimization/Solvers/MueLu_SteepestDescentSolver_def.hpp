@@ -68,7 +68,7 @@ namespace MueLu {
     RCP<const Matrix> A = rcpFromRef(Aref);
     RCP<Matrix> AP, G;
 
-    Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2, 0);
+    Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
     Teuchos::ArrayRCP<const SC> D = Utils::GetMatrixDiagonal(*A);
 

@@ -161,7 +161,7 @@ namespace MueLu {
     // Logically, we construct enough data to query topological information of a rectangular grid
     Setup(comm, overlappedCoords, colMap);
 
-    GetOStream(Runtime0,0) << "Using brick size: " << bx_ << " x " << by_ << (nDim_ == 3 ? "x " + toString(bz_) : "") << std::endl;
+    GetOStream(Runtime0) << "Using brick size: " << bx_ << " x " << by_ << (nDim_ == 3 ? "x " + toString(bz_) : "") << std::endl;
 
     // Construct aggregates
     RCP<Aggregates> aggregates = rcp(new Aggregates(colMap));
@@ -246,7 +246,7 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    GetOStream(Statistics0, 0) << aggregates->description() << std::endl;
+    GetOStream(Statistics0) << aggregates->description() << std::endl;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
