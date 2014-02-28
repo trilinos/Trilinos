@@ -187,28 +187,6 @@ void Multiply(
   //Now import any needed remote rows and populate the Bview struct.
   MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter());
 
-
-  //If the result matrix C is not already FillComplete'd, we will do a
-  //preprocessing step to create the nonzero structure,
- /*
-  if (!C.isFillComplete()) {
-    CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsgraphbuilder(C.getRowMap());
-
-    //pass the graph-builder object to the multiplication kernel to fill in all
-    //the nonzero positions that will be used in the result matrix.
-    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder, true);
-
-    //now insert all of the nonzero positions into the result matrix.
-    insert_matrix_locations(crsgraphbuilder, C);
-
-
-    if (call_FillComplete_on_result) {
-      C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-      call_FillComplete_on_result = false;
-    }
-  }
-  */
-
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM All Multiply")));
 #endif
