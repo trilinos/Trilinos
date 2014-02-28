@@ -660,10 +660,17 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
     stride_type::assign( dst.m_stride , 0 );
     dst.m_ptr_on_device = 0 ;
-
-    if ( range.first < range.second ) {
-      assert_shape_bounds( src.m_shape , 8 , range.first ,      0,0,0,0,0,0,0);
-      assert_shape_bounds( src.m_shape , 8 , range.second - 1 , 0,0,0,0,0,0,0);
+    if ( range.first == range.second ) {
+      shape_type::assign( dst.m_shape, range.second - range.first ,
+                          src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
+                          src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+      stride_type::assign( dst.m_stride , src.m_stride.value );
+    }
+    if ( (range.first < range.second) || (src.capacity()==0) ) {
+      if (src.capacity()>0) {
+        assert_shape_bounds( src.m_shape , 8 , range.first ,      0,0,0,0,0,0,0);
+        assert_shape_bounds( src.m_shape , 8 , range.second - 1 , 0,0,0,0,0,0,0);
+      }
 
       shape_type::assign( dst.m_shape, range.second - range.first ,
                           src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
@@ -706,10 +713,17 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_shape.N1      = 0 ;
     dst.m_stride.value  = 0 ;
     dst.m_ptr_on_device = 0 ;
+    if ( (range0.first == range0.second) || (range1.first == range1.second) ) {
+      dst.m_shape.N0 = range0.second - range0.first ;
+      dst.m_shape.N1 = range1.second - range1.first ;
+      dst.m_stride   = src.m_stride ;
+    }
 
-    if ( range0.first < range0.second && range1.first < range1.second ) {
-      assert_shape_bounds( src.m_shape , 2 , range0.first , range1.first );
-      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , range1.second - 1 );
+    if ( (range0.first < range0.second && range1.first < range1.second) || (src.capacity()==0) ) {
+      if (src.capacity()>0) {
+        assert_shape_bounds( src.m_shape , 2 , range0.first , range1.first );
+        assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , range1.second - 1 );
+      }
 
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = range1.second - range1.first ;
@@ -758,9 +772,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_stride.value  = 0 ;
     dst.m_ptr_on_device = 0 ;
 
-    if ( range1.first < range1.second ) {
-      assert_shape_bounds( src.m_shape , 2 , 0 , range1.first );
-      assert_shape_bounds( src.m_shape , 2 , src.m_shape.N0 - 1 , range1.second - 1 );
+    if( range1.first == range1.second ) {
+      dst.m_shape.N0 = src.m_shape.N0 ;
+      dst.m_shape.N1 = range1.second - range1.first ;
+      dst.m_stride   = src.m_stride ;
+    }
+    if ( (range1.first < range1.second) || (src.capacity()==0) ) {
+      if (src.capacity()>0) {
+        assert_shape_bounds( src.m_shape , 2 , 0 , range1.first );
+        assert_shape_bounds( src.m_shape , 2 , src.m_shape.N0 - 1 , range1.second - 1 );
+      }
 
       dst.m_shape.N0 = src.m_shape.N0 ;
       dst.m_shape.N1 = range1.second - range1.first ;
@@ -810,10 +831,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_stride.value  = 0 ;
     dst.m_ptr_on_device = 0 ;
 
-    if ( range0.first < range0.second ) {
-      assert_shape_bounds( src.m_shape , 2 , range0.first , 0 );
-      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , src.m_shape.N1 - 1 );
-
+    if( range0.first == range0.second ) {
+      dst.m_shape.N0 = range0.second - range0.first ;
+      dst.m_shape.N1 = src.m_shape.N1 ;
+      dst.m_stride   = src.m_stride ;
+    }
+    if ( (range0.first < range0.second) || (src.capacity()==0) ) {
+      if (src.capacity()>0) {
+        assert_shape_bounds( src.m_shape , 2 , range0.first , 0 );
+        assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , src.m_shape.N1 - 1 );
+      }
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = src.m_shape.N1 ;
       dst.m_stride   = src.m_stride ;
