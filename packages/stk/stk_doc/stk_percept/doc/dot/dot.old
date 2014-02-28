@@ -1,3 +1,0 @@
-#!/bin/sh
-#/usr/netpub/graphviz-2.26.3/bin/dot -Knop $*
-dot -Knop $*
