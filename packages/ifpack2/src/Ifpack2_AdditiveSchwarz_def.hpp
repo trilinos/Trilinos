@@ -498,7 +498,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
     else {
-      Xtmp = rcp (new MV (X));
+      Xtmp = rcp (new MV (createCopy(X)));
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         LocalDistributedMap_.is_null (), std::logic_error,
@@ -577,8 +577,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Inverse_->apply (*OverlappingX, *OverlappingY);
       }
       else {
-        MV ReorderedX (*OverlappingX);
-        MV ReorderedY (*OverlappingY);
+        MV ReorderedX = createCopy(*OverlappingX);
+        MV ReorderedY = createCopy(*OverlappingY);
         ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
         Inverse_->apply (ReorderedX, ReorderedY);
         ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);

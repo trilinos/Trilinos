@@ -405,7 +405,7 @@ applyImpl (const MV& X,
       Y_tmp = rcpFromRef (Y);
     }
     else {
-      Y_tmp = rcp (new MV (X)); // constructor copies X
+      Y_tmp = rcp (new MV (createCopy(X))); // constructor copies X
       if (alpha != STS::one ()) {
         Y_tmp->scale (alpha);
       }

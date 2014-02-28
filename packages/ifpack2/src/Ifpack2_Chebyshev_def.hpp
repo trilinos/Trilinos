@@ -542,7 +542,7 @@ applyImpl (const MV& X,
   // worry about caching Y_org.
   RCP<MV> Y_orig;
   if (beta != zero) {
-    Y_orig = rcp (new MV (Y));
+    Y_orig = rcp (new MV (createCopy(Y)));
   }
 
   // If X and Y point to the same memory location, we need to use a
@@ -554,7 +554,7 @@ applyImpl (const MV& X,
   RCP<const MV> X_copy;
   bool copiedInput = false;
   if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = rcp (new MV (X));
+    X_copy = rcp (new MV (createCopy(X)));
     copiedInput = true;
   }
   else {
@@ -569,7 +569,7 @@ applyImpl (const MV& X,
   if (alpha != one) {
     RCP<MV> X_copy_nonConst = rcp_const_cast<MV> (X_copy);
     if (! copiedInput) {
-      X_copy_nonConst = rcp (new MV (X));
+      X_copy_nonConst = rcp (new MV (createCopy(X)));
       copiedInput = true;
     }
     X_copy_nonConst->scale (alpha);
