@@ -650,7 +650,7 @@ private:
 #endif
 
   // A private method to initialize the _sendMessages and
-  // _recvMessages arrays.  Should be called by each constructor.
+  // _recvMessages arrays.
   void initializeMessages();
 };
 
@@ -673,8 +673,8 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
   _mdArrayView(),
   _nextAxis(0),
   _sliceBndryPad(mdMap->getNumDims()),
-  _sendMessages(mdMap->getNumDims()),
-  _recvMessages(mdMap->getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
@@ -689,9 +689,6 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -709,8 +706,8 @@ MDVector(const Teuchos::RCP<
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
   _sliceBndryPad(mdMap->getNumDims()),
-  _sendMessages(mdMap->getNumDims()),
-  _recvMessages(mdMap->getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
@@ -728,9 +725,6 @@ MDVector(const Teuchos::RCP<
       "Axis " << axis << ": MDMap dimension = " << _mdMap->getLocalDim(axis)
       << ", MDArray dimension = " << _mdArrayRcp.dimension(axis));
   }
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -747,14 +741,11 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source) :
   _mdArrayView(source._mdArrayView),
   _nextAxis(0),
   _sliceBndryPad(source._sliceBndryPad),
-  _sendMessages(_mdMap->getNumDims()),
-  _recvMessages(_mdMap->getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -775,8 +766,8 @@ MDVector(const TeuchosCommRCP teuchosComm,
   _mdArrayView(),
   _nextAxis(0),
   _sliceBndryPad(_mdMap->getNumDims()),
-  _sendMessages(_mdMap->getNumDims()),
-  _recvMessages(_mdMap->getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
@@ -791,9 +782,6 @@ MDVector(const TeuchosCommRCP teuchosComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -814,8 +802,8 @@ MDVector(const MDCommRCP mdComm,
   _mdArrayView(),
   _nextAxis(0),
   _sliceBndryPad(_mdMap->getNumDims()),
-  _sendMessages(_mdMap->getNumDims()),
-  _recvMessages(_mdMap->getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
@@ -830,9 +818,6 @@ MDVector(const MDCommRCP mdComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -851,8 +836,8 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
   _sliceBndryPad(parent.getNumDims()),
-  _sendMessages(parent.getNumDims()),
-  _recvMessages(parent.getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
@@ -865,9 +850,6 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   // Take a slice of this MDVector's MDArrayView
   MDArrayView< Scalar > newView(_mdArrayView, axis, index);
   _mdArrayView = newView;
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -887,8 +869,8 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
   _sliceBndryPad(parent.getNumDims()),
-  _sendMessages(parent.getNumDims()),
-  _recvMessages(parent.getNumDims()),
+  _sendMessages(),
+  _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
@@ -902,9 +884,6 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   // Take a slice of this MDVector's MDArrayView
   MDArrayView< Scalar > newView(_mdArrayView, axis, slice);
   _mdArrayView = newView;
-
-  // Initialize the communication padding messages
-  initializeMessages();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1688,6 +1667,11 @@ startUpdateCommPad(int axis)
 {
   // #define DOMI_MDVECTOR_OUTPUT_UPDATECOMMPAD
 
+  // Initialize the _sendMessages and _recvMessages members on the
+  // first call to startUpdateCommPad(int).
+  if (_sendMessages.empty())
+    initializeMessages();
+
   int rank    = _teuchosComm->getRank();
   int numProc = _teuchosComm->getSize();
   int tag;
@@ -1836,6 +1820,9 @@ initializeMessages()
   Teuchos::Array<int> subsizes(ndims);
   Teuchos::Array<int> starts(ndims);
   MessageInfo messageInfo;
+
+  _sendMessages.resize(ndims);
+  _recvMessages.resize(ndims);
 
 #ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
   std::stringstream msg;
