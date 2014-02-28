@@ -81,8 +81,8 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-	bool useRemotePIDs,
-	Teuchos::Array<int> & remotePIDs,
+        bool useRemotePIDs,
+        Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
     using Teuchos::null;
@@ -181,12 +181,12 @@ namespace Tpetra {
     Teuchos::Array<int> dummy;
     init (source, target, false, dummy, plist);
   }
-  
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-	  Teuchos::Array<int> & remotePIDs) :
+          Teuchos::Array<int> & remotePIDs) :
     debug_ (tpetraImportDebugDefault)
   {
     init (source, target, true, remotePIDs, Teuchos::null);
@@ -521,10 +521,10 @@ namespace Tpetra {
 
     // Sanity checks
     TEUCHOS_TEST_FOR_EXCEPTION((!useRemotePIDs && (userRemotePIDs.size() > 0)),std::invalid_argument,
-			       "Tpetra::Import::setupExport: remotePIDs are non-empty but their use has not been requested");
-    TEUCHOS_TEST_FOR_EXCEPTION((userRemotePIDs.size() > 0) && (remoteGIDs.size() != userRemotePIDs.size()),std::invalid_argument, 
-			       "Tpetra::Import::setupExport: remotePIDs must either be of size zero or match the size of remoteGIDs");
-			     
+                               "Tpetra::Import::setupExport: remotePIDs are non-empty but their use has not been requested");
+    TEUCHOS_TEST_FOR_EXCEPTION((userRemotePIDs.size() > 0) && (remoteGIDs.size() != userRemotePIDs.size()),std::invalid_argument,
+                               "Tpetra::Import::setupExport: remotePIDs must either be of size zero or match the size of remoteGIDs");
+
     // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
     // the process ID of the process that owns that GID.
     ArrayView<GO> remoteGIDsView = remoteGIDs ();
@@ -661,79 +661,6 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-  Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setUnionNaiveImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const
-  {
-    // mfh 22 Apr 2013: We plan to optimize this in the future, but
-    // provide an unoptimized implementation for now to allow
-    // development to proceed.
-    typedef Tpetra::global_size_t GST;
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::Comm;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef Import<LO, GO, Node> import_type;
-
-    RCP<const map_type> srcMap = this->getSourceMap ();
-    RCP<const map_type> tgtMap1 = this->getTargetMap ();
-    RCP<const map_type> tgtMap2 = rhs.getTargetMap ();
-    RCP<const Comm<int> > comm = srcMap->getComm ();
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
-      "Tpetra::Import::setUnion: The source Map of the input Import must be the "
-      "same as (in the sense of Map::isSameAs) the source Map of this Import.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! Details::congruent (* (tgtMap1->getComm ()), * (tgtMap2->getComm ())),
-      std::invalid_argument, "Tpetra::Import::setUnion: "
-      "The target Maps must have congruent communicators.");
-#endif // HAVE_TPETRA_DEBUG
-
-    ArrayView<const GO> gids1 = tgtMap1->getNodeElementList ();
-    ArrayView<const GO> gids2 = tgtMap2->getNodeElementList ();
-
-    // Union needs sorted sequences.
-    // Only copy a view if it's not sorted.
-    Array<GO> gids1Copy, gids2Copy;
-    if (! SortDetails::isAlreadySorted (gids1.begin (), gids1.end ())) {
-      gids1Copy.reserve (gids1.size ());
-      gids1Copy.assign (gids1.begin (), gids1.end ());
-      std::sort (gids1Copy.begin (), gids1Copy.end ());
-      gids1 = gids1Copy ();
-    }
-    if (! SortDetails::isAlreadySorted (gids2.begin (), gids2.end ())) {
-      gids2Copy.reserve (gids2.size ());
-      gids2Copy.assign (gids2.begin (), gids2.end ());
-      std::sort (gids2Copy.begin (), gids2Copy.end ());
-      gids2 = gids2Copy ();
-    }
-    // Compute union.  Reservation is only a reasonable guess.
-    Array<GO> gidsUnion;
-    gidsUnion.reserve (std::max (gids1.size (), gids2.size ()));
-    std::set_union (gids1.begin (), gids1.end (), gids2.begin (), gids2.end (),
-                    std::back_inserter (gidsUnion));
-    // Find the index base, which must also be the Map's global min
-    // GID.  This is inefficient, because we could have done that
-    // while computing the set union above.
-    typename Array<GO>::const_iterator minPos =
-      std::min_element (gidsUnion.begin (), gidsUnion.end ());
-    const GO myMinGid = (minPos == gidsUnion.end ()) ? 0 : *minPos;
-    GO globalMinGid = 0;
-    reduceAll<int, GO> (*comm, REDUCE_MIN, myMinGid, outArg (globalMinGid));
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    RCP<const map_type> unionMap =
-      rcp (new map_type (INVALID, gidsUnion (), globalMinGid,
-                         comm, srcMap->getNode ()));
-    return rcp (new import_type (srcMap, unionMap));
-  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
@@ -1118,6 +1045,9 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
       // Look up the remote GIDs' PIDs in the source Map.
+      //
+      // FIXME (mfh 28 Feb 2014) Call Tpetra::Import_Util::getPids(),
+      // early on, before the union.
       remotePIDsUnion.resize (numRemoteIDsUnion);
       const LookupStatus lookup =
         srcMap->getRemoteIndexList (remoteGIDsUnion (), remotePIDsUnion ());
@@ -1395,13 +1325,13 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  createRemoteOnlyImport(const Teuchos::RCP<const map_type>& remoteTarget) const 
+  createRemoteOnlyImport(const Teuchos::RCP<const map_type>& remoteTarget) const
   {
     size_t NumRemotes = getNumRemoteIDs();
     // Sanity Check
     if(NumRemotes != remoteTarget->getNodeNumElements())
       throw std::runtime_error("createRemoteOnlyImporter: remoteTarget map ID count doesn't match.");
-      
+
     // Compute the new Remote LIDs
     Teuchos::ArrayView<const LocalOrdinal> oldRemoteLIDs = getRemoteLIDs();
     Teuchos::Array<LocalOrdinal>           newRemoteLIDs(NumRemotes);
@@ -1410,7 +1340,7 @@ namespace Tpetra {
 
       // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
       if(i>0 && newRemoteLIDs[i] < newRemoteLIDs[i-1])
-	throw std::runtime_error("createRemoteOnlyImporter: this and remoteTarget order don't match.");
+        throw std::runtime_error("createRemoteOnlyImporter: this and remoteTarget order don't match.");
     }
 
     // Copy ExportPIDs and such
@@ -1423,16 +1353,16 @@ namespace Tpetra {
     Distributor newDistor(getDistributor());
 
     newImport = Teuchos::rcp(new Import<LocalOrdinal,GlobalOrdinal,Node>(getSourceMap(),remoteTarget,
-									 Teuchos::as<size_t>(0),
-									 dummy,
-									 dummy,
-									 newRemoteLIDs,
-									 newExportLIDs,
-									 newExportPIDs,
-									 newDistor));
+                                                                         Teuchos::as<size_t>(0),
+                                                                         dummy,
+                                                                         dummy,
+                                                                         newRemoteLIDs,
+                                                                         newExportLIDs,
+                                                                         newExportPIDs,
+                                                                         newDistor));
     return newImport;
   }
-  
+
 } // namespace Tpetra
 
 // Explicit instantiation macro.

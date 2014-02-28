@@ -199,11 +199,11 @@ namespace Tpetra {
     ///   multiply owned (overlapping) distribution.
     ///
     /// \param remotePIDs [in] Owning PIDs corresponding to the remoteGIDs.
-    /// If this information is available one can reduce the cost of the Import 
+    /// If this information is available one can reduce the cost of the Import
     /// constructor.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-	    Teuchos::Array<int> & remotePIDs);
+            Teuchos::Array<int> & remotePIDs);
 
     /// \brief Copy constructor.
     ///
@@ -323,7 +323,7 @@ namespace Tpetra {
 
     /// \brief Returns an importer that contains only the remote entries of this
     ///
-    /// Returns an importer that contains only the remote entries of this importer.  
+    /// Returns an importer that contains only the remote entries of this importer.
     /// It is expected that remoteTarget represents such a map.
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const;
@@ -382,8 +382,8 @@ namespace Tpetra {
     void
     init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-	  bool useRemotePIDs,
-	  Teuchos::Array<int> & remotePIDs,
+          bool useRemotePIDs,
+          Teuchos::Array<int> & remotePIDs,
           const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute the necessary receives for the Import.
@@ -470,10 +470,6 @@ namespace Tpetra {
             Distributor& distributor,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
-
-    //! Naive but correct implementation of setUnion().
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-    setUnionNaiveImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
     //! Optimized implementation of setUnion() (NOT IMPLEMENTED YET).
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
