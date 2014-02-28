@@ -1,23 +1,31 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  HybridPlatformTest
-  SOURCES
+# These tests require double, so disable if cuda is enabled
+# but cuda-double is not enabled
+SET(do_hybrid_tests ON)
+IF( Kokkos_ENABLE_Cuda AND NOT KokkosClassic_ENABLE_CUDA_DOUBLE )
+  SET(do_hybrid_tests OFF)
+ENDIF()
+IF( do_hybrid_tests )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     HybridPlatformTest
-  # ARGS 
-  COMM mpi # serial
-  STANDARD_PASS_OUTPUT
-)
+    SOURCES
+      HybridPlatformTest
+    # ARGS
+    COMM mpi # serial
+    STANDARD_PASS_OUTPUT
+    )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  HybridPlatformTutorial
-  SOURCES
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     HybridPlatformTutorial
-  # ARGS 
-  COMM mpi # serial
-  STANDARD_PASS_OUTPUT
-)
+    SOURCES
+      HybridPlatformTutorial
+    # ARGS
+    COMM mpi # serial
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files1
   SOURCE_DIR ${Tpetra_MACHINE_XML_FILE_DIR}
