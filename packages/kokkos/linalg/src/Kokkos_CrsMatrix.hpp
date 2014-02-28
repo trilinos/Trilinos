@@ -2317,7 +2317,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
     aVector a;
     const int numVecs = x.dimension_1();
 
-    if (s_a == -1) {
+    if ((s_a < 1) && (s_a != 0)) {
       return MV_Multiply (a, y, a, A, x, 0, -1);
     } else if (s_a == 1) {
       return MV_Multiply (a, y, a, A, x, 0, 1);
