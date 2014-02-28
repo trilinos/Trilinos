@@ -1680,9 +1680,13 @@ MpiComm<Ordinal>::split(const int color, const int key) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
-    return rcp(new MpiComm<Ordinal>(
-                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
-                                     opaqueWrapper(newComm,MPI_Comm_free))));
+    RCP<const OpaqueWrapper<MPI_Comm> > wrapped =
+      opaqueWrapper<MPI_Comm> (newComm, details::safeCommFree);
+    // Since newComm's raw MPI_Comm is the result of an
+    // MPI_Comm_split, its messages cannot collide with those of any
+    // other MpiComm.  This means we can assign its tag without an
+    // MPI_Bcast.
+    return rcp (new MpiComm<Ordinal> (wrapped, minTag_));
   }
 }
 
@@ -1748,7 +1752,11 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
     typedef OpaqueWrapper<MPI_Comm> ow_type;
     RCP<const ow_type> wrapper =
       rcp_implicit_cast<const ow_type> (opaqueWrapper (newComm, safeCommFree));
-    return rcp (new MpiComm<Ordinal> (wrapper));
+    // Since newComm's raw MPI_Comm is the result of an
+    // MPI_Comm_create, its messages cannot collide with those of any
+    // other MpiComm.  This means we can assign its tag without an
+    // MPI_Bcast.
+    return rcp (new MpiComm<Ordinal> (wrapper, minTag_));
   }
 }
 
