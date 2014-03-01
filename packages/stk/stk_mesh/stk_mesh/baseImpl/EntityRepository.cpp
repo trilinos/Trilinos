@@ -60,6 +60,8 @@ EntityRepository::internal_create_entity( const EntityKey & key )
     inserted_new_entity = true;
   }
 
+  DiagIfWatching(LOG_ENTITY, key, "Entity will be at offset: " << iter->second.local_offset());
+
   return std::make_pair(iter->second, inserted_new_entity);
 }
 
