@@ -84,7 +84,7 @@ namespace MueLu {
     Monitor m(*this, "Contact Map transfer factory");
 
     if (fineLevel.IsAvailable(mapName_, mapFact_.get())==false) {
-        GetOStream(Runtime0, 0) << "MapTransferFactory::Build: User provided map " << mapName_ << " not found in Level class." << std::endl;
+        GetOStream(Runtime0) << "MapTransferFactory::Build: User provided map " << mapName_ << " not found in Level class." << std::endl;
     }
 
     // fetch map extractor from level

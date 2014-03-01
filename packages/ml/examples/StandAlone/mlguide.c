@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
 #endif
    for (i = 0; i < 129; i++) sol[i] = 0.;
    for (i = 0; i < 129; i++) rhs[i] = 2.;
- 
+
 
    ML_Create         (&ml_object, N_grids);
 
@@ -128,7 +128,7 @@ int user_smoothing(ML_Smoother *data, int x_length, double x[], int rhs_length, 
    Amat = (ML_Operator *) ML_Get_MySmootherData(smoo);
    ML_Operator_Apply(Amat, x_length, x, rhs_length, ap);
    ML_Operator_Get_Diag(Amat, x_length, &diag);
-   
+
    for (i = 0; i < x_length; i++) x[i] = x[i] + omega*(rhs[i] - ap[i])/diag[i];
 
    return 0;

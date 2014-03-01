@@ -73,7 +73,7 @@ struct result_struct {
   int niters;
   result_struct(double add, double dot, double matvec,int niter,double res):
     addtime(add),dottime(dot),matvectime(matvec),
-    niters(niter),final_residual(res) {};
+    final_residual(res),niters(niter) {};
 };
 
 

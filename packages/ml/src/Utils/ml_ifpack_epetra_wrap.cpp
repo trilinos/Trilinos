@@ -8,10 +8,10 @@
 #if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA)
 #include "Ifpack_config.h"
 #include "ml_epetra_utils.h"
-#include "Epetra_Map.h" 
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_VbrMatrix.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
@@ -32,7 +32,7 @@
 
 using namespace ML_Epetra;
 
-namespace ML_Epetra{ 
+namespace ML_Epetra{
 
   Epetra_Operator* ML_Gen_Smoother_Ifpack_Epetra(const Epetra_Operator *A,const Epetra_Vector *InvDiagonal, Teuchos::ParameterList & List,std::string printMsg,bool verbose){
   /* Variables */
@@ -71,10 +71,10 @@ namespace ML_Epetra{
     int MaximumIterations = List.get("eigen-analysis: max iters", 10);
     std::string EigenType_ = List.get("eigen-analysis: type", "cg");
     double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
-    double alpha = List.get("chebyshev: alpha",30.0001);  
+    double alpha = List.get("chebyshev: alpha",30.0001);
     Epetra_Vector *InvDiagonal_=0;
 
-    /* Block Chebyshev stuff if needed */    
+    /* Block Chebyshev stuff if needed */
     int  MyCheby_nBlocks=     List.get("smoother: Block Chebyshev number of blocks",0);
     int* MyCheby_blockIndices=List.get("smoother: Block Chebyshev block list",(int*)0);
     int* MyCheby_blockStarts= List.get("smoother: Block Chebyshev block starts",(int*)0);
@@ -88,13 +88,13 @@ namespace ML_Epetra{
       PermuteList.set("block start index",MyCheby_blockStarts);
       //        if(is_lid) PermuteList.set("block entry lids",Blockids_);
       //NTS: Add LID support
-      PermuteList.set("block entry gids",MyCheby_blockIndices);        
+      PermuteList.set("block entry gids",MyCheby_blockIndices);
       PermuteList.set("blockdiagmatrix: list",BlockList);
-      
+
       IFPACKList.set("chebyshev: use block mode",true);
       IFPACKList.set("chebyshev: block list",PermuteList);
       IFPACKList.set("chebyshev: eigenvalue max iterations",10);
-      
+
       // EXPERIMENTAL: Cheby-NE
       IFPACKList.set("chebyshev: solve normal equations",MyCheby_NE);
     }
@@ -106,19 +106,19 @@ namespace ML_Epetra{
 	const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
 	if(!Acrs) return 0;
 	allocated_inv_diagonal=true;
-	InvDiagonal_ = new Epetra_Vector(Acrs->RowMap());  
+	InvDiagonal_ = new Epetra_Vector(Acrs->RowMap());
 	Acrs->ExtractDiagonalCopy(*InvDiagonal_);
 	for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
 	  if ((*InvDiagonal_)[i] != 0.0)
-	    (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];   
+	    (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];
       }
 
       /* Do the eigenvalue estimation*/
       if (EigenType_ == "power-method") Ifpack_Chebyshev::PowerMethod(*A,*InvDiagonal_,MaximumIterations,lambda_max);
       else if(EigenType_ == "cg") Ifpack_Chebyshev::CG(*A,*InvDiagonal_,MaximumIterations,lambda_min,lambda_max);
       else ML_CHK_ERR(0); // not recognized
-    
-      lambda_min=lambda_max / alpha;      
+
+      lambda_min=lambda_max / alpha;
 
       /* Setup the Smoother's List*/
       IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
@@ -127,7 +127,7 @@ namespace ML_Epetra{
       IFPACKList.set("chebyshev: operator inv diagonal", InvDiagonal_);
     }
 
-    /* Setup the Smoother's List*/    
+    /* Setup the Smoother's List*/
     IFPACKList.set("chebyshev: ratio eigenvalue", alpha);
     IFPACKList.set("chebyshev: degree", Sweeps);
     IFPACKList.set("chebyshev: zero starting solution",false);
@@ -143,7 +143,7 @@ namespace ML_Epetra{
     if(SmooType=="IFPACK-Block Chebyshev"){
       lambda_min=SmootherC_->GetLambdaMin();
       lambda_max=SmootherC_->GetLambdaMax();
-    }    
+    }
 
     // Smoother Info Output
     if(verbose && !A->Comm().MyPID()){
@@ -173,7 +173,7 @@ namespace ML_Epetra{
   /***           Point Relaxation             ***/
   /**********************************************/
   else if(SmooType=="Gauss-Seidel" || SmooType=="symmetric Gauss-Seidel" || SmooType=="Jacobi"
-	  || SmooType=="point relaxation stand-alone" || SmooType=="point relaxation" ){      
+	  || SmooType=="point relaxation stand-alone" || SmooType=="point relaxation" ){
     const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
     if(!Acrs) return 0;
     std::string MyIfpackType="point relaxation stand-alone";
@@ -191,7 +191,7 @@ namespace ML_Epetra{
       std::cout << printMsg << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
 	   << Sweeps << ",omega=" << omega <<  ")" <<std::endl;
     }
-    	
+
 #ifdef HAVE_IFPACK_DYNAMIC_FACTORY
     Ifpack_DynamicFactory Factory;
 #else
@@ -207,8 +207,8 @@ namespace ML_Epetra{
   /**********************************************/
   /***           Block Relaxation             ***/
   /**********************************************/
-  else if(SmooType=="block Gauss-Seidel" || SmooType=="symmetric block Gauss-Seidel" || SmooType=="block Jacobi" 
-	  || SmooType=="block relaxation stand-alone" || SmooType=="block relaxation" ){      
+  else if(SmooType=="block Gauss-Seidel" || SmooType=="symmetric block Gauss-Seidel" || SmooType=="block Jacobi"
+	  || SmooType=="block relaxation stand-alone" || SmooType=="block relaxation" ){
     const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
     if(!Acrs) return 0;
     std::string MyIfpackType="block relaxation stand-alone";
@@ -221,7 +221,7 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
     IFPACKList.set("relaxation: zero starting solution",false);
-   
+
     if(verbose && !A->Comm().MyPID()){
       std::cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
 	   << Sweeps << ",omega=" << omega << ")" <<std::endl;
@@ -253,7 +253,7 @@ namespace ML_Epetra{
     double MyIfpackRT = List.get("smoother: ifpack relative threshold", 1.0);
     double MyIfpackAT = List.get("smoother: ifpack absolute threshold", 0.0);
     IFPACKList.set("ILU: sweeps",Sweeps);
-    
+
     // Set the fact: LOF options, but only if they're not set already... All this sorcery is because level-of-fill
     // is an int for ILU and a double for ILUT.  Lovely.
     if(SmooType=="ILUT" || SmooType=="ICT"){
@@ -266,7 +266,7 @@ namespace ML_Epetra{
       IFPACKList.set("fact: level-of-fill", (int) IFPACKList.get("fact: level-of-fill",(int)MyLOF));
       MyLOF=IFPACKList.get("fact: level-of-fill",(int)MyLOF);
     }
-    
+
     IFPACKList.set("fact: relative threshold", MyIfpackRT);
     IFPACKList.set("fact: absolute threshold", MyIfpackAT);
 

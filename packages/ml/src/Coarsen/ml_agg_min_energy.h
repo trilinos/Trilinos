@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_AGG_MIN_ENERGY
 #define ML_AGG_MIN_ENERGY
@@ -10,7 +10,7 @@
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif

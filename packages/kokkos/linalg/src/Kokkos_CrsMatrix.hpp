@@ -1675,7 +1675,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
     if (dobeta==2) {
             MV_MulScalar(y,betav,y);
     } else {
-            MV_MulScalar(y,dobeta,y);
+            MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
     }
     return;
   } else {
@@ -1959,7 +1959,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       if (dobeta==2) {
               MV_MulScalar(y,betav,y);
       } else {
-              MV_MulScalar(y,dobeta,y);
+              MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
       }
       return;
     } else {
@@ -2317,7 +2317,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
     aVector a;
     const int numVecs = x.dimension_1();
 
-    if (s_a == -1) {
+    if ((s_a < 1) && (s_a != 0)) {
       return MV_Multiply (a, y, a, A, x, 0, -1);
     } else if (s_a == 1) {
       return MV_Multiply (a, y, a, A, x, 0, 1);

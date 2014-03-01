@@ -21,7 +21,7 @@
 /* data structure to hold getrow function                                    */
 /* ------------------------------------------------------------------------- */
 
-struct ML_AGG_Matrix_Context 
+struct ML_AGG_Matrix_Context
 {
    ML_Operator *Amat;
    double      omega;
@@ -35,7 +35,7 @@ struct ML_AGG_Matrix_Context
 
 struct ML_Field_Of_Values
 {
-  double real_max;                          
+  double real_max;
   double imag_max;
   double eta;
   int poly_order;
@@ -48,7 +48,7 @@ struct ML_Field_Of_Values
 };
 
 
-  
+
 /* ************************************************************************* */
 /* functions defined here                                                    */
 /* ************************************************************************* */
@@ -63,7 +63,7 @@ extern "C" {
 /* functions called by users                                                 */
 /* ------------------------------------------------------------------------- */
 
-extern int ML_Gen_MGHierarchy_UsingAggregation(ML *, int start, 
+extern int ML_Gen_MGHierarchy_UsingAggregation(ML *, int start,
                        int increment_or_decrement, ML_Aggregate *);
 
 extern int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
@@ -99,14 +99,14 @@ extern int  ML_AGG_Extract_Diag( ML_Operator *, double *diag);
 extern void ML_AGG_Matrix_Context_Clean(void *data);
 extern int  ML_AGG_DD_Solve(void *data, int, double *, int, double *);
 extern int  ML_AGG_Extract_Matrix(ML_Operator *mat, int *, int **, double ***);
-extern int  ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec, 
+extern int  ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec,
 				   int leng2, double *invec);
 extern int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml );
 extern int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 								  ML_Aggregate *ag);
 
-extern int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows, 
-               int requested_rows[], int allocated_space, int columns[], 
+extern int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows,
+               int requested_rows[], int allocated_space, int columns[],
                double values[], int row_lengths[]);
 extern int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
 			int blk_size, int );
@@ -117,7 +117,7 @@ extern int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         int (*user_gen_restriction)(ML *, int, int, void *),
         int (*user_gen_prolongator)(ML *, int, int, void *),
         void *user_data);
-extern int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start, 
+extern int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
 						       int increment_or_decrement,
 						       ML_Aggregate *ag);
 extern int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data);

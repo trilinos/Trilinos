@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Current revision: $Revision$
@@ -34,7 +34,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* A = CreateCrsMatrix("Star2D", Map, GaleriList);
-    
+
   Epetra_Vector LHS(*Map); LHS.Random();
   Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
   ParameterList MLList;
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   MLList.set("ML output", 10);
   MLList.set("max levels",5);
   MLList.set("increasing or decreasing","increasing");
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Chebyshev");
 #endif
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   MLPrec->PrintUnused(0);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
   double residual;
   LHS.Norm2(&residual);
-  
+
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
   }
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 

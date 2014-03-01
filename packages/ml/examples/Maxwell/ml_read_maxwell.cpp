@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 //@HEADER
 /*#############################################################################
@@ -27,7 +27,7 @@
    In this case, invoke the example as follows:
 
       ml_read_maxwell.exe Ke T Kn [edge map] [node map]
-  
+
    where
 
       Ke is the edge FE matrix (curlcurl + mass)
@@ -45,7 +45,7 @@
    the example as follows:
 
       ml_read_maxwell.exe S M T Kn [edge map] [node map]
-  
+
    where
 
       S is the curl curl matrix
@@ -54,8 +54,8 @@
       Kn is the nodal FE matrix
       edge map (optional)
       node map (optional)
-  
-   Matrices are read from file via the local function 
+
+   Matrices are read from file via the local function
 
      int MatrixMarketFileToCrsMatrix(const char *filename,
                                   const Epetra_Map & rowMap,
@@ -107,7 +107,7 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
   return(EpetraExt::MatrixMarketFileToCrsMatrixHandle(filename, A->Comm(), A,
                                                       &rowMap,NULL,
                                                       &rangeMap, &domainMap));
-} 
+}
 
 ML_Comm *mlcomm;
 
@@ -194,9 +194,9 @@ int main(int argc, char *argv[])
     FILE *handle;
     int M,N,NZ;
 #ifdef CurlCurlAndMassAreSeparate
-     handle = fopen(argv[3],"r"); 
+     handle = fopen(argv[3],"r");
 #else
-     handle = fopen(argv[2],"r"); 
+     handle = fopen(argv[2],"r");
 #endif
     if (handle == 0) EPETRA_CHK_ERR(-1); // file not found
     // Strip off header lines (which start with "%")
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
     if(sscanf(line,"%d %d %d", &M, &N, &NZ)==0) {if (handle!=0) fclose(handle);}
     fclose(handle);
     edgeMap = new Epetra_Map(M,0,Comm);
-    nodeMap = new Epetra_Map(N,0,Comm); 
+    nodeMap = new Epetra_Map(N,0,Comm);
   }
 
   // ===================================================== //
@@ -355,9 +355,9 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-        
+
   return 0;
-        
+
 } //main
 
 #else
@@ -391,7 +391,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 

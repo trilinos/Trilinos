@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -24,7 +24,7 @@
 /* generate Poisson matrix in CSR format                                */
 /* ******************************************************************** */
 
-int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes) 
+int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
 {
    int    i, j, k, m, nprocs, nprocs_1d, mypid, mypid_x, mypid_y;
    int    nodeoffset, xoffset, yoffset, index, nbytes;
@@ -41,7 +41,7 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    comm   = solver->comm;
    MPI_Comm_rank(comm, &mypid);
    MPI_Comm_size(comm, &nprocs);
-   
+
    nprocs_1d = (int) pow( (double) nprocs, 0.50001 );
    if ( nprocs_1d * nprocs_1d != nprocs ) {
       printf("PDE_GenMat : nprocs should be a square (%d).\n",nprocs_1d);
@@ -61,7 +61,7 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
       exit(-1);
    }
    nnode_local = nnode_part_1d * nnode_part_1d;
-  
+
    nbytes = nnode_part_1d * 3 * sizeof(int*);
 #ifdef ML_CPP
    ML_memory_alloc((void**) &square, (unsigned int) nbytes, "AP1");
@@ -89,7 +89,7 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
             nodeoffset = ((mypid_y-1+j)*nprocs_1d + mypid_x-1+i) * nnode_local;
          for ( k = 0; k < nnode_part_1d; k++ )
             for ( m = 0; m < nnode_part_1d; m++ )
-               square[yoffset+k][xoffset+m] = nodeoffset++;            
+               square[yoffset+k][xoffset+m] = nodeoffset++;
       }
    }
 
@@ -97,7 +97,7 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    mat_ia  = (int *) ML_allocate((nnode_local+1) * sizeof(int));
    mat_ja  = (int *) ML_allocate(total_nz * sizeof(int));
    mat_aa  = (double *) ML_allocate(total_nz * sizeof(double));
- 
+
    mat_ia[0] = 0;
    index = 0;
    rowcount = 1;
@@ -117,10 +117,10 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
          mat_ja[index] = square[yoffset+k][xoffset+m];
          mat_aa[index] = 2 * alpha + 2.0;
          index++;
-         if ( m < nnode_part_1d-1 || mypid_x < nprocs_1d-1 ) 
+         if ( m < nnode_part_1d-1 || mypid_x < nprocs_1d-1 )
          { mat_ja[index] = square[yoffset+k][xoffset+m+1];
            mat_aa[index] = -1; index++; diag_sum += 1;}
-         if ( k < nnode_part_1d-1 || mypid_y < nprocs_1d-1 ) 
+         if ( k < nnode_part_1d-1 || mypid_y < nprocs_1d-1 )
          { mat_ja[index] = square[yoffset+k+1][xoffset+m];
            mat_aa[index] = -alpha; index++; diag_sum += alpha;}
          mat_ia[rowcount++] = index;
@@ -136,7 +136,7 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    ML_memory_free((void*) &(square));
 #endif
    rhs  = (double *) ML_allocate(nnode_local * sizeof(double));
-   for ( i = 0; i < nnode_local; i++ ) rhs[i] = 1.0; 
+   for ( i = 0; i < nnode_local; i++ ) rhs[i] = 1.0;
 
    solver->nRows = nnode_local;
    solver->mat_ia = mat_ia;

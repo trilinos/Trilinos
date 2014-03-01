@@ -128,7 +128,10 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         z = inputPoints(i0, 2);
         
         //be sure that the basis functions are defined when z is very close to 1.
-        z = min(z, 1-eps);
+        if(fabs(z-1.0) < eps) {
+          if(z <= 1.0) z = 1.0-eps;
+          else  z = 1.0+eps;
+        }
 
 
         Scalar zTerm = 0.25/(1.0 - z);
@@ -153,7 +156,10 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
 
     	//be sure that the basis functions are defined when z is very close to 1.
     	//warning, the derivatives are discontinuous in (0, 0, 1)
-    	z = min(z, 1-eps);
+    	if(fabs(z-1.0) < eps) {
+        if(z <= 1.0) z = 1.0-eps;
+        else  z = 1.0+eps;
+      }
 
 
     	Scalar zTerm = 0.25/(1.0 - z);
@@ -200,7 +206,10 @@ void Basis_HGRAD_PYR_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
 
         //be sure that the basis functions are defined when z is very close to 1.
         //warning, the derivatives are discontinuous in (0, 0, 1)
-        z = min(z, 1-eps);
+        if(fabs(z-1.0) < eps) {
+          if(z <= 1.0) z = 1.0-eps;
+          else  z = 1.0+eps;
+        }
 
 
         Scalar zTerm = 0.25/(1.0 - z);

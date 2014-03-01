@@ -214,247 +214,252 @@ namespace {
   {
     using std::endl;
 
+    // mfh 26 Feb 2014: Organizing the if-else in this way avoids a
+    // build warning for "dynamic initialization in unreachable code."
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "Skipping testing for the integral type Scalar=" 
-	  << Teuchos::TypeNameTraits<Scalar>::name () << "." << endl;
+      out << "Skipping testing for the integral type Scalar="
+          << Teuchos::TypeNameTraits<Scalar>::name () << "." << endl;
       return;
     }
-    RCP<Node> node = getNode<Node>();
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef Operator<Scalar,LO,GO,Node>  OP;
-    typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
-    const size_t numLocal = 13, numVecs = 7;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
-    RCP<const Comm<int> > comm = getDefaultComm (); 
-    // Create a row Map for the matrix.
-    // This will be the same as the domain and range Maps.
-    RCP<const Map<LO,GO,Node> > map = 
-      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
-    Scalar SONE = ST::one ();
+    else {
+      typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+      typedef Operator<Scalar,LO,GO,Node>  OP;
+      typedef ScalarTraits<Scalar> ST;
+      typedef MultiVector<Scalar,LO,GO,Node> MV;
+      typedef typename ST::magnitudeType Mag;
+      typedef ScalarTraits<Mag> MT;
 
-    /* Create one of the following locally triangular matries:
+      RCP<Node> node = getNode<Node> ();
+      const size_t numLocal = 13, numVecs = 7;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+      RCP<const Comm<int> > comm = getDefaultComm ();
+      // Create a row Map for the matrix.
+      // This will be the same as the domain and range Maps.
+      RCP<const Map<LO,GO,Node> > map =
+        createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
+      Scalar SONE = ST::one ();
 
-    0  [1 2       ]
-    1  [  1 3     ]
-    .  [    .  .  ] = U
-   n-2 [       1 n]
-   n-1 [         1]
+      /* Create one of the following locally triangular matries:
 
-    0  [1           ]
-    1  [2 1         ]
-    .  [   .  .     ] = L
-   n-2 [     n-1 1  ]
-   n-1 [         n 1]
+         0  [1 2       ]
+         1  [  1 3     ]
+         .  [    .  .  ] = U
+        n-2 [       1 n]
+        n-1 [         1]
 
-    The resulting global matrices are diag(U,U,...,U) resp. diag(L,L,...,L).
+         0  [1           ]
+         1  [2 1         ]
+         .  [   .  .     ] = L
+        n-2 [     n-1 1  ]
+        n-1 [         n 1]
 
-    For each of these (upper or lower triangular), we test all
-    16 combinations of the following options:
-    - Explicit or implicit unit diagonal
-    - With and without the (conjugate) transpose 
-    - Optimized or nonoptimized storage
-    */
+        The resulting global matrices are diag(U,U,...,U) resp. diag(L,L,...,L).
 
-    MV X (map, numVecs), B (map, numVecs), Xhat (map, numVecs);
-    X.setObjectLabel("X");
-    B.setObjectLabel("B");
-    Xhat.setObjectLabel("Xhat");
-    X.randomize();
+        For each of these (upper or lower triangular), we test all
+        16 combinations of the following options:
+        - Explicit or implicit unit diagonal
+        - With and without the (conjugate) transpose
+        - Optimized or nonoptimized storage
+      */
 
-    // Sanity check for X.
-    Array<Mag> normsX (numVecs);
-    {
-      X.norm1 (normsX ());
-      Array<size_t> badColumns;
-      for (size_t j = 0; j < numVecs; ++j) {
-	if (ST::isnaninf (normsX[j])) {
-	  badColumns.push_back (j);
-	}
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        badColumns.size () > 0,
-        std::runtime_error,
-	"Columns " << Teuchos::toString (badColumns) << " of the input X "
-	"have a 1-norm either Inf or NaN.  That suggests that randomize() "
-	"is broken.  Here are the 1-norms of each column: " 
-	<< Teuchos::toString (normsX));
-    }
+      MV X (map, numVecs), B (map, numVecs), Xhat (map, numVecs);
+      X.setObjectLabel("X");
+      B.setObjectLabel("B");
+      Xhat.setObjectLabel("Xhat");
+      X.randomize();
 
-    RCP<ParameterList> params = parameterList();
-    // Test all 16 combinations of options.
-    for (size_t tnum = 0; tnum < 16; ++tnum) {
-      const EUplo   uplo  = ((tnum & 1) == 1 ? UPPER_TRI  : LOWER_TRI);
-      const EDiag   diag  = ((tnum & 2) == 2 ? UNIT_DIAG  : NON_UNIT_DIAG);
-      const ETransp trans = ((tnum & 8) == 8 ? CONJ_TRANS : NO_TRANS);
-      const bool optimizeStorage = (tnum & 4) == 4;
-
-      params->set ("Optimize Storage", optimizeStorage);
-      RCP<ParameterList> fillparams = sublist (params, "Local Sparse Ops");
-      fillparams->set ("Prepare Solve", true);
-      fillparams->set ("Prepare Transpose Solve", true);
-      fillparams->set ("Prepare Conjugate Transpose Solve", true);
-
-      RCP<OP> AIOp;
-      RCP<MAT> AMat;
+      // Sanity check for X.
+      Array<Mag> normsX (numVecs);
       {
-        if (diag == UNIT_DIAG) {
-          // must explicitly specify the column map
-          AMat = rcp(new MAT(map,map,2));
-        }
-        else {
-          // can let the matrix compute a column map
-          AMat = rcp(new MAT(map,2));
-        }
-        // fill the matrix
-        if (uplo == UPPER_TRI) {
-          if (diag == UNIT_DIAG) {
-            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
-              if (gid == map->getMaxGlobalIndex()) {
-                // do nothing
-              }
-              else {
-                AMat->insertGlobalValues (gid, tuple<GO> (gid+1), tuple<Scalar> (as<Scalar> (gid+2)));
-              }
-            }
-          }
-          else {
-            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
-              if (gid == map->getMaxGlobalIndex()) {
-                AMat->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (SONE));
-              }
-              else {
-                AMat->insertGlobalValues (gid, tuple<GO> (gid,gid+1), tuple<Scalar> (SONE, as<Scalar>(gid+2)));
-              }
-            }
-          }
-        }
-        else { // uplo == LOWER_TRI
-          if (diag == UNIT_DIAG) {
-            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
-              if (gid == map->getMinGlobalIndex()) {
-                // do nothing
-              }
-              else {
-                AMat->insertGlobalValues (gid, tuple<GO> (gid-1), tuple<Scalar> (as<Scalar> (gid+1)));
-              }
-            }
-          }
-          else {
-            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
-              if (gid == map->getMinGlobalIndex()) {
-                AMat->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (SONE));
-              }
-              else {
-                AMat->insertGlobalValues (gid, tuple<GO> (gid-1, gid), tuple<Scalar> (as<Scalar> (gid+1), SONE));
-              }
-            }
-          }
-        }
-        AMat->fillComplete(params);
-        TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
-        TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
-        TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
-	// AIOp.apply (X,B,trans) solves op(A) X=B for X locally,
-	// using a triangular solve.  op(A) is just A if
-	// trans==NO_TRANS, else A^H (Hermitian transpose) if
-	// trans==CONJ_TRANS.
-        AIOp = createCrsMatrixSolveOp<Scalar> (AMat.getConst ());
-      }
-      B.randomize ();
-      if (diag != UNIT_DIAG && uplo == LOWER_TRI && 
-	  trans == CONJ_TRANS && ! optimizeStorage) {
-	const std::string diagStr = (diag == UNIT_DIAG) ? 
-	  "UNIT_DIAG" : "NON_UNIT_DIAG";
-	std::string uploStr;
-	if (uplo == LOWER_TRI) {
-	  uploStr = "LOWER_TRI";
-	} else if (uplo == UPPER_TRI) {
-	  uploStr = "UPPER_TRI";
-	} else {
-	  uploStr = "NEITHER";
-	}
-	std::string transStr;
-	if (trans == CONJ_TRANS) {
-	  transStr = "CONJ_TRANS";
-	} else if (trans == TRANS) {
-	  transStr = "TRANS";
-	} else {
-	  transStr = "NO_TRANS";
-	}
-	out << endl
-	    << "================================" << endl
-	    << "HERE IS THE INTERESTING USE CASE" << endl
-	    << "================================" << endl
-	    << "  uplo: " << uploStr << endl
-	    << "  diag: " << diagStr << endl
-	    << "  trans: " << transStr << endl
-	    << "  optimizeStorage: " << optimizeStorage << endl
-	    << endl;
-	out << "Before the solve:" << endl
-	    << "  Input MV X:" << endl;
-	X.describe (out, Teuchos::VERB_EXTREME);
-	out << "  Output MV B:" << endl;
-	B.describe (out, Teuchos::VERB_EXTREME);
-	out << "  Sparse matrix A:" << endl;
-	AMat->describe (out, Teuchos::VERB_EXTREME);
-	out << "Time for the solve!" << endl;
-      }
-      AIOp->apply(X,B,trans);
-      if (diag == UNIT_DIAG) {
-        // we want (I+A)*X -> B
-        // A*X -> B needs to be augmented with X
-        B.update(ST::one(),X,ST::one());
-      }
-      Array<Mag> normsB (numVecs);
-      B.norm1 (normsB ());
-      {
-	Array<size_t> badColumns;
+        X.norm1 (normsX ());
+        Array<size_t> badColumns;
         for (size_t j = 0; j < numVecs; ++j) {
-	  if (ST::isnaninf (normsB[j])) {
-	    badColumns.push_back (j);
-	  }
-	}
-	if (badColumns.size () > 0) {
-	  out << endl << "*** TRIANGULAR SOLVE FAILED ***" << endl << endl;
-	  B.normInf (normsB ());
-	  out << "Here are the inf-norms of each column of B = A \\ X: " 
-	       << Teuchos::toString (normsB) << endl;
-	  B.norm2 (normsB ());
-	  out << "Here are the 2-norms of each column of B = A \\ X: " 
-	       << Teuchos::toString (normsB) << endl;
-	  B.norm1 (normsB ());
-	  out << "Here are the 1-norms of each column of B = A \\ X: " 
-	       << Teuchos::toString (normsB) << endl;
-	  out << "Here is the input MV X:" << endl;
-	  X.describe (out, Teuchos::VERB_EXTREME);
-	  out << "Here is the output MV B, on output:" << endl;
-	  B.describe (out, Teuchos::VERB_EXTREME);
-	}
+          if (ST::isnaninf (normsX[j])) {
+            badColumns.push_back (j);
+          }
+        }
         TEUCHOS_TEST_FOR_EXCEPTION(
           badColumns.size () > 0,
           std::runtime_error,
-   	  "Columns " << Teuchos::toString (badColumns) << " of B = A \\ X "
-	  "have a 1-norm either Inf or NaN." << std::endl 
-	  << "That suggests the triangular solve is broken." << endl
-	  << "Here are the 1-norms of each column: " 
-	  << Teuchos::toString (normsB));
+          "Columns " << Teuchos::toString (badColumns) << " of the input X "
+          "have a 1-norm either Inf or NaN.  That suggests that randomize() "
+          "is broken.  Here are the 1-norms of each column: "
+          << Teuchos::toString (normsX));
       }
 
-      Xhat.randomize();
-      AIOp->apply(B,Xhat,trans);
-      //
-      Xhat.update(-ST::one(),X,ST::one());
-      Array<Mag> errnrms(numVecs), zeros(numVecs, MT::zero());
-      Xhat.norm1(errnrms());
-      B.norm1(normsB());
-      Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
-      if (ST::isOrdinal) {
-        TEST_COMPARE_ARRAYS(errnrms, zeros);
-      } else {
-        TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+      RCP<ParameterList> params = parameterList();
+      // Test all 16 combinations of options.
+      for (size_t tnum = 0; tnum < 16; ++tnum) {
+        const EUplo   uplo  = ((tnum & 1) == 1 ? UPPER_TRI  : LOWER_TRI);
+        const EDiag   diag  = ((tnum & 2) == 2 ? UNIT_DIAG  : NON_UNIT_DIAG);
+        const ETransp trans = ((tnum & 8) == 8 ? CONJ_TRANS : NO_TRANS);
+        const bool optimizeStorage = (tnum & 4) == 4;
+
+        params->set ("Optimize Storage", optimizeStorage);
+        RCP<ParameterList> fillparams = sublist (params, "Local Sparse Ops");
+        fillparams->set ("Prepare Solve", true);
+        fillparams->set ("Prepare Transpose Solve", true);
+        fillparams->set ("Prepare Conjugate Transpose Solve", true);
+
+        RCP<OP> AIOp;
+        RCP<MAT> AMat;
+        {
+          if (diag == UNIT_DIAG) {
+            // must explicitly specify the column map
+            AMat = rcp(new MAT(map,map,2));
+          }
+          else {
+            // can let the matrix compute a column map
+            AMat = rcp(new MAT(map,2));
+          }
+          // fill the matrix
+          if (uplo == UPPER_TRI) {
+            if (diag == UNIT_DIAG) {
+              for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+                if (gid == map->getMaxGlobalIndex()) {
+                  // do nothing
+                }
+                else {
+                  AMat->insertGlobalValues (gid, tuple<GO> (gid+1), tuple<Scalar> (as<Scalar> (gid+2)));
+                }
+              }
+            }
+            else {
+              for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+                if (gid == map->getMaxGlobalIndex()) {
+                  AMat->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (SONE));
+                }
+                else {
+                  AMat->insertGlobalValues (gid, tuple<GO> (gid,gid+1), tuple<Scalar> (SONE, as<Scalar>(gid+2)));
+                }
+              }
+            }
+          }
+          else { // uplo == LOWER_TRI
+            if (diag == UNIT_DIAG) {
+              for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+                if (gid == map->getMinGlobalIndex()) {
+                  // do nothing
+                }
+                else {
+                  AMat->insertGlobalValues (gid, tuple<GO> (gid-1), tuple<Scalar> (as<Scalar> (gid+1)));
+                }
+              }
+            }
+            else {
+              for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+                if (gid == map->getMinGlobalIndex()) {
+                  AMat->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (SONE));
+                }
+                else {
+                  AMat->insertGlobalValues (gid, tuple<GO> (gid-1, gid), tuple<Scalar> (as<Scalar> (gid+1), SONE));
+                }
+              }
+            }
+          }
+          AMat->fillComplete(params);
+          TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
+          TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
+          TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
+          // AIOp.apply (X,B,trans) solves op(A) X=B for X locally,
+          // using a triangular solve.  op(A) is just A if
+          // trans==NO_TRANS, else A^H (Hermitian transpose) if
+          // trans==CONJ_TRANS.
+          AIOp = createCrsMatrixSolveOp<Scalar> (AMat.getConst ());
+        }
+        B.randomize ();
+        if (diag != UNIT_DIAG && uplo == LOWER_TRI &&
+            trans == CONJ_TRANS && ! optimizeStorage) {
+          const std::string diagStr = (diag == UNIT_DIAG) ?
+            "UNIT_DIAG" : "NON_UNIT_DIAG";
+          std::string uploStr;
+          if (uplo == LOWER_TRI) {
+            uploStr = "LOWER_TRI";
+          } else if (uplo == UPPER_TRI) {
+            uploStr = "UPPER_TRI";
+          } else {
+            uploStr = "NEITHER";
+          }
+          std::string transStr;
+          if (trans == CONJ_TRANS) {
+            transStr = "CONJ_TRANS";
+          } else if (trans == TRANS) {
+            transStr = "TRANS";
+          } else {
+            transStr = "NO_TRANS";
+          }
+          out << endl
+              << "================================" << endl
+              << "HERE IS THE INTERESTING USE CASE" << endl
+              << "================================" << endl
+              << "  uplo: " << uploStr << endl
+              << "  diag: " << diagStr << endl
+              << "  trans: " << transStr << endl
+              << "  optimizeStorage: " << optimizeStorage << endl
+              << endl;
+          out << "Before the solve:" << endl
+              << "  Input MV X:" << endl;
+          X.describe (out, Teuchos::VERB_EXTREME);
+          out << "  Output MV B:" << endl;
+          B.describe (out, Teuchos::VERB_EXTREME);
+          out << "  Sparse matrix A:" << endl;
+          AMat->describe (out, Teuchos::VERB_EXTREME);
+          out << "Time for the solve!" << endl;
+        }
+        AIOp->apply(X,B,trans);
+        if (diag == UNIT_DIAG) {
+          // we want (I+A)*X -> B
+          // A*X -> B needs to be augmented with X
+          B.update(ST::one(),X,ST::one());
+        }
+        Array<Mag> normsB (numVecs);
+        B.norm1 (normsB ());
+        {
+          Array<size_t> badColumns;
+          for (size_t j = 0; j < numVecs; ++j) {
+            if (ST::isnaninf (normsB[j])) {
+              badColumns.push_back (j);
+            }
+          }
+          if (badColumns.size () > 0) {
+            out << endl << "*** TRIANGULAR SOLVE FAILED ***" << endl << endl;
+            B.normInf (normsB ());
+            out << "Here are the inf-norms of each column of B = A \\ X: "
+                << Teuchos::toString (normsB) << endl;
+            B.norm2 (normsB ());
+            out << "Here are the 2-norms of each column of B = A \\ X: "
+                << Teuchos::toString (normsB) << endl;
+            B.norm1 (normsB ());
+            out << "Here are the 1-norms of each column of B = A \\ X: "
+                << Teuchos::toString (normsB) << endl;
+            out << "Here is the input MV X:" << endl;
+            X.describe (out, Teuchos::VERB_EXTREME);
+            out << "Here is the output MV B, on output:" << endl;
+            B.describe (out, Teuchos::VERB_EXTREME);
+          }
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            badColumns.size () > 0,
+            std::runtime_error,
+            "Columns " << Teuchos::toString (badColumns) << " of B = A \\ X "
+            "have a 1-norm either Inf or NaN." << std::endl
+            << "That suggests the triangular solve is broken." << endl
+            << "Here are the 1-norms of each column: "
+            << Teuchos::toString (normsB));
+        }
+
+        Xhat.randomize();
+        AIOp->apply(B,Xhat,trans);
+        //
+        Xhat.update(-ST::one(),X,ST::one());
+        Array<Mag> errnrms(numVecs), zeros(numVecs, MT::zero());
+        Xhat.norm1(errnrms());
+        B.norm1(normsB());
+        Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
+        if (ST::isOrdinal) {
+          TEST_COMPARE_ARRAYS(errnrms, zeros);
+        } else {
+          TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+        }
       }
     }
   }

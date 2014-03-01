@@ -988,6 +988,17 @@ public:
                                                               dx.dimension_1(),
                                                               dx.dimension_2(),
                                                               dx.dimension_3());
+
+    {
+      // Destruction of this view should be harmless
+      const_dView4 unmanaged_from_ptr_const_dx( Kokkos::view_without_managing ,
+                                                dx.ptr_on_device() ,
+                                                dx.dimension_0() ,
+                                                dx.dimension_1() ,
+                                                dx.dimension_2() ,
+                                                dx.dimension_3() );
+    }
+
     const_dView4 const_dx = dx ;
 
 

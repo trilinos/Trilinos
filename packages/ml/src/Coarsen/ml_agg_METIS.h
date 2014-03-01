@@ -1,6 +1,6 @@
 /********************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */   
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /********************************************************************* */
@@ -38,17 +38,17 @@ extern "C" {
 
   extern int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
 					    int NumLevels );
-  
-  extern int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag, 
+
+  extern int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
 					    int level, int nodes_per_aggre );
-  extern int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag, 
+  extern int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
 					   int level, int Nlocal  );
-  extern int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag, 
+  extern int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
 					    int level, int Nglobal  );
-  extern int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag, 
+  extern int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
 					      int level, int reordering_flag);
   extern int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag,
-					ML_Operator *Amatrix, 
+					ML_Operator *Amatrix,
 					ML_Operator **Pmatrix, ML_Comm *comm);
   extern int ML_DecomposeGraph_BuildOffsets( int N_parts,
 					     int offsets[],
@@ -56,11 +56,11 @@ extern "C" {
 					     USR_COMM comm);
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
-  
+
   extern int ML_Aggregate_Set_UseDropping(int i);
 
   extern int ML_Aggregate_Get_UseDropping();
-  
+
 
 #ifndef ML_CPP
 #ifdef __cplusplus

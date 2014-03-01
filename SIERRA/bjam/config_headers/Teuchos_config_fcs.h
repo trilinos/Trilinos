@@ -115,11 +115,4 @@
    code */
 #define INVALID_TEMPLATE_QUALIFIER 
 
-#ifndef TEUCHOS_DEPRECATED
-#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define TEUCHOS_DEPRECATED  __attribute__((__deprecated__))
-#  else
-#    define TEUCHOS_DEPRECATED
-#  endif
-#endif
-
+#define TEUCHOS_DEPRECATED

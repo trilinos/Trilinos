@@ -13,7 +13,7 @@
 
 #include "az_aztec.h"
 
-struct user_partition_data {               
+struct user_partition_data {
   int *my_global_ids;      /* my_global_ids[i]: id of ith local unknown.     */
   int *needed_external_ids;/* global ids of ghost unknowns.                  */
   int Nlocal;              /* Number of local unknowns.                      */
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   double tolerance = 1.0e-8;        /* At convergence:                      */
                                     /*   ||r_k||_2 < tolerance ||r_0||_2    */
 
-  ML           *ml;          
+  ML           *ml;
   ML_Aggregate *ag;
   int          Nlevels;
   int          level, coarsest_level;
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   ML_Create(&ml, MaxMgLevels);
 
   Kn_mat = user_Kn_build( &Partition);
-  AZ_ML_Set_Amat(ml, MaxMgLevels-1, Partition.Nlocal, 
+  AZ_ML_Set_Amat(ml, MaxMgLevels-1, Partition.Nlocal,
 		 Partition.Nlocal, Kn_mat, proc_config);
 
   ML_Aggregate_Create( &ag );
@@ -87,11 +87,11 @@ int main(int argc, char *argv[])
 
   /* ML_Gen_CoarseSolverSuperLU( ml, coarsest_level); */
 
-  ML_Gen_Solver(ml, ML_MGV, MaxMgLevels-1, coarsest_level); 
+  ML_Gen_Solver(ml, ML_MGV, MaxMgLevels-1, coarsest_level);
 
   xxx = (double *) ML_allocate((Partition.Nlocal+
-				Partition.Nghost)*sizeof(double)); 
-  rhs = (double *) ML_allocate(Partition.Nlocal*sizeof(double)); 
+				Partition.Nghost)*sizeof(double));
+  rhs = (double *) ML_allocate(Partition.Nlocal*sizeof(double));
   ML_random_vec(xxx, Partition.Nlocal, ml->comm);
   ML_random_vec(rhs, Partition.Nlocal, ml->comm);
 
@@ -103,12 +103,12 @@ int main(int argc, char *argv[])
   else
     options[AZ_output]   = AZ_none;
   options[AZ_conv]     = AZ_noscaled;
-  AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
+  AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options);
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
-  
+
   if (Partition.my_local_ids != NULL) free(Partition.my_local_ids);
   if (Partition.my_global_ids != NULL) free(Partition.my_global_ids);
-  if (Partition.needed_external_ids != NULL) 
+  if (Partition.needed_external_ids != NULL)
     free(Partition.needed_external_ids);
 
   ML_Aggregate_Destroy(&ag);
@@ -195,8 +195,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition)
 
   AZ_transform(proc_config,&(Partition->needed_external_ids),
 			       Kn_bindx, Kn_val, Partition->my_global_ids,
-			       &reordered_glob, &reordered_externs, 
-			       &Kn_data_org, Nlocal, 0, 0, 0, 
+			       &reordered_glob, &reordered_externs,
+			       &Kn_data_org, Nlocal, 0, 0, 0,
 			       &cpntr, AZ_MSR_MATRIX);
   Partition->Nghost = Kn_data_org[AZ_N_external];
   AZ_free(reordered_glob);

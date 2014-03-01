@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -100,11 +100,11 @@ int ML_GGraph_Print( ML_GGraph *ml_gg )
          printf("    Boundary type %d = %c \n", i, ml_gg->bdry_type[i] );
    }
    printf(" Number of edges    = %d \n", ml_gg->row_ptr[ml_gg->Npoints]);
-  
+
    printf(" Number of points selected = %d \n", ml_gg->Nselected);
    for ( i = 0; i < ml_gg->Npoints; i++ )
       printf(" vertex state %d = %c \n", i, ml_gg->vertex_state[i]);
-   
+
    /*
    printf(" Number of send destinations = %d \n", ml_gg->send_cnt);
    for ( i = 0; i < ml_gg->send_cnt; i++ )
@@ -162,17 +162,17 @@ int ML_GGraph_Load_BdryTypes( ML_GGraph *ml_gg, int n, char *btype )
          printf("ML_GGraph_LoadBdryType : wrong boundary type. \n");
          exit( 0 );
       }
-      ml_gg->bdry_type[i] = btype[i]; 
+      ml_gg->bdry_type[i] = btype[i];
    }
    return 0;
 }
-   
+
 /* ******************************************************************** */
 /* generate node graph => row_ptr, col_ptr                              */
 /* -------------------------------------------------------------------- */
 
 int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
-                            ML_Comm *comm) 
+                            ML_Comm *comm)
 {
    int         i, j, k, m, count, ncount, index, mypid, nprocs, status;
    int         total_count, total_nodes, nelements, nvertices;
@@ -221,7 +221,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    for ( i = 0; i < nelements; i++ )
    {
       vlength = grid_fcns->USR_grid_get_element_nvertices( grid, i );
-      if ( vlength > vlengmax ) 
+      if ( vlength > vlengmax )
       {
          vlengmax = vlength;
          ML_free( vlist );
@@ -256,7 +256,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       node_ja = NULL;
    }
    node_ia[0] = 0;
-   for ( i = 1; i <= nvertices; i++ ) 
+   for ( i = 1; i <= nvertices; i++ )
       node_ia[i] = node_ia[i-1] + adjacency_cnt[i-1];
 
    /* ------------------------------------------------------------- */
@@ -264,7 +264,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    /* ------------------------------------------------------------- */
 
    if ( nvertices > 0 ) adjacency_cnt[0] = 0;
-   for ( i = 1; i < nvertices; i++ ) adjacency_cnt[i] = node_ia[i]; 
+   for ( i = 1; i < nvertices; i++ ) adjacency_cnt[i] = node_ia[i];
    vlist   = (int *) ML_allocate( vlengmax * sizeof(int) );
    for ( i = 0; i < nelements; i++ )
    {
@@ -276,13 +276,13 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          if ( index < nvertices )
          {
             for ( k = 0; k < vlength; k++ )
-               if ( vlist[k] != index ) 
+               if ( vlist[k] != index )
                   node_ja[adjacency_cnt[index]++] = vlist[k];
          }
       }
    }
    ML_free( vlist );
-   
+
    /* ------------------------------------------------------------- */
    /* sort the array and take out repeated indices                  */
    /* ------------------------------------------------------------- */
@@ -290,20 +290,20 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    for ( i = 0; i < nvertices; i++ ) {
       count = adjacency_cnt[i] - node_ia[i];
       ML_sort( count, &(node_ja[node_ia[i]]) );
-      for ( j = 0; j < count-1; j++ ) 
+      for ( j = 0; j < count-1; j++ )
       {
          index = node_ja[node_ia[i]+j];
-         for ( k = j+1; k < count; k++ ) 
+         for ( k = j+1; k < count; k++ )
          {
             if ( node_ja[node_ia[i]+k] != index ) break;
-         } 
+         }
          ncount = k - j - 1;
          if ( ncount > 0 )
          {
             index = j + 1;
-            for ( m = k; m < count; m++ ) 
+            for ( m = k; m < count; m++ )
             {
-               node_ja[node_ia[i]+index] = node_ja[node_ia[i]+m]; 
+               node_ja[node_ia[i]+index] = node_ja[node_ia[i]+m];
                index++;
             }
             count = count - ncount;
@@ -313,7 +313,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    }
 
    /* ------------------------------------------------------------- */
-   /* finally compress the array into CSR format                    */ 
+   /* finally compress the array into CSR format                    */
    /* ------------------------------------------------------------- */
 
    index = 0;
@@ -323,7 +323,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       for ( j = 0; j < count; j++ ) node_ja[index+j] = node_ja[k+j];
       index += count;
       k = node_ia[i+1];
-      node_ia[i+1] = index; 
+      node_ia[i+1] = index;
    }
 
    ML_free( adjacency_cnt );
@@ -341,7 +341,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    /* form the remote portion of the parallel graph                 */
    /* ------------------------------------------------------------- */
 
-   if ( nprocs > 1 ) 
+   if ( nprocs > 1 )
    {
 
       /* ---------------------------------------------------------- */
@@ -407,7 +407,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       ML_memory_alloc( (void **) &global_list, nbytes, "gg5" );
       for ( i = 0; i < nvertices; i++ )
       {
-         global_list[i] = 
+         global_list[i] =
             grid_fcns->USR_grid_get_vertex_global_num( grid, i );
       }
 
@@ -415,13 +415,13 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       /* construct the send_list based on data in remote_list and   */
       /* proc_array                                                 */
       /* ---------------------------------------------------------- */
-   
+
       nbytes = nprocs * sizeof( int );
       ML_memory_alloc( (void **) &templist, nbytes, "gg6" );
       for ( i = 0; i < nprocs; i++ ) templist[i] = 0;
       for ( i = 0; i < nprocs; i++ )
       {
-         if ( i != mypid ) 
+         if ( i != mypid )
          {
             for ( j = proc_array[i]; j < proc_array[i+1]; j++ )
             {
@@ -442,7 +442,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       {
          if ( templist[i] > 0 ) send_cnt++;
       }
-      if ( send_cnt > 0 ) 
+      if ( send_cnt > 0 )
       {
          nbytes = send_cnt * sizeof( int );
          ML_memory_alloc( (void **) &send_proc, nbytes, "gg7" );
@@ -461,7 +461,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       index = 0;
       for ( i = 0; i < nprocs; i++ )
       {
-         if ( templist[i] > 0 ) 
+         if ( templist[i] > 0 )
          {
             send_leng[index]  = templist[i];
             nbytes = templist[i] * sizeof( int );
@@ -475,7 +475,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       for ( i = 0; i < send_cnt; i++ ) send_leng[i] = 0;
       for ( i = 0; i < nprocs; i++ )
       {
-         if ( i != mypid ) 
+         if ( i != mypid )
          {
             for ( k = 0; k < send_cnt; k++ )
                if ( send_proc[k] == i ) break;
@@ -493,7 +493,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       }
       ML_memory_free( (void **) &global_list );
       ML_memory_free( (void **) &remote_list );
-      
+
       /* ---------------------------------------------------------- */
       /* each processor notifies the processors it will send data   */
       /* to about its intention to send and the length of data sent */
@@ -501,7 +501,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
 
       for ( i = 0; i < nprocs; i++ ) proc_array[i] = 0;
       for ( i = 0; i < send_cnt; i++ )
-      { 
+      {
           if ( send_leng[i] != 0 ) proc_array[send_proc[i]] = 1;
       }
       nbytes = nprocs * sizeof( int );
@@ -516,7 +516,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          ML_memory_alloc( (void **) &Request, nbytes, "gge" );
          nbytes = recv_cnt * sizeof( int );
          ML_memory_alloc( (void **) &intarray, nbytes, "ggf" );
-      }   
+      }
       for ( i = 0; i < recv_cnt; i++ )
       {
          fromproc = -1;
@@ -529,7 +529,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       }
       for ( i = 0; i < send_cnt; i++ )
       {
-         comm->USR_sendbytes((void*) &send_leng[i], sizeof(int), 
+         comm->USR_sendbytes((void*) &send_leng[i], sizeof(int),
                              send_proc[i], msgtype, comm->USR_comm );
       }
       for ( i = 0; i < recv_cnt; i++ )
@@ -545,14 +545,14 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       }
       if ( recv_cnt > 0 )
       {
-         nbytes = recv_cnt * sizeof( int );   
+         nbytes = recv_cnt * sizeof( int );
          ML_memory_alloc( (void **) &recv_proc, nbytes, "ggg" );
          ML_memory_alloc( (void **) &recv_leng, nbytes, "ggh" );
-         nbytes = recv_cnt * sizeof( int * );   
+         nbytes = recv_cnt * sizeof( int * );
          ML_memory_alloc( (void **) &recv_list, nbytes, "ggi" );
-         recv_proc = (int *) ML_allocate( recv_cnt * sizeof( int ) );   
-         recv_leng = (int *) ML_allocate( recv_cnt * sizeof( int ) );   
-      }   
+         recv_proc = (int *) ML_allocate( recv_cnt * sizeof( int ) );
+         recv_leng = (int *) ML_allocate( recv_cnt * sizeof( int ) );
+      }
       recv_cnt = tot_recv_leng = 0;
       for ( i = 0; i < nprocs; i++ )
       {
@@ -568,7 +568,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
 
       /* ---------------------------------------------------------- */
       /* each processor sends its own send_list to the receiving    */
-      /* processors so that they can reconstruct its communication  */ 
+      /* processors so that they can reconstruct its communication  */
       /* pattern                                                    */
       /* ---------------------------------------------------------- */
 
@@ -616,14 +616,14 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       for ( i = nvertices; i <= max_remote_index; i++ )
       {
          k = grid_fcns->USR_grid_get_vertex_global_num( grid, i );
-         templist[i-nvertices] = k;   
+         templist[i-nvertices] = k;
       }
-      for ( i = 0; i < recv_cnt; i++ ) 
+      for ( i = 0; i < recv_cnt; i++ )
       {
-         for ( j = 0; j < recv_leng[i]; j++ ) 
+         for ( j = 0; j < recv_leng[i]; j++ )
          {
             index = recv_list[i][j];
-            for ( k = 0; k < m; k++ ) 
+            for ( k = 0; k < m; k++ )
             {
                if ( templist[k] == index ) break;
             }
@@ -652,10 +652,10 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       {
          ML_memory_free( (void **) &Request );
          ML_memory_free( (void **) &intarray );
-      }   
+      }
       if ( send_list2 != NULL )
       {
-         for ( i = 0; i < send_cnt; i++ ) 
+         for ( i = 0; i < send_cnt; i++ )
             ML_memory_free( (void**) &send_list2[i] );
          ML_memory_free( (void**) &send_list2 );
       }
@@ -669,7 +669,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
 /* graph coarsening                                                     */
 /* -------------------------------------------------------------------- */
 
-int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm) 
+int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
 {
    int   i, j, m, myrank, nvertices, vertex_cnt, index, *short_list;
    int   short_cnt, *templist, **proclist, *rptr, *cptr, ext_nvertices;
@@ -708,7 +708,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    /* ------------------------------------------------------------- */
    /* fetch the data in the ML_GGraph data structure                */
    /* ------------------------------------------------------------- */
-  
+
    myrank            = ml_gg->ML_rank;
    nvertices         = ml_gg->Npoints;
    btypes            = ml_gg->bdry_type;
@@ -749,7 +749,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    {
       for ( j = 0; j < send_leng[i]; j++ )
       {
-         index = send_list[i][j];     
+         index = send_list[i][j];
          if ( index >= nvertices || index < 0 )
          {
             printf("%d : Error : in Coarsening.\n", myrank);
@@ -766,9 +766,9 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
 
    nbytes = ext_nvertices * sizeof( int *);
    ML_memory_alloc( (void**) &proclist, nbytes, "gf2" );
-   for ( i = 0; i < nvertices; i++ ) 
+   for ( i = 0; i < nvertices; i++ )
    {
-      proclist[i] = (int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) ); 
+      proclist[i] = (int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) );
       proclist[i][0] = 0;
       templist[i] = 0;
    }
@@ -776,22 +776,22 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    {
       for ( j = 0; j < send_leng[i]; j++ )
       {
-         index = send_list[i][j];     
+         index = send_list[i][j];
          proclist[index][templist[index]+1] = i;
          proclist[index][templist[index]+2] = j;
          templist[index] += 2;
          proclist[index][0]++;
       }
    }
-   for ( i = nvertices; i < ext_nvertices; i++ ) 
+   for ( i = nvertices; i < ext_nvertices; i++ )
    {
-      proclist[i] = (int *) ML_allocate( sizeof( int ) ); 
+      proclist[i] = (int *) ML_allocate( sizeof( int ) );
    }
    for ( i = 0; i < recv_cnt; i++ )
    {
       for ( j = 0; j < recv_leng[i]; j++ )
       {
-         index = recv_list[i][j];     
+         index = recv_list[i][j];
          proclist[index][0] = recv_proc[i];
       }
    }
@@ -801,7 +801,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    /* fill in the initial state of all local and remote vertices    */
    /* (initial vertex state = 'F' - free)                           */
    /* ------------------------------------------------------------- */
-   
+
    vertex_cnt   = ext_nvertices;
    nbytes = vertex_cnt * sizeof( char );
    ML_memory_alloc( (void **) &vertex_state, nbytes, "ggl" );
@@ -832,13 +832,13 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    {
       nbytes = recv_cnt * sizeof( USR_REQ );
       ML_memory_alloc( (void **) &Request, nbytes, "gf6" );
-   }  
+   }
    offset = 0;
    for ( i = 0; i < recv_cnt; i++ )
    {
       fproc = recv_proc[i];
-      nbytes = recv_leng[i] * sizeof(char);   
-      comm->USR_irecvbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+      nbytes = recv_leng[i] * sizeof(char);
+      comm->USR_irecvbytes((char*) &recv_carray[offset], nbytes, &fproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -855,7 +855,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
          index = send_list[i][j];
          send_carray[j] = btypes[index];
       }
-      comm->USR_sendbytes((void*) send_carray, nbytes, send_proc[i], 
+      comm->USR_sendbytes((void*) send_carray, nbytes, send_proc[i],
                           msgtype, comm->USR_comm );
       ML_free( send_carray );
    }
@@ -863,8 +863,8 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    for ( i = 0; i < recv_cnt; i++ )
    {
       fproc = recv_proc[i];
-      nbytes = recv_leng[i] * sizeof(char);   
-      comm->USR_cheapwaitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+      nbytes = recv_leng[i] * sizeof(char);
+      comm->USR_cheapwaitbytes((char*) &recv_carray[offset], nbytes, &fproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -879,14 +879,14 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    }
    if ( recv_cnt > 0 ) ML_memory_free( (void**) &Request );
    if ( char_leng > 0 ) ML_memory_free( (void**) &recv_carray );
-   
+
    /* ------------------------------------------------------------- */
    /* now everything is almost ready                                */
    /*   proclist contains send information for vertex updates       */
    /*   vertex_type contains boundary type info for all vertices    */
    /*   vertex_state contains current state info for all vertices   */
    /* before moving on, make sure the communication buffers have    */
-   /* been sufficiently allocated                                   */ 
+   /* been sufficiently allocated                                   */
    /* ------------------------------------------------------------- */
 
    nbytes = nvertices * sizeof( int );
@@ -928,8 +928,8 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    }
 
    m = ML_GGraph_LabelVertices(short_cnt, short_list, 'C', vertex_state,
-             vertex_type, nvertices, rptr, cptr, myrank, proclist, 
-             send_cnt, send_buf, send_proc, send_leng, recv_cnt, 
+             vertex_type, nvertices, rptr, cptr, myrank, proclist,
+             send_cnt, send_buf, send_proc, send_leng, recv_cnt,
              recv_buf, recv_proc, recv_leng, recv_list, 9413, comm);
    nselected += m;
 
@@ -940,13 +940,13 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    short_cnt = 0;
    for ( i = 0; i < nvertices; i++ )
    {
-      if ( btypes[i] == 'R' && vertex_state[i] == 'F' ) 
+      if ( btypes[i] == 'R' && vertex_state[i] == 'F' )
          short_list[short_cnt++] = i;
    }
 
    m = ML_GGraph_LabelVertices(short_cnt, short_list, 'R', vertex_state,
-             vertex_type, nvertices, rptr, cptr, myrank, proclist, 
-             send_cnt, send_buf, send_proc, send_leng, recv_cnt, 
+             vertex_type, nvertices, rptr, cptr, myrank, proclist,
+             send_cnt, send_buf, send_proc, send_leng, recv_cnt,
              recv_buf, recv_proc, recv_leng, recv_list, 9414, comm);
    nselected += m;
 
@@ -957,13 +957,13 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    short_cnt = 0;
    for ( i = 0; i < nvertices; i++ )
    {
-      if ( btypes[i] == 'F' && vertex_state[i] == 'F' ) 
+      if ( btypes[i] == 'F' && vertex_state[i] == 'F' )
          short_list[short_cnt++] = i;
    }
 
    m = ML_GGraph_LabelVertices(short_cnt, short_list, 'F', vertex_state,
-             vertex_type, nvertices, rptr, cptr, myrank, proclist, 
-             send_cnt, send_buf, send_proc, send_leng, recv_cnt, 
+             vertex_type, nvertices, rptr, cptr, myrank, proclist,
+             send_cnt, send_buf, send_proc, send_leng, recv_cnt,
              recv_buf, recv_proc, recv_leng, recv_list, 9415, comm);
    nselected += m;
 
@@ -974,13 +974,13 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    short_cnt = 0;
    for ( i = 0; i < nvertices; i++ )
    {
-      if ( btypes[i] == 'I' && vertex_state[i] == 'F' ) 
+      if ( btypes[i] == 'I' && vertex_state[i] == 'F' )
          short_list[short_cnt++] = i;
    }
 
    m = ML_GGraph_LabelVertices(short_cnt, short_list, 'I', vertex_state,
-             vertex_type, nvertices, rptr, cptr, myrank, proclist, 
-             send_cnt, send_buf, send_proc, send_leng, recv_cnt, 
+             vertex_type, nvertices, rptr, cptr, myrank, proclist,
+             send_cnt, send_buf, send_proc, send_leng, recv_cnt,
              recv_buf, recv_proc, recv_leng, recv_list, 9416, comm);
    nselected += m;
 
@@ -1033,11 +1033,11 @@ int ML_GGraph_Get_NodeStates(ML_GGraph *ml_gg, int *size, char **states)
 /* -------------------------------------------------------------------- */
 int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                            char *vertex_state, char *vertex_type,
-                           int nvertices, int *rptr, int *cptr, 
-                           int myrank, int **proclist, int send_cnt, 
+                           int nvertices, int *rptr, int *cptr,
+                           int myrank, int **proclist, int send_cnt,
                            int **send_buf, int *send_proc, int *send_leng,
-                           int recv_cnt, int **recv_buf, int *recv_proc, 
-                           int *recv_leng, int **recv_list, int msgtype, 
+                           int recv_cnt, int **recv_buf, int *recv_proc,
+                           int *recv_leng, int **recv_list, int msgtype,
                            ML_Comm *comm)
 {
   int     i, j, k, m, temp_cnt, index, select_flag, fproc, col;
@@ -1084,9 +1084,9 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
    {
       nbytes = nvertices * sizeof( int );
       ML_memory_alloc((void**) &pref_list, nbytes, "ggo" );
-   }   
+   }
    pref_cnt = 0;
-   
+
    /* -------------------------------------------------------- */
    /* get ready for the coarsening                             */
    /* -------------------------------------------------------- */
@@ -1138,8 +1138,8 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
          pref_flag = 0;
          if ( pref_cnt > 0 )
          {
-            index = pref_list[pref_index];    
-            for (j = pref_index+1; j < pref_cnt; j++) 
+            index = pref_list[pref_index];
+            for (j = pref_index+1; j < pref_cnt; j++)
                pref_list[j-1] = pref_list[j];
             pref_cnt--;
             pref_flag = 1;
@@ -1161,17 +1161,17 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                {
                   vertex_state[index] = 'D';
                   delete_flag = 1;
-                  temp_cnt--;  
+                  temp_cnt--;
                   select_flag = 0;
                   break;
                }
-               
+
                /* If its neighbor is of the same type and not been   */
                /* considered. Furthermore, if it is a remote vertex  */
                /* and its owner processor has rank smaller than mine,*/
                /* my processor should wait(thus turn off select_flag)*/
 
-               else if ( vertex_type[col] == Vtype && 
+               else if ( vertex_type[col] == Vtype &&
                          vertex_state[col] == 'F')
                {
                   if ( col >= nvertices )
@@ -1233,7 +1233,7 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                      for ( k = rptr[col]; k < rptr[col+1]; k++ )
                      {
                         col2 = cptr[k];
-                        if (col2 < nvertices && 
+                        if (col2 < nvertices &&
                             vertex_state[col2] == 'F' &&
                             vertex_type[col2] == Vtype )
                         {
@@ -1244,7 +1244,7 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                      }
                   }
                }
-            } 
+            }
 
             /* if not selected due to it has just been deleted, */
             /* still have to tell the other processors          */
@@ -1273,7 +1273,7 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
 
             if ( pref_flag == 1 )
             {
-               for (j = pref_index; j < pref_cnt; j++) 
+               for (j = pref_index; j < pref_cnt; j++)
                   pref_list[j+1] = pref_list[j];
                pref_list[pref_index] = index;
                pref_index++;
@@ -1357,7 +1357,7 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
 int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
 {
    int  myrank, *cptr, *rptr, send_cnt, recv_cnt, ext_nvertices;
-   int  *send_leng, *send_proc, **send_list, nvertices, index; 
+   int  *send_leng, *send_proc, **send_list, nvertices, index;
    int  *recv_leng, *recv_proc, **recv_list, msgtype, num_faults;
    int  i, j, char_leng, offset, fproc, nselected, fault_flag;
    char *vertex_state_here, *recv_carray, *send_carray;
@@ -1377,11 +1377,11 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
       printf("Warning : Graph not coarsened yet. \n");
       return -1;
    }
-   
+
    /* ------------------------------------------------------------- */
    /* fetch the data in the ML_GGraph data structure                */
    /* ------------------------------------------------------------- */
-  
+
    myrank            = ml_gg->ML_rank;
    nvertices         = ml_gg->Npoints;
    rptr              = ml_gg->row_ptr;
@@ -1433,13 +1433,13 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
    {
       nbytes = recv_cnt * sizeof( USR_REQ );
       ML_memory_alloc( (void **) &Request, nbytes, "gh3" );
-   }  
+   }
    offset = 0;
    for ( i = 0; i < recv_cnt; i++ )
    {
       fproc = recv_proc[i];
-      nbytes = recv_leng[i] * sizeof(char);   
-      comm->USR_irecvbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+      nbytes = recv_leng[i] * sizeof(char);
+      comm->USR_irecvbytes((char*) &recv_carray[offset], nbytes, &fproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1456,7 +1456,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
          index = send_list[i][j];
          send_carray[j] = vertex_state_here[index];
       }
-      comm->USR_sendbytes((void*) send_carray, nbytes, send_proc[i], 
+      comm->USR_sendbytes((void*) send_carray, nbytes, send_proc[i],
                           msgtype, comm->USR_comm );
       ML_free( send_carray );
    }
@@ -1464,8 +1464,8 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
    for ( i = 0; i < recv_cnt; i++ )
    {
       fproc = recv_proc[i];
-      nbytes = recv_leng[i] * sizeof(char);   
-      comm->USR_cheapwaitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+      nbytes = recv_leng[i] * sizeof(char);
+      comm->USR_cheapwaitbytes((char*) &recv_carray[offset], nbytes, &fproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1480,7 +1480,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
    }
    if ( recv_cnt > 0 ) ML_memory_free( (void**) &Request );
    if ( char_leng > 0 ) ML_memory_free( (void**) &recv_carray );
-   
+
    /* ------------------------------------------------------------- */
    /* first check that all vertex states are either 'S' or 'D'      */
    /* ------------------------------------------------------------- */
@@ -1507,7 +1507,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
       {
          nselected++;
          for ( j = rptr[i]; j < rptr[i+1]; j++ )
-            if ( vertex_state_here[cptr[j]] == 'S' ) fault_flag = 1; 
+            if ( vertex_state_here[cptr[j]] == 'S' ) fault_flag = 1;
       }
    }
    printf("%d : ML_GGraph_CheckMIS : nselected = %d\n", myrank, nselected);
@@ -1535,7 +1535,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
       {
          fault_flag = 1;
          for ( j = rptr[i]; j < rptr[i+1]; j++ )
-            if ( vertex_state_here[cptr[j]] == 'S' ) fault_flag = 0; 
+            if ( vertex_state_here[cptr[j]] == 'S' ) fault_flag = 0;
       }
       if ( fault_flag == 1 ) num_faults++;
    }
@@ -1568,7 +1568,7 @@ int ML_GGraph_Find_NeighborElements(int leng1, int *list1, int leng2,
                                    int *list2, int *vlist3)
 {
    int match_count, cnt1, cnt2;
- 
+
    cnt1 = cnt2 = match_count = 0;
    while ( cnt1 < leng1 && cnt2 < leng2 ) {
       if ( list1[cnt1] == list2[cnt2] ) {
@@ -1586,7 +1586,7 @@ int ML_GGraph_Find_NeighborElements(int leng1, int *list1, int leng2,
 /* -------------------------------------------------------------------- */
 
 int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
-                               ML_Comm *comm) 
+                               ML_Comm *comm)
 {
    int         i, j, nelements, nvertices, *vlist, *vlist2, **v2elem_map;
    int         *egraph_ia, *egraph_ja, egraph_cnt, vlength, index;
@@ -1634,8 +1634,8 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          index = vlist[j];
          count = ++v2elem_map[index][0];
          if ( count >= 7 ) {
-            printf("ML_GGraph_Gen_ElementGraph : error - \n"); 
-            printf("    not enough local space, tune the code to fix it.\n"); 
+            printf("ML_GGraph_Gen_ElementGraph : error - \n");
+            printf("    not enough local space, tune the code to fix it.\n");
             exit(1);
          }
          v2elem_map[index][count] = i;
@@ -1662,30 +1662,30 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          for ( eindex2 = 0; eindex2 < vcount; eindex2++ ) {
             elem_num2 = v2elem_map[vertnum][eindex2+1];
             process_flag = 1;
-            if ( elem_index == elem_num2) process_flag = 0; 
+            if ( elem_index == elem_num2) process_flag = 0;
             if ( process_flag == 1 ) {
                for ( j = egraph_ia[elem_index]; j < egraph_cnt; j++ )
                   if ( egraph_ja[j] == elem_num2 )
                      { process_flag = 0; break;}
             }
             if ( process_flag == 1 ) {
-               vlength2 = grid_fcns->USR_grid_get_element_vlist(grid, 
+               vlength2 = grid_fcns->USR_grid_get_element_vlist(grid,
                                          elem_num2, vlist2 );
                ML_sort( vlength2, vlist2 );
-               num_common_edges = ML_GGraph_Find_NeighborElements(vlength, 
+               num_common_edges = ML_GGraph_Find_NeighborElements(vlength,
                                            vlist, vlength2, vlist2, vlist3);
                if ( num_common_edges == 2 ) {
                   index = vlist3[0];
                   index2 = vlist3[1];
                   if (vertex_state[index] != 'S' && vertex_state[index2] != 'S')
-                     egraph_ja[egraph_cnt++] = elem_num2; 
-               } 
-            } 
-         } 
-      } 
+                     egraph_ja[egraph_cnt++] = elem_num2;
+               }
+            }
+         }
+      }
       egraph_ia[elem_index+1] = egraph_cnt;
    }
- 
+
    for ( i = 0; i < egraph_n; i++ ) {
       for ( j = egraph_ia[i]; j < egraph_ia[i+1]; j++ ) {
          printf("row %5d : column = %5d \n", i, egraph_ja[j]);
@@ -1705,7 +1705,7 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
 
 /*
 int ML_GGraph_Gen_Restrictor(ML_GGraph *ml_gg, struct ML_CSR_MSRdata *mat)
-                             ML_Comm *comm) 
+                             ML_Comm *comm)
 {
 */
    /* ------------------------------------------------------------- */
@@ -1741,7 +1741,7 @@ int ML_GGraph_Gen_Restrictor(ML_GGraph *ml_gg, struct ML_CSR_MSRdata *mat)
    col_ptr = ml_gg->col_ptr;
    new_row_ptr = (int *) ML_allocate( Ncoarse * sizeof(int) );
    total_length = 0;
- 
+
    for ( fine_index = 0; fine_index < Nfine; fine_index++ ) {
       if ( vertex_state[fine_index] == 'S' ) {
          total_length += ( row_ptr[fine_index+1] - row_ptr[fine_index] );

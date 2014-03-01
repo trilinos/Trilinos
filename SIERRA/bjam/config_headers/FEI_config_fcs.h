@@ -39,14 +39,7 @@
 /* define if we want to use Boost  */
 /* #undef HAVE_FEI_BOOST */
 
-#ifndef FEI_DEPRECATED
-#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define FEI_DEPRECATED  __attribute__((__deprecated__))
-#  else
-#    define FEI_DEPRECATED
-#  endif
-#endif
-
+#define FEI_DEPRECATED
 
 #endif
 

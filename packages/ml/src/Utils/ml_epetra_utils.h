@@ -8,7 +8,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 
@@ -54,8 +54,8 @@ extern "C" {
 #endif
 
 #include "Epetra_DataAccess.h"
-  
-// ====================================================================== 
+
+// ======================================================================
 //! Matrix-vector function for Epetra matrices.
 /*! This is the ML matrix-vector wrap for Epetra matrices.
  */
@@ -72,7 +72,7 @@ int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int
 #ifdef WKC
 int ML_Epetra_matvec_WKC(ML_Operator *data, int in, double *p, int out,
                  double *ap);
-#endif 
+#endif
 
 //! Getrow function for matrix of type Epetra_RowMatrix.
 /*!
@@ -80,19 +80,19 @@ int ML_Epetra_matvec_WKC(ML_Operator *data, int in, double *p, int out,
   requested_rows[0 ... N_requested_rows-1].  Return this information in
   'row_lengths, columns, values'.  If there is not enough space to complete
   this operation, return 0. Otherwise, return 1.
- 
-  \param data (In)             
-         Points to user's data containing matrix values. 
+
+  \param data (In)
+         Points to user's data containing matrix values.
   \param N_requested_rows (In) Number of rows for which nonzero are to be
                    returned.
-  \param requested_rows (In)  
+  \param requested_rows (In)
          Requested_rows[0...N_requested_rows-1] give the
                    row indices of the rows for which nonzero values are
                    returned.
   \param row_lengths (Out)
          Row_lengths[i] is the number of nonzeros in the
          row 'requested_rows[i]'
-  \param columns,values (Out)  
+  \param columns,values (Out)
          Columns[k] and values[k] contains the column
          number and value of a matrix nonzero where all nonzeros for
          requested_rows[i] appear before requested_rows[i+1]'s
@@ -106,29 +106,29 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows,
                  int requested_rows[], int allocated_space, int columns[],
                  double values[], int row_lengths[]);
 
-int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows, 
-                               int requested_rows[], int allocated_space, 
+int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
+                               int requested_rows[], int allocated_space,
                                int columns[], double values[],
                                int row_lengths[]);
-  
+
 int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
-            int requested_rows[], 
+            int requested_rows[],
 		    int allocated_space, int columns[], double values[],
                                int row_lengths[]);
 int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
-                                    int requested_rows[], 
+                                    int requested_rows[],
                                     int allocated_space, int columns[], double values[],
                                     int row_lengths[]);
-  
+
 
 int ML_Epetra_VbrMatrix_getrow(ML_Operator *data,
-            int N_requested_rows, int requested_rows[], 
+            int N_requested_rows, int requested_rows[],
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[]);
 
 void ML_Set_Filter(Teuchos::ParameterList& List);
 
-int ML_Epetra_matvec_Filter(ML_Operator *data, int in, double *p, 
+int ML_Epetra_matvec_Filter(ML_Operator *data, int in, double *p,
                             int out, double *ap);
 
 int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
@@ -140,13 +140,13 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
                   \c AZ_matrix_create(N_local);
   and a 'getrow' function was supplied via
                   \c AZ_set_MATFREE_getrow(Amat,,,,N_ghost,).
- 
+
   \param vec Vector containing data. On output, ghost values
                     are updated.
- 
+
   \param data  points to user's data containing matrix values.
                    and communication information.
- */ 
+ */
 int ML_Epetra_comm_wrapper(double vec[], void *data);
 int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data);
 int ML_Epetra_VbrMatrix_comm_wrapper(double vec[], void *data);
@@ -156,7 +156,7 @@ int ML_Epetra_CrsGraph_comm_wrapper(double vec[], void *data);
 int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
                               int out, double *ap);
 int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
-                              int requested_rows[], int allocated_space, 
+                              int requested_rows[], int allocated_space,
                               int columns[], double values[],
                               int row_lengths[]);
 int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatrix);
@@ -171,7 +171,7 @@ void ML_CreateSublists(const Teuchos::ParameterList &List,
 #endif
 
 //! Wraps an Epetra_RowMatrix into an ML_Operators.
-/*! This function creates an ML_Operator that is based on the input 
+/*! This function creates an ML_Operator that is based on the input
  *  Epetra_RowMatrix. This is a "cheap" wrap in the sense that
  *  only function and pointers are created. Data is still coded as an
  *  Epetra_RowMatrix.
@@ -182,7 +182,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
                                 Epetra_RowMatrix * Amat);
 
 //! Wraps an Epetra_RowMatrix into an ML_Operators, for the given level.
-/*! This function creates an ML_Operator that is based on the input 
+/*! This function creates an ML_Operator that is based on the input
  *  Epetra_RowMatrix. This is a "cheap" wrap in the sense that
  *  only function and pointers are created. Data is still coded as an
  *  Epetra_RowMatrix. The ML_Operator is set in the specified level of the
@@ -208,7 +208,7 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
 int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix, bool verbose=false);
 
 //! Wraps a ML_Operator into a Epetra_CrsMatrix.
-/*! This is a somewhat cheap wrap in that the pointers get dumped into the Epetra_CrsMatrix.  
+/*! This is a somewhat cheap wrap in that the pointers get dumped into the Epetra_CrsMatrix.
  */
 void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV=::View,int base=0);
 //void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, Epetra_CrsMatrix *Result);
@@ -266,9 +266,9 @@ namespace ML_Epetra{
    * columns (across all processors) that have entries zero'd by the BC's.  This
    * will symmetrize a square matrix, though the routine can be run on
    *  non-square matrices.
-   */  
+   */
   void Apply_BCsToMatrixColumns(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix);
-  
+
   //! Applies Dirichlet conditions to matrix rows.
   void Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix);
 
@@ -277,11 +277,11 @@ namespace ML_Epetra{
    * columns (across all processors) that have entries zero'd by the BC's.  This
    * will symmetrize a square matrix, though the routine can be run on
    *  non-square matrices.
-   */  
+   */
   void Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatrix, const Epetra_RowMatrix & iMatrix);
   void Apply_BCsToMatrixColumns(const Epetra_IntVector &dirichletColumns,const Epetra_CrsMatrix & Matrix);
 
-  
+
   //! Applies boundary conditions to gradient matrix.  (Maxwell's equations)
   void Apply_BCsToGradient( const Epetra_RowMatrix & EdgeMatrix,
                             const Epetra_RowMatrix & T);
@@ -319,7 +319,7 @@ namespace ML_Epetra{
 #ifdef HAVE_ML_TEUCHOS
 int UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite);
 #endif
- 
+
 }
 
 
@@ -337,19 +337,19 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 				  double* x_coord, double* y_coord,
 				  double* z_coord, double theta,
 				  ML_Operator** NewOp);
-bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector, 
+bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
                                Epetra_Map& map,Epetra_Comm& comm, int ivec);
 bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
-                                  Epetra_Comm& comm, 
+                                  Epetra_Comm& comm,
                                   int**blocks, int** block_pde);
-bool Epetra_ML_writegidviz(char* filename, int label, 
-                           Epetra_MultiVector& vector, int ivec, 
+bool Epetra_ML_writegidviz(char* filename, int label,
+                           Epetra_MultiVector& vector, int ivec,
                            Epetra_Map& map, Epetra_Comm& comm);
-                                  
+
 #ifdef __cplusplus
 }
 #endif
-  
+
 //! Stops the code, waiting for a debugger to attach
 /*! BreakForDebugger() is useful when the user wants to attach to the running
 * process(es). This is a very easy task for serial runs -- just run gdb.

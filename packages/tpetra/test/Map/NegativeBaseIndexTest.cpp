@@ -140,7 +140,7 @@ namespace {
       elements[i] = i - 1;
     }
 
-    int localMapCtorSuccess = 0;
+    //int localMapCtorSuccess = 0;
     RCP<map_type> map;
 
     map = rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));

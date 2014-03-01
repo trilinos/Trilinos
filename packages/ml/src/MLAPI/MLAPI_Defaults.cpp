@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -8,10 +8,10 @@
 #include "MLAPI_Defaults.h"
 #include "Teuchos_ParameterList.hpp"
 
-namespace MLAPI 
+namespace MLAPI
 {
 
-// ====================================================================== 
+// ======================================================================
 void SetDefaults(Teuchos::ParameterList& List)
 {
   // general defaults for multilevel
@@ -37,4 +37,4 @@ void SetDefaults(Teuchos::ParameterList& List)
 
 } // namespace MLAPI
 
-#endif 
+#endif

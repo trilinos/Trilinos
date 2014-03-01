@@ -223,6 +223,9 @@ namespace Belos {
 	candidateBasisLength_ (initialCandidateBasisLength (akx_, akxParams_))
     {}
 
+    /// Destructor -- need to have it because class is polymorphic
+    virtual ~CaGmres() {}
+
     /// \brief Return valid list of matrix powers kernel parameters.
     ///
     /// If the params argument is nonnull and contains an "Akx" or

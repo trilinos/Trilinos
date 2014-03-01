@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -50,7 +50,7 @@ ML_Krylov *ML_Krylov_Create(ML_Comm *comm)
 
 int ML_Krylov_Destroy( ML_Krylov **data)
 {
-   if ( (*data)->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( (*data)->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Destroy error : wrong object.\n");
       exit(-1);
@@ -66,7 +66,7 @@ int ML_Krylov_Destroy( ML_Krylov **data)
 
 ML_Comm * ML_Krylov_Get_Comm(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_Comm error : wrong object.\n");
       exit(-1);
@@ -80,7 +80,7 @@ ML_Comm * ML_Krylov_Get_Comm(ML_Krylov *data)
 
 int ML_Krylov_Set_Method(ML_Krylov *data, int method)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_Method error : wrong object.\n");
       exit(-1);
@@ -97,7 +97,7 @@ int ML_Krylov_Set_Method(ML_Krylov *data, int method)
 
 int ML_Krylov_Set_PrintFreq(ML_Krylov *data, int n)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_PrintFreq error : wrong object.\n");
       exit(-1);
@@ -112,7 +112,7 @@ int ML_Krylov_Set_PrintFreq(ML_Krylov *data, int n)
 
 int ML_Krylov_Get_PrintFreq(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_PrintFreq error : wrong object.\n");
       exit(-1);
@@ -126,7 +126,7 @@ int ML_Krylov_Get_PrintFreq(ML_Krylov *data)
 
 int ML_Krylov_Set_GMRESSize(ML_Krylov *data, int size)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_GMRESSize error : wrong object.\n");
       exit(-1);
@@ -142,7 +142,7 @@ int ML_Krylov_Set_GMRESSize(ML_Krylov *data, int size)
 
 int ML_Krylov_Get_GMRESSize(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_GMRESSize error : wrong object.\n");
       exit(-1);
@@ -156,7 +156,7 @@ int ML_Krylov_Get_GMRESSize(ML_Krylov *data)
 
 int ML_Krylov_Set_BICGSTABLSize(ML_Krylov *data, int size)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_BICGSTABLSize error : wrong object.\n");
       exit(-1);
@@ -174,7 +174,7 @@ int ML_Krylov_Set_BICGSTABLSize(ML_Krylov *data, int size)
 
 int ML_Krylov_Get_BICGSTABLSize(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_BICGSTABLSize error : wrong object.\n");
       exit(-1);
@@ -188,7 +188,7 @@ int ML_Krylov_Get_BICGSTABLSize(ML_Krylov *data)
 
 int ML_Krylov_Set_Amatrix(ML_Krylov *data, ML_Operator *mat)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_Amatrix error : wrong object.\n");
       exit(-1);
@@ -203,7 +203,7 @@ int ML_Krylov_Set_Amatrix(ML_Krylov *data, ML_Operator *mat)
 
 ML_Operator* ML_Krylov_Get_Amatrix(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_Amatrix error : wrong object.\n");
       exit(-1);
@@ -217,7 +217,7 @@ ML_Operator* ML_Krylov_Get_Amatrix(ML_Krylov *data)
 
 int ML_Krylov_Set_MaxIterations(ML_Krylov *data, int iter )
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_MaxIterations error : wrong object.\n");
       exit(-1);
@@ -232,7 +232,7 @@ int ML_Krylov_Set_MaxIterations(ML_Krylov *data, int iter )
 
 int ML_Krylov_Get_MaxIterations(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_MaxIterations error : wrong object.\n");
       exit(-1);
@@ -246,7 +246,7 @@ int ML_Krylov_Get_MaxIterations(ML_Krylov *data)
 
 int ML_Krylov_Set_Tolerance(ML_Krylov *data, double tol )
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_Tolerance error : wrong object.\n");
       exit(-1);
@@ -263,7 +263,7 @@ int ML_Krylov_Set_Diagonal(ML_Krylov *data, int leng, double *diag )
 {
    int  i;
 
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_Diagonal error : wrong object.\n");
       exit(-1);
@@ -282,7 +282,7 @@ int ML_Krylov_Set_Diagonal(ML_Krylov *data, int leng, double *diag )
 
 double ML_Krylov_Get_Tolerance(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_Tolerance error : wrong object.\n");
       exit(-1);
@@ -296,7 +296,7 @@ double ML_Krylov_Get_Tolerance(ML_Krylov *data)
 
 int ML_Krylov_Set_Precon(ML_Krylov *data, void *prec)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_Precon error : wrong object.\n");
       exit(-1);
@@ -311,7 +311,7 @@ int ML_Krylov_Set_Precon(ML_Krylov *data, void *prec)
 
 void *ML_Krylov_Get_Precon(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_Precon error : wrong object.\n");
       exit(-1);
@@ -323,10 +323,10 @@ void *ML_Krylov_Get_Precon(ML_Krylov *data)
 /* set preconditioner function                                          */
 /* ******************************************************************** */
 
-int ML_Krylov_Set_PreconFunc(ML_Krylov *data, 
+int ML_Krylov_Set_PreconFunc(ML_Krylov *data,
                             int (*func)(void*,int,double*,int,double*))
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_PreconFunc error : wrong object.\n");
       exit(-1);
@@ -344,7 +344,7 @@ int ML_Krylov_Set_PreconFunc(ML_Krylov *data,
 
 int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Solve error : wrong object.\n");
       exit(-1);
@@ -354,13 +354,13 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
    {
 #ifdef RST_MODIF
       if (data->ML_dont_scale_by_diag == 1)
-	ML_CG_ComputeEigenvalues(data, leng, ML_FALSE); 
-      else ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
+	ML_CG_ComputeEigenvalues(data, leng, ML_FALSE);
+      else ML_CG_ComputeEigenvalues(data, leng, ML_TRUE);
 #else
 #ifndef MB_MODIF
       if (data->ML_dont_scale_by_diag == 1)
-	ML_CG_ComputeEigenvalues(data, leng, ML_FALSE); 
-      else ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
+	ML_CG_ComputeEigenvalues(data, leng, ML_FALSE);
+      else ML_CG_ComputeEigenvalues(data, leng, ML_TRUE);
 
 #else
       /* no diag. in smoother */
@@ -375,16 +375,16 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
    {
 #ifdef RST_MODIF
       if (data->ML_dont_scale_by_diag == 1)
-	ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE); 
-      else ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_TRUE); 
+	ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE);
+      else ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_TRUE);
 #else
 #ifndef MB_MODIF
       if (data->ML_dont_scale_by_diag == 1)
-	ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE); 
-      else ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_TRUE); 
+	ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE);
+      else ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_TRUE);
 #else
       /* no diag. in smoother */
-      ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE); 
+      ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE);
 #endif
 #endif
       data->ML_nonsym_eigen = 0;
@@ -476,7 +476,7 @@ int ML_AMGVSolve_Wrapper(void *data,int leng,double *outvec,int leng2,
 
 int ML_Krylov_Set_ComputeEigenvalues(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_ComputeEigenvalues error : wrong object.\n");
       exit(-1);
@@ -486,7 +486,7 @@ int ML_Krylov_Set_ComputeEigenvalues(ML_Krylov *data)
 }
 int ML_Krylov_Set_ComputeNonSymEigenvalues(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Set_ComputeNonSymEigenvalues error : wrong object.\n");
       exit(-1);
@@ -506,7 +506,7 @@ int ML_Krylov_Set_DiagScaling_Eig(ML_Krylov *data, int scale)
 
   if (scale == 1)
     data->ML_dont_scale_by_diag = 0;
-  else if (scale == 0) 
+  else if (scale == 0)
     data->ML_dont_scale_by_diag = 1;
   else {
     printf("ML_Krylov_Set_DiagScaling_Eig: Unknown scaling option %d\n",
@@ -522,7 +522,7 @@ int ML_Krylov_Set_DiagScaling_Eig(ML_Krylov *data, int scale)
 
 double ML_Krylov_Get_MaxEigenvalue(ML_Krylov *data)
 {
-   if ( data->ML_id != ML_ID_KRYLOVDATA ) 
+   if ( data->ML_id != ML_ID_KRYLOVDATA )
    {
       printf("ML_Krylov_Get_MaxEigenvalue error : wrong object.\n");
       exit(-1);

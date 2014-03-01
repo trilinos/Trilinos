@@ -85,7 +85,7 @@ int ML_AMG_Create( ML_AMG **amg )
 
 int ML_AMG_Destroy( ML_AMG **amg )
 {
-   if ( (*amg)->ML_id != ML_ID_AMG ) 
+   if ( (*amg)->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Destroy : wrong object. \n");
       exit(-1);
@@ -102,7 +102,7 @@ int ML_AMG_Destroy( ML_AMG **amg )
 
 int ML_AMG_Set_OutputLevel( ML_AMG *amg, double level )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_OutputLevel : wrong object. \n");
       exit(-1);
@@ -117,7 +117,7 @@ int ML_AMG_Set_OutputLevel( ML_AMG *amg, double level )
 
 int ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size  )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_MaxCoarseSize : wrong object. \n");
       exit(-1);
@@ -132,7 +132,7 @@ int ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size  )
 
 int ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_AMGScheme_Scalar : wrong object. \n");
       exit(-1);
@@ -145,7 +145,7 @@ int ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  )
 
 int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int numPDE  )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_AMGScheme_SystemUnknown : wrong object. \n");
       exit(-1);
@@ -159,7 +159,7 @@ int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int numPDE  )
 
 int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int numPDE  )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_AMGScheme_SystemNodal : wrong object. \n");
       exit(-1);
@@ -175,7 +175,7 @@ int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int numPDE  )
 
 int ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_CoarsenScheme_MIS : wrong object. \n");
       exit(-1);
@@ -190,7 +190,7 @@ int ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  )
 
 int ML_AMG_Set_Threshold( ML_AMG *amg, double thresh )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_Threshold : wrong object. \n");
       exit(-1);
@@ -206,7 +206,7 @@ int ML_AMG_Set_Threshold( ML_AMG *amg, double thresh )
 
 int ML_AMG_Set_MaxLevels( ML_AMG *amg, int level )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_MaxLevels : wrong object. \n");
       exit(-1);
@@ -219,7 +219,7 @@ int ML_AMG_Set_MaxLevels( ML_AMG *amg, int level )
 
 int ML_AMG_Set_CurrentLevel( ML_AMG *amg, int level )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_CurrentLevel : wrong object. \n");
       exit(-1);
@@ -232,7 +232,7 @@ int ML_AMG_Set_CurrentLevel( ML_AMG *amg, int level )
 
 int ML_AMG_Set_StartLevel( ML_AMG *amg, int level )
 {
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Set_StartLevel : wrong object. \n");
       exit(-1);
@@ -245,7 +245,7 @@ int ML_AMG_Set_StartLevel( ML_AMG *amg, int level )
 /* Coarsening routine                                                        */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix, 
+int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
                    ML_Comm *comm)
 {
    int    Ncoarse, mypid;
@@ -255,7 +255,7 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
    t0 = GetClock();
 #endif
 
-   if ( amg->ML_id != ML_ID_AMG ) 
+   if ( amg->ML_id != ML_ID_AMG )
    {
       printf("ML_AMG_Coarsen : wrong object. \n");
       exit(-1);
@@ -274,7 +274,7 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
       default :
          if ( mypid == 0 ) printf("ML_AMG_Coarsen : invalid scheme.\n");
          exit(1);
-   } 
+   }
 
 #ifdef ML_AMG_DEBUG
    i = 0;
@@ -302,7 +302,7 @@ int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
    amg->fine_Amat = Amatrix;
    if ( pre_or_post == ML_PRESMOOTHER )
    {
-      if ( smoother_type >= ML_AMG_SM_JACOBI && 
+      if ( smoother_type >= ML_AMG_SM_JACOBI &&
            smoother_type <= ML_AMG_SM_MSCHWARZ)
          amg->presmoother_type = smoother_type;
       amg->presmoother_ntimes = ntimes;
@@ -310,7 +310,7 @@ int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
    }
    else if ( pre_or_post == ML_POSTSMOOTHER )
    {
-      if ( smoother_type >= ML_AMG_SM_JACOBI && 
+      if ( smoother_type >= ML_AMG_SM_JACOBI &&
            smoother_type <= ML_AMG_SM_MSCHWARZ)
          amg->postsmoother_type = smoother_type;
       amg->postsmoother_ntimes = ntimes;
@@ -318,15 +318,15 @@ int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
    }
    return 0;
 }
-  
+
 /* ************************************************************************* */
 /* set Aztec-related smoother parameters                                     */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options, 
-			     double *params, int *proc_config, double *status, 
+int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options,
+			     double *params, int *proc_config, double *status,
 			     void (*aztec_function)(int)
-		     /* Trying to avoid including az_aztec.h. 
+		     /* Trying to avoid including az_aztec.h.
 			void (*aztec_function)(double *,int *,int *,double *,
                         struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*)
 		     */)
@@ -354,7 +354,7 @@ int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options,
 /* set coarse grid solver                                                    */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_Set_CoarseSolve(ML_AMG *amg, int solve_type, int ntimes, 
+int ML_AMG_Set_CoarseSolve(ML_AMG *amg, int solve_type, int ntimes,
                            double weight)
 {
    if ( solve_type >= ML_AMG_SM_JACOBI && solve_type <= ML_AMG_SM_SUPERLU)

@@ -61,16 +61,16 @@ namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &);
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>&             toTpetra(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>&);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &);
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > > toTpetra(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >&);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
+  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node > >         toXpetra(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetraNonConst(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
+  const RCP<Map<LocalOrdinal,GlobalOrdinal,Node > >               toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&);
   //
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -253,19 +253,20 @@ namespace Xpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
-    if (map != Teuchos::null)
-      return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+    if (!map.is_null())
+      return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+
     return Teuchos::null;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetraNonConst(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
-    if (map != Teuchos::null)
-      return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+  const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+    if (!map.is_null())
+      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(map));
+
     return Teuchos::null;
   }
-  //
 
   // TODO: removed (but currently used in unit test)
   namespace useTpetra {

@@ -84,6 +84,9 @@
 /* Define if Belos is enabled */
 /* #undef HAVE_STOKHOS_BELOS */
 
+/* Define if Amesos2 is enabled */
+#define HAVE_STOKHOS_AMESOS2
+
 /* Define if MATLAB is enabled */
 /* #undef HAVE_STOKHOS_MATLABLIB */
 

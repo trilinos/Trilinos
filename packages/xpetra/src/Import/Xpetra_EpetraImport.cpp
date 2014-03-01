@@ -65,8 +65,12 @@ namespace Xpetra {
   //   }
 
   RCP< const Import<int, int > > toXpetra(const Epetra_Import *import) {
-    RCP<const Epetra_Import> imp = rcp(new Epetra_Import(*import)); //NOTE: non consitent: return pointer, take ref
-    return rcp ( new Xpetra::EpetraImport(imp) );
+    if (import != NULL) {
+      RCP<const Epetra_Import> imp = rcp(new Epetra_Import(*import)); //NOTE: non consitent: return pointer, take ref
+      return rcp(new Xpetra::EpetraImport(imp));
+    }
+
+    return Teuchos::null;
   }
   //
 

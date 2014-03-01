@@ -1,6 +1,6 @@
 /********************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */   
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /********************************************************************* */
@@ -11,7 +11,7 @@
 #define __MLAGGPARMETIS__
 
 #include "ml_comm.h"
-					 
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 
-  extern int ML_Aggregate_Set_ReqLocalCoarseSize( int, ML_Aggregate *ag, 
+  extern int ML_Aggregate_Set_ReqLocalCoarseSize( int, ML_Aggregate *ag,
 	 				 int level,
 					 int desired_aggre_per_proc );
   extern int ML_DecomposeGraph_BuildOffsets( int N_parts,
@@ -27,9 +27,9 @@ extern "C" {
 				    int N_procs, USR_COMM );
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag,
-					   ML_Operator *Amatrix, 
+					   ML_Operator *Amatrix,
 					   ML_Operator **Pmatrix,
-					   ML_Comm *comm);  
+					   ML_Comm *comm);
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
 
@@ -46,7 +46,7 @@ extern "C" {
   extern int ML_Aggregate_Set_UseDropping(int i);
 
   extern int ML_Aggregate_Get_UseDropping();
-  
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

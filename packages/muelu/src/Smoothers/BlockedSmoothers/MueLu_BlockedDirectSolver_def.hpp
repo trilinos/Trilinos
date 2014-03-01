@@ -148,7 +148,7 @@ namespace MueLu {
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     FactoryMonitor m(*this, "Setup BlockedDirectSolver", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::BlockedDirectSolver::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0) << "Warning: MueLu::BlockedDirectSolver::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A"); // A needed for extracting map extractors
@@ -228,19 +228,11 @@ namespace MueLu {
   void BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    // extract parameters from internal parameter list
-    const ParameterList & pL = Factory::GetParameterList();
-
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
-    if (verbLevel & Debug) {
-    }
-
-    if (verbLevel & Debug) {
+    if (verbLevel & Debug)
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
-    }
   }
 
 } // namespace MueLu

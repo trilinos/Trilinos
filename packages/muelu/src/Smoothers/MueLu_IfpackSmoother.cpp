@@ -113,7 +113,7 @@ namespace MueLu {
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true)
-      GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
+      GetOStream(Warnings0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -124,13 +124,13 @@ namespace MueLu {
 
       try {
         lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter(maxEigString));
-        this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+        this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
       } catch (Teuchos::Exceptions::InvalidParameterName) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
 
         if (lambdaMax != -1.0) {
-          this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+          this->GetOStream(Statistics1) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
           this->SetParameter(maxEigString, ParameterEntry(lambdaMax));
         }
       }
@@ -157,7 +157,7 @@ namespace MueLu {
 
         ratio = std::max(ratio, as<Scalar>(nRowsFine)/nRowsCoarse);
 
-        this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+        this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
         this->SetParameter(eigRatioString, ParameterEntry(ratio));
       }
     }
@@ -177,12 +177,12 @@ namespace MueLu {
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->GetLambdaMax();
         A_->SetMaxEigenvalueEstimate(lambdaMax);
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack)" << " = " << lambdaMax << std::endl;
+        this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack)" << " = " << lambdaMax << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics0, 0) << description() << std::endl;
+    this->GetOStream(Statistics0) << description() << std::endl;
   }
 
   void IfpackSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {

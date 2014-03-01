@@ -466,7 +466,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (X));
+      Xcopy = rcp (new MV (createCopy(X)));
     } else {
       Xcopy = rcpFromRef (X);
     }

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -152,7 +152,7 @@ void BaseOperatorTimesMultiVector::Update(MultiVector& v) const
   if (v.GetVectorSpace() != x_.GetVectorSpace() ||
       v.IsAlias(x_))
     v.Reshape(x_.GetVectorSpace());
-  
+
   MultiVector tmp(v.GetVectorSpace());
   A_.Apply(x_, tmp);
   v.Update(1.0, tmp, 1.0);
@@ -185,7 +185,7 @@ const Space Residual::GetVectorSpace() const
 void Residual::Update(MultiVector& v) const
 {
   StackPush();
-  
+
   // FIXME: THIS IS A DUPLICATE
   if (v.IsAlias(b_) || v.IsAlias(x_))
   {

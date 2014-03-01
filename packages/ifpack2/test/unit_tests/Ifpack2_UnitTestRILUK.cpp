@@ -395,7 +395,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
     col[i] = g_row;
     val[i++] = two;
     if (l_row>0)              {col[i] = map->getGlobalElement(l_row-1); val[i++] = -one;}
-    if (l_row<numLocalElts-1) {col[i] = map->getGlobalElement(l_row+1); val[i++] = -one;}
+    if ((size_t)l_row<numLocalElts-1) {col[i] = map->getGlobalElement(l_row+1); val[i++] = -one;}
     A->insertGlobalValues(g_row, col(0,i), val(0,i));
   }
   A->fillComplete();

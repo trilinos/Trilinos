@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -50,7 +50,7 @@ public:
 
   //! Empty constructor.
   InverseOperator() {}
-  
+
   //! Constructor for a given Operator and type, and default parameters.
   InverseOperator(const Operator& Op, const std::string Type);
 
@@ -86,12 +86,12 @@ public:
                Teuchos::ParameterList* pushlist = NULL);
 
   //! Reshape with preconstructed smoother as Ifpack_Preconditioner
-  void Reshape(Ifpack_Preconditioner* prec, const Operator& Op, 
+  void Reshape(Ifpack_Preconditioner* prec, const Operator& Op,
                const bool ownership);
 
   // @}
   // @{ Get and Set methods.
-  
+
   //! Returns a reference to the range space of \c this object.
   const Space GetOperatorRangeSpace() const;
 
@@ -127,7 +127,7 @@ public:
 
   // @}
   // @{ Mathematical methods
-  
+
   //! Applies \c this object to vector \c lhs, returns values in \c rhs.
   int Apply(const MultiVector& x, MultiVector& y) const;
 
@@ -148,7 +148,7 @@ private:
 
   // @}
   // @{ \name Private data and methods
-  
+
   void Destroy();
 
   //! Operator of which \c this object define the inverse.
@@ -160,7 +160,7 @@ private:
   //! ML preconditioner
   Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  RCPMLPrec_;
   // @}
-  
+
 }; // InverseOperator
 
 } // namespace MLAPI

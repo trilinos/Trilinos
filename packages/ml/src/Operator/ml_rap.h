@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -31,36 +31,36 @@ extern "C" {
 extern void ML_convert_data_org(ML_Operator *mat, int d_org[], int *rcv,
                                 int *remap, int leng, int add_or_not);
 
-extern void ML_add_appended_rows(ML_CommInfoOP *comm_info, 
-                                 ML_Operator *matrix, int orig_rows, 
+extern void ML_add_appended_rows(ML_CommInfoOP *comm_info,
+                                 ML_Operator *matrix, int orig_rows,
                                  int total_rcvd, int appended_nzs);
 
-extern void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix, 
+extern void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
                              int max_per_proc);
 
 extern void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
         int max_per_proccomm);
 
-extern int  ML_back_to_epetraCrs(ML_Operator *Mat1Mat2,  ML_Operator *Result, 
-				 ML_Operator *Mat1,  ML_Operator *Mat2); 
+extern int  ML_back_to_epetraCrs(ML_Operator *Mat1Mat2,  ML_Operator *Result,
+				 ML_Operator *Mat1,  ML_Operator *Mat2);
                                   /* code is in ml_epetra_utils.h. Put the  */
                                  /* proto-type here to avoid c++ compiler on ml_rap.c */
 
 
-extern void ML_exchange_rows(ML_Operator *orig, ML_Operator **appended, 
+extern void ML_exchange_rows(ML_Operator *orig, ML_Operator **appended,
                              ML_CommInfoOP *comm_info);
 
-extern void ML_expand_accum(int accum_size, int **accum_col, 
+extern void ML_expand_accum(int accum_size, int **accum_col,
                             double **accum_val, int Ncols);
 
 extern void ML_get_matrix_row(ML_Operator *input_matrix,int N_requested_rows,
-                              int requested_rows[], int *allocated_space, 
-                              int **columns, double **values, 
+                              int requested_rows[], int *allocated_space,
+                              int **columns, double **values,
                               int row_lengths[], int index);
 
 extern void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc);
 
-extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat, 
+extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat,
                            ML_Operator **Cmat);
 #ifdef HAVE_ML_AZTECOO
 extern void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
@@ -79,14 +79,14 @@ extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
 extern void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
         int **values, int row_lengths[], int index);
-extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
-        int N_requested_rows, int requested_rows[], int *allocated_space, 
+extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix,
+        int N_requested_rows, int requested_rows[], int *allocated_space,
         int **columns, double **values, int row_lengths[], int index);
 
-extern void ML_getrow_matvec(ML_Operator *matrix, double *vec, 
+extern void ML_getrow_matvec(ML_Operator *matrix, double *vec,
                              int Nvec, double *ovec, int *Novec);
 
-extern void ML_rap(ML_Operator *R2mat, ML_Operator *A2mat, 
+extern void ML_rap(ML_Operator *R2mat, ML_Operator *A2mat,
                    ML_Operator *P2mat, ML_Operator *Result,
 		   int matrix_type);
 
@@ -94,19 +94,19 @@ extern void ML_rap_check(ML *ml, ML_Operator *RAP, ML_Operator *R,
                          ML_Operator *A, ML_Operator *P, int iNvec,
                          int oNvec);
 
-extern void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[], 
+extern void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
                                 int max_per_proc, ML_Operator *omatrix);
 
 extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
 
 extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 		       int *rows[], int *rows_length, int *NBrows,
-		       int *rows_that_fit, 
+		       int *rows_that_fit,
 		       void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
 					 double **,int *,int));
 extern int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
 		       int *rows[], int *rows_length, int *NBrows,
-		       int *rows_that_fit, 
+		       int *rows_that_fit,
 		       void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
 					 int **,int *,int));
 

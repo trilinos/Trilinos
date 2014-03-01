@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -48,7 +48,7 @@ typedef struct ML_GGraph_Struct
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif

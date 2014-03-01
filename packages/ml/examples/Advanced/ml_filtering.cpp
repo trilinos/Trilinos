@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 //@HEADER
 #include "ml_include.h"
@@ -36,7 +36,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   // Creates the linear problem using the Galeri package.
   // Various matrix examples are supported; please refer to the
   // Galeri documentation for more details. In this example, the grid
-  // has nx x ny nodes, divided into mx x my subdomains, 
+  // has nx x ny nodes, divided into mx x my subdomains,
   // each assigned to a different processor.
   int nx = 8;
   int ny = 8 * Comm.NumProc();
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   // create a parameter list for ML options
   ParameterList MLList;
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   MLList.set("eigen-analysis: tolerance", 1e-2);
   MLList.set("eigen-analysis: block-size", 1);
   MLList.set("eigen-analysis: length", 20);
-  
+
   // create the preconditioner object and compute hierarchy
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
@@ -99,22 +99,22 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPrec);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
 
-  // solve with 500 iterations and 1e-12 tolerance  
+  // solve with 500 iterations and 1e-12 tolerance
   solver.Iterate(1550, 1e-5);
 
   delete MLPrec;
-  
+
   // compute the real residual
 
   double residual;
-  
+
   LHS.Norm2(&residual);
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
   {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "Total Time = " << Time.ElapsedTime() << endl;
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 
-#endif 
+#endif

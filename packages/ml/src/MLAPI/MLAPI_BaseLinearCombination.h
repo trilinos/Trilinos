@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 namespace MLAPI {
@@ -21,7 +21,7 @@ class Space;
 class BaseOperator;
 class MultiVector;
 
-class BaseLinearCombination 
+class BaseLinearCombination
 {
 public:
   virtual ~BaseLinearCombination() {};

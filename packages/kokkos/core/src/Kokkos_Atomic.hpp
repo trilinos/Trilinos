@@ -49,7 +49,7 @@
 ///   - compare and exchange
 ///   - add
 ///
-/// Supported types include: 
+/// Supported types include:
 ///   - signed and unsigned 4 and 8 byte integers
 ///   - float
 ///   - double
@@ -86,7 +86,7 @@
 // Choose the best implementation for the detected compiler.
 // Preference: GCC, INTEL, OMP31
 
-#if defined( __GNUC__ ) || defined( __GNUG__ )
+#if defined( __GNUC__ ) || defined( __GNUG__ ) || defined( __clang__ )
 
 #define KOKKOS_ATOMICS_USE_GCC
 
@@ -109,6 +109,7 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+
 
 inline
 const char * atomic_query_version()
@@ -154,6 +155,23 @@ const char * atomic_query_version()
 #include "impl/Kokkos_Atomic_Fetch_Add.hpp"
 
 //----------------------------------------------------------------------------
+// Memory fence
+//
+// All loads and stores from this thread will be globally consistent before continuing
+//
+// void memory_fence() {...};
+#include "impl/Kokkos_Memory_Fence.hpp"
+
+//----------------------------------------------------------------------------
+// Provide volatile_load and safe_load
+//
+// T volatile_load(T const volatile * const ptr);
+//
+// T const& safe_load(T const * const ptr);
+// XEON PHI
+// T safe_load(T const * const ptr
+
+#include "impl/Kokkos_Volatile_Load.hpp"
 
 #endif /* KOKKOS_ATOMIC_HPP */
 

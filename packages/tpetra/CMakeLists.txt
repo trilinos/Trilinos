@@ -298,7 +298,8 @@ IF (Tpetra_ENABLE_Kokkos_Refactor AND
     Tpetra_ENABLE_KokkosCore AND
     Tpetra_ENABLE_KokkosCompat AND
     Tpetra_ENABLE_KokkosLinAlg AND
-    Tpetra_ENABLE_KokkosContainers)
+    Tpetra_ENABLE_KokkosContainers AND
+    Tpetra_ENABLE_KokkosMpiComm)
   SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
 ELSE()
   SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")

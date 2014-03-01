@@ -669,8 +669,13 @@ namespace Tpetra {
         }
         ++indResult; // exclusive end of merged result
         ++valResult; // exclusive end of merged result
-        indEnd = indResult;
-        valEnd = valResult;
+
+        // mfh 24 Feb 2014: Setting these is technically correct, but
+        // since the resulting variables aren't used after this point,
+        // it may result in a build error.
+        //
+        // indEnd = indResult;
+        // valEnd = valResult;
       }
       indResultOut = indResult;
       valResultOut = valResult;

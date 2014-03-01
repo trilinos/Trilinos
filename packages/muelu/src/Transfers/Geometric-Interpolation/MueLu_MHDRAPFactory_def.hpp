@@ -224,7 +224,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
+  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
     std::stringstream ss(std::stringstream::out);
     ss << msgTag
        << " # global rows = "      << Ac.getGlobalNumRows()

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -24,7 +24,7 @@ typedef struct ML_Grid_Struct ML_Grid;
 /* definition of the data structure for Grid                            */
 /* -------------------------------------------------------------------- */
 
-struct ML_Grid_Struct 
+struct ML_Grid_Struct
 {
    int           ML_id;
    void          *Grid;        /* user grid data structure        */

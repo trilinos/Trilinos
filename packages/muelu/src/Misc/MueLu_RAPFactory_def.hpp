@@ -59,9 +59,10 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -113,24 +114,28 @@ namespace MueLu {
         coarseLevel.Keep("RAP Pattern", this);
 
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
-      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
-      RCP<Matrix> AP, Ac;
+      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), R, AP, Ac;
+      if (!implicitTranspose_)
+        R = Get< RCP<Matrix> >(coarseLevel, "R");
 
       // Reuse pattern if available (multiple solve)
       if (coarseLevel.IsAvailable("AP Pattern", this)) {
-        GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern" << std::endl;
+        GetOStream(Runtime0) << "Ac: Using previous AP pattern" << std::endl;
+
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
       }
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
-        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2,0));
-        Set(coarseLevel, "AP Pattern", AP);
+
+        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2));
       }
+      Set(coarseLevel, "AP Pattern", AP);
 
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP Pattern", this)) {
-        GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern" << std::endl;
+        GetOStream(Runtime0) << "Ac: Using previous RAP pattern" << std::endl;
+
         Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
       }
 
@@ -141,21 +146,19 @@ namespace MueLu {
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-        Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
+        Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2), true, doOptimizedStorage);
 
       } else {
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
-        RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
-        Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
-
+        Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2), true, doOptimizedStorage);
       }
 
       CheckRepairMainDiagonal(Ac);
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A",           Ac);
       Set(coarseLevel, "RAP Pattern", Ac);
@@ -167,7 +170,7 @@ namespace MueLu {
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
         RCP<const FactoryBase> fac = *it;
-        GetOStream(Runtime0, 0) << "RAPFactory: call transfer factory: " << fac->description() << std::endl;
+        GetOStream(Runtime0) << "RAPFactory: call transfer factory: " << fac->description() << std::endl;
         fac->CallBuild(coarseLevel);
         // Coordinates transfer is marginally different from all other operations
         // because it is *optional*, and not required. For instance, we may need
@@ -257,20 +260,29 @@ namespace MueLu {
           fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
         }
       }
-      Ac->fillComplete(p);
+      {
+        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
+        Ac->fillComplete(p);
+      }
+
       MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
-      if (Ac->IsView("stridedMaps")) fixDiagMatrix->CreateView("stridedMaps", Ac);
+      if (Ac->IsView("stridedMaps"))
+        fixDiagMatrix->CreateView("stridedMaps", Ac);
+
       Ac = Teuchos::null;     // free singular coarse level matrix
       Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
     }
 
     // call fillComplete with optimized storage option set to true
     // This is necessary for new faster Epetra MM kernels.
-    Ac->fillComplete(p);
+    {
+      Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
+      Ac->fillComplete(p);
+    }
 
     // print some output
     if (IsPrint(Warnings0))
-      GetOStream(Warnings0,0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
+      GetOStream(Warnings0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
           << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
 
 #ifdef HAVE_MUELU_DEBUG // only for debugging

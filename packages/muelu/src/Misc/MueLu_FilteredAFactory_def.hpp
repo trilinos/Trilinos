@@ -90,7 +90,7 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     if (currentLevel.Get<bool>("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get()) == false) {
-      GetOStream(Runtime0,0) << "Filtered matrix is not being constructed as no filtering is being done" << std::endl;
+      GetOStream(Runtime0) << "Filtered matrix is not being constructed as no filtering is being done" << std::endl;
       Set(currentLevel, "A", A);
       return;
     }
@@ -101,7 +101,7 @@ namespace MueLu {
     size_t    blkSize = A->GetFixedBlockSize();
 
     if (lumping)
-      GetOStream(Runtime0,0) << "Lumping dropped entries" << std::endl;
+      GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
 
     // Calculate max entries per row
     RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);

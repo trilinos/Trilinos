@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ************************************************************************* */
@@ -31,7 +31,7 @@
 int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
        ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int     i, j, k, m, jnode, index, index3, count; 
+   int     i, j, k, m, jnode, index, index3, count;
    int     nz_cnt, nbytes, length, level, diff_level;
    int     Nrows, *mat_indx=NULL;
    int     maxnnz_per_row=500, *col_ind;
@@ -235,7 +235,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    {
       ml_ag->aggr_info[level][i] = aggr_index[i];
    }
-   ml_ag->aggr_count[level] = aggr_count; 
+   ml_ag->aggr_count[level] = aggr_count;
 
    /* ============================================================= */
    /* set up the new operator                                       */
@@ -431,7 +431,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
 
    ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim,
                               new_null, Ncoarse*nullspace_dim);
-   
+
    ML_memory_free( (void **) &new_null);
 
    /* ------------------------------------------------------------- */

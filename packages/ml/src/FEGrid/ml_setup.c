@@ -1216,7 +1216,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    for ( i = 0; i < proc_flag[mypid]; i++)
    {
       fromproc = -1;
-      comm->USR_cheapwaitbytes((void*) &intarray[i], sizeof(int), &fromproc, 
+      comm->USR_cheapwaitbytes((void*) &intarray[i], sizeof(int), &fromproc,
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -1298,8 +1298,8 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    }
    for ( i = 0; i < recvproc_cnt; i++ )
    {
-     comm->USR_cheapwaitbytes((void*) (recv_list[i]), (unsigned int) trecv_leng[i], 
-                          &(trecv_proc[i]), &(trecv_msg[i]), 
+     comm->USR_cheapwaitbytes((void*) (recv_list[i]), (unsigned int) trecv_leng[i],
+                          &(trecv_proc[i]), &(trecv_msg[i]),
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -1329,7 +1329,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       trecv_msg[i]  = 480;
       trecv_leng[i] = ndim * recv_leng[i] * sizeof(double);
       trecv_proc[i] = recv_proc[i];
-      comm->USR_irecvbytes((void*)&(combuf->recv_xyz[index]), 
+      comm->USR_irecvbytes((void*)&(combuf->recv_xyz[index]),
 			   (unsigned int) trecv_leng[i],
                            &(trecv_proc[i]), &(trecv_msg[i]),
 #ifdef ML_CPP
@@ -1364,9 +1364,9 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    index = 0;
    for ( i = 0; i < recvproc_cnt; i++ )
    {
-      comm->USR_cheapwaitbytes((void*)&(combuf->recv_xyz[index]), 
+      comm->USR_cheapwaitbytes((void*)&(combuf->recv_xyz[index]),
 			       (unsigned int) trecv_leng[i],
-                           &(trecv_proc[i]), &(trecv_msg[i]), 
+                           &(trecv_proc[i]), &(trecv_msg[i]),
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -1797,8 +1797,8 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       msgtype = 13580;
-      leng = recv_leng[i] * sizeof(double); 
-      comm->USR_cheapwaitbytes((void*) &coef_out[offset], (unsigned int) leng, &recv_proc[i], 
+      leng = recv_leng[i] * sizeof(double);
+      comm->USR_cheapwaitbytes((void*) &coef_out[offset], (unsigned int) leng, &recv_proc[i],
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -1833,8 +1833,8 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       msgtype = 13581;
-      leng = recv_leng[i] * sizeof(int); 
-      comm->USR_cheapwaitbytes((void*) &index_out[offset], (unsigned int) leng, &recv_proc[i], 
+      leng = recv_leng[i] * sizeof(int);
+      comm->USR_cheapwaitbytes((void*) &index_out[offset], (unsigned int) leng, &recv_proc[i],
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -1915,8 +1915,8 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       msgtype = 13582;
-      leng = recv_leng[i] * sizeof(int); 
-      comm->USR_cheapwaitbytes((char*) &coefp_out[offset], (unsigned int) leng, &recv_proc[i], 
+      leng = recv_leng[i] * sizeof(int);
+      comm->USR_cheapwaitbytes((char*) &coefp_out[offset], (unsigned int) leng, &recv_proc[i],
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -2221,7 +2221,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    for ( i = 0; i < proc_flag[mypid]; i++ )
    {
       fromproc = -1;
-      comm->USR_cheapwaitbytes((void*) &intarray[i], int_size, &fromproc, 
+      comm->USR_cheapwaitbytes((void*) &intarray[i], int_size, &fromproc,
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -2298,7 +2298,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
       fromsize = (xsfer_op->com->recv_ia[i+1] - xsfer_op->com->recv_ia[i]) *
                   int_size;
       tmp_ia = &(recv_list32[xsfer_op->com->recv_ia[i]]);
-      comm->USR_cheapwaitbytes((void*) tmp_ia, (unsigned int) fromsize, &fromproc, &msgtype, 
+      comm->USR_cheapwaitbytes((void*) tmp_ia, (unsigned int) fromsize, &fromproc, &msgtype,
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else

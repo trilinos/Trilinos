@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -126,16 +126,16 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST( readHBMatrix, Bug5072_ReadOneRowMPI )
   {
     // failure reading 1x4 matrix under MPI
-    typedef int                       LO;
-    typedef int                       GO;
+    // typedef int                       LO;
+    // typedef int                       GO;
     typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     RCP<Node>             node = getDefaultNode();
@@ -156,7 +156,7 @@ namespace {
       Tpetra::Utils::readHBMatrix("addA2.hb", comm, node, A);
       readMatrix = A;
     }
-    // test that *readMatrix == *testMatrix 
+    // test that *readMatrix == *testMatrix
     TEST_EQUALITY( testMatrix->getNodeNumRows(), readMatrix->getNodeNumRows() );
     TEST_EQUALITY( testMatrix->getNodeNumCols(), readMatrix->getNodeNumCols() );
     TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
@@ -164,13 +164,13 @@ namespace {
       Teuchos::ArrayView<const int>    rowinds1, rowinds2;
       Teuchos::ArrayView<const double> rowvals1, rowvals2;
       for (int r=0; r < (int)testMatrix->getNodeNumRows(); ++r ) {
-        testMatrix->getLocalRowView(r, rowinds1, rowvals1);  
-        readMatrix->getLocalRowView(r, rowinds2, rowvals2);  
+        testMatrix->getLocalRowView(r, rowinds1, rowvals1);
+        readMatrix->getLocalRowView(r, rowinds2, rowvals2);
         TEST_COMPARE_ARRAYS( rowinds1, rowinds2 );
         TEST_COMPARE_ARRAYS( rowvals1, rowvals2 );
       }
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -184,13 +184,13 @@ namespace {
   //   // this still has to be bigger than LO
   //   typedef     long int GO;
   //   // this test assumes that global_size_t (default: size_t) is larger than GO=="long int", which should be true on 64-bit builds.
-  //   // create a comm  
+  //   // create a comm
   //   RCP<const Comm<int> > comm = getDefaultComm();
   //   const global_size_t numGlobal = comm->getSize();
   //   RCP<const Map<LO,GO> > map = rcp(new Map<LO,GO>(numGlobal,0,comm) );
   //   RCP<const CrsGraph<LO,GO> > graph = rcp(new CrsGraph<LO,GO>(map,0,Tpetra::DynamicProfile) );
   //   TEST_EQUALITY_CONST( graph != null, true );
-  //   // All procs fail if any proc fails 
+  //   // All procs fail if any proc fails
   //   int globalSuccess_int = -1;
   //   reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   //   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -203,7 +203,7 @@ namespace {
     typedef int LO;
     // this still has to be bigger than LO
     typedef int GO;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const global_size_t numGlobal = comm->getSize()*10;
     // create two separate, but identical, maps
@@ -221,7 +221,7 @@ namespace {
     RCP<Vector<double,LO,GO> > vecOut = Tpetra::createVector<double>(mapOut);
     // do the import; under the bug, this should throw an exception
     TEST_NOTHROW( vecOut->doImport( *vecIn, *import, Tpetra::REPLACE ) )
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );

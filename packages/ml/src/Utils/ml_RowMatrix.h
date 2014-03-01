@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_ROWMATRIX_H
 #define ML_ROWMATRIX_H
@@ -31,7 +31,7 @@ class Epetra_Importer;
 
 namespace ML_Epetra {
 
-/*! 
+/*!
  * \class RowMatrix
  *
  * \brief Basic wrapper from ML_Operator to Epetra_RowMatrix.
@@ -42,7 +42,7 @@ namespace ML_Epetra {
  */
 
 class RowMatrix : public virtual Epetra_RowMatrix {
-      
+
  public:
   //@{ \name Constructor.
     //! Constructor, constructs Comm object if not provided
@@ -61,26 +61,26 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     virtual ~RowMatrix();
 
   //@}
-  
+
   //@{ \name Matrix data extraction routines
 
     //! Returns the number of nonzero entries in MyRow.
-    /*! 
+    /*!
     \param In
            MyRow - Local row.
     \param Out
 	   NumEntries - Number of nonzero values present.
-	  
+
     \return Integer error code, set to 0 if successful.
   */
-    virtual int NumMyRowEntries(int MyRow, int & NumEntries) const; 
+    virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;
 
 
     //! Returns the maximum of NumMyRowEntries() over all rows.
     virtual int MaxNumEntries() const;
 
     //! Returns a copy of the specified local row in user-provided arrays.
-    /*! 
+    /*!
     \param In
            MyRow - Local row to extract.
     \param In
@@ -91,13 +91,13 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 	   Values - Extracted values for this row.
     \param Out
 	   Indices - Extracted global column indices for the corresponding values.
-	  
+
     \return Integer error code, set to 0 if successful.
   */
     virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
 
     //! Returns a copy of the main diagonal in a user-provided vector.
-    /*! 
+    /*!
     \param Out
 	   Diagonal - Extracted main diagonal.
 
@@ -105,11 +105,11 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   */
     virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
   //@}
-  
+
   //@{ \name Mathematical functions.
 
     //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param In
 	   TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
     \param In
@@ -137,10 +137,10 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
+    virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
 		      Epetra_MultiVector& Y) const
     {
-      ML_RETURN(-1); // not implemented 
+      ML_RETURN(-1); // not implemented
     }
 
     virtual int Apply(const Epetra_MultiVector& X,
@@ -155,12 +155,12 @@ class RowMatrix : public virtual Epetra_RowMatrix {
       ML_RETURN(-1);
     }
     //! Computes the sum of absolute values of the rows of the Epetra_RowMatrix, results returned in x.
-    /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
+    /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the
         \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
 	will make the infinity norm of the resulting matrix exactly 1.
     \param Out
-	   x -A Epetra_Vector containing the row sums of the \e this matrix. 
+	   x -A Epetra_Vector containing the row sums of the \e this matrix.
 	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
@@ -184,12 +184,12 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     }
 
     //! Computes the sum of absolute values of the columns of the Epetra_RowMatrix, results returned in x.
-    /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the 
+    /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the
         \e this matrix will be sca such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
-        and j denotes the global column number of A.  Using the resulting vector from this function as input to 
+        and j denotes the global column number of A.  Using the resulting vector from this function as input to
 	RighttScale() will make the one norm of the resulting matrix exactly 1.
     \param Out
-	   x -A Epetra_Vector containing the column sums of the \e this matrix. 
+	   x -A Epetra_Vector containing the column sums of the \e this matrix.
 	   \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
@@ -198,7 +198,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     {
       ML_RETURN(-1); // not implemented
     }
-    
+
 
     //! Scales the Epetra_RowMatrix on the right with a Epetra_Vector x.
     /*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
@@ -208,13 +208,13 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int RightScale(const Epetra_Vector& x) 
+    virtual int RightScale(const Epetra_Vector& x)
     {
       ML_RETURN(-1); // not implemented
     }
 
   //@}
-  
+
   //@{ \name Attribute access functions
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
@@ -226,13 +226,13 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
        \f[\| A \|_\infty = \max_{1\lei\len} \sum_{i=1}^m |a_{ij}| \f].
-    */ 
+    */
     virtual double NormInf() const;
 
     //! Returns the one norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_1\f$ such that
        \f[\| A \|_1= \max_{1\lej\len} \sum_{j=1}^n |a_{ij}| \f].
-    */ 
+    */
     virtual double NormOne() const
     {
       return(-1.0);
@@ -263,7 +263,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
     virtual long long NumGlobalDiagonals64() const;
-    
+
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const;
 
@@ -291,7 +291,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     virtual const Epetra_Import * RowMatrixImporter() const;
   //@}
-  
+
   // following functions are required to derive Epetra_RowMatrix objects.
 
   //! Sets ownership.
@@ -302,21 +302,21 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(false);};
-  
+
   //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
   bool HasNormInf() const{return(false);};
-  
+
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   const Epetra_Comm & Comm() const{return(*Comm_);};
-  
+
   //! Returns the Epetra_Map object associated with the domain of this operator.
   const Epetra_Map & OperatorDomainMap() const {return(*DomainMap_);};
-  
+
   //! Returns the Epetra_Map object associated with the range of this operator.
   const Epetra_Map & OperatorRangeMap() const {return(*RangeMap_);};
   //@}
 
-  void SetLabel(const char* label) 
+  void SetLabel(const char* label)
   {
     strcpy(Label_,label);
   };

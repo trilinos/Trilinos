@@ -63,8 +63,8 @@
 
 // ========================================================================
 namespace {
-  int file_info(const std::string& inpfile, const std::string& input_type,
-		SystemInterface& interface);
+  bool file_info(const std::string& inpfile, const std::string& input_type,
+		 SystemInterface& interface);
 
   void output_names(const std::string &type, const Ioss::NameList &fields,
 		    Ioss::GroupingEntity *entity)
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 }
 
 namespace {
-  int file_info(const std::string& inpfile, const std::string& input_type, SystemInterface &interface)
+  bool file_info(const std::string& inpfile, const std::string& input_type, SystemInterface &interface)
   {
     //========================================================================
     // INPUT ...

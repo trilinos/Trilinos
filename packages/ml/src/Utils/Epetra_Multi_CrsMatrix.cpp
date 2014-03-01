@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA)
@@ -14,7 +14,7 @@
 #include "Epetra_MpiComm.h"
 #endif
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Constructor
 ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra_CrsMatrix ** CrsMatrices)
   :NumMatrices_(NumMatrices),CrsMatrices_(CrsMatrices),Label_(0)
@@ -26,12 +26,12 @@ ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra
   RangeMap_ = &(CrsMatrices_[0]->OperatorRangeMap());
 }/*end Constructor*/
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Destructor
 ML_Epetra::Epetra_Multi_CrsMatrix::~Epetra_Multi_CrsMatrix(){if(Label_) delete [] Label_;}
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Computes Y= <me> * X
 int ML_Epetra::Epetra_Multi_CrsMatrix::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
@@ -47,7 +47,7 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::Apply(const Epetra_MultiVector& X, Epetra
   }/*end for*/
 
   /* Final matvec */
-  CrsMatrices_[0]->Apply(*MV[0],Y);    
+  CrsMatrices_[0]->Apply(*MV[0],Y);
 
   /* Cleanup */
   if(MV[1] != &X) delete MV[1];
@@ -55,13 +55,13 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::Apply(const Epetra_MultiVector& X, Epetra
   return 0;
 }/*end Apply*/
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Computes C= <me> * A
 int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMatrix & A, ML_Comm *comm, ML_Operator **C) const
 {
 
   int rv=0;
-  ML_Comm* temp = global_comm;  
+  ML_Comm* temp = global_comm;
 
   /* Setup for 1st Matmat */
   ML_Operator * MV[2]={0,0},*CV;
@@ -95,7 +95,7 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
 }/*end MatrixMatrix_Multiply*/
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Computes C= <me> * A
 int ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMatrix & A, Epetra_CrsMatrix **C) const
 {

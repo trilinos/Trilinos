@@ -57,9 +57,10 @@
 #include <Xpetra_MatrixFactory.hpp>
 
 #include "MueLu_RebalanceAcFactory_decl.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 namespace MueLu {
 
@@ -97,7 +98,7 @@ namespace MueLu {
 
         ParameterList XpetraList;
         if (pL.get<bool>("useSubcomm") == true) {
-          GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+          GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
           XpetraList.set("Restrict Communicator",true);
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
@@ -112,12 +113,12 @@ namespace MueLu {
       if (!rebalancedAc.is_null()) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 
     } else {
       // Ac already built by the load balancing process and no load balancing needed
-      GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
+      GetOStream(Warnings0) << "No rebalancing" << std::endl;
       Set(coarseLevel, "A", originalAc);
     }
 
@@ -126,7 +127,7 @@ namespace MueLu {
 
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        GetOStream(Runtime0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
         (*it)->CallBuild(coarseLevel);
       }
     }

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -21,9 +21,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
-namespace ML_Epetra 
+namespace ML_Epetra
 {
-  
+
 //==============================================================================
 // constructor -- it's presumed that the user has constructed the ML
 // object somewhere else
@@ -47,11 +47,11 @@ MultiLevelOperator::~MultiLevelOperator() {
 int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
 
-  if (!X.Map().SameAs(OperatorDomainMap())) 
+  if (!X.Map().SameAs(OperatorDomainMap()))
     ML_CHK_ERR(-1);
-  if (!Y.Map().SameAs(OperatorRangeMap())) 
+  if (!Y.Map().SameAs(OperatorRangeMap()))
     ML_CHK_ERR(-2);
-  if (Y.NumVectors()!=X.NumVectors()) 
+  if (Y.NumVectors()!=X.NumVectors())
     ML_CHK_ERR(-3);
 
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
@@ -95,11 +95,11 @@ int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
                 Epetra_MultiVector& Y ) const {
 
 
-  if (!X.Map().SameAs(OperatorDomainMap())) 
+  if (!X.Map().SameAs(OperatorDomainMap()))
     ML_CHK_ERR(-1);
-  if (!Y.Map().SameAs(OperatorRangeMap())) 
+  if (!Y.Map().SameAs(OperatorRangeMap()))
     ML_CHK_ERR(-2);
-  if (Y.NumVectors()!=X.NumVectors()) 
+  if (Y.NumVectors()!=X.NumVectors())
     ML_CHK_ERR(-3);
 
 #ifdef ML_MPI
@@ -142,11 +142,11 @@ int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
 //==============================================================================
 int MultiLevelOperator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
-  if (!X.Map().SameAs(OperatorDomainMap())) 
+  if (!X.Map().SameAs(OperatorDomainMap()))
     ML_CHK_ERR(-1);
-  if (!Y.Map().SameAs(OperatorRangeMap())) 
+  if (!Y.Map().SameAs(OperatorRangeMap()))
     ML_CHK_ERR(-2);
-  if (Y.NumVectors()!=X.NumVectors()) 
+  if (Y.NumVectors()!=X.NumVectors())
     ML_CHK_ERR(-3);
 
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
@@ -183,7 +183,7 @@ int MultiLevelOperator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_Mul
   return 0;
 }
 #endif
- 
+
 }
 
 #endif //ifdef ML_WITH_EPETRA

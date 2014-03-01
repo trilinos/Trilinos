@@ -212,12 +212,12 @@ namespace MueLu {
 
       sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
 
-      GetOStream(Statistics1, 0) << "Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
-      GetOStream(Statistics1, 0) << "Phase 1 - total aggregates = " << total_aggs << std::endl;
+      GetOStream(Statistics1) << "Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
+      GetOStream(Statistics1) << "Phase 1 - total aggregates = " << total_aggs << std::endl;
 
       GO i = nAggregates - Nphase1_agg;
       { GO ii; sumAll(graph.GetComm(),i,ii); i = ii; }
-      GetOStream(Statistics1, 0) << "Phase 3 - additional aggregates = " << i << std::endl;
+      GetOStream(Statistics1) << "Phase 3 - additional aggregates = " << i << std::endl;
     }
 
     // Determine vertices that are not shared by setting Temp to all ones
@@ -662,8 +662,8 @@ namespace MueLu {
       GO total_Nsingle=0;   sumAll(graph.GetComm(), (GO)Nsingle,     total_Nsingle);
       GO total_Nleftover=0; sumAll(graph.GetComm(), (GO)Nleftover,   total_Nleftover);
       // GO total_aggs;        sumAll(graph.GetComm(), (GO)nAggregates, total_aggs);
-      // GetOStream(Statistics1, 0) << "Phase 6 - total aggregates = " << total_aggs << std::endl;
-      GetOStream(Statistics1, 0) << "Phase 6 - leftovers = " << total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
+      // GetOStream(Statistics1) << "Phase 6 - total aggregates = " << total_aggs << std::endl;
+      GetOStream(Statistics1) << "Phase 6 - leftovers = " << total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
     }
 
     aggregates.SetNumAggregates(nAggregates);

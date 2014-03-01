@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -42,7 +42,7 @@ void ML_Read_Matrix_Dimensions(const char *filename, int *numGlobalRows,Epetra_C
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   TEUCHOS_TEST_FOR_EXCEPTION(errcode, std::runtime_error, "error reading file " + coordFile);
 
   // ML expects the nullspace modes in a single double vector.
-  
+
   double *nullspacePointer=0;
   if (nullspaceVector) {
     int MyLength = nullspaceVector->MyLength();
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   }
 
   // ML expects coordinates in separate double vectors.
-  
+
   double* mv=0;
   int stride;
   errcode=0;
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
 }
 
 

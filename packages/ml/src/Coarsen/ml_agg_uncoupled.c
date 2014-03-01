@@ -49,7 +49,7 @@
 /* ************************************************************************* */
 /* construct the tentative prolongator (local)                               */
 /* This function assumes that the block information are stored in the        */
-/* ML_Aggregate structure.                                                   */ 
+/* ML_Aggregate structure.                                                   */
 /*  phase 1 : relax on the new seed point as Vanek                           */
 /*  phase 2 : assign the rest of the nodes to one of the existing            */
 /*            aggregate (attach_scheme), if possible.                        */
@@ -57,7 +57,7 @@
 /*            (min_nodes_per_aggregate) to form its own aggregate            */
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag, 
+int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int     mypid, Nrows, nvblocks, *vblock_info = NULL, *vblock_info2 = NULL;
@@ -129,7 +129,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
      {
-       printf("ML_Aggregate_CoarsenUncoupled : current level = %d\n", 
+       printf("ML_Aggregate_CoarsenUncoupled : current level = %d\n",
 	      ml_ag->cur_level);
        printf("ML_Aggregate_CoarsenUncoupled : current eps = %e\n",
 	      epsilon);
@@ -147,7 +147,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    getrow_obj = Amatrix->getrow;
    getrowfunc=getrow_obj->func_ptr;
    getrowdata = Amatrix;
-   if ( getrowfunc == NULL ) 
+   if ( getrowfunc == NULL )
      {
        printf("ML_Aggregate_CoarsenUncoupled ERROR : no getrow.\n");
        exit(-1);
@@ -157,9 +157,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* allocate initial temporary storage space for getrow           */
    /* also allocate space for storing the diagonal (if epsilon>0)   */
    /* ------------------------------------------------------------- */
-   if (Amatrix->max_nz_per_row > maxnnz_per_row) 
+   if (Amatrix->max_nz_per_row > maxnnz_per_row)
       maxnnz_per_row = Amatrix->max_nz_per_row;
-   if (Amatrix->min_nz_per_row < minnnz_per_row) 
+   if (Amatrix->min_nz_per_row < minnnz_per_row)
       minnnz_per_row = Amatrix->min_nz_per_row;
 
 
@@ -183,7 +183,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    k = ML_Comm_GsumInt( comm, Nrows);
    m = ML_Comm_GsumInt( comm, nz_cnt);
 
-   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
      printf("Aggregation(UVB) : Total nonzeros = %d (Nrows=%d)\n",m,k);
 
 
@@ -200,9 +200,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nz_cnt = Nrows + 1;
-   mat_indx[0] = nz_cnt; 
+   mat_indx[0] = nz_cnt;
 
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
    {
      int itmp = nz_cnt;
      int allocated_space = maxnnz_per_row;
@@ -211,10 +211,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      if ( m > maxnnz_per_row ) Amatrix->max_nz_per_row = m;
      if ( m < minnnz_per_row && m>0 ) Amatrix->min_nz_per_row = m;
 
-     for (j = 0; j < m; j++) 
+     for (j = 0; j < m; j++)
      {
        jnode = col_ind[j];
-	   if ( jnode != i && jnode < Nrows && epsilon > 0.0 ) 
+	   if ( jnode != i && jnode < Nrows && epsilon > 0.0 )
        {
           dcompare1 = col_val[j] * col_val[j];
           if ( dcompare1 > 0.0 )
@@ -222,7 +222,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
              dcompare2 = diagonal[i] * diagonal[jnode];
              dcompare1 = ML_dabs( dcompare1 );
              dcompare2 = ML_dabs( dcompare2 );
-             if ( dcompare1 >= epsilon * dcompare2 ) 
+             if ( dcompare1 >= epsilon * dcompare2 )
                 mat_indx[nz_cnt++] = col_ind[j];
 		 }
        }
@@ -257,10 +257,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        /* MB_MODIF */
        for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = ml_ag->num_PDE_eqns;
        nvblockflag = 1;
-     }    
+     }
    nbytes = (nvblocks + 1)* sizeof(int);
    if (nbytes > 0) ML_memory_alloc((void**) &vblock_info2, (unsigned int) nbytes,"AVC");
-   vblock_info2[0] = vblock_info[0]; 
+   vblock_info2[0] = vblock_info[0];
    for ( i = 1; i < nvblocks; i++ )
      vblock_info2[i] = vblock_info2[i-1] + vblock_info[i];
 
@@ -280,7 +280,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      if (nbytes > 0) ML_memory_alloc((void**) &amal_mat_indx, (unsigned int) nbytes,"AVB");
 
      amal_count = nvblocks + 1;
-     amal_mat_indx[0] = amal_count; 
+     amal_mat_indx[0] = amal_count;
      row = 0;
 
      col_entered = (char *) ML_allocate(sizeof(char)*(1+ nvblocks) );
@@ -293,31 +293,31 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        {
 	 col_entered[i] = 'T';
 	 bdry_blk = 1;
-	 for ( j = 0; j < vblock_info[i]; j++) 
+	 for ( j = 0; j < vblock_info[i]; j++)
 	   {
 	     if ( mat_indx[row+j] >= 0 ) bdry_blk = 0;
 	     else                        mat_indx[row+j] = - mat_indx[row+j];
 	   }
 	 if ( bdry_blk == 1 ) {row += vblock_info[i]; bdry_array[i] = 1;}
 	 else
-     { 
-       for ( j = 0; j < vblock_info[i]; j++) 
+     {
+       for ( j = 0; j < vblock_info[i]; j++)
        {
-		 ibeg = mat_indx[row]; 
+		 ibeg = mat_indx[row];
 		 iend = mat_indx[row+1];
 		 if ( iend < 0 ) iend = - iend;
-		 for ( k = ibeg; k < iend; k++) 
+		 for ( k = ibeg; k < iend; k++)
          {
            if ( mat_indx[k] < vblock_info2[0] ) index = 0;
            else
            {
 			 /* if we really have variable blocks we search
-			    though ... this might be better: 
+			    though ... this might be better:
 			    index=ML_fastsorted_search(mat_indx[k],nvblocks,
 			          vblock_info2,
 			          mat_indx[k]/ml_ag->num_PDE_eqns-1);
 			 */
-			 if (nvblockflag == 1) 
+			 if (nvblockflag == 1)
 			   index = mat_indx[k]/ml_ag->num_PDE_eqns-1;
 			 else index=ML_sorted_search(mat_indx[k],nvblocks,vblock_info2);
 
@@ -327,7 +327,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 		   if ( index < 0 || index >= nvblocks )
              printf("ERROR : in almalgamation %d => %d(%d).  Have you specified the correct number of DOFs?\n",mat_indx[k],
 			      index,nvblocks);
-           if (col_entered[index] == 'F') 
+           if (col_entered[index] == 'F')
            {
 			 amal_mat_indx[ amal_count++] = index;
 			 col_entered[index] = 'T';
@@ -343,7 +343,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
        }
      ML_free(col_entered);
 
-     if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
+     if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
        printf("Aggregation(UVB) : Amalgamated matrix done \n");
    }
 
@@ -363,11 +363,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      for ( i = 0; i < nz_cnt; i++ ) mat_indx[i] = abs(mat_indx[i]);
 
      csr_data->columns = mat_indx;
-     ML_Operator_Set_ApplyFuncData(Cmatrix,Amatrix->invec_leng, 
+     ML_Operator_Set_ApplyFuncData(Cmatrix,Amatrix->invec_leng,
 				   Amatrix->outvec_leng,
 				   csr_data,
 				   Amatrix->outvec_leng,NULL,0);
-     ML_Operator_Set_Getrow(Cmatrix, Cmatrix->outvec_leng, 
+     ML_Operator_Set_Getrow(Cmatrix, Cmatrix->outvec_leng,
 			    MSR_get_ones_rows);
      true_bdry = ML_Operator_IdentifyDirichletRows(Cmatrix);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,mat_indx,
@@ -376,7 +376,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    else {
      /*JJH same error as above could occur here!*/
      csr_data->columns = amal_mat_indx;
-     ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks, 
+     ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks,
 				   csr_data, nvblocks, NULL,0);
      ML_Operator_Set_Getrow(Cmatrix, nvblocks, MSR_get_ones_rows);
      true_bdry = ML_Operator_IdentifyDirichletRows(Cmatrix);
@@ -424,7 +424,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* I set the pointers using the ML_Aggregate_Info structure. This is      */
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
-   
+
    if( Amatrix->to != NULL && Amatrix->to->Grid != NULL &&
        Amatrix->to->Grid->Grid != NULL ) {
 
@@ -463,18 +463,18 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    nbytes  = Nrows * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), (unsigned int) nbytes, "AVC");
    new_cnt = aggr_count;
-   for ( i = 0; i < nvblocks; i++ ) 
+   for ( i = 0; i < nvblocks; i++ )
    {
       if ( i == 0 ) offset = 0;
-      else          offset = vblock_info2[i-1]; 
+      else          offset = vblock_info2[i-1];
       if ( aggr_index[i] >= 0 )
       {
-         for ( j = 0; j < vblock_info[i]; j++ ) 
+         for ( j = 0; j < vblock_info[i]; j++ )
             ml_ag->aggr_info[level][offset+j] = aggr_index[i];
       }
       else
       {
-         for ( j = 0; j < vblock_info[i]; j++ ) 
+         for ( j = 0; j < vblock_info[i]; j++ )
             ml_ag->aggr_info[level][offset+j] = new_cnt;
          new_cnt++;
       }
@@ -537,11 +537,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* set up the space for storing the new operator and null space  */
    /* ------------------------------------------------------------- */
 
-   nbytes = ( Nrows + 1 ) * sizeof(int); 
+   nbytes = ( Nrows + 1 ) * sizeof(int);
    ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "AVM");
-   nbytes = Nrows * nullspace_dim * sizeof(int);  
+   nbytes = Nrows * nullspace_dim * sizeof(int);
    ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "AVN");
-   nbytes = Nrows * nullspace_dim * sizeof(double); 
+   nbytes = Nrows * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "AVO");
    nbytes = Ncoarse * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_null), (unsigned int) nbytes,"AVX");
@@ -572,11 +572,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* aggregate size for allocation of qr_tmp                       */
    /* ------------------------------------------------------------- */
 
-   for (i = 0; i < nvblocks; i++) 
+   for (i = 0; i < nvblocks; i++)
    {
-      if (aggr_index[i] >= 0 && aggr_index[i] < aggr_count) 
+      if (aggr_index[i] >= 0 && aggr_index[i] < aggr_count)
          agg_sizes[aggr_index[i]] += vblock_info[i];
-      else if (aggr_index[i] != -1) 
+      else if (aggr_index[i] != -1)
       {
          printf("%d : CoarsenUncoupled - wrong index %d(%d)%d\n",mypid,
                       aggr_index[i], aggr_count,i);
@@ -606,7 +606,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLt");
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
       rows_in_aggs[i] = (int *) ML_allocate( (agg_sizes[i]+1)*sizeof(int) );
    if ( (aggr_count > 0) && (rows_in_aggs[aggr_count-1] == NULL) )
    {
@@ -614,15 +614,15 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       exit(1);
    }
    for (i = 0; i < aggr_count; i++) agg_sizes[i] = 0;
-   for (i = 0; i < nvblocks; i++) 
+   for (i = 0; i < nvblocks; i++)
    {
       if ( aggr_index[i] >= 0 )
       {
          for (j = 0; j < vblock_info[i]; j++)
          {
-            index = agg_sizes[aggr_index[i]]++; 
+            index = agg_sizes[aggr_index[i]]++;
             if ( i == 0 ) offset = 0;
-            else          offset = vblock_info2[i-1]; 
+            else          offset = vblock_info2[i-1];
             rows_in_aggs[aggr_index[i]][index] = offset + j;
          }
       }
@@ -649,11 +649,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_qr_fix_Create(aggr_count, nullspace_dim); /* alloc array in structure */
    numDeadNod = 0;  /* number of nodes with dead dofs on current coarse lev */
 #endif
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       /* set up the matrix we want to decompose into Q and R: */
 
-      if (nullspace_vect == NULL) 
+      if (nullspace_vect == NULL)
       {
          for (j = 0; j < agg_sizes[i]; j++)
             for (k = 0; k < nullspace_dim; k++)
@@ -667,29 +667,29 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
                   index=ML_fastsorted_search(row,nvblocks,vblock_info2,
 				     row/ml_ag->num_PDE_eqns-1);
 		 */
-		 if (nvblockflag == 1) 
+		 if (nvblockflag == 1)
 		   index = row/ml_ag->num_PDE_eqns-1;
 		 else index=ML_sorted_search(row,nvblocks,vblock_info2);
                   if ( index < 0 ) index = - index;
                   else             index++;
                }
-               if ( index == 0 ) offset = row; 
+               if ( index == 0 ) offset = row;
                else              offset = row-vblock_info2[index-1];
                if ( offset == k ) qr_tmp[k*agg_sizes[i] + j] = 1.0;
                else               qr_tmp[k*agg_sizes[i] + j] = 0.0;
-            } 
+            }
       }
-      else 
+      else
       {
          for (k = 0; k < nullspace_dim; k++)
             for (j = 0; j < agg_sizes[i]; j++)
-               qr_tmp[k*agg_sizes[i] + j] = 
+               qr_tmp[k*agg_sizes[i] + j] =
                   nullspace_vect[ k*Nrows + rows_in_aggs[i][j] ];
       }
 
 #ifdef MB_MODIF_QR
-     /* Graciously treat the case where we have more kernel 
-      * components than freedom. For this, we need the xCDeadNodDof structure.  
+     /* Graciously treat the case where we have more kernel
+      * components than freedom. For this, we need the xCDeadNodDof structure.
       */
       nCDofTrunc = nullspace_dim;
       dead       = 0;
@@ -707,42 +707,42 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       {
          dtemp = 0.0;
          for (j = 0; j < agg_sizes[i]; j++)
-            dtemp += ( qr_tmp[j] * qr_tmp[j] ); 
+            dtemp += ( qr_tmp[j] * qr_tmp[j] );
          dtemp = sqrt( dtemp );
          tmp_vect[0] = qr_tmp[0];
          qr_tmp[0] = dtemp;
       }
       else
       {
-         DGEQRF_F77(&(agg_sizes[i]), &nCDofTrunc, qr_tmp, 
+         DGEQRF_F77(&(agg_sizes[i]), &nCDofTrunc, qr_tmp,
                            &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
          if (info != 0) {
             pr_error("ERROR (CoarsenUncoupled) : dgeqrf returned a non-zero\n");
          }
       }
 
-      if (work[0] > lwork) 
+      if (work[0] > lwork)
       {
-         lwork=(int) work[0]; 
+         lwork=(int) work[0];
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGk");
       }
 /*-mb: never truncate here
       else lwork=(int) work[0];
 */
-		 
-     /* the upper triangle of qr_tmp is now R, so copy that into the 
-      * new nullspace. 
+
+     /* the upper triangle of qr_tmp is now R, so copy that into the
+      * new nullspace.
       * treat separately the case where any coarse dofs are dead */
 
       if (dead) {
           for (k = 0; k < nullspace_dim; k++) {
             if (ML_qr_fix_isDOFDead(i,k)) {
-               for (j = 0; j < k+1; j++) 
+               for (j = 0; j < k+1; j++)
                   new_null[i*nullspace_dim+j+k*Ncoarse] = 0.e0;
             } else {
                for (j = 0; j < k+1; j++)
-                  new_null[i*nullspace_dim+j+k*Ncoarse] = 
+                  new_null[i*nullspace_dim+j+k*Ncoarse] =
                       qr_tmp[j+agg_sizes[i]*k];
             }
           }
@@ -752,7 +752,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
               new_null[i*nullspace_dim+j+k*Ncoarse] = qr_tmp[j+agg_sizes[i]*k];
       }
 
-      /* to get this block of P, need to run qr_tmp through another LAPACK 
+      /* to get this block of P, need to run qr_tmp through another LAPACK
          function: */
 
       if ( nullspace_dim == 1 )
@@ -765,7 +765,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       }
       else
       {
-         DORGQR_F77(&(agg_sizes[i]), &nCDofTrunc, &nCDofTrunc, 
+         DORGQR_F77(&(agg_sizes[i]), &nCDofTrunc, &nCDofTrunc,
                  qr_tmp, &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("ERROR (CoarsenUncoupled): dorgqr returned a non-zero\n");
@@ -773,7 +773,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
            /* modify dead columns of Q if any */
            for (k = 0; k < nullspace_dim; k++) {
              if (ML_qr_fix_isDOFDead(i,k)) {
-               for (j = 0; j < agg_sizes[i]; j++) 
+               for (j = 0; j < agg_sizes[i]; j++)
                  qr_tmp[k*agg_sizes[i] + j] = 0.e0;
              }
            }
@@ -781,9 +781,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       }
      /* -mb: we could check cols of Q locally to see if more dofs are dead */
 
-      if (work[0] > lwork) 
+      if (work[0] > lwork)
       {
-         lwork=(int) work[0]; 
+         lwork=(int) work[0];
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AVM");
       }
@@ -798,35 +798,35 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       {
          dtemp = 0.0;
          for (j = 0; j < agg_sizes[i]; j++)
-            dtemp += ( qr_tmp[j] * qr_tmp[j] ); 
+            dtemp += ( qr_tmp[j] * qr_tmp[j] );
          dtemp = sqrt( dtemp );
          tmp_vect[0] = qr_tmp[0];
          qr_tmp[0] = dtemp;
       }
       else
       {
-         DGEQRF_F77(&(agg_sizes[i]), &nullspace_dim, qr_tmp, 
+         DGEQRF_F77(&(agg_sizes[i]), &nullspace_dim, qr_tmp,
                            &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("ERROR (CoarsenUncoupled) : dgeqrf returned a non-zero\n");
       }
 
-      if (work[0] > lwork) 
+      if (work[0] > lwork)
       {
-         lwork=(int) work[0]; 
+         lwork=(int) work[0];
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGk");
       }
       else lwork=(int) work[0];
-		 
-      /* the upper triangle of qr_tmp is now R, so copy that into the 
+
+      /* the upper triangle of qr_tmp is now R, so copy that into the
          new nullspace */
 
       for (j = 0; j < nullspace_dim; j++)
          for (k = j; k < nullspace_dim; k++)
             new_null[i*nullspace_dim+j+k*Ncoarse] = qr_tmp[j+agg_sizes[i]*k];
-		 
-      /* to get this block of P, need to run qr_tmp through another LAPACK 
+
+      /* to get this block of P, need to run qr_tmp through another LAPACK
          function: */
 
       if ( nullspace_dim == 1 )
@@ -839,15 +839,15 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       }
       else
       {
-         DORGQR_F77(&(agg_sizes[i]), &nullspace_dim, &nullspace_dim, 
+         DORGQR_F77(&(agg_sizes[i]), &nullspace_dim, &nullspace_dim,
                  qr_tmp, &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("ERROR (CoarsenUncoupled): dorgqr returned a non-zero\n");
       }
 
-      if (work[0] > lwork) 
+      if (work[0] > lwork)
       {
-         lwork=(int) work[0]; 
+         lwork=(int) work[0];
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AVM");
       }
@@ -855,17 +855,17 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 #endif/*MO_MODIF*/
 
       /* now copy Q over into the appropriate part of P: */
-      /* The rows of P get calculated out of order, so I assume the Q is 
-         totally dense and use what I know of how big each Q will be to 
-         determine where in ia, ja, etc each nonzero in Q belongs.  If I 
-         did not assume this, I would have to keep all of P in memory in 
+      /* The rows of P get calculated out of order, so I assume the Q is
+         totally dense and use what I know of how big each Q will be to
+         determine where in ia, ja, etc each nonzero in Q belongs.  If I
+         did not assume this, I would have to keep all of P in memory in
          order to determine where each entry should go */
 
       for (j = 0; j < agg_sizes[i]; j++)
       {
          /*largest = 0.0;*/ thesign = 1.;
 /* this is a bad bug. -mb.
-         for (k = 0; k < nullspace_dim; k++) 
+         for (k = 0; k < nullspace_dim; k++)
          {
             if ( ML_dabs(qr_tmp[k*agg_sizes[i]+j]) > largest )
             {
@@ -875,7 +875,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
             }
          }
 */
-         for (k = 0; k < nullspace_dim; k++) 
+         for (k = 0; k < nullspace_dim; k++)
          {
             index = new_ia[rows_in_aggs[i][j]] + k;
             new_ja [index] = i * nullspace_dim + k;
@@ -888,11 +888,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_qr_fix_setNumDeadNod(numDeadNod);
    k = numDeadNod;
    ML_gsum_scalar_int(&k, &i, comm);
-   if (mypid == 0 && printflag  < ML_Get_PrintLevel())          
+   if (mypid == 0 && printflag  < ML_Get_PrintLevel())
      printf("Aggregation(UC) : QR factorization - too small aggregates = %d\n",k);
 #endif
-	 
-   ML_Aggregate_Set_NullSpace(ml_ag, nullspace_dim, nullspace_dim, 
+
+   ML_Aggregate_Set_NullSpace(ml_ag, nullspace_dim, nullspace_dim,
                               new_null, Ncoarse);
    ML_memory_free( (void **) &new_null);
 
@@ -909,15 +909,15 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       {
          if ( new_val[j] != 0.0 )
          {
-            new_val[index]  = new_val[j];  
-            new_ja[index++] = new_ja[j];  
+            new_val[index]  = new_val[j];
+            new_ja[index++] = new_ja[j];
             nz_cnt++;
          }
       }
 	  /* JJH This code fragment forces at least one entry in each row,
 			 even if that entry is zero.  This can cause failures in
              parallel.
-      if ( index == new_ia[i] ) 
+      if ( index == new_ia[i] )
       {
          new_val[index] = new_val[k]; new_ja[index++] = new_ja[k];
       }
@@ -937,7 +937,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
 
-   ML_Operator_Set_ApplyFuncData( *Pmatrix, Ncoarse, Nrows, 
+   ML_Operator_Set_ApplyFuncData( *Pmatrix, Ncoarse, Nrows,
                                   csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm), "AVQ");
@@ -950,10 +950,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    aggr_comm->recv_leng = NULL;
    aggr_comm->send_list = NULL;
    aggr_comm->local_nrows = Ncoarse;
-   
+
    m = 0;
-   ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm), 
-                           ML_Aggregate_ExchangeBdry, aggr_comm, 
+   ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm),
+                           ML_Aggregate_ExchangeBdry, aggr_comm,
                            comm, Ncoarse, m);
    ML_Operator_Set_Getrow((*Pmatrix), Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), CSR_matvec);
@@ -1047,7 +1047,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* ============================================================= */
 
    nbytes = Nrows * sizeof( int );
-   if ( nbytes > 0 ) 
+   if ( nbytes > 0 )
    {
       ML_memory_alloc((void**) &aggr_index, (unsigned int) nbytes, "AMA");
       ML_memory_alloc((void**) &aggr_stat, (unsigned int) nbytes, "AMB");
@@ -1061,16 +1061,16 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* ============================================================= */
 
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
    {
-      if ( bdry_array[i] == 1 ) 
+      if ( bdry_array[i] == 1 )
       {
          aggr_stat[i] = ML_AGGR_BDRY;
          m++;
       }
    }
    k = ML_Comm_GsumInt( comm, m);
-   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
    {
       printf("Aggregation(UC) : Phase 0 - no. of bdry pts  = %d \n",k);
    }
@@ -1083,7 +1083,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    aggr_head = NULL;
    aggr_cnt_leng = Nrows / 5 + 2;
    nbytes = aggr_cnt_leng * sizeof( int );
-   if ( nbytes > 0 ) 
+   if ( nbytes > 0 )
    {
       ML_memory_alloc((void**) &aggr_cnt_array, (unsigned int) nbytes, "AME");
       for ( i = 0; i < aggr_cnt_leng; i++ ) aggr_cnt_array[i] = 0;
@@ -1104,16 +1104,16 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       ML_memory_alloc((void**) &randomVector, (unsigned int) nbytes, "AMF");
       for (i = 0; i < Nrows; i++) randomVector[i] = i;
       ML_randomize(Nrows, randomVector);
-   } 
+   }
    else if ( ordering == 2 )  /* graph ordering */
    {
-      new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
+      new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));
       new_node->node_id = 0;
       node_head = new_node;
       node_tail = new_node;
       new_node->next = NULL;
    }
-   
+
    inode2 = 0;
    while ( inode2 < Nrows)
    {
@@ -1123,15 +1123,15 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 
       if      ( ordering == 0 ) inode = inode2++;
       else if ( ordering == 1 ) inode = randomVector[inode2++];
-      else if ( ordering == 2 ) 
+      else if ( ordering == 2 )
       {
-         if ( node_head == NULL ) 
+         if ( node_head == NULL )
          {
-            for ( jnode = 0; jnode < Nrows; jnode++ ) 
+            for ( jnode = 0; jnode < Nrows; jnode++ )
             {
                if ( aggr_stat[jnode] == ML_AGGR_READY )
-               { 
-                  new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
+               {
+                  new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));
                   new_node->node_id = jnode;
                   node_head = new_node;
                   node_tail = new_node;
@@ -1151,13 +1151,13 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       /* consider further only if the node is in READY mode    */
       /*------------------------------------------------------ */
 
-      if ( aggr_stat[inode] == ML_AGGR_READY ) 
+      if ( aggr_stat[inode] == ML_AGGR_READY )
       {
          length = mat_indx[inode+1] - mat_indx[inode] + 1;
-         supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));      
+         supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));
          supernode->list = (int*) ML_allocate(length*sizeof(int));
 
-         if ((supernode->list) == NULL) 
+         if ((supernode->list) == NULL)
          {
             printf("Error:couldn't allocate memory for supernode! %d\n",
                             length);
@@ -1174,13 +1174,13 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          /*--------------------------------------------------- */
 
          count = 0;
-         for (jnode=mat_indx[inode];jnode<mat_indx[inode+1];jnode++) 
+         for (jnode=mat_indx[inode];jnode<mat_indx[inode+1];jnode++)
          {
             index = mat_indx[jnode];
-            if ( index < Nrows ) 
+            if ( index < Nrows )
             {
-               if ( aggr_stat[index] == ML_AGGR_READY || 
-                    aggr_stat[index] == ML_AGGR_NOTSEL ) 
+               if ( aggr_stat[index] == ML_AGGR_READY ||
+                    aggr_stat[index] == ML_AGGR_NOTSEL )
                   supernode->list[supernode->length++] = index;
                else if ( aggr_stat[index] != ML_AGGR_BDRY ) count++;
             }
@@ -1194,20 +1194,20 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 
          if ( count > max_neigh_selected ) select_flag = 0;
 
-         if (select_flag != 1 || 
-             supernode->length < min_nodes_per_aggregate) 
+         if (select_flag != 1 ||
+             supernode->length < min_nodes_per_aggregate)
          {
             aggr_stat[inode] = ML_AGGR_NOTSEL;
             ML_free( supernode->list );
             ML_free( supernode );
             if ( ordering == 2 ) /* if graph ordering */
             {
-               for (jnode=mat_indx[inode];jnode<mat_indx[inode+1];jnode++) 
+               for (jnode=mat_indx[inode];jnode<mat_indx[inode+1];jnode++)
                {
                   index = mat_indx[jnode];
                   if ( aggr_stat[index] == ML_AGGR_READY )
-                  { 
-                     new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
+                  {
+                     new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));
                      new_node->node_id = index;
                      new_node->next = NULL;
                      if ( node_head == NULL )
@@ -1218,24 +1218,24 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                         node_tail->next = new_node;
                         node_tail = new_node;
                      }
-                  } 
-               } 
-            } 
-         } 
-         else 
+                  }
+               }
+            }
+         }
+         else
          {
-            for ( j = 0; j < supernode->length; j++ ) 
+            for ( j = 0; j < supernode->length; j++ )
             {
                jnode = supernode->list[j];
                aggr_stat[jnode] = ML_AGGR_SELECTED;
                aggr_index[jnode] = aggr_count;
                if ( ordering == 2 ) /* if graph ordering */
                {
-                  for (kk=mat_indx[jnode];kk<mat_indx[jnode+1];kk++) 
+                  for (kk=mat_indx[jnode];kk<mat_indx[jnode+1];kk++)
                   {
                      if ( aggr_stat[mat_indx[kk]] == ML_AGGR_READY )
-                     { 
-                        new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
+                     {
+                        new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));
                         new_node->node_id = mat_indx[kk];
                         new_node->next = NULL;
                         if ( node_head == NULL )
@@ -1247,23 +1247,23 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                            node_tail = new_node;
                         }
                      }
-                  } 
-               } 
+                  }
+               }
             }
             supernode->next = NULL;
             supernode->index = aggr_count;
-            if ( aggr_count == 0 ) 
+            if ( aggr_count == 0 )
             {
                aggr_head = supernode;
                aggr_curr = supernode;
-            } 
-            else 
+            }
+            else
             {
                aggr_curr->next = supernode;
                aggr_curr = supernode;
-            } 
+            }
             aggr_cnt_array[aggr_count++] = supernode->length;
-            if ( aggr_count >= aggr_cnt_leng ) 
+            if ( aggr_count >= aggr_cnt_leng )
             {
                itmp_array = aggr_cnt_array;
                aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
@@ -1277,7 +1277,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       }
    }
    if ( ordering == 1 ) ML_memory_free((void**) &randomVector);
-   else if ( ordering == 2 ) 
+   else if ( ordering == 2 )
    {
       while ( node_head != NULL )
       {
@@ -1288,19 +1288,19 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    }
 
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
       if ( aggr_stat[i] == ML_AGGR_READY ) m++;
    k = ML_Comm_GsumInt( comm, m);
    if ( k > 0 && mypid == 0 && printflag  < ML_Get_PrintLevel())
       printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
       if ( aggr_stat[i] == ML_AGGR_SELECTED ) m++;
    k = ML_Comm_GsumInt( comm, m);
    m = ML_Comm_GsumInt( comm, Nrows);
    j = ML_Comm_GsumInt( comm, aggr_count );
 
-   if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
+   if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
    {
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
@@ -1316,16 +1316,16 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* ============================================================= */
 
    count = 0;
-   for ( inode = 0; inode < Nrows; inode++ ) 
+   for ( inode = 0; inode < Nrows; inode++ )
    {
       /* ---------------------------------------------------------- */
       /* for all nodes that have not been aggregated                */
       /* ---------------------------------------------------------- */
 
-      if ( aggr_stat[inode] == ML_AGGR_NOTSEL || 
-           aggr_stat[inode] == ML_AGGR_READY ) 
+      if ( aggr_stat[inode] == ML_AGGR_NOTSEL ||
+           aggr_stat[inode] == ML_AGGR_READY )
       {
-         if ( attach_scheme == ML_AGGR_MINRANK ) 
+         if ( attach_scheme == ML_AGGR_MINRANK )
          {
             /* ---------------------------------------------------- */
             /* search for a neighboring aggregate that has the      */
@@ -1334,17 +1334,17 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 
             search_flag = 0;
             mincount = 100000;
-            for (jnode=mat_indx[inode]; jnode<mat_indx[inode+1]; 
-                 jnode++) 
+            for (jnode=mat_indx[inode]; jnode<mat_indx[inode+1];
+                 jnode++)
             {
                index = mat_indx[jnode];
-               if ( index < Nrows ) 
+               if ( index < Nrows )
                {
-                  if ( aggr_stat[index] == ML_AGGR_SELECTED ) 
+                  if ( aggr_stat[index] == ML_AGGR_SELECTED )
                   {
                      search_flag = 1;
                      m = aggr_index[index];
-                     if ( aggr_cnt_array[m] < mincount ) 
+                     if ( aggr_cnt_array[m] < mincount )
                      {
                         mincount = aggr_cnt_array[m];
                         k = index;
@@ -1352,14 +1352,14 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                   }
                }
             }
-            if ( search_flag == 1 ) 
+            if ( search_flag == 1 )
             {
                index = k;
                m = aggr_index[index];
             }
 
-         } 
-         else if ( attach_scheme == ML_AGGR_MAXLINK ) 
+         }
+         else if ( attach_scheme == ML_AGGR_MAXLINK )
          {
             /* ---------------------------------------------------- */
             /* search for a neighboring aggregate that has the most */
@@ -1371,24 +1371,24 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
             nbytes = length * sizeof( int );
             if ( nbytes > 0 )
                ML_memory_alloc((void**) &int_buf, (unsigned int) nbytes, "AGR");
-            length = 0; 
-            for (jnode=mat_indx[inode]; jnode<mat_indx[inode+1]; 
-                 jnode++) 
+            length = 0;
+            for (jnode=mat_indx[inode]; jnode<mat_indx[inode+1];
+                 jnode++)
             {
                index = mat_indx[jnode];
-               if ( aggr_index[index] >= 0 ) 
+               if ( aggr_index[index] >= 0 )
                   int_buf[length++] = aggr_index[index];
             }
             ML_sort(length, int_buf);
             m = -1;
             maxcount = 0;
             if ( length > 0 ) {k = int_buf[0]; j = 1; m = k;}
-            for ( jnode = 1; jnode < length; jnode++ ) 
+            for ( jnode = 1; jnode < length; jnode++ )
             {
                if ( int_buf[jnode] == k ) j++;
-               else 
+               else
                {
-                  if ( j > maxcount ) 
+                  if ( j > maxcount )
                   {
                      maxcount = j;
                      m = k;
@@ -1408,26 +1408,26 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          /* if found, add the node to the existing aggregate        */
          /* ------------------------------------------------------- */
 
-         if ( search_flag == 1 ) 
-         { 
+         if ( search_flag == 1 )
+         {
             aggr_cnt_array[m]++;
             aggr_index[inode] = m;
             aggr_stat[inode] = ML_AGGR_SELECTED2;
             count++;
-         } 
+         }
       }
    }
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
       if (aggr_stat[i] == ML_AGGR_SELECTED2) aggr_stat[i] = ML_AGGR_SELECTED;
 
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
       if ( aggr_stat[i] == ML_AGGR_SELECTED ) m++;
    k = ML_Comm_GsumInt( comm, m);
    m = ML_Comm_GsumInt( comm, Nrows);
    j = ML_Comm_GsumInt( comm, aggr_count );
 
-   if ( mypid == 0 && printflag < ML_Get_PrintLevel()) 
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("Aggregation(UC) : Phase 2 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 2 - total aggregates = %d \n",j);
@@ -1437,16 +1437,16 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* Phase 3 : for the un-aggregated nodes, form a new aggregate   */
    /* ============================================================= */
 
-   for ( inode = 0; inode < Nrows; inode++ ) 
+   for ( inode = 0; inode < Nrows; inode++ )
    {
-      if (aggr_stat[inode] == ML_AGGR_READY || 
-          aggr_stat[inode] == ML_AGGR_NOTSEL ) 
+      if (aggr_stat[inode] == ML_AGGR_READY ||
+          aggr_stat[inode] == ML_AGGR_NOTSEL )
       {
          count = 1;
-         for (jnode = mat_indx[inode]; jnode < mat_indx[inode+1]; jnode++) 
+         for (jnode = mat_indx[inode]; jnode < mat_indx[inode+1]; jnode++)
          {
             index = mat_indx[jnode];
-            if ( index < Nrows && aggr_stat[index] != ML_AGGR_SELECTED ) 
+            if ( index < Nrows && aggr_stat[index] != ML_AGGR_SELECTED )
                count++;
          }
          length = mat_indx[inode+1] - mat_indx[inode];
@@ -1455,9 +1455,9 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          /* if enough neighbors have not been aggregated, form one  */
          /* ------------------------------------------------------- */
 
-         supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));      
+         supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));
          supernode->list = (int*) ML_allocate(count*sizeof(int));
-         if ((supernode->list) == NULL) 
+         if ((supernode->list) == NULL)
          {
             printf("ML_Aggregate_Coarsen - couldn't allocate memory.\n");
             exit(1);
@@ -1467,16 +1467,16 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          supernode->length = 1;
          supernode->list[0] = inode;
 
-         for (jnode = mat_indx[inode]; jnode < mat_indx[inode+1]; jnode++) 
+         for (jnode = mat_indx[inode]; jnode < mat_indx[inode+1]; jnode++)
          {
             index = mat_indx[jnode];
-            if ( index < Nrows&& aggr_stat[index] != ML_AGGR_SELECTED && 
-                 aggr_stat[index] != ML_AGGR_BDRY ) 
+            if ( index < Nrows&& aggr_stat[index] != ML_AGGR_SELECTED &&
+                 aggr_stat[index] != ML_AGGR_BDRY )
                supernode->list[supernode->length++] = index;
          }
          if ( supernode->length > 1 )
          {
-            for ( j = 0; j < supernode->length; j++ ) 
+            for ( j = 0; j < supernode->length; j++ )
             {
                jnode = supernode->list[j];
                aggr_stat[jnode] = ML_AGGR_SELECTED;
@@ -1484,18 +1484,18 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
             }
             supernode->next = NULL;
             supernode->index = aggr_count;
-            if ( aggr_count == 0 ) 
+            if ( aggr_count == 0 )
             {
                aggr_head = supernode;
                aggr_curr = supernode;
-            } 
-            else 
+            }
+            else
             {
                aggr_curr->next = supernode;
                aggr_curr = supernode;
-            } 
+            }
             aggr_cnt_array[aggr_count++] = supernode->length;
-            if ( aggr_count >= aggr_cnt_leng ) 
+            if ( aggr_count >= aggr_cnt_leng )
             {
                itmp_array = aggr_cnt_array;
                aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
@@ -1508,7 +1508,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          }
          else
          {
-            for ( j = 0; j < supernode->length; j++ ) 
+            for ( j = 0; j < supernode->length; j++ )
             {
                jnode = supernode->list[j];
                aggr_stat[jnode] = ML_AGGR_BDRY;
@@ -1520,13 +1520,13 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    }
 
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
       if ( aggr_stat[i] == ML_AGGR_SELECTED ) m++;
    k = ML_Comm_GsumInt( comm, m);
    m = ML_Comm_GsumInt( comm, Nrows);
    j = ML_Comm_GsumInt( comm, aggr_count );
 
-   if ( mypid == 0 && printflag < ML_Get_PrintLevel()) 
+   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
       printf("Aggregation(UC) : Phase 3 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 3 - total aggregates = %d \n",j);
@@ -1537,10 +1537,10 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* ============================================================= */
 
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
       if (aggr_stat[i] != ML_AGGR_SELECTED && aggr_stat[i] != ML_AGGR_BDRY) m++;
    k = ML_Comm_GsumInt( comm, m);
-   if ( k > 0 && mypid == 0 ) 
+   if ( k > 0 && mypid == 0 )
    {
       printf("Aggregation (UC) error : not all nodes processed.\n");
       exit(1);
@@ -1554,7 +1554,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    ML_memory_free((void**) &aggr_stat);
    ML_memory_free((void**) &aggr_cnt_array);
    aggr_curr = aggr_head;
-   while ( aggr_curr != NULL ) 
+   while ( aggr_curr != NULL )
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;

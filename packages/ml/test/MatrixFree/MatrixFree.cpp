@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   // =========== //
   // CHECK START //
   // =========== //
-  
+
   // wrap VbrA as an ML_Operator
   ML_Operator* VbrA_ML = ML_Operator_Create(MFP->Comm_ML());
   ML_Operator_WrapEpetraMatrix(VbrA, VbrA_ML);
@@ -117,13 +117,13 @@ int main(int argc, char *argv[])
   // ========================================== //
   // CHECK 1: Non-smoothed Restriction Operator //
   // ========================================== //
-  
+
   Epetra_CrsMatrix* R;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(R_ML, R));
 
-  assert (R->OperatorDomainMap().NumGlobalElements() == 
+  assert (R->OperatorDomainMap().NumGlobalElements() ==
           MFP->R().OperatorDomainMap().NumGlobalElements());
-  assert (R->OperatorRangeMap().NumGlobalElements() == 
+  assert (R->OperatorRangeMap().NumGlobalElements() ==
           MFP->R().OperatorRangeMap().NumGlobalElements());
 
   //cout << *R;
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 
     if (Comm.MyPID() == 0)
       cout << "test " << t << ", ||(C_ML - C_MFP) * y||_2 = " << norm << endl;
-    
+
     if (norm > 1e-5) exit(EXIT_FAILURE);
   }
 
@@ -189,8 +189,8 @@ int main(int argc, char *argv[])
   // CHECK 3: solution //
   // ================= //
 
-  Epetra_Vector LHS(VbrA->OperatorDomainMap()); 
-  Epetra_Vector RHS(VbrA->OperatorRangeMap()); 
+  Epetra_Vector LHS(VbrA->OperatorDomainMap());
+  Epetra_Vector RHS(VbrA->OperatorRangeMap());
   Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
   AztecOO solver(Problem);
 
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
   delete MFP;
 
-  // compare with the same stuff without low memory. All 
+  // compare with the same stuff without low memory. All
   // parameters are exactly as before, except "low memory".
 
   NullSpace = OrigNullSpace;
@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   exit(EXIT_SUCCESS);
 }
 

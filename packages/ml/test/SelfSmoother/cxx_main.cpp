@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -22,7 +22,7 @@
 using namespace Teuchos;
 using namespace Galeri;
 
-// ====================================================================== 
+// ======================================================================
 
 template<class T>
 int TestAdditiveSchwarz()
@@ -71,8 +71,8 @@ int TestAdditiveSchwarz()
   return(solver.NumIters());
 }
 
-// ====================================================================== 
-int TestML(const bool UseSelf) 
+// ======================================================================
+int TestML(const bool UseSelf)
 {
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -106,7 +106,7 @@ int TestML(const bool UseSelf)
 
   // toggle the following to compare with more classical smoothing
 
-  if (UseSelf) 
+  if (UseSelf)
   {
     MLList.set("smoother: type (level 0)", "Gauss-Seidel");
     MLList.set("smoother: type (level 1)", "self");
@@ -123,8 +123,8 @@ int TestML(const bool UseSelf)
     SelfList.set("smoother: pre or post", "both");
     SelfList.set("max levels", 5);
     SelfList.set("zero starting solution", true);
-  } 
-  else 
+  }
+  else
   {
     MLList.set("smoother: type (level 0)", "Gauss-Seidel");
     MLList.set("smoother: type (level 1)", "IFPACK");
@@ -135,7 +135,7 @@ int TestML(const bool UseSelf)
     MLList.set("smoother: ifpack overlap", 0);
   }
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   solver.SetPrecOperator(MLPrec);
@@ -157,7 +157,7 @@ int TestML(const bool UseSelf)
 
 int main(int argc, char *argv[])
 {
-  
+
   MPI_Init(&argc,&argv);
   int MyPID, NumProcs;
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
@@ -179,10 +179,10 @@ int main(int argc, char *argv[])
   if (diff < 0) diff = -diff;
   if (diff > 5)
     exit(EXIT_FAILURE);
-    
+
   ItersML = TestML(true);
   ItersAm = TestML(false);
-  
+
   if (MyPID == 0)
     cout << "ML iterations = " << ItersML
          << ", Amesos iterations = " << ItersAm << endl;
@@ -191,13 +191,13 @@ int main(int argc, char *argv[])
   if (diff < 0) diff = -diff;
   if (diff > 5)
     exit(EXIT_FAILURE);
-    
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   exit(EXIT_SUCCESS);
- 
+
 }
 
 #else
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   exit(EXIT_SUCCESS);
 }
 

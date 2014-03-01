@@ -42,6 +42,9 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
+// Teuchos
+#include "Teuchos_XMLParameterListCoreHelpers.hpp"
+
 // Tpetra
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
@@ -971,7 +974,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
-  using Teuchos::getParametersFromXmlFile;
 
   const LocalOrdinal VectorSize = 3;
   typedef typename Stokhos::DeviceForNode<Node>::type Device;

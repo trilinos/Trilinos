@@ -8,7 +8,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -87,7 +87,7 @@ using namespace Teuchos;
  * - \c user-defined
  * - \c do-nothing
  */
-int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother) 
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother)
 {
   Epetra_Time Time(Comm());
 
@@ -101,7 +101,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   std::string PreOrPostSmoother = List_.get("smoother: pre or post","both");
 
   std::string Smoother = List_.get("smoother: type","Chebyshev");
-  
+
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",SmootherOptions_);
   RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",SmootherParams_);
@@ -109,23 +109,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   bool AztecSmootherAsASolver = List_.get("smoother: Aztec as solver",false);
   int aztec_its;
 #endif
-  
+
   // rst: Changing polynomial interface:
   //    1) polynomial degree is set from "smoother: sweeps"
   //    2) "smoother: Chebyshev" also calls ML's Chebyshev
   //    3) "smoother: Chebshev alpha" also sets alpha
-  //    4) "smoother: node sweeps" and "smoother: edge sweeps" now set 
-  //                  polynomial degree within Hiptmair 
+  //    4) "smoother: node sweeps" and "smoother: edge sweeps" now set
+  //                  polynomial degree within Hiptmair
   //
-  // For backward compatiblity, we still take the degree from 
+  // For backward compatiblity, we still take the degree from
   // "smoother: MLS polynomial order" or "smoother: polynomial order"
   // if set. We also still recognize MLS.
-  // 
-  // Note: At this point, ChebyshevPolyOrder & ChebyshevAlpha have bogus values if 
+  //
+  // Note: At this point, ChebyshevPolyOrder & ChebyshevAlpha have bogus values if
   // they are not set. These get fixed when checking level specific options.
 
   int ChebyshevPolyOrder = List_.get("smoother: MLS polynomial order",-97);
-  if (ChebyshevPolyOrder == -97) 
+  if (ChebyshevPolyOrder == -97)
      ChebyshevPolyOrder = List_.get("smoother: polynomial order",-97);
 
   double ChebyshevAlpha = List_.get("smoother: MLS alpha",-2.0);
@@ -160,7 +160,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   int cheby_nBlocks=List_.get("smoother: Block Chebyshev number of blocks",-1);
   int *cheby_blockIndices=List_.get("smoother: Block Chebyshev block list",(int*)0);
   int *cheby_blockStarts=List_.get("smoother: Block Chebyshev block starts",(int*)0);
-  
+
   // Chebyshev-NE parameters
   bool cheby_NE=List_.get("smoother: chebyshev solve normal equations",false);
 
@@ -184,7 +184,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
     NodeSubSmOmega = List_.get("subsmoother: node damping factor",NodeSubSmOmega);
     SubSmType = List_.get("subsmoother: type","MLS");
 
-    // Grab or set subsmoother options that are not level specific. 
+    // Grab or set subsmoother options that are not level specific.
     EdgeSubSmType    = List_.get("subsmoother: edge type",SubSmType);
     NodeSubSmType    = List_.get("subsmoother: node type",SubSmType);
     NodeSubSmIts     = List_.get("subsmoother: node sweeps", 2);
@@ -239,18 +239,18 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
     double Myomega = smList.get("smoother: damping factor",omega);
 
     std::string MyPreOrPostSmoother = smList.get("smoother: pre or post", PreOrPostSmoother);
-    
+
     if( MyPreOrPostSmoother      == "post" ) pre_or_post = ML_POSTSMOOTHER;
     else if( MyPreOrPostSmoother == "pre"  ) pre_or_post = ML_PRESMOOTHER;
     else if( MyPreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
-    else 
+    else
       std::cerr << ErrorMsg_ << "smoother not recognized (" << MyPreOrPostSmoother << ")\n";
-    
+
     std::string MySmoother = smList.get("smoother: type",Smoother);
 
     // If we don't have a level-specific ifpack list, copy the global one
     if(!smList.isSublist("smoother: ifpack list") && List_.isSublist("smoother: ifpack list"))
-      ML_Epetra::UpdateList(List_.sublist("smoother: ifpack list"),smList.sublist("smoother: ifpack list"),true);    
+      ML_Epetra::UpdateList(List_.sublist("smoother: ifpack list"),smList.sublist("smoother: ifpack list"),true);
 
     char msg[80];
     double AddToDiag = smList.get("smoother: add to diag", 1e-12);
@@ -269,7 +269,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       if (verbose_) {
         int i = std::cout.precision(0);
         std::cout.setf(std::ios::fixed);
-        std::cout << msg << "# global rows = " << global[0] 
+        std::cout << msg << "# global rows = " << global[0]
              << ", # estim. global nnz = " << global[1];
         std::cout.precision(2);
         std::cout << ", # nnz per row = " << ((double)global[1]) / global[0] << std::endl;
@@ -321,7 +321,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                           << MyPreOrPostSmoother << ")" << std::endl;
       ML_Gen_Smoother_Jacobi(ml_, currentLevel, pre_or_post,
                              Mynum_smoother_steps, Myomega);
-     
+
     } else if( MySmoother == "Gauss-Seidel" ) {
 
       // ================== //
@@ -333,11 +333,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
       if( verbose_ ) std::cout << msg << "Gauss-Seidel (sweeps="
 			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			       << MyPreOrPostSmoother 
+			       << MyPreOrPostSmoother
 			       << (gs_type ? ",efficient symmetric" : "" )
 			       << (use_l1  ? ",l1 damping" : "" )
 			       << ")" <<std::endl;
-      
+
 #ifdef HAVE_ML_IFPACK
       std::string MyIfpackType = "point relaxation stand-alone";
       ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");
@@ -348,7 +348,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       int smoothing_indices=0;
       if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
 	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
-      
+
       if (verbose_) {
 	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
 	  std::cout << msg << "Epetra_CrsMatrix detected, using "
@@ -357,7 +357,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	  std::cout << msg << "Wrapping to use "
 		    << "Ifpack implementation" << std::endl;
 	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;	  
+	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
       }
 
       if(gs_type){
@@ -368,13 +368,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	}
 	if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
 	  ParameterList& BackwardSmoothingList_= MyIfpackList;
-	  BackwardSmoothingList_.set("relaxation: backward mode",true);        
+	  BackwardSmoothingList_.set("relaxation: backward mode",true);
 	  ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                  IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
 				 (void*)&BackwardSmoothingList_,(void*)Comm_);
-	}          
+	}
       }
-      else{          
+      else{
 	ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
 			       IfpackOverlap, currentLevel, pre_or_post,
 			       //MyIfpackList,*Comm_);
@@ -417,7 +417,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
       if( verbose_ ) std::cout << msg << "symmetric Gauss-Seidel (sweeps="
 			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			       << MyPreOrPostSmoother 
+			       << MyPreOrPostSmoother
 			       << (use_l1  ? ",l1 damping" : "" )
 			       << ")" <<std::endl;
 #ifdef HAVE_ML_IFPACK
@@ -430,7 +430,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       int smoothing_indices=0;
       if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
 	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
-	
+
 
       if (verbose_) {
 	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
@@ -440,7 +440,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	  std::cout << msg << "Wrapping to use "
 		    << "Ifpack implementation" << std::endl;
 	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;	  
+	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
       }
 
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
@@ -467,7 +467,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // ================== //
       // block Gauss-Seidel //
       // ================== //
-      
+
       if( verbose_ ) std::cout << msg << "block Gauss-Seidel (sweeps="
                           << Mynum_smoother_steps << ",omega=" << Myomega << ","
                           << MyPreOrPostSmoother << ")" << std::endl;
@@ -479,7 +479,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // ============================ //
       // symmetric block Gauss-Seidel //
       // ============================ //
-      
+
       if( verbose_ ) std::cout << msg << "symmetric block Gauss-Seidel (sweeps="
                           << Mynum_smoother_steps << ",omega=" << Myomega << ","
                           << MyPreOrPostSmoother << ")" << std::endl;
@@ -526,7 +526,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        int *blockOffset  = NULL;
        int *blockIndices = (int *) ML_allocate(sizeof(int)*(nnn+1));
 
-       for (int i = 0; i < nnn;  i++) blockIndices[i] = -1; 
+       for (int i = 0; i < nnn;  i++) blockIndices[i] = -1;
 
        // old vertical numbering
        //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(NumVerticalNodes));
@@ -557,12 +557,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        }
        else if (MeshNumbering == "horizontal") {
           tempi = nnn/(NumVerticalNodes);
-          for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi); 
+          for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi);
        }
        else {
 
           blockOffset = (int *) ML_allocate(sizeof(int)*(nnn+1));
-          for (int i = 0; i < nnn;  i++) blockOffset[i] = 0; 
+          for (int i = 0; i < nnn;  i++) blockOffset[i] = 0;
 
           int    NumCoords, NumBlocks, index, next, subindex, subnext;
           double xfirst, yfirst;
@@ -579,7 +579,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           ytemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
           ztemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
 
-          if (ztemp == NULL) { 
+          if (ztemp == NULL) {
              printf("Not enough memory for line smoothers\n");
              exit(EXIT_FAILURE);
           }
@@ -592,14 +592,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           index = 0;
 
           while ( index < NumCoords ) {
-             xfirst = xtemp[index];  
+             xfirst = xtemp[index];
              next   = index+1;
              while ( (next != NumCoords) && (xtemp[next] == xfirst))
              next++;
              ML_az_dsort2(&(ytemp[index]),next-index,&(OrigLoc[index]));
              for (int i = index; i < next; i++) ztemp[i]= zvals[OrigLoc[i]];
              /* One final sort so that the ztemps are in order */
-             subindex = index; 
+             subindex = index;
              while (subindex != next) {
                 yfirst = ytemp[subindex]; subnext = subindex+1;
                 while ( (subnext != next) && (ytemp[subnext] == yfirst)) subnext++;
@@ -689,7 +689,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       /* Grab the Block-Cheby stuff, if applicable */
       int MyCheby_nBlocks=smList.get("smoother: Block Chebyshev number of blocks",cheby_nBlocks);
       int* MyCheby_blockIndices=smList.get("smoother: Block Chebyshev block list",cheby_blockIndices);
-      
+
       if (verbose_) {
         if (MySmoother == "Block Chebyshev" && MyCheby_blockIndices && MyCheby_nBlocks>0)
         {
@@ -719,19 +719,19 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         ML_Gen_Smoother_BlockDiagScaledCheby(ml_, currentLevel, pre_or_post,
                                              MyChebyshevAlpha, MyChebyshevPolyOrder,
                                              cheby_nBlocks,cheby_blockIndices);
-        
+
       }
       else
         ML_Gen_Smoother_Cheby(ml_, currentLevel, pre_or_post,
-                              MyChebyshevAlpha, MyChebyshevPolyOrder);     
-      
+                              MyChebyshevAlpha, MyChebyshevPolyOrder);
+
       if (verbose_) {
         ML_Operator* this_A = &(ml_->Amat[currentLevel]);
         std::cout << msg << "lambda_min = " << this_A->lambda_min
              << ", lambda_max = " << this_A->lambda_max << std::endl;
       }
     } else if( MySmoother == "Aztec" ) {
-      
+
 #ifdef HAVE_ML_AZTECOO
       // ======= //
       // AztecOO //
@@ -745,10 +745,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       int* MySmootherOptionsPtr = &(*myaztecOptions)[0];
       double* MySmootherParamsPtr = &(*myaztecParams)[0];
       bool MyAztecSmootherAsASolver = smList.get("smoother: Aztec as solver",AztecSmootherAsASolver);
-     
+
       if( MyAztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
       else                                  aztec_its = Mynum_smoother_steps;
-      
+
       if( verbose_ ) {
         std::cout << msg << "Aztec";
         if( MyAztecSmootherAsASolver){
@@ -772,7 +772,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             break;
           case AZ_GMRESR:
             std::cout<<"-GMRESR";
-            break;        
+            break;
           }
           std::cout<<"("<<aztec_its<<")";
         }
@@ -814,11 +814,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         }
         std::cout << ", "  << MyPreOrPostSmoother << std::endl;
       }
-      
+
       ML_Gen_SmootherAztec(ml_, currentLevel, MySmootherOptionsPtr, MySmootherParamsPtr,
                            ProcConfig_, SmootherStatus_,
                            aztec_its, pre_or_post, NULL);
-      
+
 #else
       std::cerr << "Please configure ML with --enable-aztecoo to use" << std::endl;
       std::cerr << "AztecOO smoothers" << std::endl;
@@ -838,13 +838,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       {
         MyIfpackType = smList.get("smoother: ifpack type", IfpackType);
       }
-      else 
+      else
       {
         // MS // ILU and IC added on 08-Aug-06 for WebTrilinos
         // MS // Just a shortcut because sublists are not supported by
         // MS // the web interface.
         MyIfpackType = MySmoother;
-      }      
+      }
 
       double MyLOF=smList.get("smoother: ifpack level-of-fill",IfpackLOF);
       int MyIfpackOverlap = smList.get("smoother: ifpack overlap", IfpackOverlap);
@@ -918,7 +918,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, currentLevel, pre_or_post,
                              (void*)&MyIfpackList,(void*)Comm_);
-      
+
 #else
       std::cerr << ErrorMsg_ << "IFPACK not available." << std::endl
            << ErrorMsg_ << "ML must be configured with --enable-ifpack" << std::endl
@@ -933,7 +933,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       if (currentLevel != coarseLevel)
         nextLevel = LevelID_[level+1];
 
-      
+
       int MyChebyshevPolyOrder = smList.get("smoother: MLS polynomial order",ChebyshevPolyOrder);
       if (MyChebyshevPolyOrder == -97)
          MyChebyshevPolyOrder = smList.get("smoother: polynomial order",MyChebyshevPolyOrder);
@@ -961,11 +961,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           std::cout << msg << "IFPACK Chebyshev, order = " << MyChebyshevPolyOrder
                << ", alpha = " << MyChebyshevAlpha << ", " << MyPreOrPostSmoother << std::endl;
       }
-     
-        
+
+
       ML_Operator* this_A = &(ml_->Amat[currentLevel]);
 
-      Teuchos::ParameterList IFPACKList;      
+      Teuchos::ParameterList IFPACKList;
       if(MySmoother == "IFPACK-Block Chebyshev" && MyCheby_blockIndices && MyCheby_blockStarts){
         // If we're using Block Chebyshev, it can compute it's own eigenvalue estimate..
         Teuchos::ParameterList PermuteList,BlockList;
@@ -974,30 +974,30 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         PermuteList.set("block start index",MyCheby_blockStarts);
         //        if(is_lid) PermuteList.set("block entry lids",Blockids_);
         //NTS: Add LID support
-        PermuteList.set("block entry gids",MyCheby_blockIndices);        
+        PermuteList.set("block entry gids",MyCheby_blockIndices);
         PermuteList.set("blockdiagmatrix: list",BlockList);
 
         IFPACKList.set("chebyshev: use block mode",true);
         IFPACKList.set("chebyshev: block list",PermuteList);
         IFPACKList.set("chebyshev: eigenvalue max iterations",this_A->spectral_radius_max_iters);
-    
+
         // EXPERIMENTAL: Cheby-NE
        IFPACKList.set("chebyshev: solve normal equations",MyCheby_NE);
       }
       else {
         // Regular Chebyshev needs an eigenvalue estimate
-        ML_Gimmie_Eigenvalues(this_A, ML_DIAGSCALE, 
-                              this_A->spectral_radius_scheme, ml_->symmetrize_matrix);          
+        ML_Gimmie_Eigenvalues(this_A, ML_DIAGSCALE,
+                              this_A->spectral_radius_scheme, ml_->symmetrize_matrix);
       }
-      
+
       IFPACKList.set("chebyshev: ratio eigenvalue", MyChebyshevAlpha);
       IFPACKList.set("chebyshev: min eigenvalue", this_A->lambda_min);
       IFPACKList.set("chebyshev: max eigenvalue", this_A->lambda_max);
       IFPACKList.set("chebyshev: degree", MyChebyshevPolyOrder);
-           
-      ML_Gen_Smoother_Ifpack(ml_, "Chebyshev", 0, currentLevel, 
+
+      ML_Gen_Smoother_Ifpack(ml_, "Chebyshev", 0, currentLevel,
                              pre_or_post, (void*)&IFPACKList, (void*)Comm_);
-      
+
       if( verbose_ ) {
         std::cout << msg << "lambda_min = " << this_A->lambda_min
              << ", lambda_max = " << this_A->lambda_max << std::endl;
@@ -1017,7 +1017,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         MyIfpackOverlap = smList.get("smoother: self overlap",0);
       else
         MyIfpackOverlap = List_.get("smoother: self overlap",0);
-      
+
       if( verbose_ ) {
         std::cout << msg << "ML as self-smoother ("
              << "cycles=" << Mynum_smoother_steps
@@ -1033,7 +1033,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       char procLabel[30];
       sprintf(procLabel,"node id %d",List_.get("ML node id",-1));
       SelfList.set("ML label",procLabel);
-      SelfList.set("zero starting solution", false);  
+      SelfList.set("zero starting solution", false);
       std::string xxx = SelfList.get("SetDefaults", "not-set");
       if (xxx != "not-set") {
         if (verbose_ && Comm().MyPID() == 0)
@@ -1049,7 +1049,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       ML_Set_PrintLevel(currentPrintLevel);
       if (verbose_ && SelfList.get("ML output",0) > 0)
         std::cout << msg << "*** * End of self-smoother generation * ***" << std::endl;
-      
+
 #else
       std::cerr << ErrorMsg_ << "IFPACK not available." << std::endl
            << ErrorMsg_ << "ML must be configured with --enable-ifpack" << std::endl
@@ -1075,23 +1075,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
       int MyParaSailsFactorized = smList.get("smoother: ParaSails factorized",ParaSailsFactorized);
 
-      if( verbose_ ) 
+      if( verbose_ )
         std::cout << msg << "ParaSails "
              << "(n=" << MyParaSailsN
-             << ",sym=" << MyParaSailsSym 
-             << ",thresh=" << MyParaSailsThresh 
-             << ",filter=" << MyParaSailsFilter 
+             << ",sym=" << MyParaSailsSym
+             << ",thresh=" << MyParaSailsThresh
+             << ",filter=" << MyParaSailsFilter
              << ",lb=" << MyParaSailsLB
              << "fact=" << MyParaSailsFactorized
              << ")" << std::endl;
-      
+
 #ifdef HAVE_ML_PARASAILS
       // I am not sure about the ending `0' and of ML
-      ML_Gen_Smoother_ParaSails(ml_, currentLevel, 
+      ML_Gen_Smoother_ParaSails(ml_, currentLevel,
                                 pre_or_post, Mynum_smoother_steps,
                                 MyParaSailsSym, MyParaSailsThresh,
                                 MyParaSailsN,
-                                MyParaSailsFilter, (int) MyParaSailsLB, 
+                                MyParaSailsFilter, (int) MyParaSailsLB,
                                 MyParaSailsFactorized);
 #else
       std::cerr << ErrorMsg_ << "ParaSails not available." << std::endl
@@ -1177,7 +1177,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             MySubSmAbsThreshold = MyNodeSubSmAbsThreshold;
             MySubSmOmega = &MyNodeSubSmOmega;
             MySubSmAlpha = MyNodeSubSmAlpha;
-            SmInfo = NodeSmootherInfo; 
+            SmInfo = NodeSmootherInfo;
             break;
           case EDGE:
             ifpackList = &edgeList;
@@ -1189,13 +1189,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             MySubSmAbsThreshold = MyEdgeSubSmAbsThreshold;
             MySubSmOmega = &MyEdgeSubSmOmega;
             MySubSmAlpha = MyEdgeSubSmAlpha;
-            SmInfo = EdgeSmootherInfo; 
+            SmInfo = EdgeSmootherInfo;
             break;
           case DONE:
             pr_error("Something has gone wrong in Hiptmair smoother setup\n");
             break;
         } //switch(ne)
-          
+
         if ( (*MySubSmType == "MLS") || (*MySubSmType == "Chebyshev"))
         {
           // --------------------------------------
@@ -1209,14 +1209,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             argList = edge_args_;
             coarsening_rate = &edge_coarsening_rate;
             mlptr = ml_;
-          } else if (ne == NODE) { 
+          } else if (ne == NODE) {
             nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
             nodal_args_ = ML_Smoother_Arglist_Create(2);
             argList = nodal_args_;
             coarsening_rate = &node_coarsening_rate;
             mlptr = ml_nodes_;
           }
-          // This is for backward compatibility 
+          // This is for backward compatibility
           int itemp = List_.get("subsmoother: MLS polynomial order",-97);
           if (itemp == -97) itemp=List_.get("subsmoother: polynomial order",-97);
           itemp = smList.get("subsmoother: MLS polynomial order",itemp);
@@ -1243,7 +1243,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
             edge_args_ = ML_Smoother_Arglist_Create(2);
             argList = edge_args_;
-          } else if (ne == NODE) { 
+          } else if (ne == NODE) {
             nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
             nodal_args_ = ML_Smoother_Arglist_Create(2);
             argList = nodal_args_;
@@ -1265,7 +1265,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
               edge_args_ = ML_Smoother_Arglist_Create(4);
               edge_smoother=(void *) ML_Gen_Smoother_Ifpack;
               argList = edge_args_;
-          } else if (ne == NODE) { 
+          } else if (ne == NODE) {
             nodal_args_ = ML_Smoother_Arglist_Create(4);
             nodal_smoother=(void *) ML_Gen_Smoother_Ifpack;
             argList = nodal_args_;
@@ -1298,7 +1298,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             <<"Only Chebyshev (or MLS), SGS, ILU, IC, ILUT, and ICT" << std::endl
             << "are supported as Hiptmair subsmoothers ... not "
             << *MySubSmType << std::endl;
-    
+
       } //for (enum nodeOrEdge ne=NODE; ne!=DONE ...
 
 
@@ -1309,12 +1309,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
              << Mynum_smoother_steps << ")" << std::endl
              << msg << "edge: " << EdgeSmootherInfo << std::endl
              << msg << "node: " << NodeSmootherInfo << std::endl;
-        
+
       ML_Gen_Smoother_Hiptmair2(ml_, thisLevel, ML_BOTH,
-                                Mynum_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
+                                Mynum_smoother_steps, Tmat_array, Tmat_trans_array, NULL,
                                 MassMatrix_array,TtATMatrixML_,
                                 edge_smoother, edge_args_, nodal_smoother, nodal_args_,
-                                hiptmair_type);      
+                                hiptmair_type);
 
       ML_Smoother_Arglist_Delete(&nodal_args_);
       ML_Smoother_Arglist_Delete(&edge_args_);
@@ -1334,7 +1334,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         ML_Sm_Hiptmair_Data *hiptmairSmData =
            (ML_Sm_Hiptmair_Data *) ml_->pre_smoother[thisLevel].smoother->data;
         ML *ml_subproblem = hiptmairSmData->ml_nodal;
-                                                                                
+
         struct MLSthing *widget =
                        (struct MLSthing *) ml_subproblem->pre_smoother->smoother->data;
         double eig_ratio = widget->eig_ratio;
@@ -1347,12 +1347,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
            Amat->lambda_max = fabs(Amat->lambda_min);
            Amat->lambda_min = fabs(tmp);
            ML_Gen_Smoother_Cheby(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
-                                                                                
+
            //post-smoother
            hiptmairSmData = (ML_Sm_Hiptmair_Data *)
                           ml_->post_smoother[thisLevel].smoother->data;
            ml_subproblem = hiptmairSmData->ml_nodal;
-                                                                                
+
            // Note:  this is correct because the pre_smoother is the only one
            // used in the subproblem
            widget = (struct MLSthing *) ml_subproblem->pre_smoother->smoother->data;
@@ -1360,7 +1360,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
            degree = widget->mlsDeg;
            ml_subproblem->pre_smoother->data_destroy(
                ml_subproblem->pre_smoother->smoother->data);
-                                                                                
+
            ML_Gen_Smoother_Cheby(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
         }
       }
@@ -1376,7 +1376,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
 #     ifdef HAVE_PETSC
 
-      
+
 /*
       void *voidPC = 0;
       ML_PetscPC petscPC = 0;
@@ -1415,7 +1415,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // ======================================== //
       // Teko smoother (for block matrices only) //
       // ======================================== //
-      Teuchos::RCP<const Teko::InverseLibrary> invLib = 
+      Teuchos::RCP<const Teko::InverseLibrary> invLib =
             List_.get<Teuchos::RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",Teuchos::null);
 
       std::string tekoFilename = List_.get<std::string>("smoother: teko filename","teko_smoother.xml");
@@ -1430,9 +1430,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       isBlocked = smList.get("smoother: teko is blocked",isBlocked);
 
       // if no parameter list read one from the specified file
-      if(tekoPList==Teuchos::null && invLib==Teuchos::null) 
-        tekoPList = Teuchos::getParametersFromXmlFile(tekoFilename); 
- 
+      if(tekoPList==Teuchos::null && invLib==Teuchos::null)
+        tekoPList = Teuchos::getParametersFromXmlFile(tekoFilename);
+
       // ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
       //                      tekoFilename,tekoInverse,isBlocked);
       ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
@@ -1459,7 +1459,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       userSmootherName = List_.get("smoother: user-defined name",
                                    "User-defined");
 
-      if( verbose_ ) std::cout << msg << userSmootherName << " (sweeps=" 
+      if( verbose_ ) std::cout << msg << userSmootherName << " (sweeps="
                           << Mynum_smoother_steps << ","
                           << MyPreOrPostSmoother << ")" << std::endl;
 
@@ -1529,7 +1529,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
               << "<Chebyshev> / <ParaSails> / <Hiptmair>" << std::endl
               << ErrorMsg_ << "<user-defined>" << std::endl;
       ML_EXIT(-99); }
-    
+
     perLevelTime = Time.ElapsedTime();
     if (currentLevel != coarseLevel) {
       smooTime += perLevelTime;
@@ -1560,7 +1560,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                   << "Not doing so  may result in memory leaks or crashes." << std::endl;
       }
     } //if (verbose_)
-    
+
   } /* for (int level = 0 ; level < SmootherLevels ; ++level) */
 
   totalTime += (smooTime + coarseTime);

@@ -54,7 +54,7 @@ typedef struct ML_AMG_Struct
    int    ML_id;
    double print_flag;
    int    max_coarse_size;             /** maximum size of coarsest grid */
-   double threshold;                   /** for pruning matrix            */ 
+   double threshold;                   /** for pruning matrix            */
    double curr_threshold;              /** adjusted for levels           */
    int    coarsen_scheme;              /** MIS                           */
    int    amg_scheme;                  /** scalar(0),unknown(1),system(2)*/
@@ -105,7 +105,7 @@ typedef struct ML_AMG_Struct
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
@@ -168,11 +168,11 @@ extern int  ML_AMG_Set_Smoother(ML_AMG *ml_amg,int smoother_type,int pre_or_post
 extern int  ML_AMG_Set_SmootherAztec(ML_AMG *ml_amg, int pre_or_post,
                        int *options, double *params, int *proc_config,
 				     double *status, void (*post_function)(int)
-				     /* Trying to avoid including az_aztec.h 
+				     /* Trying to avoid including az_aztec.h
                        void (*post_function)(double *,int *,int *,double *,
 		       struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*)*/);
 
-extern int  ML_AMG_Set_CoarseSolve(ML_AMG *ml_amg, int solve_type, int ntimes, 
+extern int  ML_AMG_Set_CoarseSolve(ML_AMG *ml_amg, int solve_type, int ntimes,
                                    double weight);
 
 /* ------------------------------------------------------------------------- */
@@ -183,22 +183,22 @@ extern int  ML_AMG_Print(ML_AMG *);
 extern int  ML_AMG_Print_Complexity(ML_AMG *);
 
 extern int  ML_AMG_LabelVertices(int nvertices, int *vlist, int,
-                  char *state, char *vtype, int nvert, int *rowptr, 
+                  char *state, char *vtype, int nvert, int *rowptr,
                   int *columns, int mypid, int **proclist, int Nneigh,
                   int **sndbuf, int *neigh, int *sndleng, int Nneigh2,
-                  int **rcvbuf, int *neigh2, int *rcvleng, int **recvlist, 
+                  int **rcvbuf, int *neigh2, int *rcvleng, int **recvlist,
                   ML_Comm *comm, int *CF_array);
 
 
-int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh, 
-           int **A_neigh, int ***A_sendlist, int ***A_recvlist, 
-           int ***A_sndbuf, int ***A_rcvbuf, int **A_sndleng, 
+int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh,
+           int **A_neigh, int ***A_sendlist, int ***A_recvlist,
+           int ***A_sndbuf, int ***A_rcvbuf, int **A_sndleng,
            int **A_rcvleng, int *Nghost);
 
-int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[], 
-           int recv_cnt, int recv_proc[], int recv_leng[], int **recv_buf, 
-           int **recv_list, int proc_flag[], int *NremainingRcvProcs, 
-           int send_cnt, int send_proc[], int send_leng[], int **send_buf, 
+int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
+           int recv_cnt, int recv_proc[], int recv_leng[], int **recv_buf,
+           int **recv_list, int proc_flag[], int *NremainingRcvProcs,
+           int send_cnt, int send_proc[], int send_leng[], int **send_buf,
            int *send_flag, USR_REQ *Request, ML_Comm *comm, int msgtype);
 
 

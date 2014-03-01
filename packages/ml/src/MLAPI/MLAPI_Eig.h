@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -37,7 +37,7 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling = false);
 //! Computes eigenvalues and eigenvectors using LAPACK (w/ one process only).
 void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI);
 
-void Eigs(const Operator& A, int NumEigenvalues, 
+void Eigs(const Operator& A, int NumEigenvalues,
           MultiVector& ER, MultiVector& EI);
 
 } // namespace MLAPI

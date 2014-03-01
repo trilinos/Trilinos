@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
@@ -35,7 +35,7 @@ void StackPrint()
   std::cout << "==================" << std::endl << std::endl;
   for (unsigned int i = 0 ; i < StackData.size() ; ++i) {
     std::cout << "[" << i << "] " << StackData[i].FuncName << std::endl;
-    std::cout << "[" << i << "] " << StackData[i].FileName 
+    std::cout << "[" << i << "] " << StackData[i].FileName
               << ", line " << StackData[i].line << std::endl << std::endl;
   }
 

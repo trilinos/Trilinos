@@ -1252,23 +1252,12 @@ namespace SEAMS {
   case 120:
 /* Line 664 of lalr1.cc  */
 #line 326 "aprepro.yy"
-    { array *arr = (yysemantic_stack_[(6) - (1)].tptr)->value.avar;
-                                      int cols = arr->cols;
-                                      int rows = arr->rows;
-                                      if ((yysemantic_stack_[(6) - (3)].val) < rows && (yysemantic_stack_[(6) - (5)].val) < cols) {
-                                        int offset = (yysemantic_stack_[(6) - (3)].val)*cols+(yysemantic_stack_[(6) - (5)].val);
-                                        (yyval.val) = (yysemantic_stack_[(6) - (1)].tptr)->value.avar->data[offset];
-                                      }
-                                      else {
-                                        yyerror(aprepro, "Row or Column index out of range"); 
-                                        yyerrok;
-                                      }
-                                    }
+    { (yyval.val) = array_value((yysemantic_stack_[(6) - (1)].tptr)->value.avar, (yysemantic_stack_[(6) - (3)].val), (yysemantic_stack_[(6) - (5)].val)); }
     break;
 
   case 121:
 /* Line 664 of lalr1.cc  */
-#line 339 "aprepro.yy"
+#line 328 "aprepro.yy"
     { (yyval.val) = (yysemantic_stack_[(8) - (8)].val);
                                     array *arr = (yysemantic_stack_[(8) - (1)].tptr)->value.avar;
                                     int cols = arr->cols;
@@ -1286,7 +1275,7 @@ namespace SEAMS {
 
 
 /* Line 664 of lalr1.cc  */
-#line 1290 "apr_parser.cc"
+#line 1279 "apr_parser.cc"
       default:
         break;
       }
@@ -2095,7 +2084,7 @@ namespace SEAMS {
      257,   260,   262,   265,   268,   271,   274,   280,   281,   282,
      283,   284,   286,   288,   290,   292,   294,   296,   298,   299,
      300,   301,   308,   315,   316,   317,   320,   321,   324,   325,
-     326,   338
+     326,   327
   };
 
   // Print the state stack on the debug stream.
@@ -2188,9 +2177,9 @@ namespace SEAMS {
 
 } // SEAMS
 /* Line 1135 of lalr1.cc  */
-#line 2192 "apr_parser.cc"
+#line 2181 "apr_parser.cc"
 /* Line 1136 of lalr1.cc  */
-#line 355 "aprepro.yy"
+#line 344 "aprepro.yy"
 
 
 void SEAMS::Parser::error(const Parser::location_type&, const std::string& m)

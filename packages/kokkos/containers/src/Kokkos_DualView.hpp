@@ -43,21 +43,33 @@
 //@HEADER
 */
 
+/// \file Kokkos_DualView.hpp
+/// \brief Declaration and definition of Kokkos::DualView.
+///
+/// This header file declares and defines Kokkos::DualView and its
+/// related nonmember functions.
 
-/* DualView: container class to manage data structures which exist both on Host and Device
- * member functions:
- * DualView()
- * DualView(label,dim0,dim1,dim2,...)
- * view<DeviceType>()
- * sync<DeviceType>()
- * modify<DeviceType>()
- * resize(dim0,dim1,dim2,...)
- */
+
 #ifndef KOKKOS_DUALVIEW_HPP
 #define KOKKOS_DUALVIEW_HPP
 
 #include <Kokkos_View.hpp>
 namespace Kokkos {
+
+/* \brief DualView is a container class to manage data structures which exist in two memory spaces
+ *
+ * This class provides capabilities to manage data which exists in two memory spaces at the same time.
+ * It keeps views of the same layout on two memory spaces as well as dirty flags for both allocations.
+ * The user is responsible to set the dirty flags, and synchronize data by calling the 'modify' and the
+ * 'sync' function. The DualView class also provides convenience functions such as realloc, resize and
+ * capacity which call the appropriate functions of the underlying Kokkos::Views.
+ *
+ * Template arguments are (Look into Kokkos::View for detailed description):
+ * \tparam DataType The Kokkos Device type.
+ * \tparam Layout The array's layout in memory. .
+ * \tparam Device The Kokkos Device type.
+ * \tparam MemoryTraits (optional) Assertion of the user's intended access behavior.
+ */
 
 template< class T , class L , class D, class M = MemoryManaged>
 class DualView {
@@ -133,14 +145,14 @@ public:
 
   /* Construct views */
 
-  /* Empty Constructor */
+  /* \brief Empty Constructor */
 
   DualView() {
     modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");
     modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");
   }
 
-  /* Create view with allocation on both host and device */
+  /* \brief Create view with allocation on both host and device */
 
   DualView( const std::string & label ,
     const size_t n0 = 0 ,
@@ -163,7 +175,8 @@ public:
     modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");;
   }
 
-  /* Update data on device or host only if other space is polluted */
+
+  /* \brief Copy Constructor */
 
   template<class SS, class LS, class DS, class MS>
   DualView(const DualView<SS,LS,DS,MS> src) {
@@ -172,6 +185,8 @@ public:
     modified_host = src.modified_host;
     modified_device = src.modified_device;
   }
+
+  /* \brief Update data on device or host only if other space is polluted */
 
   template<class Device>
   void sync() {
@@ -192,7 +207,7 @@ public:
     }
   }
 
-  /* Mark data as dirty on a device */
+  /* \brief Mark data as dirty on a device */
 
   template<class Device>
   void modify() {
@@ -207,7 +222,7 @@ public:
     }
   }
 
-  /* Realloc both views, no deep copy */
+  /* \brief Realloc both views, no deep copy */
 
   void realloc( const size_t n0 = 0 ,
            const size_t n1 = 0 ,
@@ -227,7 +242,7 @@ public:
      modified_device() = modified_host() = 0;
   }
 
-  /* Resize both views, only do deep_copy in space which was last marked as dirty */
+  /* \brief Resize both views, only do deep_copy in space which was last marked as dirty */
 
   void resize( const size_t n0 = 0 ,
            const size_t n1 = 0 ,
@@ -268,22 +283,32 @@ public:
    }
   }
 
+  /* \brief return allocation size */
   size_t capacity() const {
     return d_view.capacity();
   }
 
+  /* \brief obtain strides for each dimension */
   template< typename iType>
   void stride(iType* stride_) const {
     d_view.stride(stride_);
   }
 
+  /* \brief return size of dimension 0 */
   size_t dimension_0() const {return d_view.dimension_0();}
+  /* \brief return size of dimension 1 */
   size_t dimension_1() const {return d_view.dimension_1();}
+  /* \brief return size of dimension 2 */
   size_t dimension_2() const {return d_view.dimension_2();}
+  /* \brief return size of dimension 3 */
   size_t dimension_3() const {return d_view.dimension_3();}
+  /* \brief return size of dimension 4 */
   size_t dimension_4() const {return d_view.dimension_4();}
+  /* \brief return size of dimension 5 */
   size_t dimension_5() const {return d_view.dimension_5();}
+  /* \brief return size of dimension 6 */
   size_t dimension_6() const {return d_view.dimension_6();}
+  /* \brief return size of dimension 7 */
   size_t dimension_7() const {return d_view.dimension_7();}
 };
 

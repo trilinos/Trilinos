@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef __MLXYT__
 #define __MLXYT__
@@ -37,9 +37,9 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
                       int start_location, int total_send, ML_Comm *comm,
                       int mask);
 
-extern int ML_xytComm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
+extern int ML_xytComm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
                     int total_length,int sub_mask);
-extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
+extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
                     int total_length,int sub_mask);
 
 #ifndef ML_CPP

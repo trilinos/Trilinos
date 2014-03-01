@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -131,18 +131,18 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
     if (NumDimensions > 2) RowZ[i] = z_coord[i / NumPDEEqns_];
   }
 
-  // create vectors containing coordinates for columns 
+  // create vectors containing coordinates for columns
   // (this is useful only if MIS/ParMETIS are used)
   Epetra_Vector ColX(ColMap); ColX.PutScalar(0.0);
   Epetra_Vector ColY(ColMap); ColY.PutScalar(0.0);
   Epetra_Vector ColZ(ColMap); ColZ.PutScalar(0.0);
-  
+
   // get coordinates for non-local nodes (in column map)
   Epetra_Import Importer(ColMap,RowMap);
   ColX.Import(RowX,Importer,Insert);
   if (NumDimensions > 1) ColY.Import(RowY,Importer,Insert);
   if (NumDimensions > 2) ColZ.Import(RowZ,Importer,Insert);
-  
+
   // global row and column numbering
   int* MyGlobalRowElements = RowMap.MyGlobalElements();
   int* MyGlobalColElements = ColMap.MyGlobalElements();
@@ -198,7 +198,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
         if (colInd[j] >= NumMyRows)
           continue;
 
-	if (colInd[j]%NumPDEEqns_ == 0) { 
+	if (colInd[j]%NumPDEEqns_ == 0) {
 
 	  // insert diagonal later
 	  if (colInd[j] != i) {
@@ -216,17 +216,17 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 	    // d2 is the square of the distance between node `i' and
 	    // node `j'
 	    double d2 = (coord_i[0] - coord_j[0]) * (coord_i[0] - coord_j[0]) +
-	      (coord_i[1] - coord_j[1]) * (coord_i[1] - coord_j[1]) +		     
+	      (coord_i[1] - coord_j[1]) * (coord_i[1] - coord_j[1]) +
 	      (coord_i[2] - coord_j[2]) * (coord_i[2] - coord_j[2]);
 
 	    if (d2 == 0.0) {
 	      std::cerr << std::endl;
-	      std::cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
+	      std::cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node "
                    << colInd[j]/NumPDEEqns_ << std::endl
                    << ErrorMsg_ << "is zero. Coordinates of these nodes are" << std::endl
-	           << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl  
-		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl  
-		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl  
+	           << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl
+		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl
+		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl
 		   << ErrorMsg_ << "Now proceeding with distance = 1.0" << std::endl;
 	      std::cerr << std::endl;
 	      d2 = 1.0;
@@ -260,14 +260,14 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 		int row = GlobalCol+k;
 		int col = GlobalRow+k;
 
-		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
+		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
 		  ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
 		}
 
 	      }
 	      total -= val;
 	    }
-	  } 
+	  }
 	}
       }
 
@@ -352,7 +352,7 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
   // use point map to exchange coordinates
   Epetra_Map PointRowMap(-1,NumMyRowElements,MyGlobalRowElements,0,Comm());
   Epetra_Map PointColMap(-1,NumMyColElements,MyGlobalColElements,0,Comm());
-  
+
   Epetra_Vector RowX(PointRowMap);
   Epetra_Vector RowY(PointRowMap);
   Epetra_Vector RowZ(PointRowMap);
@@ -363,12 +363,12 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
     if (NumDimensions > 2) RowZ[i] = z_coord[i];
   }
 
-  // create vectors containing coordinates for columns 
+  // create vectors containing coordinates for columns
   // (this is useful only if MIS/ParMETIS are used)
   Epetra_Vector ColX(PointColMap);
   Epetra_Vector ColY(PointColMap);
-  Epetra_Vector ColZ(PointColMap); 
-  
+  Epetra_Vector ColZ(PointColMap);
+
   // get coordinates for non-local nodes (in column map)
   Epetra_Import Importer(PointColMap,PointRowMap);
   ColX.Import(RowX,Importer,Insert);
@@ -433,12 +433,12 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
         if (d2 == 0.0) {
           std::cerr << std::endl;
-          std::cerr << ErrorMsg_ << "distance between node " << LocalRow << " and node " 
+          std::cerr << ErrorMsg_ << "distance between node " << LocalRow << " and node "
             << LocalCol << std::endl
             << ErrorMsg_ << "is zero. Coordinates of these nodes are" << std::endl
-            << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl  
-            << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl  
-            << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl  
+            << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl
+            << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl
+            << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl
             << ErrorMsg_ << "Now proceeding with distance = 1.0" << std::endl;
           std::cerr << std::endl;
           d2 = 1.0;
@@ -453,7 +453,7 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
         total += 1.0 /d2;
 
-      } 
+      }
     }
 
     // check that the diagonal block exists
@@ -517,7 +517,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
     }
 
     NumDimensions  = 0;
-  
+
     if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
     {
       ML_Aggregate_Viz_Stats *grid_info =
@@ -526,7 +526,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
 
       int n = AAA->invec_leng, Nghost = 0;
 
-      if (AAA->getrow->pre_comm) 
+      if (AAA->getrow->pre_comm)
       {
         if (AAA->getrow->pre_comm->total_rcv_length <= 0)
           ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
@@ -540,7 +540,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
       n /= NumPDEEqns_;
       Nghost /= NumPDEEqns_;
 
-      if (in_x_coord) 
+      if (in_x_coord)
       {
         NumDimensions++;
         double* x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
@@ -548,7 +548,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         for (int i = 0 ; i < n ; ++i)
           tmp[i * NumPDEEqns_] = in_x_coord[i];
 
-        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
                          AAA->comm, ML_OVERWRITE,NULL);
 
         for (int i = 0 ; i < n + Nghost ; ++i)
@@ -557,7 +557,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         grid_info->x = x_coord;
       }
 
-      if (in_y_coord) 
+      if (in_y_coord)
       {
         NumDimensions++;
         double* y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
@@ -565,7 +565,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         for (int i = 0 ; i < n ; ++i)
           tmp[i * NumPDEEqns_] = in_y_coord[i];
 
-        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
                          AAA->comm, ML_OVERWRITE,NULL);
 
         for (int i = 0 ; i < n + Nghost ; ++i)
@@ -574,7 +574,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         grid_info->y = y_coord;
       }
 
-      if (in_z_coord) 
+      if (in_z_coord)
       {
         NumDimensions++;
         double* z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
@@ -582,7 +582,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         for (int i = 0 ; i < n ; ++i)
           tmp[i * NumPDEEqns_] = in_z_coord[i];
 
-        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
                          AAA->comm, ML_OVERWRITE,NULL);
 
         for (int i = 0 ; i < n + Nghost ; ++i)
@@ -593,7 +593,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
 
       grid_info->Ndim = NumDimensions;
     } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
-  } //for (int ii=0; ii<2; ii++) 
+  } //for (int ii=0; ii<2; ii++)
 
   return(0);
 }

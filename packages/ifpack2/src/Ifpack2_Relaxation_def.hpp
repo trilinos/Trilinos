@@ -496,7 +496,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // we need to create an auxiliary vector, Xcopy
       RCP<const MV> Xcopy;
       if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-        Xcopy = rcp (new MV (X));
+        Xcopy = rcp (new MV(Tpetra::createCopy(X)));
       }
       else {
         Xcopy = rcpFromRef (X);
@@ -1319,7 +1319,6 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
   if(!localSmoothingIndices_.is_null())
     A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,

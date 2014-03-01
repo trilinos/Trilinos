@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -51,7 +51,7 @@ public:
 
   //! Empty constructor.
   LoadBalanceInverseOperator() : InverseOperator() {}
-  
+
   //! Copy constructor.
   LoadBalanceInverseOperator(const LoadBalanceInverseOperator& RHS);
 
@@ -72,12 +72,12 @@ public:
   void Reshape();
 
   //! Reshape with preconstructed smoother as Ifpack_Preconditioner
-  void Reshape(Ifpack_Preconditioner* prec, const LoadBalanceOperator& Op, 
+  void Reshape(Ifpack_Preconditioner* prec, const LoadBalanceOperator& Op,
                const bool ownership);
 
   // @}
   // @{ Get and Set methods.
-  
+
   //! Returns a bool indicating whether this proc participates in the operator application
   virtual inline bool GetParticipation() const {
     return(GetOperator().GetParticipation());
@@ -112,7 +112,7 @@ public:
 
   // @}
   // @{ Mathematical methods
-  
+
   //! Applies \c this object to vector \c lhs, returns values in \c rhs.
   int Apply(const MultiVector& x, MultiVector& y) const;
 
@@ -133,7 +133,7 @@ private:
 
   // @}
   // @{ \name Private data and methods
-  
+
   void Destroy();
 
   //! Operator of which \c this object define the inverse.
@@ -143,7 +143,7 @@ private:
   //! IFPACK preconditioner.
   Teuchos::RCP<Ifpack_Preconditioner> RCPData_;
   // @}
-  
+
 }; // InverseOperator
 
 } // namespace MLAPI

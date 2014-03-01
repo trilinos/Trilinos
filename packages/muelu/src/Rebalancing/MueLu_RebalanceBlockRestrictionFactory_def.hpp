@@ -62,12 +62,12 @@
 #include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_RebalanceBlockRestrictionFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
-
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -157,13 +157,13 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node,
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss2; ss2 << "R(" << curBlockId << "," << curBlockId << ") rebalanced:";
-      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebRii, ss2.str(), params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebRii, ss2.str(), params);
     } else {
       rebRii = Rii;
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
       std::stringstream ss2; ss2 << "R(" << curBlockId << "," << curBlockId << ") not rebalanced:";
-      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebRii, ss2.str(), params);
+      GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebRii, ss2.str(), params);
     }
 
     // fix striding information for rebalanced diagonal block rebRii

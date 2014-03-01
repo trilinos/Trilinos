@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -28,7 +28,7 @@
 /*    A(i,i) where 0 <= i < N,|    A(i,j) = values[i]                   */
 /* -------------------------------------------------------------------- */
 
-struct ML_CSR_MSRdata 
+struct ML_CSR_MSRdata
 {
    int    *columns, *rowptr;
    double *values;
@@ -39,7 +39,7 @@ struct ML_CSR_MSRdata
                               /* in the rest of ml. */
 };
 
-struct ML_vbrdata 
+struct ML_vbrdata
 {
    int    *bindx, *bpntr, *cpntr, *rpntr, *indx;
    double *val;
@@ -98,9 +98,9 @@ extern int CSR_get_one_row(ML_Operator *data, int N_requested_rows, int
                            requested_rows[], int allocated_space, int
                            columns[], double values[], int row_lengths[]);
 
-extern int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
+extern int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen,
 			     double ap[]);
-extern int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
+extern int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen,
 		       double ap[]);
 
 extern int CSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
@@ -132,7 +132,7 @@ extern int CSR_trans_ones_matvec(ML_Operator *Amat, int, double p[], int, double
 extern int sCSR_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int CSR_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
 extern int sCSR_ones_matvec(ML_Operator *Amat, int, double p[], int, double ap[]);
-extern int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
+extern int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen,
                            double ap[]);
 
 
@@ -145,7 +145,7 @@ extern int VECTOR_getrows(ML_Operator *mat,int N_requested_rows,int requested_ro
                           int allocated_space, int columns[], double values[],
                           int row_lengths[]);
 extern int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows,
-                          int *Ncolumns);  
+                          int *Ncolumns);
 
 extern int  ML_Matrix_DCSR_Create( ML_Matrix_DCSR ** );
 extern void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR * );

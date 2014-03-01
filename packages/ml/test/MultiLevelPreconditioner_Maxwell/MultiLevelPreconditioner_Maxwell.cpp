@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*
  * copied from examples/ml_example_epetra_preconditioner_Maxwell.cpp
@@ -29,7 +29,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
-struct user_partition {               
+struct user_partition {
   int *my_global_ids;      /* my_global_ids[i]: id of ith local unknown.     */
   int *needed_external_ids;/* global ids of ghost unknowns.                  */
   int Nlocal;              /* Number of local unknowns.                      */
@@ -55,14 +55,14 @@ extern void user_partition_edges(struct user_partition *,
 extern void user_partition_nodes(struct user_partition *Partition);
 extern AZ_MATRIX   *user_Ke_build(struct user_partition *);
 extern AZ_MATRIX   *user_Kn_build(struct user_partition *);
-extern ML_Operator *user_T_build (struct user_partition *, 
+extern ML_Operator *user_T_build (struct user_partition *,
                                   struct user_partition *, ML_Operator *, ML_Comm *);
 int main(int argc, char *argv[])
 {
   int    Nnodes=32*32;              /* Total number of nodes in the problem.*/
                                     /* 'Nnodes' must be a perfect square.   */
 
-  struct       user_partition Edge_Partition = {NULL, NULL,0,0,NULL,0,0,0}, 
+  struct       user_partition Edge_Partition = {NULL, NULL,0,0,NULL,0,0,0},
                                 Node_Partition = {NULL, NULL,0,0,NULL,0,0,0};
 
   int          proc_config[AZ_PROC_SIZE];
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 
   user_partition_nodes(&Node_Partition);
   user_partition_edges(&Edge_Partition, &Node_Partition);
-  
+
   AZ_MATRIX * AZ_Ke = user_Ke_build(&Edge_Partition);
   AZ_MATRIX * AZ_Kn = user_Kn_build(&Node_Partition);
 
@@ -94,11 +94,11 @@ int main(int argc, char *argv[])
   AZ_convert_aztec_matrix_2ml_matrix(AZ_Ke,ML_Ke,proc_config);
   AZ_convert_aztec_matrix_2ml_matrix(AZ_Kn,ML_Kn,proc_config);
 
-  ML_Tmat = user_T_build(&Edge_Partition, &Node_Partition, 
+  ML_Tmat = user_T_build(&Edge_Partition, &Node_Partition,
 		      ML_Kn, comm);
 
   Epetra_CrsMatrix * Epetra_Kn, * Epetra_Ke, * Epetra_T;
-  
+
   int MaxNumNonzeros;
   double CPUTime;
 
@@ -111,11 +111,11 @@ int main(int argc, char *argv[])
 			      true,CPUTime);
 
   ML_Operator2EpetraCrsMatrix(ML_Tmat,Epetra_T,MaxNumNonzeros,
-			      true,CPUTime);  
+			      true,CPUTime);
 
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults("maxwell", MLList);
-  
+
   MLList.set("ML output", 0);
 
   MLList.set("aggregation: type", "Uncoupled");
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
   Epetra_Vector LHS(Epetra_Ke->DomainMap()); LHS.Random();
   Epetra_Vector RHS(Epetra_Ke->DomainMap()); RHS.PutScalar(1.0);
-  
+
   Epetra_LinearProblem Problem(Epetra_Ke,&LHS,&RHS);
   AztecOO solver(Problem);
   solver.SetPrecOperator(MLPrec);
@@ -165,12 +165,12 @@ int main(int argc, char *argv[])
   // =============== //
   // C L E A N   U P //
   // =============== //
-  
+
   delete MLPrec;    // destroy phase prints out some information
   delete Epetra_Kn;
   delete Epetra_Ke;
   delete Epetra_T;
-  
+
   ML_Operator_Destroy( &ML_Ke );
   ML_Operator_Destroy( &ML_Kn );
   ML_Comm_Destroy( &comm );
@@ -179,9 +179,9 @@ int main(int argc, char *argv[])
   if (Node_Partition.my_local_ids != NULL) free(Node_Partition.my_local_ids);
   if (Node_Partition.my_global_ids != NULL) free(Node_Partition.my_global_ids);
   if (Edge_Partition.my_global_ids != NULL) free(Edge_Partition.my_global_ids);
-  if (Node_Partition.needed_external_ids != NULL) 
+  if (Node_Partition.needed_external_ids != NULL)
     free(Node_Partition.needed_external_ids);
-  if (Edge_Partition.needed_external_ids != NULL) 
+  if (Edge_Partition.needed_external_ids != NULL)
     free(Edge_Partition.needed_external_ids);
 
   if (AZ_Ke!= NULL) {
@@ -207,11 +207,11 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-		
+
   if (proc_config[AZ_node] == 0)
     std::cout << "`MultiLevelPreconditioner_Maxwell.exe' passed!" << std::endl;
   exit(EXIT_SUCCESS);
-		
+
 }
 
 #define HORIZONTAL 1
@@ -228,7 +228,7 @@ extern int west(int i, int j, int n);
 int northwest(int i, int j, int n) { return(i + (j)*n); }
 int southwest(int i, int j, int n) { if (j == 0) j = n;
                                        return(i + (j-1)*n);}
-int southeast(int i, int j, int n)  { if (j == 0) j = n;    
+int southeast(int i, int j, int n)  { if (j == 0) j = n;
                                        return(i+1 + (j-1)*n);}
 
 int north(int i, int j, int n) { return(i + (j)*n);}
@@ -272,7 +272,7 @@ void user_partition_edges(struct user_partition *Partition,
   for (i = 0; i < NodePartition->Nlocal; i++)
     (Partition->my_global_ids)[i] = (NodePartition->my_global_ids)[i];
   for (i = 0; i < NodePartition->Nlocal; i++)
-    (Partition->my_global_ids)[i+NodePartition->Nlocal] = 
+    (Partition->my_global_ids)[i+NodePartition->Nlocal] =
                (NodePartition->my_global_ids)[i] + NodePartition->Nglobal;
 
 }
@@ -344,8 +344,8 @@ AZ_MATRIX *user_Ke_build(struct user_partition *Edge_Partition)
 
   AZ_transform_norowreordering(proc_config, &(Edge_Partition->needed_external_ids),
 			       Ke_bindx, Ke_val, Edge_Partition->my_global_ids,
-			       &reordered_glob_edges, &reordered_edge_externs, 
-			       &Ke_data_org, Nlocal_edges, 0, 0, 0, 
+			       &reordered_glob_edges, &reordered_edge_externs,
+			       &Ke_data_org, Nlocal_edges, 0, 0, 0,
 			       &cpntr,	       AZ_MSR_MATRIX);
   AZ_free(reordered_glob_edges);
   AZ_free(reordered_edge_externs);
@@ -390,13 +390,13 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
     if (jj !=    0) { Kn_bindx[nz_ptr] = gid-nx; Kn_val[nz_ptr++] = -1.;}
     if (ii !=    0) { Kn_bindx[nz_ptr] = gid- 1; Kn_val[nz_ptr++] = -1.;}
 
-    if ((ii != nx-1) && (jj !=    0)) 
+    if ((ii != nx-1) && (jj !=    0))
       {Kn_bindx[nz_ptr] = gid-nx+1; Kn_val[nz_ptr++] = -1.;}
-    if ((ii != nx-1) && (jj != nx-1)) 
+    if ((ii != nx-1) && (jj != nx-1))
       {Kn_bindx[nz_ptr] = gid+nx+1; Kn_val[nz_ptr++] = -1.;}
-    if ((ii !=    0) && (jj != nx-1)) 
+    if ((ii !=    0) && (jj != nx-1))
       {Kn_bindx[nz_ptr] = gid+nx-1; Kn_val[nz_ptr++] = -1.;}
-    if ((ii !=    0) && (jj !=    0)) 
+    if ((ii !=    0) && (jj !=    0))
       {Kn_bindx[nz_ptr] = gid-nx-1; Kn_val[nz_ptr++] = -1.;}
     Kn_val[i] = (double) (nz_ptr - Kn_bindx[i]);
     Kn_bindx[i+1] = nz_ptr;
@@ -406,8 +406,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 
   AZ_transform_norowreordering(proc_config,&(Node_Partition->needed_external_ids),
 			       Kn_bindx, Kn_val, Node_Partition->my_global_ids,
-			       &reordered_glob_nodes, &reordered_node_externs, 
-			       &Kn_data_org, Nlocal_nodes, 0, 0, 0, 
+			       &reordered_glob_nodes, &reordered_node_externs,
+			       &Kn_data_org, Nlocal_nodes, 0, 0, 0,
 			       &cpntr, AZ_MSR_MATRIX);
   Node_Partition->Nghost = Kn_data_org[AZ_N_external];
   AZ_free(reordered_glob_nodes);
@@ -432,7 +432,7 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
   struct ML_CSR_MSRdata *csr_data;
   struct aztec_context *aztec_context;
   int global_id;
-  int Nlocal_nodes, Nlocal_edges; 
+  int Nlocal_nodes, Nlocal_edges;
   int nz_ptr;
 
   Nlocal_nodes = Node_Partition->Nlocal;
@@ -458,7 +458,7 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
       if(ii != -1) {
 	Tmat_bindx[nz_ptr] = southwest(ii,jj,nx); Tmat_val[nz_ptr++] = -1.;
       }
-      Tmat_bindx[nz_ptr]   = southeast(ii,jj,nx); Tmat_val[nz_ptr++] =  1.; 
+      Tmat_bindx[nz_ptr]   = southeast(ii,jj,nx); Tmat_val[nz_ptr++] =  1.;
     }
     else {
       if (ii == -1) ii = nx-1;
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
-    
+
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
 
 #ifdef HAVE_MPI

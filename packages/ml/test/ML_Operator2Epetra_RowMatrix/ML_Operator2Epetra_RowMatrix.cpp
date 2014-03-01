@@ -1,4 +1,4 @@
-/* 
+/*
  * Goal of this test:
  * - compare the two converters from ML_Operator to Epetra_RowMatrix.
  *   ML offers two ways to convert from ML_Operator to an Epetra_RowMatrix
@@ -40,7 +40,7 @@
 #include "ml_RowMatrix.h"
 
 // The matrix construction part is copied from ml_aztec_simple.c.
-struct user_partition_data {               
+struct user_partition_data {
   int *my_global_ids;      /* my_global_ids[i]: id of ith local unknown.     */
   int *needed_external_ids;/* global ids of ghost unknowns.                  */
   int Nlocal;              /* Number of local unknowns.                      */
@@ -132,16 +132,16 @@ int main(int argc, char *argv[])
 
   X1.Random();
   Epetra_MultiVector X2(X1);
-  
+
   Epetra_MultiVector Y1(RowMap,NumVectors);
   Epetra_MultiVector Y2(RowMap,NumVectors);
 
   CrsMatrix->Apply(X1,Y1);
-  
+
   MLMatrix->Apply(X2,Y2);
-  
+
   Y1.Update(-1.0,Y2,1.0);
-  
+
   double* Norm2 = new double[NumVectors];
   Y1.Norm2(Norm2);
 
@@ -151,22 +151,22 @@ int main(int argc, char *argv[])
     if (Norm2[i] > 1e-13) {
       std::cout << "Norm2[" << i << "] = " << Norm2[i] << std::endl;
       std::cout << "Test `ML_Operator2Epetra_RowMatrix.exe' failed!" << std::endl;
-      ML_EXIT(EXIT_FAILURE); 
+      ML_EXIT(EXIT_FAILURE);
     }
   }
-    
+
   // at this point the test is passed. Some fancy (??) output,
   // and I give up.
   if (proc_config[AZ_node] == 0) {
     std::cout << "Total norm = " << TotalNorm << std::endl;
     std::cout << "Test `ML_Operator2Epetra_RowMatrix.exe' passed!" << std::endl;
   }
-    
+
   // free memory
 
   ML_Destroy(&ml_handle);
   ML_Operator_Destroy(&ML_Mat);
-  
+
   delete CrsMatrix;
   delete MLMatrix;
 
@@ -183,13 +183,13 @@ int main(int argc, char *argv[])
   }
 
   delete [] Norm2;
-  
+
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
   return(0);
 
-} // main driver 
+} // main driver
 
 /*------------------------------------------------------------------*/
 
@@ -250,8 +250,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition)
 
   AZ_transform(proc_config,&(Partition->needed_external_ids),
 			       Kn_bindx, Kn_val, Partition->my_global_ids,
-			       &reordered_glob, &reordered_externs, 
-			       &Kn_data_org, Nlocal, 0, 0, 0, 
+			       &reordered_glob, &reordered_externs,
+			       &Kn_data_org, Nlocal, 0, 0, 0,
 			       &cpntr, AZ_MSR_MATRIX);
   Partition->Nghost = Kn_data_org[AZ_N_external];
   AZ_free(reordered_glob);
@@ -286,5 +286,5 @@ int main(int argc, char *argv[])
 #endif
 return(0);
 }
- 
-#endif 
+
+#endif

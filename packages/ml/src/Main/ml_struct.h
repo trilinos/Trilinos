@@ -60,8 +60,8 @@ typedef struct ML_Struct ML;
 /* data definition for the ML Class                                     */
 /* ******************************************************************** */
 /* -------------------------------------------------------------------- */
-/** This is the primary data structure which users interact directly     
-    with via the provided functions.                                    
+/** This is the primary data structure which users interact directly
+    with via the provided functions.
    -------------------------------------------------------------------- */
 
 struct ML_Struct {
@@ -87,7 +87,7 @@ struct ML_Struct {
    int            res_output_freq;
    int            MinPerProc_repartition;
    int            PutOnSingleProc_repartition;
-   double         LargestMinMaxRatio_repartition; 
+   double         LargestMinMaxRatio_repartition;
    int            use_repartitioning; /* turn repartitioning [off]/on */
    int            repartitionStartLevel; /* used to suppress repartitioning until a certain level*/
    ML_Partitioner partitioner; /*which partitioner to use: zoltan,parmetis,jostle */
@@ -258,7 +258,7 @@ extern int ML_Gen_Smoother_BlockHiptmair(ML*,int nl,int pre_post,int ntimes,
 extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes,
                                           double omega);
 extern int ML_Gen_Smoother_EffSymGaussSeidel(ML*,int nl,int pre_post,int ntimes,
-                                            double omega);  
+                                            double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
                      int ntimes, double omega);
 extern int ML_Gen_Smoother_MLS(ML*,int nl,int pre_post, double eig,
@@ -271,12 +271,12 @@ extern int ML_Gen_Smoother_SubdomainOverlap(ML *ml, int level, int overlap);
 
 extern int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
 			 int matrix_is_nonsymmetric, int symmetrize_matrix);
-extern int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, 
+extern int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl,
 					int pre_or_post,
 					double eig_ratio, int deg,
 					int nBlocks, int *blockIndices);
 extern int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
-					      int nBlocks, 
+					      int nBlocks,
 					      int *blockIndices,
 					      ML_Operator **blockMat,
 					      struct MLSthing *widget);

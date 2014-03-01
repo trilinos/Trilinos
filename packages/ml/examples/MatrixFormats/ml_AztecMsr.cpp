@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Example of wrappers for Aztec MSR or VBR matrices to Epetra_RowMatrix.
@@ -11,7 +11,7 @@
 // Epetra objects required by the class ML_Epetra::MultiLevelPreconditioner.
 //
 // This example uses class Epetra_MsrMatrix, which defines a wrapper.
-// Alternatively, one can make use of the Aztec2Petra() function 
+// Alternatively, one can make use of the Aztec2Petra() function
 // (contained in the aztecoo package).
 // This function creates shallow copies for vectors and for VBR matrices,
 // while MSR matrices (as in this example) are deep copied. The user
@@ -19,7 +19,7 @@
 // to the documentation in Trilinos/packages/aztecoo/src/Aztec2Petra.h.
 
 #include "ml_config.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO) 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -38,7 +38,7 @@
 #include "ml_include.h"
 
 // data required by this example to build the Aztec matrix
-struct partition_data {               
+struct partition_data {
   int *my_global_ids;      /* my_global_ids[i]: id of ith local unknown.     */
   int *needed_external_ids;/* global ids of ghost unknowns.                  */
   int Nlocal;              /* Number of local unknowns.                      */
@@ -83,12 +83,12 @@ int main(int argc, char *argv[])
   // =========================================== //
   // conversion from MSR/VBR to Epetra_RowMatrix //
   // =========================================== //
-  
+
   // need to set the update list in the `update' field of
   // AZ_MATRIX struct. Here `Partition.my_global_ids' is the update
   // list.
   AztecMatrix->update = Partition.my_global_ids;
-  
+
   // at this point we can wrap the matrix as Epetra_MsrMatrix, derived
   // from the Epetra_RowMatrix class. This means that AztecMatrix is
   // still required to perform the matrix-vector product.
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
   // create the preconditioner object and compute hierarchy
   // (see comments contained in file ml_preconditioner.cpp)
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(EpetraMatrix, MLList, true);
 
   // tell AztecOO to use this preconditioner, then solve
@@ -145,13 +145,13 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
 
-  // solve with 500 iterations and 1e-5 tolerance  
+  // solve with 500 iterations and 1e-5 tolerance
   solver.Iterate(500, 1e-5);
 
   // =========== //
   // free memory //
   // =========== //
-  
+
   // these are the objects of this example
   if (AztecMatrix != NULL) {
     AZ_free(AztecMatrix->bindx);
@@ -159,12 +159,12 @@ int main(int argc, char *argv[])
     AZ_free(AztecMatrix->data_org);
     AZ_matrix_destroy(&AztecMatrix);
   }
-    
+
   // these are the objects created by Aztec2Petra
   delete LHS;
   delete RHS;
   delete MLPrec;
-  
+
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
@@ -181,7 +181,7 @@ void BuildPartition(struct partition_data *Partition)
 #else
   AZ_set_proc_config(proc_config, AZ_NOT_MPI);
 #endif
-  
+
   AZ_input_update(NULL,&(Partition->Nlocal), &(Partition->my_global_ids),
 		  proc_config, Partition->Nglobal, 1, AZ_linear);
   Partition->Nghost = 0;   /* will be computed later */
@@ -246,8 +246,8 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
 
   AZ_transform(proc_config,&(Partition->needed_external_ids),
 			       Kn_bindx, Kn_val, Partition->my_global_ids,
-			       &reordered_glob, &reordered_externs, 
-			       &Kn_data_org, Nlocal, 0, 0, 0, 
+			       &reordered_glob, &reordered_externs,
+			       &Kn_data_org, Nlocal, 0, 0, 0,
 			       &cpntr, AZ_MSR_MATRIX);
   Partition->Nghost = Kn_data_org[AZ_N_external];
 
@@ -260,9 +260,9 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
 
   AZ_free(reordered_glob);
   AZ_free(reordered_externs);
-  
+
   return(Kn_mat);
-} 
+}
 
 #else
 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 #endif

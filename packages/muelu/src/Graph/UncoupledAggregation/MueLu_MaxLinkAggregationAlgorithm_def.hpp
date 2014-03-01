@@ -85,8 +85,7 @@ namespace MueLu {
     const int myRank = graph.GetComm()->getRank();
 
     size_t           aggSize = 0;
-    const unsigned   magicConstAsDefaultSize = 100;
-    std::vector<int> aggList(magicConstAsDefaultSize);
+    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
 
     //bool recomputeAggregateSizes=false; // variable not used TODO remove it
 
@@ -95,12 +94,6 @@ namespace MueLu {
         continue;
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
-
-      // TODO: I would like to get rid of this, but that requires something like
-      // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
-      // computation in LWGraph
-      if (as<size_t>(neighOfINode.size()) >= aggList.size())
-        aggList.resize(neighOfINode.size()*2);
 
       aggSize = 0;
       for (LO j = 0; j < neighOfINode.size(); j++) {

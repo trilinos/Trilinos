@@ -190,8 +190,8 @@ int main(int argc, char *argv[])
                            myGraph.numMyVertices,  /* hash table size */
                            0);                     /* debug level */
 
-  parts = malloc(myGraph.numMyVertices * sizeof(int));
-  lids = malloc(myGraph.numMyVertices * sizeof(ZOLTAN_ID_TYPE));
+  parts = (int *) malloc(myGraph.numMyVertices * sizeof(int));
+  lids = (ZOLTAN_ID_TYPE *) malloc(myGraph.numMyVertices * sizeof(ZOLTAN_ID_TYPE));
   
   for (i=0; i < myGraph.numMyVertices; i++){
     parts[i] = myRank;   /* part number of this vertex */

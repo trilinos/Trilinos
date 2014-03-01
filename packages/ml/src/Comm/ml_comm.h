@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -19,7 +19,7 @@
 #include "ml_memory.h"
 
 /* ******************************************************************** */
-/* communicator can be loaded by users or use the resident mpi          */ 
+/* communicator can be loaded by users or use the resident mpi          */
 /* -------------------------------------------------------------------- */
 
 #ifdef ML_MPI
@@ -75,7 +75,7 @@ typedef struct ml_DblLoc_struct {
 
 typedef struct ML_Comm_Struct
 {
-   int      ML_id; 
+   int      ML_id;
    int      ML_mypid;
    int      ML_nprocs;
    USR_COMM USR_comm;

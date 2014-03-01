@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 //@HEADER
 
@@ -17,7 +17,7 @@
 // configured with --enable-epetra --enable-teuchos. This example
 // required --enable-galeri (for the definition of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -43,7 +43,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -51,13 +51,13 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Creates the linear problem using the Galeri package. 
+  // Creates the linear problem using the Galeri package.
   // Several matrix examples are supported; please refer to the
   // Galeri documentation for more details.
   // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
   // class are based on Epetra_CrsMatrix. Example
   // `ml_EpetraVbr.cpp' shows how to define a Epetra_VbrMatrix.
-  
+
   // `Laplace2D' is a symmetric matrix; an example of non-symmetric
   // matrices is `Recirc2D' (advection-diffusion in a box, with
   // recirculating flow). The grid has nx x ny nodes, divided into
@@ -79,10 +79,10 @@ int main(int argc, char *argv[])
 
   // set defaults for smoothed aggregation
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   // use Uncoupled scheme to create the aggregate
   MLList.set("aggregation: type", "Uncoupled");
-  
+
   // fix the smoother
   MLList.set("smoother: type","symmetric Gauss-Seidel");
 
@@ -90,12 +90,12 @@ int main(int argc, char *argv[])
   // Note that users need to set "viz: enable" == true in order to
   // visualize!
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // for 2D Cartesian grid, you can print the stencil of your operator
   // using this simple function.
-  
+
   MLPrec->PrintStencil2D(nx, ny);
 
   // ================================================= //
@@ -105,14 +105,14 @@ int main(int argc, char *argv[])
   // Method AnalyzeHierarchy() can be used to validate an
   // already built hierarchy.
   // - `true' means perform a "cheap" analysis of each level's matrix
-  // - Then, each level's smoothers and the complete cycle are 
+  // - Then, each level's smoothers and the complete cycle are
   //   applied to solve the problem
   //     A e = 0
   //   with a random initial solution, to get a sense of the effectiveness
   //   of the smoothers and the cycle itself. The parameters are:
   //   * NumPreCycles and NumPostCycles specify the number of post
   //     and pre smoother applications;
-  //   * NumMLCycles specifies the number of applications of the 
+  //   * NumMLCycles specifies the number of applications of the
   //     complete cycle.
 
   int NumPreCycles = 5;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList MLTestList;
   ML_Epetra::SetDefaults("SA",MLTestList);
-  
+
   MLPrec->TestSmoothers(MLTestList);
 
   // =============== //
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 
-#endif 
+#endif

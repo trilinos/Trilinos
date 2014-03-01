@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_QR_FIX_H
 #define ML_QR_FIX_H
@@ -65,7 +65,7 @@ extern "C" {
           ML_Operator *Cmat,          /*-up- coarse operator in MSR format   */
           const int    CoarseMtxType  /*-in- coarse-lev mtx storage type     */
   );
- 
+
   /* Mark all appropriate coarse DOFs as dead. */
    void ML_qr_fix_markDOFsAsDead(const int aggNum, const int aggSize, const int nullspaceDim);
 

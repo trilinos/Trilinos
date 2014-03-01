@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -27,9 +27,9 @@
 
 using namespace Teuchos;
 
-// ============================================================================ 
-static void AddParameter(Teuchos::ParameterList& List, 
-                         const std::string& name, 
+// ============================================================================
+static void AddParameter(Teuchos::ParameterList& List,
+                         const std::string& name,
                          const Teuchos::ParameterEntry& entry)
 {
   if (entry.isType<int>())
@@ -58,7 +58,7 @@ static void AddParameter(Teuchos::ParameterList& List,
   }
 }
 
-// ============================================================================ 
+// ============================================================================
 static void AddSubList(Teuchos::ParameterList& List, Teuchos::ParameterList& ListToAdd)
 {
   if (List.name() == "ANONYMOUS") List.setName(ListToAdd.name());
@@ -71,14 +71,14 @@ static void AddSubList(Teuchos::ParameterList& List, Teuchos::ParameterList& Lis
   }
 }
 
-// ============================================================================ 
+// ============================================================================
 int ML_Epetra::ReadXML(const std::string &FileName, ParameterList &List,
             const Epetra_Comm &Comm)
 {
   int i = 0, j;
   FILE* ML_capture_flag;
   ML_capture_flag = fopen((char*)FileName.c_str(),"r");
-  if(ML_capture_flag) 
+  if(ML_capture_flag)
   {
     i++;
     fclose(ML_capture_flag);
@@ -97,7 +97,7 @@ int ML_Epetra::ReadXML(const std::string &FileName, ParameterList &List,
            << "***" << std::endl;
     return(0);
   }
-  
+
   Teuchos::FileInputSource fileSrc(FileName);
   Teuchos::XMLObject fileXML = fileSrc.getObject();
 

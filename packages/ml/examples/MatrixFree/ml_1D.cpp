@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   int NumMyBoundaryRows = 0;
   vector<int>    MyBoundaryRows;
   vector<double> MyBoundaryValues;
-  
+
   if (Comm.MyPID() == 0)
   {
     NumMyBoundaryRows += 2;
@@ -87,9 +87,9 @@ int main(int argc, char *argv[])
     MyBoundaryValues.push_back(0.0);
     MyBoundaryValues.push_back(0.0);
   }
-    
+
   // this is the local finite element matrix
-  
+
   Epetra_SerialDenseMatrix FEMatrix(NumPDEEqns * NumVerticesPerFE, NumPDEEqns * NumVerticesPerFE);
   FEMatrix(0,0) =  1.0; FEMatrix(0,1) =  0.0; FEMatrix(0,2) = -1.0; FEMatrix(0,3) =  0.0;
   FEMatrix(1,0) =  0.0; FEMatrix(1,1) =  1.0; FEMatrix(1,2) =  0.0; FEMatrix(1,3) = -1.0;
@@ -98,13 +98,13 @@ int main(int argc, char *argv[])
 
   // still need to specify the map for the graph. This requires
   // knowledge of the global number of vertices
-  
+
   Epetra_Map GraphMap(NumGlobalFEs, 0, Comm);
 
   // we can now build the matrix
 
   ElementByElement_SingleElement EBE(Comm, NumMyFEs, NumVerticesPerFE, &MyFEs[0],
-                                     NumPDEEqns, &FEMatrix, NumMyBoundaryRows, 
+                                     NumPDEEqns, &FEMatrix, NumMyBoundaryRows,
                                      &MyBoundaryRows[0], &MyBoundaryValues[0],
                                      GraphMap, 0);
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 

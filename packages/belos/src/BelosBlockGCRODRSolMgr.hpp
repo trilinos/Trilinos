@@ -845,7 +845,8 @@ private:
      // parameters ("Orthogonalization Parameters") requires knowing the
      // orthogonalization manager name.  Save it for later, and also
      // record whether it's different than before.
-     bool changedOrthoType = false;
+
+     //bool changedOrthoType = false; // silence warning about not being used
      if (params_->isParameter ("Orthogonalization")) {
        const std::string& tempOrthoType =
          params_->get<std::string> ("Orthogonalization");
@@ -859,7 +860,7 @@ private:
          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
        }
        if (tempOrthoType != orthoType_) {
-         changedOrthoType = true;
+         //changedOrthoType = true;
          orthoType_ = tempOrthoType;
        }
      }
@@ -917,13 +918,14 @@ private:
      //
      // The "Orthogonalization Constant" parameter is retained only
      // for backwards compatibility.
-     bool gotValidOrthoKappa = false;
+
+     //bool gotValidOrthoKappa = false; // silence warning about not being used
      if (params_->isParameter ("Orthogonalization Constant")) {
        const MagnitudeType orthoKappa =
          params_->get<MagnitudeType> ("Orthogonalization Constant");
        if (orthoKappa > 0) {
          orthoKappa_ = orthoKappa;
-         gotValidOrthoKappa = true;
+         //gotValidOrthoKappa = true;
          // Only DGKS currently accepts this parameter.
          if (orthoType_ == "DGKS" && ! ortho_.is_null()) {
            typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_man_type;
@@ -1830,7 +1832,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
     // **************************************************************************************************************************
     // Begin initial solver preparations.  Either update U,C for new operator or generate an initial space using a cycle of GMRES
     // **************************************************************************************************************************
-    int prime_iterations;
+    //int prime_iterations; // silence warning about not being used
     if(keff > 0){//If there is already a subspace to recycle, then use it
       // Update U, C for the new operator
 
@@ -1892,7 +1894,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
       MVT::MvTimesMatAddMv( -one, *Ctmp, Ctr, one, *R_ );
 
       // We recycled space from previous call
-      prime_iterations = 0;
+      //prime_iterations = 0;
 
       // Since we have a previous recycle space, we do not need block_gmres_iter
       // and we must allocate V ourselves. See comments in initialize() routine for
@@ -2027,7 +2029,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
       }
 
       // Record number of iterations in generating initial recycle spacec
-      prime_iterations = block_gmres_iter->getNumIters();//instantiated here because it is not needed outside of else{} scope;  we'll see if this is true or not
+      //prime_iterations = block_gmres_iter->getNumIters();//instantiated here because it is not needed outside of else{} scope;  we'll see if this is true or not
 
       // Update the linear problem.
       RCP<MV> update = block_gmres_iter->getCurrentUpdate();

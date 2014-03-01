@@ -28,14 +28,14 @@
 
 using namespace Teuchos;
 
-void PrintLine() 
+void PrintLine()
 {
   cout << endl;
   for( int i=0 ; i<80 ; ++i )
     cout << "=";
   cout << endl;
   cout << endl;
-  
+
   return;
 }
 
@@ -47,11 +47,11 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 				 Epetra_LinearProblem & Problem,double & TotalErrorResidual,
 				 double & TotalErrorExactSol,bool cg=false)
 {
-  
+
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
   Epetra_RowMatrix* A = Problem.GetMatrix();
-  
+
   // ======================================== //
   // create a rhs corresponding to lhs or 1's //
   // ======================================== //
@@ -59,63 +59,63 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   ML_set_random_seed(987654);
 
   lhs->PutScalar(1.0);
-    
+
   A->Multiply(false,*lhs,*rhs);
   lhs->PutScalar(0.0);
-  
+
   Epetra_Time Time(A->Comm());
-  
+
   // =================== //
   // call ML and AztecOO //
   // =================== //
-  
+
   AztecOO solver(Problem);
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
-  
+
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
-  
+
   solver.Iterate(1000, 1e-10);
-  
+
   delete MLPrec;
-  
+
   // ==================================================== //
   // compute difference between exact solution and ML one //
   // ==================================================== //
-  
+
   double d = 0.0, d_tot = 0.0;
-  
+
   for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
     d += ((*lhs)[0][i] - 1.0) * ((*lhs)[0][i] - 1.0);
-  
+
   A->Comm().SumAll(&d,&d_tot,1);
-  
+
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
-  
+
   double Norm;
   Epetra_Vector Ax(rhs->Map());
   A->Multiply(false, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
-  
+
   string msg = ProblemType;
-  
+
   if (A->Comm().MyPID() == 0) {
     cout << msg << "......Using " << A->Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
-  
+
   TotalErrorExactSol += sqrt(d_tot);
   TotalErrorResidual += Norm;
-  
+
   return( solver.NumIters() );
-  
+
 }
 
 int main(int argc, char *argv[]) {
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   // initialize the random number generator
   int ml_one = 1;
   ML_srandom1(&ml_one);
@@ -153,13 +153,13 @@ int main(int argc, char *argv[]) {
 
   BadMatrix->FillComplete();  BadMatrix->OptimizeStorage();
   int N=BadMatrix->RowMatrixRowMap().NumMyElements();
-  
+
   // Create the trivial blockID list
   int * trivial_blockids=new int[N];
   for(int i=0;i<N;i++)
-    trivial_blockids[i]=i;    
-  
-  Epetra_Vector LHS(*Map); 
+    trivial_blockids[i]=i;
+
+  Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
   Epetra_LinearProblem BadProblem(BadMatrix, &LHS, &RHS);
 
@@ -168,16 +168,16 @@ int main(int argc, char *argv[]) {
   char mystring[80];
 
   // ====================== //
-  // ML Cheby 
+  // ML Cheby
   // ====================== //
   if (Comm.MyPID() == 0) PrintLine();
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type","Chebyshev");
-  MLList.set("coarse: type","Amesos-KLU");    
+  MLList.set("coarse: type","Amesos-KLU");
   MLList.set("max levels",2);
   MLList.set("aggregation: threshold",.02);
   MLList.set("ML output",10);
-  MLList.set("smoother: polynomial order",2);  
+  MLList.set("smoother: polynomial order",2);
   strcpy(mystring,"Cheby");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
@@ -187,55 +187,55 @@ int main(int argc, char *argv[]) {
     // ====================== //
     // ML Block Cheby (Trivial)
     // ====================== //
-    if (Comm.MyPID() == 0) PrintLine(); 
-    ML_Epetra::SetDefaults("SA",MLList); 
+    if (Comm.MyPID() == 0) PrintLine();
+    ML_Epetra::SetDefaults("SA",MLList);
     MLList.set("smoother: type","Block Chebyshev");
     MLList.set("smoother: Block Chebyshev number of blocks",N);
     MLList.set("smoother: Block Chebyshev block list",trivial_blockids);
-    MLList.set("coarse: type","Amesos-KLU");  
+    MLList.set("coarse: type","Amesos-KLU");
     MLList.set("max levels",2);
-    MLList.set("ML output",10);  
+    MLList.set("ML output",10);
     MLList.set("smoother: polynomial order",2);
     strcpy(mystring,"ML Block Cheby (Trivial)");
     TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                  TotalErrorResidual, TotalErrorExactSol);
-  
-  
+
+
     // ====================== //
     // ML Block Cheby (Smart)
-    // ====================== //  
+    // ====================== //
     if (Comm.MyPID() == 0) PrintLine();
-    ML_Epetra::SetDefaults("SA",MLList);  
+    ML_Epetra::SetDefaults("SA",MLList);
     MLList.set("smoother: type","Block Chebyshev");
     MLList.set("smoother: Block Chebyshev number of blocks",numblocks);
-    MLList.set("smoother: Block Chebyshev block list",i_blockids);    
-    MLList.set("coarse: type","Amesos-KLU");  
+    MLList.set("smoother: Block Chebyshev block list",i_blockids);
+    MLList.set("coarse: type","Amesos-KLU");
     MLList.set("max levels",2);
-    MLList.set("ML output",10);  
+    MLList.set("ML output",10);
     MLList.set("smoother: polynomial order",2);
     strcpy(mystring,"ML Block Cheby (Smart)");
     TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                  TotalErrorResidual, TotalErrorExactSol);
   }
-  
+
 #if defined(HAVE_ML_IFPACK)
   // ====================== //
-  // IFPACK Cheby 
+  // IFPACK Cheby
   // ====================== //
   if (Comm.MyPID() == 0) PrintLine();
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type","IFPACK-Chebyshev");
-  MLList.set("coarse: type","Amesos-KLU");    
+  MLList.set("coarse: type","Amesos-KLU");
   MLList.set("max levels",2);
   MLList.set("ML output",10);
-  MLList.set("smoother: polynomial order",2);  
+  MLList.set("smoother: polynomial order",2);
   strcpy(mystring,"IFPACK Cheby");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ====================== //
   // IFPACK Block Cheby (Trivial)
-  // ====================== //  
+  // ====================== //
   int NumBlocks=Map->NumMyElements();
   int *BlockStarts=new int[NumBlocks+1];
   int *Blockids=new int [NumBlocks];
@@ -249,17 +249,17 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type","IFPACK-Block Chebyshev");
   MLList.set("smoother: Block Chebyshev number of blocks",NumBlocks);
   MLList.set("smoother: Block Chebyshev block starts",&BlockStarts[0]);
-  MLList.set("smoother: Block Chebyshev block list",&Blockids[0]);    
-  MLList.set("coarse: type","Amesos-KLU");  
+  MLList.set("smoother: Block Chebyshev block list",&Blockids[0]);
+  MLList.set("coarse: type","Amesos-KLU");
   MLList.set("max levels",2);
-  MLList.set("ML output",10);  
+  MLList.set("ML output",10);
   MLList.set("smoother: polynomial order",2);
   strcpy(mystring,"IFPACK Block Cheby (Trivial)");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
   delete [] BlockStarts; delete [] Blockids;
 
-  
+
   // ====================== //
   // IFPACK Block Cheby (Smart)
   // ====================== //
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
   }
   Comm.Broadcast(&g_NumBlocks,1,0);
   Comm.Broadcast(&g_MaxSize,1,0);
-  Epetra_Map BlockMap(g_NumBlocks,0,Comm);   
+  Epetra_Map BlockMap(g_NumBlocks,0,Comm);
   Epetra_MultiVector *blockids_disk=0;
   rv=EpetraExt::MatrixMarketFileToMultiVector("localids_in_blocks.dat",BlockMap,blockids_disk);
 
@@ -299,31 +299,31 @@ int main(int argc, char *argv[]) {
     Blockids[cidx]=(int)(*blockids_disk)[0][i];cidx++;
     if((*blockids_disk)[1][i] > 1e-2){
       Blockids[cidx]=(int)(*blockids_disk)[1][i];cidx++;
-    }    
+    }
   }
   BlockStarts[NumBlocks]=cidx;
-  
-  
+
+
   if (Comm.MyPID() == 0) PrintLine();
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type","IFPACK-Block Chebyshev");
   MLList.set("smoother: Block Chebyshev number of blocks",NumBlocks);
   MLList.set("smoother: Block Chebyshev block starts",&BlockStarts[0]);
-  MLList.set("smoother: Block Chebyshev block list",&Blockids[0]);    
-  MLList.set("coarse: type","Amesos-KLU");  
+  MLList.set("smoother: Block Chebyshev block list",&Blockids[0]);
+  MLList.set("coarse: type","Amesos-KLU");
   MLList.set("max levels",2);
-  MLList.set("ML output",10);  
+  MLList.set("ML output",10);
   MLList.set("smoother: polynomial order",2);
   strcpy(mystring,"IFPACK Block Cheby (Smart)");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
-  
+
   delete blockids_disk; delete [] BlockStarts; delete [] Blockids;
 #endif
-  
 
 
-  
+
+
   // ===================== //
   // print out total error //
   // ===================== //

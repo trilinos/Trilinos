@@ -7,16 +7,16 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 namespace ML_Epetra {
 
 /*! \enum FilterType
- * 
+ *
  * \brief Defined the type of filter to be applied after each
  *  ExtractMyRowCopy().
- * 
+ *
  * \author Marzio Sala, SNL 9214.
  *
  * \date Last updated on 15-Mar-05.

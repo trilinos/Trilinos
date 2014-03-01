@@ -398,6 +398,7 @@ int main(int argc, char *argv[]) {
     pyrBasis.getValues(vals, pyrNodes, OPERATOR_D2);
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
+        if(j == 4) continue; //derivatives are singular when z = 1.
         for (int k = 0; k < D2Cardin; k++) {
            int l = k + i * D2Cardin + j * D2Cardin * numFields;
            if (std::abs(vals(i,j,k) - basisD2[l]) > INTREPID_TOL) {

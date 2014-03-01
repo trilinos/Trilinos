@@ -236,7 +236,8 @@ template<class Scalar,
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview,
+  RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null);
 
 template<class Scalar,
          class LocalOrdinal,

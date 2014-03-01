@@ -7,11 +7,11 @@
  \author Marzio Sala, SNL, 9214
 
  \date 28-May-2003
- 
+
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /* ------------------------------------------------------------------------ */
 
@@ -67,7 +67,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	     __LINE__ );
     exit( EXIT_FAILURE );
   }
-  
+
   if( mypid == 0 ) filemode[0] = 'w';
   else             filemode[0] = 'a';
   filemode[1] = '\0';
@@ -96,13 +96,13 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
     for( i=0 ; i<Naggregates ; ++i ) reorder[i] = -1;
 
     srand(0); /* Initialize random seed */
-    
+
     for( i=0 ; i<Naggregates ; ++i ) {
 
       do {
 
 	ok = 0;
-	
+
 	j = (int)(1.0*(Naggregates)*rand()/RAND_MAX);
 
 	if( j >=0 && j<Naggregates ) {
@@ -145,7 +145,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   offset -= Naggregates;
 #else
   offset = 0;
-#endif  
+#endif
 
   /* cycle over all local rows, plot corresponding value on file */
 
@@ -160,14 +160,14 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 
       for( irow=0 ; irow<Nrows ; irow++ ) {
 	if( vector != NULL ) val = vector[irow];
-	else if( AggrToVisualize != -1 ) { 
+	else if( AggrToVisualize != -1 ) {
 	  if( graph_decomposition[irow] == AggrToVisualize ) val = 1.0;
 	  else                                               val = 0.0;
 	} else
 	  val = (double)(reorder[graph_decomposition[irow]] + offset);
 
 	/* XD3D does not work in 3D, other codes will */
-	if( z == NULL ) 
+	if( z == NULL )
 	  fprintf( fp,
 		  "%f %f %f\n",
 		  x[irow], y[irow], val );
@@ -181,11 +181,11 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
     }
     ML_Comm_Barrier(comm);
   }
-  
+
   if( reorder != NULL ) free(reorder);
 
   return 0;
-  
+
 } /* ML_VisualizeWithXYZ */
 
 /* ======================================================================== */
@@ -229,7 +229,7 @@ int ML_PlotXYZ(int Npoints, double* x, double* y, double* z,
       for (irow = 0 ; irow < Npoints ; ++irow) {
 	val = vector[irow];
 
-	if( z == NULL ) 
+	if( z == NULL )
 	  fprintf( fp,
 		  "%f %f %f\n",
 		  x[irow], y[irow], val );
@@ -243,9 +243,9 @@ int ML_PlotXYZ(int Npoints, double* x, double* y, double* z,
     }
     ML_Comm_Barrier(comm);
   }
-  
+
   return 0;
-  
+
 } /* ML_PlotXYZ */
 
 

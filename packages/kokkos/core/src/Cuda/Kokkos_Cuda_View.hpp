@@ -185,7 +185,7 @@ struct CudaTextureFetch {
 
     template< typename iType >
     KOKKOS_INLINE_FUNCTION
-    double operator[]( const iType & i ) const
+    ValueType operator[]( const iType & i ) const
     {
   #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
   // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
@@ -290,23 +290,24 @@ struct ViewAssignment< ViewCudaTexture , ViewCudaTexture , void >
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
     typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type    shape_type ;
     //typedef typename DstViewType::memory_space  memory_space ; // unused
     //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
-    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
+    dst.m_tracking.decrement( dst.m_texture.ptr );
 
     dst.m_texture  = src.m_texture ;
     dst.m_stride   = src.m_stride ;
+    dst.m_tracking = src.m_tracking ;
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
-    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
+    dst.m_tracking.increment( dst.m_texture.ptr );
   }
 };
 
@@ -326,14 +327,14 @@ struct ViewAssignment< ViewCudaTexture , ViewDefault , void >
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    // typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
     typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type  shape_type ;
     typedef typename DstViewType::value_type  value_type ;
     typedef typename DstViewType::stride_type stride_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
+    dst.m_tracking.decrement( dst.m_texture.ptr );
 
     dst.m_texture = CudaTextureFetch< value_type >( src.m_ptr_on_device );
 
@@ -342,8 +343,9 @@ struct ViewAssignment< ViewCudaTexture , ViewDefault , void >
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
     stride_type::assign( dst.m_stride , src.m_stride.value );
+    dst.m_tracking  = src.m_tracking ;
 
-    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
+    dst.m_tracking.increment( dst.m_texture.ptr );
   }
 };
 
@@ -374,10 +376,10 @@ private:
   typedef Impl::CalculateOffset< typename traits::array_layout ,
                          typename traits::shape_type > calculate_offset;
 
-
   Impl::CudaTextureFetch<typename traits::value_type > m_texture ;
   typename traits::shape_type           m_shape ;
   stride_type                           m_stride ;
+  Impl::ViewTracking< traits >          m_tracking ;
 
 public:
 
@@ -431,14 +433,15 @@ public:
    }
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_texture.ptr ); }
+  ~View() { m_tracking.decrement( m_texture.ptr ); }
 
   View( const View & rhs )
     : m_texture( rhs.m_texture )
     , m_stride(  rhs.m_stride )
     {
-      m_shape = rhs.m_shape ;
-      Impl::ViewTracking< traits >::increment( m_texture.ptr );
+      m_shape    = rhs.m_shape ;
+      m_tracking = rhs.m_tracking ;
+      m_tracking.increment( m_texture.ptr );
     }
 
   View & operator = ( const View & rhs )
@@ -472,9 +475,8 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          Impl::is_same<TT,typename traits::value_type>::value &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
+          Impl::is_same<TT,typename traits::value_type>::value
+        ), const size_t >::type n7 = 0 )
     : m_texture( Impl::CudaTextureFetch< typename traits::value_type >(ptr))
     {
       typedef typename traits::shape_type  shape_type ;
@@ -482,6 +484,7 @@ public:
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
+      m_tracking = false ;
     }
 
   //------------------------------------

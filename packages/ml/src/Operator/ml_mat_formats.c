@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -34,7 +34,7 @@ void ML_restricted_MSR_mult(ML_Operator *matrix, int Nrows,
    struct ML_CSR_MSRdata *temp;
    ML_Comm *comm;
 
-   if (Nrows == -57) 
+   if (Nrows == -57)
      ML_avoid_unused_param( (void *) &Nsend);
    comm = matrix->comm;
    ML_exchange_bdry(b, matrix->getrow->pre_comm, Nrows, comm,
@@ -68,7 +68,7 @@ void ML_restricted_MSR_mult(ML_Operator *matrix, int Nrows,
 
 void ML_RECUR_CSR_MSRdata_Destroy(ML_Operator *matrix)
 {
-   if (matrix->sub_matrix != NULL) 
+   if (matrix->sub_matrix != NULL)
       ML_RECUR_CSR_MSRdata_Destroy(matrix->sub_matrix);
    ML_CSR_MSRdata_Destroy(matrix->data);
 }
@@ -216,7 +216,7 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 /*                  indx while index2 is used for values.            */
 /*********************************************************************/
 
-/*Another version of this function exists without the index and with 
+/*Another version of this function exists without the index and with
   fewer values passed by reference in version 1.73 if this file and
   associated checkins*/
 
@@ -232,7 +232,7 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
    int done = 0;
    int col_size;
    ML_Operator *place_holder;
-   
+
 
 #ifdef DEBUG2
    if ( (requested_row >= input_matrix->getrow->N_block_rows) || (requested_row < 0) ) {
@@ -242,7 +242,7 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
 #endif
 
    /*cathing a potential problem but not sure if this is a problem or would ever happen*/
-   /*if (data->getrow->row_map != NULL) 
+   /*if (data->getrow->row_map != NULL)
    {
      printf("It is unclear as to what a non-NULL rowmap means in a blockrow matrix.\n");
      exit(1);
@@ -256,7 +256,7 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
     return;}
    }*/
 
-                          
+
    place_holder = data;
    /*Find matrix to query*/
    while(!done)
@@ -288,9 +288,9 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
 
    /*calculate block row information*/
    *row_length = finish - start;
-   *blocks = bpntr_rows_1 - bpntr_rows;   
-   
-   /*Make sure we have enough space to store the block row variables we need 
+   *blocks = bpntr_rows_1 - bpntr_rows;
+
+   /*Make sure we have enough space to store the block row variables we need
      one more space for the last spot of the indx*/
    if(*blocks + index >= *int_space){
      *int_space = 2*(*int_space) +1;
@@ -325,9 +325,9 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
       ML_free(*values);
       *values = t3;
    }
-   
+
    /*iterate over the blocking data and store it*/
-   bindx_old = &(input_matrix->bindx[bpntr_rows]); 
+   bindx_old = &(input_matrix->bindx[bpntr_rows]);
    indx_old = &(input_matrix->indx[bpntr_rows]);
    if(index == 0){
      **indx = 0;
@@ -351,7 +351,7 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
        bindx_ptr[i] = place_holder->getrow->loc_glob_map[bindx_ptr[i]*col_size]/col_size;
      }
    }
-                                                                 
+
    /*iterate over the data and copy it*/
    val = &(input_matrix->val[start]);
    values_ptr = &((*values)[index2]);
@@ -439,7 +439,7 @@ int MSR_get_ones_rows(ML_Operator *data, int N_requested_rows, int requested_row
    struct ML_CSR_MSRdata *input_matrix;
    ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) data; 
+   mat_in = (ML_Operator *) data;
   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
   bindx  = input_matrix->columns;
 
@@ -476,9 +476,9 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int  i, j, offset, point_rows, iminus1;
    int *cpntr, *bindx, *rpntr, *indx, *bpntr, startblock, endblock;
    double *val, cur_val;
-  
- 
-   /*set alliases*/                                                       
+
+
+   /*set alliases*/
    input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(data);
    bindx  = input_matrix->bindx;
    val    = input_matrix->val;
@@ -492,7 +492,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    iminus1 = i-1;
    offset = indx[bpntr[iminus1]] + *requested_rows - rpntr[iminus1];
    point_rows = rpntr[i] - rpntr[iminus1];
-                          
+
    /*Make sure we have enough allocated space here*/
    if ((indx[bpntr[i]] - indx[bpntr[iminus1]])/point_rows > allocated_space) {
      ML_avoid_unused_param( (void *) &N_requested_rows);
@@ -504,7 +504,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    endblock = bpntr[i];
 
    *row_lengths = 0; /*data points stored*/
-  
+
    /*we need something to check here but in time we'll have it*/
    if(data->getrow->columns_loc_glob == ML_GLOBAL_INDICES)
    {
@@ -626,7 +626,7 @@ int sCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
 }
 
 /* really cheap matrix format for null space within   */
-/* edge element AMG (which contains only + or -1's).  */   
+/* edge element AMG (which contains only + or -1's).  */
 int cCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -662,7 +662,7 @@ int cCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    val    = &(val[itemp]);
 
    for (j = 0 ; j < *row_lengths; j++) {
-     *values++ = sgn[ (int) *val++ ]; 
+     *values++ = sgn[ (int) *val++ ];
    }
    return(1);
 }
@@ -821,7 +821,7 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    if (getrow_comm != NULL) {
       p2 = (double *) ML_allocate((Nrows+getrow_comm->minimum_vec_size+1)*
                                   sizeof(double));
-      if (p2 == NULL) 
+      if (p2 == NULL)
 	pr_error("MSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
       for (i = 0; i < Nrows; i++) p2[i] = p[i];
@@ -875,7 +875,7 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
 * p         on input, x vector (int)                                 *
 * olen      on input, length of y vector (int)                       *
 * ap        on ouput, product Ax (double)                            *
-*                                                                    * 
+*                                                                    *
 *********************************************************************/
 
 int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
@@ -905,7 +905,7 @@ int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("CSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
@@ -919,7 +919,7 @@ int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("CSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
    }
    else ap2 = ap;
@@ -986,7 +986,7 @@ int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1001,7 +1001,7 @@ int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
       for (k = 0; k < i; k++) ap2[k] = 0.;
@@ -1071,7 +1071,7 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("cCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1086,7 +1086,7 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("cCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
       for (k = 0; k < i; k++) ap2[k] = 0.;
@@ -1162,7 +1162,7 @@ int CSR_trans_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1177,7 +1177,7 @@ int CSR_trans_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
       for (k = 0; k < i; k++) ap2[k] = 0.;
@@ -1246,7 +1246,7 @@ int CSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doubl
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1261,7 +1261,7 @@ int CSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doubl
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
       for (k = 0; k < i; k++) ap2[k] = 0.;
@@ -1331,7 +1331,7 @@ int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("sCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1346,7 +1346,7 @@ int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("sCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
    }
@@ -1416,7 +1416,7 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("cCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1431,7 +1431,7 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("cCSR_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
    }
@@ -1447,7 +1447,7 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
 	 {
 	   sum  += ( sgn[(int) val[ k]]) * p2[bindx[k]];
 	 }
-       
+
        ap2[i] = sum;
      }
    }
@@ -1458,7 +1458,7 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
 	 {
 	   sum  += ( sgn[(int) val[ k]]) * p2[bindx[k]];
 	 }
-       
+
        ap2[i] = sum;
      }
    }
@@ -1512,7 +1512,7 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
            if (getrow_comm != NULL) {
              p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                           sizeof(double));
-             if (p2 == NULL) 
+             if (p2 == NULL)
                pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
              for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1527,20 +1527,20 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
               i = Nstored+getrow_comm->minimum_vec_size + 1;
               if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
               ap2 = (double *) ML_allocate(i* sizeof(double));
-              if (ap2 == NULL) 
+              if (ap2 == NULL)
             pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
            }
            else ap2 = ap;
 
            /*   jj = Amat->invec_leng; */
-           
+
            oldp2 = p2;
 
            /* length of the product is the same for all vectors */
            /* It is enough to get the first length */
            k2    = row_ptr[1];
-           
+
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
            t0 = GetClock();
 #endif
@@ -1550,20 +1550,20 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
              /* jj = 0 */
              for (k = 0; k < k2; k++) {
                /*       sum += val[j++]*p2[k];  */
-               /*  sum += val[j++]*p2[jj++];  */  
-               
-               sum += *val++ * *p2++; 
+               /*  sum += val[j++]*p2[jj++];  */
+
+               sum += *val++ * *p2++;
              }
              /*  ap2[i] = sum;  */
-             
-             *ap2++ = sum; 
+
+             *ap2++ = sum;
            }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
            Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
-           
+
            if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
-         
+
            if (getrow_comm != NULL) {
               if (getrow_comm->remap != NULL) {
                  if (getrow_comm->remap_max != olen-1) {
@@ -1610,7 +1610,7 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("CSR_ones_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1625,7 +1625,7 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("CSR_ones_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
    }
@@ -1696,7 +1696,7 @@ int sCSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doubl
    if (getrow_comm != NULL) {
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
-     if (p2 == NULL) 
+     if (p2 == NULL)
        pr_error("CSR_ones_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
@@ -1711,7 +1711,7 @@ int sCSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doubl
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
+      if (ap2 == NULL)
 	pr_error("CSR_ones_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
    }
@@ -1925,17 +1925,17 @@ int ML_Matrix_DCSR_Matvec(ML_Operator *mat_in,int ilen,double *x,int olen,double
 /* Convert the data in csr_data from an MSR matrix to a CSR matrix.     */
 /* Also, return the largest column number encountered.                  */
 /*----------------------------------------------------------------------*/
- 
+
 int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
 {
   int  *row_ptr, *Tmat_bindx, i, j, lower, upper, nz_ptr, Ncols;
   double *Tmat_val, *diag;
- 
+
   row_ptr = (int *) ML_allocate((Nrows+1)*sizeof(int));
   csr_data->rowptr  = row_ptr;
   Tmat_bindx = csr_data->columns;
   Tmat_val   = csr_data->values;
- 
+
   diag    = (double *) ML_allocate(Nrows*sizeof(double));
   for (i = 0; i <= Nrows; i++) row_ptr[i] = Tmat_bindx[i];
   for (i = 0; i < Nrows; i++) diag[i] = Tmat_val[i];
@@ -1944,7 +1944,7 @@ int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
   nz_ptr = 0;
   Ncols = -1;
   for (i = 0; i < Nrows; i++) {
- 
+
     upper = row_ptr[i+1];
     if ( diag[i] != 0.0) {
       Tmat_bindx[nz_ptr] = i;
@@ -2047,7 +2047,7 @@ int MSR_matvec_WKC(ML_Operator *Amat_in, int ilen, double *ep_p, int olen, doubl
 
 
   if (getrow_comm != NULL) {
-     for (i = 0; i < Nrows; i++) 
+     for (i = 0; i < Nrows; i++)
      for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
        X[KK][i] = big_p[KK][i];
      }

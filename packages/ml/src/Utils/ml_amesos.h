@@ -37,7 +37,7 @@ extern "C" {
 
   /** Clean memory associated to Amesos_Handle. */
   void ML_Smoother_Clean_Amesos(void *Amesos_Handle);
-  
+
   /** Generates the coarse solver using Amesos. */
   /*! Generates the coarse solver using one of the Amesos supported
     direct solvers.
@@ -54,11 +54,11 @@ extern "C" {
     processes to use in the coarse solution (only for some of the
     supported Amesos solvers).
 
-    \param AddToDiag (In) - add the specified value to the 
+    \param AddToDiag (In) - add the specified value to the
     diagonals of the matrix.
   */
-  
-int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver, 
+
+int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
                            int MaxProcs, double AddToDiag);
 
 
