@@ -401,7 +401,7 @@ applyImpl (const MV& X,
     // with its output.
     RCP<MV> Y_tmp;
     if (beta == STS::zero () && Y.isConstantStride () && alpha == STS::one ()) {
-      Y = X;
+      deep_copy(Y, X);
       Y_tmp = rcpFromRef (Y);
     }
     else {
@@ -428,7 +428,7 @@ applyImpl (const MV& X,
       Y.update (alpha, *Y_tmp, beta);
     }
     else if (! Y.isConstantStride ()) {
-      Y = *Y_tmp;
+      deep_copy(Y, *Y_tmp);
     }
   }
 }
