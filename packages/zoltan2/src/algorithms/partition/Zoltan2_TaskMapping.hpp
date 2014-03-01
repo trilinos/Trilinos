@@ -1378,6 +1378,138 @@ public:
 		}
 	}
 
+
+	/*! \brief Constructor.
+	 * When this constructor is called, in order to calculate the communication metric,
+	 * the task adjacency graph is created based on the coordinate model input and partitioning of it.
+	 * if the communication graph is already calculated, use the other constructors.
+	 *  \param comm_ is the communication object.
+	 *  \param machine_ is the machineRepresentation object. Stores the coordinates of machines.
+	 *  \param model_ is the input adapter.
+	 *  \param soln_ is the solution object. Holds the assignment of points.
+	 *  \param envConst_ is the environment object.
+	 */
+	CoordinateTaskMapper(
+			const Teuchos::Comm<int> *comm_,
+			const MachineRepresentation<pcoord_t> *machine_,
+			const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
+			const Zoltan2::PartitioningSolution<Adapter> *soln_,
+			const Environment *envConst):
+				PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst),
+				proc_to_task_xadj(0),
+				proc_to_task_adj(0),
+				task_to_proc(0),
+				isOwnerofModel(true),
+				proc_task_comm(0),
+				task_communication_xadj(0),
+				task_communication_adj(0){
+
+		pcoord_t *task_communication_edge_weight_ = NULL;
+		//if mapping type is 0 then it is coordinate mapping
+		int procDim = machine_->getProcDim();
+		this->nprocs = machine_->getNumProcs();
+		//get processor coordinates.
+		pcoord_t **procCoordinates = machine_->getProcCoords();
+
+		int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
+		this->ntasks = soln_->getActualGlobalNumberOfParts();
+		if (procId_t (soln_->getTargetGlobalNumberOfParts()) > this->ntasks){
+			this->ntasks = soln_->getTargetGlobalNumberOfParts();
+		}
+		//cout << "actual: " << this->ntasks << endl;
+
+		//alloc memory for part centers.
+		tcoord_t **partCenters = NULL;
+		partCenters = allocMemory<tcoord_t *>(coordDim);
+		for (int i = 0; i < coordDim; ++i){
+			partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
+		}
+
+
+		envConst->timerStart(MACRO_TIMERS, "Mapping - Solution Center");
+		//get centers for the parts.
+		getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
+				envConst,
+				comm_,
+				((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
+				this->soln,
+				coordDim,
+				ntasks,
+				partCenters);
+
+		envConst->timerStop(MACRO_TIMERS, "Mapping - Solution Center");
+
+
+		//create coordinate communication model.
+		this->proc_task_comm =
+				new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t>(
+						procDim,
+						procCoordinates,
+						coordDim,
+						partCenters,
+						this->nprocs,
+						this->ntasks
+				);
+
+		int myRank = comm_->getRank();
+
+
+		envConst->timerStart(MACRO_TIMERS, "Mapping - Processor Task map");
+		this->doMapping(myRank);
+		envConst->timerStop(MACRO_TIMERS, "Mapping - Processor Task map");
+
+
+		envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Graph");
+		((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getCommunicationGraph(
+				comm_,
+				task_communication_xadj,
+				task_communication_adj
+		);
+
+		envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
+	#ifdef gnuPlot
+		if (comm_->getRank() == 0){
+
+			procId_t taskCommCount = task_communication_xadj.size();
+			std::cout << " TotalComm:" << task_communication_xadj[taskCommCount - 1] << std::endl;
+			procId_t maxN = task_communication_xadj[0];
+			for (procId_t i = 1; i < taskCommCount; ++i){
+				procId_t nc = task_communication_xadj[i] - task_communication_xadj[i - 1];
+				if (maxN < nc) maxN = nc;
+			}
+			std::cout << " maxNeighbor:" << maxN << std::endl;
+		}
+
+		this->writeGnuPlot(comm_, soln_, coordDim, partCenters);
+	#endif
+
+		envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Cost");
+		this->proc_task_comm->calculateCommunicationCost(
+				task_to_proc.getRawPtr(),
+				task_communication_xadj.getRawPtr(),
+				task_communication_adj.getRawPtr(),
+				task_communication_edge_weight_
+		);
+
+
+		envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Cost");
+
+		//processors are divided into groups of size numProc! * numTasks!
+		//each processor in the group obtains a mapping with a different rotation
+		//and best one is broadcasted all processors.
+		this->getBestMapping();
+	#ifdef gnuPlot
+		this->writeMapping2(comm_->getRank());
+	#endif
+
+		for (int i = 0; i < coordDim; ++i){
+			freeArray<tcoord_t>(partCenters[i]);
+		}
+		freeArray<tcoord_t *>(partCenters);
+
+	}
+
+
 	/*! \brief Constructor
 	 * The mapping constructor which will also perform the mapping operation.
 	 * The result mapping can be obtained by
@@ -1499,7 +1631,7 @@ public:
 
 			this->getBestMapping();
 
-
+/*
 			if (myRank == 0){
 				this->proc_task_comm->calculateCommunicationCost(
 						task_to_proc.getRawPtr(),
@@ -1509,7 +1641,7 @@ public:
 				);
 				cout << "me: " << problemComm->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 			}
-
+*/
 
 		}
 
@@ -1544,12 +1676,11 @@ public:
 	 * \param numProcs: the number of allocated processors.
 	 * \param mCoords: allocated machine coordinates.
 	 */
-	//template <typename procId_t,  typename pcoord_t>
 	pcoord_t **shiftMachineCoordinates(
-				int machine_dim,
-				procId_t *machine_dimensions,
-				procId_t numProcs,
-				pcoord_t **mCoords){
+			int machine_dim,
+			procId_t *machine_dimensions,
+			procId_t numProcs,
+			pcoord_t **mCoords){
 		pcoord_t **result_machine_coords = NULL;
 		result_machine_coords = new pcoord_t*[machine_dim];
 		for (int i = 0; i < machine_dim; ++i){
@@ -1601,13 +1732,13 @@ public:
 				/* Pick the largest gap in this dimension. Use fewer process on either side
 	               of the largest gap to break the tie. An easy addition to this would
 	               be to weight the gap by the number of processes. */
-	               if (gap > biggestGap || (gap == biggestGap && biggestGapProc > gapProc)){
-	            	   shiftBorderCoordinate = rightSideProcCoord;
-	            	   biggestGapProc = gapProc;
-	            	   biggestGap = gap;
-	               }
-	               leftSideProcCoord = rightSideProcCoord;
-	               leftSideProcCount = rightSideProcCount;
+				if (gap > biggestGap || (gap == biggestGap && biggestGapProc > gapProc)){
+					shiftBorderCoordinate = rightSideProcCoord;
+					biggestGapProc = gapProc;
+					biggestGap = gap;
+				}
+				leftSideProcCoord = rightSideProcCoord;
+				leftSideProcCount = rightSideProcCount;
 			}
 
 

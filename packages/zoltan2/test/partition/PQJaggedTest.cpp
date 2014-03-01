@@ -280,28 +280,19 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
     }
 
     if(pqParts != ""){
-        params->set("pqParts", pqParts);
+        params->set("mj_parts", pqParts);
     }
     if(numParts > 0){
         params->set("num_global_parts", numParts);
     }
     if (k > 0){
-        params->set("parallel_part_calculation_count", k);
-    }
-    if(migration_processor_assignment_type >= 0){
-        params->set("migration_processor_assignment_type", migration_processor_assignment_type);
+        params->set("mj_concurrent_part_count", k);
     }
     if(migration_check_option >= 0){
-        params->set("migration_check_option", migration_check_option);
-    }
-    if(migration_all_to_all_type >= 0){
-        params->set("migration_all_to_all_type", migration_all_to_all_type);
+        params->set("mj_migration_option", migration_check_option);
     }
     if(migration_imbalance_cut_off >= 0){
-        params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
-    }
-    if (migration_doMigration_type >= 0){
-        params->set("migration_doMigration_type", int (migration_doMigration_type));
+        params->set("mj_minimum_migration_imbalance", double (migration_imbalance_cut_off));
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -381,28 +372,19 @@ int testFromDataFile(
     }
 
     if(pqParts != ""){
-        params->set("pqParts", pqParts);
+        params->set("mj_parts", pqParts);
     }
     if(numParts > 0){
         params->set("num_global_parts", numParts);
     }
     if (k > 0){
-        params->set("parallel_part_calculation_count", k);
-    }
-    if(migration_processor_assignment_type >= 0){
-        params->set("migration_processor_assignment_type", migration_processor_assignment_type);
+        params->set("mj_concurrent_part_count", k);
     }
     if(migration_check_option >= 0){
-        params->set("migration_check_option", migration_check_option);
-    }
-    if(migration_all_to_all_type >= 0){
-        params->set("migration_all_to_all_type", migration_all_to_all_type);
+        params->set("mj_migration_option", migration_check_option);
     }
     if(migration_imbalance_cut_off >= 0){
-        params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
-    }
-    if (migration_doMigration_type >= 0){
-        params->set("migration_doMigration_type", int (migration_doMigration_type));
+        params->set("mj_minimum_migration_imbalance", double (migration_imbalance_cut_off));
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
