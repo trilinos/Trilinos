@@ -150,10 +150,6 @@ private:
   bool m_owned;
   bool m_shared;
 
-#ifndef NDEBUG
-  mutable bool m_modified_during_iteration;
-#endif
-
 public:
 
   stk::topology topology() const { return m_topology; }
@@ -166,85 +162,23 @@ public:
   //--------------------------------
   // Container-like types and methods:
 
-#ifndef NDEBUG
-  struct iterator
-  {
-    iterator() : m_ptr(NULL), m_bucket(NULL) {}
-
-    iterator(Entity const* ptr, Bucket const* bucket) : m_ptr(ptr), m_bucket(bucket) {}
-
-    iterator& operator++()
-    {
-      ++m_ptr;
-      return *this;
-    }
-
-    iterator operator++(int)
-    {
-      iterator rv(m_ptr, m_bucket);
-      ++m_ptr;
-      return rv;
-    }
-
-    operator Entity const*() const { return m_ptr; }
-
-    bool operator==(iterator const& rhs) const { return m_ptr == rhs.m_ptr; }
-
-    bool operator!=(iterator const& rhs) const { return m_ptr != rhs.m_ptr; }
-
-    ptrdiff_t operator-(iterator const& rhs) const { return m_ptr - rhs.m_ptr; }
-
-    Entity operator*() const
-    {
-      ThrowRequireMsg(!m_bucket->m_modified_during_iteration, "Unsafe iteration occuring over this bucket");
-      return *m_ptr;
-    }
-
-    Entity const* m_ptr;
-    Bucket const* m_bucket;
-  };
-#else
   typedef const Entity * iterator;
-#endif
 
   /** \brief Beginning of the bucket */
-  inline iterator begin() const
-  {
-#ifndef NDEBUG
-    m_modified_during_iteration = false;
-    return iterator(&m_entities[0], this);
-#else
-    return &m_entities[0];
-#endif
-  }
+  inline iterator begin() const { return &m_entities[0]; }
 
-  // /** \brief End of the bucket */
-  inline iterator end() const
-  {
-#ifndef NDEBUG
-    return iterator(&m_entities[0] + m_size, this);
-#else
-    return &m_entities[0] + m_size;
-#endif
-  }
+  /** \brief End of the bucket */
+  inline iterator end() const { return &m_entities[0] + m_size; }
 
   /** \brief  Number of entities associated with this bucket */
-  size_type size() const { return m_size; }
+  size_type size() const { return m_size ; }
 
   /** \brief  Capacity of this bucket */
   size_t capacity() const { return m_capacity ; }
 
   /** \brief  Query the i^th entity */
-  Entity operator[] ( size_t i ) const
-  {
+  Entity operator[] ( size_t i ) const {
     ThrowAssertMsg( i < m_entities.size(), "Index " << i << " is out of bounds");
-
-#ifndef NDEBUG
-    if (i == 0) { m_modified_during_iteration = false; }
-    ThrowRequireMsg( !m_modified_during_iteration, "Unsafe iteration occuring over this bucket" ); //change to assert
-    if (i == size() - 1) { m_modified_during_iteration = false; }
-#endif
-
     return m_entities[i];
   }
 
@@ -732,7 +666,10 @@ typedef Bucket::iterator BucketIterator;
 /** Get the cell_topology off a bucket */
 CellTopology get_cell_topology(const Bucket &bucket);
 
+
 } // namespace mesh
 } // namespace stk
 
-#endif
+
+
+#endif 
