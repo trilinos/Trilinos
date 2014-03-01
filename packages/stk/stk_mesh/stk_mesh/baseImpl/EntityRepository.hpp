@@ -48,7 +48,7 @@ public:
     // will be false; otherwise it will be true (even if the Entity was present
     // but marked as destroyed).
     std::pair<Entity ,bool>
-      internal_create_entity( const EntityKey & key );
+    internal_create_entity( const EntityKey & key, size_t preferred_offset = 0 );
 
     void change_entity_bucket( Bucket & b, Entity e, unsigned ordinal);
 

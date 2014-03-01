@@ -140,6 +140,7 @@ public:
   inline static BulkData & get( const Ghosting & ghost);
   inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
+  typedef boost::unordered_map<EntityKey, size_t> GhostReuseMap;
   typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...
@@ -442,7 +443,7 @@ public:
    *  \return  True if the request for destruction is accepted; i.e.,
    *           if the entity is not the 'to' member of a relation.
    */
-  bool destroy_entity( Entity entity );
+  bool destroy_entity( Entity entity, bool was_ghost = false );
 
   //------------------------------------
 
@@ -1043,7 +1044,7 @@ public:
   size_t total_field_data_footprint(EntityRank rank) const;
 
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
-  size_t generate_next_local_offset();
+  size_t generate_next_local_offset(size_t preferred_offset = 0);
 
 #ifdef SIERRA_MIGRATION
   //strictly a transition aid!!! don't add new usage of this!
@@ -1108,10 +1109,10 @@ public:
   void get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const;
 
   //
-  //  Get entities of the specified rank that satisify the input selector.  
+  //  Get entities of the specified rank that satisify the input selector.
   //  Note entities are returned in bucket order, though no particular order should be relied on
   //
-  void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;  
+  void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
 
 private:
@@ -1148,6 +1149,8 @@ private:
 
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities_current_modification_cycle;
+
+  GhostReuseMap m_ghost_reuse_map;
 
   // Other information:
   MetaData &         m_mesh_meta_data;
@@ -1235,7 +1238,7 @@ private:
   //  "fields" is an optional argument, if present copy only the listed fields.
   //
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                   unsigned src_bucket_id, Bucket::size_type src_bucket_ord, 
+                                   unsigned src_bucket_id, Bucket::size_type src_bucket_ord,
                                    const std::vector<FieldBase*>* fields =NULL);
 
 

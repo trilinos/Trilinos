@@ -44,7 +44,7 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 }
 
 std::pair<Entity ,bool>
-EntityRepository::internal_create_entity( const EntityKey & key )
+EntityRepository::internal_create_entity( const EntityKey & key, size_t preferred_offset )
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::internal_create_entity", LOG_ENTITY, key);
 
@@ -53,7 +53,7 @@ EntityRepository::internal_create_entity( const EntityKey & key )
 
   if (iter == m_entities.end() || iter->first != key) {
     Entity next_entity = {Entity::InvalidEntity};
-    next_entity.set_local_offset(m_mesh.generate_next_local_offset());
+    next_entity.set_local_offset(m_mesh.generate_next_local_offset(preferred_offset));
     m_mesh.set_entity_key(next_entity, key);
 
     iter = m_entities.insert(iter, std::make_pair(key, next_entity));

@@ -117,6 +117,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_ghosting(),
     m_deleted_entities(),
     m_deleted_entities_current_modification_cycle(),
+    m_ghost_reuse_map(),
     m_mesh_meta_data( mesh_meta_data ),
     m_parallel_machine( parallel ),
     m_parallel_size( parallel_machine_size( parallel ) ),
@@ -460,6 +461,13 @@ void BulkData::update_deleted_entities_container()
     m_deleted_entities_current_modification_cycle.pop_front();
     m_deleted_entities.push_front(entity_offset);
   }
+
+  // Reclaim offsets for deleted ghosted that were not regenerated
+  for (GhostReuseMap::iterator m_itr = m_ghost_reuse_map.begin(), m_end = m_ghost_reuse_map.end(); m_itr != m_end; ++m_itr) {
+    m_deleted_entities.push_front(m_itr->second);
+  }
+
+  m_ghost_reuse_map.clear();
 }
 
 size_t BulkData::total_field_data_footprint(EntityRank rank) const
@@ -679,11 +687,14 @@ unsigned BulkData::count_valid_connectivity(Entity entity) const
   return count;
 }
 
-size_t BulkData::generate_next_local_offset()
+size_t BulkData::generate_next_local_offset(size_t preferred_offset)
 {
   size_t new_local_offset = m_mesh_indexes.size();
 
-  if (!m_deleted_entities.empty()) {
+  if (preferred_offset != 0) {
+    new_local_offset = preferred_offset;
+  }
+  else if (!m_deleted_entities.empty()) {
     new_local_offset = m_deleted_entities.front();
     m_deleted_entities.pop_front();
   }
@@ -846,10 +857,11 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 
 //----------------------------------------------------------------------
 
-bool BulkData::destroy_entity( Entity entity )
+bool BulkData::destroy_entity( Entity entity, bool was_ghost )
 {
-  TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
+  const EntityKey key = entity_key(entity);
+  TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, key);
+  DiagIfWatching(LOG_ENTITY, key, "entity state: " << key);
 
   require_ok_to_modify();
 
@@ -860,6 +872,7 @@ bool BulkData::destroy_entity( Entity entity )
     return false;
   }
 
+  const bool ghost = was_ghost || in_receive_ghost(key);
   const EntityRank erank = entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank != end_rank; ++irank) {
@@ -910,6 +923,14 @@ bool BulkData::destroy_entity( Entity entity )
     }
   }
 
+  // If this is a ghosted entity, store key->local_offset so that local_offset can be
+  // reused if the entity is recreated in the next aura-regen. This will prevent clients
+  // from having their handles to ghosted entities go invalid when the ghost is refreshed.
+  if ( ghost ) {
+    DiagIfWatching(LOG_ENTITY, key, "Adding to ghost reuse map");
+    m_ghost_reuse_map[key] = entity.local_offset();
+  }
+
   // We need to save these items and call remove_entity AFTER the call to
   // destroy_later because remove_entity may destroy the bucket
   // which would cause problems in m_entity_repo.destroy_later because it
@@ -917,21 +938,22 @@ bool BulkData::destroy_entity( Entity entity )
 
   // Need to invalidate Entity handles in comm-list
   EntityCommListInfoVector::iterator lb_itr =
-    std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), entity_key(entity));
-  if (lb_itr != m_entity_comm_list.end() && lb_itr->key == entity_key(entity)) {
+    std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), key);
+  if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
     lb_itr->entity = Entity();
   }
 
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
 
-  m_entities_index.register_removed_key( entity_key(entity) );
+  m_entities_index.register_removed_key( key );
 
   bucket(entity).getPartition()->remove(entity);
-
-  m_entity_repo.destroy_entity(entity_key(entity), entity );
+  m_entity_repo.destroy_entity(key, entity );
   m_entity_states[entity.local_offset()] = Deleted;
   m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
-  m_deleted_entities_current_modification_cycle.push_front(entity.local_offset());
+  if ( !ghost ) {
+    m_deleted_entities_current_modification_cycle.push_front(entity.local_offset());
+  }
 
   m_check_invalid_rels = true;
   return true ;
@@ -3648,7 +3670,7 @@ void BulkData::internal_change_ghosting(
       removed = true ;
       i->key = EntityKey(); // No longer communicated
       if ( remove_recv ) {
-        ThrowRequireMsg( destroy_entity( i->entity ),
+        ThrowRequireMsg( destroy_entity( i->entity, remove_recv ),
                          " FAILED attempt to destroy entity: " << identifier(i->entity) );
       }
     }
@@ -3735,8 +3757,14 @@ void BulkData::internal_change_ghosting(
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.globally_shared_part() );
 
+          GhostReuseMap::iterator f_itr = m_ghost_reuse_map.find(key);
+          const size_t use_this_offset = f_itr == m_ghost_reuse_map.end() ? 0 : f_itr->second;
+          if (use_this_offset != 0) {
+            m_ghost_reuse_map.erase(f_itr);
+          }
+
           std::pair<Entity ,bool> result =
-            m_entity_repo.internal_create_entity( key );
+            m_entity_repo.internal_create_entity( key, use_this_offset );
 
           Entity entity = result.first;
           const bool created   = result.second ;
@@ -4561,7 +4589,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
         if ( ! in_owned_closure(*this, entity , m_parallel_rank ) ) {
 
-          const bool destroy_entity_successful = destroy_entity(entity);
+          const bool destroy_entity_successful = destroy_entity(entity, true);
           ThrowRequireMsg(destroy_entity_successful,
               "Could not destroy ghost entity " << identifier(entity));
         }
