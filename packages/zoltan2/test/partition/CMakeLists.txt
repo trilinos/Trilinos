@@ -39,18 +39,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 ENDIF()
 
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    parallelTaskMapper
-    SOURCES parallelTaskMappingTest.cpp
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    ARGS 
-    "PART=part.txt"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blockTest
