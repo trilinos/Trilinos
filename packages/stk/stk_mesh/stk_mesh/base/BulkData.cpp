@@ -1755,6 +1755,18 @@ void BulkData::get_buckets(EntityRank rank, Selector const& selector, BucketVect
   }
 }
 
+void BulkData::get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const {
+  output_entities.clear();
+  const stk::mesh::BucketVector &bucket_ptrs = get_buckets(rank, selector);
+  for(size_t ib=0, ib_end=bucket_ptrs.size(); ib<ib_end; ++ib) {
+     const stk::mesh::Bucket *bucket = bucket_ptrs[ib];
+     for(size_t iobj=0, iobj_end=bucket->size(); iobj<iobj_end; ++iobj) {
+       output_entities.push_back((*bucket)[iobj]);
+     }
+  }
+}
+
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

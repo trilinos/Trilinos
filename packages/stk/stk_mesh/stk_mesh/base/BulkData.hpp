@@ -1108,6 +1108,13 @@ public:
   // non-memoized version.
   void get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const;
 
+  //
+  //  Get entities of the specified rank that satisify the input selector.  
+  //  Note entities are returned in bucket order, though no particular order should be relied on
+  //
+  void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;  
+
+
 private:
 
   void update_deleted_entities_container();

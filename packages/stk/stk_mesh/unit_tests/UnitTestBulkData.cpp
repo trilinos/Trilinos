@@ -43,6 +43,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
+#include <stk_util/parallel/ParallelReduce.hpp>
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -1647,6 +1648,55 @@ STKUNIT_UNIT_TEST( UnitTestingOfBulkData, test_total_field_data_footprint )
 
   STKUNIT_EXPECT_EQUAL(node_fields_footprint, field_data_footprint);
 }
+
+
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Testing of get_buckets and get_entities functions
+STKUNIT_UNIT_TEST( UnitTestingOfBulkData, test_get_entities )
+{
+  // Test 3x4x4 HexFixture structure
+  const unsigned NX = 3;
+  const unsigned NY = 4;
+  const unsigned NZ = 40;
+  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+
+  hf.m_meta.commit();
+  hf.generate_mesh();
+  const stk::mesh::BulkData &mesh = hf.m_bulk_data;
+
+  Selector select_owned( MetaData::get(mesh).locally_owned_part() );
+  const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
+  stk::mesh::EntityVector entities;
+  mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);
+  //
+  //  Confirm that the number of entities exracted by either bucket or entity access is identical
+  //
+  int numBucketEntities=0;
+  std::map<stk::mesh::Entity, int> entityMap;
+  for(unsigned int ibucket=0; ibucket<bucket_ptrs.size(); ++ibucket) {
+    numBucketEntities += bucket_ptrs[ibucket]->size();
+    for(unsigned iobj=0; iobj< bucket_ptrs[ibucket]->size(); ++iobj) {
+      entityMap[(*bucket_ptrs[ibucket])[iobj]] = 1;
+    }
+  }
+  int numEntities = entities.size();
+  STKUNIT_EXPECT_EQUAL(numBucketEntities, numEntities);
+  //
+  //  Confirm that the actual contents of the entity lists are identical
+  //
+  for(unsigned int iobj=0; iobj<entities.size(); ++iobj) {
+    STKUNIT_ASSERT(entityMap.find(entities[iobj]) != entityMap.end());
+  }  
+  //
+  //  confirm the total number of entities is the expected (41*5*4) = 820, the total number of unique nodes in the mesh
+  //
+  int globalNumEntities = numEntities;
+  stk::all_reduce(MPI_COMM_WORLD, stk::ReduceSum<1>(&globalNumEntities));
+
+  STKUNIT_EXPECT_EQUAL(globalNumEntities, 820);
+}
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
