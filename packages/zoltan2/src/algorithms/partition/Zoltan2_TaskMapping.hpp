@@ -1936,51 +1936,6 @@ void coordinateTaskMapperInterface(
 
 }
 
-// KDDKDD TODO:  This interface should go away or move to MiniGhost;
-// KDDKDD TODO:  it is only a convenience for the MiniGhost experiments.
-template <typename procId_t, typename pcoord_t, typename tcoord_t>
-void coordinateTaskMapperInterface_Fortran(
-		int *commWorld,
-		int procDim,
-		int numProcessors,
-		pcoord_t **machine_coords_,
-		int taskDim,
-		procId_t numTasks,
-		tcoord_t **task_coords,
-		procId_t *task_communication_xadj_,
-		procId_t *task_communication_adj_,
-		pcoord_t *task_communication_edge_weight_,
-		procId_t *proc_to_task_xadj, /*output*/
-		procId_t *proc_to_task_adj, /*output*/
-		int partArraySize,
-		procId_t *partNoArray,
-		int *machineDimensions
-)
-{
-
-#ifdef HAVE_MPI
-	MPI_Comm cComm = MPI_Comm_f2c((MPI_Fint) *commWorld);
-	RCP<const Teuchos::Comm<int> > tcomm = RCP<const Teuchos::Comm<int> > (new Teuchos::MpiComm<int> (cComm));
-#else
-	RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-#endif
-	coordinateTaskMapperInterface<procId_t, pcoord_t, tcoord_t>(
-			tcomm,
-			procDim,
-			numProcessors,
-			machine_coords_,
-			taskDim,
-			numTasks,
-			task_coords,
-			task_communication_xadj_,
-			task_communication_adj_,
-			task_communication_edge_weight_,
-			proc_to_task_xadj, /*output*/
-			proc_to_task_adj, /*output*/
-			partArraySize,
-			partNoArray,
-			machineDimensions);
-}
 
 }// namespace Zoltan2
 
