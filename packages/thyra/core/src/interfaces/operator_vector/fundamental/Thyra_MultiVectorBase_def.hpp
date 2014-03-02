@@ -123,6 +123,50 @@ getRowStatImpl(const RowStatLinearOpBaseUtils::ERowStat rowStat,
   }
 }
 
+// Overridden methods from ScaledLinearOpBase
+
+template<class Scalar>
+bool MultiVectorBase<Scalar>::
+supportsScaleLeftImpl() const
+{
+  return true;
+}
+ 	
+template<class Scalar>
+bool MultiVectorBase<Scalar>::
+supportsScaleRightImpl() const
+{
+  return true;
+}
+ 	
+template<class Scalar>
+void MultiVectorBase<Scalar>::
+scaleLeftImpl(const VectorBase< Scalar > &row_scaling)
+{
+  // loop over each column applying the row scaling
+  for(Ordinal i=0;i<this->domain()->dim();i++)
+    ::Thyra::ele_wise_scale<Scalar>(row_scaling,this->col(i).ptr());
+}
+ 	
+template<class Scalar>
+void MultiVectorBase<Scalar>::
+scaleRightImpl(const VectorBase< Scalar > &col_scaling)
+{
+  // this is probably incorrect if the domain is distrbuted
+  // but if it is on every processor its probably fine...
+
+  RTOpPack::SubVectorView<Scalar> view;
+  col_scaling.acquireDetachedView(Thyra::Range1D(),&view);
+
+  Teuchos::ArrayRCP<const Scalar> col_scaling_vec = view.values();
+
+  // check to make sure things match up
+  TEUCHOS_ASSERT(this->domain()->dim()==col_scaling_vec.size());
+
+  for(Ordinal i=0;i<this->domain()->dim();i++)
+    ::Thyra::scale<double>(col_scaling_vec[i],this->col(i));
+}
+
 // helper methods
 
 template<class Scalar>
