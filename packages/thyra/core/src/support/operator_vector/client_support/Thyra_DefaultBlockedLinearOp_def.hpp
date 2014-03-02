@@ -549,7 +549,7 @@ DefaultBlockedLinearOp<Scalar>::rowStatIsSupportedImpl(
         const RowStatOp & row_stat_op = Teuchos::dyn_cast<const RowStatOp>(*Orig_i_j);
 
         // sub block must also support the required row stat operation
-        RowStatLinearOpBaseUtils::ERowStat stat;
+        RowStatLinearOpBaseUtils::ERowStat stat = subblk_stat;
         if(transp==NOTRANS || transp==CONJ)
           stat = subblk_stat;
         else if(transp==TRANS || transp==CONJTRANS)

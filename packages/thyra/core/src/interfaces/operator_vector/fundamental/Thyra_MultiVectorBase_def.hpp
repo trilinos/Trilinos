@@ -47,10 +47,10 @@
 #include "Thyra_VectorSpaceBase.hpp"
 
 #include "Thyra_VectorBase.hpp"
-#include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 
 #include "RTOpPack_TOpAbs.hpp"
+#include "RTOpPack_ROpNorm1.hpp"
 
 namespace Thyra {
 
@@ -192,10 +192,33 @@ template<class Scalar>
 void MultiVectorBase<Scalar>::
 absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const
 { 
+  using Teuchos::tuple; 
+  using Teuchos::ptrInArg; 
+  using Teuchos::null;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+
   RTOpPack::SubVectorView<Scalar> view;
   output->acquireDetachedView(Thyra::Range1D(),&view);
 
-  Thyra::norms_1<Scalar>(*this,view.values()());
+  // Thyra::norms_1<Scalar>(*this,view.values()());
+
+  ArrayView<typename ScalarTraits<Scalar>::magnitudeType> norms = view.values()();
+  RTOpPack::ROpNorm1<Scalar> op;
+
+  const int m = this->domain()->dim();
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
+    rcp_op_targs[kc] = op.reduct_obj_create();
+    op_targs[kc] = rcp_op_targs[kc].ptr();
+  }
+  ::Thyra::applyOp<Scalar>(op, tuple(ptrInArg(*this)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    op_targs );
+  for( int kc = 0; kc < m; ++kc ) {
+    norms[kc] = op(*op_targs[kc]);
+  }
   
   output->commitDetachedView(&view);
 }

@@ -109,10 +109,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, RowStat,
   RCP<VectorBase<Scalar> > sv_3 = createMember(mv->domain());
   RCP<VectorBase<Scalar> > sv_4 = createMember(mv->domain());
 
-  for(std::size_t i=0;i<numVecs;i++) {
-    Scalar value = -2.0;
-    RCP<VectorBase<Scalar> > ptr = mv->col(i);
-    put_scalar(std::pow(value,i),ptr.ptr());
+  {
+    Scalar powValue = 1.0;
+    for(std::size_t i=0;i<numVecs;i++) {
+      Scalar value = -2.0;
+      RCP<VectorBase<Scalar> > ptr = mv->col(i);
+      put_scalar(powValue,ptr.ptr()); // pow(value,i)
+      powValue *= value; 
+    }
   }
 
   mv->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,sv_1.ptr());
@@ -140,9 +144,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, RowStat,
   {
     RTOpPack::SubVectorView<Scalar> view;
     ref_domain->acquireDetachedView(Thyra::Range1D(),&view);
+    Scalar powValue = 1.0;
     for(std::size_t i=0;i<numVecs;i++)  {
       Scalar value = -2.0;
-      view.values()[i] = std::abs(std::pow(value,i))*numProcs*myRows;
+      view.values()[i] = std::abs(powValue)*numProcs*myRows;
+      powValue *= value; 
     }
   }
 
@@ -176,10 +182,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
   // intialize test multivector
   ///////////////////////////////////////////////////
   RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, numVecs);
-  for(std::size_t i=0;i<numVecs;i++) {
-    Scalar value = -2.0;
-    RCP<VectorBase<Scalar> > ptr = mv->col(i);
-    put_scalar(std::pow(value,i),ptr.ptr());
+  {
+    Scalar powValue = 1.0;
+    for(std::size_t i=0;i<numVecs;i++) {
+      Scalar value = -2.0;
+      RCP<VectorBase<Scalar> > ptr = mv->col(i);
+      put_scalar(powValue,ptr.ptr());
+      powValue *= value; 
+    }
   }
 
   // initialize scaling vectors
@@ -201,18 +211,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
   RCP<MultiVectorBase<Scalar> > result_2 = Thyra::createMembers(vs,numVecs);
 
   {
+    Scalar powValue = 1.0;
     for(std::size_t i=0;i<numVecs;i++) {
       Scalar value = -2.0;
       RCP<VectorBase<Scalar> > ptr = result_1->col(i);
-      put_scalar(2.0*std::pow(value,i),ptr.ptr());
+      put_scalar(2.0*powValue,ptr.ptr());
+      powValue *= value; 
     }
   }
 
   {
+    Scalar powValue = 1.0;
     for(std::size_t i=0;i<numVecs;i++) {
       Scalar value = -2.0;
       RCP<VectorBase<Scalar> > ptr = result_2->col(i);
-      put_scalar((i+1)*2.0*std::pow(value,i),ptr.ptr());
+      put_scalar((i+1)*2.0*powValue,ptr.ptr());
+      powValue *= value; 
     }
   }
 
