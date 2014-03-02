@@ -1250,7 +1250,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::sequential_task_partitioning(
 
 
 
-    partId_t future_num_parts = this->total_num_cut;
+    partId_t future_num_parts = this->total_num_part;
 
     vector<partId_t> *future_num_part_in_parts = new vector<partId_t> ();
     vector<partId_t> *next_future_num_parts_in_parts = new vector<partId_t> ();
@@ -1355,7 +1355,12 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::sequential_task_partitioning(
                 pq_lno_t coordinate_end_index= this->part_xadj[current_work_part_in_concurrent_parts];
                 pq_lno_t coordinate_begin_index = current_work_part_in_concurrent_parts==0 ? 0: this->part_xadj[current_work_part_in_concurrent_parts -1];
 
-
+                /*
+                cout << "i:" << i << " j:" << current_work_part + kk
+                		<< " coordinate_begin_index:" << coordinate_begin_index
+                		<< " coordinate_end_index:" << coordinate_end_index
+                		<< " total:" << coordinate_end_index - coordinate_begin_index<< endl;
+                		*/
                 this->mj_get_local_min_max_coord_totW(
                 		coordinate_begin_index,
                 		coordinate_end_index,
@@ -1859,6 +1864,13 @@ partId_t AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::update_part_num_arrays(
         //cout << "me:" << this->myRank << " current_iteration" << current_iteration << " current_num_parts:" << current_num_parts << endl;
         //cout << "num_partitioning_in_current_dim[0]:" << num_partitioning_in_current_dim[0] << endl;
         //set the new value of future_num_parts.
+
+        /*
+        cout << "\tfuture_num_parts:" << future_num_parts
+        		<< " num_partitioning_in_current_dim[0]:" << num_partitioning_in_current_dim[0]
+        		<< future_num_parts/ num_partitioning_in_current_dim[0] << endl;
+        */
+
         future_num_parts /= num_partitioning_in_current_dim[0];
         output_num_parts = current_num_parts * num_partitioning_in_current_dim[0];
 
@@ -2346,12 +2358,26 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_get_initial_cut_coords_target_we
             partId_t cumulative = 0;
             //how many total future parts the part will be partitioned into.
             pq_scalar_t total_future_part_count_in_part = pq_scalar_t((*future_num_part_in_parts)[concurrent_current_part]);
+
+
             //how much each part should weigh in ideal case.
             pq_scalar_t unit_part_weight = global_weight / total_future_part_count_in_part;
+            /*
+            cout << "total_future_part_count_in_part:" << total_future_part_count_in_part << endl;
+            cout << "global_weight:" << global_weight << endl;
+            cout << "unit_part_weight" << unit_part_weight <<endl;
+            */
             for(partId_t i = 0; i < num_cuts; ++i){
                 cumulative += (*next_future_num_parts_in_parts)[i + obtained_part_index];
+
+                /*
+                cout << "obtained_part_index:" << obtained_part_index <<
+                		" (*next_future_num_parts_in_parts)[i + obtained_part_index]:" << (*next_future_num_parts_in_parts)[i + obtained_part_index] <<
+                		" cumulative:" << cumulative << endl;
+                */
                 //set target part weight.
                 current_target_part_weights[i] = cumulative * unit_part_weight;
+                //cout <<"i:" << i << " current_target_part_weights:" << current_target_part_weights[i] << endl;
                 //set initial cut coordinate.
                 initial_cut_coords[i] = min_coord + (coord_range *
                                          cumulative) / total_future_part_count_in_part;
@@ -2361,7 +2387,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_get_initial_cut_coords_target_we
 
         //round the target part weights.
         if (this->mj_uniform_weights[0]){
-            for(partId_t i = 0; i < num_cuts + 1; ++i){
+        	for(partId_t i = 0; i < num_cuts + 1; ++i){
                 current_target_part_weights[i] = long(current_target_part_weights[i] + 0.5);
             }
         }
@@ -3374,7 +3400,6 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_get_new_cut_coordinates(
 			current_global_right_closest_points[i] = current_cut_coordinates[i];
 
 	}
-
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
@@ -3651,6 +3676,15 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_get_new_cut_coordinates(
 					pq_scalar_t space_to_put_left = necessary_weight_on_line_for_left - weight_on_line_upto_process_inclusive;
 					//add my weight to this space to find out how much space is left to me.
 					pq_scalar_t space_left_to_me = space_to_put_left + my_weight_on_line;
+
+					/*
+					cout << "expected_part_weight:" << expected_part_weight
+							<< " necessary_weight_on_line_for_left:" << necessary_weight_on_line_for_left
+							<< " my_weight_on_line" << my_weight_on_line
+							<< " weight_on_line_upto_process_inclusive:" << weight_on_line_upto_process_inclusive
+							<< " space_to_put_left:" << space_to_put_left
+							<< " space_left_to_me" << space_left_to_me << endl;
+					 */
 					if(space_left_to_me < 0){
 						//space_left_to_me is negative and i dont need to put anything to left.
 						current_part_cut_line_weight_to_put_left[i] = 0;
@@ -3659,10 +3693,13 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_get_new_cut_coordinates(
 						//space left to me is bigger than the weight of the processor on cut.
 						//so put everything to left.
 						current_part_cut_line_weight_to_put_left[i] = my_weight_on_line;
+						//cout << "setting current_part_cut_line_weight_to_put_left to my_weight_on_line:" << my_weight_on_line << endl;
 					}
 					else {
 						//put only the weight as much as the space.
 						current_part_cut_line_weight_to_put_left[i] = space_left_to_me ;
+
+						//cout << "setting current_part_cut_line_weight_to_put_left to space_left_to_me:" << space_left_to_me << endl;
 					}
 
 				}
@@ -4910,10 +4947,12 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::create_consistent_chunks(
 	//now if the rectelinear partitioning is allowed we decide how
 	//much weight each thread should put to left and right.
 	if (this->distribute_points_on_cut_lines){
+
 		my_local_thread_cut_weights_to_put_left = this->thread_cut_line_weight_to_put_left[me];
 		for (partId_t i = 0; i < no_cuts; ++i){
 			//the left to be put on the left of the cut.
 			pq_scalar_t left_weight = used_local_cut_line_weight_to_left[i];
+			//cout << "i:" << i << " left_weight:" << left_weight << endl;
 			for(int ii = 0; ii < this->num_threads; ++ii){
 				if(left_weight > this->sEpsilon){
 					//the weight of thread ii on cut.
@@ -5680,11 +5719,12 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
                 pq_lno_t coordinate_end_index= this->part_xadj[current_work_part_in_concurrent_parts];
                 pq_lno_t coordinate_begin_index = current_work_part_in_concurrent_parts==0 ? 0: this->part_xadj[current_work_part_in_concurrent_parts -1];
 
-
-                //cout << "i:" << i << " j:" << current_work_part + kk
-                //		<< " coordinate_begin_index:" << coordinate_begin_index
-                //		<< " coordinate_end_index:" << coordinate_end_index << endl;
-
+/*
+                cout << "i:" << i << " j:" << current_work_part + kk
+                		<< " coordinate_begin_index:" << coordinate_begin_index
+                		<< " coordinate_end_index:" << coordinate_end_index
+                		<< " total:" << coordinate_end_index - coordinate_begin_index<< endl;
+                		*/
                 this->mj_get_local_min_max_coord_totW(
                     		coordinate_begin_index,
                     		coordinate_end_index,
