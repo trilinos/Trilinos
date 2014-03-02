@@ -132,16 +132,16 @@ namespace Domi
  * or communication padding is present.  This allows negative indexes
  * to represent reverse indexing from the end of a dimension.
  */
-template< class LocalOrd,
-          class GlobalOrd = LocalOrd,
-          class Node = Kokkos::DefaultNode::DefaultNodeType >
+template< class Node = Kokkos::DefaultNode::DefaultNodeType >
 class MDMap
 {
 public:
 
-  /** \brief Adopt the MDArray <tt>sizetype</tt> type
-   */
-  typedef typename MDArray< LocalOrd >::size_type size_type;
+  /** \brief Adopt the MDArray <tt>size_type</tt> type */
+  typedef typename MDArray< Ordinal >::size_type size_type;
+
+  /** \brief Adopt the MDArray <tt>dim_type</tt> type */
+  typedef typename MDArray< Ordinal >::dim_type dim_type;
 
   /** \name Constructors and destructor */
   //@{
@@ -170,7 +170,7 @@ public:
    * \param node [in] the Kokkos node of the map
    */
   MDMap(const MDCommRCP mdComm,
-        const Teuchos::ArrayView< GlobalOrd > & dimensions,
+        const Teuchos::ArrayView< Ordinal > & dimensions,
         const Teuchos::ArrayView< int > & commPad =
           Teuchos::ArrayView< int >(),
         const Teuchos::ArrayView< int > & bndryPad =
@@ -228,9 +228,9 @@ public:
    * than the dimensions of the parent MDMap (unless the parent MDMap
    * is already one dimension).
    */
-  MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+  MDMap(const MDMap< Node > & parent,
         int axis,
-        GlobalOrd index);
+        Ordinal index);
 
   /** \brief Parent/single slice sub-map constructor
    *
@@ -253,7 +253,7 @@ public:
    * along the given axis (unless the given Slice represents the
    * entire axis).
    */
-  MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+  MDMap(const MDMap< Node > & parent,
         int axis,
         const Slice & slice,
         int bndryPad = 0);
@@ -271,7 +271,7 @@ public:
    *        These may include indexes from the boundary padding of the
    *        parent MDMap, but they do not have to.
    */
-  MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+  MDMap(const MDMap< Node > & parent,
         const Teuchos::ArrayView< Slice > & slices,
         const Teuchos::ArrayView< int > & bndryPad =
           Teuchos::ArrayView< int >());
@@ -392,7 +392,7 @@ public:
    * \param withBndryPad [in] specify whether the dimension should
    *        include boundary padding or not
    */
-  GlobalOrd getGlobalDim(int axis, bool withBndryPad=false) const;
+  Ordinal getGlobalDim(int axis, bool withBndryPad=false) const;
 
   /** \brief Get the bounds of the global problem
    *
@@ -427,7 +427,7 @@ public:
    * \param withPad [in] specify whether the dimension should include
    *        padding or not
    */
-  LocalOrd getLocalDim(int axis, bool withPad=false) const;
+  Ordinal getLocalDim(int axis, bool withPad=false) const;
 
   /** \brief Get the local loop bounds along the specified axis
    *
@@ -525,7 +525,7 @@ public:
    * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
    *        (i,j,k) for 3D, etc)
    */
-  bool isCommPad(Teuchos::ArrayView< LocalOrd > index) const;
+  bool isCommPad(Teuchos::ArrayView< Ordinal > index) const;
 
   /* \brief Return whether given local index is in the boundary
    *        padding
@@ -533,7 +533,7 @@ public:
    * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
    *        (i,j,k) for 3D, etc)
    */
-  bool isBndryPad(Teuchos::ArrayView< LocalOrd > index) const;
+  bool isBndryPad(Teuchos::ArrayView< Ordinal > index) const;
 
   /** \brief Get the storage order
    */
@@ -576,18 +576,49 @@ public:
 #ifdef HAVE_TPETRA
 
   /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
-   *         MDMap
+   *         MDMap, specifying only the LocalOrdinal type
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
    *
    * Note that the boundary padding is always included in the map
    */
-  Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  template< class LocalOrdinal >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
+  getTpetraMap(bool withCommPad=true) const;
+
+  /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
+   *         MDMap, specifying the LocalOrdinal and GlobalOrdinal
+   *         types, but not the Node tpye
+   *
+   * \param withCommPad [in] flag whether to include the communication
+   *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
+   */
+  template< class LocalOrdinal,
+            class GlobalOrdinal >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+  getTpetraMap(bool withCommPad=true) const;
+
+  /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
+   *         MDMap, specifying the new LocalOrdinal, GlobalOrdinal and
+   *         Node types
+   *
+   * \param withCommPad [in] flag whether to include the communication
+   *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
+   */
+  template< class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node2 >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that represents the
-   *         decomposition of this MDMap along the given axis
+   *         decomposition of this MDMap along the given axis,
+   *         specifying only the LocalOrdinal type
    *
    * \param axis [in] the requested axis
    *
@@ -596,7 +627,44 @@ public:
    *
    * Note that the boundary padding is always included in the map
    */
-  Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  template< class LocalOrdinal >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
+  getTpetraAxisMap(int axis,
+                   bool withCommPad=true) const;
+
+  /** \brief Return an RCP to a Tpetra::Map that represents the
+   *         decomposition of this MDMap along the given axis,
+   *         specifying both the LocalOrdinal and GlobalOrdinal types
+   *
+   * \param axis [in] the requested axis
+   *
+   * \param withCommPad [in] flag whether to include the communication
+   *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
+   */
+  template< class LocalOrdinal,
+            class GlobalOrdinal >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+  getTpetraAxisMap(int axis,
+                   bool withCommPad=true) const;
+
+  /** \brief Return an RCP to a Tpetra::Map that represents the
+   *         decomposition of this MDMap along the given axis,
+   *         specifying the new LocalOrdinal, GlobalOrdinal and Node
+   *         types
+   *
+   * \param axis [in] the requested axis
+   *
+   * \param withCommPad [in] flag whether to include the communication
+   *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
+   */
+  template< class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node2 >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true) const;
 
@@ -611,28 +679,28 @@ public:
    *
    * \param globalIndex [in] a unique 1D global identifier
    */
-  Teuchos::Array< GlobalOrd >
-  getGlobalAxisIndex(GlobalOrd globalIndex) const;
+  Teuchos::Array< Ordinal >
+  getGlobalAxisIndex(Ordinal globalIndex) const;
 
   /** \brief Convert a local index to an array of local axis indexes
    *
    * \param localIndex [in] a unique 1D local identifier
    */
-  Teuchos::Array< LocalOrd >
-  getLocalAxisIndex(LocalOrd localIndex) const;
+  Teuchos::Array< Ordinal >
+  getLocalAxisIndex(Ordinal localIndex) const;
 
   /** \brief Convert a local index to a global index
    *
    * \param localIndex [in] a unique 1D local identifier
    */
-  GlobalOrd getGlobalIndex(LocalOrd localIndex) const;
+  Teuchos::Ordinal getGlobalIndex(Ordinal localIndex) const;
 
   /** \brief convert an array of global axis indexes to a global index
    *
    * \param globalAxisIndex [in] a multi-dimensional global axis index
    */
-  GlobalOrd
-  getGlobalIndex(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const;
+  Teuchos::Ordinal
+  getGlobalIndex(const Teuchos::ArrayView< Ordinal > globalAxisIndex) const;
 
   /** \brief Convert a global index to a local index
    *
@@ -641,14 +709,14 @@ public:
    * This method can throw a Domi::RangeError if the global index is
    * not on the current processor.
    */
-  LocalOrd getLocalIndex(GlobalOrd globalIndex) const;
+  Ordinal getLocalIndex(Ordinal globalIndex) const;
 
   /** \brief Convert an array of local axis indexes to a local index
    *
    * \param localAxisIndex [in] a multi-dimensional local axis index
    */
-  LocalOrd
-  getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const;
+  Ordinal
+  getLocalIndex(const Teuchos::ArrayView< Ordinal > localAxisIndex) const;
 
   //@}
 
@@ -669,7 +737,7 @@ private:
 
   // The size of the global dimensions along each axis.  This includes
   // the values of the boundary padding.
-  Teuchos::Array< GlobalOrd > _globalDims;
+  Teuchos::Array< dim_type > _globalDims;
 
   // Store the start and stop indexes of the global problem along each
   // axis.  This includes the values of the boundary padding.
@@ -687,34 +755,34 @@ private:
   // The global stride between adjacent IDs.  This quantity is
   // "virtual" as it does not describe actual memory layout, but it is
   // useful for index conversion algorithms.
-  Teuchos::Array< GlobalOrd > _globalStrides;
+  Teuchos::Array< size_type > _globalStrides;
 
   // The minumum 1D index of the global data structure, including
   // boundary padding.  This will only be non-zero on a sub-map.
-  GlobalOrd _globalMin;
+  Ordinal _globalMin;
 
   // The maximum 1D index of the global data structure, including
   // boundary padding.
-  GlobalOrd _globalMax;
+  Ordinal _globalMax;
 
   // The size of the local dimensions along each axis.  This includes
   // the values of the communication padding.
-  Teuchos::Array< LocalOrd > _localDims;
+  Teuchos::Array< Ordinal > _localDims;
 
   // The local loop bounds along each axis, stored as an array of
   // Slices.  These bounds DO include the communication padding.
   Teuchos::Array< Slice > _localBounds;
 
   // The local stride between adjacent elements in memory.
-  Teuchos::Array< LocalOrd > _localStrides;
+  Teuchos::Array< size_type > _localStrides;
 
   // The minimum 1D index of the local data structure, including
   // communication padding.
-  LocalOrd _localMin;
+  Teuchos::Ordinal _localMin;
 
   // The maximum 1D index of the local data structure, including
   // communnication padding.
-  LocalOrd _localMax;
+  Teuchos::Ordinal _localMax;
 
   // The communication padding that was specified at construction, one
   // value along each axis.
@@ -768,49 +836,16 @@ private:
   mutable Teuchos::Array< Teuchos::RCP< const Epetra_Map > > _epetraAxisOwnMaps;
 #endif
 
-#ifdef HAVE_TPETRA
-  // An RCP pointing to a Tpetra::Map that is equivalent to this
-  // MDMap, including communication padding.  It is mutable because we
-  // do not construct it until it asked for by a get method that is
-  // const.
-  mutable Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
-  _tpetraMap;
-
-  // An RCP pointing to a Tpetra::Map that is equivalent to this
-  // MDMap, excluding communication padding.  The returned Tpetra::Map
-  // thus indicates what IDs are owned by this processor.  It is
-  // mutable because we do not construct it until it asked for by a
-  // get method that is const.
-  mutable Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
-  _tpetraOwnMap;
-
-  // An ArrayRCP that stores Tpetra::Maps that represent the
-  // distribution of axis IDs along each axis, including communication
-  // padding.  It is mutable because we do not construct it until it
-  // asked for by a get method that is const.
-  mutable Teuchos::Array<
-    Teuchos::RCP<
-      const Tpetra::Map< LocalOrd, GlobalOrd, Node > > > _tpetraAxisMaps;
-
-  // An ArrayRCP that stores Tpetra::Maps that represent the
-  // distribution of axis IDs along each axis, excluding communication
-  // padding.  It is mutable because we do not construct it until it
-  // asked for by a get method that is const.
-  mutable Teuchos::Array<
-    Teuchos::RCP<
-      const Tpetra::Map< LocalOrd, GlobalOrd, Node > > > _tpetraAxisOwnMaps;
-#endif
-
 };
 
 ////////////////////////////////////////////////////////////////////////
 // Implementations
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node >::
+template< class Node >
+MDMap< Node >::
 MDMap(const MDCommRCP mdComm,
-      const Teuchos::ArrayView< GlobalOrd > & dimensions,
+      const Teuchos::ArrayView< dim_type > & dimensions,
       const Teuchos::ArrayView< int > & commPad,
       const Teuchos::ArrayView< int > & bndryPad,
       const Layout layout,
@@ -881,14 +916,14 @@ MDMap(const MDCommRCP mdComm,
   _localMax = computeSize(_localDims());
 
   // Compute the strides
-  _globalStrides = computeStrides(_globalDims, _layout);
-  _localStrides  = computeStrides(_localDims , _layout);
+  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
+  _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node>::
+template< class Node >
+MDMap< Node>::
 MDMap(TeuchosCommRCP teuchosComm,
       Teuchos::ParameterList & plist,
       const Teuchos::RCP< Node > & node) :
@@ -919,16 +954,12 @@ MDMap(TeuchosCommRCP teuchosComm,
   int numDims = _mdComm->getNumDims();
 
   // Check the global dimensions
-  Teuchos::Array< long int > dimensions =
-    plist.get("dimensions", Teuchos::Array< long int >());
+  Teuchos::Array< dim_type > dimensions =
+    plist.get("dimensions", Teuchos::Array< dim_type >());
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != dimensions.size(),
     InvalidArgument,
     "Size of dimensions does not match MDComm number of dimensions");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    computeSize(dimensions) - 1 > std::numeric_limits< GlobalOrd >::max(),
-    MapOrdinalError,
-    "The maximum global ID of this MDMap is too large for GlobalOrd");
 
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
@@ -995,14 +1026,14 @@ MDMap(TeuchosCommRCP teuchosComm,
     _layout = DEFAULT_ORDER;
 
   // Compute the strides
-  _globalStrides = computeStrides(_globalDims, _layout);
-  _localStrides  = computeStrides(_localDims , _layout);
+  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
+  _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node>::
+template< class Node >
+MDMap< Node>::
 MDMap(MDCommRCP mdComm,
       Teuchos::ParameterList & plist,
       const Teuchos::RCP< Node > & node) :
@@ -1032,16 +1063,12 @@ MDMap(MDCommRCP mdComm,
   int numDims = _mdComm->getNumDims();
 
   // Check the global dimensions
-  Teuchos::Array< long int > dimensions =
-    plist.get("dimensions", Teuchos::Array< long int >());
+  Teuchos::Array< dim_type > dimensions =
+    plist.get("dimensions", Teuchos::Array< dim_type >());
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != dimensions.size(),
     InvalidArgument,
     "Number of dimensions does not match MDComm number of dimensions");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    computeSize(dimensions) - 1 > std::numeric_limits< GlobalOrd >::max(),
-    MapOrdinalError,
-    "The maximum global ID of this MDMap is too large for GlobalOrd");
 
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
@@ -1103,17 +1130,17 @@ MDMap(MDCommRCP mdComm,
     _layout = DEFAULT_ORDER;
 
   // Compute the strides
-  _globalStrides = computeStrides(_globalDims, _layout);
-  _localStrides  = computeStrides(_localDims , _layout);
+  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
+  _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node >::
-MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & parent,
       int axis,
-      GlobalOrd index) :
+      Ordinal index) :
   _mdComm(parent._mdComm),
   _globalDims(),
   _globalBounds(),
@@ -1232,9 +1259,9 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node >::
-MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & parent,
       int axis,
       const Slice & slice,
       int bndryPad) :
@@ -1295,13 +1322,13 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       _globalRankBounds[axis][axisRank] = ConcreteSlice(start, stop);
     }
     // Alter _bndryPad if necessary
-    GlobalOrd start = bounds.start() - _bndryPadSizes[axis];
+    Ordinal start = bounds.start() - _bndryPadSizes[axis];
     if (start < 0)
     {
       _bndryPad[axis][0] = bounds.start();
       start = 0;
     }
-    GlobalOrd stop = bounds.stop() + _bndryPadSizes[axis];
+    Ordinal stop = bounds.stop() + _bndryPadSizes[axis];
     if (stop > parent.getGlobalBounds(axis,true).stop())
     {
       _bndryPad[axis][1] = parent.getGlobalBounds(axis,true).stop() -
@@ -1350,7 +1377,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
         _pad[axis][0] = _bndryPad[axis][0];
       if (axisRank == _mdComm->getAxisCommSize(axis)-1)
         _pad[axis][1] = _bndryPad[axis][1];
-      LocalOrd start = parent._localBounds[axis].start();
+      Ordinal start = parent._localBounds[axis].start();
       if (_globalBounds[axis].start() >
           _globalRankBounds[axis][axisRank].start())
       {
@@ -1366,7 +1393,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
             _globalBounds[axis].start();
         }
       }
-      LocalOrd stop = parent._localBounds[axis].stop();
+      Ordinal stop = parent._localBounds[axis].stop();
       if (_globalBounds[axis].stop() <
           _globalRankBounds[axis][axisRank].stop())
       {
@@ -1414,9 +1441,9 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node >::
-MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & parent,
       const Teuchos::ArrayView< Slice > & slices,
       const Teuchos::ArrayView< int > & bndryPad)
 {
@@ -1431,14 +1458,14 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
     "dimensions = " << numDims);
 
   // Apply the single-Slice constructor to each axis in succession
-  MDMap< LocalOrd, GlobalOrd, Node > tempMDMap1(parent);
+  MDMap< Node > tempMDMap1(parent);
   for (int axis = 0; axis < numDims; ++axis)
   {
     int bndryPadding = (axis < bndryPad.size()) ? bndryPad[axis] : 0;
-    MDMap< LocalOrd, GlobalOrd, Node > tempMDMap2(tempMDMap1,
-                                                  axis,
-                                                  slices[axis],
-                                                  bndryPadding);
+    MDMap< Node > tempMDMap2(tempMDMap1,
+                             axis,
+                             slices[axis],
+                             bndryPadding);
     tempMDMap1 = tempMDMap2;
   }
   *this = tempMDMap1;
@@ -1446,88 +1473,88 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-MDMap< LocalOrd, GlobalOrd, Node >::~MDMap()
+template< class Node >
+MDMap< Node >::~MDMap()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 bool
-MDMap< LocalOrd, GlobalOrd, Node >::onSubcommunicator() const
+MDMap< Node >::onSubcommunicator() const
 {
   return _mdComm->onSubcommunicator();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 TeuchosCommRCP
-MDMap< LocalOrd, GlobalOrd, Node >::getTeuchosComm() const
+MDMap< Node >::getTeuchosComm() const
 {
   return _mdComm->getTeuchosComm();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getNumDims() const
+MDMap< Node >::getNumDims() const
 {
   return _mdComm->getNumDims();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getAxisCommSize(int axis) const
+MDMap< Node >::getAxisCommSize(int axis) const
 {
   return _mdComm->getAxisCommSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 bool
-MDMap< LocalOrd, GlobalOrd, Node >::isPeriodic(int axis) const
+MDMap< Node >::isPeriodic(int axis) const
 {
   return _mdComm->isPeriodic(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getAxisRank(int axis) const
+MDMap< Node >::getAxisRank(int axis) const
 {
   return _mdComm->getAxisRank(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getLowerNeighbor(int axis) const
+MDMap< Node >::getLowerNeighbor(int axis) const
 {
   return _mdComm->getLowerNeighbor(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getUpperNeighbor(int axis) const
+MDMap< Node >::getUpperNeighbor(int axis) const
 {
   return _mdComm->getUpperNeighbor(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-GlobalOrd
-MDMap< LocalOrd, GlobalOrd, Node >::
+template< class Node >
+Ordinal
+MDMap< Node >::
 getGlobalDim(int axis,
              bool withBndryPad) const
 {
@@ -1546,9 +1573,9 @@ getGlobalDim(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 Slice
-MDMap< LocalOrd, GlobalOrd, Node >::
+MDMap< Node >::
 getGlobalBounds(int axis,
                 bool withBndryPad) const
 {
@@ -1563,17 +1590,17 @@ getGlobalBounds(int axis,
     return _globalBounds[axis];
   else
   {
-    GlobalOrd start = _globalBounds[axis].start() + _bndryPad[axis][0];
-    GlobalOrd stop  = _globalBounds[axis].stop()  - _bndryPad[axis][1];
+    Ordinal start = _globalBounds[axis].start() + _bndryPad[axis][0];
+    Ordinal stop  = _globalBounds[axis].stop()  - _bndryPad[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-LocalOrd
-MDMap< LocalOrd, GlobalOrd, Node >::
+template< class Node >
+Ordinal
+MDMap< Node >::
 getLocalDim(int axis,
             bool withPad) const
 {
@@ -1592,9 +1619,9 @@ getLocalDim(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 Slice
-MDMap< LocalOrd, GlobalOrd, Node >::
+MDMap< Node >::
 getGlobalRankBounds(int axis,
                     bool withBndryPad) const
 {
@@ -1608,8 +1635,8 @@ getGlobalRankBounds(int axis,
   int axisRank = getAxisRank(axis);
   if (withBndryPad)
   {
-    GlobalOrd start = _globalRankBounds[axis][axisRank].start();
-    GlobalOrd stop  = _globalRankBounds[axis][axisRank].stop();
+    Ordinal start = _globalRankBounds[axis][axisRank].start();
+    Ordinal stop  = _globalRankBounds[axis][axisRank].stop();
     if (getAxisRank(axis) == 0)
       start -= _bndryPad[axis][0];
     if (getAxisRank(axis) == getAxisCommSize(axis)-1)
@@ -1622,9 +1649,9 @@ getGlobalRankBounds(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 Slice
-MDMap< LocalOrd, GlobalOrd, Node >::
+MDMap< Node >::
 getLocalBounds(int axis,
                bool withPad) const
 {
@@ -1639,17 +1666,17 @@ getLocalBounds(int axis,
     return _localBounds[axis];
   else
   {
-    LocalOrd start = _localBounds[axis].start() + _pad[axis][0];
-    LocalOrd stop  = _localBounds[axis].stop()  - _pad[axis][1];
+    Ordinal start = _localBounds[axis].start() + _pad[axis][0];
+    Ordinal stop  = _localBounds[axis].stop()  - _pad[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 bool
-MDMap< LocalOrd, GlobalOrd, Node >::hasPadding() const
+MDMap< Node >::hasPadding() const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -1659,9 +1686,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::hasPadding() const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getLowerPadSize(int axis) const
+MDMap< Node >::getLowerPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1675,9 +1702,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getLowerPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getUpperPadSize(int axis) const
+MDMap< Node >::getUpperPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1691,9 +1718,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getUpperPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getCommPadSize(int axis) const
+MDMap< Node >::getCommPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1707,9 +1734,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getCommPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getLowerBndryPad(int axis) const
+MDMap< Node >::getLowerBndryPad(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1723,9 +1750,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getLowerBndryPad(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getUpperBndryPad(int axis) const
+MDMap< Node >::getUpperBndryPad(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1739,9 +1766,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getUpperBndryPad(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getBndryPadSize(int axis) const
+MDMap< Node >::getBndryPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1755,10 +1782,10 @@ MDMap< LocalOrd, GlobalOrd, Node >::getBndryPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 bool
-MDMap< LocalOrd, GlobalOrd, Node >::
-isCommPad(Teuchos::ArrayView< LocalOrd > index) const
+MDMap< Node >::
+isCommPad(Teuchos::ArrayView< Ordinal > index) const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -1782,10 +1809,10 @@ isCommPad(Teuchos::ArrayView< LocalOrd > index) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 bool
-MDMap< LocalOrd, GlobalOrd, Node >::
-isBndryPad(Teuchos::ArrayView< LocalOrd > index) const
+MDMap< Node >::
+isBndryPad(Teuchos::ArrayView< Ordinal > index) const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -1809,9 +1836,9 @@ isBndryPad(Teuchos::ArrayView< LocalOrd > index) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 Layout
-MDMap< LocalOrd, GlobalOrd, Node >::getLayout() const
+MDMap< Node >::getLayout() const
 {
   return _layout;
 }
@@ -1820,9 +1847,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getLayout() const
 
 #ifdef HAVE_EPETRA
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 Teuchos::RCP< const Epetra_Map >
-MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
+MDMap< Node >::getEpetraMap(bool withCommPad) const
 {
   if (withCommPad)
   {
@@ -1837,7 +1864,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
 
       // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
-      Teuchos::Array<size_type> localDims(numDims);
+      Teuchos::Array<dim_type> localDims(numDims);
       for (int axis = 0; axis < numDims; ++axis)
         localDims[axis] = _localDims[axis];
       MDArray<int> myElements(localDims);
@@ -1881,7 +1908,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
       // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
       Teuchos::Array<int> index(numDims);
-      Teuchos::Array<size_type> myDims(numDims);
+      Teuchos::Array<dim_type> myDims(numDims);
       for (int axis = 0; axis < numDims; ++axis)
       {
         myDims[axis] = _localDims[axis] - _pad[axis][0] - _pad[axis][1];
@@ -1928,9 +1955,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
 
 #ifdef HAVE_EPETRA
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 Teuchos::RCP< const Epetra_Map >
-MDMap< LocalOrd, GlobalOrd, Node >::
+MDMap< Node >::
 getEpetraAxisMap(int axis,
                  bool withCommPad) const
 {
@@ -1986,101 +2013,113 @@ getEpetraAxisMap(int axis,
 
 #ifdef HAVE_TPETRA
 
-template< class LocalOrd, class GlobalOrd, class Node >
-Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
-MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withCommPad) const
+template< class Node >
+template< class LocalOrdinal >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
+MDMap< Node >::getTpetraMap(bool withCommPad) const
+{
+  return getTpetraMap< LocalOrdinal, LocalOrdinal, Node >(withCommPad);
+}
+
+template< class Node >
+template< class LocalOrdinal,
+          class GlobalOrdinal >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+MDMap< Node >::getTpetraMap(bool withCommPad) const
+{
+  return getTpetraMap< LocalOrdinal, GlobalOrdinal, Node >(withCommPad);
+}
+
+template< class Node >
+template< class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node2 >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
+MDMap< Node >::getTpetraMap(bool withCommPad) const
 {
   if (withCommPad)
   {
-    if (_tpetraMap.is_null())
+    // Allocate the elementsMDArray and the index array
+    int numDims = getNumDims();
+    Teuchos::Array<dim_type> localDims(numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+      localDims[axis] = _localDims[axis];
+    MDArray< GlobalOrdinal > elementMDArray(localDims);
+    Teuchos::Array< LocalOrdinal > index(numDims);
+
+    // Iterate over the local MDArray and assign global IDs
+    for (typename MDArray< GlobalOrdinal >::iterator it = elementMDArray.begin();
+         it != elementMDArray.end(); ++it)
     {
-      // Allocate the elementsMDArray and the index array
-      int numDims = getNumDims();
-      Teuchos::Array<size_type> localDims(numDims);
+      GlobalOrdinal globalID = 0;
       for (int axis = 0; axis < numDims; ++axis)
-        localDims[axis] = _localDims[axis];
-      MDArray<GlobalOrd> elementMDArray(localDims);
-      Teuchos::Array<LocalOrd> index(numDims);
-
-      // Iterate over the local MDArray and assign global IDs
-      for (typename MDArray<GlobalOrd>::iterator it = elementMDArray.begin();
-           it != elementMDArray.end(); ++it)
       {
-        GlobalOrd globalID = 0;
-        for (int axis = 0; axis < numDims; ++axis)
-        {
-          int axisRank    = getAxisRank(axis);
-          GlobalOrd start = _globalRankBounds[axis][axisRank].start() -
-                            _pad[axis][0];
-          globalID += (start + it.index(axis)) * _globalStrides[axis];
-        }
-        *it = globalID;
+        int axisRank        = getAxisRank(axis);
+        GlobalOrdinal start = _globalRankBounds[axis][axisRank].start() -
+                              _pad[axis][0];
+        globalID += (start + it.index(axis)) * _globalStrides[axis];
       }
-
-      // Construct the Tpetra::Map
-      const Teuchos::Array<GlobalOrd> & myElements = elementMDArray.array();
-      TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
-      _tpetraMap =
-        Teuchos::rcp(new Tpetra::Map<LocalOrd,
-                                     GlobalOrd,
-                                     Node>(Teuchos::OrdinalTraits<
-                                             Tpetra::global_size_t>::invalid(),
-                                           myElements(),
-                                           0,
-                                           teuchosComm));
+      *it = globalID;
     }
-    return _tpetraMap;
+
+    // Return the Tpetra::Map
+    const Teuchos::Array< GlobalOrdinal > & myElements = elementMDArray.array();
+    TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+    return
+      Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
+                                    GlobalOrdinal,
+                                    Node2 >(Teuchos::OrdinalTraits<
+                                              Tpetra::global_size_t>::invalid(),
+                                            myElements(),
+                                            0,
+                                            teuchosComm));
   }
   else
   {
-    if (_tpetraOwnMap.is_null())
+    // Allocate the elementMDArray MDArray and the index array
+    int numDims = getNumDims();
+    Teuchos::Array< LocalOrdinal > index(numDims);
+    Teuchos::Array< dim_type >     myDims(numDims);
+    for (int axis = 0; axis < numDims; ++axis)
     {
-      // Allocate the elementMDArray MDArray and the index array
-      int numDims = getNumDims();
-      Teuchos::Array<LocalOrd> index(numDims);
-      Teuchos::Array<size_type> myDims(numDims);
+      myDims[axis] =
+        _localDims[axis] - _pad[axis][0] - _pad[axis][1];
+      int axisRank = getAxisRank(axis);
+      if (axisRank == 0)
+        myDims[axis] += _bndryPad[axis][0];
+      if (axisRank == getAxisCommSize(axis)-1)
+        myDims[axis] += _bndryPad[axis][1];
+    }
+    MDArray< GlobalOrdinal > elementMDArray(myDims());
+
+    // Iterate over the local MDArray and assign global IDs
+    for (typename MDArray< GlobalOrdinal >::iterator it = elementMDArray.begin();
+         it != elementMDArray.end(); ++it)
+    {
+      GlobalOrdinal globalID = 0;
       for (int axis = 0; axis < numDims; ++axis)
       {
-        myDims[axis] =
-          _localDims[axis] - _pad[axis][0] - _pad[axis][1];
-        int axisRank = getAxisRank(axis);
+        int axisRank        = getAxisRank(axis);
+        GlobalOrdinal start = _globalRankBounds[axis][axisRank].start();
         if (axisRank == 0)
-          myDims[axis] += _bndryPad[axis][0];
+          start -= _bndryPad[axis][0];
         if (axisRank == getAxisCommSize(axis)-1)
-          myDims[axis] += _bndryPad[axis][1];
+          start += _bndryPad[axis][1];
+        globalID += (start + it.index(axis)) * _globalStrides[axis];
       }
-      MDArray<GlobalOrd> elementMDArray(myDims());
+    }
 
-      // Iterate over the local MDArray and assign global IDs
-      for (typename MDArray<GlobalOrd>::iterator it = elementMDArray.begin();
-           it != elementMDArray.end(); ++it)
-      {
-        GlobalOrd globalID = 0;
-          for (int axis = 0; axis < numDims; ++axis)
-          {
-            int axisRank    = getAxisRank(axis);
-            GlobalOrd start = _globalRankBounds[axis][axisRank].start();
-            if (axisRank == 0)
-              start -= _bndryPad[axis][0];
-            if (axisRank == getAxisCommSize(axis)-1)
-              start += _bndryPad[axis][1];
-            globalID += (start + it.index(axis)) * _globalStrides[axis];
-          }
-      }
-
-      // Construct the Tpetra::Map
-      const Teuchos::Array<GlobalOrd> & myElements = elementMDArray.array();
-      TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
-      _tpetraOwnMap =
-        Teuchos::rcp(new Tpetra::Map<LocalOrd,
-                                     GlobalOrd,
-                                     Node>(Teuchos::OrdinalTraits<
+    // Return the Tpetra::Map
+    const Teuchos::Array< GlobalOrdinal> & myElements = elementMDArray.array();
+    TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+    return
+      Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
+                                    GlobalOrdinal,
+                                    Node >(Teuchos::OrdinalTraits<
                                              Tpetra::global_size_t>::invalid(),
                                            myElements(),
                                            0,
                                            teuchosComm));
-    }
-    return _tpetraOwnMap;
   }
 }
 #endif
@@ -2089,9 +2128,33 @@ MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withCommPad) const
 
 #ifdef HAVE_TPETRA
 
-template< class LocalOrd, class GlobalOrd, class Node >
-Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
-MDMap< LocalOrd, GlobalOrd, Node >::
+template< class Node >
+template< class LocalOrdinal >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
+MDMap< Node >::
+getTpetraAxisMap(int axis,
+                 bool withCommPad) const
+{
+  return getTpetraAxisMap< LocalOrdinal, LocalOrdinal, Node >(axis, withCommPad);
+}
+
+template< class Node >
+template< class LocalOrdinal,
+          class GlobalOrdinal >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+MDMap< Node >::
+getTpetraAxisMap(int axis,
+                 bool withCommPad) const
+{
+  return getTpetraAxisMap< LocalOrdinal, LocalOrdinal, Node >(axis, withCommPad);
+}
+
+template< class Node >
+template< class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node2 >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
+MDMap< Node >::
 getTpetraAxisMap(int axis,
                  bool withCommPad) const
 {
@@ -2102,55 +2165,29 @@ getTpetraAxisMap(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     getNumDims() << ")");
 #endif
-  if ((withCommPad     && (_tpetraAxisMaps.size()    == 0)) ||
-      (not withCommPad && (_tpetraAxisOwnMaps.size() == 0)))
-  {
-    int numDims = getNumDims();
-    TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
-    for (int axis=0; axis < numDims; ++axis)
-    {
-      Teuchos::Array<GlobalOrd> elements(getLocalDim(axis,withCommPad));
-      GlobalOrd start = getGlobalRankBounds(axis,true).start();
-      if (withCommPad && (getAxisRank(axis) != 0)) start -= _pad[axis][0];
-      for (LocalOrd i = 0; i < elements.size(); ++i)
-        elements[i] = i + start;
-      if (withCommPad)
-      {
-        _tpetraAxisMaps.push_back(
-          Teuchos::rcp(new Tpetra::Map<LocalOrd,
-                                       GlobalOrd,
+  int numDims = getNumDims();
+  TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+  Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));
+  GlobalOrdinal start = getGlobalRankBounds(axis,true).start();
+  if (withCommPad && (getAxisRank(axis) != 0)) start -= _pad[axis][0];
+  for (LocalOrdinal i = 0; i < elements.size(); ++i)
+    elements[i] = i + start;
+  return Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
+                                       GlobalOrdinal,
                                        Node>(Teuchos::OrdinalTraits<
                                                Tpetra::global_size_t>::invalid(),
                                              elements,
                                              0,
-                                             teuchosComm)));
-      }
-      else
-      {
-        _tpetraAxisOwnMaps.push_back(
-          Teuchos::rcp(new Tpetra::Map<LocalOrd,
-                                       GlobalOrd,
-                                       Node>(Teuchos::OrdinalTraits<
-                                               Tpetra::global_size_t>::invalid(),
-                                             elements,
-                                             0,
-                                             teuchosComm)));
-      }
-    }
-  }
-  if (withCommPad)
-    return _tpetraAxisMaps[axis];
-  else
-    return _tpetraAxisOwnMaps[axis];
+                                             teuchosComm));
 }
 #endif
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-Teuchos::Array< GlobalOrd >
-MDMap< LocalOrd, GlobalOrd, Node >::
-getGlobalAxisIndex(GlobalOrd globalIndex) const
+template< class Node >
+Teuchos::Array< Ordinal >
+MDMap< Node >::
+getGlobalAxisIndex(Ordinal globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2160,8 +2197,8 @@ getGlobalAxisIndex(GlobalOrd globalIndex) const
     _globalMin << " and " << _globalMax << ")");
 #endif
   int numDims = getNumDims();
-  Teuchos::Array< GlobalOrd > result(numDims);
-  GlobalOrd index = globalIndex;
+  Teuchos::Array< Ordinal > result(numDims);
+  Ordinal index = globalIndex;
   if (_layout == LAST_INDEX_FASTEST)
   {
     for (int axis = 0; axis < numDims-1; ++axis)
@@ -2185,10 +2222,10 @@ getGlobalAxisIndex(GlobalOrd globalIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-Teuchos::Array< LocalOrd >
-MDMap< LocalOrd, GlobalOrd, Node >::
-getLocalAxisIndex(LocalOrd localIndex) const
+template< class Node >
+Teuchos::Array< Ordinal >
+MDMap< Node >::
+getLocalAxisIndex(Ordinal localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2198,8 +2235,8 @@ getLocalAxisIndex(LocalOrd localIndex) const
     _localMin << " and " << _localMax << ")");
 #endif
   int numDims = getNumDims();
-  Teuchos::Array< LocalOrd > result(numDims);
-  LocalOrd index = localIndex;
+  Teuchos::Array< Ordinal > result(numDims);
+  Ordinal index = localIndex;
   if (_layout == LAST_INDEX_FASTEST)
   {
     for (int axis = 0; axis < numDims-1; ++axis)
@@ -2223,10 +2260,10 @@ getLocalAxisIndex(LocalOrd localIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-GlobalOrd
-MDMap< LocalOrd, GlobalOrd, Node >::
-getGlobalIndex(LocalOrd localIndex) const
+template< class Node >
+Teuchos::Ordinal
+MDMap< Node >::
+getGlobalIndex(Ordinal localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2235,11 +2272,11 @@ getGlobalIndex(LocalOrd localIndex) const
     "invalid local index = " << localIndex << " (local size = " <<
     _localMax << ")");
 #endif
-  Teuchos::Array< LocalOrd > localAxisIndex = getLocalAxisIndex(localIndex);
-  GlobalOrd result = 0;
+  Teuchos::Array< Ordinal > localAxisIndex = getLocalAxisIndex(localIndex);
+  Ordinal result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    GlobalOrd globalAxisIndex = localAxisIndex[axis] +
+    Ordinal globalAxisIndex = localAxisIndex[axis] +
       _globalRankBounds[axis][getAxisRank(axis)].start() - _pad[axis][0];
     result += globalAxisIndex * _globalStrides[axis];
   }
@@ -2248,10 +2285,10 @@ getGlobalIndex(LocalOrd localIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-GlobalOrd
-MDMap< LocalOrd, GlobalOrd, Node >::
-getGlobalIndex(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const
+template< class Node >
+Teuchos::Ordinal
+MDMap< Node >::
+getGlobalIndex(const Teuchos::ArrayView< Ordinal > globalAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2269,7 +2306,7 @@ getGlobalIndex(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const
       " (global dimension = " << _globalDims[axis] << ")");
   }
 #endif
-  GlobalOrd result = 0;
+  Ordinal result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += globalAxisIndex[axis] * _globalStrides[axis];
   return result;
@@ -2277,10 +2314,10 @@ getGlobalIndex(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-LocalOrd
-MDMap< LocalOrd, GlobalOrd, Node >::
-getLocalIndex(GlobalOrd globalIndex) const
+template< class Node >
+Ordinal
+MDMap< Node >::
+getLocalIndex(Ordinal globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2289,12 +2326,12 @@ getLocalIndex(GlobalOrd globalIndex) const
     "invalid global index = " << globalIndex << " (should be between " <<
     _globalMin << " and " << _globalMax << ")");
 #endif
-  Teuchos::Array< GlobalOrd > globalAxisIndex =
+  Teuchos::Array< Ordinal > globalAxisIndex =
     getGlobalAxisIndex(globalIndex);
-  LocalOrd result = 0;
+  Ordinal result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    LocalOrd localAxisIndex = globalAxisIndex[axis] -
+    Ordinal localAxisIndex = globalAxisIndex[axis] -
       _globalRankBounds[axis][getAxisRank(axis)].start() + _pad[axis][0];
     TEUCHOS_TEST_FOR_EXCEPTION(
       (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
@@ -2307,10 +2344,10 @@ getLocalIndex(GlobalOrd globalIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
-LocalOrd
-MDMap< LocalOrd, GlobalOrd, Node >::
-getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
+template< class Node >
+Ordinal
+MDMap< Node >::
+getLocalIndex(const Teuchos::ArrayView< Ordinal > localAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2328,7 +2365,7 @@ getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
       " (local dimension = " << _localDims[axis] << ")");
   }
 #endif
-  LocalOrd result = 0;
+  Ordinal result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += localAxisIndex[axis] * _localStrides[axis];
   return result;
@@ -2336,9 +2373,9 @@ getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class LocalOrd, class GlobalOrd, class Node >
+template< class Node >
 void
-MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
+MDMap< Node >::computeBounds()
 {
   // Initialization
   int numDims = getNumDims();
@@ -2353,9 +2390,9 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
       // First estimates assuming even division of global dimensions
       // by the number of processors along this axis, and ignoring
       // communication and boundary padding.
-      LocalOrd  localDim  = (_globalDims[axis] - 2*_bndryPadSizes[axis]) /
-                            axisCommSize;
-      GlobalOrd axisStart = axisRank * localDim;
+      Ordinal  localDim  = (_globalDims[axis] - 2*_bndryPadSizes[axis]) /
+                           axisCommSize;
+      Ordinal axisStart = axisRank * localDim;
 
       // Adjustments for non-zero remainder.  Compute the remainder
       // using the mod operator.  If the remainder is > 0, then add an
@@ -2364,7 +2401,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
       // standard Tpetra::Map constructor (which adds an elements to
       // the lowest processor ranks), and provides better balance for
       // finite differencing systems with staggered data location.
-      GlobalOrd remainder = (_globalDims[axis] - 2*_bndryPadSizes[axis]) %
+      Ordinal remainder = (_globalDims[axis] - 2*_bndryPadSizes[axis]) %
                             axisCommSize;
       if (axisCommSize - axisRank - 1 < remainder)
       {

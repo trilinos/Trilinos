@@ -64,8 +64,8 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _periodic(computePeriodic(axisCommSizes.size(), periodic)),
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisCommSizes)),
-  _axisStrides(computeStrides(_axisCommSizes,
-                              DEFAULT_ORDER))
+  _axisStrides(computeStrides<int,int>(_axisCommSizes,
+                                       DEFAULT_ORDER))
 {
 }
 
@@ -96,8 +96,8 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                                 _axisCommSizes);
 
   // Set the axis strides
-  _axisStrides = computeStrides(_axisCommSizes,
-                                DEFAULT_ORDER);
+  _axisStrides = computeStrides<int,int>(_axisCommSizes,
+                                         DEFAULT_ORDER);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -111,8 +111,8 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _periodic(numDims, 0),
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisCommSizes)),
-  _axisStrides(computeStrides(_axisCommSizes,
-                              DEFAULT_ORDER))
+  _axisStrides(computeStrides<int,int>(_axisCommSizes,
+                                       DEFAULT_ORDER))
 {
 }
 
@@ -129,8 +129,8 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _periodic(computePeriodic(numDims, periodic)),
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisCommSizes)),
-  _axisStrides(computeStrides(_axisCommSizes,
-                              DEFAULT_ORDER))
+  _axisStrides(computeStrides<int,int>(_axisCommSizes,
+                                       DEFAULT_ORDER))
 {
 }
 

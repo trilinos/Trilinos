@@ -65,8 +65,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, defaultConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, simpleConstructor, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
-  MDArray< T > a(tuple< size_type >(2,3));
+  typedef typename MDArray< T >::dim_type dim_type;
+  MDArray< T > a(tuple< dim_type >(2,3));
   TEST_EQUALITY_CONST(a.num_dims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 3);
@@ -78,9 +78,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, simpleConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndValConstructor, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
+  typedef typename MDArray< T >::dim_type dim_type;
   T val = 1;
-  MDArray< T > a(tuple< size_type >(2,2), val);
+  MDArray< T > a(tuple< dim_type >(2,2), val);
   TEST_EQUALITY_CONST(a.num_dims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 2);
@@ -96,8 +96,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndValConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndOrderConstructor, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
-  MDArray< T > a(tuple< size_type >(3,3), Domi::C_ORDER);
+  typedef typename MDArray< T >::dim_type dim_type;
+  MDArray< T > a(tuple< dim_type >(3,3), Domi::C_ORDER);
   TEST_EQUALITY_CONST(a.num_dims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 3);
   TEST_EQUALITY_CONST(a.dimension(1), 3);
@@ -109,9 +109,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndOrderConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsValAndOrderConstructor, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
+  typedef typename MDArray< T >::dim_type dim_type;
   T val = 2;
-  MDArray< T > a(tuple< size_type >(2,2,2), val, Domi::ROW_MAJOR);
+  MDArray< T > a(tuple< dim_type >(2,2,2), val, Domi::ROW_MAJOR);
   TEST_EQUALITY_CONST(a.num_dims(), 3);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 2);
@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equalOperatorMDArrayView, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, inequalityOperator, T )
 {
-  //typedef typename MDArray< T >::size_type size_type;
+  //typedef typename MDArray< T >::dim_type dim_type;
   MDArray< T > a = generateMDArray< T >(4,4);
   MDArray< T > b(a);
   b(1,2) = b(1,2) * b(1,2);
@@ -420,13 +420,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, max_size, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, resize, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
+  typedef typename MDArray< T >::dim_type dim_type;
   MDArray< T > a = generateMDArray< T >(11,4);
   TEST_EQUALITY_CONST(a.num_dims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 11);
   TEST_EQUALITY_CONST(a.dimension(1),  4);
   TEUCHOS_ASSERT(!a.empty());
-  a.resize(tuple< size_type >(5,9,3));
+  a.resize(tuple< dim_type >(5,9,3));
   TEST_EQUALITY_CONST(a.num_dims(), 3);
   TEST_EQUALITY_CONST(a.dimension(0), 5);
   TEST_EQUALITY_CONST(a.dimension(1), 9);
@@ -483,9 +483,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, toStringNull, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, toString1D, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
+  typedef typename MDArray< T >::dim_type dim_type;
   T val = 3;
-  MDArray< T > a(tuple< size_type >(3), val);
+  MDArray< T > a(tuple< dim_type >(3), val);
   TEST_EQUALITY_CONST(a.toString(), "[3, 3, 3]");
 }
 

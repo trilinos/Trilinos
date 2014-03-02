@@ -65,7 +65,8 @@ template< typename T > class MDArrayRCP;
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2);
+bool operator==(const MDArrayRCP< T > & a1,
+                const MDArrayRCP< T > & a2);
 
 /** \brief MDArray/MDArrayRCP equality operator.
  *
@@ -73,7 +74,8 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator==(const MDArray< T > & a1, const MDArrayRCP< T > & a2);
+bool operator==(const MDArray< T > & a1,
+                const MDArrayRCP< T > & a2);
 
 /** \brief MDArrayRCP/MDArray equality operator.
  *
@@ -81,7 +83,8 @@ bool operator==(const MDArray< T > & a1, const MDArrayRCP< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator==(const MDArrayRCP< T > & a1, const MDArray< T > & a2);
+bool operator==(const MDArrayRCP< T > & a1,
+                const MDArray< T > & a2);
 
 /** \brief MDArrayView/MDArrayRCP equality operator.
  *
@@ -89,7 +92,8 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArray< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator==(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2);
+bool operator==(const MDArrayView< T > & a1,
+                const MDArrayRCP< T > & a2);
 
 /** \brief MDArrayRCP/MDArrayView equality operator.
  *
@@ -97,14 +101,16 @@ bool operator==(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator==(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2);
+bool operator==(const MDArrayRCP< T > & a1,
+                const MDArrayView< T > & a2);
 
 /** \brief Inequality operator.
  *
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator!=(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2);
+bool operator!=(const MDArrayRCP< T > & a1,
+                const MDArrayRCP< T > & a2);
 
 /** \brief MDArray/MDArrayRCP inequality operator.
  *
@@ -112,7 +118,8 @@ bool operator!=(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator!=(const MDArray< T > & a1, const MDArrayRCP< T > & a2);
+bool operator!=(const MDArray< T > & a1,
+                const MDArrayRCP< T > & a2);
 
 /** \brief MDArrayView/MDArrayRCP inequality operator.
  *
@@ -120,7 +127,8 @@ bool operator!=(const MDArray< T > & a1, const MDArrayRCP< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator!=(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2);
+bool operator!=(const MDArrayView< T > & a1,
+                const MDArrayRCP< T > & a2);
 
 /** \brief MDArrayRCP/MDArrayView inequality operator.
  *
@@ -128,7 +136,8 @@ bool operator!=(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2);
  * \relates MDArrayRCP
  */
 template< typename T >
-bool operator!=(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2);
+bool operator!=(const MDArrayRCP< T > & a1,
+                const MDArrayView< T > & a2);
 
 /** \brief Memory-safe, reference-counted, templated,
  * multi-dimensional array class
@@ -148,13 +157,28 @@ public:
   //@{
 
   /** \brief Size type */
-  typedef Ordinal size_type;
+  typedef Domi::size_type size_type;
+
+  /** \brief Dim type */
+  typedef Domi::dim_type dim_type;
+
+  /** \brief Difference type */
+  typedef Domi::difference_type difference_type;
 
   /** \brief Value type */
   typedef T value_type;
 
   /** \brief Pointer type */
-  typedef T* pointer_type;
+  typedef T* pointer;
+
+  /** \brief Const pointer type */
+  typedef const T* const_pointer;
+
+  /** \brief Reference type */
+  typedef T& reference;
+
+  /** \brief Const reference type */
+  typedef const T& const_reference;
 
   //@}
 
@@ -184,7 +208,7 @@ public:
    * buffer.
    */
   inline MDArrayRCP(const Teuchos::ArrayView< T > & array,
-		    const Teuchos::ArrayView< size_type > & dims,
+		    const Teuchos::ArrayView< dim_type > & dims,
 		    Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions, default value and optional
@@ -202,8 +226,8 @@ public:
    *
    * This constructor allocates new memory and takes ownership of it.
    */
-  inline explicit MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
-			     const T & val = T(),
+  inline explicit MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
+			     const_reference val = T(),
 			     Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order flag.
@@ -218,7 +242,7 @@ public:
    *
    * This constructor allocates new memory and takes ownership of it.
    */
-  inline explicit MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
+  inline explicit MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
 			     Layout layout);
 
   /** \brief Shallow copy constructor
@@ -254,24 +278,22 @@ public:
 
   /** \brief Return the array of dimensions
    */
-  inline const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
-  dimensions() const;
+  inline const Teuchos::Array< dim_type > & dimensions() const;
 
   /** \brief Return the dimension of the given axis
    *
    * \param axis [in] The axis being queried (0 for the first axis,
    *        for the second axis, and so forth)
    */
-  inline typename Teuchos::Array< T >::size_type dimension(int axis) const;
+  inline dim_type dimension(int axis) const;
 
   /** \brief Return the total size of the <tt>MDArrayRCP</tt>
    */
-  inline typename Teuchos::Array< T >::size_type size() const;
+  inline size_type size() const;
 
   /** \brief Return the indexing strides
    */
-  inline const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
-  strides() const;
+  inline const Teuchos::Array< size_type > & strides() const;
 
   /** \brief Return the underlying <tt>Teuchos::ArrayRCP</tt>
    */
@@ -347,15 +369,15 @@ public:
 
   /** \brief Pointer <tt>-></tt> access to members of underlying data buffer
    */
-  inline T * operator->() const;
+  inline pointer operator->() const;
 
   /** \brief Dereference the underlying data buffer
    */
-  inline T & operator*();
+  inline reference operator*();
 
   /** \brief Get the raw C++ pointer to the underlying data buffer
    */
-  inline T * get() const;
+  inline pointer get() const;
 
   //@}
 
@@ -406,7 +428,7 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArrayRCP</tt>.
    */
-  MDArrayView< T > operator[](size_type i);
+  MDArrayView< T > operator[](dim_type i);
 
   /** \brief Sub-array const access operator.  The returned
    *  <tt>MDArrayView</tt> object will have one fewer dimensions than
@@ -417,7 +439,7 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArrayRCP</tt>.
    */
-  const MDArrayView< T > operator[](size_type i) const;
+  const MDArrayView< T > operator[](dim_type i) const;
 
   /** \brief Sub-array access operator.  The returned
    *  <tt>MDArrayView</tt> object will have the same number of
@@ -464,7 +486,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 1D, an exception will be thrown.
    */
-  inline T & operator()(size_type i);
+  inline T & operator()(dim_type i);
 
   /** \brief Non-const 2D element access operator
    *
@@ -476,7 +498,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 2D, an exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j);
+  inline T & operator()(dim_type i, dim_type j);
 
   /** \brief Non-const 3D element access operator
    *
@@ -490,7 +512,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 3D, an exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k);
+  inline T & operator()(dim_type i, dim_type j, dim_type k);
 
   /** \brief Non-const 4D element access operator
    *
@@ -506,7 +528,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 4D, an exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k, size_type m);
+  inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m);
 
   /** \brief Non-const 5D element access operator
    *
@@ -524,8 +546,8 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 5D, an exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k, size_type m,
-                        size_type n);
+  inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m,
+                        dim_type n);
 
   /** \brief Non-const 6D and higher element access operator
    *
@@ -547,8 +569,8 @@ public:
    * <tt>MDArrayRCP</tt>s.  If DOMI_ENABLE_ABC is true and the
    * <tt>MDArrayRCP</tt> is less than 6D, an exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k, size_type m,
-                        size_type n, size_type p, ...);
+  inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m,
+                        dim_type n, dim_type p, ...);
 
   /** \brief Const 1D element access operator
    *
@@ -558,7 +580,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 1D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i) const;
+  inline const T & operator()(dim_type i) const;
 
   /** \brief Const 2D element access operator
    *
@@ -570,7 +592,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 2D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j) const;
+  inline const T & operator()(dim_type i, dim_type j) const;
 
   /** \brief Const 3D element access operator
    *
@@ -584,7 +606,7 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 3D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k) const;
 
   /** \brief Const 4D element access operator
    *
@@ -600,8 +622,8 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 4D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k,
-                              size_type m) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k,
+                              dim_type m) const;
 
   /** \brief Const 5D element access operator
    *
@@ -619,8 +641,8 @@ public:
    * If DOMI_ENABLE_ABC is true and the <tt>MDArrayRCP</tt> is not
    * 5D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k,
-                              size_type m, size_type n) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k,
+                              dim_type m, dim_type n) const;
 
   /** \brief Const 6D and higher element access operator
    *
@@ -642,8 +664,8 @@ public:
    * <tt>MDArrayRCP</tt>s.  If DOMI_ENABLE_ABC is true and the
    * <tt>MDArrayRCP</tt> is less than 6D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k,
-                              size_type m, size_type n, size_type p, ...) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k,
+                              dim_type m, dim_type n, dim_type p, ...) const;
 
 
   //@}
@@ -655,7 +677,7 @@ public:
    *
    * \param value [in] The value to be assigned
    */
-  void assign(const T & value);
+  void assign(const_reference value);
 
   /** \brief Non-const single element access method with bounds
    * checking
@@ -666,7 +688,7 @@ public:
    *        the same number of arguments as the number of dimensions
    *        of the <tt>MDArrayRCP</tt>.
    */
-  T & at(size_type i, ...);
+  reference at(dim_type i, ...);
 
   /** \brief Const single element access method with bounds checking
    *
@@ -676,7 +698,7 @@ public:
    *        the same number of arguments as the number of dimensions
    *        of the <tt>MDArrayRCP</tt>.
    */
-  const T & at(size_type i, ...) const;
+  const_reference at(dim_type i, ...) const;
 
   /** \brief Return the capacity of the underlying <tt>Teuchos::ArrayRCP</tt>
    */
@@ -703,7 +725,7 @@ public:
    *        is with a Tuple returned by the non-member
    *        <tt>Teuchos::tuple<T>()</tt> function.
    */
-  void resize(const Teuchos::ArrayView< size_type > & dims);
+  void resize(const Teuchos::ArrayView< dim_type > & dims);
 
   /** \brief Return true if <tt>MDArrayRCP</tt> has been compiled with
    *  bounds checking on. */
@@ -716,7 +738,7 @@ public:
 
   /** \brief Return a const raw pointer to the beginning of the
    *  <tt>MDArrayRCP</tt> or NULL if unsized. */
-  inline const T * getRawPtr() const;
+  inline const_pointer getRawPtr() const;
 
   //@}
 
@@ -735,22 +757,26 @@ public:
   /** \brief MDArray/MDArrayRCP equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArray< T2 > & a1, const MDArrayRCP< T2 > & a2);
+  friend bool operator==(const MDArray< T2 > & a1,
+                         const MDArrayRCP< T2 > & a2);
 
   /** \brief MDArrayRCP/MDArray equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArrayRCP< T2 > & a1, const MDArray< T2 > & a2);
+  friend bool operator==(const MDArrayRCP< T2 > & a1,
+                         const MDArray< T2 > & a2);
 
   /** \brief MDArrayRCP/MDArrayView equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArrayRCP< T2 > & a1, const MDArrayView< T2 > & a2);
+  friend bool operator==(const MDArrayRCP< T2 > & a1,
+                         const MDArrayView< T2 > & a2);
 
   /** \brief MDArrayView/MDArrayRCP equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArrayView< T2 > & a1, const MDArrayRCP< T2 > & a2);
+  friend bool operator==(const MDArrayView< T2 > & a1,
+                         const MDArrayRCP< T2 > & a2);
 
   /** \brief Inequality operator.
    */
@@ -761,22 +787,26 @@ public:
   /** \brief MDArray/MDArrayRCP inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArray< T2 > & a1, const MDArrayRCP< T2 > & a2);
+  friend bool operator!=(const MDArray< T2 > & a1,
+                         const MDArrayRCP< T2 > & a2);
 
   /** \brief MDArrayRCP/MDArray inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArrayRCP< T2 > & a1, const MDArray< T2 > & a2);
+  friend bool operator!=(const MDArrayRCP< T2 > & a1,
+                         const MDArray< T2 > & a2);
 
   /** \brief MDArrayRCP/MDArrayView inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArrayRCP< T2 > & a1, const MDArrayView< T2 > & a2);
+  friend bool operator!=(const MDArrayRCP< T2 > & a1,
+                         const MDArrayView< T2 > & a2);
 
   /** \brief MDArrayView/MDArrayRCP inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArrayView< T2 > & a1, const MDArrayRCP< T2 > & a2);
+  friend bool operator!=(const MDArrayView< T2 > & a1,
+                         const MDArrayRCP< T2 > & a2);
 
   /** \brief Stream output operator
    */
@@ -787,15 +817,17 @@ public:
   //@}
 
 private:
-  Teuchos::Array< size_type > _dimensions;
+  Teuchos::Array< dim_type >  _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::ArrayRCP< T >      _array;
   Layout                      _layout;
-  T *                         _ptr;
+  pointer                     _ptr;
 
   // Used for array bounds checking
-  void assertIndex(size_type i, int axis) const;
+  void assertIndex(dim_type i, int axis) const;
 };
+
+////////////////////////////////////////////////////////////////////////
 
 /////////////////////
 // Implementations //
@@ -803,7 +835,7 @@ private:
 
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
-  _dimensions(Teuchos::tuple< size_type >(0)),
+  _dimensions(Teuchos::tuple< dim_type >(0)),
   _strides(Teuchos::tuple< size_type >(1)), 
   _array(),
   _layout(DEFAULT_ORDER),
@@ -815,10 +847,10 @@ MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
 
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
-			    const Teuchos::ArrayView< size_type > & dims,
+			    const Teuchos::ArrayView< dim_type > & dims,
 			    Layout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, layout)),
+  _strides(computeStrides< size_type, dim_type >(dims, layout)),
   _array(array.getRawPtr(), 0, array.size(), false),
   _layout(layout),
   _ptr(_array.getRawPtr())
@@ -832,11 +864,11 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
+MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
 			    const T & val,
 			    Layout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, layout)),
+  _strides(computeStrides< size_type, dim_type >(dims, layout)),
   _array(computeSize(dims), val),
   _layout(layout),
   _ptr(_array.getRawPtr())
@@ -846,10 +878,10 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
+MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
 			    Layout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, layout)),
+  _strides(computeStrides< size_type, dim_type >(dims, layout)),
   _array(computeSize(dims)),
   _layout(layout),
   _ptr(_array.getRawPtr())
@@ -873,7 +905,8 @@ MDArrayRCP< T >::MDArrayRCP(const MDArrayRCP< T > & r_ptr) :
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const MDArrayView< T > & source) :
   _dimensions(source.dimensions()),
-  _strides(computeStrides(source.dimensions(), source.layout())),
+  _strides(computeStrides< size_type, dim_type >(source.dimensions(),
+                                                 source.layout())),
   _array(computeSize(source.dimensions())),
   _layout(source.layout()),
   _ptr(_array.getRawPtr())
@@ -919,7 +952,7 @@ MDArrayRCP< T >::num_dims() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
+const Teuchos::Array< dim_type > &
 MDArrayRCP< T >::dimensions() const
 {
   return _dimensions;
@@ -928,7 +961,7 @@ MDArrayRCP< T >::dimensions() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename Teuchos::Array< T >::size_type
+dim_type
 MDArrayRCP< T >::dimension(int axis) const
 {
   return _dimensions[axis];
@@ -937,7 +970,7 @@ MDArrayRCP< T >::dimension(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename Teuchos::Array< T >::size_type
+size_type
 MDArrayRCP< T >::size() const
 {
   return _array.size();
@@ -946,7 +979,7 @@ MDArrayRCP< T >::size() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
+const Teuchos::Array< size_type > &
 MDArrayRCP< T >::strides() const
 {
   return _strides;
@@ -1116,7 +1149,7 @@ template< typename T >
 const MDArrayView< T >
 MDArrayRCP< T >::mdArrayView() const
 {
-  Teuchos::Array< size_type > dims(_dimensions);
+  Teuchos::Array< dim_type > dims(_dimensions);
   return MDArrayView< T >(_array(), dims(), _layout);
 }
 
@@ -1158,7 +1191,7 @@ MDArrayRCP< T >::operator MDArrayView< const T >() const
 
 template< typename T >
 MDArrayView< T >
-MDArrayRCP< T >::operator[](size_type i)
+MDArrayRCP< T >::operator[](dim_type i)
 {
   // Note: array bounds checking, if active, will be performed by the
   // MDArrayView class
@@ -1169,7 +1202,7 @@ MDArrayRCP< T >::operator[](size_type i)
 
 template< typename T >
 const MDArrayView< T >
-MDArrayRCP< T >::operator[](size_type i) const
+MDArrayRCP< T >::operator[](dim_type i) const
 {
   // Note: array bounds checking, if active, will be performed by the
   // MDArrayView class
@@ -1218,7 +1251,7 @@ MDArrayRCP< T >::operator()() const
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i)
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1234,8 +1267,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i)
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j)
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1252,9 +1285,9 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k)
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1272,10 +1305,10 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k,
-                            typename MDArrayRCP< T >::size_type m)
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k,
+                            typename MDArrayRCP< T >::dim_type m)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1295,11 +1328,11 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k,
-                            typename MDArrayRCP< T >::size_type m,
-                            typename MDArrayRCP< T >::size_type n)
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k,
+                            typename MDArrayRCP< T >::dim_type m,
+                            typename MDArrayRCP< T >::dim_type n)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1320,12 +1353,12 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k,
-                            typename MDArrayRCP< T >::size_type m,
-                            typename MDArrayRCP< T >::size_type n,
-                            typename MDArrayRCP< T >::size_type p,
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k,
+                            typename MDArrayRCP< T >::dim_type m,
+                            typename MDArrayRCP< T >::dim_type n,
+                            typename MDArrayRCP< T >::dim_type p,
                             ...)
 {
 #ifdef DOMI_ENABLE_ABC
@@ -1344,9 +1377,9 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   size_type offset = i * _strides[0] + j * _strides[1] + k * _strides[2] +
                      m * _strides[3] + n * _strides[4] + p * _strides[5];
   va_start(indexes, p);
-  for (size_type axis = 6; axis < _dimensions.size(); axis++)
+  for (int axis = 6; axis < _dimensions.size(); axis++)
   {
-    size_type q = va_arg(indexes, size_type);
+    dim_type q = va_arg(indexes, dim_type);
 #ifdef DOMI_ENABLE_ABC
     assertIndex(q, axis);
 #endif
@@ -1360,7 +1393,7 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i) const
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1376,8 +1409,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i) const
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j) const
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1394,9 +1427,9 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k) const
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1414,10 +1447,10 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k,
-                            typename MDArrayRCP< T >::size_type m) const
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k,
+                            typename MDArrayRCP< T >::dim_type m) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1437,11 +1470,11 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k,
-                            typename MDArrayRCP< T >::size_type m,
-                            typename MDArrayRCP< T >::size_type n) const
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k,
+                            typename MDArrayRCP< T >::dim_type m,
+                            typename MDArrayRCP< T >::dim_type n) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1462,12 +1495,12 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
-                            typename MDArrayRCP< T >::size_type j,
-                            typename MDArrayRCP< T >::size_type k,
-                            typename MDArrayRCP< T >::size_type m,
-                            typename MDArrayRCP< T >::size_type n,
-                            typename MDArrayRCP< T >::size_type p,
+MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
+                            typename MDArrayRCP< T >::dim_type j,
+                            typename MDArrayRCP< T >::dim_type k,
+                            typename MDArrayRCP< T >::dim_type m,
+                            typename MDArrayRCP< T >::dim_type n,
+                            typename MDArrayRCP< T >::dim_type p,
                             ...) const
 {
 #ifdef DOMI_ENABLE_ABC
@@ -1486,9 +1519,9 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   size_type offset = i * _strides[0] + j * _strides[1] + k * _strides[2] +
                      m * _strides[3] + n * _strides[4] + p * _strides[5];
   va_start(indexes, p);
-  for (size_type axis = 6; axis < _dimensions.size(); axis++)
+  for (int axis = 6; axis < _dimensions.size(); axis++)
   {
-    size_type q = va_arg(indexes, size_type);
+    dim_type q = va_arg(indexes, dim_type);
 #ifdef DOMI_ENABLE_ABC
     assertIndex(q, axis);
 #endif
@@ -1502,7 +1535,7 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 
 template< typename T >
 void
-MDArrayRCP< T >::assign(const T & value)
+MDArrayRCP< T >::assign(const_reference value)
 {
   for (iterator it = begin(); it != end(); ++it)
     *it = value;
@@ -1512,15 +1545,15 @@ MDArrayRCP< T >::assign(const T & value)
 
 template< typename T >
 T &
-MDArrayRCP< T >::at(size_type i, ...)
+MDArrayRCP< T >::at(dim_type i, ...)
 {
   assertIndex(i, 0);
   va_list indexes;
   size_type offset = i * _strides[0];
   va_start(indexes, i);
-  for (size_type axis = 1; axis < _dimensions.size(); axis++)
+  for (int axis = 1; axis < _dimensions.size(); axis++)
   {
-    size_type j = va_arg(indexes, size_type);
+    dim_type j = va_arg(indexes, dim_type);
     assertIndex(j, axis);
     offset += j * _strides[axis];
   }
@@ -1532,15 +1565,15 @@ MDArrayRCP< T >::at(size_type i, ...)
 
 template< typename T >
 const T &
-MDArrayRCP< T >::at(size_type i, ...) const
+MDArrayRCP< T >::at(dim_type i, ...) const
 {
   assertIndex(i, 0);
   va_list indexes;
   size_type offset = i * _strides[0];
   va_start(indexes, i);
-  for (size_type axis = 1; axis < _dimensions.size(); axis++)
+  for (int axis = 1; axis < _dimensions.size(); axis++)
   {
-    size_type j = va_arg(indexes, size_type);
+    dim_type j = va_arg(indexes, dim_type);
     assertIndex(j, axis);
     offset += j * _strides[axis];
   }
@@ -1551,7 +1584,7 @@ MDArrayRCP< T >::at(size_type i, ...) const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename MDArrayRCP< T >::size_type
+size_type
 MDArrayRCP< T >::capacity() const
 {
   return _array.capacity();
@@ -1593,10 +1626,10 @@ MDArrayRCP< T >::max_size() const
 
 template< typename T >
 void
-MDArrayRCP< T >::resize(const Teuchos::ArrayView< size_type > & dims)
+MDArrayRCP< T >::resize(const Teuchos::ArrayView< dim_type > & dims)
 {
   _dimensions.assign(dims.begin(), dims.end());
-  _strides = computeStrides(dims, _layout);
+  _strides = computeStrides< size_type, dim_type >(dims, _layout);
   _array.resize(computeSize(dims));
   _ptr = _array.getRawPtr();
 }
@@ -1635,7 +1668,8 @@ MDArrayRCP< T >::getRawPtr() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
+bool operator==(const MDArrayRCP< T > & a1,
+                const MDArrayRCP< T > & a2)
 {
   return (a1() == a2());
 }
@@ -1643,7 +1677,8 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator==(const MDArray< T > & a1, const MDArrayRCP< T > & a2)
+bool operator==(const MDArray< T > & a1,
+                const MDArrayRCP< T > & a2)
 {
   return (a1() == a2());
 }
@@ -1651,7 +1686,8 @@ bool operator==(const MDArray< T > & a1, const MDArrayRCP< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator==(const MDArrayRCP< T > & a1, const MDArray< T > & a2)
+bool operator==(const MDArrayRCP< T > & a1,
+                const MDArray< T > & a2)
 {
   return (a1() == a2());
 }
@@ -1659,7 +1695,8 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArray< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator==(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2)
+bool operator==(const MDArrayView< T > & a1,
+                const MDArrayRCP< T > & a2)
 {
   return (a1 == a2());
 }
@@ -1667,7 +1704,8 @@ bool operator==(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator==(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2)
+bool operator==(const MDArrayRCP< T > & a1,
+                const MDArrayView< T > & a2)
 {
   return (a1() == a2);
 }
@@ -1675,7 +1713,8 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator!=(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
+bool operator!=(const MDArrayRCP< T > & a1,
+                const MDArrayRCP< T > & a2)
 {
   return not (a1 == a2);
 }
@@ -1699,7 +1738,8 @@ bool operator!=(const MDArrayRCP< T > & a1, const MDArray< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator!=(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2)
+bool operator!=(const MDArrayView< T > & a1,
+                const MDArrayRCP< T > & a2)
 {
   return (a1 != a2());
 }
@@ -1707,7 +1747,8 @@ bool operator!=(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-bool operator!=(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2)
+bool operator!=(const MDArrayRCP< T > & a1,
+                const MDArrayView< T > & a2)
 {
   return (a1() != a2);
 }
@@ -1715,7 +1756,8 @@ bool operator!=(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-std::ostream & operator<<(std::ostream & os, const MDArrayRCP< T > & a)
+std::ostream & operator<<(std::ostream & os,
+                          const MDArrayRCP< T > & a)
 {
   os << a.toString();
   return os;
@@ -1727,7 +1769,7 @@ std::ostream & operator<<(std::ostream & os, const MDArrayRCP< T > & a)
 
 template< typename T >
 void
-MDArrayRCP< T >::assertIndex(size_type i, int axis) const
+MDArrayRCP< T >::assertIndex(dim_type i, int axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= i && i < _dimensions[axis]), RangeError,

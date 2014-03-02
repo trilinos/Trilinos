@@ -46,20 +46,26 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
-using std::string;
-using Teuchos::Array;
-using Teuchos::ArrayView;
-using Teuchos::Tuple;
-using Teuchos::tuple;
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDVector.hpp"
-using Domi::splitStringOfIntsWithCommas;
-using Domi::TeuchosCommRCP;
 
 ////////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+
+using std::string;
+using Teuchos::Array;
+using Teuchos::ArrayView;
+using Teuchos::Tuple;
+using Teuchos::tuple;
+//typedef Domi::Ordinal Ordinal;
+typedef int Ordinal;
+using Domi::splitStringOfIntsWithCommas;
+using Domi::TeuchosCommRCP;
 
 string dims          = "8,8";
 string axisCommSizes = "-1";
@@ -67,9 +73,6 @@ string commPad       = "1,1";
 string bndryPad      = "";
 string periodic      = "";
 bool   verbose       = false;
-
-namespace
-{
 
 TEUCHOS_STATIC_SETUP()
 {
@@ -100,16 +103,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   int pid = comm->getRank();
 
   // Convert the command-line arguments into usable arrays
-  Array< int > dimVals;
+  Array< Ordinal > dimVals;
   Array< int > axisCommSizeVals;
   Array< int > commPadVals;
   Array< int > bndryPadVals;
   Array< int > periodicFlags;
-  splitStringOfIntsWithCommas(dims         , dimVals         );
-  splitStringOfIntsWithCommas(axisCommSizes, axisCommSizeVals);
-  splitStringOfIntsWithCommas(commPad      , commPadVals     );
-  splitStringOfIntsWithCommas(bndryPad     , bndryPadVals    );
-  splitStringOfIntsWithCommas(periodic     , periodicFlags   );
+  dimVals          = splitStringOfIntsWithCommas(dims         );
+  axisCommSizeVals = splitStringOfIntsWithCommas(axisCommSizes);
+  commPadVals      = splitStringOfIntsWithCommas(commPad      );
+  bndryPadVals     = splitStringOfIntsWithCommas(bndryPad     );
+  periodicFlags    = splitStringOfIntsWithCommas(periodic     );
 
   // Fill out the axisCommSizeVals, if needed
   int numDims = dimVals.size();
@@ -142,14 +145,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
                                   periodicFlags() ));
 
   // Construct the MDMap
-  Teuchos::RCP< const Domi::MDMap< int > > mdMap =
-    Teuchos::rcp(new Domi::MDMap< int >(mdComm,
-                                        dimVals(),
-                                        commPadVals(),
-                                        bndryPadVals() ));
+  Teuchos::RCP< const Domi::MDMap<> > mdMap =
+    Teuchos::rcp(new Domi::MDMap<>(mdComm,
+                                   dimVals(),
+                                   commPadVals(),
+                                   bndryPadVals() ));
 
   // Construct the MDVector and extract the MDArrayView
-  Domi::MDVector< Sca, int > mdVector(mdMap);
+  Domi::MDVector< Sca >    mdVector(mdMap);
   Domi::MDArrayView< Sca > mdArray = mdVector.getDataNonConst();
 
   // Initilize with -1 everywhere

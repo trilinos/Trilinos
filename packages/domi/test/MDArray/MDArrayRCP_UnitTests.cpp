@@ -69,9 +69,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, defaultConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
   Array< T > a(60);
-  MDArrayRCP< T > mdar(a,tuple< size_type >(3,4,5));
+  MDArrayRCP< T > mdar(a,tuple< dim_type >(3,4,5));
   TEST_EQUALITY(mdar.num_dims(), 3);
   TEST_EQUALITY(mdar.dimension(0), 3);
   TEST_EQUALITY(mdar.dimension(1), 4);
@@ -85,16 +85,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructorBad, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
   Array< T > a(50);
-  TEST_THROW(MDArrayRCP< T > mdar(a,tuple< size_type >(8,8)), RangeError);
+  TEST_THROW(MDArrayRCP< T > mdar(a,tuple< dim_type >(8,8)), RangeError);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsOrderConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
   Array< T > a(60);
-  MDArrayRCP< T > mdar(a,tuple< size_type >(3,4,5),Domi::C_ORDER);
+  MDArrayRCP< T > mdar(a,tuple< dim_type >(3,4,5),Domi::C_ORDER);
   TEST_EQUALITY(mdar.num_dims(), 3);
   TEST_EQUALITY(mdar.dimension(0), 3);
   TEST_EQUALITY(mdar.dimension(1), 4);
@@ -108,8 +108,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsOrderConstructor, T 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
-  MDArrayRCP< T > mdar(tuple< size_type >(3,4,5));
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  MDArrayRCP< T > mdar(tuple< dim_type >(3,4,5));
   TEST_EQUALITY(mdar.num_dims(), 3);
   TEST_EQUALITY(mdar.dimension(0), 3);
   TEST_EQUALITY(mdar.dimension(1), 4);
@@ -123,8 +123,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsValConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
-  MDArrayRCP< T > mdar(tuple< size_type >(3,4), 12);
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  MDArrayRCP< T > mdar(tuple< dim_type >(3,4), 12);
   TEST_EQUALITY(mdar.num_dims(), 2);
   TEST_EQUALITY(mdar.dimension(0), 3);
   TEST_EQUALITY(mdar.dimension(1), 4);
@@ -148,8 +148,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsValConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, copyConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
-  MDArrayRCP< T > mdar1(tuple< size_type >(2,3), 2);
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  MDArrayRCP< T > mdar1(tuple< dim_type >(2,3), 2);
   MDArrayRCP< T > mdar2(mdar1);
   TEST_EQUALITY(mdar1.num_dims(),   mdar2.num_dims()  );
   TEST_EQUALITY(mdar1.dimension(0), mdar2.dimension(0));
@@ -218,8 +218,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperatorMDArrayView, T 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, assignmentOperator, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
-  MDArrayRCP< T > mdar1(tuple< size_type >(2,2,2), 8);
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  MDArrayRCP< T > mdar1(tuple< dim_type >(2,2,2), 8);
   MDArrayRCP< T > mdar2 = mdar1;
   TEST_EQUALITY(mdar1.num_dims(),   mdar2.num_dims()  );
   TEST_EQUALITY(mdar1.dimension(0), mdar2.dimension(0));
@@ -468,13 +468,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, clearEmpty, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, resize, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
   MDArrayRCP< T > a = generateMDArrayRCP< T >(11,4);
   TEST_EQUALITY_CONST(a.num_dims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 11);
   TEST_EQUALITY_CONST(a.dimension(1),  4);
   TEUCHOS_ASSERT(!a.empty());
-  a.resize(tuple< size_type >(5,9,3));
+  a.resize(tuple< dim_type >(5,9,3));
   TEST_EQUALITY_CONST(a.num_dims(), 3);
   TEST_EQUALITY_CONST(a.dimension(0), 5);
   TEST_EQUALITY_CONST(a.dimension(1), 9);
@@ -505,9 +505,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toStringNull, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toString1D, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
+  typedef typename MDArrayRCP< T >::dim_type dim_type;
   T val = 3;
-  MDArrayRCP< T > a(tuple< size_type >(3), val);
+  MDArrayRCP< T > a(tuple< dim_type >(3), val);
   TEST_EQUALITY_CONST(a.toString(), "[3, 3, 3]");
 }
 

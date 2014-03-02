@@ -57,8 +57,46 @@
 namespace Domi
 {
 
-/** \brief Used to specify the order in which elements of an MDArray,
- *         MDArrayView, or MDArrayRCP are stored.
+/** \name Domi types */
+//@{
+
+////////////////////////////////////////////////////////////////////////
+
+/** \brief The Domi size_type has the capacity to describe the entire
+ *         size of the allocated buffer
+ *
+ * Data buffers in Domi are stored within MDArray, MDArrayView, and
+ * MDArrayRCP objects.  These in turn use std::vector to allocate
+ * their data.  Thus, by default, the Domi::size_type is the same type
+ * as std:vector<T>::size_type, although it can be changed at
+ * configuration time by setting Teuchos_ORDINAL_TYPE.
+ */
+typedef Teuchos::Ordinal size_type;
+
+/** \brief The Domi dim_type is the ordinal type used by dimensions
+ *         and indexes, both local and global
+ *
+ * The default type for dim_type is int.  This means that the maximum
+ * size of a multi-dimensional Domi data structure is (2**31)**n =
+ * ~2.1B**n, where n is the number of dimensions (or the maximum value
+ * of size_type, whichever is smaller).  This should be sufficient for
+ * the largest problems under consideration for the forseeable future.
+ * MPI arrays also use ints for the same reason.  The type specified
+ * by dim_type can be altered at configuration time by setting
+ * Domi_ORDINAL_TYPE.
+ */
+typedef Ordinal dim_type;
+
+/** \brief The Domi difference_type is the same as the dim_type, not
+ *         the size_type 
+*/
+typedef Ordinal difference_type;
+
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Layout enumeration, used to specify the order in which
+ *         elements of an MDArray, MDArrayView, or MDArrayRCP are
+ *         stored.
  *
  *  Note that there are only two orderings supported, but multiple
  *  ways to refer to them.
@@ -80,6 +118,8 @@ enum Layout
   /** \brief Default order, currently first index fastest */
   DEFAULT_ORDER       = 1
 };
+
+//@}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -116,23 +156,23 @@ struct remove_const< const T >
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given the
  *         dimensions (as an Array) and the storage order.
  */
-template< typename T >
-Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
-                                   const Layout layout)
+template< class SIZE_TYPE, class DIM_TYPE >
+Teuchos::Array< SIZE_TYPE >
+computeStrides(const Teuchos::Array< DIM_TYPE > & dimensions,
+               const Layout layout)
 {
-  typedef typename Teuchos::Array< T >::size_type size_type;
-  size_type n = dimensions.size();
-  Teuchos::Array< T > strides(n);
+  int n = dimensions.size();
+  Teuchos::Array< SIZE_TYPE > strides(n);
   if (layout == FIRST_INDEX_FASTEST)
   {
     strides[0] = 1;
-    for (size_type axis = 1; axis < n; ++axis)
+    for (int axis = 1; axis < n; ++axis)
       strides[axis] = strides[axis-1] * dimensions[axis-1];
   }
   else
   {
     strides[n-1] = 1;
-    for (size_type axis = n-2; axis >= 0; --axis)
+    for (int axis = n-2; axis >= 0; --axis)
       strides[axis] = strides[axis+1] * dimensions[axis+1];
   }
   return strides;
@@ -144,23 +184,23 @@ Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an ArrayView.
  */
-template< typename T >
-Teuchos::Array< T >
-computeStrides(const Teuchos::Array< T > & dimensions,
+template< class SIZE_TYPE, class DIM_TYPE >
+Teuchos::Array< SIZE_TYPE >
+computeStrides(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
                const Layout layout)
 {
   // In the MDArray<T>(const MDArrayView<T> &) constructor, I try to
   // pass the MDArrayView dimensions to computeStrides(), but they
   // come in as ArrayView<const T> (for reasons I can't determine) and
   // cause all sorts of const-correctness problems.  So I copy them
-  // into a new Array<T> and pass its view to the main
+  // into a new Array<T> and pass its reference to the main
   // computeStrides() function.  Fortunately, the array of dimensions
   // is small.
-  Teuchos::Array< T > nonConstDims(0);
+  Teuchos::Array< DIM_TYPE > nonConstDims(0);
   nonConstDims.insert(nonConstDims.begin(),
                       dimensions.begin(),
                       dimensions.end());
-  return computeStrides(nonConstDims(), layout);
+  return computeStrides< SIZE_TYPE, DIM_TYPE >(nonConstDims, layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -169,12 +209,12 @@ computeStrides(const Teuchos::Array< T > & dimensions,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an Arrayview.
  */
-template< typename T >
-T computeSize(const Teuchos::ArrayView< T > & dimensions)
+template< class DIM_TYPE >
+size_type computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions)
 {
-  typedef typename Teuchos::ArrayView< T >::size_type size_type;
-  T result = 1;
-  for (size_type axis = 0; axis < dimensions.size(); ++axis)
+  //typedef typename Teuchos::ArrayView< dim_type >::size_type size_type;
+  size_type result = 1;
+  for (int axis = 0; axis < dimensions.size(); ++axis)
     result *= dimensions[axis];
   return result;
 }
@@ -185,8 +225,8 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions)
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an Array.
  */
-template< typename T >
-T computeSize(const Teuchos::Array< T > & dimensions)
+template< class DIM_TYPE >
+size_type computeSize(const Teuchos::Array< DIM_TYPE > & dimensions)
 {
   // In the MDArray<T>(const MDArrayView<T> &) constructor, I try to
   // pass the MDArrayView dimensions to computeSize(), but they come
@@ -194,7 +234,7 @@ T computeSize(const Teuchos::Array< T > & dimensions)
   // cause all sorts of const-correctness problems.  So I copy them
   // into a new Array<T> and pass its view to the main computeSize()
   // function.  Fortunately, the array of dimensions is small.
-  Teuchos::Array< T > nonConstDims(0);
+  Teuchos::Array< DIM_TYPE > nonConstDims(0);
   nonConstDims.insert(nonConstDims.begin(),
                       dimensions.begin(),
                       dimensions.end());
@@ -207,14 +247,13 @@ T computeSize(const Teuchos::Array< T > & dimensions)
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions and strides.
  */
-template< typename T >
-T computeSize(const Teuchos::ArrayView< T > & dimensions,
-	      const Teuchos::ArrayView< T > & strides)
+template< class SIZE_TYPE, class DIM_TYPE >
+SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
+                      const Teuchos::ArrayView< SIZE_TYPE > & strides)
 {
-  typedef typename Teuchos::ArrayView< T >::size_type size_type;
-  // T might be a const type, but we need result to be non-const
-  typename remove_const< T >::type result = 1;
-  for (size_type axis = 0; axis < dimensions.size(); ++axis)
+  // SIZE_TYPE might be a const type, but we need result to be non-const
+  typename remove_const< SIZE_TYPE >::type result = 1;
+  for (int axis = 0; axis < dimensions.size(); ++axis)
     result += (dimensions[axis]-1) * strides[axis];
   return result;
 }
@@ -278,8 +317,8 @@ computePeriodic(int numDims,
 /** \brief Given a std::string which contains comma-separated integers,
  *         return an array of ints.
  */
-void splitStringOfIntsWithCommas(std::string data,
-                                 Teuchos::Array< int > & result);
+Teuchos::Array< int >
+splitStringOfIntsWithCommas(std::string data);
 
 ////////////////////////////////////////////////////////////////////////
 

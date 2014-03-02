@@ -79,7 +79,7 @@ TEUCHOS_STATIC_SETUP()
 #if 1
 TEUCHOS_UNIT_TEST( MDComm, regularizeAxisSizes )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   Array< int > axisCommSizesActual =
     Domi::regularizeAxisSizes(comm->getSize(), numDims, axisCommSizes);
@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST( MDComm, regularizeAxisSizes )
 
 TEUCHOS_UNIT_TEST( MDComm, axisCommSizesConstructor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // If axisCommSizes is shorter than numDims, pad it with -1 values
   // at the end
@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesConstructor )
 
 TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // If axisCommSizes is shorter than numDims, pad it with -1 values
   // at the end
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
 
 TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // If axisCommSizes is shorter than numDims, pad it with -1 values
   // at the end
@@ -185,10 +185,9 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 #endif
 }
 
-#if 1
 TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // If axisCommSizes is shorter than numDims, pad it with -1 values
   // at the end
@@ -245,7 +244,7 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims);
 
@@ -262,7 +261,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesConstructor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, axisCommSizes);
 
@@ -280,7 +279,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesConstructor )
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesPeriodicConstructor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
@@ -302,7 +301,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesPeriodicConstructor )
 
 TEUCHOS_UNIT_TEST( MDComm, getTeuchosComm )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, axisCommSizes);
   TeuchosCommRCP newComm = mdComm.getTeuchosComm();
@@ -313,7 +312,7 @@ TEUCHOS_UNIT_TEST( MDComm, getTeuchosComm )
 
 TEUCHOS_UNIT_TEST( MDComm, getAxisRank )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, axisCommSizes);
   // Get the final axisCommSizes and compute the strides
@@ -346,7 +345,7 @@ TEUCHOS_UNIT_TEST( MDComm, getAxisRank )
 
 TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, axisCommSizes);
   // Get the final axisCommSizes and compute the strides
@@ -385,7 +384,7 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
 
 TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
@@ -432,7 +431,7 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
 
 TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, axisCommSizes);
   // Get the final axisCommSizes and compute the strides
@@ -471,7 +470,7 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
 
 TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
@@ -518,7 +517,7 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
 
 TEUCHOS_UNIT_TEST( MDComm, exceptions )
 {
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // Construct MDComm
   MDComm mdComm(comm, numDims, axisCommSizes);
@@ -542,7 +541,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
 {
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
@@ -611,7 +610,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
 {
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
@@ -697,7 +696,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
 {
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
@@ -783,7 +782,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
 {
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
@@ -870,7 +869,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
 {
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the actual axisCommSizes, in case the command-line
@@ -998,7 +997,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
 {
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
   // Construct the periodic flags
   Array< int > periodic(numDims, 0);
   periodic[0] = 1;
@@ -1052,6 +1051,5 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
     TEST_EQUALITY(subMDComm.getNumDims(), 0);
   }
 }
-#endif
 
 }  // namespace

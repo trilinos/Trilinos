@@ -102,7 +102,13 @@ public:
   /** \name MDARRAY typedefs */
   //@{
 
+  /** \brief Size type */
   typedef typename MDARRAY::size_type  size_type;
+
+  /** \brief Dim type */
+  typedef typename MDARRAY::dim_type dim_type;
+
+  /** \brief Value type */
   typedef typename MDARRAY::value_type value_type;
 
   //@}
@@ -110,7 +116,7 @@ public:
   /** \name Constructors and Destructor */
   //@{
 
-  /** \brief MDARRAY constructor
+  /** \brief MDRevIterator constructor
    *
    *  \param mdarray [in] The multi-dimensional array object on which
    *         the iterator will act upon
@@ -138,7 +144,7 @@ public:
    *  index.
    */
   MDRevIterator(const MDARRAY & mdarray,
-                const Teuchos::ArrayView< size_type > & index);
+                const Teuchos::ArrayView< dim_type > & index);
 
   /** \brief Copy constructor
    *
@@ -195,7 +201,7 @@ public:
    *
    *  \param axis [in] Requested axis for index value
    */
-  size_type index(size_type axis) const;
+  dim_type index(int axis) const;
 
   /** \brief Stream output operator
    */
@@ -206,7 +212,7 @@ private:
 
   // A copy of the dimensions of the multi-dimensional array being
   // reverse iterated
-  const Teuchos::Array< size_type > _dimensions;
+  const Teuchos::Array< dim_type > _dimensions;
 
   // A copy of the strides of the multi-dimensional array being
   // reverse iterated
@@ -221,11 +227,11 @@ private:
   Layout _layout;
 
   // The multi-dimensional index of the current reverse iterate
-  Teuchos::Array< size_type > _index;
+  Teuchos::Array< dim_type > _index;
 
   // A temporary value used to indicate the axis of the index
   // currently being incremented or decremented
-  mutable size_type _axis;
+  mutable int _axis;
 
   // A temporary value used to indicate whether an increment or
   // decrement operation is complete
@@ -242,7 +248,7 @@ private:
   void assign_end_index();
 
   // Assert that the given index is valid for the given axis
-  void assert_index(size_type i, size_type axis) const;
+  void assert_index(dim_type i, int axis) const;
 
 };
 
@@ -275,7 +281,7 @@ MDRevIterator< MDARRAY >::MDRevIterator(const MDARRAY & mdarray,
 template< class MDARRAY >
 MDRevIterator< MDARRAY >::
 MDRevIterator(const MDARRAY & mdarray,
-              const Teuchos::ArrayView< size_type > & index) :
+              const Teuchos::ArrayView< dim_type > & index) :
   _dimensions(mdarray._dimensions),
   _strides(mdarray._strides),
   _ptr(mdarray._ptr),
@@ -487,9 +493,9 @@ MDRevIterator< MDARRAY >::operator--(int)
 ////////////////////////////////////////////////////////////////////////
 
 template< class MDARRAY >
-typename MDRevIterator< MDARRAY >::size_type
+typename MDRevIterator< MDARRAY >::dim_type
 MDRevIterator< MDARRAY >::
-index(typename MDRevIterator< MDARRAY >::size_type axis) const
+index(int axis) const
 {
   return _index[axis];
 }
@@ -511,7 +517,7 @@ template< class MDARRAY >
 void
 MDRevIterator< MDARRAY >::assign_begin_index()
 {
-  for (typename MDRevIterator< MDARRAY >::size_type axis = 0;
+  for (int axis = 0;
        axis < _index.size(); ++axis)
     _index[axis] = _dimensions[axis] - 1;
 }
@@ -523,7 +529,7 @@ void
 MDRevIterator< MDARRAY >::assign_end_index()
 {
   // We choose the end index to be equal to an array of -1 values
-  for (typename MDRevIterator< MDARRAY >::size_type axis = 0;
+  for (int axis = 0;
        axis < _index.size(); ++axis)
     _index[axis] = -1;
 }
@@ -533,8 +539,8 @@ MDRevIterator< MDARRAY >::assign_end_index()
 template< class MDARRAY >
 void
 MDRevIterator< MDARRAY >::
-assert_index(typename MDRevIterator< MDARRAY >::size_type i,
-             typename MDRevIterator< MDARRAY >::size_type axis) const
+assert_index(typename MDRevIterator< MDARRAY >::dim_type i,
+             int axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= i && i < _dimensions[axis]), RangeError,

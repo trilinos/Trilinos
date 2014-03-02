@@ -152,10 +152,10 @@ computePeriodic(int numDims,
 
 ////////////////////////////////////////////////////////////////////////
 
-void splitStringOfIntsWithCommas(std::string data,
-                                 Teuchos::Array< int > & result)
+Teuchos::Array< int >
+splitStringOfIntsWithCommas(std::string data)
 {
-  result.clear();
+  Teuchos::Array< int > result;
   size_t current = 0;
   while (current < data.size())
   {
@@ -164,6 +164,7 @@ void splitStringOfIntsWithCommas(std::string data,
     result.push_back(atoi(data.substr(current, next-current).c_str()));
     current = next + 1;
   }
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////

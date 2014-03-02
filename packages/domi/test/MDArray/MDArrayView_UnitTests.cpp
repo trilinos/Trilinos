@@ -69,9 +69,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, defaultConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, arrayViewDimsConstructor, T )
 {
-  typedef typename MDArrayView< T >::size_type size_type;
+  typedef typename MDArrayView< T >::dim_type dim_type;
   Array< T > a(314);
-  MDArrayView< T > av(a, tuple< size_type >(12,25));
+  MDArrayView< T > av(a, tuple< dim_type >(12,25));
   TEST_EQUALITY_CONST(av.num_dims(),     2);
   TEST_EQUALITY_CONST(av.dimension(0),  12);
   TEST_EQUALITY_CONST(av.dimension(1),  25);
@@ -80,9 +80,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, arrayViewDimsConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, arrayViewDimsConstructorBad, T )
 {
-  typedef typename MDArrayView< T >::size_type size_type;
+  typedef typename MDArrayView< T >::dim_type dim_type;
   Array< T > a(100);
-  TEST_THROW(MDArrayView< T > av(a, tuple< size_type >(15,12)), RangeError);
+  TEST_THROW(MDArrayView< T > av(a, tuple< dim_type >(15,12)), RangeError);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, copyConstructor, T )
@@ -398,9 +398,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toStringNull, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toString1D, T )
 {
-  typedef typename MDArray< T >::size_type size_type;
+  typedef typename MDArray< T >::dim_type dim_type;
   T val = 3;
-  MDArray< T > a(tuple< size_type >(3), val);
+  MDArray< T > a(tuple< dim_type >(3), val);
   MDArrayView< T > av(a());
   TEST_EQUALITY_CONST(av.toString(), "[3, 3, 3]");
 }

@@ -15,8 +15,13 @@ IF(Domi_ENABLE_Tpetra)
 ENDIF()
 
 #
-# Set the Domi_ORDINAL_TYPE
-SET(${PACKAGE_NAME}_ORDINAL_TYPE ptrdiff_t
+# Here we set the Domi_ORDINAL_TYPE to be int.  This should be
+# sufficient for all conceivable situations, even for global ordinals
+# for distributed MDVectors.  We do not run into the same upper bound
+# on problem size that, say, Epetra does, because Domi is a
+# multi-dimensional package, and each dimension can be the maximum
+# value supported by int.
+SET(${PACKAGE_NAME}_ORDINAL_TYPE int
   CACHE STRING
   "Select the data type for Domi_Ordinal (Domi::Ordinal)."
   )

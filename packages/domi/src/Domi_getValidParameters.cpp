@@ -124,27 +124,25 @@ RCP< const ParameterList > getValidParameters()
                "periodic).",
                periodicValidator);
 
-    // "dimensions" parameter applies to MDMap
-    RCP< EnhancedNumberValidator< long int > > dimensionNumber =
-      rcp(new EnhancedNumberValidator< long int >());
+    // "dimensions" parameter applies to MDMap and MDVector
+    RCP< EnhancedNumberValidator< dim_type > > dimensionNumber =
+      rcp(new EnhancedNumberValidator< dim_type >());
      dimensionNumber->setMin(0);
 
-    RCP< const EnhancedNumberValidator< long int > > constDimensionNumber =
-    	rcp_const_cast< EnhancedNumberValidator< long int > >(dimensionNumber);
+    RCP< const EnhancedNumberValidator< dim_type > > constDimensionNumber =
+    	rcp_const_cast< EnhancedNumberValidator< dim_type > >(dimensionNumber);
 
      RCP< const ParameterEntryValidator > dimensionValidator =
      	rcp< const ParameterEntryValidator >
-     	(new ArrayNumberValidator< long int >(constDimensionNumber));
+     	(new ArrayNumberValidator< dim_type >(constDimensionNumber));
 
-    Array< long int > dimensions(1);
+    Array< dim_type > dimensions(1);
     dimensions[0] = 0;
     plist->set("dimensions",
                dimensions,
                "An array of ordinals specifying the global dimensions of "
                "the MDMap. The length of this array should be the same as "
-               "the length of the axisCommSizes array. Note that this is "
-               "an array of long int and it will need to be copied to an "
-               "array of type GlobalOrd.",
+               "the length of the axisCommSizes array.",
                dimensionValidator);
 
     // Both boundary pad and communication pad use the same validator,
@@ -163,7 +161,7 @@ RCP< const ParameterList > getValidParameters()
       //(new ScalarOrArrayNumberValidator< int >(constPadNumber));
       (new ArrayNumberValidator< int >(constPadNumber));
 
-    // "boundary pad" parameter applies to MDMap
+    // "boundary pad" parameter applies to MDMap and MDVector
     plist->set("boundary pad",
                pad,
                "A scalar or an array of ints specifying the size of the "
@@ -173,7 +171,7 @@ RCP< const ParameterList > getValidParameters()
                "zero.",
                padValidator);
 
-    // "communication pad" parameter applies to MDMap
+    // "communication pad" parameter applies to MDMap and MDVector
     plist->set("communication pad",
                pad,
                "A scalar or an array of ints specifying the size of the "
@@ -183,7 +181,7 @@ RCP< const ParameterList > getValidParameters()
                "to be zero.",
                padValidator);
 
-    // "layout" parameter applies to MDMap
+    // "layout" parameter applies to MDMap and MDVector
     string layout = "Default";
 
     Array< string >

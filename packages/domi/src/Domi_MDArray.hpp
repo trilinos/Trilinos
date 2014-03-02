@@ -67,7 +67,8 @@ template< typename T > class MDArray;
  * \relates MDArray
  */
 template< typename T >
-bool operator==(const MDArray< T > & a1, const MDArray< T > & a2);
+bool operator==(const MDArray< T > & a1,
+                const MDArray< T > & a2);
 
 /** \brief MDArray/MDArrayView equality operator.
  *
@@ -75,7 +76,8 @@ bool operator==(const MDArray< T > & a1, const MDArray< T > & a2);
  * \relates MDArrayView
  */
 template< typename T >
-bool operator==(const MDArray< T > & a1, const MDArrayView< T > & a2);
+bool operator==(const MDArray< T > & a1,
+                const MDArrayView< T > & a2);
 
 /** \brief MDArrayView/MDArray equality operator.
  *
@@ -83,21 +85,24 @@ bool operator==(const MDArray< T > & a1, const MDArrayView< T > & a2);
  * \relates MDArrayView
  */
 template< typename T >
-bool operator==(const MDArrayView< T > & a1, const MDArray< T > & a2);
+bool operator==(const MDArrayView< T > & a1,
+                const MDArray< T > & a2);
 
 /** \brief Inequality operator.
  *
  * \relates MDArray
  */
 template< typename T >
-bool operator!=(const MDArray< T > & a1, const MDArray< T > & a2);
+bool operator!=(const MDArray< T > & a1,
+                const MDArray< T > & a2);
 
 /** \brief MDArrayView inequality operator.
  *
  * \relates MDArray
  */
 template< typename T >
-bool operator!=(const MDArray< T > & a1, const MDArrayView< T > & a2);
+bool operator!=(const MDArray< T > & a1,
+                const MDArrayView< T > & a2);
 
 /** \brief MDArrayView/MDArray inequality operator.
  *
@@ -105,7 +110,8 @@ bool operator!=(const MDArray< T > & a1, const MDArrayView< T > & a2);
  * \relates MDArrayView
  */
 template< typename T >
-bool operator!=(const MDArrayView< T > & a1, const MDArray< T > & a2);
+bool operator!=(const MDArrayView< T > & a1,
+                const MDArray< T > & a2);
 
 /** \brief Non-member swap
  *
@@ -279,11 +285,32 @@ class MDArray
 {
 public:
 
-  /** \name Teuchos::Array typedefs */
+  /** \name Public types */
   //@{
 
-  typedef typename Teuchos::Array< T >::size_type  size_type;
-  typedef typename Teuchos::Array< T >::value_type value_type;
+  /** \brief Size type */
+  typedef Domi::size_type size_type;
+
+  /** \brief Dim type */
+  typedef Domi::dim_type dim_type;
+
+  /** \brief Difference type */
+  typedef Domi::difference_type difference_type;
+
+  /** \brief Value type */
+  typedef T value_type;
+
+  /** \brief Pointer type */
+  typedef T* pointer;
+
+  /** \brief Const pointer type */
+  typedef const T* const_pointer;
+
+  /** \brief Reference type */
+  typedef T& reference;
+
+  /** \brief Const reference type */
+  typedef const T& const_reference;
 
   //@}
 
@@ -303,7 +330,7 @@ public:
    *        is with a Teuchos::Tuple returned by the non-member
    *        <tt>Teuchos::tuple<T>()</tt> function.
    */
-  inline MDArray(const Teuchos::ArrayView< size_type > & dims);
+  inline MDArray(const Teuchos::ArrayView< dim_type > & dims);
 
   /** \brief Constructor with dimensions and default value,
    *         with optional storage order
@@ -319,8 +346,8 @@ public:
    * \param layout [in] An enumerated value specifying the internal
    *        storage order of the <tt>MDArray</tt>
    */
-  inline MDArray(const Teuchos::ArrayView< size_type > & dims,
-		 const value_type & value,
+  inline MDArray(const Teuchos::ArrayView< dim_type > & dims,
+		 const T & value,
 		 const Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order,
@@ -337,9 +364,9 @@ public:
    * \param value [in] The default value for filling the
    *        <tt>MDArray</tt>
    */
-  inline MDArray(const Teuchos::ArrayView< size_type > & dims,
+  inline MDArray(const Teuchos::ArrayView< dim_type > & dims,
 		 const Layout layout,
-		 const value_type & value = value_type());
+		 const T & value = value_type());
 
   /** \brief Copy constructor
    *
@@ -368,14 +395,14 @@ public:
 
   /** \brief Return an array of dimensions
    */
-  inline const Teuchos::Array< size_type > & dimensions() const;
+  inline const Teuchos::Array< dim_type > & dimensions() const;
 
   /** \brief Return the dimension of the given axis
    *
    * \param axis [in] The axis being queried (0 for the first axis,
    *        1 for the second axis, and so forth)
    */
-  inline size_type dimension(int axis) const;
+  inline dim_type dimension(int axis) const;
 
   /** \brief Return the total size of the <tt>MDArray</tt>
    */
@@ -497,7 +524,7 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArray</tt>.
    */
-  MDArrayView< T > operator[](size_type i);
+  MDArrayView< T > operator[](dim_type i);
 
   /** \brief Sub-array const access operator.  The returned
    *  <tt>MDArrayView</tt> object will have one fewer dimensions than
@@ -508,7 +535,7 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArray</tt>.
    */
-  const MDArrayView< T > operator[](size_type i) const;
+  const MDArrayView< T > operator[](dim_type i) const;
 
   /** \brief Sub-array access operator.  The returned <tt>MDArrayView</tt>
    *  object will have the same number of dimensions as the calling
@@ -554,7 +581,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 1D, an
    * exception will be thrown.
    */
-  inline T & operator()(size_type i);
+  inline reference operator()(dim_type i);
 
   /** \brief Non-const 2D element access operator
    *
@@ -566,7 +593,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 2D, an
    * exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j);
+  inline reference operator()(dim_type i, dim_type j);
 
   /** \brief Non-const 3D element access operator
    *
@@ -580,7 +607,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 3D, an
    * exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k);
+  inline reference operator()(dim_type i, dim_type j, dim_type k);
 
   /** \brief Non-const 4D element access operator
    *
@@ -596,7 +623,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 4D, an
    * exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k, size_type m);
+  inline reference operator()(dim_type i, dim_type j, dim_type k, dim_type m);
 
   /** \brief Non-const 5D element access operator
    *
@@ -614,8 +641,8 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 5D, an
    * exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k, size_type m,
-                        size_type n);
+  inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m,
+                        dim_type n);
 
   /** \brief Non-const 6D and higher element access operator
    *
@@ -637,8 +664,8 @@ public:
    * <tt>MDArray</tt>s.  If DOMI_ENABLE_ABC is true and the
    * <tt>MDArray</tt> is less than 6D, an exception will be thrown.
    */
-  inline T & operator()(size_type i, size_type j, size_type k, size_type m,
-                        size_type n, size_type p, ...);
+  inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m,
+                        dim_type n, dim_type p, ...);
 
   /** \brief Const 1D element access operator
    *
@@ -648,7 +675,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 1D, an
    * exception will be thrown.
    */
-  inline const T & operator()(size_type i) const;
+  inline const T & operator()(dim_type i) const;
 
   /** \brief Const 2D element access operator
    *
@@ -660,7 +687,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 2D, an
    * exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j) const;
+  inline const T & operator()(dim_type i, dim_type j) const;
 
   /** \brief Const 3D element access operator
    *
@@ -674,7 +701,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 3D, an
    * exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k) const;
 
   /** \brief Const 4D element access operator
    *
@@ -690,8 +717,8 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 4D, an
    * exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k,
-                              size_type m) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k,
+                              dim_type m) const;
 
   /** \brief Const 5D element access operator
    *
@@ -709,8 +736,8 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 5D, an
    * exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k,
-                              size_type m, size_type n) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k,
+                              dim_type m, dim_type n) const;
 
   /** \brief Const 6D and higher element access operator
    *
@@ -732,8 +759,8 @@ public:
    * <tt>MDArray</tt>s.  If DOMI_ENABLE_ABC is true and the
    * <tt>MDArray</tt> is less than 6D, an exception will be thrown.
    */
-  inline const T & operator()(size_type i, size_type j, size_type k,
-                              size_type m, size_type n, size_type p, ...) const;
+  inline const T & operator()(dim_type i, dim_type j, dim_type k,
+                              dim_type m, dim_type n, dim_type p, ...) const;
 
   //@}
 
@@ -754,7 +781,7 @@ public:
    *        number of arguments as the number of dimensions of the
    *        <tt>MDArray</tt>.
    */
-  T & at(size_type i, ...);
+  reference at(dim_type i, ...);
 
   /** \brief Const single element access method with bounds checking
    *
@@ -764,7 +791,7 @@ public:
    *        number of arguments as the number of dimensions of the
    *        <tt>MDArray</tt>.
    */
-  const T & at(size_type i, ...) const;
+  const T & at(dim_type i, ...) const;
 
   /** \brief Return the capacity of the underlying <tt>Teuchos::Array</tt>
    */
@@ -786,7 +813,7 @@ public:
    *
    * \param dims [in] New dimensions of the resized <tt>MDArray</tt>
    */
-  void resize(const Teuchos::ArrayView< size_type > & dims);
+  void resize(const Teuchos::ArrayView< dim_type > & dims);
 
   /** \brief Swap this <tt>MDArray</tt> with the given <tt>MDArray</tt>
    */
@@ -802,7 +829,7 @@ public:
 
   /** \brief Return a const raw pointer to the beginning of the
    *         <tt>MDArray</tt> or NULL if unsized. */
-  inline const T * getRawPtr() const;
+  inline const_pointer getRawPtr() const;
 
   //@}
 
@@ -815,54 +842,62 @@ public:
   /** \brief Equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArray< T2 > & a1, const MDArray< T2 > & a2);
+  friend bool operator==(const MDArray< T2 > & a1,
+                         const MDArray< T2 > & a2);
 
   /** \brief MDArray/MDArrayView equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArray< T2 > & a1, const MDArrayView< T2 > & a2);
+  friend bool operator==(const MDArray< T2 > & a1,
+                         const MDArrayView< T2 > & a2);
 
   /** \brief MDArrayView/MDArray equality operator.
    */
   template< typename T2 >
-  friend bool operator==(const MDArrayView< T2 > & a1, const MDArray< T2 > & a2);
+  friend bool operator==(const MDArrayView< T2 > & a1,
+                         const MDArray< T2 > & a2);
 
   /** \brief Inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArray< T2 > & a1, const MDArray< T2 > & a2);
+  friend bool operator!=(const MDArray< T2 > & a1,
+                         const MDArray< T2 > & a2);
 
   /** \brief MDArray/MDArrayView inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArray< T2 > & a1, const MDArrayView< T2 > & a2);
+  friend bool operator!=(const MDArray< T2 > & a1,
+                         const MDArrayView< T2 > & a2);
 
   /** \brief MDArrayView/MDArray inequality operator.
    */
   template< typename T2 >
-  friend bool operator!=(const MDArrayView< T2 > & a1, const MDArray< T2 > & a2);
+  friend bool operator!=(const MDArrayView< T2 > & a1,
+                         const MDArray< T2 > & a2);
 
   /** \brief Stream output operator
    */
   template< typename T2 >
-  friend std::ostream & operator<<(std::ostream & os, const MDArray< T2 > & a);
+  friend std::ostream & operator<<(std::ostream & os,
+                                   const MDArray< T2 > & a);
 
   /** \brief Swap function
    */
   template< typename T2 >
-  friend void swap(MDArray< T2 > & a1, MDArray< T2 > & a2);
+  friend void swap(MDArray< T2 > & a1,
+                   MDArray< T2 > & a2);
 
   //@}
 
 private:
-  Teuchos::Array< size_type > _dimensions;
+  Teuchos::Array< dim_type >  _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::Array< T >         _array;
   Layout                      _layout;
-  T *                         _ptr;
+  pointer                     _ptr;
 
   // Used for array bounds checking
-  void assertIndex(size_type i, int axis) const;
+  void assertIndex(dim_type i, int axis) const;
 };
 
 /////////////////////
@@ -871,7 +906,7 @@ private:
 
 template< typename T >
 MDArray< T >::MDArray() :
-  _dimensions(Teuchos::tuple< size_type >(0)),
+  _dimensions(Teuchos::tuple< dim_type >(0)),
   _strides(Teuchos::tuple< size_type >(1)),
   _array(),
   _layout(DEFAULT_ORDER),
@@ -882,9 +917,9 @@ MDArray< T >::MDArray() :
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims) :
+MDArray< T >::MDArray(const Teuchos::ArrayView< dim_type > & dims) :
   _dimensions(dims),
-  _strides(computeStrides(dims, DEFAULT_ORDER)),
+  _strides(computeStrides< size_type, dim_type >(dims, DEFAULT_ORDER)),
   _array(computeSize(dims)),
   _layout(DEFAULT_ORDER),
   _ptr(_array.getRawPtr())
@@ -894,11 +929,11 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims) :
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
-		      const value_type & value,
+MDArray< T >::MDArray(const Teuchos::ArrayView< dim_type > & dims,
+		      const T & value,
 		      const Layout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, layout)),
+  _strides(computeStrides< size_type, dim_type >(dims, layout)),
   _array(computeSize(dims), value),
   _layout(layout),
   _ptr(_array.getRawPtr())
@@ -908,11 +943,11 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
+MDArray< T >::MDArray(const Teuchos::ArrayView< dim_type > & dims,
 		      const Layout layout,
-		      const value_type & value) :
+		      const T & value) :
   _dimensions(dims),
-  _strides(computeStrides(dims, layout)),
+  _strides(computeStrides< size_type, dim_type >(dims, layout)),
   _array(computeSize(dims), value),
   _layout(layout),
   _ptr(_array.getRawPtr())
@@ -936,7 +971,8 @@ MDArray< T >::MDArray(const MDArray< T > & source) :
 template< typename T >
 MDArray< T >::MDArray(const MDArrayView< T > & source) :
   _dimensions(source.dimensions()),
-  _strides(computeStrides(source.dimensions(), source.layout())),
+  _strides(computeStrides< size_type, dim_type >(source.dimensions(),
+                                                 source.layout())),
   _array(computeSize(source.dimensions())),
   _layout(source.layout()),
   _ptr(_array.getRawPtr())
@@ -969,7 +1005,7 @@ MDArray< T >::num_dims() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
+const Teuchos::Array< dim_type > &
 MDArray< T >::dimensions() const
 {
   return _dimensions;
@@ -978,7 +1014,7 @@ MDArray< T >::dimensions() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename Teuchos::Array< T >::size_type
+dim_type
 MDArray< T >::dimension(int axis) const
 {
   return _dimensions[axis];
@@ -987,7 +1023,7 @@ MDArray< T >::dimension(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename Teuchos::Array< T >::size_type
+size_type
 MDArray< T >::size() const
 {
   return _array.size();
@@ -996,7 +1032,7 @@ MDArray< T >::size() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
+const Teuchos::Array< size_type > &
 MDArray< T >::strides() const
 {
   return _strides;
@@ -1132,7 +1168,7 @@ MDArray< T >::mdArrayView() const
 {
   Teuchos::ArrayView< T > array(const_cast< T* >(_array.getRawPtr()),
                                 _array.size());
-  Teuchos::Array< size_type > dims(_dimensions);
+  Teuchos::Array< dim_type > dims(_dimensions);
   return MDArrayView< T >(array, dims(), _layout);
 }
 
@@ -1174,7 +1210,7 @@ MDArray< T >::operator MDArrayView< const T >() const
 
 template< typename T >
 MDArrayView< T >
-MDArray< T >::operator[](size_type i)
+MDArray< T >::operator[](dim_type i)
 {
   // Note: array bounds checking, if active, will be performed by the
   // MDArrayView class
@@ -1185,7 +1221,7 @@ MDArray< T >::operator[](size_type i)
 
 template< typename T >
 const MDArrayView< T >
-MDArray< T >::operator[](size_type i) const
+MDArray< T >::operator[](dim_type i) const
 {
   // Note: array bounds checking, if active, will be performed by the
   // MDArrayView class
@@ -1234,7 +1270,7 @@ MDArray< T >::operator()() const
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i)
+MDArray< T >::operator()(typename MDArray< T >::dim_type i)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1250,8 +1286,8 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i)
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j)
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1268,9 +1304,9 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k)
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1288,10 +1324,10 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k,
-                         typename MDArray< T >::size_type m)
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k,
+                         typename MDArray< T >::dim_type m)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1311,11 +1347,11 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k,
-                         typename MDArray< T >::size_type m,
-                         typename MDArray< T >::size_type n)
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k,
+                         typename MDArray< T >::dim_type m,
+                         typename MDArray< T >::dim_type n)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1336,12 +1372,12 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k,
-                         typename MDArray< T >::size_type m,
-                         typename MDArray< T >::size_type n,
-                         typename MDArray< T >::size_type p,
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k,
+                         typename MDArray< T >::dim_type m,
+                         typename MDArray< T >::dim_type n,
+                         typename MDArray< T >::dim_type p,
                          ...)
 {
 #ifdef DOMI_ENABLE_ABC
@@ -1360,9 +1396,9 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
   size_type offset = i * _strides[0] + j * _strides[1] + k * _strides[2] +
                      m * _strides[3] + n * _strides[4] + p * _strides[5];
   va_start(indexes, p);
-  for (size_type axis = 6; axis < _dimensions.size(); axis++)
+  for (int axis = 6; axis < _dimensions.size(); axis++)
   {
-    size_type q = va_arg(indexes, size_type);
+    dim_type q = va_arg(indexes, dim_type);
 #ifdef DOMI_ENABLE_ABC
     assertIndex(q, axis);
 #endif
@@ -1376,7 +1412,7 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i) const
+MDArray< T >::operator()(typename MDArray< T >::dim_type i) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1392,8 +1428,8 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i) const
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j) const
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1410,9 +1446,9 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k) const
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1430,10 +1466,10 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k,
-                         typename MDArray< T >::size_type m) const
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k,
+                         typename MDArray< T >::dim_type m) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1453,11 +1489,11 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k,
-                         typename MDArray< T >::size_type m,
-                         typename MDArray< T >::size_type n) const
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k,
+                         typename MDArray< T >::dim_type m,
+                         typename MDArray< T >::dim_type n) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1478,12 +1514,12 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::size_type i,
-                         typename MDArray< T >::size_type j,
-                         typename MDArray< T >::size_type k,
-                         typename MDArray< T >::size_type m,
-                         typename MDArray< T >::size_type n,
-                         typename MDArray< T >::size_type p,
+MDArray< T >::operator()(typename MDArray< T >::dim_type i,
+                         typename MDArray< T >::dim_type j,
+                         typename MDArray< T >::dim_type k,
+                         typename MDArray< T >::dim_type m,
+                         typename MDArray< T >::dim_type n,
+                         typename MDArray< T >::dim_type p,
                          ...) const
 {
 #ifdef DOMI_ENABLE_ABC
@@ -1502,9 +1538,9 @@ MDArray< T >::operator()(typename MDArray< T >::size_type i,
   size_type offset = i * _strides[0] + j * _strides[1] + k * _strides[2] +
                      m * _strides[3] + n * _strides[4] + p * _strides[5];
   va_start(indexes, p);
-  for (size_type axis = 6; axis < _dimensions.size(); axis++)
+  for (int axis = 6; axis < _dimensions.size(); axis++)
   {
-    size_type q = va_arg(indexes, size_type);
+    dim_type q = va_arg(indexes, dim_type);
 #ifdef DOMI_ENABLE_ABC
     assertIndex(q, axis);
 #endif
@@ -1528,15 +1564,15 @@ MDArray< T >::assign(const T & value)
 
 template< typename T >
 T &
-MDArray< T >::at(size_type i, ...)
+MDArray< T >::at(dim_type i, ...)
 {
   assertIndex(i, 0);
   va_list indexes;
   size_type offset = i * _strides[0];
   va_start(indexes, i);
-  for (size_type axis = 1; axis < _dimensions.size(); axis++)
+  for (int axis = 1; axis < _dimensions.size(); axis++)
   {
-    size_type j = va_arg(indexes, size_type);
+    dim_type j = va_arg(indexes, dim_type);
     assertIndex(j, axis);
     offset += j * _strides[axis];
   }
@@ -1548,15 +1584,15 @@ MDArray< T >::at(size_type i, ...)
 
 template< typename T >
 const T &
-MDArray< T >::at(size_type i, ...) const
+MDArray< T >::at(dim_type i, ...) const
 {
   assertIndex(i, 0);
   va_list indexes;
   size_type offset = i * _strides[0];
   va_start(indexes, i);
-  for (size_type axis = 1; axis < _dimensions.size(); axis++)
+  for (int axis = 1; axis < _dimensions.size(); axis++)
   {
-    size_type j = va_arg(indexes, size_type);
+    dim_type j = va_arg(indexes, dim_type);
     assertIndex(j, axis);
     offset += j * _strides[axis];
   }
@@ -1609,10 +1645,10 @@ MDArray< T >::max_size() const
 
 template< typename T >
 void
-MDArray< T >::resize(const Teuchos::ArrayView< size_type > & dims)
+MDArray< T >::resize(const Teuchos::ArrayView< dim_type > & dims)
 {
   _dimensions.assign(dims.begin(), dims.end());
-  _strides = computeStrides(dims, _layout);
+  _strides = computeStrides< size_type, dim_type >(dims, _layout);
   _array.resize(computeSize(dims));
   _ptr = _array.getRawPtr();
 }
@@ -1739,7 +1775,7 @@ void swap(MDArray< T > & a1, MDArray< T > & a2)
 
 template< typename T >
 void
-MDArray< T >::assertIndex(size_type i, int axis) const
+MDArray< T >::assertIndex(dim_type i, int axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     !(0 <= i && i < _dimensions[axis]), RangeError,
