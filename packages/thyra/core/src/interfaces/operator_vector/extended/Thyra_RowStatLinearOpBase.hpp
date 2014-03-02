@@ -53,10 +53,14 @@ namespace RowStatLinearOpBaseUtils {
 
 /** \brief Rows statistic requested. */
 enum ERowStat {
-  /** \brief Inverse row sums. */
+  /** \brief Inverse absolute row sums. */
   ROW_STAT_INV_ROW_SUM,
-  /** \brief Inverse row sums. */
-  ROW_STAT_ROW_SUM
+  /** \brief Absolute row sums. */
+  ROW_STAT_ROW_SUM,
+  /** \brief Inverse absolute column sums. */
+  ROW_STAT_INV_COL_SUM,
+  /** \brief Absolute column sums. */
+  ROW_STAT_COL_SUM
 };
 
 
