@@ -1671,6 +1671,9 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
              const TCrsMatrix &A,
              const DomainVector &x)
 {
+  //Special case for zero Rows RowMap
+  if(A.numRows() == -1) return;
+
   if (doalpha == 0) {
     if (dobeta==2) {
             MV_MulScalar(y,betav,y);
@@ -1778,6 +1781,13 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
               h_b(i) = s_b;
 
             Kokkos::deep_copy(beta, h_b);
+    }
+
+    if (dobeta==2) {
+       MV_MulScalar(y,betav,y);
+    } else {
+      if (dobeta!=1)
+       MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
     }
 
     const typename CrsMatrixType::ordinal_type nrow = A.numRows();
@@ -1955,6 +1965,9 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                const TCrsMatrix &A,
                const DomainVector &x)
   {
+    //Special case for zero Rows RowMap
+    if(A.numRows() == -1) return;
+
     if (doalpha == 0) {
       if (dobeta==2) {
               MV_MulScalar(y,betav,y);
