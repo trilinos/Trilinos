@@ -164,7 +164,7 @@ scaleRightImpl(const VectorBase< Scalar > &col_scaling)
   TEUCHOS_ASSERT(this->domain()->dim()==col_scaling_vec.size());
 
   for(Ordinal i=0;i<this->domain()->dim();i++)
-    ::Thyra::scale<double>(col_scaling_vec[i],this->col(i));
+    ::Thyra::scale<Scalar>(col_scaling_vec[i],this->col(i).ptr());
 }
 
 // helper methods
