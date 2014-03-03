@@ -39,8 +39,7 @@
 
 
 # Just used for unit testing
-
-SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
   MPI            cmake/TPLs/    PT
   BLAS           cmake/TPLs/    PT
   LAPACK         cmake/TPLs/    PT

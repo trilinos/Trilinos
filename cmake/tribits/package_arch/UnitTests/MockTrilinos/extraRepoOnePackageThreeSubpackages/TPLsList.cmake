@@ -37,7 +37,5 @@
 # ************************************************************************
 # @HEADER
 
-
 # Only for unit testing
-
-SET(extraRepoOnePackageThreeSubpackages_TPLS_FINDMODS_CLASSIFICATIONS)
+TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()

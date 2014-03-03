@@ -47,6 +47,8 @@ INCLUDE(ParseVariableArguments)
 
 
 #
+# @FUNCTION: TRIBITS_TPL_DECLARE_LIBRARIES
+# 
 # Function that sets up cache variables for users to specify where to
 # find a TPL's headers and libraries.
 #
@@ -100,7 +102,6 @@ INCLUDE(ParseVariableArguments)
 #     no libraries are searched for and this varaible will be assumed to
 #     have the correct list of libraries to link to.
 #
-
 FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
 
   # Make sure the right name is used
