@@ -63,6 +63,7 @@ namespace Xpetra {
   // TODO: move that elsewhere
   const Epetra_Export & toEpetra(const Export<int, int> &);
   //
+  RCP<const Export<int, int> > toXpetra(const Epetra_Export *exp);
 
   class EpetraExport
     : public Export<int, int>

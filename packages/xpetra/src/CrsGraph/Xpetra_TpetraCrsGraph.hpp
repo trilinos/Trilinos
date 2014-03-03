@@ -150,6 +150,9 @@ namespace Xpetra {
     //! Returns the importer associated with this graph.
     RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("TpetraCrsGraph::getImporter"); return toXpetra(graph_->getImporter()); }
 
+    //! Returns the exporter associated with this graph.
+    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("TpetraCrsGraph::getExporter"); return toXpetra(graph_->getExporter()); }
+
     //! Returns the number of global rows in the graph.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("TpetraCrsGraph::getGlobalNumRows"); return graph_->getGlobalNumRows(); }
 

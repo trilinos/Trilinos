@@ -48,16 +48,19 @@
 
 namespace Xpetra {
 
+  RCP<const Export<int, int> > toXpetra(const Epetra_Export *exp) {
+    if (exp != NULL) {
+      RCP<const Epetra_Export> eexp = rcp(new Epetra_Export(*exp)); //NOTE: non consitent: return pointer, take ref
+      return rcp(new Xpetra::EpetraExport(eexp));
+    }
+
+    return Teuchos::null;
+  }
+
   EpetraExport::EpetraExport(const Teuchos::RCP<const Map<int,int> > & source, const Teuchos::RCP<const Map<int,int> > & target)
     : export_(rcp(new Epetra_Export(toEpetra(source), toEpetra(target)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
 
   //
-  RCP< const Export<int, int > > toXpetra(const Epetra_Export *import) {
-    RCP<const Epetra_Export> imp = rcp(new Epetra_Export(*import)); //NOTE: non consitent: return pointer, take ref
-    return rcp ( new Xpetra::EpetraExport(imp) );
-  }
-  //
-
   ArrayView< const int > EpetraExport::getExportPIDs() const { XPETRA_MONITOR("EpetraExport::getExportImageIDs"); return ArrayView<const int> (export_->ExportPIDs(),export_->NumExportIDs()); }
 
   ArrayView< const int > EpetraExport::getPermuteFromLIDs() const {
