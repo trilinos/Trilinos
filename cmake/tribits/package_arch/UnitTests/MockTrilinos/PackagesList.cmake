@@ -37,15 +37,11 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsListHelpers)
-
-
 # This list is just used for unit testing the dependency handling
 # CMake code.  The reason that we have a separate list is so that we
 # can keep very stable unit tests.
 
-
-SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
   TrilinosFramework   cmake                           PT
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT

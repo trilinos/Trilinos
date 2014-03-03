@@ -38,9 +38,7 @@
 # @HEADER
 
 
-INCLUDE(TribitsListHelpers)
-
-SET( extraRepoTwoPackages_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
   Ex2Package1     package1   PT
   Ex2Package2     package2   ST
   )

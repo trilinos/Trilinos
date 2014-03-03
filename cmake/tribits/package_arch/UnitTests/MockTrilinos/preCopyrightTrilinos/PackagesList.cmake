@@ -37,10 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE(TribitsListHelpers)
-
-SET( preCopyrightTrilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
   Teko         teko      ST
   Stalix       stalix    EX
   )

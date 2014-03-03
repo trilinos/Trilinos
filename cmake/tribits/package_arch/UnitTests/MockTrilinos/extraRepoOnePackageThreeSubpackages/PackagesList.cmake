@@ -37,9 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE(TribitsListHelpers)
-
-SET( extraRepoOnePackageThreeSubpackages_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
   extraRepoOnePackageThreeSubpackages   .     PT
   )
