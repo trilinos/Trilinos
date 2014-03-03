@@ -54,9 +54,16 @@ using namespace std;
 namespace sierra {
 namespace Env {
 
-  GeminiSCIVersion GetGeminiVersion() {
-    return GEMINI_SCI_1;
-    //return GEMINI_SCI_2;
+  //
+  //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
+  //
+  GeminiSCIVersion GeminiVersion(GeminiSCIVersion ver) {
+    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini verion
+    if(ver != GEMINI_SCI_UNKNOWN) {
+      GeminiSCIVersionValue = ver;
+    }
+    ThrowRequire(GeminiSCIVersionValue != GEMINI_SCI_UNKNOWN);
+    return GeminiSCIVersionValue;
   }
     
 
@@ -75,11 +82,12 @@ void sierra_bootstrap()
     ("logfile,l", boost::program_options::value<std::string>()->default_value(""), "Output log file path, one of : 'cout', 'cerr', or a file path")
     ("pout", boost::program_options::value<std::string>()->implicit_value("-"), "Per-processor log file path")
     ("dout", boost::program_options::value<std::string>()->implicit_value("out"), "Diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path")
-//    ("timer", boost::program_options::value<std::string>(), "Wall and CPU time options") // , &Diag::Timer::theTimerParser())
     ("version", "Display version information")
     ("jamsub", boost::program_options::value<std::string>(), "Display user subroutine build command")
     ("runtest", boost::program_options::value<std::string>()->implicit_value("pid"), "Record process host and pid to this file")
     ("developer-mode", "Activate developer specific features")
+    //("sci1", "Use SCI version 1 interface for gemini interface")
+    //("sci2", "Use SCI version 2 interface for gemini interface")
     ("architecture", boost::program_options::value<std::string>(), "Specifies the architecture running the sierra application");
 
   stk::get_options_description().add(desc);
@@ -999,7 +1007,7 @@ startup_multi_exec(MPI_Comm                world_comm,
 
     if (fluid_rank_size) {
 
-      if( Env::GetGeminiVersion() == Env::GEMINI_SCI_2) {
+      if( Env::GeminiSCIVersion() == Env::GEMINI_SCI_2) {
         int eul_rank_size = fluid_rank_size;
         if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS) {
           throw RuntimeError() << "MPI_Bcast failed";

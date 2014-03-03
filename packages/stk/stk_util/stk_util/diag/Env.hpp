@@ -46,11 +46,12 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 //  Provide single switch point for gemini interface options
 //
   enum GeminiSCIVersion {
+    GEMINI_SCI_UNKNOWN = 0,
     GEMINI_SCI_1 = 1,
     GEMINI_SCI_2 = 2
   };
 
-  GeminiSCIVersion GetGeminiVersion();
+  GeminiSCIVersion GeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
 
 
 /**
