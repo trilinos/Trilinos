@@ -79,12 +79,12 @@ namespace MueLu {
 
     LO nLocalAggregates = aggregates.GetNumAggregates();
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == NodeStats::BOUNDARY ||
-          (aggStat[iNode] != NodeStats::AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
+      if (aggStat[iNode] == BOUNDARY ||
+          (aggStat[iNode] != AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
         // This is a boundary or an isolated node
         aggregates.SetIsRoot(iNode);
 
-        aggStat[iNode]      = NodeStats::AGGREGATED;
+        aggStat[iNode]      = AGGREGATED;
         vertex2AggId[iNode] = nLocalAggregates++;
         procWinner[iNode]   = myRank;
 

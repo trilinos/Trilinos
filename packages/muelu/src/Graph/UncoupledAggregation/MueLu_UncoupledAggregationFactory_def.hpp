@@ -187,13 +187,13 @@ namespace MueLu {
     const LO nRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    std::vector<unsigned> aggStat(nRows, NodeStats::READY);
+    std::vector<unsigned> aggStat(nRows, READY);
 
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     if (dirichletBoundaryMap != Teuchos::null) {
       for (LO i = 0; i < nRows; i++)
         if (dirichletBoundaryMap[i] == true)
-          aggStat[i] = NodeStats::BOUNDARY;
+          aggStat[i] = BOUNDARY;
     }
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
@@ -206,14 +206,14 @@ namespace MueLu {
         if (SmallAggMap != null) {
           for (LO kr = 0; kr < nDofsPerNode; kr++) {
             if (SmallAggMap->isNodeGlobalElement(grid + kr))
-              aggStat[i] = MueLu::NodeStats::SMALLAGG;
+              aggStat[i] = SMALLAGG;
           }
         }
 
         if (OnePtMap != null) {
           for (LO kr = 0; kr < nDofsPerNode; kr++) {
             if (OnePtMap->isNodeGlobalElement(grid + kr))
-              aggStat[i] = MueLu::NodeStats::ONEPT;
+              aggStat[i] = ONEPT;
           }
         }
       }

@@ -92,7 +92,7 @@ void SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   while (iNode1 < nRows) {
 
   //std::cout << aggStat[iNode1] << std::endl;
-    if (aggStat[iNode1] == NodeStats::SMALLAGG) {
+    if (aggStat[iNode1] == SMALLAGG) {
 
       aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
 
@@ -104,20 +104,20 @@ void SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
       for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode1.begin(); it!=neighOfINode1.end(); ++it) {
         LocalOrdinal index = *it;
         if(graph.isLocalNeighborVertex(index) &&
-           aggStat[index] == NodeStats::SMALLAGG) {
+           aggStat[index] == SMALLAGG) {
           ag.list.push_back(index);
         }
       } // loop over all columns, add potential neighbour nodes to new aggregate
 
       // finalize aggregate
       for(size_t k=0; k<ag.list.size(); k++) {
-        aggStat[ag.list[k]] = NodeStats::AGGREGATED;
+        aggStat[ag.list[k]] = AGGREGATED;
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }
 
       numNonAggregatedNodes -= ag.list.size();
-    } // end if NodeStats::SMALLAGG
+    } // end if SMALLAGG
 
     iNode1++;
   } // end while
