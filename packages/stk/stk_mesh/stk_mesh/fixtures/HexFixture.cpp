@@ -30,9 +30,9 @@ namespace mesh {
 namespace fixtures {
 
   HexFixture::HexFixture(   stk::ParallelMachine pm
-              , unsigned nx
-              , unsigned ny
-              , unsigned nz
+              , size_t nx
+              , size_t ny
+              , size_t nz
               , ConnectivityMap const* connectivity_map
             )
   : m_spatial_dimension(3),
@@ -65,9 +65,9 @@ void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
 {
   std::vector<EntityId> element_ids_on_this_processor;
 
-  const unsigned p_size = m_bulk_data.parallel_size();
-  const unsigned p_rank = m_bulk_data.parallel_rank();
-  const unsigned num_elems = m_nx * m_ny * m_nz ;
+  const size_t p_size = m_bulk_data.parallel_size();
+  const size_t p_rank = m_bulk_data.parallel_rank();
+  const size_t num_elems = m_nx * m_ny * m_nz ;
 
   const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
   const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
@@ -79,7 +79,7 @@ void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
   generate_mesh(element_ids_on_this_processor, coordMap);
 }
 
-void HexFixture::node_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const
+void HexFixture::node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
   entity_id -= 1;
 
@@ -92,7 +92,7 @@ void HexFixture::node_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , uns
   z = entity_id;
 }
 
-void HexFixture::elem_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const
+void HexFixture::elem_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const
 {
   entity_id -= 1;
 
@@ -126,7 +126,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
     const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
     for (; ib != ie; ++ib) {
       EntityId entity_id = *ib;
-      unsigned ix = 0, iy = 0, iz = 0;
+      size_t ix = 0, iy = 0, iz = 0;
       elem_x_y_z(entity_id, ix, iy, iz);
 
       stk::mesh::EntityId elem_node[8] ;
@@ -142,7 +142,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
       stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_node);
 
-      for (unsigned i = 0; i<8; ++i) {
+      for (size_t i = 0; i<8; ++i) {
         stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_node[i] );
         m_bulk_data.change_entity_parts(node, m_node_parts);
 
@@ -150,7 +150,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node
-        unsigned nx = 0, ny = 0, nz = 0;
+        size_t nx = 0, ny = 0, nz = 0;
         node_x_y_z(elem_node[i], nx, ny, nz);
 
         Scalar * data = stk::mesh::field_data( m_coord_field , node );
