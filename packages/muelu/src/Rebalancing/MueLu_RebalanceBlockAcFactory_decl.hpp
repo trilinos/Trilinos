@@ -71,10 +71,6 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Types.hpp"
 
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-
 namespace MueLu {
   /*!
     @class RebalanceAcFactory

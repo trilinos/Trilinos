@@ -74,10 +74,6 @@
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
-// MPI helper
-#define minAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-
 namespace MueLu {
 
   /*!
