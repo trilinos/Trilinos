@@ -189,6 +189,7 @@ public:
       // OpenMPexec::Active == m_scan_state
 
       work_value[0] = value ;
+      memory_fence();
 
       // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
@@ -202,6 +203,7 @@ public:
       }
 
       work_value[1] = work_value[0] ;
+      memory_fence();
 
       if ( rank_rev ) {
 
