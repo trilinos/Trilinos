@@ -61,7 +61,7 @@ namespace fixtures {
 
 }
 
-void TetFixture::generate_mesh(const TetCoordinateMapping & coordMap)
+void TetFixture::generate_mesh(const CoordinateMapping & coordMap)
 {
   std::vector<size_t> hex_range_on_this_processor;
 
@@ -103,7 +103,7 @@ void TetFixture::hex_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &
   z = entity_id;
 }
 
-void TetFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_processor, const TetCoordinateMapping & coordMap)
+void TetFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_processor, const CoordinateMapping & coordMap)
 {
   m_bulk_data.modification_begin();
 

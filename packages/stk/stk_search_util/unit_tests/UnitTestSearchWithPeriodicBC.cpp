@@ -306,7 +306,7 @@ public:
         m_offsetY(offsetY),
         m_offsetZ(offsetZ)
   { }
-  virtual void getNodeCoordinates(Scalar * field, const unsigned nx, const unsigned ny, const unsigned nz) const
+  virtual void getNodeCoordinates(Scalar * field, const size_t nx, const size_t ny, const size_t nz) const
   {
     Scalar fracTheta = nx/(m_numTheta - 1);
 

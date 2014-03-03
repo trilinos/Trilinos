@@ -11,6 +11,7 @@
 
 #include <math.h>                       // for cos, sin
 #include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/fixtures/CoordinateMapping.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
@@ -29,36 +30,8 @@ namespace mesh {
 namespace fixtures {
 
 /**
- * A mapping for the coordinates as a function of the node indices
- */
-class TetCoordinateMapping
-{
-public:
-  typedef double Scalar;
-  TetCoordinateMapping() {}
-  virtual void getNodeCoordinates(Scalar * field, const size_t nx, const size_t ny, const size_t nz) const = 0;
-  virtual ~TetCoordinateMapping() {};
-};
-
-
-/**
- * Standard Cartesian X-Y-Z coordinate mapping
- */
-class TetCartesianCoordinateMapping : public TetCoordinateMapping
-{
-public:
-  TetCartesianCoordinateMapping() : TetCoordinateMapping() {}
-  virtual void getNodeCoordinates(Scalar * field, const size_t nx, const size_t ny, const size_t nz) const
-  {
-    field[0] = nx;
-    field[1] = ny;
-    field[2] = nz;
-  }
-};
-
-
-/**
- * A 3-dimensional X*Y*Z hex fixture.
+ * A 3-dimensional X*Y*Z tet fixture.
+ * Generates 6* X*Y*Z tets -- each "hex" is subdivided into 6 tetrahedrons.
  *
  * A coordinate field will be added to all nodes, a coordinate-gather field
  * will be added to all elements.
@@ -130,9 +103,9 @@ class TetFixture
   /**
    * Create the mesh (into m_bulk_data).
    */
-  void generate_mesh(const TetCoordinateMapping & coordMap = TetCartesianCoordinateMapping());
+  void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
-  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor, const TetCoordinateMapping & coordMap = TetCartesianCoordinateMapping());
+  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
   // When creating entities, you can tell TetFixture what parts to add
   // elements and nodes.
