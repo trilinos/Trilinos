@@ -910,14 +910,12 @@ void mult_A_B(
       C.sumIntoGlobalValues(
           global_row,
           combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
-          onlyCalculateStructure ? null : combined_values.view(
-          OrdinalTraits<size_t>::zero(), last_index))
+	  combined_values.view(OrdinalTraits<size_t>::zero(), last_index))
       :
       C.insertGlobalValues(
           global_row,
           combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
-          onlyCalculateStructure ? null : combined_values.view(
-          OrdinalTraits<size_t>::zero(), last_index));
+	  combined_values.view(OrdinalTraits<size_t>::zero(), last_index));
     
   }
   
