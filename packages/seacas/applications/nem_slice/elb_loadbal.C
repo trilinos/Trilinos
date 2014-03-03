@@ -1768,9 +1768,6 @@ namespace {
 		  }
 		  
 		} else {
-		  if (!dflag) {
-		    fprintf(stderr, "Possible corrupted mesh detected at element "ST_ZU", strange connectivity.\n", ecnt);
-		  } 
 		  /* This is the second or later time through this
 		     loop and each time through, there have been two
 		     or more elements that are connected to 'node'
@@ -1801,6 +1798,9 @@ namespace {
 		    }
 		  }
 		  nelem = ncnt3;
+		  if (!dflag && nelem > 2) {
+		    fprintf(stderr, "Possible corrupted mesh detected at element "ST_ZU", strange connectivity.\n", ecnt);
+		  } 
 		}
 	      }
 	      else { /* nelem == 1 or 0 */
