@@ -137,11 +137,11 @@ class MDMap
 {
 public:
 
-  /** \brief Adopt the MDArray <tt>size_type</tt> type */
-  typedef typename MDArray< Ordinal >::size_type size_type;
+  /** \brief Adopt the Domi <tt>size_type</tt> type */
+  typedef Domi::size_type size_type;
 
-  /** \brief Adopt the MDArray <tt>dim_type</tt> type */
-  typedef typename MDArray< Ordinal >::dim_type dim_type;
+  /** \brief Adopt the Domi <tt>dim_type</tt> type */
+  typedef Domi::dim_type dim_type;
 
   /** \name Constructors and destructor */
   //@{
@@ -170,7 +170,7 @@ public:
    * \param node [in] the Kokkos node of the map
    */
   MDMap(const MDCommRCP mdComm,
-        const Teuchos::ArrayView< Ordinal > & dimensions,
+        const Teuchos::ArrayView< dim_type > & dimensions,
         const Teuchos::ArrayView< int > & commPad =
           Teuchos::ArrayView< int >(),
         const Teuchos::ArrayView< int > & bndryPad =
@@ -230,7 +230,7 @@ public:
    */
   MDMap(const MDMap< Node > & parent,
         int axis,
-        Ordinal index);
+        dim_type index);
 
   /** \brief Parent/single slice sub-map constructor
    *
@@ -392,7 +392,7 @@ public:
    * \param withBndryPad [in] specify whether the dimension should
    *        include boundary padding or not
    */
-  Ordinal getGlobalDim(int axis, bool withBndryPad=false) const;
+  dim_type getGlobalDim(int axis, bool withBndryPad=false) const;
 
   /** \brief Get the bounds of the global problem
    *
@@ -427,7 +427,7 @@ public:
    * \param withPad [in] specify whether the dimension should include
    *        padding or not
    */
-  Ordinal getLocalDim(int axis, bool withPad=false) const;
+  dim_type getLocalDim(int axis, bool withPad=false) const;
 
   /** \brief Get the local loop bounds along the specified axis
    *
@@ -525,7 +525,7 @@ public:
    * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
    *        (i,j,k) for 3D, etc)
    */
-  bool isCommPad(Teuchos::ArrayView< Ordinal > index) const;
+  bool isCommPad(Teuchos::ArrayView< dim_type > index) const;
 
   /* \brief Return whether given local index is in the boundary
    *        padding
@@ -533,7 +533,7 @@ public:
    * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
    *        (i,j,k) for 3D, etc)
    */
-  bool isBndryPad(Teuchos::ArrayView< Ordinal > index) const;
+  bool isBndryPad(Teuchos::ArrayView< dim_type > index) const;
 
   /** \brief Get the storage order
    */
@@ -679,28 +679,28 @@ public:
    *
    * \param globalIndex [in] a unique 1D global identifier
    */
-  Teuchos::Array< Ordinal >
-  getGlobalAxisIndex(Ordinal globalIndex) const;
+  Teuchos::Array< dim_type >
+  getGlobalAxisIndex(size_type globalIndex) const;
 
   /** \brief Convert a local index to an array of local axis indexes
    *
    * \param localIndex [in] a unique 1D local identifier
    */
-  Teuchos::Array< Ordinal >
-  getLocalAxisIndex(Ordinal localIndex) const;
+  Teuchos::Array< dim_type >
+  getLocalAxisIndex(size_type localIndex) const;
 
   /** \brief Convert a local index to a global index
    *
    * \param localIndex [in] a unique 1D local identifier
    */
-  Teuchos::Ordinal getGlobalIndex(Ordinal localIndex) const;
+  size_type getGlobalIndex(size_type localIndex) const;
 
   /** \brief convert an array of global axis indexes to a global index
    *
    * \param globalAxisIndex [in] a multi-dimensional global axis index
    */
-  Teuchos::Ordinal
-  getGlobalIndex(const Teuchos::ArrayView< Ordinal > globalAxisIndex) const;
+  size_type
+  getGlobalIndex(const Teuchos::ArrayView< dim_type > globalAxisIndex) const;
 
   /** \brief Convert a global index to a local index
    *
@@ -709,14 +709,14 @@ public:
    * This method can throw a Domi::RangeError if the global index is
    * not on the current processor.
    */
-  Ordinal getLocalIndex(Ordinal globalIndex) const;
+  size_type getLocalIndex(size_type globalIndex) const;
 
   /** \brief Convert an array of local axis indexes to a local index
    *
    * \param localAxisIndex [in] a multi-dimensional local axis index
    */
-  Ordinal
-  getLocalIndex(const Teuchos::ArrayView< Ordinal > localAxisIndex) const;
+  size_type
+  getLocalIndex(const Teuchos::ArrayView< dim_type > localAxisIndex) const;
 
   //@}
 
@@ -759,15 +759,15 @@ private:
 
   // The minumum 1D index of the global data structure, including
   // boundary padding.  This will only be non-zero on a sub-map.
-  Ordinal _globalMin;
+  size_type _globalMin;
 
   // The maximum 1D index of the global data structure, including
   // boundary padding.
-  Ordinal _globalMax;
+  size_type _globalMax;
 
   // The size of the local dimensions along each axis.  This includes
   // the values of the communication padding.
-  Teuchos::Array< Ordinal > _localDims;
+  Teuchos::Array< dim_type > _localDims;
 
   // The local loop bounds along each axis, stored as an array of
   // Slices.  These bounds DO include the communication padding.
@@ -778,11 +778,11 @@ private:
 
   // The minimum 1D index of the local data structure, including
   // communication padding.
-  Teuchos::Ordinal _localMin;
+  size_type _localMin;
 
   // The maximum 1D index of the local data structure, including
   // communnication padding.
-  Teuchos::Ordinal _localMax;
+  size_type _localMax;
 
   // The communication padding that was specified at construction, one
   // value along each axis.
@@ -1140,7 +1140,7 @@ template< class Node >
 MDMap< Node >::
 MDMap(const MDMap< Node > & parent,
       int axis,
-      Ordinal index) :
+      dim_type index) :
   _mdComm(parent._mdComm),
   _globalDims(),
   _globalBounds(),
@@ -1315,20 +1315,20 @@ MDMap(const MDMap< Node > & parent,
     for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
          ++axisRank)
     {
-      typename Slice::Ordinal start = _globalRankBounds[axis][axisRank].start();
-      typename Slice::Ordinal stop  = _globalRankBounds[axis][axisRank].stop();
+      typename Slice::dim_type start = _globalRankBounds[axis][axisRank].start();
+      typename Slice::dim_type stop  = _globalRankBounds[axis][axisRank].stop();
       if (start < bounds.start()) start = bounds.start();
       if (stop  > bounds.stop() ) stop  = bounds.stop();
       _globalRankBounds[axis][axisRank] = ConcreteSlice(start, stop);
     }
     // Alter _bndryPad if necessary
-    Ordinal start = bounds.start() - _bndryPadSizes[axis];
+    dim_type start = bounds.start() - _bndryPadSizes[axis];
     if (start < 0)
     {
       _bndryPad[axis][0] = bounds.start();
       start = 0;
     }
-    Ordinal stop = bounds.stop() + _bndryPadSizes[axis];
+    dim_type stop = bounds.stop() + _bndryPadSizes[axis];
     if (stop > parent.getGlobalBounds(axis,true).stop())
     {
       _bndryPad[axis][1] = parent.getGlobalBounds(axis,true).stop() -
@@ -1377,7 +1377,7 @@ MDMap(const MDMap< Node > & parent,
         _pad[axis][0] = _bndryPad[axis][0];
       if (axisRank == _mdComm->getAxisCommSize(axis)-1)
         _pad[axis][1] = _bndryPad[axis][1];
-      Ordinal start = parent._localBounds[axis].start();
+      dim_type start = parent._localBounds[axis].start();
       if (_globalBounds[axis].start() >
           _globalRankBounds[axis][axisRank].start())
       {
@@ -1393,7 +1393,7 @@ MDMap(const MDMap< Node > & parent,
             _globalBounds[axis].start();
         }
       }
-      Ordinal stop = parent._localBounds[axis].stop();
+      dim_type stop = parent._localBounds[axis].stop();
       if (_globalBounds[axis].stop() <
           _globalRankBounds[axis][axisRank].stop())
       {
@@ -1553,7 +1553,7 @@ MDMap< Node >::getUpperNeighbor(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Ordinal
+dim_type
 MDMap< Node >::
 getGlobalDim(int axis,
              bool withBndryPad) const
@@ -1590,8 +1590,8 @@ getGlobalBounds(int axis,
     return _globalBounds[axis];
   else
   {
-    Ordinal start = _globalBounds[axis].start() + _bndryPad[axis][0];
-    Ordinal stop  = _globalBounds[axis].stop()  - _bndryPad[axis][1];
+    dim_type start = _globalBounds[axis].start() + _bndryPad[axis][0];
+    dim_type stop  = _globalBounds[axis].stop()  - _bndryPad[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
@@ -1599,7 +1599,7 @@ getGlobalBounds(int axis,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Ordinal
+dim_type
 MDMap< Node >::
 getLocalDim(int axis,
             bool withPad) const
@@ -1635,8 +1635,8 @@ getGlobalRankBounds(int axis,
   int axisRank = getAxisRank(axis);
   if (withBndryPad)
   {
-    Ordinal start = _globalRankBounds[axis][axisRank].start();
-    Ordinal stop  = _globalRankBounds[axis][axisRank].stop();
+    dim_type start = _globalRankBounds[axis][axisRank].start();
+    dim_type stop  = _globalRankBounds[axis][axisRank].stop();
     if (getAxisRank(axis) == 0)
       start -= _bndryPad[axis][0];
     if (getAxisRank(axis) == getAxisCommSize(axis)-1)
@@ -1666,8 +1666,8 @@ getLocalBounds(int axis,
     return _localBounds[axis];
   else
   {
-    Ordinal start = _localBounds[axis].start() + _pad[axis][0];
-    Ordinal stop  = _localBounds[axis].stop()  - _pad[axis][1];
+    dim_type start = _localBounds[axis].start() + _pad[axis][0];
+    dim_type stop  = _localBounds[axis].stop()  - _pad[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
@@ -1785,7 +1785,7 @@ MDMap< Node >::getBndryPadSize(int axis) const
 template< class Node >
 bool
 MDMap< Node >::
-isCommPad(Teuchos::ArrayView< Ordinal > index) const
+isCommPad(Teuchos::ArrayView< dim_type > index) const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -1812,7 +1812,7 @@ isCommPad(Teuchos::ArrayView< Ordinal > index) const
 template< class Node >
 bool
 MDMap< Node >::
-isBndryPad(Teuchos::ArrayView< Ordinal > index) const
+isBndryPad(Teuchos::ArrayView< dim_type > index) const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -2185,9 +2185,9 @@ getTpetraAxisMap(int axis,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Teuchos::Array< Ordinal >
+Teuchos::Array< dim_type >
 MDMap< Node >::
-getGlobalAxisIndex(Ordinal globalIndex) const
+getGlobalAxisIndex(size_type globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2197,8 +2197,8 @@ getGlobalAxisIndex(Ordinal globalIndex) const
     _globalMin << " and " << _globalMax << ")");
 #endif
   int numDims = getNumDims();
-  Teuchos::Array< Ordinal > result(numDims);
-  Ordinal index = globalIndex;
+  Teuchos::Array< dim_type > result(numDims);
+  size_type index = globalIndex;
   if (_layout == LAST_INDEX_FASTEST)
   {
     for (int axis = 0; axis < numDims-1; ++axis)
@@ -2223,9 +2223,9 @@ getGlobalAxisIndex(Ordinal globalIndex) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Teuchos::Array< Ordinal >
+Teuchos::Array< dim_type >
 MDMap< Node >::
-getLocalAxisIndex(Ordinal localIndex) const
+getLocalAxisIndex(size_type localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2235,8 +2235,8 @@ getLocalAxisIndex(Ordinal localIndex) const
     _localMin << " and " << _localMax << ")");
 #endif
   int numDims = getNumDims();
-  Teuchos::Array< Ordinal > result(numDims);
-  Ordinal index = localIndex;
+  Teuchos::Array< dim_type > result(numDims);
+  size_type index = localIndex;
   if (_layout == LAST_INDEX_FASTEST)
   {
     for (int axis = 0; axis < numDims-1; ++axis)
@@ -2261,9 +2261,9 @@ getLocalAxisIndex(Ordinal localIndex) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Teuchos::Ordinal
+size_type
 MDMap< Node >::
-getGlobalIndex(Ordinal localIndex) const
+getGlobalIndex(size_type localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2272,11 +2272,11 @@ getGlobalIndex(Ordinal localIndex) const
     "invalid local index = " << localIndex << " (local size = " <<
     _localMax << ")");
 #endif
-  Teuchos::Array< Ordinal > localAxisIndex = getLocalAxisIndex(localIndex);
-  Ordinal result = 0;
+  Teuchos::Array< dim_type > localAxisIndex = getLocalAxisIndex(localIndex);
+  size_type result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    Ordinal globalAxisIndex = localAxisIndex[axis] +
+    dim_type globalAxisIndex = localAxisIndex[axis] +
       _globalRankBounds[axis][getAxisRank(axis)].start() - _pad[axis][0];
     result += globalAxisIndex * _globalStrides[axis];
   }
@@ -2286,9 +2286,9 @@ getGlobalIndex(Ordinal localIndex) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Teuchos::Ordinal
+size_type
 MDMap< Node >::
-getGlobalIndex(const Teuchos::ArrayView< Ordinal > globalAxisIndex) const
+getGlobalIndex(const Teuchos::ArrayView< dim_type > globalAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2306,7 +2306,7 @@ getGlobalIndex(const Teuchos::ArrayView< Ordinal > globalAxisIndex) const
       " (global dimension = " << _globalDims[axis] << ")");
   }
 #endif
-  Ordinal result = 0;
+  size_type result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += globalAxisIndex[axis] * _globalStrides[axis];
   return result;
@@ -2315,9 +2315,9 @@ getGlobalIndex(const Teuchos::ArrayView< Ordinal > globalAxisIndex) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Ordinal
+size_type
 MDMap< Node >::
-getLocalIndex(Ordinal globalIndex) const
+getLocalIndex(size_type globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2326,12 +2326,12 @@ getLocalIndex(Ordinal globalIndex) const
     "invalid global index = " << globalIndex << " (should be between " <<
     _globalMin << " and " << _globalMax << ")");
 #endif
-  Teuchos::Array< Ordinal > globalAxisIndex =
+  Teuchos::Array< dim_type > globalAxisIndex =
     getGlobalAxisIndex(globalIndex);
-  Ordinal result = 0;
+  size_type result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    Ordinal localAxisIndex = globalAxisIndex[axis] -
+    dim_type localAxisIndex = globalAxisIndex[axis] -
       _globalRankBounds[axis][getAxisRank(axis)].start() + _pad[axis][0];
     TEUCHOS_TEST_FOR_EXCEPTION(
       (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
@@ -2345,9 +2345,9 @@ getLocalIndex(Ordinal globalIndex) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Ordinal
+size_type
 MDMap< Node >::
-getLocalIndex(const Teuchos::ArrayView< Ordinal > localAxisIndex) const
+getLocalIndex(const Teuchos::ArrayView< dim_type > localAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2365,7 +2365,7 @@ getLocalIndex(const Teuchos::ArrayView< Ordinal > localAxisIndex) const
       " (local dimension = " << _localDims[axis] << ")");
   }
 #endif
-  Ordinal result = 0;
+  size_type result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += localAxisIndex[axis] * _localStrides[axis];
   return result;
@@ -2390,9 +2390,9 @@ MDMap< Node >::computeBounds()
       // First estimates assuming even division of global dimensions
       // by the number of processors along this axis, and ignoring
       // communication and boundary padding.
-      Ordinal  localDim  = (_globalDims[axis] - 2*_bndryPadSizes[axis]) /
-                           axisCommSize;
-      Ordinal axisStart = axisRank * localDim;
+      dim_type  localDim  = (_globalDims[axis] - 2*_bndryPadSizes[axis]) /
+                             axisCommSize;
+      dim_type axisStart = axisRank * localDim;
 
       // Adjustments for non-zero remainder.  Compute the remainder
       // using the mod operator.  If the remainder is > 0, then add an
@@ -2401,7 +2401,7 @@ MDMap< Node >::computeBounds()
       // standard Tpetra::Map constructor (which adds an elements to
       // the lowest processor ranks), and provides better balance for
       // finite differencing systems with staggered data location.
-      Ordinal remainder = (_globalDims[axis] - 2*_bndryPadSizes[axis]) %
+      dim_type remainder = (_globalDims[axis] - 2*_bndryPadSizes[axis]) %
                             axisCommSize;
       if (axisCommSize - axisRank - 1 < remainder)
       {

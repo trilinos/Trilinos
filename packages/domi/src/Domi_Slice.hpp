@@ -53,6 +53,7 @@
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
 #include "Domi_Exceptions.hpp"
+#include "Domi_Utils.hpp"
 
 namespace Domi
 {
@@ -98,7 +99,7 @@ namespace Domi
  * well.  For example,
  *
  *   \code
- *   const Domi_Ordinal & dflt = Domi::Slice::Default;
+ *   const Domi::dim_type & dflt = Domi::Slice::Default;
  *   \endcode
  *
  * For the common case of a positive step value, the default start
@@ -124,7 +125,7 @@ namespace Domi
  * value of <tt>Default</tt> refers to the size of the container, and
  * not to the literal value of <tt>Default</tt> (which would be set,
  * for practical purposes, to the maximum value supported by the
- * Ordinal, which might be something like 2**63 as an example).
+ * dim_type, which might be something like 2**31 as an example).
  *
  * A container class can easily convert a Slice object that
  * (potentially) has default values to a Slice object that has
@@ -139,7 +140,7 @@ public:
   /** \brief The type for start indexes, stop indexes, and step
    *         intervals
    */
-  typedef Domi_Ordinal Ordinal;
+  typedef Domi::dim_type dim_type;
 
   /** \brief Default value for Slice constructors
    *
@@ -150,7 +151,7 @@ public:
    *  references.  These default values are reversed if the
    *  <tt>step</tt> is negative.  The default <tt>step</tt> is one.
    */
-  static const Ordinal Default;
+  static const dim_type Default;
 
   /** \name Constructors and destructor */
 
@@ -169,7 +170,7 @@ public:
    * Returns Slice with <tt>start == 0</tt>, <tt>step == stopVal</tt>,
    * <tt>step == 1</tt>.
    */
-  inline Slice(Ordinal stopVal);
+  inline Slice(dim_type stopVal);
 
   /** \brief Two or three argument constructor
    *
@@ -187,7 +188,7 @@ public:
    * <tt>stop = 0</tt>.  If <tt>stepVal</tt> is zero, an exception is
    * thrown.
    */
-  inline Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal=1);
+  inline Slice(dim_type startVal, dim_type stopVal, dim_type stepVal=1);
 
   /** \brief Copy constructor
    */
@@ -214,7 +215,7 @@ public:
    * negative, then it is interpreted to represent the size of the
    * container.
    */
-  inline const Ordinal start() const;
+  inline const dim_type start() const;
 
   /** \brief Stop index
    *
@@ -227,7 +228,7 @@ public:
    * <tt>Default</tt>, and <tt>step</tt> is negative, then it is set
    * to zero.
    */
-  inline const Ordinal stop() const;
+  inline const dim_type stop() const;
 
   /** \brief Step interval
    *
@@ -236,7 +237,7 @@ public:
    * throw an exception.  If <tt>step</tt> equals <tt>Default</tt>,
    * the constructor will convert it to a value of one.
    */
-  inline const Ordinal step() const;
+  inline const dim_type step() const;
 
   //@}
 
@@ -271,7 +272,7 @@ public:
    *
    *   \code
    *   Slice bounds = s.bounds(size);
-   *   for (Domi::Ordinal i = bounds.start(); i != bounds.stop();
+   *   for (Domi::dim_type i = bounds.start(); i != bounds.stop();
    *        i += bounds.step())
    *   { ... }
    *   \endcode
@@ -282,7 +283,7 @@ public:
    * <tt>bounds()</tt> return precisely the first ordinal outside the
    * bounds that will be returned by <tt>(i += bounds.step())</tt>.
    */
-  virtual Slice bounds(Ordinal size) const;
+  virtual Slice bounds(dim_type size) const;
 
   /** \brief Return a string representation of the Slice
    *
@@ -304,13 +305,13 @@ public:
 private:
 
   // Start index
-  Ordinal _start;
+  dim_type _start;
 
   // Stop index
-  Ordinal _stop;
+  dim_type _stop;
 
   // Step interval
-  Ordinal _step;
+  dim_type _step;
 
   // Boolean flag indicating whether the step is positive and the stop
   // index is concrete (i.e. it is not Default and not negative)
@@ -345,7 +346,7 @@ public:
    * Returns Slice with <tt>start == 0</tt>, <tt>step == stopVal</tt>,
    * <tt>step == 1</tt>.
    */
-  ConcreteSlice(Ordinal stopVal);
+  ConcreteSlice(dim_type stopVal);
 
   /** \brief Two or three argument constructor
    *
@@ -358,7 +359,7 @@ public:
    * Returns Slice with <tt>start == startVal</tt>, <tt>step ==
    * stopVal</tt>, <tt>step == stepVal</tt> (default 1).
    */
-  ConcreteSlice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal=1);
+  ConcreteSlice(dim_type startVal, dim_type stopVal, dim_type stepVal=1);
 
   /** \brief Destructor
    */
@@ -366,7 +367,7 @@ public:
 
   /** \brief Simply return this ConcreteSlice
    */
-  inline Slice bounds(Ordinal size) const { return *this; }
+  inline Slice bounds(dim_type size) const { return *this; }
 
 private:
 
@@ -389,7 +390,7 @@ Slice::Slice() :
 
 ////////////////////////////////////////////////////////////////////////
 
-Slice::Slice(Ordinal stopVal) :
+Slice::Slice(dim_type stopVal) :
   _start(0),
   _stop(stopVal),
   _step(1),
@@ -400,7 +401,7 @@ Slice::Slice(Ordinal stopVal) :
 
 ////////////////////////////////////////////////////////////////////////
 
-Slice::Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal) :
+Slice::Slice(dim_type startVal, dim_type stopVal, dim_type stepVal) :
   _start(((startVal==Slice::Default) && (stepVal > 0)) ? 0 : startVal),
   _stop( ((stopVal ==Slice::Default) && (stepVal < 0)) ? 0 : stopVal ),
   _step(  (stepVal ==Slice::Default) ? 1 : stepVal),
@@ -426,21 +427,21 @@ Slice::Slice(const Slice & source) :
 
 ////////////////////////////////////////////////////////////////////////
 
-const Ordinal Slice::start() const
+const dim_type Slice::start() const
 {
   return _start;
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-const Ordinal Slice::stop() const
+const dim_type Slice::stop() const
 {
   return _stop;
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-const Ordinal Slice::step() const
+const dim_type Slice::step() const
 {
   return _step;
 }
