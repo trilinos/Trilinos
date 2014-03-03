@@ -44,6 +44,7 @@ namespace stk {
     namespace {
 
       typedef std::vector<EntityKey> EntityKeyVector;
+      typedef std::vector<EntityId>  EntityIdVector;
 
       struct shared_face_type
       {
@@ -51,12 +52,11 @@ namespace stk {
 	EntityKeyVector           nodes;
 	EntityKey                 local_key;
 	EntityKey                 global_key;
-	int                 num_nodes;
 
-	shared_face_type(const int my_num_nodes) :
-	  num_nodes(my_num_nodes)
+	shared_face_type(stk::topology my_topology) :
+	  topology(my_topology.value())
 	{
-	  nodes.resize(num_nodes);
+	  nodes.resize(my_topology.num_nodes());
 	}
 
 	friend inline bool operator < (shared_face_type const& l, shared_face_type const& r)
@@ -64,24 +64,22 @@ namespace stk {
 	  if (l.topology < r.topology)   return true;
 	  if (l.topology > r.topology)   return false;
 
-	  if (l.num_nodes < r.num_nodes) return true;
-	  if (l.num_nodes > r.num_nodes) return false;
-
-	  for (int k = 0; k < l.num_nodes-1; ++k) {
+	  int num_nodes = (int)l.nodes.size();
+	  for (int k = 0; k < num_nodes-1; ++k) {
 	    if (l.nodes[k] < r.nodes[k]) return true;
 	    if (l.nodes[k] > r.nodes[k]) return false;
 	  }
-	  const int j = l.num_nodes-1;
+	  const int j = num_nodes-1;
 	  return l.nodes[j] < r.nodes[j];
 	}
 
 	friend inline bool operator == (shared_face_type const& l, shared_face_type const& r)
 	{
 	  bool equal = l.topology == r.topology;
-	  equal = equal && (l.num_nodes == r.num_nodes);
-	  for (int k = 0; k < l.num_nodes; ++k) {
+	  int num_nodes = (int)l.nodes.size();
+	  for (int k = 0; k < num_nodes; ++k) {
 	    bool node_found = false;
-	    for (int j = 0; j < r.num_nodes; ++j) {
+	    for (int j = 0; j < num_nodes; ++j) {
 	      node_found = node_found || (l.nodes[k] == r.nodes[j]);
 	    }
 	    equal = equal && node_found;
@@ -93,13 +91,11 @@ namespace stk {
 	  topology(a.topology),
 	  nodes(a.nodes),
 	  local_key(a.local_key),
-	  global_key(a.global_key),
-	  num_nodes(a.num_nodes)
+	  global_key(a.global_key)
 	{}
 
 	shared_face_type & operator = (const shared_face_type & a)
 	{
-	  num_nodes = a.num_nodes;
 	  nodes = a.nodes;
 	  topology = a.topology;
 	  local_key = a.local_key;
@@ -149,24 +145,24 @@ namespace stk {
 
 	    std::vector<bool> face_exists(Topology::num_faces,false);
 	    {
-	      const int num_faces = m_bucket.num_faces(ielem);
-	      ThrowRequire(num_faces <= (int)Topology::num_faces);
+	      const int num_existing_faces = m_bucket.num_faces(ielem);
+	      ThrowRequire(num_existing_faces <= (int)Topology::num_faces);
       
 	      Entity const *face_entity = m_bucket.begin_faces(ielem);
 	      ConnectivityOrdinal const *face_ords = m_bucket.begin_face_ordinals(ielem);
-	      for (int f=0 ; f < num_faces ; ++f) {
+	      for (int f=0 ; f < num_existing_faces ; ++f) {
 		face_exists[face_ords[f]] = mesh.is_valid(face_entity[f]);
 	      }
 	    }
 
 	    for (unsigned f=0; f < Topology::num_faces; ++f) {
-
-	      if (face_exists[f]) continue;
+	      if (face_exists[f])
+		continue;
 
 	      topology faceTopology = elemTopology.face_topology(f);
 
 	      // Use node identifier instead of node local_offset for cross-processor consistency.
-	      std::vector<EntityId> face_node_ids(faceTopology.num_nodes());
+	      EntityIdVector face_node_ids(faceTopology.num_nodes());
 	      Topology::face_nodes(elem_node_ids, f, face_node_ids.begin());
 	      const unsigned smallest_permutation = faceTopology.lexicographical_smallest_permutation(face_node_ids);
 
@@ -194,8 +190,7 @@ namespace stk {
 		  shared_face = shared_face && mesh.bucket(node).shared();
 		}
 		if (shared_face) {
-		  shared_face_type sface(num_face_nodes);
-		  sface.topology = faceTopology.value();
+		  shared_face_type sface(faceTopology);
 		  for (int n=0; n<num_face_nodes; ++n) {
 		    sface.nodes[n] = mesh.entity_key(permuted_face_nodes[n]);
 		  }
@@ -226,156 +221,144 @@ namespace stk {
 	Bucket                & m_bucket;
       };
 
-    } //namespace
+      void update_shared_faces_global_ids( BulkData & mesh, shared_face_map_type & shared_face_map)
+      {
+	//sort the faces for ease of lookup
+	std::sort(shared_face_map.begin(), shared_face_map.end());
 
-    void update_shared_faces_global_ids( BulkData & mesh, shared_face_map_type & shared_face_map)
-    {
-      //sort the faces for ease of lookup
-      std::sort(shared_face_map.begin(), shared_face_map.end());
+	std::vector< shared_face_map_type >  shared_faces( mesh.parallel_size());
 
-      std::vector< shared_face_map_type >  shared_faces( mesh.parallel_size());
+	for (shared_face_map_type::const_iterator itr = shared_face_map.begin(),
+	       end = shared_face_map.end(); itr != end; ++itr ) {
+	  //find process that share this face;
 
-      for (shared_face_map_type::const_iterator itr = shared_face_map.begin(),
-	     end = shared_face_map.end(); itr != end; ++itr ) {
-	//find process that share this face;
+	  PairIterEntityComm left_shared = mesh.entity_comm_sharing(itr->nodes[0]);
 
-	PairIterEntityComm left_shared = mesh.entity_comm_sharing(itr->nodes[0]);
+	  EntityCommInfoVector shared_processes(left_shared.first, left_shared.second);
 
-	EntityCommInfoVector shared_processes(left_shared.first, left_shared.second);
+	  for (int i = 1; i < (int)itr->nodes.size(); ++i) {
+	    PairIterEntityComm right_shared = mesh.entity_comm_sharing( itr->nodes[i] );
 
-	for (int i = 1; i < itr->num_nodes; ++i) {
-	  PairIterEntityComm right_shared = mesh.entity_comm_sharing( itr->nodes[i] );
+	    std::set_intersection( shared_processes.begin(), shared_processes.end(),
+				   right_shared.first, right_shared.second,
+				   shared_processes.begin()
+				   );
 
-	  std::set_intersection( shared_processes.begin(), shared_processes.end(),
-				 right_shared.first, right_shared.second,
-				 shared_processes.begin()
-				 );
+	  }
 
+	  for (EntityCommInfoVector::const_iterator comm_itr = shared_processes.begin(),
+		 comm_end = shared_processes.end(); comm_itr != comm_end; ++comm_itr ) {
+	    if (comm_itr->proc > mesh.parallel_rank())
+	      shared_faces[comm_itr->proc].push_back(*itr);
+	  }
 	}
 
-	for (EntityCommInfoVector::const_iterator comm_itr = shared_processes.begin(),
-	       comm_end = shared_processes.end(); comm_itr != comm_end; ++comm_itr ) {
-	  if (comm_itr->proc > mesh.parallel_rank())
-	    shared_faces[comm_itr->proc].push_back(*itr);
-	}
-      }
+	CommAll comm( mesh.parallel() );
 
-      CommAll comm( mesh.parallel() );
+	//pack send buffers
+	for (int allocation_pass=0; allocation_pass<2; ++allocation_pass) {
+	  if (allocation_pass >= 1) {
+	    comm.allocate_buffers( mesh.parallel_size() /4, 0);
+	  }
 
-      //pack send buffers
-      for (int allocation_pass=0; allocation_pass<2; ++allocation_pass) {
-	if (allocation_pass >= 1) {
-	  comm.allocate_buffers( mesh.parallel_size() /4, 0);
-	}
-
-	for (int proc=mesh.parallel_rank()+1, parallel_size = mesh.parallel_size(); proc<parallel_size; ++proc) {
-	  for (size_t e=0, num_shared = shared_faces[proc].size(); e < num_shared; ++e) {
-	    shared_face_type const & sface = shared_faces[proc][e];
-	    CommBuffer & commbuff = comm.send_buffer(proc).pack<int>(sface.num_nodes).pack<stk::topology::topology_t>(sface.topology);
-	    for (int i = 0; i < sface.num_nodes; ++i) {
-	      commbuff.pack<EntityKey>(sface.nodes[i]);
+	  for (int proc=mesh.parallel_rank()+1, parallel_size = mesh.parallel_size(); proc<parallel_size; ++proc) {
+	    for (size_t e=0, num_shared = shared_faces[proc].size(); e < num_shared; ++e) {
+	      shared_face_type const & sface = shared_faces[proc][e];
+	      CommBuffer & commbuff = comm.send_buffer(proc).pack<stk::topology::topology_t>(sface.topology);
+	      for (int i = 0; i < (int)sface.nodes.size(); ++i) {
+		commbuff.pack<EntityKey>(sface.nodes[i]);
+	      }
+	      commbuff.pack<EntityKey>(sface.local_key);
 	    }
-	    commbuff.pack<EntityKey>(sface.local_key);
+	  }
+	}
+
+	comm.communicate();
+
+	for ( unsigned ip = mesh.parallel_rank() ; ip > 0 ; ) {
+	  --ip;
+	  CommBuffer & buf = comm.recv_buffer( ip );
+	  while ( buf.remaining() ) {
+	    stk::topology::topology_t topology;
+	    buf.unpack<stk::topology::topology_t>(topology);
+	    shared_face_type sface(topology);
+	    for (int i = 0; i < (int)sface.nodes.size(); ++i) {
+	      buf.unpack<EntityKey>(sface.nodes[i]);
+	    }
+
+	    buf.unpack<EntityKey>(sface.global_key);
+
+	    shared_face_map_type::iterator shared_itr = std::lower_bound(shared_face_map.begin(), shared_face_map.end(), sface);
+
+	    //update the global global_key
+	    if (shared_itr != shared_face_map.end() && *shared_itr == sface) {
+	      shared_itr->global_key = sface.global_key;
+	    }
+	  }
+	}
+
+	//update the entity keys
+	for (size_t i=0, e=shared_face_map.size(); i<e; ++i) {
+	  if (shared_face_map[i].global_key != shared_face_map[i].local_key) {
+	    mesh.internal_change_entity_key(shared_face_map[i].local_key, shared_face_map[i].global_key, mesh.get_entity(shared_face_map[i].local_key));
 	  }
 	}
       }
 
-      comm.communicate();
-
-      for ( unsigned ip = mesh.parallel_rank() ; ip > 0 ; ) {
-	--ip;
-	CommBuffer & buf = comm.recv_buffer( ip );
-	while ( buf.remaining() ) {
-	  int num_nodes;
-	  buf.unpack<int>(num_nodes);
-	  shared_face_type sface(num_nodes);
-
-	  buf.unpack<stk::topology::topology_t>(sface.topology);
-	  for (int i = 0; i < sface.num_nodes; ++i) {
-	    buf.unpack<EntityKey>(sface.nodes[i]);
-	  }
-
-	  buf.unpack<EntityKey>(sface.global_key);
-
-	  shared_face_map_type::iterator shared_itr = std::lower_bound(shared_face_map.begin(), shared_face_map.end(), sface);
-
-	  //update the global global_key
-	  if (shared_itr != shared_face_map.end() && *shared_itr == sface) {
-	    shared_itr->global_key = sface.global_key;
-	  }
-	}
-      }
-
-      //update the entity keys
-      for (size_t i=0, e=shared_face_map.size(); i<e; ++i) {
-	if (shared_face_map[i].global_key != shared_face_map[i].local_key) {
-	  mesh.internal_change_entity_key(shared_face_map[i].local_key, shared_face_map[i].global_key, mesh.get_entity(shared_face_map[i].local_key));
-	}
-      }
-    }
-
+    } //namespace
 
     void create_faces( BulkData & mesh, const Selector & element_selector )
     {
-
-      //  static size_t next_edge = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
+      // static size_t next_face = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
       // NOTE: This is a workaround to eliminate some bad behavior with the equation above when
       //       the #proc is a power of two.  The 256 below is the bin size of the Distributed Index.
       static size_t next_face = (static_cast<size_t>(mesh.parallel_rank()+1) << 32) + 256 * mesh.parallel_rank();
 
-      mesh.modification_begin();
+      bool i_started = mesh.modification_begin();
 
-      {
-	shared_face_map_type shared_face_map;
+      shared_face_map_type shared_face_map;
+      face_map_type        face_map;
 
-	{
-	  face_map_type        face_map;
-	  //populate the face_map with existing faces
-	  {
-	    BucketVector const & face_buckets = mesh.buckets(stk::topology::FACE_RANK);
+      //populate the face_map with existing faces
+      BucketVector const & face_buckets = mesh.buckets(stk::topology::FACE_RANK);
 
-	    for (size_t i=0, ie=face_buckets.size(); i<ie; ++i) {
-	      Bucket &b = *face_buckets[i];
+      for (size_t i=0, ie=face_buckets.size(); i<ie; ++i) {
+	Bucket &b = *face_buckets[i];
 
-	      const unsigned num_nodes = b.topology().num_nodes();
-	      EntityVector face_nodes(num_nodes);
+	const unsigned num_nodes = b.topology().num_nodes();
+	EntityVector face_nodes(num_nodes);
 
-	      for (size_t j=0, je=b.size(); j<je; ++j) {
-		Entity face = b[j];
-		Entity const *nodes_rel = b.begin_nodes(j);
+	for (size_t j=0, je=b.size(); j<je; ++j) {
+	  Entity face = b[j];
+	  Entity const *nodes_rel = b.begin_nodes(j);
 
-		for (unsigned n=0; n<num_nodes; ++n) {
-		  face_nodes[n] = nodes_rel[n];
-		}
-
-		face_map[face_nodes] = face;
-	      }
-
-	    }
+	  for (unsigned n=0; n<num_nodes; ++n) {
+	    face_nodes[n] = nodes_rel[n];
 	  }
 
-	  // create faces and connect them to elements
-	  {
-	    BucketVector const& element_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & mesh.mesh_meta_data().locally_owned_part());
-
-	    //create the faces for the elements in each bucket
-	    for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
-	      Bucket &b = *element_buckets[i];
-
-	      create_face_impl functor( next_face, face_map, shared_face_map, b);
-	      stk::topology::apply_functor< create_face_impl > apply(functor);
-	      apply( b.topology() );
-	    }
-	  }
-
+	  face_map[face_nodes] = face;
 	}
-
-	//update global ids of shared faces
-	update_shared_faces_global_ids( mesh, shared_face_map );
-
       }
 
-      mesh.modification_end( BulkData::MOD_END_COMPRESS_AND_SORT );
+      // create faces and connect them to elements
+      BucketVector const& element_buckets =
+	mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & mesh.mesh_meta_data().locally_owned_part());
+
+      //create the faces for the elements in each bucket
+      for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
+	Bucket &b = *element_buckets[i];
+
+	create_face_impl functor( next_face, face_map, shared_face_map, b);
+	stk::topology::apply_functor< create_face_impl > apply(functor);
+	apply( b.topology() );
+      }
+
+      //update global ids of shared faces
+      update_shared_faces_global_ids( mesh, shared_face_map );
+
+      if (i_started) {
+	mesh.modification_end( BulkData::MOD_END_COMPRESS_AND_SORT );
+      }
     }
 
   }
