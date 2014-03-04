@@ -46,8 +46,10 @@
 #ifndef MUELU_PERFUTILS_DEF_HPP
 #define MUELU_PERFUTILS_DEF_HPP
 
+#include <algorithm>
 #include <string>
 
+#include <Xpetra_Export.hpp>
 #include <Xpetra_Import.hpp>
 
 #include "MueLu_PerfUtils_decl.hpp"
@@ -56,45 +58,103 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LO, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string PerfUtils<Scalar, LO, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+  template<class Type>
+  void calculateStats(Type& minVal, Type& maxVal, double& avgVal, double& devVal, const RCP<const Teuchos::Comm<int> >& comm, const Type& v, RCP<ParameterList> paramList = Teuchos::null) {
+    int numProcs = comm->getSize();
+    if (!paramList.is_null() && paramList->isParameter("num procs"))
+      numProcs = paramList->get<int>("num procs");
+
+    Type sumVal, sum2Val;
+
+    sumAll(comm,   v, sumVal);
+    sumAll(comm, v*v, sum2Val);
+    maxAll(comm,   v, maxVal);
+
+    if (paramList.is_null() || !paramList->isParameter("avoid min zero"))
+      minAll(comm, v, minVal);
+    else if (paramList->get<bool>("avoid min zero") == true)
+      minAll(comm, (v > 0 ? v : maxVal), minVal);
+
+    avgVal = as<double>(sumVal) / numProcs;
+    devVal = (numProcs != 1 ? sqrt((sum2Val - sumVal*avgVal)/(numProcs-1)) : 0);
+  }
+
+  template<class Type>
+  std::string stringStats(const RCP<const Teuchos::Comm<int> >& comm, const Type& v, RCP<ParameterList> paramList = Teuchos::null) {
+    Type minVal, maxVal;
+    double avgVal, devVal;
+    calculateStats<Type>(minVal, maxVal, avgVal, devVal, comm, v, paramList);
+
+    char buf[256];
+    if (avgVal && (paramList.is_null() || !paramList->isParameter("print abs") || paramList->get<bool>("print abs") == false))
+      sprintf(buf, "avg = %.2e,  dev = %5.1f%%,  min = %+6.1f%%,  max = %+6.1f%%", avgVal,
+              (devVal/avgVal)*100, (minVal/avgVal-1)*100, (maxVal/avgVal-1)*100);
+    else
+      sprintf(buf, "avg = %8.2f,  dev = %6.2f,  min = %6.1f ,  max = %6.1f", avgVal,
+              devVal, as<double>(minVal), as<double>(maxVal));
+    return buf;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+    typedef Xpetra::global_size_t global_size_t;
+
     std::ostringstream ss;
     ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols() << ", nnz = " << A.getGlobalNumEntries() << std::endl;
 
     if (params.is_null())
       return ss.str();
 
+    RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+
     if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo")) {
-      RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
-      GlobalOrdinal numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
+      GO numProcessesWithData = 0;
 
-      // aggregate data
-      GlobalOrdinal  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
-      GlobalOrdinal numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
-      double  numMyNnz2 =  Teuchos::as<double>(numMyNnz)* numMyNnz,     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
-      double numMyRows2 = Teuchos::as<double>(numMyRows)*numMyRows, sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
-      maxAll(comm,                                       numMyNnz, maxNnz);
-      maxAll(comm,                                      numMyRows, maxNumRows);
-      sumAll(comm, (GlobalOrdinal)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
-      minAll(comm, (GlobalOrdinal)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
-      minAll(comm, (GlobalOrdinal)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-      sumAll(comm,                                      numMyNnz2, sum2Nnz);
-      sumAll(comm,                                     numMyRows2, sum2NumRows);
+      size_t numMyNnz = A.getNodeNumEntries(), numMyRows = A.getNodeNumRows();
 
-      double avgNumRows = sumNumRows / numProcessesWithData;
-      double avgNnz     = sumNnz     / numProcessesWithData;
-      double devNumRows = (numProcessesWithData != 1 ? sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1)) : 0);
-      double devNnz     = (numProcessesWithData != 1 ? sqrt((sum2Nnz     -     sumNnz*    sumNnz/numProcessesWithData)/(numProcessesWithData-1)) : 0);
+      sumAll(comm, as<GO>((numMyRows > 0) ? 1 : 0), numProcessesWithData);
 
-      char buf[256];
-      ss << msgTag << " Load balancing info:" << std::endl;
-      ss << msgTag << "   # active processes: "   << numActiveProcesses << ",  # processes with data = " << numProcessesWithData << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNumRows,
-              (devNumRows/avgNumRows)*100, (minNumRows/avgNumRows-1)*100, (maxNumRows/avgNumRows-1)*100);
-      ss << msgTag << "   # rows per proc   : " << buf << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNnz,
-              (devNnz/avgNnz)*100, (minNnz/avgNnz-1)*100, (maxNnz/avgNnz-1)*100);
-      ss << msgTag << "   #  nnz per proc   : " << buf << std::endl;
+      ParameterList paramList;
+      paramList.set("num procs",      numProcessesWithData);
+      paramList.set("avoid min zero", true);
+
+      ss << msgTag << " Load balancing info"    << std::endl;
+      ss << msgTag << "   # active processes: " << comm->getSize() << ",  # processes with data = " << numProcessesWithData << std::endl;
+      ss << msgTag << "   # rows per proc   : " << stringStats<global_size_t>(comm, numMyRows, rcpFromRef(paramList)) << std::endl;
+      ss << msgTag << "   #  nnz per proc   : " << stringStats<global_size_t>(comm,  numMyNnz, rcpFromRef(paramList)) << std::endl;
+    }
+
+    if (params->isParameter("printCommInfo") && params->get<bool>("printCommInfo")) {
+      RCP<const Import> importer = A.getCrsGraph()->getImporter();
+      RCP<const Export> exporter = A.getCrsGraph()->getExporter();
+
+      // Communication volume
+      size_t numExport = 0, numImport = 0;
+      size_t numNeigh  = 0, maxNeighMsg = 0;
+      if (!importer.is_null()) {
+        numExport = importer->getNumExportIDs();
+        numImport = importer->getNumRemoteIDs();
+
+        ArrayView<const int> exportPIDs = importer->getExportPIDs();
+
+        if (exportPIDs.size()) {
+          std::map<int,size_t> neighMap;
+          for (int i = 0; i < exportPIDs.size(); i++)
+            neighMap[exportPIDs[i]]++;
+
+          numNeigh    = neighMap.size();
+          maxNeighMsg = std::max_element(neighMap.begin(), neighMap.end())->second;
+        }
+      }
+
+      ParameterList absList;
+      absList.set("print abs", true);
+
+      ss << msgTag << " Communication info"     << std::endl;
+      ss << msgTag << "   # num export ids  : " << stringStats<global_size_t>(comm,   numExport)                      << std::endl;
+      ss << msgTag << "   # num import ids  : " << stringStats<global_size_t>(comm,   numImport)                      << std::endl;
+      ss << msgTag << "   # num neighbors   : " << stringStats<global_size_t>(comm,    numNeigh, rcpFromRef(absList)) << std::endl;
+      ss << msgTag << "   # max neigh msg   : " << stringStats<global_size_t>(comm, maxNeighMsg)                      << std::endl;
     }
 
     return ss.str();
@@ -120,7 +180,7 @@ namespace MueLu {
     if (exportPIDs.size()) {
       // NodeTE: exportPIDs is sorted but not unique ( 1 1 1 2 2 3 4 4 4 )
       int neigh  = exportPIDs[0];
-      GlobalOrdinal  weight = 1;
+      GO  weight = 1;
       for (int i = 1; i < exportPIDs.size(); i++) {
         if (exportPIDs[i] != exportPIDs[i-1]) {
           out << " " << neigh << "(" << weight << ")";

@@ -177,6 +177,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo",          true);
     GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()

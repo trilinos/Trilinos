@@ -137,6 +137,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());;
     params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo",          true);
 
     if (pL.get<std::string>("type") == "Interpolation") {
 

@@ -113,6 +113,7 @@ namespace MueLu {
       if (!rebalancedAc.is_null()) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 

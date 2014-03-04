@@ -50,6 +50,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_Export_fwd.hpp>
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
