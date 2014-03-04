@@ -50,6 +50,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_ImportExportData.hpp>
 #include <Tpetra_Util.hpp>
+#include <Tpetra_Import_Util.hpp>
 #include <Tpetra_Export.hpp>
 #include <Teuchos_as.hpp>
 
@@ -943,7 +944,7 @@ namespace Tpetra {
         cerr << os.str ();
       }
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    }
+    }// end permutes
 
     // Thus far, we have computed the following in the union Import:
     //   - getNumSameIDs()
@@ -974,7 +975,7 @@ namespace Tpetra {
     cerr << myRank << ": Computing remote IDs" << endl;
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
-    ArrayView<GO> remoteGIDsUnion;
+    Array<GO> remoteGIDsUnion;
     Array<int> remotePIDsUnion;
     Array<LO> remoteLIDsUnion;
     size_type numRemoteIDsUnion = 0;
@@ -986,162 +987,73 @@ namespace Tpetra {
       // Distributor via getImagesFrom(), but Distributor reorders
       // them in some not entirely transparent way.
 
-      ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs ();
-      ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs ();
+      // Grab the remoteLIDs
+      ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
+      ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      cerr << myRank << ": Converting remote LIDs to GIDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+      // Grab the remotePIDs
+      Array<int> remotePIDs1, remotePIDs2; 
+      Tpetra::Import_Util::getRemotePIDs(*this,remotePIDs1);
+      Tpetra::Import_Util::getRemotePIDs(rhs,remotePIDs2);
 
-      // We'll have to recompute LIDs for the target Map anyway, so
-      // start by converting back to GIDs.  Sort each one in
-      // preparation for the merge below.
-      Array<GO> remoteGIDs1 (remoteLIDs1.size ());
-      for (size_type k = 0; k < remoteLIDs1.size (); ++k) {
-        remoteGIDs1[k] = tgtMap1->getGlobalElement (remoteLIDs1[k]);
-      }
-      std::sort (remoteGIDs1.begin (), remoteGIDs1.end ());
+      // Put the (PID,GID) into std:pairs to make for easier sorting
+      Array<std::pair<int,GO> > remotePGIDs1, remotePGIDs2,remotePGUnion;
+      remotePGIDs1.resize(remotePIDs1.size());
+      remotePGIDs2.resize(remotePIDs2.size());
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": remoteGIDs1: " << toString (remoteGIDs1 ()) << endl;
-        cerr << os.str ();
-      }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+      for(size_type k=0; k < remotePIDs1.size(); k++)
+	remotePGIDs1[k] = std::pair<int,GO>(remotePIDs1[k],this->getTargetMap()->getGlobalElement(remoteLIDs1[k]));
 
-      Array<GO> remoteGIDs2 (remoteLIDs2.size ());
-      for (size_type k = 0; k < remoteLIDs2.size (); ++k) {
-        remoteGIDs2[k] = tgtMap2->getGlobalElement (remoteLIDs2[k]);
-      }
-      std::sort (remoteGIDs2.begin (), remoteGIDs2.end ());
+      for(size_type k=0; k < remotePIDs2.size(); k++)
+	remotePGIDs2[k] = std::pair<int,GO>(remotePIDs2[k],rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]));
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": remoteGIDs2: " << toString (remoteGIDs2 ()) << endl;
-        cerr << os.str ();
-      }
-      cerr << myRank << ": Merging remote GID lists" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
-      // Merge the two GID lists to make the list of remote GIDs for
-      // the union Import.
-      const size_type oldSize = unionTgtGIDs.size ();
-      std::set_union (remoteGIDs1.begin (), remoteGIDs1.end (),
-                      remoteGIDs2.begin (), remoteGIDs2.end (),
-                      std::back_inserter (unionTgtGIDs));
-      const size_type newSize = unionTgtGIDs.size ();
-      numRemoteIDsUnion = newSize - oldSize;
-      remoteGIDsUnion = unionTgtGIDs (oldSize, numRemoteIDsUnion);
+      // Sort and merge the (PID,GID) pairs (with the LIDs along for the ride at least for the sort)
+      std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
+      std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
+      std::merge(remotePGIDs1.begin(), remotePGIDs1.end(),
+		 remotePGIDs2.begin(), remotePGIDs2.end(),
+		 std::back_inserter(remotePGUnion));      
+      typename Array<std::pair<int,GO> >::iterator it = std::unique(remotePGUnion.begin(),remotePGUnion.end());
+      remotePGUnion.resize(std::distance(remotePGUnion.begin(),it));
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": remoteGIDsUnion: " << toString (remoteGIDsUnion ()) << endl;
-        cerr << os.str ();
-      }
-      cerr << myRank << ": Looking up remote GIDs' PIDs in the source Map" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+      // Assign the remote LIDs in order; copy out 
+      numRemoteIDsUnion = remotePGUnion.size();
+      remoteLIDsUnion.resize(numRemoteIDsUnion);
+      remotePIDsUnion.resize(numRemoteIDsUnion);
+      remoteGIDsUnion.resize(numRemoteIDsUnion);
 
-      // Look up the remote GIDs' PIDs in the source Map.
-      //
-      // FIXME (mfh 28 Feb 2014) Call Tpetra::Import_Util::getPids(),
-      // early on, before the union.
-      remotePIDsUnion.resize (numRemoteIDsUnion);
-      const LookupStatus lookup =
-        srcMap->getRemoteIndexList (remoteGIDsUnion (), remotePIDsUnion ());
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": remotePIDsUnion: " << toString (remotePIDsUnion ()) << endl;
-        cerr << os.str ();
-      }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      // Ignore remote GIDs that aren't owned by any process in the
-      // source Map.  getRemoteIndexList() gives these a PID of -1.
-      if (lookup == IDNotPresent) {
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-        cerr << myRank << ": Filtering remote GIDs not owned by any process in the source Map" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-        const size_type numInvalidRemote =
-          std::count_if (remotePIDsUnion.begin (), remotePIDsUnion.end (),
-                         std::bind1st (std::equal_to<int> (), -1));
-        if (numInvalidRemote == numRemoteIDsUnion) {
-          // If all of them are invalid, then there are no remote IDs.
-          unionTgtGIDs.resize (oldSize);
-          numRemoteIDsUnion = 0;
-          remoteGIDsUnion = ArrayView<GO> (NULL, 0);
-          { // C++ idiom to force Array to free storage; clear() doesn't free
-            Array<int> newRemotePIDsUnion;
-            std::swap (remotePIDsUnion, newRemotePIDsUnion);
-          }
-        }
-        else {
-          // Some remotes are valid; we need to keep the valid ones.
-          // Pack and resize remotePIDs and remoteGIDs.
-          size_type numValidRemote = 0;
-          for (size_type r = 0; r < numRemoteIDsUnion; ++r) {
-            // Pack in all the valid remote PIDs and GIDs.
-            if (remotePIDsUnion[r] != -1) {
-              remotePIDsUnion[numValidRemote] = remotePIDsUnion[r];
-              remoteGIDsUnion[numValidRemote] = remoteGIDsUnion[r];
-              ++numValidRemote;
-            }
-          }
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            numValidRemote != numRemoteIDsUnion - numInvalidRemote, std::logic_error,
-            "Tpetra::Import::setUnion(): After removing invalid remote GIDs and"
-            " packing the valid remote GIDs, numValidRemote = " << numValidRemote
-            << " != numRemoteIDsUnion - numInvalidRemote = "
-            << numRemoteIDsUnion - numInvalidRemote
-            << ".  Please report this bug to the Tpetra developers.");
-
-          unionTgtGIDs.resize (oldSize + numValidRemote);
-          numRemoteIDsUnion = numValidRemote;
-          remoteGIDsUnion = unionTgtGIDs (oldSize, numValidRemote);
-          remotePIDsUnion.resize (numValidRemote);
-        }
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-        {
-          std::ostringstream os;
-          os << myRank << ": remoteGIDsUnion after filtering: " << toString (remoteGIDsUnion ()) << endl;
-          os << myRank << ": remotePIDsUnion after filtering: " << toString (remotePIDsUnion ()) << endl;
-          cerr << os.str ();
-        }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      }
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      cerr << myRank << ": Assigning LIDs (in union target Map) to remote IDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      // Now remoteGIDsUnion, remotePIDsUnion, and numRemoteIDsUnion
-      // have been set.  We just need to assign LIDs to those PIDs,
-      // and then sort all three arrays together by PID.
-      remoteLIDsUnion.resize (numRemoteIDsUnion);
       for (size_type k = 0; k < numRemoteIDsUnion; ++k) {
         remoteLIDsUnion[k] = curTgtLid++;
-      }
+        remotePIDsUnion[k] = remotePGUnion[k].first;
+        remoteGIDsUnion[k] = remotePGUnion[k].second;
+      }     
+
+      // Update the unionTgtGIDs
+      const size_type oldSize = unionTgtGIDs.size();
+      unionTgtGIDs.resize(oldSize + numRemoteIDsUnion);
+      for(size_type k=0; k<numRemoteIDsUnion; k++)
+	unionTgtGIDs[oldSize+k] = remoteGIDsUnion[k];
 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
       {
+	// For debugging purposes only
+	Array<GO> remoteGIDs1(remotePIDs1.size());
+	Array<GO> remoteGIDs2(remotePIDs2.size());
+	for(size_type k=0; k < remotePIDs1.size(); k++)
+	  remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
+	for(size_type k=0; k < remotePIDs2.size(); k++)
+	  remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
+
         std::ostringstream os;
-        os << myRank << ": remoteLIDsUnion: " << toString (remoteLIDsUnion ()) << endl;
+        os << myRank << ": remoteGIDs1           : " << toString (remoteGIDs1 ()) << endl;
+        os << myRank << ": remotePIDs1           : " << toString (remotePIDs1 ()) << endl;
+        os << myRank << ": remoteGIDs2           : " << toString (remoteGIDs2 ()) << endl;
+        os << myRank << ": remotePIDs2           : " << toString (remotePIDs2 ()) << endl;
         cerr << os.str ();
       }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      cerr << myRank << ": Sorting remote PIDs, GIDs, and LIDs jointly by PID" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      sort3 (remotePIDsUnion.begin (), remotePIDsUnion.end (),
-             remoteGIDsUnion.begin (), remoteLIDsUnion.begin ());
+#endif
+    }//end remotes
 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
       {
@@ -1152,7 +1064,7 @@ namespace Tpetra {
         cerr << os.str ();
       }
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    }
+
 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     {
@@ -1279,7 +1191,7 @@ namespace Tpetra {
     // communication plan.  remoteGIDsUnion and remotePIDsUnion are
     // input; exportGIDsUnion and exportPIDsUnion are output arrays
     // which are allocated by createFromRecvs().
-    distributor.createFromRecvs (remoteGIDsUnion.getConst (),
+    distributor.createFromRecvs (remoteGIDsUnion().getConst (),
                                  remotePIDsUnion ().getConst (),
                                  exportGIDsUnion, exportPIDsUnion);
 
@@ -1290,7 +1202,7 @@ namespace Tpetra {
       exportLIDsUnion[k] = srcMap->getLocalElement (exportGIDsUnion[k]);
     }
 #endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
-
+ 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     {
       std::ostringstream os;
@@ -1317,9 +1229,6 @@ namespace Tpetra {
 
     return unionImport;
   }
-
-
-
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

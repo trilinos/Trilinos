@@ -47,6 +47,7 @@
 
 #include <Tpetra_Util.hpp>
 #include <Tpetra_Import_Util.hpp>
+#include <Tpetra_Import_Util2.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayRCP.hpp>
