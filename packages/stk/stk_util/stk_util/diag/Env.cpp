@@ -57,7 +57,7 @@ namespace Env {
   //
   //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
   //
-  GeminiSCIVersion GeminiVersion(GeminiSCIVersion ver) {
+  GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
     static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini verion
     if(ver != GEMINI_SCI_UNKNOWN) {
       GeminiSCIVersionValue = ver;
@@ -1007,7 +1007,7 @@ startup_multi_exec(MPI_Comm                world_comm,
 
     if (fluid_rank_size) {
 
-      if( Env::GeminiSCIVersion() == Env::GEMINI_SCI_2) {
+      if( Env::GetGeminiVersion() == Env::GEMINI_SCI_2) {
         int eul_rank_size = fluid_rank_size;
         if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS) {
           throw RuntimeError() << "MPI_Bcast failed";
@@ -1047,25 +1047,6 @@ startup_multi_exec(MPI_Comm                world_comm,
         throw RuntimeError() << "MPI_Comm_create failed";
 
     }
-
-    /*
-    cout<<"START ALPHA TEST"<<endl;
-
-    int NumFlags[6] = {2, 3, 1, 2, 4, 0};
-    int HdrFlag[2] = {3,2};
-    int TAG = 0;
-
-    MPI_Send(NumFlags, 6, MPI_INTEGER, fluid_master, TAG, world_comm);
-
-    MPI_Send(HdrFlag, NumFlags[0], MPI_INTEGER, fluid_master, TAG, world_comm);
-
-    int NumFlagEul[5];
-    MPI_Status stat;
-    MPI_Recv(NumFlagEul, 3, MPI_INTEGER, fluid_master, TAG, world_comm, &stat);
-
-    cout<<"END ALPHA TEST"<<endl;
-    */
-
 
     env_data.m_worldComm                            = world_comm;
     env_data.m_execMap[EXEC_TYPE_LAG].m_master      = lag_master;
