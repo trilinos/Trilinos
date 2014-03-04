@@ -127,15 +127,16 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    params->set("printCommInfo",          true);
+    if (aggregates->AggregatesCrossProcessors())
+      params->set("printCommInfo",        true);
     GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
                      const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo,
-                     const MultiVector & fineNullspace, RCP<const Map> coarseMap,
-                     RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
+                     const MultiVector& fineNullspace, RCP<const Map> coarseMap,
+                     RCP<MultiVector>& coarseNullspace, RCP<Matrix>& Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();

@@ -59,21 +59,15 @@
 namespace MueLu {
 
   template<class Type>
-  void calculateStats(Type& minVal, Type& maxVal, double& avgVal, double& devVal, const RCP<const Teuchos::Comm<int> >& comm, const Type& v, RCP<ParameterList> paramList = Teuchos::null) {
+  void calculateStats(Type& minVal, Type& maxVal, double& avgVal, double& devVal, const RCP<const Teuchos::Comm<int> >& comm, const Type& v) {
     int numProcs = comm->getSize();
-    if (!paramList.is_null() && paramList->isParameter("num procs"))
-      numProcs = paramList->get<int>("num procs");
 
     Type sumVal, sum2Val;
 
     sumAll(comm,   v, sumVal);
     sumAll(comm, v*v, sum2Val);
+    minAll(comm,   v, minVal);
     maxAll(comm,   v, maxVal);
-
-    if (paramList.is_null() || !paramList->isParameter("avoid min zero"))
-      minAll(comm, v, minVal);
-    else if (paramList->get<bool>("avoid min zero") == true)
-      minAll(comm, (v > 0 ? v : maxVal), minVal);
 
     avgVal = as<double>(sumVal) / numProcs;
     devVal = (numProcs != 1 ? sqrt((sum2Val - sumVal*avgVal)/(numProcs-1)) : 0);
@@ -83,7 +77,7 @@ namespace MueLu {
   std::string stringStats(const RCP<const Teuchos::Comm<int> >& comm, const Type& v, RCP<ParameterList> paramList = Teuchos::null) {
     Type minVal, maxVal;
     double avgVal, devVal;
-    calculateStats<Type>(minVal, maxVal, avgVal, devVal, comm, v, paramList);
+    calculateStats<Type>(minVal, maxVal, avgVal, devVal, comm, v);
 
     char buf[256];
     if (avgVal && (paramList.is_null() || !paramList->isParameter("print abs") || paramList->get<bool>("print abs") == false))
@@ -95,66 +89,77 @@ namespace MueLu {
     return buf;
   }
 
+  template<class Map>
+  bool cmp_less(typename Map::value_type& v1, typename Map::value_type& v2) {
+    return v1.second < v2.second;
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
     typedef Xpetra::global_size_t global_size_t;
 
     std::ostringstream ss;
-    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols() << ", nnz = " << A.getGlobalNumEntries() << std::endl;
+
+    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols()
+       << ", nnz = " << A.getGlobalNumEntries() << std::endl;
 
     if (params.is_null())
       return ss.str();
 
-    RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+    bool printLoadBalanceInfo = false, printCommInfo = false;
+    if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo"))
+      printLoadBalanceInfo = true;
+    if (params->isParameter("printCommInfo") && params->get<bool>("printCommInfo"))
+      printCommInfo = true;
 
-    if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo")) {
-      GO numProcessesWithData = 0;
+    if (!printLoadBalanceInfo && !printCommInfo)
+      return ss.str();
 
-      size_t numMyNnz = A.getNodeNumEntries(), numMyRows = A.getNodeNumRows();
+    RCP<const Import> importer = A.getCrsGraph()->getImporter();
+    RCP<const Export> exporter = A.getCrsGraph()->getExporter();
 
-      sumAll(comm, as<GO>((numMyRows > 0) ? 1 : 0), numProcessesWithData);
+    size_t numMyNnz = A.getNodeNumEntries(), numMyRows = A.getNodeNumRows();
 
-      ParameterList paramList;
-      paramList.set("num procs",      numProcessesWithData);
-      paramList.set("avoid min zero", true);
+    // Create communicator only for active processes
+    RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();
+    RCP<const Teuchos::Comm<int> >     comm = origComm->split((numMyRows > 0) ? 0 : MPI_UNDEFINED, 0);
 
+    if (comm.is_null())
+      return ss.str();
+
+    ParameterList absList;
+    absList.set("print abs", true);
+
+    if (printLoadBalanceInfo) {
       ss << msgTag << " Load balancing info"    << std::endl;
-      ss << msgTag << "   # active processes: " << comm->getSize() << ",  # processes with data = " << numProcessesWithData << std::endl;
-      ss << msgTag << "   # rows per proc   : " << stringStats<global_size_t>(comm, numMyRows, rcpFromRef(paramList)) << std::endl;
-      ss << msgTag << "   #  nnz per proc   : " << stringStats<global_size_t>(comm,  numMyNnz, rcpFromRef(paramList)) << std::endl;
+      ss << msgTag << "   # active processes: " << comm->getSize() << "/" << origComm->getSize() << std::endl;
+      ss << msgTag << "   # rows per proc   : " << stringStats<global_size_t>(comm, numMyRows) << std::endl;
+      ss << msgTag << "   #  nnz per proc   : " << stringStats<global_size_t>(comm,  numMyNnz) << std::endl;
     }
 
-    if (params->isParameter("printCommInfo") && params->get<bool>("printCommInfo")) {
-      RCP<const Import> importer = A.getCrsGraph()->getImporter();
-      RCP<const Export> exporter = A.getCrsGraph()->getExporter();
-
-      // Communication volume
-      size_t numExport = 0, numImport = 0;
-      size_t numNeigh  = 0, maxNeighMsg = 0;
+    if (printCommInfo) {
+      typedef std::map<int,size_t> map_type;
+      map_type neighMap;
       if (!importer.is_null()) {
-        numExport = importer->getNumExportIDs();
-        numImport = importer->getNumRemoteIDs();
-
         ArrayView<const int> exportPIDs = importer->getExportPIDs();
-
-        if (exportPIDs.size()) {
-          std::map<int,size_t> neighMap;
+        if (exportPIDs.size())
           for (int i = 0; i < exportPIDs.size(); i++)
             neighMap[exportPIDs[i]]++;
-
-          numNeigh    = neighMap.size();
-          maxNeighMsg = std::max_element(neighMap.begin(), neighMap.end())->second;
-        }
       }
 
-      ParameterList absList;
-      absList.set("print abs", true);
+      // Communication volume
+      size_t numExportSend = (!exporter.is_null() ? exporter->getNumExportIDs() : 0);
+      size_t numImportSend = (!importer.is_null() ? importer->getNumExportIDs() : 0);
+      size_t numMsgs       = neighMap.size();
+      size_t minMsg        = std::min_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>)->second;
+      size_t maxMsg        = std::max_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>)->second;
 
       ss << msgTag << " Communication info"     << std::endl;
-      ss << msgTag << "   # num export ids  : " << stringStats<global_size_t>(comm,   numExport)                      << std::endl;
-      ss << msgTag << "   # num import ids  : " << stringStats<global_size_t>(comm,   numImport)                      << std::endl;
-      ss << msgTag << "   # num neighbors   : " << stringStats<global_size_t>(comm,    numNeigh, rcpFromRef(absList)) << std::endl;
-      ss << msgTag << "   # max neigh msg   : " << stringStats<global_size_t>(comm, maxNeighMsg)                      << std::endl;
+      ss << msgTag << "   # num export send : " << stringStats<global_size_t>(comm, numExportSend)                      << std::endl;
+      ss << msgTag << "   # num import send : " << stringStats<global_size_t>(comm, numImportSend)                      << std::endl;
+      ss << msgTag << "   # num msgs        : " << stringStats<global_size_t>(comm,       numMsgs, rcpFromRef(absList)) << std::endl;
+      ss << msgTag << "   # min msg size    : " << stringStats<global_size_t>(comm,        minMsg)                      << std::endl;
+      ss << msgTag << "   # max msg size    : " << stringStats<global_size_t>(comm,        maxMsg)                      << std::endl;
     }
 
     return ss.str();
