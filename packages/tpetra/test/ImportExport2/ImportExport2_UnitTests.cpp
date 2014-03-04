@@ -77,6 +77,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Import_Util.hpp"
+#include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
