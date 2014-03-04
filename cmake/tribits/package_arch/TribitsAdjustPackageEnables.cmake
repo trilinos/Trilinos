@@ -287,7 +287,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_DEFINE_PACKAGE_DEPENDENCIES
+# @MACRO: TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
 #
 # Define the dependenices for a given TriBITS SE package (i.e. a top-level
 # package or a subpackage).
@@ -375,6 +375,9 @@ ENDMACRO()
 # both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
 # "LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
 # not important.
+#
+# If some upstream packages are allowed to be missing, this can be specified
+# by calling the macro ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES``_.
 #
 # A top-level package can also have subpackages.  In this case, the following
 # varible must be set:
