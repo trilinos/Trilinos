@@ -52,7 +52,7 @@ INCLUDE(TribitsListHelpers)
 
 
 #
-# @MACRO: TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS
+# @MACRO: TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()
 #
 # Define the set of packages for a given TriBIT repo.  This macro is typically
 # called from inside of a PackagesList.cmake file for a given TriBITS repo.
@@ -73,7 +73,7 @@ INCLUDE(TribitsListHelpers)
 #   across all other TriBITS packages in this or any other TriBITS repo that
 #   might be combined into a single TriBITS project meta-build.  The name
 #   should be a valid identifier (e.g. matches the regex
-#   "[a-zA-Z_][a-zA-Z0-9_]*").
+#   ``[a-zA-Z_][a-zA-Z0-9_]*``).
 #
 # * **DIR**: The relative directory for the package.  This is relative to the
 #   TriBITS repository base directory.  Under this directory will be a
@@ -100,12 +100,12 @@ INCLUDE(TribitsListHelpers)
 #  * Asserts that REPOSITORY_NAME is defined and set
 #
 #  * Avoids having to hard-code the assumed repository name
-#  ${REPOSITORY_NAME}.  This provides more flexibility for how other TriBITS
-#  project name a given TriBITS repo (i.e. the name of repo subdirs).
+#    ${REPOSITORY_NAME}.  This provides more flexibility for how other TriBITS
+#    project name a given TriBITS repo (i.e. the name of repo subdirs).
 #
 #  * Avoid mispelling the name of the varible
-#  ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.  If you misspell
-#  the name of the macro, it is an immediate error in CMake.
+#    ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.  If you misspell
+#    the name of the macro, it is an immediate error in CMake.
 #
 MACRO(TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS)
   ASSERT_DEFINED(REPOSITORY_NAME)
@@ -114,7 +114,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES
+# @MACRO: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 # 
 # Macro used in Dependencies.cmake files to allow some upstream dependent packages
 # to be missing.

@@ -311,7 +311,7 @@ ENDMACRO()
 #        ]
 #      )
 #
-# Every argument in this macro is option.  The arguments that apply a package
+# Every argument in this macro is optional.  The arguments that apply a package
 # itself are:
 #
 # * **LIB_REQUIRED_PACKAGES:** List of upstream packages that must be enabled
@@ -324,7 +324,7 @@ ENDMACRO()
 #   of these optional upstream packages will result in diminished capabilities
 #   of this package.
 #
-# * *TEST_REQUIRED_PACKAGES:** List of additional upstream packages that must
+# * **TEST_REQUIRED_PACKAGES:** List of additional upstream packages that must
 #   be enabled in order to build and/or run the tests and/or examples in this
 #   packages.  If any of these upstream packages is not enabled, then there
 #   will be no tests or examples defined or run for this package.
@@ -344,7 +344,7 @@ ENDMACRO()
 #   optional upstream TPLs will result in diminished capabilities of this
 #   package.
 #
-# * *TEST_REQUIRED_TPLS:** List of additional upstream TPLs that must
+# * **TEST_REQUIRED_TPLS:** List of additional upstream TPLs that must
 #   be enabled in order to build and/or run the tests and/or examples in this
 #   packages.  If any of these upstream TPLs is not enabled, then there
 #   will be no tests or examples defined or run for this package.
@@ -377,7 +377,7 @@ ENDMACRO()
 # not important.
 #
 # If some upstream packages are allowed to be missing, this can be specified
-# by calling the macro ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES``_.
+# by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
 #
 # A top-level package can also have subpackages.  In this case, the following
 # varible must be set:
@@ -400,7 +400,7 @@ ENDMACRO()
 #     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
 #     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
 #     as for full packages (see
-#     ``TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS``_).
+#     `TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()`_).
 #
 #   * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
 #     REQUIRED dependence on this subpackage.

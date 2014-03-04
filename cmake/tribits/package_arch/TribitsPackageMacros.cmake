@@ -111,7 +111,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE_DECL
+# @MACRO: TRIBITS_PACKAGE_DECL()
 #
 # Macro called at the very beginning of a ${PROJECT_NAME}
 # package's top-level CMakeLists.txt file when a packages has subpackages.
@@ -244,7 +244,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE_DEF
+# @MACRO: TRIBITS_PACKAGE_DEF()
 #
 # Macro called after subpackages are processed in order to
 # handle the libraries, tests, and examples of the final package. 
@@ -310,7 +310,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_ADD_TEST_DIRECTORIES
+# @MACRO: TRIBITS_ADD_TEST_DIRECTORIES()
 #
 # Macro called to add a set of test directories for an SE package.
 #
@@ -396,7 +396,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES
+# @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES()
 #  
 # Macro called to conditionally add a set of example directories for an SE
 # package.
@@ -514,7 +514,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE_POSTPROCESS
+# @MACRO: TRIBITS_PACKAGE_POSTPROCESS()
 #  
 # Macro called at the very end of a package's top-level CMakeLists.txt file.
 # This macro performs some critical post-processing activities before
@@ -551,7 +551,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_PROCESS_SUBPACKAGES
+# @MACRO: TRIBITS_PROCESS_SUBPACKAGES()
 #
 # Macro that processes subpackages for packages that have them.
 #
