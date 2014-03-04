@@ -186,7 +186,7 @@ getRowStatImpl(
     const RowStatLinearOpBaseUtils::ERowStat rowStat, 
     const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const
 { 
-  Thyra::put_scalar(0.0,rowStatVec); 
+  Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(),rowStatVec); 
 }
 
 
