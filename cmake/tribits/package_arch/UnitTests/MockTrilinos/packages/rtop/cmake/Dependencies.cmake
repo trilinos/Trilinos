@@ -39,6 +39,6 @@
 
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES Teuchos
+  REGRESSION_EMAIL_LIST thyra-regression@software.sandia.gov
   )
 
-SET(REGRESSION_EMAIL_LIST thyra-regression@software.sandia.gov)

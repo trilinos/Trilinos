@@ -39,6 +39,6 @@
 
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES Teuchos
+  REGRESSION_EMAIL_LIST extra-one-package-override@some.url.gov
   )
 
-SET(REGRESSION_EMAIL_LIST extra-one-package-override@some.url.gov)

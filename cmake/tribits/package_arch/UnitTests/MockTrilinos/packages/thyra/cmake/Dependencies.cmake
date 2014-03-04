@@ -37,24 +37,21 @@
 # ************************************************************************
 # @HEADER
 
-
-SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  CoreLibs  src  PT  REQUIRED
-  GoodStuff  src/good_stuff  ST  OPTIONAL
-  CrazyStuff  src/crazy_stuff  EX  OPTIONAL
-  Epetra  adapters/epetra  PT  OPTIONAL
-  EpetraExt  adapters/epetraext  PT  OPTIONAL
-  Tpetra  adapters/tpetra  PT  OPTIONAL
+TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+    CoreLibs  src  PT  REQUIRED
+    GoodStuff  src/good_stuff  ST  OPTIONAL
+    CrazyStuff  src/crazy_stuff  EX  OPTIONAL
+    Epetra  adapters/epetra  PT  OPTIONAL
+    EpetraExt  adapters/epetraext  PT  OPTIONAL
+    Tpetra  adapters/tpetra  PT  OPTIONAL
+  LIB_OPTIONAL_PACKAGES MissingPackage
+  REGRESSION_EMAIL_LIST thyra-boneheads@gmail.com
   )
 
 # NOTE: The above subpackages automatically become required and optional LIB
 # package dependencies (prefixed by 'Thyra') added to the variables below.
 # There is no need to add them again!
 
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
-  LIB_OPTIONAL_PACKAGES MissingPackage
-  )
-
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MissingPackage)
 
-SET(REGRESSION_EMAIL_LIST thyra-boneheads@gmail.com)

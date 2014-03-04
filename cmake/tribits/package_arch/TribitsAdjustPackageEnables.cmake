@@ -289,7 +289,8 @@ ENDMACRO()
 #
 # @MACRO: TRIBITS_DEFINE_PACKAGE_DEPENDENCIES
 #
-# Define the dependenices for a given TriBITS SE package.
+# Define the dependenices for a given TriBITS SE package (i.e. a top-level
+# package or a subpackage).
 #
 # Usage::
 #
@@ -302,10 +303,60 @@ ENDMACRO()
 #      [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
 #      [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
 #      [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
+#      [REGRESSION_EMAIL_LIST  <regression-email-address>
+#      [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+#        <spkg1_name>  <spkg1_dir>  <spkg1_classifications>  <spkg1_optreq>
+#        <spkg2_name>  <spkg2_dir>  <spkg2_classifications>  <spkg2_optreq>
+#        ...
+#        ]
 #      )
 #
+# Every argument in this macro is option.  The arguments that apply a package
+# itself are:
+#
+# * **LIB_REQUIRED_PACKAGES:** List of upstream packages that must be enabled
+#   in order to build and use the libraries (or capabilities) in this
+#   package.
+#
+# * **LIB_OPTIONAL_PACKAGES:** List of additional optional upstream packages
+#   that can be used in this package if enabled.  These upstream packages need
+#   not be enabled in order to use this package but not enabling one or more
+#   of these optional upstream packages will result in diminished capabilities
+#   of this package.
+#
+# * *TEST_REQUIRED_PACKAGES:** List of additional upstream packages that must
+#   be enabled in order to build and/or run the tests and/or examples in this
+#   packages.  If any of these upstream packages is not enabled, then there
+#   will be no tests or examples defined or run for this package.
+#
+# * **TEST_OPTIONAL_PACKAGES:** List of additional optional upstream packages
+#   that can be used by the tests in this package.  These upstream packages
+#   need not be enabled in order to run basic tests for this package.
+#   Typically, extra tests that depend on optional test packages involve
+#   integration testing of some type.
+#
+# * **LIB_REQUIRED_TPLS:** List of upstream TPLs that must be enabled in order
+#   to build and use the libraries (or capabilities) in this package.
+#
+# * **LIB_OPTIONAL_TPLS:** List of additional optional upstream TPLs that can
+#   be used in this package if enabled.  These upstream TPLs need not be
+#   enabled in order to use this package but not enabling one or more of these
+#   optional upstream TPLs will result in diminished capabilities of this
+#   package.
+#
+# * *TEST_REQUIRED_TPLS:** List of additional upstream TPLs that must
+#   be enabled in order to build and/or run the tests and/or examples in this
+#   packages.  If any of these upstream TPLs is not enabled, then there
+#   will be no tests or examples defined or run for this package.
+#
+# * **TEST_OPTIONAL_TPLS:** List of additional optional upstream TPLs
+#   that can be used by the tests in this package.  These upstream TPLs
+#   need not be enabled in order to run basic tests for this package.
+#   Typically, extra tests that depend on optional test TPLs involve
+#   integration testing of some type.
+#
 # Only direct package dependenices need to be listed.  Indirect package
-# dependencies are are automatically handled.  For example, if this SE package
+# dependencies are automatically handled.  For example, if this SE package
 # directly depends on PKG2 which depends on PKG1 (but this SE package does not
 # directly depend on anything in PKG1) then this package only needs to list a
 # dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
@@ -325,7 +376,40 @@ ENDMACRO()
 # "LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
 # not important.
 #
+# A top-level package can also have subpackages.  In this case, the following
+# varible must be set:
+#
+# * **SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:** 2D array with rows listing
+#   the subpackages and the columns:
+#
+#   * **SUBPACKAGE:** The name of the subpackage <spkg_name>.  The full SE
+#     package name is "${PARENT_PACKAGE_NAME}<spkg_name>".  The full SE
+#     package name is what is used in listing dependenices in other SE
+#     packages.
+#
+#   * **DIRS:** The subdirectory <spkg_dir> relative to the parent package's
+#     base directory.  All of the contents of the subpackage should be under
+#     this subdirectory.  This is assumed by the TriBITS testing support
+#     software when mapping modified files to SE packages that need to be
+#     tested.
+#
+#   * **CLASSIFICATIONS***: The test group PT, ST, EX and the maturity level
+#     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
+#     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
+#     as for full packages (see
+#     ``TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS``_).
+#
+#   * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
+#     REQUIRED dependence on this subpackage.
+#
+# Other variables that this macro handles:
+#
+# * **REGRESSION_EMAIL_LIST:** The email list that is used to send CDash error
+#   messages.  If this is missing, then the email list that CDash errors go to
+#   is determined by other means (see ???).
+#
 # NOTE: All this macro really does is to just define the variables:
+#
 # * LIB_REQUIRED_DEP_PACKAGES
 # * LIB_OPTIONAL_DEP_PACKAGES
 # * TEST_REQUIRED_DEP_PACKAGES
@@ -334,6 +418,8 @@ ENDMACRO()
 # * LIB_OPTIONAL_DEP_TPLS
 # * TEST_REQUIRED_DEP_TPLS
 # * TEST_OPTIONAL_DEP_TPLS
+# * REGRESSION_EMAIL_LIST
+# * SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
 #
 # which are then read by the TriBITS cmake code to build the package
 # dependency graph.  The advantage of using this macro instead of just
@@ -348,7 +434,7 @@ MACRO(TRIBITS_DEFINE_PACKAGE_DEPENDENCIES)
      #prefix
      PARSE
      #lists
-     "LIB_REQUIRED_PACKAGES;LIB_OPTIONAL_PACKAGES;TEST_REQUIRED_PACKAGES;TEST_OPTIONAL_PACKAGES;LIB_REQUIRED_TPLS;LIB_OPTIONAL_TPLS;TEST_REQUIRED_TPLS;TEST_OPTIONAL_TPLS"
+     "LIB_REQUIRED_PACKAGES;LIB_OPTIONAL_PACKAGES;TEST_REQUIRED_PACKAGES;TEST_OPTIONAL_PACKAGES;LIB_REQUIRED_TPLS;LIB_OPTIONAL_TPLS;TEST_REQUIRED_TPLS;TEST_OPTIONAL_TPLS;REGRESSION_EMAIL_LIST;SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS"
      #options
      ""
      ${ARGN}
@@ -362,6 +448,14 @@ MACRO(TRIBITS_DEFINE_PACKAGE_DEPENDENCIES)
   SET(LIB_OPTIONAL_DEP_TPLS ${PARSE_LIB_OPTIONAL_TPLS})
   SET(TEST_REQUIRED_DEP_TPLS ${PARSE_TEST_REQUIRED_TPLS})
   SET(TEST_OPTIONAL_DEP_TPLS ${PARSE_TEST_OPTIONAL_TPLS})
+  SET(REGRESSION_EMAIL_LIST ${PARSE_REGRESSION_EMAIL_LIST})
+  SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+    ${PARSE_SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS})
+
+  # ToDo:
+  # * Assert that REGRESSION_EMAIL_LIST has only one entry
+  # * Assert that SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS is divisible
+  #   by the number of columns!
 
 ENDMACRO()
 
