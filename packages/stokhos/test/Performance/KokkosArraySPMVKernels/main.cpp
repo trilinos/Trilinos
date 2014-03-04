@@ -72,13 +72,9 @@ int main(int argc, char *argv[])
   bool mkl = false;
 #ifdef KOKKOS_HAVE_OPENMP
   bool omp = true;
-#else
-  bool omp = false;
 #endif
 #ifdef KOKKOS_HAVE_PTHREAD
   bool threads = true;
-#else
-  bool threads = false;
 #endif
   int device = 0;
 
