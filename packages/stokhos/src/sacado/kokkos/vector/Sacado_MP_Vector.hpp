@@ -1099,6 +1099,18 @@ namespace Sacado {
   template <typename S> struct is_mp_vector< MP::Vector<S> > {
     static const bool value = true;
   };
+  template <typename T> struct is_mp_vector< const T > {
+    static const bool value = is_mp_vector<T>::value;
+  };
+  template <typename T> struct is_mp_vector< T* > {
+    static const bool value = is_mp_vector<T>::value;
+  };
+  template <typename T> struct is_mp_vector< T[] > {
+    static const bool value = is_mp_vector<T>::value;
+  };
+  template <typename T, unsigned N> struct is_mp_vector< T[N] > {
+    static const bool value = is_mp_vector<T>::value;
+  };
 
 } // namespace Sacado
 

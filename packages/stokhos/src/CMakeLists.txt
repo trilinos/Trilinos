@@ -390,6 +390,12 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
+     IF (Stokhos_ENABLE_KokkosMpiComm)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/mpicomm/Kokkos_TeuchosCommAdapters_MP_Vector.hpp
+        )
+    ENDIF()
 
     IF (Stokhos_ENABLE_Tpetra AND
         NOT Tpetra_ENABLE_Kokkos_DistObject)
