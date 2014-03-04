@@ -83,6 +83,12 @@ namespace {
       stkIo.add_input_field(stk::io::MeshField(temperature, "temp",
 					       stk::io::MeshField::LINEAR_INTERPOLATION));/*@\label{io:input:interpolate}*/
 
+      //+ If the same stk field (temperature) is added more than once,
+      //+ the first database name and settings will be used.  For example,
+      //+ the add_input_field below will be ignored with no error or warning.
+      stkIo.add_input_field(stk::io::MeshField(temperature, "temp-again",
+					       stk::io::MeshField::LINEAR_INTERPOLATION));
+
       for (size_t i=0; i < 21; i++) {
 	double time = i/10.0;
 	//+ Read the field values from the database and verify that they

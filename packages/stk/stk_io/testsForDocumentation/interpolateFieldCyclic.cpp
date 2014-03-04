@@ -104,8 +104,8 @@ namespace {
       double scale = 10.0;
       stkIo.get_mesh_database(idx)
 	.set_periodic_time(period_length, startup, stk::io::InputFile::REVERSING)
-	.set_scale_time(scale);
-
+	.set_scale_time(scale)
+	.set_start_time(0.0).set_offset_time(0.0).set_stop_time(999.0); // These are optional
       double delta_time = 0.25;
       double time = 0.0;
       double expected = 0.0;
