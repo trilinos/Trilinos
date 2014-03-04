@@ -19,6 +19,7 @@
 #include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
 #include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
+#include <stk_mesh/fixtures/degenerate_mesh.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector, vector<>::iterator
 #include "gtest/gtest.h"                // for AssertHelper
@@ -627,6 +628,73 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Heterogeneous )
     STKUNIT_EXPECT_EQ( 0u,  counts[edge_rank] ); // edges
     STKUNIT_EXPECT_EQ( 39u, counts[face_rank] ); // faces
     STKUNIT_EXPECT_EQ( 17u, counts[elem_rank] ); // elements
+  }
+
+}
+
+STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Degenerate )
+{
+  stk::mesh::MetaData meta_data(3);
+  stk::mesh::fixtures::VectorFieldType & node_coord =
+    meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+  stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+
+  stk::mesh::fixtures::degenerate_mesh_meta_data( meta_data , node_coord );
+  meta_data.commit();
+
+  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
+  stk::mesh::fixtures::degenerate_mesh_bulk_data( bulk_data , node_coord );
+
+  /*
+   *  Z = 0 plane:
+   *
+   *    Y
+   *    ^ 
+   *    !
+   *     
+   *   4*       *5
+   *    |\     /|
+   *    | \   / |
+   *    |  \ /  |
+   *    *---*---* ----> X
+   *    1   2   3
+   *
+   *  Z = -1 plane:
+   *
+   *    Y
+   *    ^ 
+   *    !
+   *     
+   *   9*       *10
+   *    |\     /|
+   *    | \   / |
+   *    |  \ /  |
+   *    *---*---* ----> X
+   *    6   7   8
+   *
+   * Total elements = 2 hexes
+   * Total faces    = 11 = 2 front + 2 back + 6 perimeter + 1 internal degenerate
+   */
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts(bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ(10u, counts[node_rank] ); // nodes
+    STKUNIT_EXPECT_EQ( 0u, counts[edge_rank] ); // edges
+    STKUNIT_EXPECT_EQ( 0u, counts[face_rank] ); // faces
+    STKUNIT_EXPECT_EQ( 2u, counts[elem_rank] ); // elements
+  }
+
+  stk::mesh::create_faces(bulk_data);
+
+  {
+    std::vector<size_t> counts ;
+    stk::mesh::comm_mesh_counts(bulk_data , counts);
+
+    STKUNIT_EXPECT_EQ(10u, counts[node_rank] ); // nodes
+    STKUNIT_EXPECT_EQ( 0u, counts[edge_rank] ); // edges
+    STKUNIT_EXPECT_EQ(11u, counts[face_rank] ); // faces
+    STKUNIT_EXPECT_EQ( 2u, counts[elem_rank] ); // elements
   }
 
 }
