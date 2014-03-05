@@ -980,6 +980,7 @@ void import_and_extract_views(
   Mview.indices.resize(         Mview.numRows);
   Mview.values.resize(          Mview.numRows);
   Mview.remote.resize(          Mview.numRows);
+  Mview.origMatrix = Teuchos::rcp(&M,false);
 
 
   Mview.origRowMap = M.getRowMap();
