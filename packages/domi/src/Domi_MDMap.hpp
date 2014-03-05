@@ -519,13 +519,20 @@ public:
    */
   int getBndryPadSize(int axis) const;
 
+  /* \brief Return whether given local index is in the padding
+   *
+   * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
+   *        (i,j,k) for 3D, etc)
+   */
+  bool isPad(const Teuchos::ArrayView< dim_type > & index) const;
+
   /* \brief Return whether given local index is in the communication
    *        padding
    *
    * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
    *        (i,j,k) for 3D, etc)
    */
-  bool isCommPad(Teuchos::ArrayView< dim_type > index) const;
+  bool isCommPad(const Teuchos::ArrayView< dim_type > & index) const;
 
   /* \brief Return whether given local index is in the boundary
    *        padding
@@ -533,7 +540,7 @@ public:
    * \param index [in] An array of indexes ((i) for 1D, (i,j) for 2D,
    *        (i,j,k) for 3D, etc)
    */
-  bool isBndryPad(Teuchos::ArrayView< dim_type > index) const;
+  bool isBndryPad(const Teuchos::ArrayView< dim_type > & index) const;
 
   /** \brief Get the storage order
    */
@@ -700,7 +707,7 @@ public:
    * \param globalAxisIndex [in] a multi-dimensional global axis index
    */
   size_type
-  getGlobalIndex(const Teuchos::ArrayView< dim_type > globalAxisIndex) const;
+  getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const;
 
   /** \brief Convert a global index to a local index
    *
@@ -716,7 +723,7 @@ public:
    * \param localAxisIndex [in] a multi-dimensional local axis index
    */
   size_type
-  getLocalIndex(const Teuchos::ArrayView< dim_type > localAxisIndex) const;
+  getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const;
 
   //@}
 
@@ -963,14 +970,17 @@ MDMap(TeuchosCommRCP teuchosComm,
 
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
-  Teuchos::Array< int > bndryPad =
-    plist.get("boundary pad", Teuchos::Array< int >());
+  int bndryPad = plist.get("boundary pad size", int(0));
+  Teuchos::Array< int > bndryPads =
+    plist.get("boundary pad sizes", Teuchos::Array< int >());
   _bndryPadSizes.resize(numDims);
   _globalDims.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (axis < bndryPad.size())
-      _bndryPadSizes[axis] = bndryPad[axis];
+    if (axis < bndryPads.size())
+      _bndryPadSizes[axis] = bndryPads[axis];
+    else
+      _bndryPadSizes[axis] = bndryPad;
     _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
                                        _bndryPadSizes[axis]));
     _globalDims[axis] = dimensions[axis] + 2*_bndryPadSizes[axis];
@@ -981,13 +991,16 @@ MDMap(TeuchosCommRCP teuchosComm,
   _globalMax = computeSize(_globalDims());
 
   // Copy the communication padding sizes and set the actual padding
-  Teuchos::Array< int > commPad =
-    plist.get("communication pad", Teuchos::Array< int >());
+  int commPad = plist.get("communication pad size", int(0));
+  Teuchos::Array< int > commPads =
+    plist.get("communication pad sizes", Teuchos::Array< int >());
   _commPadSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (axis < commPad.size())
-      _commPadSizes[axis] = commPad[axis];
+    if (axis < commPads.size())
+      _commPadSizes[axis] = commPads[axis];
+    else
+      _commPadSizes[axis] = commPad;
     int lower, upper;
     if (getLowerNeighbor(axis) == -1)
       lower = _bndryPadSizes[axis];
@@ -1072,12 +1085,15 @@ MDMap(MDCommRCP mdComm,
 
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
-  Teuchos::Array< int > bndryPad =
-    plist.get("boundary pad", Teuchos::Array< int >());
+  int bndryPad = plist.get("boundary pad size", int(0));
+  Teuchos::Array< int > bndryPads =
+    plist.get("boundary pad sizes", Teuchos::Array< int >());
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (axis < bndryPad.size())
-      _bndryPadSizes[axis] = bndryPad[axis];
+    if (axis < bndryPads.size())
+      _bndryPadSizes[axis] = bndryPads[axis];
+    else
+      _bndryPadSizes[axis] = bndryPad;
     _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
                                        _bndryPadSizes[axis]));
     _globalDims[axis] = dimensions[axis] + 2*_bndryPadSizes[axis];
@@ -1088,12 +1104,15 @@ MDMap(MDCommRCP mdComm,
   _globalMax = computeSize(_globalDims());
 
   // Copy the communication padding sizes and set the actual padding
-  Teuchos::Array< int > commPad =
-    plist.get("communication pad", Teuchos::Array< int >());
+  int commPad = plist.get("communication pad size", int(0));
+  Teuchos::Array< int > commPads =
+    plist.get("communication pad sizes", Teuchos::Array< int >());
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (axis < commPad.size())
-      _commPadSizes[axis] = commPad[axis];
+    if (axis < commPads.size())
+      _commPadSizes[axis] = commPads[axis];
+    else
+      _commPadSizes[axis] = commPad;
     int lower, upper;
     if (getLowerNeighbor(axis) == -1)
       lower = _bndryPadSizes[axis];
@@ -1315,8 +1334,8 @@ MDMap(const MDMap< Node > & parent,
     for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
          ++axisRank)
     {
-      typename Slice::dim_type start = _globalRankBounds[axis][axisRank].start();
-      typename Slice::dim_type stop  = _globalRankBounds[axis][axisRank].stop();
+      dim_type start = _globalRankBounds[axis][axisRank].start();
+      dim_type stop  = _globalRankBounds[axis][axisRank].stop();
       if (start < bounds.start()) start = bounds.start();
       if (stop  > bounds.stop() ) stop  = bounds.stop();
       _globalRankBounds[axis][axisRank] = ConcreteSlice(start, stop);
@@ -1785,7 +1804,25 @@ MDMap< Node >::getBndryPadSize(int axis) const
 template< class Node >
 bool
 MDMap< Node >::
-isCommPad(Teuchos::ArrayView< dim_type > index) const
+isPad(const Teuchos::ArrayView< dim_type > & index) const
+{
+  bool result = false;
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    if (index[axis] < getLowerPadSize(axis))
+      result = true;
+    if (index[axis] >= getLocalDim(axis,true) - getUpperPadSize(axis))
+      result = true;
+  }
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+bool
+MDMap< Node >::
+isCommPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -1812,7 +1849,7 @@ isCommPad(Teuchos::ArrayView< dim_type > index) const
 template< class Node >
 bool
 MDMap< Node >::
-isBndryPad(Teuchos::ArrayView< dim_type > index) const
+isBndryPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -2288,7 +2325,7 @@ getGlobalIndex(size_type localIndex) const
 template< class Node >
 size_type
 MDMap< Node >::
-getGlobalIndex(const Teuchos::ArrayView< dim_type > globalAxisIndex) const
+getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2347,7 +2384,7 @@ getLocalIndex(size_type globalIndex) const
 template< class Node >
 size_type
 MDMap< Node >::
-getLocalIndex(const Teuchos::ArrayView< dim_type > localAxisIndex) const
+getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
