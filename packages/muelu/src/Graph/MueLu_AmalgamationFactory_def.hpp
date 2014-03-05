@@ -130,10 +130,13 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
+    Teuchos::ArrayView<const GlobalOrdinal> globalElts = colMap->getNodeElementList();
     LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(colMap->getNodeNumElements());
+    assert(Teuchos::as<LocalOrdinal>(globalElts.size()) == nColEle);
     for (LocalOrdinal i = 0; i < nColEle; i++) {
       // get global DOF id
-      GlobalOrdinal gDofId = colMap->getGlobalElement(i);
+      //GlobalOrdinal gDofId = colMap->getGlobalElement(i);
+      GlobalOrdinal gDofId = globalElts[i];
 
       // translate DOFGid to node id
       GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);

@@ -631,7 +631,6 @@ namespace MueLu {
       //    prepare generation of nodeRowMap (of amalgamated matrix)
       // TODO: special handling for blockdim=1
       RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
-      RCP<std::map<GO,std::vector<GO> > > nodegid2dofgids = amalInfo->GetGlobalAmalgamationParams();
       RCP<std::vector<GO> > gNodeIds = amalInfo->GetNodeGIDVector();
       GO cnt_amalRows = amalInfo->GetNumberOfNodes();
 
