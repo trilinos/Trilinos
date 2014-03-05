@@ -50,6 +50,7 @@ Level 1
       algorithm = laplacian
       
      lumping = 1
+     filtered matrix: reuse eigenvalue = 1
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
@@ -136,6 +137,7 @@ Level 2
       algorithm = laplacian
       
      lumping = 1
+     filtered matrix: reuse eigenvalue = 1
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
@@ -222,6 +224,7 @@ Level 3
       algorithm = laplacian
       
      lumping = 1
+     filtered matrix: reuse eigenvalue = 1
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
@@ -307,9 +310,9 @@ Level 3
  
  Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.9477, alpha: 20, lambdaMin: 0.097385}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94999, alpha: 20, lambdaMin: 0.0974995}, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+ Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.95221, alpha: 20, lambdaMin: 0.0976105}, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
  
- Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94941, alpha: 20, lambdaMin: 0.0974703}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
+ Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.9463, alpha: 20, lambdaMin: 0.0973151}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
  
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother
