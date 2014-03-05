@@ -45,7 +45,7 @@ INCLUDE(PrintVar)
 INCLUDE(Split)
 
 #
-# @MACRO: UNITEST_TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS
+# @MACRO: TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS
 #
 # Define the list of TPLs, find modules, and classifications for a given
 # TriBITS repository.  This macro is typically called from inside of a

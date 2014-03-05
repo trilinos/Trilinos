@@ -57,7 +57,7 @@ INCLUDE(ParseVariableArguments)
 
 
 #
-# @MACRO: TRIBITS_SET_ST_FOR_DEV_MODE
+# @FUNCTION: TRIBITS_SET_ST_FOR_DEV_MODE
 #
 # Function that allows packages to easily make a feature ST for development
 # builds and PT for release builds by default.
