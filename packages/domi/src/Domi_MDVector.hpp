@@ -752,14 +752,13 @@ MDVector(const TeuchosCommRCP teuchosComm,
   _recvMessages(),
   _requests()
 {
-  typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
 
   // Obtain the array of dimensions
   int numDims = _mdMap->getNumDims();
   Teuchos::Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = _mdMap->getLocalDim(axis);
+    dims[axis] = _mdMap->getLocalDim(axis,true);
 
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
@@ -784,14 +783,13 @@ MDVector(const MDCommRCP mdComm,
   _recvMessages(),
   _requests()
 {
-  typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
 
   // Obtain the array of dimensions
   int numDims = _mdMap->getNumDims();
   Teuchos::Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = _mdMap->getLocalDim(axis);
+    dims[axis] = _mdMap->getLocalDim(axis,true);
 
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
