@@ -87,10 +87,12 @@ namespace MueLu {
   public:
 
     AmalgamationInfo(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids,
-                     RCP<std::vector<GlobalOrdinal> > nodegids) {
-      nodegid2dofgids_ = nodegid2dofgids;
-      gNodeIds_        = nodegids;
-    }
+                     RCP<std::vector<GlobalOrdinal> > nodegids,
+                     RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap) :
+               nodegid2dofgids_(nodegid2dofgids),
+               gNodeIds_(nodegids),
+               columnMap_(columnMap)
+    {}
 
     virtual ~AmalgamationInfo() {}
 
@@ -127,6 +129,9 @@ namespace MueLu {
 
     // contains global node ids on current proc (used by CoalesceDropFactory to build nodeMap)
     RCP<std::vector<GlobalOrdinal> > gNodeIds_;
+
+    //! @brief DOF map (really column map of A)
+    const Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &columnMap_;
 
     //@}
 

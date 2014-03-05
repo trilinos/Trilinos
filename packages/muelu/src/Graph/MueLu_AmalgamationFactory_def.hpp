@@ -167,7 +167,7 @@ namespace MueLu {
     }
 
     // store (un)amalgamation information on current level
-    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds));
+    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, A->getColMap()));
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }
 
