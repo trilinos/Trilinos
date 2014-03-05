@@ -236,7 +236,7 @@ public:
     if ( con.isActivated() ) {
       eps = algo_state.gnorm;
     }
-    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
+    ProjectedObjective<Real> pObj(obj,con,this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
     //ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
     this->CGflag_ = 0;
     this->CGiter_ = 0;
@@ -253,7 +253,7 @@ public:
     if ( con.isActivated() ) {
       eps = algo_state.gnorm;
     }
-    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
+    ProjectedObjective<Real> pObj(obj,con,this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
 
     // Store previous step for constraint computations
     Teuchos::RCP<Vector<Real> > xold;

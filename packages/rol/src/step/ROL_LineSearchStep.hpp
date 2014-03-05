@@ -200,7 +200,7 @@ public:
     if ( con.isActivated() ) {
       eps = algo_state.gnorm;
     }
-    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
+    ProjectedObjective<Real> pObj(obj,con,this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
 
     // Compute step s
     if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {

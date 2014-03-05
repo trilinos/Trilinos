@@ -161,11 +161,11 @@ namespace ROL {
     Real eps_;
 
   public:
-    ProjectedObjective( Objective<Real> &obj, Constraints<Real> &con, Secant<Real> &secant, 
+    ProjectedObjective( Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > &secant, 
                         bool useSecantPrecond = false, bool useSecantHessVec = false, Real eps = 0.0 ) {
       obj_              = Teuchos::rcp(&obj,    false);
       con_              = Teuchos::rcp(&con,    false);
-      secant_           = Teuchos::rcp(&secant, false);
+      secant_           = secant; //Teuchos::rcp(&secant, false);
       useSecantPrecond_ = useSecantPrecond;
       useSecantHessVec_ = useSecantHessVec;
       eps_              = eps;
