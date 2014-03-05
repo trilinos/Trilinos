@@ -62,8 +62,7 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::Tuple;
 using Teuchos::tuple;
-//typedef Domi::Ordinal Ordinal;
-typedef int Ordinal;
+typedef Domi::dim_type dim_type;
 using Domi::splitStringOfIntsWithCommas;
 using Domi::TeuchosCommRCP;
 
@@ -103,7 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   int pid = comm->getRank();
 
   // Convert the command-line arguments into usable arrays
-  Array< Ordinal > dimVals;
+  Array< dim_type > dimVals;
   Array< int > axisCommSizeVals;
   Array< int > commPadVals;
   Array< int > bndryPadVals;
