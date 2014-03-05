@@ -1226,9 +1226,9 @@ dot(const MDVector< Scalar, Node > & a) const
   typedef typename MDArrayView< const Scalar >::iterator iterator;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    _mdMap != a._mdMap,
+    ! _mdMap->isCompatible(*(a._mdMap)),
     MDMapError,
-    "MDMap of calling MDVector and argument 'a' are different");
+    "MDMap of calling MDVector and argument 'a' are incompatible");
 
   MDArrayView< const Scalar > aView = a.getData();
   Scalar local_dot = 0;
@@ -1313,9 +1313,9 @@ normWeighted(const MDVector< Scalar, Node > & weights) const
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    _mdMap != weights._mdMap,
+    ! _mdMap->isCompatible(*(weights._mdMap)),
     MDMapError,
-    "MDMap of calling MDVector and argument 'weights' are different");
+    "MDMap of calling MDVector and argument 'weights' are incompatible");
 
   MDArrayView< const Scalar > wView = weights.getData();
   mag local_wNorm = 0;

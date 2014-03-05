@@ -65,6 +65,7 @@
 
 #ifdef HAVE_TPETRA
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Util.hpp"
 #endif
 
 namespace Domi
@@ -724,6 +725,47 @@ public:
    */
   size_type
   getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const;
+
+  //@}
+
+  /** \name Boolean comparison methods */
+  //@{
+
+  /** \brief True if two MDMaps are "compatible"
+   *
+   * \param mdMap [in] MDMap to compare against
+   *
+   * Two MDMaps are considered "compatible" if all of the following
+   * are true:
+   * <ol>
+   *   <li> The axisCommSizes of their underlying MDComms are
+   *        identical.</li>
+   *   <li> Their global dimensions are identical.</li>
+   *   <li> Their local dimensions, not including padding, are
+   *        identical.</li>
+   * <ol>
+   */
+  bool isCompatible(const MDMap< Node > & mdMap) const;
+
+  /** \brief True if two MDMaps are "identical"
+   *
+   * \param mdMap [in] MDMap to compare against
+   *
+   * Two MDMaps are considered "identical" if all of the following
+   * are true:
+   * <ol>
+   *   <li> They are compatible.</li>
+   *   <li> Their underlying communicators are <i>congruent</i> (have
+   *        the same number of processes, in the same order: this
+   *        corresponds to the \c MPI_IDENT or \c MPI_CONGRUENT return
+   *        values of MPI_Comm_compare).</li>
+   *   <li> Both are distributed or not distributed.</li>
+   *   <li> Their global bounds identical on each process.</li>
+   *   <li> Their local dimensions, including padding, are
+   *        identical.</li>
+   * <ol>
+   */
+  bool isSameAs(const MDMap< Node > & mdMap) const;
 
   //@}
 
@@ -2406,6 +2448,89 @@ getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += localAxisIndex[axis] * _localStrides[axis];
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+bool
+MDMap< Node >::isCompatible(const MDMap< Node > & mdMap) const
+{
+  // Trivial comparison.  We assume that if the object pointers match
+  // on this processor, then they match on all processors
+  if (this == &mdMap) return true;
+
+  // Check the number of dimensions.  Assume this check produces the
+  // same result on all processors
+  int numDims = getNumDims();
+  if (numDims != mdMap.getNumDims()) return false;
+
+  // Check the axisCommSizes.  Assume this check produces the same
+  // result on all processes
+  for (int axis = 0; axis < numDims; ++axis)
+    if (getAxisCommSize(axis) != mdMap.getAxisCommSize(axis)) return false;
+
+  // Check the global dimensions.  Assume this check produces the same
+  // result on all processes
+  if (_globalDims != mdMap._globalDims) return false;
+
+  // Check the local dimensions.  This needs to be checked locally on
+  // each processor and then the results communicated to obtain global
+  // result
+  int localResult  = 1;
+  int globalResult = 1;
+  for (int axis = 0; axis < numDims; ++axis)
+    if (getLocalDim(axis,false) != mdMap.getLocalDim(axis,false))
+      localResult = 0;
+  Teuchos::reduceAll(*(getTeuchosComm()),
+                     Teuchos::REDUCE_MIN,
+                     1,
+                     &localResult,
+                     &globalResult);
+
+  // Return the result
+  return bool(globalResult);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+bool
+MDMap< Node >::isSameAs(const MDMap< Node > & mdMap) const
+{
+  // Trivial comparison.  We assume that if the object pointers match
+  // on this processor, then they match on all processors
+  if (this == &mdMap) return true;
+
+  // Check if MDMaps are compatible.  Assume this check produces the
+  // same result on all processes
+  if (! isCompatible(mdMap)) return false;
+
+  // Check that underlying communicators are congruent.  This
+  // congruent() function should really be in Teuchos, but oh well ...
+#ifdef HAVE_TPETRA
+  using Tpetra::Details::congruent;
+  if (! congruent(*(getTeuchosComm()),
+                  *(mdMap.getTeuchosComm()))) return false;
+#endif
+
+  // Check the global bounds.  Assume this check produces the
+  // same result on all processes
+  if (_globalBounds != mdMap._globalBounds) return false;
+
+  // Check the local dimensions.  This needs to be checked locally on
+  // each processor and then the results communicated to obtain global
+  // result
+  int localResult  = (_localDims == mdMap._localDims);
+  int globalResult = 1;
+  Teuchos::reduceAll(*(getTeuchosComm()),
+                     Teuchos::REDUCE_MIN,
+                     1,
+                     &localResult,
+                     &globalResult);
+
+  // Return the result
+  return bool(globalResult);
 }
 
 ////////////////////////////////////////////////////////////////////////
