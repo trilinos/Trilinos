@@ -3,14 +3,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.10: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
 <style type="text/css">
 
 /*
 :Author: David Goodger (goodger@python.org)
-:Id: $Id: html4css1.css 7514 2012-09-14 14:27:12Z milde $
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -48,10 +48,6 @@ blockquote.epigraph {
 dl.docutils dd {
   margin-bottom: 0.5em }
 
-object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
-  overflow: hidden;
-}
-
 /* Uncomment (and remove this text!) to get bold-faced definition list terms
 dl.docutils dt {
   font-weight: bold }
@@ -78,7 +74,7 @@ div.tip p.admonition-title {
 
 div.attention p.admonition-title, div.caution p.admonition-title,
 div.danger p.admonition-title, div.error p.admonition-title,
-div.warning p.admonition-title, .code .error {
+div.warning p.admonition-title {
   color: red ;
   font-weight: bold ;
   font-family: sans-serif }
@@ -162,21 +158,15 @@ h2.subtitle {
 hr.docutils {
   width: 75% }
 
-img.align-left, .figure.align-left, object.align-left {
+img.align-left, .figure.align-left{
   clear: left ;
   float: left ;
   margin-right: 1em }
 
-img.align-right, .figure.align-right, object.align-right {
+img.align-right, .figure.align-right {
   clear: right ;
   float: right ;
   margin-left: 1em }
-
-img.align-center, .figure.align-center, object.align-center {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 .align-left {
   text-align: left }
@@ -190,7 +180,7 @@ img.align-center, .figure.align-center, object.align-center {
 
 /* reset inner alignment in figures */
 div.align-right {
-  text-align: inherit }
+  text-align: left }
 
 /* div.align-center * { */
 /*   text-align: left } */
@@ -250,18 +240,9 @@ pre.address {
   margin-top: 0 ;
   font: inherit }
 
-pre.literal-block, pre.doctest-block, pre.math, pre.code {
+pre.literal-block, pre.doctest-block {
   margin-left: 2em ;
   margin-right: 2em }
-
-pre.code .ln { color: grey; } /* line numbers */
-pre.code, code { background-color: #eeeeee }
-pre.code .comment, code .comment { color: #5C6576 }
-pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
-pre.code .literal.string, code .literal.string { color: #0C5404 }
-pre.code .name.builtin, code .name.builtin { color: #352B84 }
-pre.code .deleted, code .deleted { background-color: #DEB0A1}
-pre.code .inserted, code .inserted { background-color: #A3D289}
 
 span.classifier {
   font-family: sans-serif ;
@@ -339,14 +320,16 @@ ul.auto-toc {
 <ul class="auto-toc simple">
 <li><a class="reference internal" href="#introduction" id="id3">1&nbsp;&nbsp;&nbsp;Introduction</a></li>
 <li><a class="reference internal" href="#structure-of-a-tribits-project" id="id4">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></li>
-<li><a class="reference internal" href="#tribits-macros-and-functions" id="id5">3&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul class="auto-toc">
-<li><a class="reference internal" href="#tribits-add-library" id="id6">3.1&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></li>
-<li><a class="reference internal" href="#tribits-add-executable" id="id7">3.2&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></li>
+<li><a class="reference internal" href="#tribits-global-project-settings" id="id5">3&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></li>
+<li><a class="reference internal" href="#tribits-macros-and-functions" id="id6">4&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul class="auto-toc">
+<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id7">4.1&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-packages-dirs-classifications" id="id8">4.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></li>
+<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id9">4.3&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#references" id="id8">4&nbsp;&nbsp;&nbsp;References</a></li>
-<li><a class="reference internal" href="#appendix" id="id9">5&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id10">5.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#references" id="id10">5&nbsp;&nbsp;&nbsp;References</a></li>
+<li><a class="reference internal" href="#appendix" id="id11">6&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id12">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
 </ul>
 </li>
 </ul>
@@ -360,34 +343,255 @@ which contains the big picture and provides a high-level road map to what
 TriBITS provides.  This particular document, however, describes the details on
 how to use the TriBITS system to create a CMake build system for a set of
 compiled software packages.</p>
+<p>TriBITS is a fairly extensive framework that is build on
+CMake/CTest/CPack/CDash which in of itself is a very extensive system of
+software and tools.  The most important thing to remember is that software
+project that use TriBITS are really just CMake projects.  TriBITS makes no
+attent to hide that either from the TriBITS project developers or from the
+users that need to configure and build the software.  Therefore, to make
+effective usage of TriBITS, one must learn the basics of CMake.  In
+particular, CMake is a Turning complete programming lanauge with local and
+global variables (with strange scoping rules), macros, functions, targets,
+commands, and other features.  One needs to understand how to define and use
+variables, macros, functions in CMake.  One needs to know how to debug
+CMakeLists.txt files and CMake code in general (i.e. using <tt class="docutils literal">MESSAGE()</tt> print
+statements).  One needs to understand how CMake defines and uses targets for
+various qualities like libraries, executables, etc.  Without this basic
+understanding of CMake, one will have trouble resolving problems when they
+might occur.</p>
 </div>
 <div class="section" id="structure-of-a-tribits-project">
 <h1><a class="toc-backref" href="#id4">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></h1>
 <p>???</p>
 </div>
-<div class="section" id="tribits-macros-and-functions">
-<h1><a class="toc-backref" href="#id5">3&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h1>
-<div class="section" id="tribits-add-library">
-<h2><a class="toc-backref" href="#id6">3.1&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></h2>
-<p>Usage:</p>
-<pre class="literal-block">
-TRIBITS_ADD_LIBRARY(&lt;libName&gt; ...)
-</pre>
-<p>See <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a>.</p>
-<p>Blah blah blah ...</p>
+<div class="section" id="tribits-global-project-settings">
+<h1><a class="toc-backref" href="#id5">3&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></h1>
+<p>TriBITS defines a number of global project-level settings that can be set by
+the user and can have their default determined by each individual TriBITS
+project.  If a given TriBITS project does not define its own default, a
+reasonble default is set by the TriBITS system automatically.</p>
+<p>ToDo: Document what parameters influence the entire TriBITS project, what
+parameters can have project-specific defaults, etc.</p>
 </div>
-<div class="section" id="tribits-add-executable">
-<h2><a class="toc-backref" href="#id7">3.2&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></h2>
+<div class="section" id="tribits-macros-and-functions">
+<h1><a class="toc-backref" href="#id6">4&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h1>
+<div class="section" id="tribits-define-package-dependencies">
+<h2><a class="toc-backref" href="#id7">4.1&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h2>
+<p>Define the dependenices for a given TriBITS SE package (i.e. a top-level
+package or a subpackage).</p>
 <p>Usage:</p>
 <pre class="literal-block">
-TRIBITS_ADD_EXECUTABLE(&lt;execName&gt; ...)
+TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+   [LIB_REQUIRED_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [LIB_OPTIONAL_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [TEST_REQUIRED_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [TEST_OPTIONAL_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [LIB_REQUIRED_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [LIB_OPTIONAL_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [TEST_REQUIRED_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [TEST_OPTIONAL_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [REGRESSION_EMAIL_LIST  &lt;regression-email-address&gt;
+   [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+     &lt;spkg1_name&gt;  &lt;spkg1_dir&gt;  &lt;spkg1_classifications&gt;  &lt;spkg1_optreq&gt;
+     &lt;spkg2_name&gt;  &lt;spkg2_dir&gt;  &lt;spkg2_classifications&gt;  &lt;spkg2_optreq&gt;
+     ...
+     ]
+   )
 </pre>
-<p>See <a class="reference internal" href="#tribits-add-library">TRIBITS_ADD_LIBRARY()</a>.</p>
-<p>Blah blah blah ...</p>
+<p>Every argument in this macro is optional.  The arguments that apply a package
+itself are:</p>
+<ul class="simple">
+<li><strong>LIB_REQUIRED_PACKAGES:</strong> List of upstream packages that must be enabled
+in order to build and use the libraries (or capabilities) in this
+package.</li>
+<li><strong>LIB_OPTIONAL_PACKAGES:</strong> List of additional optional upstream packages
+that can be used in this package if enabled.  These upstream packages need
+not be enabled in order to use this package but not enabling one or more
+of these optional upstream packages will result in diminished capabilities
+of this package.</li>
+<li><strong>TEST_REQUIRED_PACKAGES:</strong> List of additional upstream packages that must
+be enabled in order to build and/or run the tests and/or examples in this
+packages.  If any of these upstream packages is not enabled, then there
+will be no tests or examples defined or run for this package.</li>
+<li><strong>TEST_OPTIONAL_PACKAGES:</strong> List of additional optional upstream packages
+that can be used by the tests in this package.  These upstream packages
+need not be enabled in order to run basic tests for this package.
+Typically, extra tests that depend on optional test packages involve
+integration testing of some type.</li>
+<li><strong>LIB_REQUIRED_TPLS:</strong> List of upstream TPLs that must be enabled in order
+to build and use the libraries (or capabilities) in this package.</li>
+<li><strong>LIB_OPTIONAL_TPLS:</strong> List of additional optional upstream TPLs that can
+be used in this package if enabled.  These upstream TPLs need not be
+enabled in order to use this package but not enabling one or more of these
+optional upstream TPLs will result in diminished capabilities of this
+package.</li>
+<li><strong>TEST_REQUIRED_TPLS:</strong> List of additional upstream TPLs that must
+be enabled in order to build and/or run the tests and/or examples in this
+packages.  If any of these upstream TPLs is not enabled, then there
+will be no tests or examples defined or run for this package.</li>
+<li><strong>TEST_OPTIONAL_TPLS:</strong> List of additional optional upstream TPLs
+that can be used by the tests in this package.  These upstream TPLs
+need not be enabled in order to run basic tests for this package.
+Typically, extra tests that depend on optional test TPLs involve
+integration testing of some type.</li>
+</ul>
+<p>Only direct package dependenices need to be listed.  Indirect package
+dependencies are automatically handled.  For example, if this SE package
+directly depends on PKG2 which depends on PKG1 (but this SE package does not
+directly depend on anything in PKG1) then this package only needs to list a
+dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
+automatically by the TriBITS dependency tracking system.</p>
+<p>However, currently, all TPL dependendies must be listed, even the indirect
+ones.  This is a requirement that will be dropped in the future.</p>
+<p>The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
+dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
+implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
+dependencies.</p>
+<p>The dependencies within a single list do not need to be listed in any order.
+For example if PKG2 depends on PKG1, and this given SE package depends on
+both, one can list &quot;LIB_REQUIRED_PACKAGES PKG2 PKG1&quot; or
+&quot;LIB_REQUIRED_PACKAGES PKG1 PKG2&quot;.  Likewise the listing of TPLs order is
+not important.</p>
+<p>If some upstream packages are allowed to be missing, this can be specified
+by calling the macro <a class="reference internal" href="#tribits-allow-missing-external-packages">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a>.</p>
+<p>A top-level package can also have subpackages.  In this case, the following
+varible must be set:</p>
+<ul class="simple">
+<li><strong>SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:</strong> 2D array with rows listing
+the subpackages and the columns:<ul>
+<li><strong>SUBPACKAGE:</strong> The name of the subpackage &lt;spkg_name&gt;.  The full SE
+package name is &quot;${PARENT_PACKAGE_NAME}&lt;spkg_name&gt;&quot;.  The full SE
+package name is what is used in listing dependenices in other SE
+packages.</li>
+<li><strong>DIRS:</strong> The subdirectory &lt;spkg_dir&gt; relative to the parent package's
+base directory.  All of the contents of the subpackage should be under
+this subdirectory.  This is assumed by the TriBITS testing support
+software when mapping modified files to SE packages that need to be
+tested.</li>
+<li><strong>CLASSIFICATIONS*</strong>: The test group PT, ST, EX and the maturity level
+EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
+spaces in between (e.g. &quot;PT,GPM&quot;).  These have exactly the name meaning
+as for full packages (see
+<a class="reference internal" href="#tribits-define-repository-packages-dirs-classifications">TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a>).</li>
+<li><strong>OPTREQ:</strong> Determines if the outer parent package has an OPTIONAL or
+REQUIRED dependence on this subpackage.</li>
+</ul>
+</li>
+</ul>
+<p>Other variables that this macro handles:</p>
+<ul class="simple">
+<li><strong>REGRESSION_EMAIL_LIST:</strong> The email list that is used to send CDash error
+messages.  If this is missing, then the email list that CDash errors go to
+is determined by other means (see ???).</li>
+</ul>
+<p>NOTE: All this macro really does is to just define the variables:</p>
+<ul class="simple">
+<li>LIB_REQUIRED_DEP_PACKAGES</li>
+<li>LIB_OPTIONAL_DEP_PACKAGES</li>
+<li>TEST_REQUIRED_DEP_PACKAGES</li>
+<li>TEST_OPTIONAL_DEP_PACKAGES</li>
+<li>LIB_REQUIRED_DEP_TPLS</li>
+<li>LIB_OPTIONAL_DEP_TPLS</li>
+<li>TEST_REQUIRED_DEP_TPLS</li>
+<li>TEST_OPTIONAL_DEP_TPLS</li>
+<li>REGRESSION_EMAIL_LIST</li>
+<li>SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</li>
+</ul>
+<p>which are then read by the TriBITS cmake code to build the package
+dependency graph.  The advantage of using this macro instead of just
+directly setting the varibles is that you only need to list the dependencies
+you have.  Otherwise, you need to set all of these varibles, even those that
+are empty.  This is a error checking property of the TriBITS system to avoid
+misspelling the names of these variables.</p>
+</div>
+<div class="section" id="tribits-define-repository-packages-dirs-classifications">
+<h2><a class="toc-backref" href="#id8">4.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></h2>
+<p>Define the set of packages for a given TriBIT repo.  This macro is typically
+called from inside of a PackagesList.cmake file for a given TriBITS repo.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
+   &lt;pkg0&gt;  &lt;pkg0_dir&gt;  &lt;pkg0_classifications&gt;
+   ...
+   &lt;pkgnm1&gt;  &lt;pkgnm1_dir&gt;  &lt;pkgnm1_classifications&gt;
+   )
+</pre>
+<p>This macro sets up a 2D array of NumPackages by NumColumns listing out the
+packages for a TriBITS repository.  Each row (with 3 entries) specifies a
+package which contains the three columns:</p>
+<ul class="simple">
+<li><strong>PACKAGE</strong>: The name of the TriBITS package.  This name must be unique
+across all other TriBITS packages in this or any other TriBITS repo that
+might be combined into a single TriBITS project meta-build.  The name
+should be a valid identifier (e.g. matches the regex
+<tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
+<li><strong>DIR</strong>: The relative directory for the package.  This is relative to the
+TriBITS repository base directory.  Under this directory will be a
+package-specific 'cmake/' directory with file 'cmake/Dependencies.cmake'
+and a base-level CMakeLists.txt file.  The entire contents of the package
+including all of the source code and all of the tests should be contained
+under this directory.  The TriBITS testing infrastructure relies on the
+mapping of changed files to these base directories when deciding what
+packages are modified and need to be retested (along with downstream
+packages).</li>
+<li><strong>CLASSIFICATION</strong>: Gives the testing group PT, ST, EX and
+the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
+by a coma with no space in between such as &quot;RS,PT&quot; for a &quot;Research
+Stable&quot;, &quot;Primary Tested&quot; package.  No spaces are allowed so that CMake
+treats this a one field in the array.  The maturity level can be left off
+in which case it is assumed to be UM for &quot;Unspecified Maturity&quot;.</li>
+</ul>
+<blockquote>
+<p>NOTE: This macro just sets the varaible
+${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in the current
+scope.  The advantages of using this macro instead of directly setting this
+varible include:</p>
+<ul class="simple">
+<li>Asserts that REPOSITORY_NAME is defined and set</li>
+<li>Avoids having to hard-code the assumed repository name
+${REPOSITORY_NAME}.  This provides more flexibility for how other TriBITS
+project name a given TriBITS repo (i.e. the name of repo subdirs).</li>
+<li>Avoid mispelling the name of the varible
+${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.  If you misspell
+the name of the macro, it is an immediate error in CMake.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="tribits-allow-missing-external-packages">
+<h2><a class="toc-backref" href="#id9">4.3&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h2>
+<p>Macro used in Dependencies.cmake files to allow some upstream dependent packages
+to be missing.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(&lt;pack_1&gt; &lt;pack_2&gt; ...)
+</pre>
+<p>If the missing upstream SE package &lt;pack_i&gt; is optional, then the effect
+will be to simply ignore the missing package and remove it from the
+dependency list.  However, if the missing upstream SE package &lt;pack_i&gt; is
+required, then in addition to ignoring the missing package, the current SE
+(sub)package will also ee hard disabled,
+i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.</p>
+<p>This function is typically used in packages in external TriBITS repos that
+are depend on other packages in other exteral TriBITS repos that might be
+missing.</p>
+<p>NOTE: Using this function effectively turns off error checking for
+misspelled package names so it is important to only use it when it
+absolutely is needed.</p>
+<!-- @FUNCTION: TRIBITS_TPL_DECLARE_LIBRARIES - -->
+<!-- @MACRO: TRIBITS_PACKAGE_DECL() - -->
+<!-- @MACRO: TRIBITS_PACKAGE_DEF() - -->
+<!-- @MACRO: TRIBITS_ADD_TEST_DIRECTORIES() - -->
+<!-- @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES() - -->
+<!-- @MACRO: TRIBITS_PACKAGE_POSTPROCESS() - -->
+<!-- @MACRO: TRIBITS_PROCESS_SUBPACKAGES() - -->
+<!-- @MACRO: TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS() - -->
+<!-- @FUNCTION: TRIBITS_SET_ST_FOR_DEV_MODE() - -->
+<!-- @FUNCTION: TRIBITS_ADD_LIBRARY() - -->
+<!-- @FUNCTION: TRIBITS_ADD_EXECUTABLE() - -->
 </div>
 </div>
 <div class="section" id="references">
-<h1><a class="toc-backref" href="#id8">4&nbsp;&nbsp;&nbsp;References</a></h1>
+<h1><a class="toc-backref" href="#id10">5&nbsp;&nbsp;&nbsp;References</a></h1>
 <table class="docutils citation" frame="void" id="scale" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -396,9 +600,9 @@ TRIBITS_ADD_EXECUTABLE(&lt;execName&gt; ...)
 </table>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id9">5&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id11">6&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id10">5.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id12">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)

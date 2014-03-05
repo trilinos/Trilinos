@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # This script is used to generate the the TribitsDevelopersGuide.(html,pdf)
 # files using a new script in TriBITS for that purpose.  You just run it from
@@ -18,10 +18,32 @@
 #
 #    --generate-latex=
 #
+# This script also automatically extracts detailed TriBITS documentation from
+# the *.cmake files using extract_rst_cmake_doc.py (which works kind of like
+# doxygen).
+#
+# To see output from extract_rst_cmake_doc.py just run the script as:
+#
+#   env EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS=--do-trace \
+#      ./generate-dev-guide.sh [other args]
+#
 # Enjoy!
 
 ARGS=$@
 
+echo
+echo "Extracting TriBITS documentation from *.cmake files ..."
+echo
+../../python/extract_rst_cmake_doc.py \
+  --extract-from=../../package_arch/ \
+  --rst-file-pairs=TribitsDetailedMacroFunctionDocTemplate.rst:TribitsDetailedMacroFunctionDoc.rst \
+  $EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
+
+
+
+echo
+echo "Generating HTML and PDF files ..."
+echo
 ../../python/generate-docutils-output.py \
   --file-base=TribitsDevelopersGuide \
   --generate-html=rst2html.py --generate-latex=rst2latex.py \

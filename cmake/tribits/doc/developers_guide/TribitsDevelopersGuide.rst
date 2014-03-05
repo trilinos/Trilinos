@@ -31,7 +31,7 @@ particular, CMake is a Turning complete programming lanauge with local and
 global variables (with strange scoping rules), macros, functions, targets,
 commands, and other features.  One needs to understand how to define and use
 variables, macros, functions in CMake.  One needs to know how to debug
-CMakeLists.txt files and CMake code in general (i.e. using ``MESSAGE()` print
+CMakeLists.txt files and CMake code in general (i.e. using ``MESSAGE()`` print
 statements).  One needs to understand how CMake defines and uses targets for
 various qualities like libraries, executables, etc.  Without this basic
 understanding of CMake, one will have trouble resolving problems when they
