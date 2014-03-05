@@ -428,8 +428,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("dimensions"       , dims   );
-  plist.set("communication pad", commPad);
+  plist.set("dimensions"             , dims   );
+  plist.set("communication pad sizes", commPad);
 
   // Construct an MDVector
   MDVector< Sca > mdVector(mdComm, plist);
@@ -494,9 +494,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("axis comm sizes", axisCommSizes);
-  plist.set("dimensions"     , dims         );
-  plist.set("boundary pad"   , bndryPad     );
+  plist.set("axis comm sizes"   , axisCommSizes);
+  plist.set("dimensions"        , dims         );
+  plist.set("boundary pad sizes", bndryPad     );
 
   // Construct an MDVector
   MDVector< Sca > mdVector(comm, plist);
@@ -578,9 +578,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("dimensions"       , dims    );
-  plist.set("communication pad", commPad );
-  plist.set("boundary pad"     , bndryPad);
+  plist.set("dimensions"             , dims    );
+  plist.set("communication pad sizes", commPad );
+  plist.set("boundary pad sizes"     , bndryPad);
 
   // Construct an MDVector
   MDVector< Sca > mdVector(mdComm, plist);
