@@ -20,11 +20,45 @@ TriBITS provides.  This particular document, however, describes the details on
 how to use the TriBITS system to create a CMake build system for a set of
 compiled software packages.
 
+TriBITS is a fairly extensive framework that is build on
+CMake/CTest/CPack/CDash which in of itself is a very extensive system of
+software and tools.  The most important thing to remember is that software
+project that use TriBITS are really just CMake projects.  TriBITS makes no
+attent to hide that either from the TriBITS project developers or from the
+users that need to configure and build the software.  Therefore, to make
+effective usage of TriBITS, one must learn the basics of CMake.  In
+particular, CMake is a Turning complete programming lanauge with local and
+global variables (with strange scoping rules), macros, functions, targets,
+commands, and other features.  One needs to understand how to define and use
+variables, macros, functions in CMake.  One needs to know how to debug
+CMakeLists.txt files and CMake code in general (i.e. using ``MESSAGE()` print
+statements).  One needs to understand how CMake defines and uses targets for
+various qualities like libraries, executables, etc.  Without this basic
+understanding of CMake, one will have trouble resolving problems when they
+might occur.
+
 
 Structure of a TriBITS Project
 ==============================
 
 ???
+
+TriBITS Global Project Settings
+===============================
+
+TriBITS defines a number of global project-level settings that can be set by
+the user and can have their default determined by each individual TriBITS
+project.  If a given TriBITS project does not define its own default, a
+reasonble default is set by the TriBITS system automatically.
+
+ToDo: Document what parameters influence the entire TriBITS project, what
+parameters can have project-specific defaults, etc.
+
+
+TriBITS Macros and Functions
+============================
+
+.. include:: TribitsDetailedMacroFunctionDoc.rst
 
 
 References
