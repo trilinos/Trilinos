@@ -130,9 +130,11 @@ namespace {
 	      const std::string &decomp_method,
 	      bool create_edges,
 	      bool create_faces,
-	      bool create_skin)
+	      bool create_skin,
+	      int id_integer_size)
   {
     stk::io::StkMeshIoBroker mesh_data(comm);
+    mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", id_integer_size));
 
     if (!decomp_method.empty()) {
       mesh_data.property_add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
@@ -150,6 +152,7 @@ int main(int argc, char** argv)
   std::string decomp_method = "";
   std::string mesh = "";
   std::string type = "exodusii";
+  int id_integer_size = 4;
   bool create_faces = false;
   bool create_edges = false;
   bool create_skin  = false;
@@ -167,6 +170,7 @@ int main(int argc, char** argv)
     ("faces", "create all faces" )
     ("edges", "create all edges" )
     ("skin",  "create all boundary faces (skin of the model)" )
+    ("id_integer_size", bopt::value<int>(&id_integer_size), "use 4 or 8-byte integers for ids" )
     ("mesh",          bopt::value<std::string>(&mesh),
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename." );
 
@@ -202,7 +206,7 @@ int main(int argc, char** argv)
   }
 
   driver(comm, working_directory, mesh, type, decomp_method,
-	 create_edges, create_faces, create_skin);
+	 create_edges, create_faces, create_skin, id_integer_size);
 
   stk::parallel_machine_finalize();
   return 0;
