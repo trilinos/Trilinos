@@ -166,6 +166,23 @@ namespace MueLu {
       }
     }
 
+    // the next code block is an eventual replacement for the stuff in the loop above
+    // push *all* nodal GIDs onto the vector, then make it unique afterwards
+    //**start of block
+    //Teuchos::ArrayView<const GlobalOrdinal> globalElts = colMap->getNodeElementList();
+    gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
+    gNodeIds->empty();
+    for (LocalOrdinal i = 0; i < nColEle; i++) {
+      GlobalOrdinal gDofId = globalElts[i];
+      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
+      if (rowMap->isNodeGlobalElement(gDofId))
+          gNodeIds->push_back(gNodeId);
+    }
+    //make the gNodeIds unique
+    std::sort( gNodeIds->begin(), gNodeIds->end() );
+    gNodeIds->erase( std::unique( gNodeIds->begin(), gNodeIds->end() ), gNodeIds->end() );
+    //**end of block
+
     // store (un)amalgamation information on current level
     RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, A->getColMap()));
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
