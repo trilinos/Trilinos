@@ -41,6 +41,9 @@
 // @HEADER
 */
 
+// System include
+#include <cstdlib>
+
 // Teuchos includes
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -178,19 +181,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
       TEST_EQUALITY(*it, scalar);
   }
 
-  // Test dot product and norms
-  mdVector.putScalar(scalar);
-  Sca norm1 = scalar * Domi::computeSize(dims);
-  Sca dot   = scalar * norm1 ;
-  Sca norm2 = Teuchos::ScalarTraits< Sca >::squareroot(dot);
-  Sca tolerance = 1.0e-14;
-  TEST_COMPARE(std::abs(mdVector.dot(mdVector) - dot   ), <, tolerance);
-  TEST_COMPARE(std::abs(mdVector.norm1()       - norm1 ), <, tolerance);
-  TEST_COMPARE(std::abs(mdVector.norm2()       - norm2 ), <, tolerance);
-  TEST_COMPARE(std::abs(mdVector.normInf()     - scalar), <, tolerance);
-  TEST_COMPARE(std::abs(mdVector.normWeighted(mdVector) -
-                        std::pow(scalar, 3./2.)        ), <, tolerance);
-  TEST_COMPARE(std::abs(mdVector.meanValue()   - scalar), <, tolerance);
+  // Test dot product and norms for non-ordinal types
+  if (! Teuchos::ScalarTraits< Sca >::isOrdinal)
+  {
+    mdVector.putScalar(scalar);
+    Sca norm1 = scalar * Domi::computeSize(dims);
+    Sca dot   = scalar * norm1 ;
+    typename Teuchos::ScalarTraits< Sca >::magnitudeType norm2 =
+      Teuchos::ScalarTraits< Sca >::squareroot(dot);
+    typename Teuchos::ScalarTraits< Sca >::magnitudeType tolerance =
+      Sca(1.0e-7);
+    TEST_COMPARE(std::abs(mdVector.dot(mdVector) - dot   ), <, tolerance);
+    TEST_COMPARE(std::abs(mdVector.norm1()       - norm1 ), <, tolerance);
+    TEST_COMPARE(std::abs(mdVector.norm2()       - norm2 ), <, tolerance);
+    TEST_COMPARE(std::abs(mdVector.normInf()     - scalar), <, tolerance);
+    TEST_COMPARE(std::abs(mdVector.normWeighted(mdVector) -
+                          std::pow(scalar, 3./2.)        ), <, tolerance);
+    TEST_COMPARE(std::abs(mdVector.meanValue()   - scalar), <, tolerance);
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
@@ -671,12 +679,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
 
   // Test the randomize method
   mdVector.randomize();
+  Sca rand_min = -1;
+  Sca rand_max =  1;
+  if (Teuchos::ScalarTraits< Sca >::isOrdinal)
+  {
+    rand_min = 0;
+    rand_max = RAND_MAX;
+  }
   int count = 0;
   for (const_iterator it = view.cbegin(); it != view.cend(); ++it)
   {
     if (*it != 0) ++count;
-    TEST_COMPARE(*it, >=, -1);
-    TEST_COMPARE(*it, <=,  1);
+    TEST_COMPARE(*it, >=, rand_min);
+    TEST_COMPARE(*it, <=, rand_max);
   }
   TEST_COMPARE(count, >, 0);
   
@@ -695,8 +710,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, randomize, Sca )
 
 UNIT_TEST_GROUP(double)
-#if 0
+#if 1
 UNIT_TEST_GROUP(float)
+UNIT_TEST_GROUP(int)
+UNIT_TEST_GROUP(long)
 #endif
 
 }  // namespace
