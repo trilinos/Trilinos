@@ -86,12 +86,18 @@ namespace MueLu {
 
   public:
 
-    AmalgamationInfo(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids,
-                     RCP<std::vector<GlobalOrdinal> > nodegids,
-                     RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap) :
-               nodegid2dofgids_(nodegid2dofgids),
-               gNodeIds_(nodegids),
-               columnMap_(columnMap)
+    //AmalgamationInfo(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids,
+    AmalgamationInfo(RCP<std::vector<GlobalOrdinal> > nodegids,
+                     RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap,
+                     LO fullblocksize, GO offset, LO blockid, LO nStridedOffset, LO stridedblocksize) :
+                     gNodeIds_(nodegids),
+                     columnMap_(columnMap),
+                     fullblocksize_(fullblocksize),
+                     offset_(offset),
+                     blockid_(blockid),
+                     nStridedOffset_(nStridedOffset),
+                     stridedblocksize_(stridedblocksize),
+                     indexBase_(columnMap->getIndexBase())
     {}
 
     virtual ~AmalgamationInfo() {}
@@ -119,6 +125,8 @@ namespace MueLu {
      */
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
+    std::vector<GO> ComputeGlobalDOFs(GO const gNodeID) const;
+
   private:
 
     //! @name amalgamation information variables
@@ -132,6 +140,13 @@ namespace MueLu {
 
     //! @brief DOF map (really column map of A)
     const Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &columnMap_;
+
+    LO fullblocksize_;
+    GO offset_;
+    LO blockid_;
+    LO nStridedOffset_;
+    LO stridedblocksize_;
+    GO indexBase_;
 
     //@}
 

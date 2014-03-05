@@ -117,10 +117,8 @@ namespace MueLu {
     // 2) prepare maps for amalgamated graph of A and
     //    setup unamalgamation information
 
-    RCP<std::vector<GlobalOrdinal> > gNodeIds; // contains global node ids on current proc
-    gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
-    gNodeIds->empty();
 
+#ifdef OLD_AMALGAMATION_DATA_STRUCTURE
     // in nodegid2dofgids for each node on the current proc a vector of
     // the corresponding DOFs gids is stored.
     // The map contains all nodes the current proc has connections to (including
@@ -161,15 +159,16 @@ namespace MueLu {
 
         (*nodegid2dofgids)[gNodeId] = DOFs;
 
-        if (rowMap->isNodeGlobalElement(gDofId))
-          gNodeIds->push_back(gNodeId);
       }
     }
+#endif //ifdef OLD_AMALGAMATION_DATA_STRUCTURE
 
     // the next code block is an eventual replacement for the stuff in the loop above
     // push *all* nodal GIDs onto the vector, then make it unique afterwards
-    //**start of block
-    //Teuchos::ArrayView<const GlobalOrdinal> globalElts = colMap->getNodeElementList();
+    RCP<const Map> const &rowMap = A->getRowMap();
+    Teuchos::ArrayView<const GlobalOrdinal> globalElts = A->getColMap()->getNodeElementList();
+    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalElts.size());
+    RCP<std::vector<GlobalOrdinal> > gNodeIds; // contains global node ids on current proc
     gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
     gNodeIds->empty();
     for (LocalOrdinal i = 0; i < nColEle; i++) {
@@ -181,10 +180,13 @@ namespace MueLu {
     //make the gNodeIds unique
     std::sort( gNodeIds->begin(), gNodeIds->end() );
     gNodeIds->erase( std::unique( gNodeIds->begin(), gNodeIds->end() ), gNodeIds->end() );
-    //**end of block
 
     // store (un)amalgamation information on current level
-    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, A->getColMap()));
+    //RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, A->getColMap(),
+    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(gNodeIds, A->getColMap(),
+                                                                      fullblocksize, offset, blockid, nStridedOffset,
+                                                                      stridedblocksize) );
+
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }
 

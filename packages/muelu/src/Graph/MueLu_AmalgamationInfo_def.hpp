@@ -71,7 +71,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     LO size = procWinner.size();
 
-    std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > & gAmalgParams = *(GetGlobalAmalgamationParams());
+    //std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > & gAmalgParams = *(GetGlobalAmalgamationParams());
     GO total=0;
     std::vector<LO> sizes(aggregates.GetNumAggregates());
     for (LO lnode = 0; lnode < size; ++lnode) {
@@ -80,7 +80,8 @@ namespace MueLu {
         //GO gnodeid = map.getGlobalElement(lnode);
         GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
         //std::vector<GO> const &gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
-        std::vector<GO> const &gDofIds = gAmalgParams[gnodeid];
+        //std::vector<GO> const &gDofIds = gAmalgParams[gnodeid];
+        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
         total += Teuchos::as<LO>(gDofIds.size());
         sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
       }
@@ -103,7 +104,8 @@ namespace MueLu {
         //GO gnodeid = map.getGlobalElement(lnode);
         GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
         //std::vector<GO> const &gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
-        std::vector<GO> const &gDofIds = gAmalgParams[gnodeid];
+        //std::vector<GO> const &gDofIds = gAmalgParams[gnodeid];
+        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
         LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
         for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
           //aggToRowMap[ aggStart[myAgg] + gDofId ] = gDofIds[gDofId]; // fill aggToRowMap structure
@@ -116,6 +118,8 @@ namespace MueLu {
 
   } //UnamalgamateAggregates
 
+  /////////////////////////////////////////////////////////////////////////////
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap(); //aggregates.GetVertex2AggId();
@@ -124,7 +128,8 @@ namespace MueLu {
     LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
     for(LO n = 0; n<nodeElements; n++) {
       GO gnodeid = (GO) nodeMap->getGlobalElement(n);
-      std::vector<GO> gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
+      //std::vector<GO> gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
+      std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
       for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
         myDofGids->push_back(*gDofIdsIt);
       }
@@ -137,7 +142,25 @@ namespace MueLu {
     return importDofMap;
   }
 
-}
+  /////////////////////////////////////////////////////////////////////////////
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::vector<GlobalOrdinal> AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeGlobalDOFs(GlobalOrdinal const gNodeID) const {
+    //optimization:  preallocate DOFs and reuse it
+    std::vector<GlobalOrdinal> DOFs;
+
+    DOFs.reserve(stridedblocksize_);
+    for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
+    // here, the assumption is, that the node map has the same indexBase as the dof map
+    //                            this is the node map index base                    this is the dof map index base
+      GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;
+      if (columnMap_->isNodeGlobalElement(gDofIndex))
+        DOFs.push_back(gDofIndex);
+    }
+    return DOFs;
+  }
+
+} //namespace
 
 
 #endif /* MUELU_AMALGAMATIONINFO_DEF_HPP_ */
