@@ -68,7 +68,7 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
     validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating fatory for coalesced filtered graph");
-    validParamList->set< bool >                  ("lumping",                false, "Use lumping for dropped values");
+    validParamList->set< bool >                  ("lumping",                 true, "Use lumping for dropped values");
 
     return validParamList;
   }
