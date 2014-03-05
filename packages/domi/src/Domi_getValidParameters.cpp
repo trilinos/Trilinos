@@ -74,7 +74,9 @@ RCP< const ParameterList > getValidParameters()
     // Allocate a new non-const ParameterList
     ParameterList* plist = new ParameterList;
 
+    ////////////////////////////////////////////////////////////////
     // "axis comm sizes" parameter applies to MDComm
+    ////////////////////////////////////////////////////////////////
     RCP< EnhancedNumberValidator< int > > axisCommNumber =
       rcp(new EnhancedNumberValidator< int >());
     axisCommNumber->setMin(-1);
@@ -97,7 +99,9 @@ RCP< const ParameterList > getValidParameters()
                "processors",
                axisCommValidator);
 
-    // "periodic" parameter applies to MDComm
+    ////////////////////////////////////////////////////////////////
+    // "periodic" parameter applies to MDComm, MDMap, and MDVector
+    ////////////////////////////////////////////////////////////////
     RCP< EnhancedNumberValidator< int > > periodicNumber =
       rcp(new EnhancedNumberValidator< int >());
     periodicNumber->setMin(0);
@@ -124,7 +128,9 @@ RCP< const ParameterList > getValidParameters()
                "periodic).",
                periodicValidator);
 
+    ////////////////////////////////////////////////////////////////
     // "dimensions" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
     RCP< EnhancedNumberValidator< dim_type > > dimensionNumber =
       rcp(new EnhancedNumberValidator< dim_type >());
      dimensionNumber->setMin(0);
@@ -145,43 +151,64 @@ RCP< const ParameterList > getValidParameters()
                "the length of the axisCommSizes array.",
                dimensionValidator);
 
-    // Both boundary pad and communication pad use the same validator,
-    // so just construct one
-    Array< int > pad;
+    // Both boundary pad and communication pad use the same number and
+    // array validators, so just construct one EnhancedNumberValidator
+    // and one ArrayNumberValidator.
+    int          pad = 0;
+    Array< int > pads;
 
-    RCP< EnhancedNumberValidator< int > > padNumber =
+    RCP< EnhancedNumberValidator< int > > padNumberValidator =
       rcp(new EnhancedNumberValidator< int >());
-    padNumber->setMin(0);
+    padNumberValidator->setMin(0);
 
-    RCP< const EnhancedNumberValidator< int > > constPadNumber =
-      rcp_const_cast< EnhancedNumberValidator< int > >(padNumber);
+    RCP< const EnhancedNumberValidator< int > > constPadNumberValidator =
+      rcp_const_cast< EnhancedNumberValidator< int > >(padNumberValidator);
 
-    RCP< const ParameterEntryValidator > padValidator =
+    RCP< const ParameterEntryValidator > padArrayValidator =
       rcp< const ParameterEntryValidator >
-      //(new ScalarOrArrayNumberValidator< int >(constPadNumber));
-      (new ArrayNumberValidator< int >(constPadNumber));
+      (new ArrayNumberValidator< int >(constPadNumberValidator));
 
-    // "boundary pad" parameter applies to MDMap and MDVector
-    plist->set("boundary pad",
+    ////////////////////////////////////////////////////////////////
+    // "boundary pad size" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
+    plist->set("boundary pad size",
                pad,
-               "A scalar or an array of ints specifying the size of the "
-               "boundary padding. If a scalar is given, then all axes share "
-               "that padding value.  An array can be used to specify padding "
-               "along each axis.  All unspecified entries are assumed to be "
-               "zero.",
-               padValidator);
+               "An int that specifies the boundary padding size for all axes.",
+               padNumberValidator);
 
-    // "communication pad" parameter applies to MDMap and MDVector
-    plist->set("communication pad",
+    ////////////////////////////////////////////////////////////////
+    // "boundary pad sizes" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
+    plist->set("boundary pad sizes",
+               pads,
+               "An array of ints specifying the size of the boundary padding "
+               "along each axis. All unspecified entries take the value of "
+               "the 'boundary pad size' parameter, which defaults to zero.",
+               padArrayValidator);
+
+    ////////////////////////////////////////////////////////////////
+    // "communication pad size" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
+    plist->set("communication pad size",
                pad,
-               "A scalar or an array of ints specifying the size of the "
-               "communication padding. If a scalar is given, then all axes "
-               "share that padding value.  An array can be used to specify "
-               "padding along each axis.  All unspecified entries are assumed "
-               "to be zero.",
-               padValidator);
+               "An int that specifies the communication padding size for all "
+               "axes.",
+               padNumberValidator);
 
+    ////////////////////////////////////////////////////////////////
+    // "communication pad sizes" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
+    plist->set("communication pad sizes",
+               pads,
+               "An array of ints specifying the size of the communication "
+               "padding along each axis. All unspecified entries take the "
+               "value of the 'communication pad size' parameter, which "
+               "defaults to zero.",
+               padArrayValidator);
+
+    ////////////////////////////////////////////////////////////////
     // "layout" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
     string layout = "Default";
 
     Array< string >
