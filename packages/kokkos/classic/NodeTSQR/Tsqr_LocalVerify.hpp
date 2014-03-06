@@ -99,7 +99,11 @@ namespace TSQR {
 	for (Ordinal j = 0; j < ncols; j++)
 	  for (Ordinal i = 0; i < nrows; i++)
 	    {
+#ifdef __CUDACC__
+              if (isnan (A[i + j*lda]))
+#else
 	      if (std::isnan (A[i + j*lda]))
+#endif
 		return true;
 	    }
 	return false;
