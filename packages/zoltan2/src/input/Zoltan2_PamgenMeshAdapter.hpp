@@ -52,6 +52,8 @@
 #include <Zoltan2_StrideData.hpp>
 #include <vector>
 
+#include <im_exodusII_l.h
+
 namespace Zoltan2 {
 
 /*! \brief This class represents a mesh.
@@ -202,18 +204,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   int error = 0;
   int exoid = 0;
   int num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
-  error += im_ex_get_init ( exoid, "PAMGEN Inline Mesh", &dimension_,
+  error += im_ex_get_init_l ( exoid, "PAMGEN Inline Mesh", &dimension_,
 			    &num_nodes, &num_elem, &num_elem_blk,
 			    &num_node_sets, &num_side_sets);
 
   Vcoords_ = (double *)malloc(num_nodes * dimension_ * sizeof(double));
 
-  error += im_ex_get_coord(exoid, Vcoords_, Vcoords_ + num_nodes,
+  error += im_ex_get_coord_l(exoid, Vcoords_, Vcoords_ + num_nodes,
 			   Vcoords_ + 2 * num_nodes);
 
   if (3 == dimension_ && num_elem) {
     int * element_num_map = (int *)malloc(num_elem * sizeof(int));
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
+    error += im_ex_get_elem_num_map_l(exoid, element_num_map);
 
     RnumIds_ = num_elem;
     RidList_ = element_num_map;
@@ -224,7 +226,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   if (2 == dimension_ && num_elem) {
     int * element_num_map = (int *)malloc(num_elem * sizeof(int));
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
+    error += im_ex_get_elem_num_map_l(exoid, element_num_map);
 
     FnumIds_ = num_elem;
     FidList_ = element_num_map;
@@ -238,7 +240,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   if (num_nodes) {
     int * node_num_map = (int *)malloc(num_nodes * sizeof(int));
-    error += im_ex_get_node_num_map(exoid, node_num_map);
+    error += im_ex_get_node_num_map_l(exoid, node_num_map);
 
     VnumIds_ = num_nodes;
     VidList_ = node_num_map;
@@ -254,11 +256,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   char ** elem_type        = (char **)malloc(num_elem_blk * sizeof(char *));
   int ** connect           = (int **)malloc(num_elem_blk * sizeof(int *));
 
-  error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
+  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
 
   for(int i = 0; i < num_elem_blk; i++){
     char * elem_type[i] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
-    error += im_ex_get_elem_block(exoid, elem_blk_id[i], elem_type[i],
+    error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
 				  (int *)&(num_elem_this_blk[i]),
 				  (int *)&(num_nodes_per_elem[i]),
 				  (int *)&(num_attr[i]));
@@ -270,7 +272,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   for(int b = 0; b < num_elem_blk; b++){
     int * connect[b] = (int *)malloc(num_nodes_per_elem[b] *
 				    num_elem_this_blk[b] * sizeof(int));
-    error += im_ex_get_elem_conn(exoid, elem_blk_id[b], connect[b]);
+    error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
 
     for(int i = 0; i < num_elem_this_blk[b]; i++){
       Acoords_[a] = 0;
