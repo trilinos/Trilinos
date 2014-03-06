@@ -555,6 +555,11 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Gears )
 
 STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Heterogeneous )
 {
+  int numprocs = 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+  if (numprocs > 1)
+    return;
+  
   stk::mesh::MetaData meta_data(3);
   stk::mesh::fixtures::VectorFieldType & node_coord =
     meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
@@ -634,6 +639,11 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Heterogeneous )
 
 STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Degenerate )
 {
+  int numprocs = 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+  if (numprocs > 1)
+    return;
+
   stk::mesh::MetaData meta_data(3);
   stk::mesh::fixtures::VectorFieldType & node_coord =
     meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
