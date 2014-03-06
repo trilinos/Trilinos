@@ -15,7 +15,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 
-  TEST(StkMesh, CreateFacesEdgesHex)
+  TEST(StkMeshHowTo, CreateFacesEdgesHex)
   {
     // ============================================================
     // INITIALIZATION
