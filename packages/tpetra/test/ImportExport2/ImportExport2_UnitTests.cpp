@@ -843,9 +843,10 @@ void build_test_prolongator(const RCP<const CrsMatrixType> & A, RCP< CrsMatrixTy
 
   Teuchos::Array<Scalar> Values(1);
   Teuchos::Array<GO> Indices(1);
+  Values[0]=1;
   for(size_t i=0; i<RowMap->getNodeNumElements(); i++) {
     GO GID = RowMap->getGlobalElement(i);
-    Indices[0] = GID % 3;
+    Indices[0] = GID / 3;
     P->insertGlobalValues(GID,Indices(),Values());
   }
   P->fillComplete(DomainMap,RowMap);
@@ -1694,6 +1695,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
     // Build R
     Tpetra::RowMatrixTransposer<double, Ordinal, Ordinal, Node> transposer(P);
     R = transposer.createTranspose();
+
+    ArrayRCP< const size_t > rowptr;
+    ArrayRCP< const Ordinal > colind;
+    ArrayRCP< const double > vals;
+    R->getAllValues(rowptr,colind,vals);
 
     // Form AP
     AP = rcp (new CrsMatrixType(A->getRowMap(),0));
