@@ -128,16 +128,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, RowStat,
   RCP<VectorBase<Scalar> > ref_range = Thyra::createMember(mv->range());
   RCP<VectorBase<Scalar> > ref_domain = Thyra::createMember(mv->domain());
 
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormType;
+  NormType tol = 1e-12;
   {
-    Scalar normVal = Thyra::norm_2(*sv_1);
+    NormType normVal = Thyra::norm_2(*sv_1);
     Thyra::Vp_S(sv_1.ptr(),Scalar(-31.0));
-    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_1)/normVal,0.0,1e-12);
+    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_1)/normVal,NormType(0.0),tol);
   }
 
   {
-    Scalar normVal = Thyra::norm_2(*sv_2);
+    NormType normVal = Thyra::norm_2(*sv_2);
     Thyra::Vp_S(sv_2.ptr(),Scalar(-1.0/31.0));
-    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_2)/normVal,0.0,1e-12);
+    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_2)/normVal,NormType(0.0),tol);
   }
 
   // build the absolute column sum
@@ -153,16 +155,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, RowStat,
   }
 
   {
-    Scalar normVal = Thyra::norm_2(*sv_3);
+    NormType normVal = Thyra::norm_2(*sv_3);
     Thyra::Vp_V(sv_3.ptr(),*ref_domain,Scalar(-1.0));
-    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_3)/normVal,0.0,1e-12);
+    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_3)/normVal,NormType(0.0),tol);
   }
 
   {
-    Scalar normVal = Thyra::norm_2(*sv_4);
+    NormType normVal = Thyra::norm_2(*sv_4);
     Thyra::reciprocal(*ref_domain,ref_domain.ptr()); // I hope this can be done in place
     Thyra::Vp_V(sv_4.ptr(),*ref_domain,Scalar(-1.0));
-    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_4)/normVal,0.0,1e-12);
+    TEST_FLOATING_EQUALITY(Thyra::norm_2(*sv_4)/normVal,NormType(0.0),tol);
   }
 }
 
@@ -172,6 +174,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( MultiVector_RowStatScaledOp,
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
   Scalar )
 {
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormType;
   std::size_t numVecs = 5;
   Teuchos_Ordinal myRows = 10;
 
@@ -197,7 +200,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
   RCP<VectorBase<Scalar> > scale_1 = Thyra::createMember(mv->range());
   RCP<VectorBase<Scalar> > scale_2 = Thyra::createMember(mv->domain());
 
-  put_scalar(2.0,scale_1.ptr());
+  put_scalar(Scalar(2.0),scale_1.ptr());
 
   {
     scale_2->acquireDetachedView(Thyra::Range1D(),&view);
@@ -215,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
     for(std::size_t i=0;i<numVecs;i++) {
       Scalar value = -2.0;
       RCP<VectorBase<Scalar> > ptr = result_1->col(i);
-      put_scalar(2.0*powValue,ptr.ptr());
+      put_scalar(Scalar(2.0)*powValue,ptr.ptr());
       powValue *= value; 
     }
   }
@@ -225,7 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
     for(std::size_t i=0;i<numVecs;i++) {
       Scalar value = -2.0;
       RCP<VectorBase<Scalar> > ptr = result_2->col(i);
-      put_scalar((i+1)*2.0*powValue,ptr.ptr());
+      put_scalar(Scalar((i+1)*2.0)*powValue,ptr.ptr());
       powValue *= value; 
     }
   }
@@ -234,26 +237,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector_RowStatScaledOp, ScaledOp,
   mv->scaleLeft(*scale_1);
 
   {
-    std::vector<Scalar> norms(result_1->domain()->dim()); 
-    Teuchos::ArrayView<Scalar> av_norms = Teuchos::arrayViewFromVector(norms);
+    std::vector<NormType> norms(result_1->domain()->dim()); 
+    Teuchos::ArrayView<NormType> av_norms = Teuchos::arrayViewFromVector(norms);
     Thyra::V_VmV(result_1.ptr(),*result_1,*mv);
     Thyra::norms_2(*result_1,av_norms);
 
-    std::vector<Scalar> zeros(norms.size(),0.0); 
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,1e-12);
+    std::vector<NormType> zeros(norms.size(),NormType(0.0)); 
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,NormType(1e-12));
   }
 
   // test scale right
   mv->scaleRight(*scale_2);
 
   {
-    std::vector<Scalar> norms(result_2->domain()->dim()); 
-    Teuchos::ArrayView<Scalar> av_norms = Teuchos::arrayViewFromVector(norms);
+    std::vector<NormType> norms(result_2->domain()->dim()); 
+    Teuchos::ArrayView<NormType> av_norms = Teuchos::arrayViewFromVector(norms);
     Thyra::V_VmV(result_2.ptr(),*result_2,*mv);
     Thyra::norms_2(*result_2,av_norms);
 
-    std::vector<Scalar> zeros(norms.size(),0.0); 
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,1e-12);
+    std::vector<NormType> zeros(norms.size(),NormType(0.0)); 
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,NormType(1e-12));
   }
 }
 

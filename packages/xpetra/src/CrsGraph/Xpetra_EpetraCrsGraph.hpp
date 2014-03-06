@@ -53,6 +53,7 @@
 #include "Xpetra_CrsGraph.hpp"
 
 #include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraExport.hpp"
 #include "Xpetra_EpetraImport.hpp"
 #include "Xpetra_EpetraUtils.hpp"
 
@@ -139,6 +140,9 @@ namespace Xpetra {
 
     //! Returns the importer associated with this graph.
     RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraph::getImporter"); return toXpetra(graph_->Importer()); }
+
+    //! Returns the exporter associated with this graph.
+    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraph::getExporter"); return toXpetra(graph_->Exporter()); }
 
     //! Returns the number of global rows in the graph.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsGraph::getGlobalNumRows"); return graph_->NumGlobalRows(); }

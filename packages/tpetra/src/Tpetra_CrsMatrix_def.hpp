@@ -47,6 +47,7 @@
 
 #include <Tpetra_Util.hpp>
 #include <Tpetra_Import_Util.hpp>
+#include <Tpetra_Import_Util2.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -3915,7 +3916,7 @@ namespace Tpetra {
 
     if (this->isStaticGraph ()) {
       // This matrix has a const graph, so the returned matrix should too.
-      RCP<out_mat_type> newmat = rcp (new out_mat_type (this->getCrsGraph ()));
+      newmat = rcp (new out_mat_type (this->getCrsGraph ()));
 
       // Convert the values from Scalar to T, and stuff them directly
       // into the matrix to return.
@@ -3953,8 +3954,8 @@ namespace Tpetra {
         numEntriesPerRow[localRow] = as<size_type> (getNumEntriesInLocalRow (localRow));
       }
 
-      RCP<out_mat_type> newmat =
-        rcp (new out_mat_type (rowMap, colMap, numEntriesPerRow, StaticProfile));
+      newmat = rcp (new out_mat_type (rowMap, colMap, numEntriesPerRow,
+                                      StaticProfile));
 
       // Convert this matrix's values from Scalar to T.
       const size_type numVals = this->values1D_.size ();

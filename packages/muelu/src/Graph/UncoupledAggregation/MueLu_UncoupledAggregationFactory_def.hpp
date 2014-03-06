@@ -77,6 +77,7 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

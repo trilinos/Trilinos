@@ -203,7 +203,7 @@ absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const
 
   // Thyra::norms_1<Scalar>(*this,view.values()());
 
-  ArrayView<typename ScalarTraits<Scalar>::magnitudeType> norms = view.values()();
+  ArrayView<Scalar> norms = view.values()();
   RTOpPack::ROpNorm1<Scalar> op;
 
   const int m = this->domain()->dim();

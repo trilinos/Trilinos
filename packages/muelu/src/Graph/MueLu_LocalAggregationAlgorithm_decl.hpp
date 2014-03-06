@@ -50,19 +50,12 @@
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_LocalAggregationAlgorithm_fwd.hpp"
 
-#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_AggOptions.hpp" // includes Ordering enum
-
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-#define minAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define maxAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 namespace MueLu {
 

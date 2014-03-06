@@ -75,9 +75,6 @@
 
 #include "Xpetra_Matrix.hpp"
 
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-
 /** \file Xpetra_BlockedCrsMatrix.hpp
 
   Declarations for the class Xpetra::BlockedCrsMatrix.
@@ -307,7 +304,8 @@ public:
 
       // sum up number of local elements
       size_t numGlobalElements = 0;
-      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements)
+      Teuchos::reduceAll(*(rangemaps_->getFullMap()->getComm()), Teuchos::REDUCE_SUM, colmapentries.size(), Teuchos::outArg(numGlobalElements));
+
 
       const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
       fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());

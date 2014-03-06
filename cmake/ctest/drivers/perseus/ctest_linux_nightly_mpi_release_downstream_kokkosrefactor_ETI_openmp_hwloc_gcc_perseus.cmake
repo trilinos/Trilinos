@@ -64,7 +64,7 @@ SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_RELEASE_DEV_DownStream_KokkosRefactor_ETI_OPENMP_HWLOC_GCC)
 SET(CTEST_PARALLEL_LEVEL 1)
-SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES Tpetra KokkosCore KokkosLinAlg KokkosContainers KokkosCompat KokkosClassic Belos Ifpack2 MueLu)

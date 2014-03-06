@@ -1,13 +1,12 @@
-// @HEADER
-//
-// ***********************************************************************
-//
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
-//
+/*
+// ************************************************************************
+// 
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,45 +34,37 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
-// @HEADER
-#ifndef MUELU_PERFUTILS_DECL_HPP
-#define MUELU_PERFUTILS_DECL_HPP
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// 
+// ************************************************************************
+*/
 
-#include "MueLu_ConfigDefs.hpp"
+#include <Kokkos_Cuda.hpp>
+#include <HexElement.hpp>
+#include <fenl_impl.hpp>
 
-#include <Teuchos_ParameterList.hpp>
+namespace Kokkos {
+namespace Example {
+namespace FENL {
 
-#include <Xpetra_Export_fwd.hpp>
-#include <Xpetra_Import_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
+template
+Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
 
-#include "MueLu_Utilities_fwd.hpp"
 
-namespace MueLu {
+template
+Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemQuadratic >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
 
-  template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-  class PerfUtils {
-#undef MUELU_PERFUTILS_SHORT
-#include "MueLu_UseShortNames.hpp"
+} /* namespace FENL */
+} /* namespace Example */
+} /* namespace Kokkos */
 
-  public:
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
-
-    static std::string CommPattern(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
-  };
-
-} //namespace MueLu
-
-#define MUELU_PERFUTILS_SHORT
-#endif // MUELU_PERFUTILS_DECL_HPP

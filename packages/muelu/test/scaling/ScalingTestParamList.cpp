@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
 
   if (printTimings) {
     TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
-    MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
+    // MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
   }
 
   return 0;

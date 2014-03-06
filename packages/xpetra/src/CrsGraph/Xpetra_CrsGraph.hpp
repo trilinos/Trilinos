@@ -136,6 +136,9 @@ namespace Xpetra {
     //! Returns the importer associated with this graph.
     virtual RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const = 0;
 
+    //! Returns the exporter associated with this graph.
+    virtual RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const = 0;
+
     //! Returns the number of global rows in the graph.
     virtual global_size_t getGlobalNumRows() const = 0;
 

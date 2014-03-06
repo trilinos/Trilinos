@@ -187,28 +187,6 @@ void Multiply(
   //Now import any needed remote rows and populate the Bview struct.
   MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter());
 
-
-  //If the result matrix C is not already FillComplete'd, we will do a
-  //preprocessing step to create the nonzero structure,
- /*
-  if (!C.isFillComplete()) {
-    CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsgraphbuilder(C.getRowMap());
-
-    //pass the graph-builder object to the multiplication kernel to fill in all
-    //the nonzero positions that will be used in the result matrix.
-    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder, true);
-
-    //now insert all of the nonzero positions into the result matrix.
-    insert_matrix_locations(crsgraphbuilder, C);
-
-
-    if (call_FillComplete_on_result) {
-      C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-      call_FillComplete_on_result = false;
-    }
-  }
-  */
-
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM All Multiply")));
 #endif
@@ -750,8 +728,7 @@ template<class Scalar,
 void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  bool onlyCalculateStructure)
+  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
   //TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
@@ -777,7 +754,7 @@ void mult_A_B(
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
 
-  Array<Scalar> dwork = onlyCalculateStructure ? Array<Scalar>() : Array<Scalar>(C_numCols);
+  Array<Scalar> dwork = Array<Scalar>(C_numCols);
   Array<GlobalOrdinal> iwork = Array<GlobalOrdinal>(C_numCols);
   Array<size_t> iwork2 = Array<size_t>(C_numCols);
 
@@ -785,7 +762,7 @@ void mult_A_B(
   Array<GlobalOrdinal> C_cols = iwork;
   Array<size_t> c_index = iwork2;
   Array<GlobalOrdinal> combined_index = Array<GlobalOrdinal>(2*C_numCols);
-  Array<Scalar> combined_values = onlyCalculateStructure ? Array<Scalar>() : Array<Scalar>(2*C_numCols);
+  Array<Scalar> combined_values = Array<Scalar>(2*C_numCols);
 
   size_t C_row_i_length, j, k, lastj, last_index;
 
@@ -829,7 +806,7 @@ void mult_A_B(
 
 
     ArrayView<const LocalOrdinal> Aindices_i = Aview.indices[i];
-    ArrayView<const Scalar> Aval_i  = onlyCalculateStructure ? null : Aview.values[i];
+    ArrayView<const Scalar> Aval_i  = Aview.values[i];
 
     GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
 
@@ -846,16 +823,13 @@ void mult_A_B(
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
       Scalar Aval = Aval_i[k];
-      if (onlyCalculateStructure)
-        Aval = STS::zero();
-      else if (Aval == STS::zero())
+      if (Aval == STS::zero())
         continue;
 
       if (Bview.remote[Ak]) continue;
 
       const LocalOrdinal *Bcol_inds = Bview.indices[Ak].getRawPtr();
-      const Scalar *Bvals_k = onlyCalculateStructure ? NULL :
-                                     Bview.values[Ak].getRawPtr();
+      const Scalar *Bvals_k         = Bview.values[Ak].getRawPtr();
 
       lastj = Bview.numEntriesPerRow[Ak];
 
@@ -864,18 +838,14 @@ void mult_A_B(
           //assert(col >= 0 && col < C_numCols);
           if (c_index[col] == OrdinalTraits<size_t>::invalid()){
           //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
-            if(!onlyCalculateStructure){
-                // This has to be a +=  so insertGlobalValue goes out
-                C_row_i[C_row_i_length] = Aval*Bvals_k[j];
-            }
+	    // This has to be a +=  so insertGlobalValue goes out
+	    C_row_i[C_row_i_length] = Aval*Bvals_k[j];
             C_cols[C_row_i_length] = col;
             c_index[col] = C_row_i_length;
             C_row_i_length++;
           }
           else {
-            if(!onlyCalculateStructure){
-              C_row_i[c_index[col]] += Aval*Bvals_k[j];
-            }
+	    C_row_i[c_index[col]] += Aval*Bvals_k[j];
           }
         }
     }
@@ -884,46 +854,26 @@ void mult_A_B(
       c_index[C_cols[ii]] = OrdinalTraits<size_t>::invalid();
       C_cols[ii] = bcols[C_cols[ii]];
       combined_index[ii] = C_cols[ii];
-      if (!onlyCalculateStructure)
-          combined_values[ii] = C_row_i[ii];
+      combined_values[ii] = C_row_i[ii];
     }
     last_index = C_row_i_length;
-
-      //
-      //Now put the C_row_i values into C.
-      //
-      // We might have to revamp this later.
-    /*if (!onlyCalculateStructure)
-    {
-      C_filled ?
-        C.sumIntoGlobalValues(
-          global_row,
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
-          onlyCalculateStructure ? null :
-          C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
-        :
-        C.insertGlobalValues(
-          global_row,
-          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length),
-          onlyCalculateStructure ? null :
-          C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
-    }*/
-
+    
+    //
+    //Now put the C_row_i values into C.
+    //
+    // We might have to revamp this later.
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
       Scalar Aval = Aval_i[k];
-      if (onlyCalculateStructure)
-        Aval = STS::zero();
-      else if (Aval == STS::zero())
+      if (Aval == STS::zero())
         continue;
 
       if (!Bview.remote[Ak]) continue;
 
       const LocalOrdinal *Bcol_inds = Bview.indices[Ak].getRawPtr();
-      const Scalar *Bvals_k = onlyCalculateStructure ? NULL :
-                                     Bview.values[Ak].getRawPtr();
+      const Scalar *Bvals_k         = Bview.values[Ak].getRawPtr();
 
       lastj = Bview.numEntriesPerRow[Ak];
         for(j=OrdinalTraits<size_t>::zero(); j< lastj; ++j) {
@@ -931,19 +881,15 @@ void mult_A_B(
           //assert(col >= 0 && col < C_numCols);
           if (c_index[col] == OrdinalTraits<size_t>::invalid()){
           //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
-            if(!onlyCalculateStructure){
-                // This has to be a +=  so insertGlobalValue goes out
-                C_row_i[C_row_i_length] = Aval*Bvals_k[j];
-            }
+	    // This has to be a +=  so insertGlobalValue goes out
+	    C_row_i[C_row_i_length] = Aval*Bvals_k[j];
             C_cols[C_row_i_length] = col;
             c_index[col] = C_row_i_length;
             C_row_i_length++;
             }
             else {
-              if(!onlyCalculateStructure){
-                // This has to be a +=  so insertGlobalValue goes out
-                C_row_i[c_index[col]] += Aval*Bvals_k[j];
-              }
+	      // This has to be a +=  so insertGlobalValue goes out
+	      C_row_i[c_index[col]] += Aval*Bvals_k[j];
             }
         }
     }
@@ -952,8 +898,7 @@ void mult_A_B(
       c_index[C_cols[ii]] = OrdinalTraits<size_t>::invalid();
       C_cols[ii] = bcols_import[C_cols[ii]];
       combined_index[last_index] = C_cols[ii];
-      if (!onlyCalculateStructure)
-          combined_values[last_index] = C_row_i[ii];
+      combined_values[last_index] = C_row_i[ii];
       last_index++;
     }
 
@@ -961,24 +906,19 @@ void mult_A_B(
       //Now put the C_row_i values into C.
       //
       // We might have to revamp this later.
-    if (!onlyCalculateStructure)
-    {
-      C_filled ?
-        C.sumIntoGlobalValues(
+    C_filled ?
+      C.sumIntoGlobalValues(
           global_row,
           combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
-          onlyCalculateStructure ? null : combined_values.view(
-          OrdinalTraits<size_t>::zero(), last_index))
-        :
-        C.insertGlobalValues(
+	  combined_values.view(OrdinalTraits<size_t>::zero(), last_index))
+      :
+      C.insertGlobalValues(
           global_row,
           combined_index.view(OrdinalTraits<size_t>::zero(), last_index),
-          onlyCalculateStructure ? null : combined_values.view(
-          OrdinalTraits<size_t>::zero(), last_index));
-    }
-
+	  combined_values.view(OrdinalTraits<size_t>::zero(), last_index));
+    
   }
-
+  
 }
 
 template<class Scalar,

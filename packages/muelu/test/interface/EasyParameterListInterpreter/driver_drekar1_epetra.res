@@ -47,6 +47,7 @@ Level 1
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
@@ -131,6 +132,7 @@ Level 2
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
@@ -215,6 +217,7 @@ Level 3
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
