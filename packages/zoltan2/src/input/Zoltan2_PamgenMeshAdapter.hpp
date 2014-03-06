@@ -249,21 +249,21 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     VidList_ = NULL;
   }
 
-  long long * elem_blk_ids = new long long [num_elem_blk];
-  int * num_nodes_per_elem = (int *)malloc(num_elem_blk * sizeof(int));
-  int * num_attr           = (int *)malloc(num_elem_blk * sizeof(int));
-  int * num_elem_this_blk  = (int *)malloc(num_elem_blk * sizeof(int));
-  char ** elem_type        = (char **)malloc(num_elem_blk * sizeof(char *));
+  long long *elem_blk_ids       = new long long [num_elem_blk];
+  long long *num_nodes_per_elem = new long long [num_elem_blk];
+  long long *num_attr           = new long long [num_elem_blk];
+  long long *num_elem_this_blk  = new long long [num_elem_blk];
+  char **elem_type              = new char * [num_elem_blk];
   int ** connect           = (int **)malloc(num_elem_blk * sizeof(int *));
 
   error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
 
-  for(int i = 0; i < num_elem_blk; i++){
-    char * elem_type[i] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
+  for(long long i = 0; i < num_elem_blk; i++){
+    elem_type[i] = new char [MAX_STR_LENGTH + 1];
     error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
-				  (int *)&(num_elem_this_blk[i]),
-				  (int *)&(num_nodes_per_elem[i]),
-				  (int *)&(num_attr[i]));
+				  (long long*)&(num_elem_this_blk[i]),
+				  (long long*)&(num_nodes_per_elem[i]),
+				  (long long*)&(num_attr[i]));
   }
 
   Acoords_ = (double *)malloc(num_elem * dimension_ * sizeof(double));
