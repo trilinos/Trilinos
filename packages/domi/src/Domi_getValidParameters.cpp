@@ -92,11 +92,15 @@ RCP< const ParameterList > getValidParameters()
     axisCommSizes[0] = -1;
     plist->set("axis comm sizes",
                axisCommSizes, 
-               "An array of ints whose length is the number of dimensions "
-               "of the problem and whose entries specify the size of the "
-               "MDComm along each axis. A negative value tells Domi to "
-               "fill in a logical value based on the total number of "
-               "processors",
+               "An array of ints that specifies the size of the "
+               "MDComm along each axis. If the 'dimensions' parameter is "
+               "present, then the length of that parameter determines the "
+               "number of dimensions.  If 'dimensions' is not present, then "
+               "the length of this parameter determines the number of "
+               "dimensions.  If the length of this parameter is shorter than "
+               "the number of dimensions, then this parameter is extended with "
+               "values of -1.  A negative value tells Domi to fill in a "
+               "logical value based on the total number of processors.",
                axisCommValidator);
 
     ////////////////////////////////////////////////////////////////
@@ -129,7 +133,7 @@ RCP< const ParameterList > getValidParameters()
                periodicValidator);
 
     ////////////////////////////////////////////////////////////////
-    // "dimensions" parameter applies to MDMap and MDVector
+    // "dimensions" parameter applies to MDComm, MDMap and MDVector
     ////////////////////////////////////////////////////////////////
     RCP< EnhancedNumberValidator< dim_type > > dimensionNumber =
       rcp(new EnhancedNumberValidator< dim_type >());
@@ -147,8 +151,10 @@ RCP< const ParameterList > getValidParameters()
     plist->set("dimensions",
                dimensions,
                "An array of ordinals specifying the global dimensions of "
-               "the MDMap. The length of this array should be the same as "
-               "the length of the axisCommSizes array.",
+               "the MDMap. If present for the MDComm constructor, the length "
+               "of this parameter will set the number of dimensions.  If not "
+               "present for the MDComm constructor, the number of dimensions "
+               "will be set by the length of the 'axis comm szies' parameter.",
                dimensionValidator);
 
     // Both boundary pad and communication pad use the same number and
