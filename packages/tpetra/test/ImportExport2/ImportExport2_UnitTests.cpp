@@ -836,7 +836,6 @@ void build_test_prolongator(const RCP<const CrsMatrixType> & A, RCP< CrsMatrixTy
   P = rcp(new CrsMatrixType(RowMap,0));
 
   // Make DomainMap
-  //  size_t num_my_domains=0;
   Array<GO> gids;
   for(size_t i=0; i<RowMap->getNodeNumElements(); i++) {
     if(RowMap->getGlobalElement(i) %3 == 0) gids.push_back((GO)(RowMap->getGlobalElement(i)/3.0));
