@@ -83,6 +83,8 @@ INCLUDE(ParseVariableArguments)
 #
 # ToDo: Document other arguments!
 #
+# .. _tribits_executable_name:
+#
 # **Executable and Target Name:**
 #
 # By default, the actual name of the executable and target will be::

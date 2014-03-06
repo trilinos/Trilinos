@@ -4,7 +4,7 @@
 .. should be directly modified!
 
 TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+---------------------------------------------------------
 
 Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a PackagesList.cmake file for a given TriBITS repo.
@@ -60,7 +60,7 @@ package which contains the three columns:
    the name of the macro, it is an immediate error in CMake.
 
 TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+---------------------------------------------------------
 
 Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
@@ -119,7 +119,7 @@ varible include:
   the name of the macro, it is an immediate error in CMake.
 
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
-+++++++++++++++++++++++++++++++++++++
+-------------------------------------
 
 Define the dependenices for a given TriBITS SE package (i.e. a top-level
 package or a subpackage).
@@ -264,7 +264,7 @@ are empty.  This is a error checking property of the TriBITS system to avoid
 misspelling the names of these variables.
 
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
-+++++++++++++++++++++++++++++++++++++++++
+-----------------------------------------
 
 Macro used in Dependencies.cmake files to allow some upstream dependent packages
 to be missing.
@@ -289,7 +289,7 @@ misspelled package names so it is important to only use it when it
 absolutely is needed.
 
 TRIBITS_TPL_DECLARE_LIBRARIES()
-+++++++++++++++++++++++++++++++
+-------------------------------
 
 Function that sets up cache variables for users to specify where to find a
 TPL's headers and libraries.  This function is typically called inside of a
@@ -360,7 +360,7 @@ intended for the user to set and/or use:
   correct list of libraries to link to.
 
 TRIBITS_PACKAGE()
-+++++++++++++++++
+-----------------
 
 Macro called at the very beginning of a ${PROJECT_NAME} package's top-level
 CMakeLists.txt file.
@@ -380,7 +380,7 @@ See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
 arguments and the side-effects (and varibles set) of calling this macro.
 
 TRIBITS_PACKAGE_DECL()
-++++++++++++++++++++++
+----------------------
 
 Macro called at the very beginning of a ${PROJECT_NAME}
 package's top-level CMakeLists.txt file when a packages has subpackages.
@@ -438,7 +438,7 @@ There are several side-effects of calling this macro:
   leaving off the full path and the ``*.cmake`` extension.
 
 TRIBITS_PACKAGE_DEF()
-+++++++++++++++++++++
+---------------------
 
 Macro called after subpackages are processed in order to
 handle the libraries, tests, and examples of the final package. 
@@ -459,7 +459,7 @@ This macro has several side effects:
   list of libraries, etc.) are initialized to emtpy.
 
 TRIBITS_PROCESS_SUBPACKAGES()
-+++++++++++++++++++++++++++++
+-----------------------------
 
 Macro that processes subpackages for packages that have them.  This is
 called in the parent packages top-level CMakeLists.txt file.
@@ -472,7 +472,7 @@ Must be called after `TRIBITS_PACKAGE_DECL()`_ but before
 `TRIBITS_PACKAGE_DEF()`_.
 
 TRIBITS_ADD_TEST_DIRECTORIES()
-++++++++++++++++++++++++++++++
+------------------------------
 
 Macro called to add a set of test directories for an SE package.
 
@@ -493,7 +493,7 @@ extended in the futgure in order to modify behavior related to adding tests
 and examples in a uniform way..
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES()
-+++++++++++++++++++++++++++++++++
+---------------------------------
  
 Macro called to conditionally add a set of example directories for an SE
 package.
@@ -515,7 +515,7 @@ be extended in the futgure in order to modify behavior related to adding
 tests and examples in a uniform way..
 
 TRIBITS_SET_ST_FOR_DEV_MODE()
-+++++++++++++++++++++++++++++
+-----------------------------
 
 Function that allows packages to easily make a feature ``ST`` for
 development builds and ``PT`` for release builds by default.
@@ -533,7 +533,7 @@ while still having important functionality available to users by default in
 a release.
 
 TRIBITS_ADD_LIBRARY()
-+++++++++++++++++++++
+---------------------
 
 Function used to add a CMake library target using ``ADD_LIBRARY()``.
 
@@ -573,7 +573,7 @@ NOTE: IF the library is added, a CMake library target ``<libName>`` gets
 created through calling the build-in command ``ADD_LIBRARY(<libName> ...)``.
 
 TRIBITS_ADD_EXECUTABLE()
-++++++++++++++++++++++++
+------------------------
 
 Function used to create an executable (typically for a test or example),
 using the built-in CMake comamnd ``ADD_EXECUTABLE()``.
@@ -603,6 +603,8 @@ The arguments are:
 
 ToDo: Document other arguments!
 
+.. _tribits_executable_name:
+
 **Executable and Target Name:**
 
 By default, the actual name of the executable and target will be::
@@ -624,8 +626,324 @@ avoid clashing with executables installed by other packages.
 
 ToDo: Document post conditions!
 
+TRIBITS_ADD_TEST()
+------------------
+
+Add a test or a set of tests for a single executable or command.
+
+Usage::
+
+  TRIBITS_ADD_TEST(
+    <execRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
+    [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
+    [DIRECTORY <directory>]
+    [ADD_DIR_TO_NAME]
+    [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
+      | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
+        POSTFIX_AND_ARGS_1 ... ]
+    [COMM [serial] [mpi]]
+    [NUM_MPI_PROCS <numProcs>]
+    [CATEGORIES <category1>  <category2> ...]
+    [HOST <host1> <host2> ...]
+    [XHOST <host1> <host2> ...]
+    [HOSTTYPE <hosttype1> <hosttype2> ...]
+    [XHOSTTYPE <hosttype1> <hosttype2> ...]
+    [STANDARD_PASS_OUTPUT
+      | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+    [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+    [WILL_FAIL]
+    [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+    )
+
+**Formal Arguments:**
+
+  ``<execRootName>``
+
+    The name of the exectuble or path to the exectuable to run for the test
+    (see `Determining the Exectuable or Command to Run`_).  This name is
+    also the default root name for the test (see `Determining the Full Test
+    Name`_).
+
+  ``NOEXEPREFIX``
+
+   If specified, then the prefix ``${PACKAGE_NAME}_`` is not assumed to be
+   prepended to ``<execRootName>``.
+
+  ``NOEXESUFFIX``
+
+     If specified, then the postfix
+     ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be
+     post-pended to ``<execRootName>``.
+
+  ``NAME <testRootName>``
+
+    If specified, gives the root name of the test.
+    If not specified, then ``<testRootName>`` is taken to be
+    ``<execRootName>``.  The actual test name will always prefixed as
+    ``${PACKAGE_NAME}_<testRootName>`` passed into the call to the built-in
+    CMake command ``ADD_TEST(...)``.  The main purpose of this argument is to
+    allow multiple tests to be defined for the same executable.  CTest
+    requires all test names to be globally unique in a single project.
+ 
+  ``NAME_POSTFIX <testNamePostfix>``
+
+    If specified, gives a postfix that will be added to the standard test
+    name based on ``<execRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
+    the ``NAME <testRootName>`` argument is given, this argument is ignored.
+ 
+  ``DIRECTORY <dir>``
+
+    If specified, then the executable is assumed to be in the directory
+    given by by ``<dir>``.  The directory ``<dir>`` can either be a relative
+    or absolute path.  If not specified, the executable is assumed to be in
+    the current bindary directory.
+  
+  ``ADD_DIR_TO_NAME``
+
+    If specified, then the directory name that this test resides in will be
+    added into the name of the test after the package name is added and
+    before the root test name (see below).  The directory will have the
+    package's base directory stripped off so only the unique part of the
+    test directory will be used.  All directory seperators will be changed
+    into underscores.
+ 
+  ``RUN_SERIAL``
+
+      If specified then no other tests will be allowed to run while this
+      test is running. This is useful for devices(like cuda cards) that
+      require exclusive access for processes/threads.  This just sets the
+      CTest test property ``RUN_SERIAL`` using the built-in CMake function
+      ``SET_TESTS_PROPERTIES()``.
+ 
+  ``ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...``
+
+    If specified, then a set of arguments can be passed in quotes.  If
+    multiple groups of arguments are passed in different quoted clusters of
+    arguments then a different test will be added for each set of arguments.
+    In this way, many different tests can be added for a single executable
+    in a single call to this function.  Each of these separate tests will be
+    named ``${TEST_NAME}_xy`` where ``xy`` = ``00``, ``01``, ``02``, and so
+    on.
+ 
+  ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg1> <arg2> ...``
+
+    If specified, gives a sequence of sets of test postfix names and arguments
+    lists for different tests.  For example, a set of three different tests
+    with argument lists can be specified as::
+      
+      POSTIFX_AND_ARGS_0 postfix1 --arg1 --arg2="dummy"
+      POSTIFX_AND_ARGS_1 postfix2  --arg2="fly"
+      POSTIFX_AND_ARGS_3 postfix3  --arg2="bags"
+ 
+    This will create three different test cases with the postfix names
+    ``postfix1``, ``postfix2``, and ``postfix3``.  The indexes must be
+    consecutive starting a ``0`` and going up to (currently) ``19``.  The main
+    advantages of using these arguments instead of just 'ARGS' are that you
+    can give meaningful name to each test case and you can specify multiple
+    arguments without having to quote them and you can allow long argument
+    lists to span multiple lines.
+ 
+  ``COMM [serial] [mpi]``
+
+    If specified, selects if the test will be added in serial and/or MPI
+    mode.  If the ``COMM`` argument is missing, the test will be added in
+    both serial and MPI builds of the code.
+ 
+  ``NUM_MPI_PROCS <numProcs>``
+
+    If specified, gives the number of processes that the test will be
+    defined to run.  If ``<numProcs>`` is greater than
+    ${MPI_EXEC_MAX_NUMPROCS} then the test will be excluded.  If not
+    specified, then the default number of processes for an MPI build will be
+    ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
+    ignored.  ToDo: Force this to be 1 for serial builds and add test for
+    this!
+ 
+  ``HOST <host1> <host2> ...``
+
+    If specified, gives a list of hostnames where the test will be included.
+    The current hostname is determined by the built-in CMake command
+    ``SITE_NAME(${PROJECT_NAME}_HOSTNAME)``.  On Linux/Unix systems, this is
+    typically the value returned by 'uname -n'.  If this list is given, the
+    value of ``${${PROJECT_NAME}_HOSTNAME}`` must equal one of the listed
+    host names ``<hosti>`` or test will not be added.  The value of
+    ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
+    output under the section ``Probing the environment``.
+ 
+  ``XHOST <host1> <host2> ...``
+
+    If specified, gives a list of hostnames (see ``HOST`` argument) where
+    the test will *not* be added.  This check is performed after the check
+    for the hostnames in the ``HOST`` list if it should exist.  Therefore,
+    this list exclusion list overrides the 'HOST' inclusion list.
+
+  ``CATEGORIES <category1> <category2> ...``
+
+    If specified, gives the specific categories of the test.  Valid test
+    categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
+    and ``PERFORMANCE``.  By default, the category is ``BASIC``.  When the
+    test category does not match ``${PROJECT_NAME}_TEST_CATEGORIES``, then
+    the test is not added.  When the ``CATEGORIES`` is ``BASIC`` it will
+    match ``${PROJECT_NAME}_TEST_CATEGORIES`` eqaual to ``CONTINUOUS``,
+    ``NIGHTLY``, and ``WEEKLY``.  When the ``CATEGORIES`` contains
+    ``CONTINUOUS`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES`` equal
+    to ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY``.  When the ``CATEGORIES``
+    is ``NIGHTLY`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES`` equal
+    to ``NIGHTLY`` and ``WEEKLY``.  When the ``CATEGORIES`` is
+    ``PERFORMANCE`` it will match
+    ``${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE`` only.
+
+  ``HOSTTYPE <hosttype1> <hosttype2> ...``
+
+    If specified, gives the names of the host system type (given by
+    ``CMAKE_HOST_SYSTEM_NAME`` which is printed in the TriBITS cmake
+    confgiure output in the section ``Probing the environment``) to include
+    the test.  Typical host system type names include ``Linux``, ``Darwain``
+    etc.
+
+  ``XHOSTTYPE <hosttype1> <hosttype2> ...``
+
+    If specified, gives the names of the host system type to *not* include
+    the test.  This check is performed after the check for the host system
+    names in the ``HOSTTYPE`` list if it should exist.  Therefore, this list
+    exclusion list overrides the ``HOSTTYPE`` inclusion list.
+
+  ``STANDARD_PASS_OUTPUT``
+
+    If specified, then the standard test output ``End Result: TEST PASSED``
+    is greped for to determine success.  This is needed for MPI tests on
+    some platforms since the return value is unreliable.  This is set using
+    the built-in ctest property ``PASS_REGULAR_EXPRESSION``.
+
+  ``PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."``
+
+    If specified, then a test will be assumed to pass only if one of the
+    regular expressions ``<regex1>``, ``<regex2>`` etc. match the output.
+    Otherwise, the test will fail.  This is set using the built-in test
+    property ``PASS_REGULAR_EXPRESSION``.  Consult standard CMake
+    documentation.
+
+  ``FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."``
+
+    If specified, then a test will be assumed to fail if one of the regular
+    expressions ``<regex1>``, ``<regex2>`` etc. match the output.
+    Otherwise, the test will pass.  This is set using the built-in test
+    property ``FAIL_REGULAR_EXPRESSION``.
+
+  ``WILL_FAIL``
+
+    If passed in, then the pass/fail criteria will be inverted.  This is set
+    using the built-in test property ``WILL_FAIL``.
+
+  ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ...``
+
+    If passed in, the listed environment varaibles will be set before
+    calling the test.  This is set using the built-in test property
+    ``ENVIRONMENT``.
+
+In the end, this function just calls the built-in CMake commands
+``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
+...)`` to set up a executable process for ``ctest`` to run and determine
+pass/fail.  Therefore, this wrapper funtion does not provide any
+fundamentally new features that is avaiable in the basic usage if
+CMake/CTes.  However, this wrapper function takes care of many of the
+details and boiler-plate CMake code that it takes to add such as test (or
+tests) and enforces consistency across a large project for how tests are
+defined, run, and named (to avoid test name clashes).
+
+If more flexibility or control is needed when defining tests, then the
+function ``TRIBITS_ADD_ADVANCED_TEST()`` should be used instead.
+
+In the following subsections, more details on how tests are defined and run
+is given.
+
+.. _Determining the Exectuable or Command to Run:
+
+**Determining the Exectuable or Command to Run:**
+
+This funtion is primarily designed to make it easy to run tests for
+exectaubles built usign the function ``TRIBITS_ADD_EXECUTABLE()``.  To set
+up tests to run arbitrary executables, see below.
+
+By default, the command to run for the executable is determined by first
+getting the exectuable name which by default is assumed to be::
+
+  ${PACKAGE_NAME}_<execRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+
+If ``NONEXEPREFIX`` is passed in, the prefix ``${PACKAGE_NAME}_`` is not
+prepended to the assumed name.  If ``NOEXESUFFIX`` is passed in, then
+``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be appended
+to the name.
+
+By default, this executable is assumed to be in the current CMake binary
+directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
+changed using the ``DIRECTORY <dir>`` argument.  
+
+If an arbitrary exectuable is to be run for the test, then pass in
+``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set ``<execRootName>`` to the
+relative or absolute path of the exeutable to be run.  If ``<execRootName>``
+is not an absolute path, then ``${CMAKE_CURRENT_BINARY_DIR}/<execRootName>``
+is set as the executable to run.
+
+Whatever executable path is specified using this logic, if the executable is
+not found, then when ``ctest`` goes to run the test, it will mark it as
+``NOT RUN``.
+
+.. _Determining the Full Test Name:
+
+**Determining the Full Test Name:**
+
+By default, the base test name is selected to be::
+
+  ${PACKAGE_NAME}_<execRootName>
+
+If ``NAME <testRootName>`` is passed in, then ``<testRootName>`` is used
+instead of ``<execRootName>``.
+
+If ``NAME_POSTFIX <testNamePostfix>`` is passed in, then the base test name
+is selected to be::
+
+  ${PACKAGE_NAME}_<execRootName>_<testNamePostfix>
+
+If ``ADD_DIR_TO_NAME`` is passed in, then the directory name realtive to the
+package directory name is added to the name as well to help disambiguate the
+test name (see the above).
+
+Let the test name determined by this process be ``TEST_NAME``.  If no
+arguments or one set of arguments are passed in through ``ARGS``, then this
+is the test name actaully passed in to ``ADD_TEST()``.  If multiple tests
+are defined, then this name becomes the base test name for each of the
+tests. See below.
+
+**Adding Multiple Tests:**
+
+ToDo: Explain how multiple tests can be added with different sets of
+ arguments in one of two ways.
+
+**Determining Pass/Fail:**
+
+ToDo: Fill in!
+
+**Debugging and Examining Test Generation:**
+
+ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
+info it prints out.
+
+ToDo: Describe how to examine the generated CTest files to see what test(s)
+actually got added (or not added) and what the pass/fail criteria is.
+
+**Disabling Tests Externally:**
+
+The test can be disabled externally by setting the CMake cache variable
+``${FULL_TEST_NAME}_DISABLE=TRUE`` (perhaps in the cache).  This allows
+tests to be disable on a case-by-case basis.  This is the *exact* name that
+shows up in 'ctest -N' when running the test.  If multiple tests are added
+in this funtion through multiple argument sets to ``ARGS`` or through
+multiple ``POSTFIX_AND_ARGS_<IDX>`` arguments, then
+``${FULL_TEST_NAME}_DISABLE=TRUE`` must be set for each test individually.
+
 TRIBITS_PACKAGE_POSTPROCESS()
-+++++++++++++++++++++++++++++
+-----------------------------
  
 Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
