@@ -115,7 +115,8 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const {
+  typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot_type
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const {
     using Teuchos::outArg;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
@@ -126,11 +127,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
-    Scalar gbldot;
+    dot_type gbldot;
     //gbldot = MVT::Dot(this->lclMV_,a.lclMV_);
     Kokkos::MV_Dot(&gbldot,this->view_.d_view,a.view_.d_view);
     if (this->isDistributed()) {
-      Scalar lcldot = gbldot;
+      dot_type lcldot = gbldot;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcldot,outArg(gbldot));
     }
     return gbldot;
@@ -166,7 +167,9 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm2() const {
+  typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm2() const {
+    /*
     using Teuchos::ScalarTraits;
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -176,6 +179,10 @@ namespace Tpetra {
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
     }
     return ScalarTraits<Mag>::squareroot(norm);
+    */
+    mag_type norm;
+    this->norm2( Teuchos::arrayView(&norm,1) );
+    return norm;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
