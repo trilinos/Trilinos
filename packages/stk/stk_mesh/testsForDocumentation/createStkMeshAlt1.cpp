@@ -1,4 +1,4 @@
-
+//-BEGIN
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -13,10 +13,28 @@
 
 namespace
 {
-TEST(StkMesh, CreateStkMesh)
-{
+  TEST(StkMeshHowTo, CreateStkMesh)
+  {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    const std::string exodusFileName = "example.exo";
 
+//-END
+    {
+      // ============================================================
+      //+ INITIALIZATION:
+      //+ Create a mesh 
+      stk::io::StkMeshIoBroker stkIo(communicator);
+
+      const std::string generatedFileName = "generated:8x8x8";
+      size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+      stkIo.set_active_mesh(index);
+      stkIo.create_input_mesh();
+      stkIo.populate_bulk_data();
+
+      size_t fh = stkIo.create_output_mesh(exodusFileName, stk::io::WRITE_RESULTS);
+      stkIo.write_output_mesh(fh);
+    }
+    //-BEGIN    
     // Creation of STK Mesh objects.
     // MetaData creates the universal_part, locally-owned part, and globally shared part.
     const int spatialDim = 3;
@@ -27,26 +45,26 @@ TEST(StkMesh, CreateStkMesh)
     // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
     // The order of the following lines in {} are important
     {
-        stk::io::StkMeshIoBroker exodusFileReader(communicator);
+      stk::io::StkMeshIoBroker exodusFileReader(communicator);
 
-        // Inform STK IO which STK Mesh objects to populate later
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
+      // Inform STK IO which STK Mesh objects to populate later
+      exodusFileReader.set_bulk_data(stkMeshBulkData);
 
-        const std::string exodusFileName = "example.exo";
-        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+      exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 
-        // Populate the MetaData which has the descriptions of the Parts and Fields.
-        exodusFileReader.create_input_mesh();
+      // Populate the MetaData which has the descriptions of the Parts and Fields.
+      exodusFileReader.create_input_mesh();
 
-        // Populate entities in STK Mesh from Exodus file
-        exodusFileReader.populate_bulk_data();
+      // Populate entities in STK Mesh from Exodus file
+      exodusFileReader.populate_bulk_data();
     }
 
-    // Test if the STK Mesh has 256 elements. Other examples will discuss details below.
+    // Test if the STK Mesh has 512 elements. Other examples will discuss details below.
     stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
     std::vector<unsigned> entityCounts;
     stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
-    EXPECT_EQ(256u, entityCounts[stk::topology::ELEMENT_RANK]);
+    EXPECT_EQ(512u, entityCounts[stk::topology::ELEMENT_RANK]);
+    unlink(exodusFileName.c_str());
+  }
 }
-
-}
+//-END
