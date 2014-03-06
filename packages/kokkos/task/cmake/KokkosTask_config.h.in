@@ -1,0 +1,4 @@
+#ifndef KOKKOS_TASK_CONFIG_H
+#define KOKKOS_TASK_CONFIG_H
+
+#endif

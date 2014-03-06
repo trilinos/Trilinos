@@ -712,8 +712,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_stride.value  = 0 ;
     dst.m_ptr_on_device = 0 ;
     if ( (range0.first == range0.second) || (range1.first == range1.second) ||
-         ( (src.capacity()==0) && (range0.second<src.m_shape.N0) &&
-                                  (range1.second<src.m_shape.N1) ) ) {
+         ( ( src.capacity() == 0u ) &&
+           ( long(range0.second) < long(src.m_shape.N0) ) &&
+           ( long(range1.second) < long(src.m_shape.N1) ) ) ) {
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = range1.second - range1.first ;
       dst.m_stride   = src.m_stride ;
