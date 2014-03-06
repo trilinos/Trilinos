@@ -43,15 +43,6 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
-  NAME MDComm_UnitTests_1D_6
-  COMM mpi
-  NUM_MPI_PROCS 6
-  ARGS "--teuchos-suppress-startup-banner --numDims=1"
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_TEST(
-  MDComm_UnitTests
   NAME MDComm_UnitTests_2D_1_1
   COMM mpi
   NUM_MPI_PROCS 1
