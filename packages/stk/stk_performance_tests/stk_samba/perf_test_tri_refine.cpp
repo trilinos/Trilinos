@@ -42,7 +42,6 @@ struct MemoryInfo
 {
   MemorySizeType m_rss_current;
   MemorySizeType m_rss_high_water_mark;
-  static const MemorySizeType MB = 1024*1024;
 
   MemoryInfo() { get_memory_usage(); }
 

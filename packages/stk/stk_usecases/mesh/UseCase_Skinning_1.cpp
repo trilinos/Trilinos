@@ -25,8 +25,6 @@
 
 namespace {
 
-static const size_t NODE_RANK = stk::topology::NODE_RANK;
-
 unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank )
 {
   const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
