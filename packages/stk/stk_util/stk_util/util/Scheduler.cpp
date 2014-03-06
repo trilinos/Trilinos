@@ -210,7 +210,7 @@ bool Scheduler::internal_is_it_time(Time time)
   {
     std::set<Time>::iterator iter = times_.begin();
     if (iter != times_.end()) {
-      if (delta.min <= *iter && *iter <= delta.max) {
+      if (*iter <= delta.max) {
         while (iter != times_.end() && *iter <= delta.max) {
           times_.erase(iter);
           iter = times_.begin();
