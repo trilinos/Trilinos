@@ -46,6 +46,7 @@
 #define TEUCHOS_SERIALIZATION_TRAITS_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_TestForException.hpp"
 #include <climits> // SIZE_MAX, ULONG_MAX, etc.
 
 #ifdef HAVE_TEUCHOS_QD
