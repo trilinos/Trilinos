@@ -153,18 +153,16 @@ bool Scheduler::internal_is_it_time(Time time)
   if (!initialized_) {
     initialized_ = true;
 
-    // If startTime_ == -Real_MAX, then set startTime_ to the minimum time on the intervals...
-    // which is the first interval if there are any intervals...
-    if (startTime_ == -Real_MAX && !timeIntervals_.empty()) {
-      startTime_ = timeIntervals_.begin()->first;
-
-      if (startTime_ > terminationTime_) {
-        // A specified output will always output at least once...
-        // Note that this block will not be entered if user manually specifies a start time.
-        startTime_ = terminationTime_;
+    // If user has specified a start time, make sure none of the
+    // "additional times" are previous to that time...
+    if (startTime_ != -Real_MAX && !times_.empty()) {
+      std::set<Time>::iterator iter = times_.begin();
+      while (iter != times_.end() && *iter < startTime_) {
+	times_.erase(iter);
+	iter = times_.begin();
       }
     }
-
+      
     // This routine can be called from Region::initialize via a "will_output"
     // call prior to restart ocurring in which case restartTime_ will be > time.
     // In that case, return false and don't reset any "magic numbers"
@@ -200,6 +198,31 @@ bool Scheduler::internal_is_it_time(Time time)
   }
 
   TolerancedTime delta = get_toleranced_time_range(time);
+
+  // See if this time is in the explicit times_ list...
+  // The 'times_' list is sorted and items are removed from
+  // the list as they are used.  If the first item in the list
+  // is less than or equal to the current time, then will do output.
+  // Remove this item (and all others <= time) from the list.
+  //
+  // If list is empty or if first item is larger than time, don't
+  // do output.
+  {
+    std::set<Time>::iterator iter = times_.begin();
+    if (iter != times_.end()) {
+      if (delta.min <= *iter && *iter <= delta.max) {
+        while (iter != times_.end() && *iter <= delta.max) {
+          times_.erase(iter);
+          iter = times_.begin();
+        }
+        lastTime_ = time;
+        if (firstTime_ == -Real_MAX) firstTime_ = time;
+        lastInterval_ = -1;
+        return true;
+      }
+    }
+  }
+
   if (delta.max < startTime_) {
     return false;
   }
@@ -222,30 +245,6 @@ bool Scheduler::internal_is_it_time(Time time)
     if (firstTime_ == -Real_MAX) firstTime_ = time;
     lastInterval_ = -1;
     return true;
-  }
-
-  // See if this time is in the explicit times_ list...
-  // The 'times_' list is sorted and items are removed from
-  // the list as they are used.  If the first item in the list
-  // is less than or equal to the curren time, then will do output.
-  // Remove this item (and all others <= time) from the list.
-  //
-  // If list is empty or if first item is larger than time, don't
-  // do output.
-  {
-    std::set<Time>::iterator iter = times_.begin();
-    if (iter != times_.end()) {
-      if (*iter <= delta.max) {
-        while (iter != times_.end() && *iter <= delta.max) {
-          times_.erase(iter);
-          iter = times_.begin();
-        }
-        lastTime_ = time;
-        if (firstTime_ == -Real_MAX) firstTime_ = time;
-        lastInterval_ = -1;
-        return true;
-      }
-    }
   }
 
   TimeContainer::const_iterator interval = get_time_interval(time, true);
