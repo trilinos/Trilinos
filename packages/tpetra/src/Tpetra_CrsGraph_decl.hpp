@@ -1111,7 +1111,7 @@ namespace Tpetra {
     ///
     /// \param newColMap [in] New colMap.  Must be nonnull.
     ///
-    /// \pre The matrix must have no entries inserted yet
+    /// \pre The graph must have no entries inserted yet
     void
     replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
 
