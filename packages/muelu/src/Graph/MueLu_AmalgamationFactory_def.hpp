@@ -117,54 +117,6 @@ namespace MueLu {
     // 2) prepare maps for amalgamated graph of A and
     //    setup unamalgamation information
 
-
-#ifdef OLD_AMALGAMATION_DATA_STRUCTURE
-    // in nodegid2dofgids for each node on the current proc a vector of
-    // the corresponding DOFs gids is stored.
-    // The map contains all nodes the current proc has connections to (including
-    // nodes that are stored on other procs when there are off-diagonal entries in A)
-    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
-
-    RCP<const Map> rowMap = A->getRowMap();
-    RCP<const Map> colMap = A->getColMap();
-
-    Teuchos::ArrayView<const GlobalOrdinal> globalElts = colMap->getNodeElementList();
-    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(colMap->getNodeNumElements());
-    assert(Teuchos::as<LocalOrdinal>(globalElts.size()) == nColEle);
-    for (LocalOrdinal i = 0; i < nColEle; i++) {
-      // get global DOF id
-      //GlobalOrdinal gDofId = colMap->getGlobalElement(i);
-      GlobalOrdinal gDofId = globalElts[i];
-
-      // translate DOFGid to node id
-      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
-
-      // gblockid -> gDofId/lDofId
-      if (nodegid2dofgids->count(gNodeId) == 0) {
-
-        // current column DOF gDofId belongs to a node that has not been added
-        // to nodeid2dofgids yet. Do it now and add ALL DOFs of node gNodeId to
-        // unamalgamation information.
-        // Note: we use offset and fullblocksize, ie. information from strided maps indirectly
-        std::vector<GlobalOrdinal> DOFs;
-
-        DOFs.reserve(stridedblocksize);
-        for (LocalOrdinal k = 0; k < stridedblocksize; k++) {
-          // here, the assumption is, that the node map has the same indexBase as the dof map
-          //                            this is the node map index base                    this is the dof map index base
-          GO gDofIndex = offset + (gNodeId-indexBase)*fullblocksize + nStridedOffset + k + indexBase;
-          if (colMap->isNodeGlobalElement(gDofIndex))
-            DOFs.push_back(gDofIndex);
-        }
-
-        (*nodegid2dofgids)[gNodeId] = DOFs;
-
-      }
-    }
-#endif //ifdef OLD_AMALGAMATION_DATA_STRUCTURE
-
-    // the next code block is an eventual replacement for the stuff in the loop above
-    // push *all* nodal GIDs onto the vector, then make it unique afterwards
     RCP<const Map> const &rowMap = A->getRowMap();
     Teuchos::ArrayView<const GlobalOrdinal> globalElts = A->getColMap()->getNodeElementList();
     LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalElts.size());
@@ -182,10 +134,7 @@ namespace MueLu {
     gNodeIds->erase( std::unique( gNodeIds->begin(), gNodeIds->end() ), gNodeIds->end() );
 
     // store (un)amalgamation information on current level
-    //RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, A->getColMap(),
-    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(gNodeIds, A->getColMap(),
-                                                                      fullblocksize, offset, blockid, nStridedOffset,
-                                                                      stridedblocksize) );
+    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(gNodeIds, A->getColMap(), fullblocksize, offset, blockid, nStridedOffset, stridedblocksize) );
 
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }

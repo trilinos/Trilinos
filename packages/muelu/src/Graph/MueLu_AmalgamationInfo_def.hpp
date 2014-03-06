@@ -71,7 +71,6 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     LO size = procWinner.size();
 
-    //std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > & gAmalgParams = *(GetGlobalAmalgamationParams());
     GO total=0;
     std::vector<LO> sizes(aggregates.GetNumAggregates());
     for (LO lnode = 0; lnode < size; ++lnode) {
@@ -79,8 +78,6 @@ namespace MueLu {
       if (procWinner[lnode] == myPid) {
         //GO gnodeid = map.getGlobalElement(lnode);
         GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
-        //std::vector<GO> const &gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
-        //std::vector<GO> const &gDofIds = gAmalgParams[gnodeid];
         std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
         total += Teuchos::as<LO>(gDofIds.size());
         sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
@@ -103,8 +100,6 @@ namespace MueLu {
       if (procWinner[lnode] == myPid) {
         //GO gnodeid = map.getGlobalElement(lnode);
         GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
-        //std::vector<GO> const &gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
-        //std::vector<GO> const &gDofIds = gAmalgParams[gnodeid];
         std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
         LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
         for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
@@ -128,7 +123,6 @@ namespace MueLu {
     LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
     for(LO n = 0; n<nodeElements; n++) {
       GO gnodeid = (GO) nodeMap->getGlobalElement(n);
-      //std::vector<GO> gDofIds = (*(GetGlobalAmalgamationParams()))[gnodeid];
       std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
       for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
         myDofGids->push_back(*gDofIdsIt);
