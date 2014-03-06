@@ -66,10 +66,12 @@ typedef Domi::dim_type dim_type;
 using Domi::splitStringOfIntsWithCommas;
 using Domi::TeuchosCommRCP;
 
-string dims          = "8,8";
+string dims          = "20,16";
 string axisCommSizes = "-1";
-string commPad       = "1,1";
-string bndryPad      = "";
+int    commPad       = 1;
+string commPads      = "";
+int    bndryPad      = 0;
+string bndryPads     = "";
 string periodic      = "";
 bool   verbose       = false;
 
@@ -81,10 +83,14 @@ TEUCHOS_STATIC_SETUP()
                 "Comma-separated global dimensions of Field");
   clp.setOption("axisCommSizes", &axisCommSizes,
                 "Comma-separated number of processors along each axis");
-  clp.setOption("commPad"      , &commPad,
+  clp.setOption("commPad"       , &commPad,
+                "CommPad size along every axis");
+  clp.setOption("commPads"      , &commPads,
                 "Comma-separated list of commPad sizes along each axis");
-  clp.setOption("bndryPad"     , &bndryPad,
-                "Comma-separated list of bndryPad points on each axis");
+  clp.setOption("bndryPad"      , &bndryPad,
+                "CBndryPad size along every axis");
+  clp.setOption("bndryPads"     , &bndryPads,
+                "Comma-separated list of bndryPad sizes on each axis");
   clp.setOption("periodic"     , &periodic,
                 "Comma-separated list of axis periodicity flags (use 0,1)");
   clp.setOption("verbose"      , "quiet"       , &verbose,
@@ -109,56 +115,68 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   Array< int > periodicFlags;
   dimVals          = splitStringOfIntsWithCommas(dims         );
   axisCommSizeVals = splitStringOfIntsWithCommas(axisCommSizes);
-  commPadVals      = splitStringOfIntsWithCommas(commPad      );
-  bndryPadVals     = splitStringOfIntsWithCommas(bndryPad     );
+  commPadVals      = splitStringOfIntsWithCommas(commPads      );
+  bndryPadVals     = splitStringOfIntsWithCommas(bndryPads     );
   periodicFlags    = splitStringOfIntsWithCommas(periodic     );
 
-  // Fill out the axisCommSizeVals, if needed
-  int numDims = dimVals.size();
-  for (int i = axisCommSizeVals.size(); i < numDims; ++i)
-    axisCommSizeVals.push_back(-1);
-
   // Check for 2D or 3D
+  int numDims = dimVals.size();
   if (numDims == 3 && dimVals[2] == 1)
   {
     numDims = 2;
     dimVals.pop_back();
   }
-  TEST_ASSERT(numDims == 2 || numDims == 3);
-  
+  TEST_ASSERT(numDims >= 1 && numDims <= 3);
+
   // Print the arrays that will be passed to the MDMap constructor
   if (verbose && pid == 0)
-  {
-    cout << endl;
-    cout << "dims:          " << dimVals          << endl;
-    cout << "axisCommSizes: " << axisCommSizeVals << endl;
-    cout << "commPad:       " << commPadVals      << endl;
-    cout << "bndryPad:      " << bndryPadVals     << endl;
-    cout << "periodic:      " << periodicFlags    << endl;
-  }
+    cout << endl
+         << "dims:          " << dimVals          << endl
+         << "axisCommSizes: " << axisCommSizeVals << endl
+         << "commPad:       " << commPad          << endl
+         << "commPads:      " << commPadVals      << endl
+         << "bndryPad:      " << bndryPad         << endl
+         << "bndryPads:     " << bndryPadVals     << endl
+         << "periodic:      " << periodicFlags    << endl;
 
-  // Construct the MDComm
-  Teuchos::RCP< const Domi::MDComm > mdComm =
-    Teuchos::rcp(new Domi::MDComm(comm,
-                                  axisCommSizeVals(),
-                                  periodicFlags() ));
+  // Construct the MDVector ParameterList
+  Teuchos::ParameterList plist;
+  if (! axisCommSizeVals.empty())
+    plist.set("axis comm sizes", axisCommSizeVals);
+  if (! periodicFlags.empty())
+    plist.set("periodic", periodicFlags);
+  plist.set("dimensions", dimVals);
+  if (bndryPad)
+    plist.set("boundary pad size", bndryPad);
+  if (! bndryPadVals.empty())
+    plist.set("boundary pad sizes", bndryPadVals);
+  if (commPad)
+    plist.set("communication pad size", commPad);
+  if (! commPadVals.empty())
+    plist.set("communication pad sizes", commPadVals);
+  if (verbose && pid == 0)
+    cout << endl << "MDVector constructor ParameterList =" << endl << plist
+         << endl;
 
-  // Construct the MDMap
-  Teuchos::RCP< const Domi::MDMap<> > mdMap =
-    Teuchos::rcp(new Domi::MDMap<>(mdComm,
-                                   dimVals(),
-                                   commPadVals(),
-                                   bndryPadVals() ));
-
-  // Construct the MDVector and extract the MDArrayView
-  Domi::MDVector< Sca >    mdVector(mdMap);
+  // Construct the MDVector and extract the MDArrayView and MDMap
+  Domi::MDVector< Sca >    mdVector(comm, plist);
   Domi::MDArrayView< Sca > mdArray = mdVector.getDataNonConst();
+  Teuchos::RCP< const Domi::MDMap<> > mdMap = mdVector.getMDMap();
 
   // Initilize with -1 everywhere
   mdVector.putScalar(-1.0);
 
   // Assign each owned element the value of its global ID
-  if (numDims == 2)
+  if (numDims == 1)
+  {
+    Domi::Slice iBounds = mdVector.getLocalBounds(0);
+    for (int i = iBounds.start(); i < iBounds.stop(); ++i)
+    {
+      int lid = mdMap->getLocalIndex(tuple(i));
+      mdArray(i) = (Sca) mdMap->getGlobalIndex(lid);
+    }
+  }
+  else if (numDims == 2)
   {
     Domi::Slice iBounds = mdVector.getLocalBounds(0);
     Domi::Slice jBounds = mdVector.getLocalBounds(1);
@@ -199,7 +217,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   // unchanged
   if (verbose)
     cout << pid << ": checking interior data" << endl;
-  if (numDims == 2)
+  if (numDims == 1)
+  {
+    Domi::Slice iBounds = mdVector.getLocalBounds(0);
+    for (int i = iBounds.start(); i < iBounds.stop(); ++i)
+    {
+      int lid = mdMap->getLocalIndex(tuple(i));
+      Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+      if (verbose)
+        cout << pid << ": mdVector(" << i << ") = "
+             << mdArray(i) << " (should be " << gid << ")"
+             << endl;
+      TEST_EQUALITY(mdArray(i), gid);
+    }
+  }
+  else if (numDims == 2)
   {
     Domi::Slice iBounds = mdVector.getLocalBounds(0);
     Domi::Slice jBounds = mdVector.getLocalBounds(1);
@@ -244,7 +276,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   if (verbose)
     cout << pid << ": checking lower padding along axis 0" << endl;
   Domi::MDArrayView< const Sca > view = mdVector.getLowerPadData(0);
-  if (numDims == 2)
+  if (numDims == 1)
+  {
+    for (int i = 0; i < view.dimension(0); ++i)
+    {
+      int lid = mdMap->getLocalIndex(tuple(i));
+      Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+      if (mdMap->isBndryPad(tuple(i)))
+        gid = -1;
+      if (verbose)
+        cout << pid << ": mdVector(" << i << ") = "
+             << mdArray(i) << " (should be " << gid << ")"
+             << endl;
+      TEST_EQUALITY(view(i), gid);
+    }
+  }
+  else if (numDims == 2)
   {
     for (int j = 0; j < view.dimension(1); ++j)
     {
@@ -288,7 +335,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   if (verbose)
     cout << pid << ": checking upper padding along axis 0" << endl;
   view = mdVector.getUpperPadData(0);
-  if (numDims == 2)
+  if (numDims == 1)
+  {
+    int ioff = mdMap->getLocalBounds(0).stop();
+    for (int i = 0; i < view.dimension(0); ++i)
+    {
+      int lid = mdMap->getLocalIndex(tuple(i+ioff));
+      Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+      if (mdMap->isBndryPad(tuple(i+ioff)))
+        gid = -1;
+      if (verbose)
+        cout << pid << ": mdVector(" << i+ioff << ") = "
+             << view(i) << " (should be " << gid << ")" << endl;
+      TEST_EQUALITY(view(i), gid);
+    }
+  }
+  else if (numDims == 2)
   {
     int ioff = mdMap->getLocalBounds(0).stop();
     for (int j = 0; j < view.dimension(1); ++j)
@@ -330,9 +392,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   }
 
   // Check the lower padding along axis 1
-  if (verbose)
-    cout << pid << ": checking lower padding along axis 1" << endl;
-  view = mdVector.getLowerPadData(1);
+  if (numDims > 1)
+  {
+    if (verbose)
+      cout << pid << ": checking lower padding along axis 1" << endl;
+    view = mdVector.getLowerPadData(1);
+  }
   if (numDims == 2)
   {
     for (int j = 0; j < view.dimension(1); ++j)
@@ -351,7 +416,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       }
     }
   }
-  else  // 3D
+  else if (numDims == 3)
   {
     for (int k = 0; k < view.dimension(2); ++k)
     {
@@ -374,9 +439,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   }
 
   // Check the upper padding along axis 1
-  if (verbose)
-    cout << pid << ": checking upper padding along axis 1" << endl;
-  view = mdVector.getUpperPadData(1);
+  if (numDims > 1)
+  {
+    if (verbose)
+      cout << pid << ": checking upper padding along axis 1" << endl;
+    view = mdVector.getUpperPadData(1);
+  }
   if (numDims == 2)
   {
     int joff = mdMap->getLocalBounds(1).stop();
@@ -395,7 +463,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       }
     }
   }
-  else  // 3D
+  else if (numDims == 3)
   {
     int joff = mdMap->getLocalBounds(1).stop();
     for (int k = 0; k < view.dimension(2); ++k)
@@ -479,5 +547,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
 
 UNIT_TEST_GROUP(float)
 UNIT_TEST_GROUP(double)
+UNIT_TEST_GROUP(int)
+UNIT_TEST_GROUP(long)
 
 }
