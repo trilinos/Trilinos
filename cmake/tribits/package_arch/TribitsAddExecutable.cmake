@@ -53,28 +53,57 @@ INCLUDE(ParseVariableArguments)
 
 
 #
-# TRIBITS_ADD_EXECUTABLE(...): Function that adds a test/example executable.
+# @FUNCTION: TRIBITS_ADD_EXECUTABLE()
 #
-# TRIBITS_ADD_EXECUTABLE(
-#   <execName>
-#   SOURCES <src1> <src2> ...
-#   [CATEGORIES <category1>  <category2> ...]
-#   [HOST <host1> <host2> ...]
-#   [XHOST <host1> <host2> ...]
-#   [HOSTTYPE <hosttype1> <hosttype2> ...]
-#   [XHOSTTYPE <hosttype1> <hosttype2> ...]
-#   [NOEXEPREFIX ]
-#   [NOEXESUFFIX ]
-#   [DIRECTORY <dir> ]
-#   [DEPLIBS <lib1> <lib2> ... ]
-#   [COMM [serial] [mpi] ]
-#   [LINKER_LANGUAGE [C|CXX|Fortran] ]
-#   [ADD_DIR_TO_NAME ]
-#   [DEFINES <-DSOMEDEFINE>]
-#   [INSTALLABLE]
-#   )
+# Function used to create an executable (typically for a test or example),
+# using the built-in CMake comamnd ``ADD_EXECUTABLE()``.
+#
+# Usage::
+#
+#   TRIBITS_ADD_EXECUTABLE(
+#     <execName>  [NOEXEPREFIX]  [NOEXESUFFIX]
+#     SOURCES <src1> <src2> ...
+#     [CATEGORIES <category1>  <category2> ...]
+#     [HOST <host1> <host2> ...]
+#     [XHOST <host1> <host2> ...]
+#     [HOSTTYPE <hosttype1> <hosttype2> ...]
+#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
+#     [DIRECTORY <dir> ]
+#     [DEPLIBS <lib1> <lib2> ... ]
+#     [COMM [serial] [mpi] ]
+#     [LINKER_LANGUAGE [C|CXX|Fortran] ]
+#     [ADD_DIR_TO_NAME]
+#     [DEFINES -DS<someDefine>]
+#     [INSTALLABLE]
+#     )
+#
+# The arguments are:
+#
+# * ``<execName>``: The base name of the exectuable and CMake target.
+#
+# ToDo: Document other arguments!
+#
+# **Executable and Target Name:**
+#
+# By default, the actual name of the executable and target will be::
+#
+#   ${PACKAGE_NAME}_<execName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+#
+# If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
+# is removed.  If the option ``NOEXESUFFIX`` is passed in, the suffix
+# ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.  The reason that
+# a default prefix is appended to the executable name is because the primary
+# reason to create an executable is typically to create a test or an example
+# that is private to the package.  This prefix helps to namespace the
+# exexutable and its target so as to avoid name clashes with targets in other
+# packages.  Also, if ``INSTALLABLE`` is set and this executable gets
+# installed into the ``<install>/bin/`` directory, then this prefix helps to
+# avoid clashing with executables installed by other packages.
+#
+# **Postcondition:**
 # 
-
+# ToDo: Document post conditions!
+# 
 FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)

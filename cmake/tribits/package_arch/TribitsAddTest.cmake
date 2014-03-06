@@ -258,7 +258,6 @@ INCLUDE(TribitsAddTestHelpers)
 # plus any other postfixes.  This is the name that shows up in 'ctest -N' when
 # running the test.
 #
-
 FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)

@@ -27,6 +27,16 @@
 #   env EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS=--do-trace \
 #      ./generate-dev-guide.sh [other args]
 #
+# NOTE: If you see rst2html or rst2latex errors for the file
+# TribitsDeveloeprsGuilde.rst with line numbers that don't seem to make sense,
+# this is likley due to the include of TribitsDetailedMacroFunctionDoc.rst.
+# To adjust the line numbers, subtract the line number of the include for
+# TribitsDetailedMacroFunctionDoc.rst in TribitsDevelopersGuilde.rst form the
+# line number given in the output and that will be the line number in the
+# TribitsDevelopersGuilde.rst file.  You can then match that up with the
+# original text in the *.cmake file that this came from for the given macro or
+# function.
+#
 # Enjoy!
 
 ARGS=$@

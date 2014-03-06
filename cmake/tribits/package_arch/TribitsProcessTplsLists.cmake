@@ -45,7 +45,7 @@ INCLUDE(PrintVar)
 INCLUDE(Split)
 
 #
-# @MACRO: TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS
+# @MACRO: TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()
 #
 # Define the list of TPLs, find modules, and classifications for a given
 # TriBITS repository.  This macro is typically called from inside of a
@@ -53,10 +53,10 @@ INCLUDE(Split)
 #
 # Usage::
 #
-#  TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
-#    <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
-#    ...
-#    <tplnm1_name>   <tplnm1_findmod>  <tplnm1_classification>
+#   TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
+#     <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
+#     ...
+#     <tplnm1_name>   <tplnm1_findmod>  <tplnm1_classification>
 #
 # This macro sets up a 2D array of NumTPLS by NumColumns listing out the
 # TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
@@ -66,7 +66,7 @@ INCLUDE(Split)
 #   across all other TriBITS TPLs in this or any other TriBITS repo that might
 #   be combined into a single TriBITS project meta-build.  However, a TPL can
 #   be redefined (see below).  The name should be a valid identifier
-#   (e.g. matches the regex "[a-zA-Z_][a-zA-Z0-9_]*").
+#   (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 #
 # * **FINDMOD**: The relative directory for the find module, usually with the
 #   name FindTPL<TPL_NAME>.cmake.  This is relative to the repository base
@@ -75,7 +75,7 @@ INCLUDE(Split)
 #   under that this directory with the standard name
 #   (e.g. "cmake/tpls/FindTPL<TPL_NAME>.cmake").  A standard way to write a
 #   FindTPL<TPL_NAME>.cmake module is to use the function
-#   ``TRIBITS_TPL_DECLARE_LIBRARIES``_.
+#   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
 #
 # * **CLASSIFICATION**: Gives the testing group PT, ST, EX and the maturity
 #   level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated by a coma

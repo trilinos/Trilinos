@@ -57,21 +57,22 @@ INCLUDE(ParseVariableArguments)
 
 
 #
-# @FUNCTION: TRIBITS_SET_ST_FOR_DEV_MODE
+# @FUNCTION: TRIBITS_SET_ST_FOR_DEV_MODE()
 #
-# Function that allows packages to easily make a feature ST for development
-# builds and PT for release builds by default.
+# Function that allows packages to easily make a feature ``ST`` for
+# development builds and ``PT`` for release builds by default.
 #
 # Usage::
 #
-#   TRIBITS_SET_ST_FOR_DEV_MODE(OUTPUT_VAR)
+#   TRIBITS_SET_ST_FOR_DEV_MODE(<outputVar>)
 #
-# ${OUTPUT_VAR} is set to ON or OFF based on the configure state. In
-# development mode it will be set to ON only if ST code is enabled, 
-# otherwise it is set to OFF. In release mode it is always set to ON.
-# This allows some sections of a TriBITS package to be considered ST for 
-# development mode reducing testing time, while still having important
-# functionality available to users by default in a release.
+# ``${<outputVar>}`` is set to ``ON`` or ``OFF`` based on the configure state.
+# In development mode it will be set to ``ON`` only if ``ST`` code is enabled,
+# otherwise it is set to ``OFF``. In release mode it is always set to ``ON``.
+# This allows some sections of a TriBITS package to be considered ``ST`` for
+# development mode reducing testing time which includes only ``PT`` code.,
+# while still having important functionality available to users by default in
+# a release.
 #
 FUNCTION(TRIBITS_SET_ST_FOR_DEV_MODE  OUTPUT_VAR)
   IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)

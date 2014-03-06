@@ -134,11 +134,45 @@ ENDFUNCTION()
 
 
 #
-# Macro used to add a package library
+# @FUNCTION: TRIBITS_ADD_LIBRARY()
+# 
+# Function used to add a CMake library target using ``ADD_LIBRARY()``.
 #
-# ToDo: Add documentation!
+# Usage::
 #
-
+#   TRIBITS_ADD_LIBRARY(
+#     <libName>
+#     [HEADERS <h1> <h> ...]
+#     [NOINSTALLHEADERS <nih1> <hih2> ...]
+#     [SOURCES <src1> <src2> ...]
+#     [DEPLIBS <deplib1> <deplib2> ...]
+#     [IMPORTEDLIBS <ideplib1> <ideplib2> ...]
+#     [DEFINES -D<define1> -D<define2> ...]
+#     [TESTONLY]
+#     [NO_INSTALL_LIB_OR_HEADERS]
+#     [CUDALIBRARY]
+#     )
+#
+# ToDo: Document each argument!
+#
+# This function has a number of side-effects after it finishes running:
+#
+# * An install target for the library is created by default using
+#   ``INSTALL(TARGETS <libName> ...)``.  However, this install target will not
+#   get created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+#   ``BUILD_SHARD_LIBS=OFF``.  However, when ``BUILD_SHARD_LIBS=ON``, the
+#   install target will get created.  Also, this install target will *not* get
+#   created if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
+#
+# * An install target for the headers listed in ``HEADERS`` will get created
+#   using ``INSTALL(FILES <h1> <h2> ...)``.  NOTE: An install target will
+#   *not* get created for the headers listed in ``NOINSTALLHEADERS``.
+#
+# ToDo: Document other side-effects!
+#
+# NOTE: IF the library is added, a CMake library target ``<libName>`` gets
+# created through calling the build-in command ``ADD_LIBRARY(<libName> ...)``.
+#
 FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

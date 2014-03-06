@@ -55,12 +55,6 @@ ToDo: Document what parameters influence the entire TriBITS project, what
 parameters can have project-specific defaults, etc.
 
 
-TriBITS Macros and Functions
-============================
-
-.. include:: TribitsDetailedMacroFunctionDoc.rst
-
-
 References
 ==========
 
@@ -115,3 +109,14 @@ VERA development and expansion.  Independently, an early version of TriBITS
 from 2012 was adopted by the LiveV
 project\footnote{https://github.com/lifev/cmake} which was forked and extended
 independently.
+
+
+TriBITS Macros and Functions
+----------------------------
+
+The following subsection give detailed documentation for the macros and
+functions that make up the core TriBITS system.  These are what are used by
+TriBITS project developers.  These are listed in approximately the order they
+will be encounted in a project or packages CMakeLists.txt or other files.
+
+.. include:: TribitsDetailedMacroFunctionDoc.rst
