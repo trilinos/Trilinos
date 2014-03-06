@@ -688,15 +688,6 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const
   {
-    return setUnionImpl (rhs);
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-  Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setUnionImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const
-  {
     typedef Tpetra::global_size_t GST;
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -1264,6 +1255,80 @@ namespace Tpetra {
 
     return unionImport;
   }
+
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  setUnion () const
+  {
+    typedef Tpetra::global_size_t GST;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Import<LO, GO, Node> import_type;
+    typedef typename Array<GO>::size_type size_type;
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > unionImport;
+    RCP<const map_type> srcMap = this->getSourceMap ();
+    RCP<const map_type> tgtMap = this->getTargetMap ();
+    RCP<const Comm<int> > comm = srcMap->getComm ();
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    const int myRank = comm->getRank ();
+#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    
+    ArrayView<const GO> srcGIDs = srcMap->getNodeElementList ();
+    ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
+
+    // All elements in srcMap will be in the "new" target map, so...
+    size_t numSameIDsNew    = srcMap->getNodeNumElements();
+    size_t numRemoteIDsNew  = getNumRemoteIDs();
+    Array<LO> permuteToLIDsNew, permuteFromLIDsNew; // empty on purpose
+
+    // Grab some old data
+    ArrayView<const LO> remoteLIDsOld = getRemoteLIDs();
+    ArrayView<const LO> exportLIDsOld = getExportLIDs();
+
+    // Build up the new map (same part)
+    Array<GO> GIDs(numSameIDsNew + numRemoteIDsNew);
+    for(size_t i=0; i<numSameIDsNew; i++) 
+      GIDs[i] = srcGIDs[i];
+
+    // Build up the new map (remote part) and remotes list
+    Array<LO> remoteLIDsNew(numRemoteIDsNew);
+    for(size_t i=0; i<numRemoteIDsNew; i++) {
+      GIDs[numSameIDsNew + i] = tgtGIDs[remoteLIDsOld[i]];
+      remoteLIDsNew[i] = numSameIDsNew+i;
+    }
+
+    // Build the new target map
+    GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    RCP<const map_type> targetMapNew = rcp(new map_type(GO_INVALID,GIDs,tgtMap->getIndexBase(),tgtMap->getComm(),tgtMap->getNode()));
+
+    // Exports are trivial (since the sourcemap doesn't change
+    Array<int> exportPIDsnew(getExportPIDs());
+    Array<GO> exportLIDsnew(getExportLIDs());
+
+    // Copy the Distributor (due to how the Import constructor works)
+    Distributor D(getDistributor());
+
+    // Build the importer
+    unionImport = rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(srcMap,targetMapNew,numSameIDsNew,permuteToLIDsNew,permuteFromLIDsNew,
+								    remoteLIDsNew,exportLIDsnew,exportPIDsnew,D));
+
+    return unionImport;
+  }
+
+
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -998,17 +998,26 @@ void mult_A_B_newmatrix(
     }
 
   }
-  else if(!Bimport.is_null() && !Iimport.is_null()) {
-    Cimport = Bimport->setUnion(*Iimport);
-    Ccolmap = Cimport->getTargetMap();
+  else { 
+    // We need to either do a full or
+    if(!Bimport.is_null() && !Iimport.is_null())
+      Cimport = Bimport->setUnion(*Iimport);
+    else if(!Bimport.is_null() && Iimport.is_null()) 
+      Cimport = Bimport->setUnion();
+    else if(Bimport.is_null() && !Iimport.is_null()) 
+      Cimport = Iimport->setUnion();
+    else
+      throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
 
+    Ccolmap = Cimport->getTargetMap();      
+    
     if(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()))
       throw std::runtime_error("Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
     
     // NOTE: This is not efficient and should be folded into setUnion
     Icol2Ccol.resize(Bview.importColMap->getNodeNumElements());    
     ArrayView<const GlobalOrdinal> GIDlist = Ccolmap->getNodeElementList();
-
+    
     for(size_t i=0; i<Ccolmap->getNodeNumElements(); i++) {
       GlobalOrdinal GID = GIDlist[i];
       LocalOrdinal B_LID = Bview.colMap->getLocalElement(GID);
@@ -1019,10 +1028,6 @@ void mult_A_B_newmatrix(
 	Icol2Ccol[I_LID] = i;
       }
     }
-
-  }
-  else {
-    throw std::runtime_error("Tpetra::MatrixMatrix::Multiply - mixed import case not yet implemented");
   }
   
 #ifdef ENABLE_MMM_TIMINGS
