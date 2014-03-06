@@ -187,7 +187,7 @@ private:
   lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 
-  int dimension_;
+  long long dimension_;
   double * Rcoords_, Fcoords_, Ecoords_, Vcoords_, Acoords_;
 };
 
@@ -203,10 +203,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   int error = 0;
   int exoid = 0;
-  int num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
-  error += im_ex_get_init_l ( exoid, "PAMGEN Inline Mesh", &dimension_,
-			    &num_nodes, &num_elem, &num_elem_blk,
-			    &num_node_sets, &num_side_sets);
+  long long num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+  im_ex_get_init_l ( exoid, "PAMGEN Inline Mesh", &dimension_,
+		     &num_nodes, &num_elem, &num_elem_blk,
+		     &num_node_sets, &num_side_sets);
 
   Vcoords_ = (double *)malloc(num_nodes * dimension_ * sizeof(double));
 
@@ -249,7 +249,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     VidList_ = NULL;
   }
 
-  int * elem_blk_ids       = (int *)malloc(num_elem_blk * sizeof(int));
+  long long * elem_blk_ids = new long long [num_elem_blk];
   int * num_nodes_per_elem = (int *)malloc(num_elem_blk * sizeof(int));
   int * num_attr           = (int *)malloc(num_elem_blk * sizeof(int));
   int * num_elem_this_blk  = (int *)malloc(num_elem_blk * sizeof(int));
