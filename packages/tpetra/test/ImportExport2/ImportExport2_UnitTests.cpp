@@ -855,8 +855,6 @@ void build_test_prolongator(const RCP<const CrsMatrixType> & A, RCP< CrsMatrixTy
   }
   P->fillComplete(DomainMap,RowMap);
 
-  if(P->getGraph()->getImporter().is_null()) printf("P has no importer\n");
-  else printf("P has an importer\n");
 }
 
 // ===============================================================================
