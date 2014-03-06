@@ -349,6 +349,18 @@ public:
                 typename traits::device_type::host_mirror_device_type ,
                 typename traits::memory_traits > host_const_array_type ;
 
+  // Equivalent flattened array type for this view.
+  typedef View< typename analyze_sacado_shape::flat_array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type ,
+                typename traits::memory_traits > flat_array_type ;
+
+  // Equivalent const flattened array type for this view.
+  typedef View< typename analyze_sacado_shape::const_flat_array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type ,
+                typename traits::memory_traits > const_flat_array_type ;
+
   //------------------------------------
   // Shape for the Sacado::MP::Vector value_type ignores the internal static array length.
   enum { Rank = traits::rank };
@@ -412,7 +424,8 @@ public:
   View() : m_ptr_on_device(0), m_storage_size(0), m_sacado_size(0)
     {
       traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
-      m_stride = 0 ;
+      m_stride = 1 ; // need to initialize to 1 as there are checks for
+                     // m_stride != 1 that need to work for empty views
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -1229,6 +1242,12 @@ public:
   typedef       Sacado::MP::Vector< StorageType >  value_type ;
   typedef const Sacado::MP::Vector< StorageType >  const_value_type ;
   typedef       Sacado::MP::Vector< StorageType >  non_const_value_type ;
+
+  // Replace MP::Vector<S> with S::value_type in array specification to
+  // form the flattened array with the same rank
+  typedef typename nested::type           flat_array_type ;
+  typedef typename nested::const_type     const_flat_array_type ;
+  typedef typename nested::non_const_type non_const_flat_array_type ;
 };
 
 //----------------------------------------------------------------------------
@@ -1342,7 +1361,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       part.begin / dst.m_sacado_size.value ;
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device +
-      part.begin / dst.m_sacado_size.value ;
+      (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
   }
 
   //------------------------------------
@@ -1380,7 +1399,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_shape.N0      = range.second - range.first ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
-        src.m_allocation.m_scalar_ptr_on_device + range.first ;
+        src.m_allocation.m_scalar_ptr_on_device + range.first * src.m_storage_size ;
       dst.m_stride       = src.m_stride ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
@@ -1416,7 +1435,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
-      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 ;
+      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 * src.m_storage_size ;
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
@@ -1452,7 +1471,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_shape.N1      = 1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
-      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 ;
+      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 * src.m_storage_size;
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
@@ -1501,7 +1520,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
       dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_shape.N0 * range1.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
-        src.m_allocation.m_scalar_ptr_on_device + dst.m_shape.N0 * range1.first ;
+        src.m_allocation.m_scalar_ptr_on_device + dst.m_shape.N0 * range1.first * src.m_storage_size ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
 
@@ -1552,7 +1571,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
       dst.m_ptr_on_device = src.m_ptr_on_device + range0.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
-        src.m_allocation.m_scalar_ptr_on_device + range0.first ;
+        src.m_allocation.m_scalar_ptr_on_device + range0.first * src.m_storage_size;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
 
@@ -1625,21 +1644,41 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
   }
 
   //------------------------------------
-  /** \brief  Assign to flattened view where Sacado dimension is combined with
-   * most adjacent dimension.  Must have instrinsic value_type, layout, and
-   * rank (add 1 to rank for sacado dimension, remove 1 for flattening)
+  /**
+   * \brief Assign to flattened view where Sacado dimension is combined with
+   * most adjacent dimension.  Must have same instrinsic value_type, layout,
+   * and rank (add 1 to rank for sacado dimension, remove 1 for flattening).
+   *
+   * Would like to just use anything that is assignable to the flat_array_type,
+   * e.g.,
+   *
+   * typename enable_if<
+   *    (
+   *      Impl::ViewAssignable<
+   *        View<DT,DL,DD,DM,ViewDefault>,
+   *        typename View<ST,SL,SD,SM,ViewMPVectorContiguous>::flat_array_type
+   *      >::value
+   *    ) >::type * = 0)
+   *
+   * except this conflicts with the overload above for array_type (since
+   * ViewAssignable is loose on the ranks and array_type is actually assignable
+   * to flat_array_type).  And we can't use flat_array_type as there are
+   * use cases where the view is the same as flat_array_type but with different
+   * memory traits.
    */
-
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment(
-    View<DT,DL,DD,DM,ViewDefault>& dst,
+          View<DT,DL,DD,DM,ViewDefault>& dst,
     const View<ST,SL,SD,SM,ViewMPVectorContiguous>& src,
     typename enable_if<
       (
-        is_same< typename View<DT,DL,DD,DM,ViewDefault>::value_type ,
-                 typename View<ST,SL,SD,SM,ViewMPVectorContiguous>::value_type::storage_type::value_type >::value &&
+        ( is_same< typename View<DT,DL,DD,DM,ViewDefault>::value_type ,
+                   typename View<ST,SL,SD,SM,ViewMPVectorContiguous>::intrinsic_scalar_type >::value ||
+          is_same< typename View<DT,DL,DD,DM,ViewDefault>::non_const_value_type ,
+                   typename View<ST,SL,SD,SM,ViewMPVectorContiguous>::intrinsic_scalar_type >::value
+         ) &&
         is_same< typename View<DT,DL,DD,DM,ViewDefault>::array_layout ,
                  typename View<ST,SL,SD,SM,ViewMPVectorContiguous>::array_layout >::value &&
         ( unsigned(View<DT,DL,DD,DM,ViewDefault>::rank) ==
@@ -1649,7 +1688,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
     typedef View<DT,DL,DD,DM,ViewDefault>   dst_type ;
     typedef typename dst_type::shape_type   dst_shape_type ;
     typedef typename dst_type::stride_type  dst_stride_type ;
-    typedef typename dst_type::array_layout dst_layout_type;
+    typedef typename dst_type::array_layout dst_layout_type ;
 
     if ( src.m_stride != 1 ) {
       const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
@@ -1698,138 +1737,6 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 } // namespace Impl
 
 } // namespace Kokkos
-
-/*
-namespace Kokkos {
-namespace Impl {
-
- template< class FunctorType , class Ordinal, class Value, class Device >
- struct ReduceAdapter< FunctorType,
-                       Sacado::MP::Vector< Stokhos::DynamicStorage<Ordinal,Value,Device> > >
-{
-  typedef Stokhos::DynamicStorage<Ordinal,Value,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> ScalarType;
-  enum { StaticValueSize = sizeof(ScalarType) };
-
-  typedef ScalarType & reference_type  ;
-  typedef ScalarType * pointer_type  ;
-  typedef ScalarType   scalar_type  ;
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p ) {
-    ScalarType *m = (ScalarType*) p;
-    new (m) ScalarType;
-    return *m;
-  }
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p , unsigned i ) {
-    ScalarType *m = (ScalarType*) p;
-    new (m+i) ScalarType;
-    return m[i];
-  }
-
-  KOKKOS_INLINE_FUNCTION static
-  pointer_type pointer( reference_type p ) { return & p ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return 1 ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_size( const FunctorType & ) { return sizeof(ScalarType); }
-
-  KOKKOS_INLINE_FUNCTION static
-  void copy( const FunctorType & , void * const dst , const void * const src )
-    { *((scalar_type*)dst) = *((const scalar_type*)src); }
-
-  KOKKOS_INLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * update , volatile const void * input )
-    { f.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & f ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    FunctorHasFinal<F>::value )
-                                >::type * p )
-    { f.final( *((ScalarType *) p ) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    ! FunctorHasFinal<F>::value )
-                                >::type * )
-    {}
-};
-
-template< class FunctorType , class Ordinal, class Value, class Device >
-struct ReduceAdapter< FunctorType,
-                       Sacado::MP::Vector< Stokhos::DynamicStorage<Ordinal,Value,Device> >[] >
-{
-  typedef Stokhos::DynamicStorage<Ordinal,Value,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> ScalarType;
-  enum { StaticValueSize = 0 };
-
-  typedef ScalarType * reference_type  ;
-  typedef ScalarType * pointer_type  ;
-  typedef ScalarType   scalar_type  ;
-
-  KOKKOS_INLINE_FUNCTION static
-  ScalarType * reference( void * p ) {
-    ScalarType *m = (ScalarType*) p;
-    new (m) ScalarType;
-    return m;
-  }
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p , unsigned i ) {
-    ScalarType *m = (ScalarType*) p;
-    new (m+i) ScalarType;
-    return m+i;
-  }
-
-  KOKKOS_INLINE_FUNCTION static
-  pointer_type pointer( reference_type p ) { return p ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_count( const FunctorType & f ) { return f.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_size( const FunctorType & f ) { return f.value_count * sizeof(ScalarType); }
-
-  KOKKOS_INLINE_FUNCTION static
-  void copy( const FunctorType & f , void * const dst , const void * const src )
-    {
-      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
-        ((scalar_type*)dst)[i] = ((const scalar_type*)src)[i];
-      }
-    }
-
-  KOKKOS_INLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * update , volatile const void * input )
-    { f.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & f ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    FunctorHasFinal<F>::value )
-                                >::type * p )
-    { f.final( ((ScalarType *) p ) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    ! FunctorHasFinal<F>::value )
-                                >::type * )
-    {}
-};
-
-}
-}
-*/
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

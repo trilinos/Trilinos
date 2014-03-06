@@ -47,21 +47,25 @@ namespace Stokhos {
 // A simple CG solver for Tpetra-like objects
 template <typename Matrix,
           typename Vector,
-          typename MagScalar,
           typename Ordinal>
 bool CG_Solve(const Matrix& A, Vector& x, const Vector& b,
-              MagScalar tol, Ordinal max_its, std::ostream* out = 0) {
+              typename Vector::mag_type tol, Ordinal max_its,
+              std::ostream* out = 0)
+{
+  typedef typename Vector::mag_type mag_type;
+  typedef typename Vector::dot_type dot_type;
+
   Vector r(b.getMap());
   Vector p(x.getMap());
   Vector w(x.getMap());
   A.apply(x, r);
   r.update(1.0, b, -1.0);
 
-  MagScalar rho = r.dot(r);
-  MagScalar rho_old = rho;
-  MagScalar nrm = std::sqrt(rho);
+  dot_type rho = r.dot(r);
+  dot_type rho_old = rho;
+  mag_type nrm = std::sqrt(rho);
   Ordinal k=0;
-  MagScalar alpha, beta, pAp;
+  dot_type alpha, beta, pAp;
   while (k < max_its && nrm > tol) {
     if (k == 0) {
       p.update(1.0, r, 0.0);
@@ -94,20 +98,24 @@ bool CG_Solve(const Matrix& A, Vector& x, const Vector& b,
 template <typename Matrix,
           typename Vector,
           typename Prec,
-          typename MagScalar,
           typename Ordinal>
 bool PCG_Solve(const Matrix& A, Vector& x, const Vector& b, const Prec& M,
-               MagScalar tol, Ordinal max_its, std::ostream* out = 0) {
+               typename Vector::mag_type tol, Ordinal max_its,
+               std::ostream* out = 0)
+{
+  typedef typename Vector::mag_type mag_type;
+  typedef typename Vector::dot_type dot_type;
+
   Vector r(b.getMap());
   Vector p(x.getMap());
   Vector w(x.getMap());
   A.apply(x, r);
   r.update(1.0, b, -1.0);
 
-  MagScalar nrm = r.norm2();
-  MagScalar rho = 1.0;
+  mag_type nrm = r.norm2();
+  dot_type rho = 1.0;
   Ordinal k=0;
-  MagScalar rho_old, alpha, beta, pAp;
+  dot_type rho_old, alpha, beta, pAp;
   while (k < max_its && nrm > tol) {
     M.apply(r, w);
     rho_old = rho;

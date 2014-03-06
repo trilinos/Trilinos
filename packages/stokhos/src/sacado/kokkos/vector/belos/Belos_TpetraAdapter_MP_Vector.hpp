@@ -130,6 +130,9 @@ namespace { // anonymous
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
+    typedef typename Tpetra::MultiVector<Scalar,LO,GO,Node>::dot_type dot_type;
+    typedef typename Tpetra::MultiVector<Scalar,LO,GO,Node>::mag_type mag_type;
+
     /// \brief Create a new multivector with \c numvecs columns.
     ///
     /// The returned Tpetra::MultiVector has the same Tpetra::Map
@@ -359,64 +362,87 @@ namespace { // anonymous
     }
 
     static void
-    MvTimesMatAddMv (const Scalar& alpha,
+    MvTimesMatAddMv (const dot_type& alpha,
                      const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
-                     const Teuchos::SerialDenseMatrix<int,BaseScalar>& B,
-                     const Scalar& beta,
-                     Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+                     const Teuchos::SerialDenseMatrix<int,dot_type>& B,
+                     const dot_type& beta,
+                     Tpetra::MultiVector<Scalar,LO,GO,Node>& C)
     {
-      Teuchos::SerialDenseMatrix<int,Scalar> B_mp(B.numRows(), B.numCols());
-      for (int i=0; i<B.numRows(); i++)
-        for (int j=0; j<B.numCols(); j++)
-          B_mp(i,j) = B(i,j);
-      MvTimesMatAddMv(alpha, A, B_mp, beta, mv);
-    }
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Kokkos::Compat::persistingView;
 
-    static void
-    MvTimesMatAddMv (const Scalar& alpha,
-                     const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
-                     const Teuchos::SerialDenseMatrix<int,Scalar>& B,
-                     const Scalar& beta,
-                     Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
-    {
-      using Teuchos::ArrayView;
-      using Teuchos::Comm;
-      using Teuchos::rcpFromRef;
-      typedef Tpetra::Map<LO, GO, Node> map_type;
-
-#ifdef HAVE_BELOS_TPETRA_TIMERS
-      const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
-      Teuchos::RCP<Teuchos::Time> timer =
-        Teuchos::TimeMonitor::lookupCounter (timerName);
-      if (timer.is_null ()) {
-        timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error,
-        "Belos::MultiVecTraits::MvTimesMatAddMv: "
-        "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
-
-      // This starts the timer.  It will be stopped on scope exit.
-      Teuchos::TimeMonitor timeMon (*timer);
-#endif // HAVE_BELOS_TPETRA_TIMERS
-
-      // Check if B is 1-by-1, in which case we can just call update()
-      if (B.numRows () == 1 && B.numCols () == 1) {
-        mv.update (alpha*B(0,0), A, beta);
+      // Check if numRowsB == numColsB == 1, in which case we can call update()
+      const int numRowsB = B.numRows ();
+      const int numColsB = B.numCols ();
+      const int strideB  = B.stride ();
+      if (numRowsB == 1 && numColsB == 1) {
+        C.update (alpha*B(0,0), A, beta);
         return;
       }
 
-      // Create local map
-      Teuchos::SerialComm<int> serialComm;
-      map_type LocalMap (B.numRows (), A.getMap ()->getIndexBase (),
-                         rcpFromRef<const Comm<int> > (serialComm),
-                         Tpetra::LocallyReplicated, A.getMap ()->getNode ());
-      // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
-      ArrayView<const Scalar> Bvalues (B.values (), B.stride () * B.numCols ());
-      // create locally replicated MultiVector with a copy of this data
-      MV B_mv (rcpFromRef (LocalMap), Bvalues, B.stride (), B.numCols ());
-      mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, B_mv, beta);
+      // Ensure A and C have constant stride
+      RCP<const MV> Atmp, Ctmp;
+      if (A.isConstantStride() == false) Atmp = rcp (new MV (A));
+      else Atmp = rcp(&A,false);
+
+      if (C.isConstantStride() == false) Ctmp = rcp (new MV (C));
+      else Ctmp = rcp(&C,false);
+
+      // Create flattened Kokkos::MultiVector's
+      typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
+      typedef typename FMV::view_type::t_dev view_type;
+      typedef KokkosClassic::MultiVector<dot_type,Node> DKMV;
+      view_type A_view = Atmp->getLocalView().d_view;
+      view_type C_view = Ctmp->getLocalView().d_view;
+      DKMV A_mv(A.getMap()->getNode());
+      DKMV C_mv(A.getMap()->getNode());
+      size_t A_stride[8], C_stride[8];
+      A_view.stride(A_stride);
+      C_view.stride(C_stride);
+      const size_t LDA =
+        A_view.dimension_1() > 1 ? A_stride[1] : A_view.dimension_0();
+      const size_t LDC =
+        C_view.dimension_1() > 1 ? C_stride[1] : C_view.dimension_0();
+      A_mv.initializeValues(A_view.dimension_0(),
+                            A_view.dimension_1(),
+                            persistingView(A_view),
+                            LDA);
+      C_mv.initializeValues(C_view.dimension_0(),
+                            C_view.dimension_1(),
+                            persistingView(C_view),
+                            LDC);
+
+      // Create a view for B
+      typedef typename view_type::device_type device_type;
+      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> b_view_type;
+      typedef typename b_view_type::HostMirror b_host_view_type;
+      b_host_view_type B_view(Kokkos::view_without_managing,
+                              B.values(), strideB, numColsB);
+      //b_view_type B_view_dev = view_type("B", strideB, numColsB);
+      b_view_type B_view_dev = B_view;
+
+      // Make a Kokkos::MultiVector for B
+      DKMV B_mv(A.getMap()->getNode());
+      size_t B_stride[8];
+      B_view_dev.stride(B_stride);
+      const size_t LDB =
+        B_view_dev.dimension_1() > 1 ? B_stride[1] : B_view_dev.dimension_0();
+      B_mv.initializeValues(numRowsB, numColsB, persistingView(B_view_dev),
+                            LDB);
+
+      // Do local multiply
+      typedef KokkosClassic::DefaultArithmetic<DKMV> MVT;
+      MVT::GEMM(C_mv, Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha,
+                A_mv, B_mv, beta);
+
+      // Copy back into C if necessary
+      if (C.isConstantStride() == false)
+        Tpetra::deep_copy(C, *Ctmp);
+
+      // Release A and C if necessary
+      Atmp = Teuchos::null;
+      Ctmp = Teuchos::null;
     }
 
     /// \brief <tt>mv := alpha*A + beta*B</tt>
@@ -462,115 +488,96 @@ namespace { // anonymous
     }
 
     static void
-    MvTransMv (Scalar alpha,
+    MvTransMv (dot_type alpha,
                const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
                const Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
-               Teuchos::SerialDenseMatrix<int,BaseScalar>& C)
+               Teuchos::SerialDenseMatrix<int,dot_type>& C)
     {
-      Teuchos::SerialDenseMatrix<int,Scalar> C_mp(C.numRows(), C.numCols());
-      MvTransMv(alpha, A, B, C_mp);
-      for (int i=0; i<C.numRows(); i++) {
-        for (int j=0; j<C.numCols(); j++) {
-          BaseScalar v = 0.0;
-          const s_ordinal sz = C_mp(i,j).size();
-          for (s_ordinal k=0; k<sz; ++k)
-            v += C_mp(i,j).fastAccessCoeff(k);
-          C(i,j) = v;
-        }
-      }
-    }
-
-    static void
-    MvTransMv (Scalar alpha,
-               const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
-               const Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
-               Teuchos::SerialDenseMatrix<int,Scalar>& C)
-    {
-      using Tpetra::LocallyReplicated;
       using Teuchos::Comm;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      using Teuchos::rcpFromRef;
       using Teuchos::REDUCE_SUM;
       using Teuchos::reduceAll;
-      using Teuchos::SerialComm;
-      typedef Tpetra::Map<LO,GO,Node> map_type;
-      typedef Tpetra::MultiVector<Scalar,LO,GO,Node> mv_type;
+      using Kokkos::Compat::persistingView;
 
-#ifdef HAVE_BELOS_TPETRA_TIMERS
-      const std::string timerName ("Belos::MVT::MvTransMv");
-      RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
-      if (timer.is_null ()) {
-        timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error, "Belos::MvTransMv: "
-        "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
-
-      // This starts the timer.  It will be stopped on scope exit.
-      Teuchos::TimeMonitor timeMon (*timer);
-#endif // HAVE_BELOS_TPETRA_TIMERS
-
-      // Form alpha * A^H * B, then copy into the SerialDenseMatrix.
-      // We will create a multivector C_mv from a a local map.  This
-      // map has a serial comm, the purpose being to short-circuit the
-      // MultiVector::reduce() call at the end of
-      // MultiVector::multiply().  Otherwise, the reduced multivector
-      // data would be copied back to the GPU, only to turn around and
-      // have to get it back here.  This saves us a round trip for
-      // this data.
+      // Check if numRowsC == numColsC == 1, in which case we can call dot()
       const int numRowsC = C.numRows ();
       const int numColsC = C.numCols ();
       const int strideC  = C.stride ();
-
-      // Check if numRowsC == numColsC == 1, in which case we can call dot()
       if (numRowsC == 1 && numColsC == 1) {
-        A.dot (B, Teuchos::ArrayView<Scalar> (C.values (), 1));
+        A.dot (B, Teuchos::ArrayView<dot_type> (C.values (), 1));
         return;
       }
 
-      RCP<const Comm<int> > serialComm (new SerialComm<int> ());
-      // create local map with serial comm
-      RCP<const map_type> LocalMap =
-        rcp (new map_type (numRowsC, 0, serialComm, LocallyReplicated,
-                           A.getMap ()->getNode ()));
-      // create local multivector to hold the result
-      const bool INIT_TO_ZERO = true;
-      mv_type C_mv (LocalMap, numColsC, INIT_TO_ZERO);
+      // Ensure A and B have constant stride
+      RCP<const MV> Atmp, Btmp;
+      if (A.isConstantStride() == false) Atmp = rcp (new MV (A));
+      else Atmp = rcp(&A,false);
 
-      // multiply result into local multivector
-      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B,
-                     Teuchos::ScalarTraits<Scalar>::zero ());
-      // get comm
-      RCP<const Comm<int> > pcomm = A.getMap ()->getComm ();
-      // create arrayview encapsulating the Teuchos::SerialDenseMatrix
-      Teuchos::ArrayView<Scalar> C_view (C.values (), strideC*numColsC);
-      if (pcomm->getSize () == 1) {
-        // No accumulation to do; simply extract the multivector data
-        // into C.  Extract a copy of the result into the array view
-        // (and therefore, the SerialDenseMatrix).
-        C_mv.get1dCopy (C_view, strideC);
-      }
+      if (B.isConstantStride() == false) Btmp = rcp (new MV (B));
+      else Btmp = rcp(&B,false);
+
+      // Create flattened Kokkos::MultiVector's
+      typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
+      typedef typename FMV::view_type::t_dev view_type;
+      typedef KokkosClassic::MultiVector<dot_type,Node> DKMV;
+      view_type A_view = Atmp->getLocalView().d_view;
+      view_type B_view = Btmp->getLocalView().d_view;
+      DKMV A_mv(A.getMap()->getNode());
+      DKMV B_mv(A.getMap()->getNode());
+      size_t A_stride[8], B_stride[8];
+      A_view.stride(A_stride);
+      B_view.stride(B_stride);
+      const size_t LDA =
+        A_view.dimension_1() > 1 ? A_stride[1] : A_view.dimension_0();
+      const size_t LDB =
+        B_view.dimension_1() > 1 ? B_stride[1] : B_view.dimension_0();
+      A_mv.initializeValues(A_view.dimension_0(),
+                            A_view.dimension_1(),
+                            persistingView(A_view),
+                            LDA);
+      B_mv.initializeValues(B_view.dimension_0(),
+                            B_view.dimension_1(),
+                            persistingView(B_view),
+                            LDB);
+
+      // Create a view for C -- if this is not host, we need to
+      // create a buffer on the device
+      typedef typename view_type::device_type device_type;
+      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> c_view_type;
+      typedef typename c_view_type::HostMirror c_host_view_type;
+      c_host_view_type C_view(Kokkos::view_without_managing,
+                              C.values(), strideC, numColsC);
+      //c_view_type C_view_dev = view_type("C", strideC, numColsC);
+      c_view_type C_view_dev = C_view;
+
+      // Make a Kokkos::MultiVector for C
+      DKMV C_mv(A.getMap()->getNode());
+      size_t C_stride[8];
+      C_view_dev.stride(C_stride);
+      const size_t LDC =
+        C_view_dev.dimension_1() > 1 ? C_stride[1] : C_view_dev.dimension_0();
+      C_mv.initializeValues(numRowsC, numColsC, persistingView(C_view_dev),
+                            LDC);
+
+      // Do local multiply
+      typedef KokkosClassic::DefaultArithmetic<DKMV> MVT;
+      MVT::GEMM(C_mv, Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha,
+                A_mv, B_mv, Kokkos::Details::ArithTraits<dot_type>::zero());
+
+      // Release A and B if necessary
+      Atmp = Teuchos::null;
+      Btmp = Teuchos::null;
+
+      // reduce across processors -- could check for RDMA
+      RCP<const Comm<int> > pcomm = A.getMap()->getComm ();
+      if (pcomm->getSize () == 1)
+        Kokkos::deep_copy(C_view, C_view_dev);
       else {
-        // get a const host view of the data in C_mv
-        Teuchos::ArrayRCP<const Scalar> C_mv_view = C_mv.get1dView ();
-        if (strideC == numRowsC) {
-          // sum all into C
-          reduceAll<int,Scalar> (*pcomm, REDUCE_SUM, numColsC*numRowsC,
-                                 C_mv_view.getRawPtr (), C_view.getRawPtr ());
-        }
-        else {
-          // sum-all into temp, copy into C
-          Teuchos::Array<Scalar> destBuff (numColsC * numRowsC);
-          reduceAll<int,Scalar> (*pcomm, REDUCE_SUM, numColsC*numRowsC,
-                                 C_mv_view.getRawPtr (), destBuff.getRawPtr ());
-          for (int j = 0; j < numColsC; ++j) {
-            for (int i = 0; i < numRowsC; ++i) {
-              C_view[strideC*j+i] = destBuff[numRowsC*j+i];
-            }
-          }
-        }
+        c_host_view_type C_view_tmp("C_tmp", strideC, numColsC);
+        Kokkos::deep_copy(C_view_tmp, C_view_dev);
+        reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
+                        C_view_tmp.ptr_on_device(), C_view.ptr_on_device());
       }
     }
 
@@ -578,7 +585,7 @@ namespace { // anonymous
     static void
     MvDot (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
            const Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
-           std::vector<BaseScalar>& dots)
+           std::vector<dot_type>& dots)
     {
       const size_t numVecs = A.getNumVectors ();
 
@@ -597,22 +604,14 @@ namespace { // anonymous
         "but 'dots' only has " << dots.size() << " entry(/ies).");
 #endif // HAVE_TPETRA_DEBUG
 
-      // Teuchos::ArrayView<Scalar> av (dots);
-      // A.dot (B, av (0, numVecs));
-      Teuchos::Array<Scalar> mp_dots(numVecs);
-      A.dot(B, mp_dots);
-      for (size_t i=0; i<numVecs; i++) {
-        const s_ordinal sz = mp_dots[i].size();
-        dots[i] = 0.0;
-        for (s_ordinal j=0; j<sz; ++j)
-          dots[i] += mp_dots[i].fastAccessCoeff(j);
-      }
+      Teuchos::ArrayView<dot_type> av (dots);
+      A.dot (B, av (0, numVecs));
     }
 
     //! For all columns j of mv, set <tt>normvec[j] = norm(mv[j])</tt>.
     static void
     MvNorm (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
-            std::vector<typename Teuchos::ScalarTraits<BaseScalar>::magnitudeType> &normvec,
+            std::vector<mag_type> &normvec,
             NormType type=TwoNorm)
     {
       typedef std::vector<int>::size_type size_type;
@@ -626,9 +625,11 @@ namespace { // anonymous
         "(columns) in the MultiVector mv.  normvec.size() = " << normvec.size ()
         << " < mv.getNumVectors() = " << mv.getNumVectors () << ".");
 #endif
+
       const size_t num_mv = mv.getNumVectors();
       Teuchos::Array<Scalar> mp_norms(num_mv);
       Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(mp_norms);
+      Teuchos::ArrayView<mag_type> av2(normvec);
       switch (type) {
       case OneNorm:
         mv.norm1(av(0,mv.getNumVectors()));
@@ -644,17 +645,7 @@ namespace { // anonymous
         }
         break;
       case TwoNorm:
-        mv.norm2(av(0,mv.getNumVectors()));
-
-        for (size_t col=0; col<num_mv; ++col) {
-          BaseScalar v = 0.0;
-          const s_ordinal sz = mp_norms[col].size();
-          for (s_ordinal i=0; i<sz; ++i) {
-            const BaseScalar a = mp_norms[col].fastAccessCoeff(i);
-            v += a*a;
-          }
-          normvec[col] = std::sqrt(v);
-        }
+        mv.norm2(av2(0,mv.getNumVectors()));
         break;
       case InfNorm:
         mv.normInf(av(0,mv.getNumVectors()));

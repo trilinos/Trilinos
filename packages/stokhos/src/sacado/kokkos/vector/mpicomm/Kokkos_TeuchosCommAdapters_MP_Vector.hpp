@@ -65,9 +65,9 @@ send (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuff
       const Comm<Ordinal>& comm)
 {
   typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::array_type array_type;
+  typedef typename view_type::flat_array_type flat_array_type;
 
-  array_type array = sendBuffer;
+  flat_array_type array = sendBuffer;
   Ordinal array_count = count * sendBuffer.sacado_size();
   send(array, array_count, destRank, tag, comm);
 }
@@ -82,9 +82,9 @@ ssend (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuf
        const Comm<Ordinal>& comm)
 {
   typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::array_type array_type;
+  typedef typename view_type::flat_array_type flat_array_type;
 
-  array_type array = sendBuffer;
+  flat_array_type array = sendBuffer;
   Ordinal array_count = count * sendBuffer.sacado_size();
   ssend(array, array_count, destRank, tag, comm);
 }
@@ -99,9 +99,9 @@ readySend (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sen
            const Comm<Ordinal>& comm)
 {
   typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::array_type array_type;
+  typedef typename view_type::flat_array_type flat_array_type;
 
-  array_type array = sendBuffer;
+  flat_array_type array = sendBuffer;
   Ordinal array_count = count * sendBuffer.sacado_size();
   readySend(array, array_count, destRank, tag, comm);
 }
@@ -115,9 +115,9 @@ isend (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuf
        const Comm<Ordinal>& comm)
 {
   typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::array_type array_type;
+  typedef typename view_type::flat_array_type flat_array_type;
 
-  array_type array = sendBuffer;
+  flat_array_type array = sendBuffer;
   return isend(array, destRank, tag, comm);
 }
 
@@ -130,9 +130,9 @@ ireceive (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& recv
           const Comm<Ordinal>& comm)
 {
   typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::array_type array_type;
+  typedef typename view_type::flat_array_type flat_array_type;
 
-  array_type array = recvBuffer;
+  flat_array_type array = recvBuffer;
   return ireceive(array, sourceRank, tag, comm);
 }
 

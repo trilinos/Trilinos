@@ -383,6 +383,7 @@ IF (Stokhos_ENABLE_Sacado)
       SET(HEADERS ${HEADERS}
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
+        sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
         )
       IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
         SET(HEADERS ${HEADERS}
@@ -397,8 +398,7 @@ IF (Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Stokhos_ENABLE_Tpetra AND
-        NOT Tpetra_ENABLE_Kokkos_DistObject)
+    IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)

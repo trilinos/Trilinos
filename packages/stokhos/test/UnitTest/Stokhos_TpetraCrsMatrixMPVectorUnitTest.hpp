@@ -140,6 +140,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -222,8 +225,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -259,32 +266,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Dot product
-  Scalar dot = x1->dot(*x2);
+  dot_type dot = x1->dot(*x2);
 
   // Check
 
   // Local contribution
-  Scalar local_val(VectorSize, BaseScalar(0.0));
+  dot_type local_val(0);
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
       BaseScalar v = generate_vector_coefficient<BaseScalar,size_t>(
         nrow, VectorSize, row, j);
-      local_val.fastAccessCoeff(j) += 0.12345 * v * v;
+      local_val += 0.12345 * v * v;
     }
   }
 
   // Global reduction
-  Scalar val(VectorSize, BaseScalar(0.0));
+  dot_type val(0);
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
                      Teuchos::outArg(val));
 
   out << "dot = " << dot << " expected = " << val << std::endl;
 
-  TEST_EQUALITY( dot.size(), VectorSize );
   BaseScalar tol = 1.0e-14;
-  for (LocalOrdinal j=0; j<VectorSize; ++j)
-    TEST_FLOATING_EQUALITY( dot.fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
+  TEST_FLOATING_EQUALITY( dot, val, tol );
 }
 
 //
@@ -308,6 +313,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -399,8 +407,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+  typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -442,36 +454,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Dot product
-  Array<Scalar> dots(ncol);
+  Array<dot_type> dots(ncol);
   x1->dot(*x2, dots());
 
   // Check
 
   // Local contribution
-  Array<Scalar> local_vals(ncol, Scalar(VectorSize, BaseScalar(0.0)));
+  Array<dot_type> local_vals(ncol, dot_type(0));
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (size_t j=0; j<ncol; ++j) {
       for (LocalOrdinal k=0; k<VectorSize; ++k) {
         BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
           nrow, ncol, VectorSize, row, j, k);
-        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+        local_vals[j] += 0.12345 * v * v;
       }
     }
   }
 
   // Global reduction
-  Array<Scalar> vals(ncol, Scalar(VectorSize, BaseScalar(0.0)));
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol), local_vals.getRawPtr(),
-                     vals.getRawPtr());
+  Array<dot_type> vals(ncol, dot_type(0));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol),
+                     local_vals.getRawPtr(), vals.getRawPtr());
 
   BaseScalar tol = 1.0e-14;
   for (size_t j=0; j<ncol; ++j) {
     out << "dots(" << j << ") = " << dots[j]
         << " expected(" << j << ") = " << vals[j] << std::endl;
-    TEST_EQUALITY( dots[j].size(), VectorSize );
-    for (LocalOrdinal k=0; k<VectorSize; ++k)
-      TEST_FLOATING_EQUALITY( dots[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k), tol );
+    TEST_FLOATING_EQUALITY( dots[j], vals[j], tol );
   }
 }
 
@@ -494,8 +504,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+  typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -544,26 +558,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_MultiVector> x2_sub = x2->subView(cols());
 
   // Dot product
-  Array<Scalar> dots(ncol_sub);
+  Array<dot_type> dots(ncol_sub);
   x1_sub->dot(*x2_sub, dots());
 
   // Check
 
   // Local contribution
-  Array<Scalar> local_vals(ncol_sub, Scalar(VectorSize, BaseScalar(0.0)));
+  Array<dot_type> local_vals(ncol_sub, dot_type(0));
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (size_t j=0; j<ncol_sub; ++j) {
       for (LocalOrdinal k=0; k<VectorSize; ++k) {
         BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
           nrow, ncol, VectorSize, row, cols[j], k);
-        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+        local_vals[j] += 0.12345 * v * v;
       }
     }
   }
 
   // Global reduction
-  Array<Scalar> vals(ncol_sub, Scalar(VectorSize, BaseScalar(0.0)));
+  Array<dot_type> vals(ncol_sub, dot_type(0));
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,
                      Teuchos::as<int>(ncol_sub), local_vals.getRawPtr(),
                      vals.getRawPtr());
@@ -572,9 +586,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   for (size_t j=0; j<ncol_sub; ++j) {
     out << "dots(" << j << ") = " << dots[j]
         << " expected(" << j << ") = " << vals[j] << std::endl;
-    TEST_EQUALITY( dots[j].size(), VectorSize );
-    for (LocalOrdinal k=0; k<VectorSize; ++k)
-      TEST_FLOATING_EQUALITY( dots[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k), tol );
+    TEST_FLOATING_EQUALITY( dots[j], vals[j], tol );
   }
 }
 
@@ -601,6 +613,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -726,6 +741,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -866,6 +884,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -989,6 +1010,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1066,10 +1090,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  typedef Teuchos::ScalarTraits<BaseScalar> BST;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typename BST::magnitudeType btol = 1e-9;
-  typename ST::magnitudeType tol = btol;
+  typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
+  typedef typename BST::mag_type base_mag_type;
+  typedef typename Tpetra_Vector::mag_type mag_type;
+  base_mag_type btol = 1e-9;
+  mag_type tol = btol;
   int max_its = 1000;
   bool solved = Stokhos::CG_Solve(*matrix, *x, *b, tol, max_its,
                                   out.getOStream().get());
@@ -1094,9 +1119,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     // Set small values to zero
     Scalar v = x_view[i];
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
-      if (BST::magnitude(v.coeff(j)) < btol)
+      if (BST::abs(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (BST::magnitude(val.coeff(j)) < btol)
+      if (BST::abs(val.coeff(j)) < btol)
         val.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1133,6 +1158,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1217,10 +1245,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  typedef Teuchos::ScalarTraits<BaseScalar> BST;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typename BST::magnitudeType btol = 1e-9;
-  typename ST::magnitudeType tol = btol;
+  typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
+  typedef typename BST::mag_type base_mag_type;
+  typedef typename Tpetra_Vector::mag_type mag_type;
+  base_mag_type btol = 1e-9;
+  mag_type tol = btol;
   int max_its = 1000;
   bool solved = Stokhos::PCG_Solve(*matrix, *x, *b, *M, tol, max_its,
                                    out.getOStream().get());
@@ -1290,6 +1319,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1442,6 +1474,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1603,6 +1638,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1785,6 +1823,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
