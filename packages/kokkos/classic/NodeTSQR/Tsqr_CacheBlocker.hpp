@@ -549,6 +549,7 @@ namespace TSQR {
       curInd_ = rhs.curInd_;
       reverse_ = rhs.reverse_;
       contiguousCacheBlocks_ = rhs.contiguousCacheBlocks_;
+      return *this;
     }
 
     //! Prefix increment operator.
