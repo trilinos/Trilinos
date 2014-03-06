@@ -43,13 +43,17 @@
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 
+#include <Teuchos_GlobalMPISession.hpp>
+
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+#if defined (KOKKOS_HAVE_PTHREADS)
+
 template
 Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
-  MPI_Comm comm ,
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -58,18 +62,27 @@ Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
 
 template
 Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemQuadratic >(
-  MPI_Comm comm ,
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
   const int global_elems[] );
 
+#endif
+
+} /* namespace FENL */
+} /* namespace Example */
+} /* namespace Kokkos */
+
+namespace Kokkos {
+namespace Example {
+namespace FENL {
 
 #if defined (KOKKOS_HAVE_OPENMP)
 
 template
 Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
-  MPI_Comm comm ,
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -78,7 +91,7 @@ Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
 
 template
 Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemQuadratic >(
-  MPI_Comm comm ,
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,

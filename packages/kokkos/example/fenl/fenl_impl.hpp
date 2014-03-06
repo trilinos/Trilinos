@@ -271,7 +271,6 @@ Perf fenl(
     // from the element->to->node identifier array.
     // The graph only has rows for the owned nodes.
 
-
     typename NodeNodeGraphType::Times graph_times;
 
     const NodeNodeGraphType

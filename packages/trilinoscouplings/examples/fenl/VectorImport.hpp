@@ -52,7 +52,8 @@
 
 #include <Kokkos_View.hpp>
 
-#include <WrapMPI.hpp>
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_DefaultMpiComm.hpp>
 
 namespace Kokkos {
 namespace Example {
@@ -74,11 +75,11 @@ namespace Example {
 template< class CommMessageType , class CommIdentType , class VectorType >
 struct VectorImport {
 
-  const MPI_Comm comm ;
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm ;
   const unsigned count_owned ;
   const unsigned count_receive ;
 
-  VectorImport( MPI_Comm arg_comm ,
+  VectorImport( const Teuchos::RCP<const Teuchos::Comm<int> > arg_comm ,
                 const CommMessageType & ,
                 const CommMessageType & ,
                 const CommIdentType   & ,
@@ -131,7 +132,7 @@ private:
 
 public:
 
-  const MPI_Comm         comm ;
+  const Teuchos::RCP<const Teuchos::Comm<int> >  comm ;
   const unsigned         count_owned ;
   const unsigned         count_receive ;
 
@@ -157,7 +158,7 @@ public:
     }
   };
 
-  VectorImport( MPI_Comm arg_comm ,
+  VectorImport( const Teuchos::RCP<const Teuchos::Comm<int> > & arg_comm ,
                 const CommMessageType & arg_recv_msg ,
                 const CommMessageType & arg_send_msg ,
                 const CommIdentType   & arg_send_nodeid ,
@@ -188,6 +189,10 @@ public:
   {
     typedef typename VectorType::value_type  scalar_type ;
 
+    const Teuchos::MpiComm<int> & teuchos_mpi_comm = dynamic_cast< const Teuchos::MpiComm<int> & >( *comm );
+
+    MPI_Comm mpi_comm = * teuchos_mpi_comm.getRawMpiComm();
+
     const int mpi_tag = 42 ;
     const unsigned chunk = v.dimension_1();
 
@@ -206,13 +211,13 @@ public:
         const int count = recv_msg(i,1) * chunk ;
 
         MPI_Irecv( ptr , count * sizeof(scalar_type) , MPI_BYTE ,
-                   proc , mpi_tag , comm , & recv_request[i] );
+                   proc , mpi_tag , mpi_comm , & recv_request[i] );
 
         ptr += count ;
       }
     }
 
-    MPI_Barrier( comm );
+    MPI_Barrier( mpi_comm );
 
     { // Pack and send 
       const Pack pack( send_nodeid , v , send_buffer );
@@ -234,7 +239,7 @@ public:
 
         MPI_Ssend( ptr ,
                    count * sizeof(scalar_type) , MPI_BYTE ,
-                   proc , mpi_tag , comm );
+                   proc , mpi_tag , mpi_comm );
 
         ptr += count ;
       }
@@ -263,7 +268,7 @@ public:
 
         int local_rank  = 0 ;
 
-        MPI_Comm_rank( comm , & local_rank );
+        MPI_Comm_rank( mpi_comm , & local_rank );
 
         std::ostringstream msg ;
         msg << "VectorImport error:"

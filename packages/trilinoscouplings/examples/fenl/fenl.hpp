@@ -46,7 +46,9 @@
 
 #include <stdlib.h>
 #include <BoxElemPart.hpp>
-#include <WrapMPI.hpp>
+
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
 
 namespace Kokkos {
 namespace Example {
@@ -74,7 +76,7 @@ struct Perf {
 
 template < class Device , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
-  MPI_Comm comm ,
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,

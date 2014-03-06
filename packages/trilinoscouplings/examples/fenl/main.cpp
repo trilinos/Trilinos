@@ -10,6 +10,8 @@
 #include <iostream>
 #include <iomanip>
 
+//----------------------------------------------------------------------------
+
 #include <KokkosCore_config.h>
 #include <Kokkos_hwloc.hpp>
 #include <Kokkos_Threads.hpp>
@@ -22,10 +24,21 @@
 #include <Kokkos_OpenMP.hpp>
 #endif
 
-#include <WrapMPI.hpp>
 #include <fenl.hpp>
 
 //----------------------------------------------------------------------------
+
+#include <Tpetra_Version.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_oblackholestream.hpp>
+
+// #include <Tpetra_Vector.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// Command line processing:
 
 enum { CMD_USE_THREADS = 0
      , CMD_USE_NUMA
@@ -110,17 +123,23 @@ void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  c
   s << std::endl ;
 }
 
+//----------------------------------------------------------------------------
+
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
-void run( MPI_Comm comm , const int cmd[] )
+void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[] )
 {
-  if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
-  else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
-  else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+  const int comm_rank = comm->getRank();
 
-  if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
-  else { std::cout << " , LINEAR-ELEMENT" ; }
+  if ( 0 == comm_rank ) {
+    if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
+    else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
+    else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
 
-  if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
+    if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
+    else { std::cout << " , LINEAR-ELEMENT" ; }
+
+    if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
+  }
 
   std::vector< std::pair<std::string,std::string> > headers;
 
@@ -148,16 +167,18 @@ void run( MPI_Comm comm , const int cmd[] )
     widths[i] = std::max(min_width, headers[i].first.size()+1);
 
   // print column headers
-  std::cout << std::endl ;
-  for (size_t i=0; i<headers.size(); ++i)
-    std::cout << std::setw(widths[i]) << headers[i].first << " ,";
-  std::cout << "\b\b  " << std::endl;
-  for (size_t i=0; i<headers.size(); ++i)
-    std::cout << std::setw(widths[i]) << headers[i].second << " ,";
-  std::cout << "\b\b  " << std::endl;
+  if ( 0 == comm_rank ) {
+    std::cout << std::endl ;
+    for (size_t i=0; i<headers.size(); ++i)
+      std::cout << std::setw(widths[i]) << headers[i].first << " ,";
+    std::cout << "\b\b  " << std::endl;
+    for (size_t i=0; i<headers.size(); ++i)
+      std::cout << std::setw(widths[i]) << headers[i].second << " ,";
+    std::cout << "\b\b  " << std::endl;
 
-  std::cout << std::scientific;
-  std::cout.precision(3);
+    std::cout << std::scientific;
+    std::cout.precision(3);
+  }
 
   if ( cmd[ CMD_USE_FIXTURE_BEGIN ] ) {
     for ( int i = cmd[CMD_USE_FIXTURE_BEGIN] ; i < cmd[CMD_USE_FIXTURE_END] * 2 ; i *= 2 ) {
@@ -174,7 +195,7 @@ void run( MPI_Comm comm , const int cmd[] )
             ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         ;
 
-      print_perf_value( std::cout , widths, perf );
+      if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
     }
   }
   else {
@@ -190,25 +211,24 @@ void run( MPI_Comm comm , const int cmd[] )
           ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       ;
 
-    print_perf_value( std::cout , widths, perf );
+    if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
   }
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 int main( int argc , char ** argv )
 {
-  int comm_rank = 0 ;
-  int comm_size = 1 ;
+  Teuchos::oblackholestream blackHole;
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
 
-#if defined( KOKKOS_HAVE_MPI )
-  MPI_Init( & argc , & argv );
-  MPI_Comm comm = MPI_COMM_WORLD ;
-  MPI_Comm_rank( comm , & comm_rank );
-  MPI_Comm_size( comm , & comm_size );
-#else
-  MPI_Comm comm = 0 ;
-#endif
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  const int comm_rank = comm->getRank();
+
+  //--------------------------------------------------------------------------
 
   int cmdline[ CMD_COUNT ] ;
 
@@ -270,9 +290,9 @@ int main( int argc , char ** argv )
     if ( cmdline[ CMD_ECHO ] ) { print_cmdline( std::cout , cmdline ); }
   }
 
-#if defined( KOKKOS_HAVE_MPI )
-  MPI_Bcast( cmdline , CMD_COUNT , MPI_INT , 0 , comm );
-#endif
+  //--------------------------------------------------------------------------
+
+  comm->broadcast( int(0) , int(CMD_COUNT * sizeof(int)) , (char *) cmdline );
 
   if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
 
@@ -341,9 +361,7 @@ int main( int argc , char ** argv )
 
   }
 
-#if defined( KOKKOS_HAVE_MPI )
-  MPI_Finalize();
-#endif
+  //--------------------------------------------------------------------------
 
   return cmdline[ CMD_ERROR ] ? -1 : 0 ;
 }

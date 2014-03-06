@@ -51,13 +51,31 @@
 #include <Kokkos_MV.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include <WrapMPI.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Example {
+
+inline
+double all_reduce( double local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+  double global = 0 ;
+  Teuchos::reduceAll( *comm , Teuchos::REDUCE_SUM , 1 , & local , & global );
+  return global ;
+}
+
+inline
+double all_reduce_max( double local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+  double global = 0 ;
+  Teuchos::reduceAll( *comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
+  return global ;
+}
+
+
 
 template< class ImportType , class SparseMatrixType , class VectorType , class TagType = void >
 struct CGSolve ;

@@ -53,6 +53,8 @@
 #include <Kokkos_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
+#include <Teuchos_CommHelpers.hpp>
+
 // Examples headers:
 
 #include <BoxElemFixture.hpp>
@@ -62,6 +64,7 @@
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
 
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -69,12 +72,10 @@ namespace Example {
 namespace FENL {
 
 inline
-double maximum( MPI_Comm comm , double local )
+double maximum( const Teuchos::RCP<const Teuchos::Comm<int> >& comm , double local )
 {
-  double global = local ;
-#if defined( KOKKOS_HAVE_MPI )
-  MPI_Allreduce( & local , & global , 1 , MPI_DOUBLE , MPI_MAX , comm );
-#endif
+  double global = 0 ;
+  Teuchos::reduceAll( *comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
   return global ;
 }
 
@@ -151,7 +152,7 @@ namespace FENL {
 
 template < class Device , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
-  MPI_Comm comm ,
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -195,11 +196,8 @@ Perf fenl(
 
   const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
 
-  int comm_rank ;
-  int comm_size ;
-
-  MPI_Comm_rank( comm , & comm_rank );
-  MPI_Comm_size( comm , & comm_size );
+  const int comm_rank = comm->getRank();
+  const int comm_size = comm->getSize();
 
   // Decompose by node to avoid mpi-communication for assembly
 
