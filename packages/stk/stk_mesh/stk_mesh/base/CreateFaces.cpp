@@ -156,8 +156,9 @@ namespace stk {
 	    }
 
 	    for (unsigned f=0; f < Topology::num_faces; ++f) {
-	      if (face_exists[f])
+	      if (face_exists[f]) {
 		continue;
+	      }
 
 	      topology faceTopology = elemTopology.face_topology(f);
 
@@ -248,8 +249,9 @@ namespace stk {
 
 	  for (EntityCommInfoVector::const_iterator comm_itr = shared_processes.begin(),
 		 comm_end = shared_processes.end(); comm_itr != comm_end; ++comm_itr ) {
-	    if (comm_itr->proc > mesh.parallel_rank())
+	    if (comm_itr->proc > mesh.parallel_rank()) {
 	      shared_faces[comm_itr->proc].push_back(*itr);
+	    }
 	  }
 	}
 
@@ -306,6 +308,11 @@ namespace stk {
       }
 
     } //namespace
+
+    void create_faces( BulkData & mesh )
+    {
+      create_faces(mesh, mesh.mesh_meta_data().universal_part());
+    }
 
     void create_faces( BulkData & mesh, const Selector & element_selector )
     {

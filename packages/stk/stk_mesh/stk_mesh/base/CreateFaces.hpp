@@ -12,14 +12,12 @@
 #ifndef stk_mesh_CreateFaces_hpp
 #define stk_mesh_CreateFaces_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
 namespace stk {
   namespace mesh {
 
+    class BulkData;
+    class Selector;
+    
     /** Create faces for all elements in "element_selector" and attach them to
      * existing elements.
      *
@@ -36,11 +34,7 @@ namespace stk {
      * processors at the same time
      *
      */
-    inline
-    void create_faces( BulkData & mesh )
-    {
-      create_faces(mesh, mesh.mesh_meta_data().universal_part());
-    }
+    void create_faces( BulkData & mesh );
   }
 }
 

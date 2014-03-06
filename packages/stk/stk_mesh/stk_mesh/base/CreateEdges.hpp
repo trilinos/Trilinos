@@ -9,30 +9,22 @@
 #ifndef stk_mesh_CreateEdges_hpp
 #define stk_mesh_CreateEdges_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
 namespace stk {
-namespace mesh {
+  namespace mesh {
+    class BulkData;
+    class Selector;
+  
+    /** Create all the edges in the mesh and attach them to
+     * existing elements and defined faces.
+     *
+     * This is a parallel collective function (it should be called on all
+     * processors at the same time
+     *
+     */
+    void create_edges(  BulkData & mesh, const Selector & element_selector );
 
-/** Create all the edges in the mesh and attach them to
- * existing elements and defined faces.
- *
- * This is a parallel collective function (it should be called on all
- * processors at the same time
- *
- */
-void create_edges(  BulkData & mesh, const Selector & element_selector );
-
-inline
-void create_edges( BulkData & mesh )
-{
-  create_edges(mesh, mesh.mesh_meta_data().universal_part());
-}
-
-}
+    void create_edges( BulkData & mesh );
+  }
 }
 #endif
 
