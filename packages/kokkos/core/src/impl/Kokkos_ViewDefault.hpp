@@ -853,6 +853,706 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       dst.m_tracking.increment( dst.m_ptr_on_device );
     }
   }
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutRight Rank-3 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N1 ;
+    dst.m_shape.N1      = src.m_shape.N2 ;
+    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_ptr_on_device = &src(i0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutRight Rank-4 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N2 ;
+    dst.m_shape.N1      = src.m_shape.N3 ;
+    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_ptr_on_device = &src(i0,i1,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutRight Rank-5 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N3 ;
+    dst.m_shape.N1      = src.m_shape.N4 ;
+    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutRight Rank-6 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const unsigned i3 ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N4 ;
+    dst.m_shape.N1      = src.m_shape.N5 ;
+    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutRight Rank-7 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const unsigned i3 ,
+                  const unsigned i4 ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N5 ;
+    dst.m_shape.N1      = src.m_shape.N6 ;
+    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutRight Rank-8 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const unsigned i3 ,
+                  const unsigned i4 ,
+                  const unsigned i5 ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N6 ;
+    dst.m_shape.N1      = src.m_shape.N7 ;
+    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,i5,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-3 array from LayoutRight Rank-4 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 3 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 3 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N1 ;
+    dst.m_shape.N1      = src.m_shape.N2 ;
+    dst.m_shape.N2      = src.m_shape.N3 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_ptr_on_device = &src(i0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-3 array from LayoutRight Rank-5 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 3 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 3 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N2 ;
+    dst.m_shape.N1      = src.m_shape.N3 ;
+    dst.m_shape.N2      = src.m_shape.N4 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_ptr_on_device = &src(i0,i1,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-3 array from LayoutRight Rank-6 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 3 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 3 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N3 ;
+    dst.m_shape.N1      = src.m_shape.N4 ;
+    dst.m_shape.N2      = src.m_shape.N5 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-3 array from LayoutRight Rank-7 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const unsigned i3 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 3 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 3 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N4 ;
+    dst.m_shape.N1      = src.m_shape.N5 ;
+    dst.m_shape.N2      = src.m_shape.N6 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-3 array from LayoutRight Rank-8 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const unsigned i3 ,
+                  const unsigned i4 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 3 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 3 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N5 ;
+    dst.m_shape.N1      = src.m_shape.N6 ;
+    dst.m_shape.N2      = src.m_shape.N7 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-4 array from LayoutRight Rank-5 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 4 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 4 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N1 ;
+    dst.m_shape.N1      = src.m_shape.N2 ;
+    dst.m_shape.N2      = src.m_shape.N3 ;
+    dst.m_shape.N3      = src.m_shape.N4 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 ;
+    dst.m_ptr_on_device = &src(i0,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-4 array from LayoutRight Rank-6 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 4 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 4 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N2 ;
+    dst.m_shape.N1      = src.m_shape.N3 ;
+    dst.m_shape.N2      = src.m_shape.N4 ;
+    dst.m_shape.N3      = src.m_shape.N5 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 ;
+    dst.m_ptr_on_device = &src(i0,i1,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-4 array from LayoutRight Rank-7 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 4 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 4 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N3 ;
+    dst.m_shape.N1      = src.m_shape.N4 ;
+    dst.m_shape.N2      = src.m_shape.N5 ;
+    dst.m_shape.N3      = src.m_shape.N6 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-4 array from LayoutRight Rank-8 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const unsigned i3 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 4 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 4 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N4 ;
+    dst.m_shape.N1      = src.m_shape.N5 ;
+    dst.m_shape.N2      = src.m_shape.N6 ;
+    dst.m_shape.N3      = src.m_shape.N7 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-5 array from LayoutRight Rank-6 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 5 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 5 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N1 ;
+    dst.m_shape.N1      = src.m_shape.N2 ;
+    dst.m_shape.N2      = src.m_shape.N3 ;
+    dst.m_shape.N3      = src.m_shape.N4 ;
+    dst.m_shape.N4      = src.m_shape.N5 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 * dst.m_shape.N4 ;
+    dst.m_ptr_on_device = &src(i0,0,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-5 array from LayoutRight Rank-7 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 5 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 5 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N2 ;
+    dst.m_shape.N1      = src.m_shape.N3 ;
+    dst.m_shape.N2      = src.m_shape.N4 ;
+    dst.m_shape.N3      = src.m_shape.N5 ;
+    dst.m_shape.N4      = src.m_shape.N6 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 * dst.m_shape.N4 ;
+    dst.m_ptr_on_device = &src(i0,i1,0,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-5 array from LayoutRight Rank-8 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const unsigned i0 ,
+                  const unsigned i1 ,
+                  const unsigned i2 ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const ALL & ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 5 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 5 )
+                  ), ALL >::type & )
+  {
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking      = src.m_tracking ;
+    dst.m_shape.N0      = src.m_shape.N3 ;
+    dst.m_shape.N1      = src.m_shape.N4 ;
+    dst.m_shape.N2      = src.m_shape.N5 ;
+    dst.m_shape.N3      = src.m_shape.N6 ;
+    dst.m_shape.N4      = src.m_shape.N7 ;
+    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
+                          dst.m_shape.N3 * dst.m_shape.N4 ;
+    dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0,0,0);
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
   //------------------------------------
   /** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
    *          Check the dimensions and allocation lengths at runtime.
