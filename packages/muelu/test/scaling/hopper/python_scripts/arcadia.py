@@ -230,14 +230,15 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                         return "Error reading \"" + analysis_run + ".epetra"
 
                     try:
-                      time_epetra[s] = float(r[1])
+                        time_epetra[s] = float(r[1])
+                        eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
+                        fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
                     except (RuntimeError, ValueError):
-                        print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, epetra_file))
+                        # print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, epetra_file))
+                        fullstr += "           -   -"
 
                     if nnodes == str(BASECASE):
                         basetime_epetra[s] = time_epetra[s]
-                    eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
-                    fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
 
                 if has_ml:
                     ml_file = analysis_run + ".ml"
@@ -262,16 +263,17 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
                     if r[0] != 0:
                         return "Error reading \"" + analysis_run + ".tpetra"
-                    try:
-                      time_tpetra[s] = float(r[1])
-                    except (RuntimeError, ValueError):
-                      print("Problem converting \"%s\" to float for timeline \"%s\" in %s" % (r[1], s, tpetra_file))
 
-                    time_tpetra[s] = float(r[1])
+                    try:
+                        time_tpetra[s] = float(r[1])
+                        eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
+                        fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
+                    except (RuntimeError, ValueError):
+                        print("Problem converting \"%s\" to float for timeline \"%s\" in %s" % (r[1], s, tpetra_file))
+                        fullstr += "           -   -"
+
                     if nnodes == str(BASECASE):
                         basetime_tpetra[s] = time_tpetra[s]
-                    eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
-                    fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
 
             print(fullstr)
 
