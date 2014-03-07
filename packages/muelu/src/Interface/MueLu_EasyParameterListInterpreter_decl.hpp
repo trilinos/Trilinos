@@ -98,7 +98,7 @@ namespace MueLu {
   private:
     void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager);
 
-    void SetupMatrix   (Matrix&    A) const;
+    void SetupMatrix(Matrix& A) const;
 
     CycleType Cycle_;
     int       blockSize_;

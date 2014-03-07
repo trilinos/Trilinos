@@ -7,6 +7,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
+#include <MueLu_EasyParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_Exceptions.hpp>
@@ -58,17 +59,28 @@ namespace MueLu {
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null)
   {
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>      MultiVector;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>           Matrix;
-    typedef Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>                   Hierarchy;
-    typedef ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node> HierarchyFactory;
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
+    typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
+    typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
+    typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
 
     bool hasParamList = paramList.numParams();
 
-    RCP<HierarchyFactory> mueLuFactory;
+    RCP<HierarchyManager> mueLuFactory;
     RCP<Hierarchy>        H;
     if (hasParamList) {
-      mueLuFactory = rcp(new HierarchyFactory(paramList));
+      bool useEasy = !paramList.isSublist("Hierarchy");
+
+      if (useEasy == false)
+        mueLuFactory = rcp(new ParameterListInterpreter    <SC,LO,GO,NO>(paramList));
+      else
+        mueLuFactory = rcp(new EasyParameterListInterpreter<SC,LO,GO,NO>(paramList));
+
       H = mueLuFactory->CreateHierarchy();
 
     } else {
@@ -76,19 +88,19 @@ namespace MueLu {
     }
 
     // Wrap A
-    RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inA);
+    RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
     H->GetLevel(0)->Set("A", A);
 
     // Wrap coordinates if available
     if (inCoords != Teuchos::null) {
-      RCP<MultiVector> coordinates = TpetraMultiVector_To_XpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(inCoords);
+      RCP<MultiVector> coordinates = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inCoords);
       H->GetLevel(0)->Set("Coordinates", coordinates);
     }
 
     // Wrap nullspace if available, otherwise use constants
     RCP<MultiVector> nullspace;
     if (inNullspace != Teuchos::null) {
-      nullspace = TpetraMultiVector_To_XpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inNullspace);
+      nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inNullspace);
 
     } else {
       int nPDE = 1;
@@ -98,18 +110,18 @@ namespace MueLu {
           nPDE = operatorList.get<int>("PDE equations");
       }
 
-      nullspace = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getDomainMap(), nPDE);
+      nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
       if (nPDE == 1) {
-        nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
       } else {
         for (int i = 0; i < nPDE; i++) {
-          Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+          Teuchos::ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
           for (int j = 0; j < nsData.size(); j++) {
-            GlobalOrdinal GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
+            GO GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
 
             if ((GID-i) % nPDE == 0)
-              nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+              nsData[j] = Teuchos::ScalarTraits<SC>::one();
           }
         }
       }
@@ -121,7 +133,7 @@ namespace MueLu {
     else
       H->Setup();
 
-    return rcp(new TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(H));
+    return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
   }
 
   /*! \fn CreateTpetraPreconditioner
