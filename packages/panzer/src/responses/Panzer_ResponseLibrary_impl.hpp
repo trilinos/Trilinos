@@ -54,7 +54,7 @@ namespace panzer {
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary()
-   : nextBC_id(0), responseEvaluatorsBuilt_(false)
+   : nextBC_id(0), closureModelByEBlock_(false), responseEvaluatorsBuilt_(false) 
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -66,7 +66,7 @@ template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
-   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), responseEvaluatorsBuilt_(false)
+   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), closureModelByEBlock_(false), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -77,7 +77,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    : respAggManager_(rl.globalIndexer_,rl.linObjFactory_), wkstContainer_(rl.wkstContainer_)
-   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0), responseEvaluatorsBuilt_(false)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0), closureModelByEBlock_(false), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -736,7 +736,7 @@ buildResponseEvaluators(
    fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true)); 
 
    fmb2_->setWorksetContainer(wkstContainer_);
-   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,requiredWorksetDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,requiredWorksetDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef2,closureModelByEBlock_);
    if(eqset_factory==Teuchos::null)
      fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
    else
@@ -778,6 +778,20 @@ void ResponseLibrary<TraitsT>::
 evaluate(const panzer::AssemblyEngineInArgs& input_args)
 {
    ae_tm2_.template getAsObject<EvalT>()->evaluate(input_args);
+}
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+print(std::ostream & os) const
+{
+   typedef boost::unordered_map<std::string, Response_TemplateManager> RespObjType;
+
+   for(RespObjType::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr) { 
+     std::string respName = itr->first;
+     os << "Response \"" << respName << "\": ";
+     Sacado::mpl::for_each<typename Response_TemplateManager::types_vector>(Printer(itr->second,os));
+     os << std::endl;
+   }
 }
 
 }

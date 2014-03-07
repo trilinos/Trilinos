@@ -346,6 +346,13 @@ public:
    template <typename EvalT> 
    void evaluate(const panzer::AssemblyEngineInArgs& input_args);
 
+   /** Print the contents of this response library.
+     */
+   void print(std::ostream & os) const;
+
+   void useClosureModelByEBlockInResponse(bool value)
+   { closureModelByEBlock_ = value; }
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
@@ -414,8 +421,22 @@ private:
 
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
+   bool closureModelByEBlock_;
 
    bool responseEvaluatorsBuilt_;
+
+   struct Printer {
+     const Response_TemplateManager & tm_;
+     ostream & os_;
+     Printer(const Response_TemplateManager & tm,ostream & os) : tm_(tm), os_(os) {}
+     template <typename T> void operator()(T) const { 
+       os_ << PHX::TypeString<T>::value << "=";
+       if(tm_.get<T>()!=Teuchos::null) 
+         os_ << "ON ";
+       else
+         os_ << "OFF ";
+     }
+  };
 };
 
 }
