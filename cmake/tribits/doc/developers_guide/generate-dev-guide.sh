@@ -45,7 +45,7 @@ echo
 echo "Extracting TriBITS documentation from *.cmake files ..."
 echo
 ../../python/extract_rst_cmake_doc.py \
-  --extract-from=../../package_arch/ \
+  --extract-from=../../package_arch/,../../utils/ \
   --rst-file-pairs=TribitsDetailedMacroFunctionDocTemplate.rst:TribitsDetailedMacroFunctionDoc.rst \
   $EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
 

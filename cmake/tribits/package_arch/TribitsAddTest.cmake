@@ -332,6 +332,12 @@ INCLUDE(TribitsAddTestHelpers)
 # are defined, then this name becomes the base test name for each of the
 # tests. See below.
 #
+# Finally, for any test that gets defined, if MPI is enabled
+# (i.e. ``TPL_ENABLE_MPI=ON``), then the terminal suffix
+# `_MPI_${NUM_MPI_PROCS}` will be added to the end of the test name (even for
+# multiple tests).  No such prefix is added for the serial case
+# (i.e. ``TPL_ENABLE_MPI=OFF``).
+#
 # **Adding Multiple Tests:**
 #
 # ToDo: Explain how multiple tests can be added with different sets of

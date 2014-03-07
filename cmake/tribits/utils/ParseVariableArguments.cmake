@@ -47,9 +47,93 @@ FUNCTION(PARSE_ARGUMENTS_DUMP_OUTPUT)
 ENDFUNCTION()
 
 #
-# Parse a set of input arguments into different lists
+# @MACRO: PARSE_ARGUMENTS()
 #
-
+# Parse a set of macro/functon input arguments into different lists.  This
+# allows the easy implementation of keyword-based user-defined macros and
+# functions.
+#
+# Usage::
+#
+#   PARSE_ARGUMENTS(
+#     <prefix>  <argNamesList>  <optionNamesList>
+#     <inputArgsList>
+#     )
+#
+# Arguments to this macro:
+#
+#   ``<prefix>``
+#
+#     Prefix ``<prefix>_`` added the list and option variables created listed
+#     in ``<argNamesList>`` and ``<optionNamesList>``.
+#
+#   ``<argNamesList>``
+#
+#     Quoted array of list arguments (e.g. ``"<argName0>;<argName1>;..."``).
+#     For each varaible name ``<argNamei>``, a local varible will be created
+#     in the current scope with the name ``<prefix>_<argNamei>`` which gives
+#     the list of varibles parsed out of ``<inputArgsList>``.
+#
+#   ``<optionNamesList>``
+#
+#     Quoted array of list arguments (e.g. ``"<optName0>;<optName1>;..."``).
+#     For each varaible name ``<optNamei>``, a local varible will be created
+#     in the current scope with the name ``<prefix>_<optNamei>`` that is
+#     either set to ``TRUE`` or ``FALSE`` depending if ``<optNamei>`` apears
+#     in ``<inputArgsList>`` or not.
+#
+#   ``<inputArgsList>``
+#
+#     List of arguments keyword-based arguments passed in for the outer macro
+#     or function to be parsed out into the different argument and option
+#     lists.
+#
+# What this macro does is very simple yet very powerful.  What it does is to
+# allow you to create your own keyword-based macros and functions like CMake
+# has.  For example, you can have the user-defined macro::
+#
+#   MACRO(PARSE_SPECIAL_VARS  BASE_NAME)
+#
+#     PARSE_ARGUMENTS(
+#       #prefix
+#       ${BASE_NAME}
+#       #lists
+#       "ARG0;ARG1;ARG2"
+#       #options
+#       "OPT0;OPT1"
+#       ${ARGN}
+#       )
+#
+#   ENDMACRO()
+#
+# Calling this macro as::
+#
+#   PARSE_SPECIAL_VARS(MyVar ARG0 a b ARG2 c OPT1)
+#
+# sets the following varibles in the current scopt:
+#
+# * ``MyVar_ARG0="a;b"``
+# * ``MyVar_ARG1=""``
+# * ``MyVar_ARG2="c"``
+# * ``MyVar_OPT0="FALSE"``
+# * ``MyVar_OPT1="TRUE"``
+#
+# This allows you to define user-defined macros and functions that have a
+# mixture of positional arguments and keyword-based arguments like you can do
+# in other languages.  The keyword-based arguments can be passed in in any
+# order and those that are missing are empty (or false) by default.
+#
+# If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED``is set to ``TRUE``, then a bunch
+# of detailed debug info will be printed.  This should only lbe used in the
+# most desparate of debug situations because it will print a *lot* of output!
+#
+# **PERFORMANCE:** This function will scale as::
+#
+#   `O( (len(<argNamesList>) * len(<optionNamesList>)) * len(<inputArgsList>))
+#
+# Therefore, this could scale very badly for large lests of argument and
+# option names and input argument lists.
+#
 MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
 
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: prefix='${prefix}'")
@@ -57,14 +141,15 @@ MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: option_names='${option_names}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: ARGN='${ARGN}'")
 
-  SET(DEFAULT_ARGS)
   FOREACH(arg_name ${arg_names})    
     SET(${prefix}_${arg_name})
-  ENDFOREACH(arg_name)
+  ENDFOREACH()
+
   FOREACH(option ${option_names})
     SET(${prefix}_${option} FALSE)
-  ENDFOREACH(option)
+  ENDFOREACH()
 
+  SET(DEFAULT_ARGS)
   SET(current_arg_name DEFAULT_ARGS)
   SET(current_arg_list)
 
@@ -94,4 +179,16 @@ MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
   PARSE_ARGUMENTS_DUMP_OUTPUT( "PARSE_ARGUMENTS:"
     " ${prefix}_${current_arg_name} = '${${prefix}_${current_arg_name}}'" )
 
-ENDMACRO(PARSE_ARGUMENTS)
+ENDMACRO()
+
+# NOTE: If the above function turns out to be a performance bottle neck, there
+# are a few things that could be done to improve performance.  One thing you
+# could do is repalce the O(len(arg_names)) and O(len(option_names)) lookups
+# with O(1) lookups by creating CMake varibles of the name
+# ${OUTER_FUNC_NAME}_arg_<argNamei> and then just look of that varible exists
+# or not.  That should use a hash function.  That might actually slow things
+# down for short lists however so we would have to measure, measure,
+# measure. I we would have to pass in the function/macro name to disabiguate
+# the varible names.  It would really be better if cmake would provide a
+# sorted list find operation.  That would make this much faster for large
+# numbers of argument and option names.

@@ -38,8 +38,168 @@ understanding of CMake, one will have trouble resolving problems when they
 might occur.
 
 
+Brief CMake Language Tutorial
+==============================
+
+TriBITS removes a lot of the boiler plate code needed to write a CMake
+project.  As a result, many people can come into a project that uses TriBITS
+and quickly start to contribute by adding new source files, adding new
+libraries, adding new tests, and even adding new TriBITS packages and TPLs;
+all without really having learned anything about CMake.  One just needs to
+copy-and-paste existing example CMake code and files as basically "monkey see,
+monkey do".  As long as nothing out of the ordinary happens, many people can
+get along just fine in this mode for a time.
+
+However, we have observed that most mistakes that people make when using
+TriBITS, and most of the problems they have when using the sytem, are due to a
+basic lack of knowlege of the CMake language.  One can find basic tutorials
+and references on the CMake language in various locations online for free.
+One can also purchase the `offical CMake reference book`_.  Therefore, this
+document will not even attempt to provide a first reference to CMake (which is
+a large topic in itself).  However, what we try to provide below is a short
+overivew of the CMake langauge and a description of its unique features in
+order to help avoid some of these common mistakes and provide greater
+understanding of how TriBITS works.
+
+.. _Offical CMake reference book: http://www.cmake.org/cmake/help/book.html
+
+The CMake language that is used to write CMake projects with TriBITS (and that
+core TriBITS itself is implemented in) is a fairly simply programming languge
+with fairly simple rules (for the most part).  However, compared to other
+programming lanuages, there are a few peculiar aspects to the CMake language
+like strange varible scoping rules, arguments to macros and function, that can
+make working with it difficult if you don't understand these.  Also, CMake has
+some interesting gotchas.  In order to effectively use TriBITS (or just raw
+CMake) to construct and maintain a project's CMake files, one must know the
+basic rules of CMake.  
+
+The first thing to understand about the CMake language is that everthing is
+just a string (or an array of strings) and functions that operate on strings.
+An array argument is just a single with elements separated by semi-colons
+"<str0>;<str1>;...".
+
+Varibles are set using a built-in CMke function that just takes string
+arguments like::
+
+  SET(SOME_VARIABLE "some_value")
+
+In CMake, the above is idential, in every way, to::
+
+  SET(SOME_VARIABLE some_value)
+
+or::
+
+  SET("SOME_VARIABLE;"some_value")
+
+The function ``SET()`` simply interprets the first argument to as the name of
+a varible to set in the local scope.  Many other built-in and user-defined
+CMake functions work the same way.
+
+CMake offers a rich assortment of built-in functions for doing all sorts of
+things.  As part of these functions are the built-in ``MACRO()`` and the
+``FUNCTION()`` functions which allow you to create user-defined macros and
+function.  All of these built-in and user-defined macros and functions work
+exactly the same way; they take in an array of string arguments.  Some
+functions take in positional arguments but most actually take a combination of
+positional and keyword arguments.
+
+Varible names are translated into their stored values using
+``${SOME_VARIABLE}``.  The value that is extracted depends on if the varible
+is set in the local or global (cache) scope.  The local scopes for CMake start
+in the base project directory in its ``CMakeLists.txt`` file.  Any varibles
+that are created by macros in that base local scope are seen across an entire
+project but are *not* persistent across ``cmake`` configure invocations.
+
+The handling of variables is one area where CMake is radically different from
+most other languages.  First, a varible that is not defined simply returns
+nothing.  What is surprising to most peoople about this is that it does not
+even return an empty string.  For example, the following set statement::
+
+   SET(SOME_VAR a ${SOME_UNDEFINED_VAR} c)
+
+produces ``SOME_VAR='a;c'`` and *not* ``'a;;c'``!  The same thing occurs when
+an empty varible is dereferenced such as with::
+
+   SET(EMPTY_VAR "")
+   SET(SOME_VAR a ${EMPTY_VAR} c)
+
+which produces ``SOME_VAR='a;c'`` and *not* ``'a;;c'``.  In order to always
+produce an element in the array even if the varible is empty, one must quote
+the argument as with::
+
+   SET(EMPTY_VAR "")
+   SET(SOME_VAR a "${EMPTY_VAR}" c)
+
+which produces ``SOME_VAR='a;;c'``, or three elements as one might assue.
+
+This is a common error the people make when they call functions (built-in or
+TriBITS-defined) involving varibles that might be undefined or set to the
+empty string.  For example, for the macro::
+
+   MACRO(SOME_MACRO A_ARG B_ARG C_ARG)
+      ...
+   ENDMACRO()
+
+If someone trys to call it with::
+
+  SOME_MACRO(a ${SOME_OHTER_VAR} c)
+
+and if ``SOME_OHTER_VAR=""`` or if it is undefined, then CMake will error out
+with the error message saying that the macro ``SOME_MACRO()`` takes 3
+arguments but only 2 were provided.  If a varible might be empty but that is
+still a valid argument to a function (or element in a general array variable,
+then it must be quoted as::
+
+  SOME_MACRO(a "${SOME_OHTER_VAR}" c)
+
+A quick note of some strange CMake langauge behavior is case sensitivity:
+
+* Calls of built-in and user-defined functions is *case insensitive*!  That is
+  ``set(...)``, ``SET(...)``, ``Set()``, and all other combinations of upper
+  and lower case characters for 'S', 'E', 'T' all call the bulit-in `SET()``
+  function.  The convention in TriBITS is to use all caps for functions and
+  macros.  The convention in CMake literature from Kitware seems to use
+  lower-case for functions and macros.
+
+* The names of CMake varables (local or cache/global) are *case sensitive*!
+  That is, ``SOME_VAR`` and ``some_var`` are *different* variables.  Built-in
+  CMake varibles tend use all caps with underscores
+  (e.g. ``CMAKE_CURRENT_SOURCE_DIR``) but other built-in CMake varibles tend
+  to use mixed case wtih underscores (e.g. ``CMAKE_Fortran_FLAGS``).  TriBITS
+  tends to use a similar naming convention where most varibles have mostly
+  upper-case letters except for proper nouns like the project, package or TPL
+  name (e.g. ``TribitsProj_TRIBITS_DIR``, ``TriBITS_SOURCE_DIR``,
+  ``Boost_INCLUDE_DIRS``).
+
+I don't now of any other language that uses different case senstivity rules
+for varibles verses functions.  However, because we must parse macro and
+function arguments when writing user-defined macros and functions, it is a
+good thing that CMake varibles are not case insensitive.  Case insenstivity
+would make it much harder and more expensive to parse argument lists (see 
+
+The other mistakes that people make is not understanding how CMake scopes
+variables and other entities.
+
+
+
+In cases where a varible 
+
+
+
+
+
+
+???
+
+
 Structure of a TriBITS Project
 ==============================
+
+???
+
+
+Processing of TriBITS Files
+===========================
 
 ???
 

@@ -687,3 +687,13 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDIF()
 
 ENDFUNCTION()
+
+# PERFORMANCE NOTES:
+#
+# We might be able to improve the performance of the parsing by limiting the
+# number of TEST_<I> blocks up front by setting a varible that will fix it.
+# This might just be set as a local variable in the CMakeLists.txt file where
+# this function is called from.  The other option is to just read through the
+# input arguments to parse first and look for the highest TEST_<IDX> and use
+# that instead to build the list of tests.  This would just be a linear search
+# it could be a big pay off for very long lists.
