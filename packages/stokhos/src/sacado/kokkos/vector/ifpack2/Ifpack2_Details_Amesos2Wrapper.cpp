@@ -60,4 +60,39 @@
 
 #endif
 
+// Add missing instantiations from Amesos2
+
+#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_STOKHOS_AMESOS2)
+
+#include "Amesos2_config.h"
+
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#ifdef HAVE_AMESOS2_SUPERLU
+#include "Amesos2_Superlu_decl.hpp"
+#include "Amesos2_Superlu_def.hpp"
+#define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)                        \
+  template class Superlu<Tpetra::CrsMatrix<S, LO, GO, N>,               \
+                         Tpetra::MultiVector<S, LO, GO,  N> >;
+#else
+#define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)
+#endif
+
+#define AMESOS2_LOCAL_INSTANT(S,LO,GO,N)        \
+  AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)
+
+namespace Amesos2 {
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+  AMESOS2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+#endif
+
+}
+
+#endif
+
+#endif
+
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
