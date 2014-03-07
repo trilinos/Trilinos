@@ -337,12 +337,13 @@ ul.auto-toc {
 <li><a class="reference internal" href="#tribits-add-library" id="id19">4.13&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></li>
 <li><a class="reference internal" href="#tribits-add-executable" id="id20">4.14&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></li>
 <li><a class="reference internal" href="#tribits-add-test" id="id21">4.15&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-package-postprocess" id="id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-add-advanced-test" id="id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-package-postprocess" id="id23">4.17&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#references" id="id23">5&nbsp;&nbsp;&nbsp;References</a></li>
-<li><a class="reference internal" href="#appendix" id="id24">6&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id25">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#references" id="id24">5&nbsp;&nbsp;&nbsp;References</a></li>
+<li><a class="reference internal" href="#appendix" id="id25">6&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id26">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
 </ul>
 </li>
 </ul>
@@ -913,7 +914,7 @@ using the built-in CMake comamnd <tt class="docutils literal">ADD_EXECUTABLE()</
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_EXECUTABLE(
-  &lt;execName&gt;  [NOEXEPREFIX]  [NOEXESUFFIX]
+  &lt;exeRootName&gt;  [NOEXEPREFIX]  [NOEXESUFFIX]
   SOURCES &lt;src1&gt; &lt;src2&gt; ...
   [CATEGORIES &lt;category1&gt;  &lt;category2&gt; ...]
   [HOST &lt;host1&gt; &lt;host2&gt; ...]
@@ -929,26 +930,28 @@ TRIBITS_ADD_EXECUTABLE(
   [INSTALLABLE]
   )
 </pre>
-<p>The arguments are:</p>
-<ul class="simple">
-<li><tt class="docutils literal">&lt;execName&gt;</tt>: The base name of the exectuable and CMake target.</li>
-</ul>
+<p><strong>Formal Arguments:</strong></p>
+<blockquote>
+<p><tt class="docutils literal">&lt;exeRootName&gt;</tt></p>
+<blockquote>
+The base name of the exectuable and CMake target.</blockquote>
+</blockquote>
 <p>ToDo: Document other arguments!</p>
-<p id="tribits-executable-name"><strong>Executable and Target Name:</strong></p>
+<p id="executable-and-target-name"><strong>Executable and Target Name:</strong></p>
 <p>By default, the actual name of the executable and target will be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;execName&gt;${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+${PACKAGE_NAME}_&lt;exeRootName&gt;${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 </pre>
 <p>If the option <tt class="docutils literal">NOEXEPREFIX</tt> is pased in, the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt>
 is removed.  If the option <tt class="docutils literal">NOEXESUFFIX</tt> is passed in, the suffix
-<tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> is removed.  The reason that
-a default prefix is appended to the executable name is because the primary
-reason to create an executable is typically to create a test or an example
-that is private to the package.  This prefix helps to namespace the
-exexutable and its target so as to avoid name clashes with targets in other
-packages.  Also, if <tt class="docutils literal">INSTALLABLE</tt> is set and this executable gets
-installed into the <tt class="docutils literal"><span class="pre">&lt;install&gt;/bin/</span></tt> directory, then this prefix helps to
-avoid clashing with executables installed by other packages.</p>
+<tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> is removed.</p>
+<p>The reason that a default prefix is appended to the executable name is
+because the primary reason to create an executable is typically to create a
+test or an example that is private to the package.  This prefix helps to
+namespace the exexutable and its target so as to avoid name clashes with
+targets in other packages.  Also, if <tt class="docutils literal">INSTALLABLE</tt> is set and this
+executable gets installed into the <tt class="docutils literal"><span class="pre">&lt;install&gt;/bin/</span></tt> directory, then this
+prefix helps to avoid clashing with executables installed by other packages.</p>
 <p><strong>Postcondition:</strong></p>
 <p>ToDo: Document post conditions!</p>
 </div>
@@ -958,7 +961,7 @@ avoid clashing with executables installed by other packages.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_TEST(
-  &lt;execRootName&gt;  [NOEXEPREFIX]  [NOEXESUFFIX]
+  &lt;exeRootName&gt;  [NOEXEPREFIX]  [NOEXESUFFIX]
   [NAME &lt;testName&gt; | NAME_POSTFIX &lt;testNamePostfix&gt;]
   [DIRECTORY &lt;directory&gt;]
   [ADD_DIR_TO_NAME]
@@ -981,7 +984,7 @@ TRIBITS_ADD_TEST(
 </pre>
 <p><strong>Formal Arguments:</strong></p>
 <blockquote>
-<p><tt class="docutils literal">&lt;execRootName&gt;</tt></p>
+<p><tt class="docutils literal">&lt;exeRootName&gt;</tt></p>
 <blockquote>
 The name of the exectuble or path to the exectuable to run for the test
 (see <a class="reference internal" href="#determining-the-exectuable-or-command-to-run">Determining the Exectuable or Command to Run</a>).  This name is
@@ -990,17 +993,17 @@ Name</a>).</blockquote>
 <p><tt class="docutils literal">NOEXEPREFIX</tt></p>
 <blockquote>
 If specified, then the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> is not assumed to be
-prepended to <tt class="docutils literal">&lt;execRootName&gt;</tt>.</blockquote>
+prepended to <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</blockquote>
 <p><tt class="docutils literal">NOEXESUFFIX</tt></p>
 <blockquote>
 If specified, then the postfix
 <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> is not assumed to be
-post-pended to <tt class="docutils literal">&lt;execRootName&gt;</tt>.</blockquote>
+post-pended to <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</blockquote>
 <p><tt class="docutils literal">NAME &lt;testRootName&gt;</tt></p>
 <blockquote>
 If specified, gives the root name of the test.
 If not specified, then <tt class="docutils literal">&lt;testRootName&gt;</tt> is taken to be
-<tt class="docutils literal">&lt;execRootName&gt;</tt>.  The actual test name will always prefixed as
+<tt class="docutils literal">&lt;exeRootName&gt;</tt>.  The actual test name will always prefixed as
 <tt class="docutils literal">${PACKAGE_NAME}_&lt;testRootName&gt;</tt> passed into the call to the built-in
 CMake command <tt class="docutils literal"><span class="pre">ADD_TEST(...)</span></tt>.  The main purpose of this argument is to
 allow multiple tests to be defined for the same executable.  CTest
@@ -1008,7 +1011,7 @@ requires all test names to be globally unique in a single project.</blockquote>
 <p><tt class="docutils literal">NAME_POSTFIX &lt;testNamePostfix&gt;</tt></p>
 <blockquote>
 If specified, gives a postfix that will be added to the standard test
-name based on <tt class="docutils literal">&lt;execRootName&gt;</tt> (appended as <tt class="docutils literal">_&lt;NAME_POSTFIX&gt;</tt>).  If
+name based on <tt class="docutils literal">&lt;exeRootName&gt;</tt> (appended as <tt class="docutils literal">_&lt;NAME_POSTFIX&gt;</tt>).  If
 the <tt class="docutils literal">NAME &lt;testRootName&gt;</tt> argument is given, this argument is ignored.</blockquote>
 <p><tt class="docutils literal">DIRECTORY &lt;dir&gt;</tt></p>
 <blockquote>
@@ -1026,10 +1029,10 @@ test directory will be used.  All directory seperators will be changed
 into underscores.</blockquote>
 <p><tt class="docutils literal">RUN_SERIAL</tt></p>
 <blockquote>
-If specified then no other tests will be allowed to run while this
-test is running. This is useful for devices(like cuda cards) that
-require exclusive access for processes/threads.  This just sets the
-CTest test property <tt class="docutils literal">RUN_SERIAL</tt> using the built-in CMake function
+If specified then no other tests will be allowed to run while this test
+is running. This is useful for devices(like cuda cards) that require
+exclusive access for processes/threads.  This just sets the CTest test
+property <tt class="docutils literal">RUN_SERIAL</tt> using the built-in CMake function
 <tt class="docutils literal">SET_TESTS_PROPERTIES()</tt>.</blockquote>
 <p><tt class="docutils literal">ARGS &quot;&lt;arg1&gt; &lt;arg2&gt; <span class="pre">...&quot;</span> &quot;&lt;arg3&gt; &lt;arg4&gt; <span class="pre">...&quot;</span> ...</tt></p>
 <blockquote>
@@ -1067,11 +1070,10 @@ both serial and MPI builds of the code.</blockquote>
 <blockquote>
 If specified, gives the number of processes that the test will be
 defined to run.  If <tt class="docutils literal">&lt;numProcs&gt;</tt> is greater than
-${MPI_EXEC_MAX_NUMPROCS} then the test will be excluded.  If not
+<tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt> then the test will be excluded.  If not
 specified, then the default number of processes for an MPI build will be
 <tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt>.  For serial builds, this argument is
-ignored.  ToDo: Force this to be 1 for serial builds and add test for
-this!</blockquote>
+ignored.</blockquote>
 <p><tt class="docutils literal">HOST &lt;host1&gt; &lt;host2&gt; ...</tt></p>
 <blockquote>
 If specified, gives a list of hostnames where the test will be included.
@@ -1165,8 +1167,10 @@ up tests to run arbitrary executables, see below.</p>
 <p>By default, the command to run for the executable is determined by first
 getting the exectuable name which by default is assumed to be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;execRootName&gt;${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+${PACKAGE_NAME}_&lt;exeRootName&gt;${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 </pre>
+<p>which is (by no coincidence) idential to how it is selected in
+<tt class="docutils literal">TRIBITS_ADD_EXECUTABLE()</tt> (see <a class="reference internal" href="#executable-and-target-name">Executable and Target Name</a>).</p>
 <p>If <tt class="docutils literal">NONEXEPREFIX</tt> is passed in, the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> is not
 prepended to the assumed name.  If <tt class="docutils literal">NOEXESUFFIX</tt> is passed in, then
 <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> is not assumed to be appended
@@ -1175,9 +1179,9 @@ to the name.</p>
 directory <tt class="docutils literal">${CMAKE_CURRENT_BINARY_DIR}</tt> but the directory location can be
 changed using the <tt class="docutils literal">DIRECTORY &lt;dir&gt;</tt> argument.</p>
 <p>If an arbitrary exectuable is to be run for the test, then pass in
-<tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> and set <tt class="docutils literal">&lt;execRootName&gt;</tt> to the
-relative or absolute path of the exeutable to be run.  If <tt class="docutils literal">&lt;execRootName&gt;</tt>
-is not an absolute path, then <tt class="docutils literal"><span class="pre">${CMAKE_CURRENT_BINARY_DIR}/&lt;execRootName&gt;</span></tt>
+<tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> and set <tt class="docutils literal">&lt;exeRootName&gt;</tt> to the
+relative or absolute path of the exeutable to be run.  If <tt class="docutils literal">&lt;exeRootName&gt;</tt>
+is not an absolute path, then <tt class="docutils literal"><span class="pre">${CMAKE_CURRENT_BINARY_DIR}/&lt;exeRootName&gt;</span></tt>
 is set as the executable to run.</p>
 <p>Whatever executable path is specified using this logic, if the executable is
 not found, then when <tt class="docutils literal">ctest</tt> goes to run the test, it will mark it as
@@ -1185,14 +1189,14 @@ not found, then when <tt class="docutils literal">ctest</tt> goes to run the tes
 <p id="determining-the-full-test-name"><strong>Determining the Full Test Name:</strong></p>
 <p>By default, the base test name is selected to be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;execRootName&gt;
+${PACKAGE_NAME}_&lt;exeRootName&gt;
 </pre>
 <p>If <tt class="docutils literal">NAME &lt;testRootName&gt;</tt> is passed in, then <tt class="docutils literal">&lt;testRootName&gt;</tt> is used
-instead of <tt class="docutils literal">&lt;execRootName&gt;</tt>.</p>
+instead of <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</p>
 <p>If <tt class="docutils literal">NAME_POSTFIX &lt;testNamePostfix&gt;</tt> is passed in, then the base test name
 is selected to be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;execRootName&gt;_&lt;testNamePostfix&gt;
+${PACKAGE_NAME}_&lt;exeRootName&gt;_&lt;testNamePostfix&gt;
 </pre>
 <p>If <tt class="docutils literal">ADD_DIR_TO_NAME</tt> is passed in, then the directory name realtive to the
 package directory name is added to the name as well to help disambiguate the
@@ -1216,15 +1220,248 @@ info it prints out.</p>
 actually got added (or not added) and what the pass/fail criteria is.</p>
 <p><strong>Disabling Tests Externally:</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
-<tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt> (perhaps in the cache).  This allows
-tests to be disable on a case-by-case basis.  This is the <em>exact</em> name that
-shows up in 'ctest -N' when running the test.  If multiple tests are added
-in this funtion through multiple argument sets to <tt class="docutils literal">ARGS</tt> or through
-multiple <tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> arguments, then
+<tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
+case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
+when running the test.  If multiple tests are added in this funtion through
+multiple argument sets to <tt class="docutils literal">ARGS</tt> or through multiple
+<tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> arguments, then
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt> must be set for each test individually.</p>
 </div>
+<div class="section" id="tribits-add-advanced-test">
+<h2><a class="toc-backref" href="#id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></h2>
+<p>Function that creates an advanced test defined using one or more executable
+commands that is run as a separate CMake script.</p>
+<p>This function allows you to add a single CTest test as a single unit that is
+actually a sequence of one or more separate commands strung together in some
+way to define the final pass/fail.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_ADD_ADVANCED_TEST(
+  &lt;testName&gt;
+  TEST_0 (EXEC &lt;execTarget0&gt; | CMND &lt;cmndExec0&gt;) ...
+  [TEST_1 (EXEC &lt;execTarget1&gt; | CMND &lt;cmndExec1&gt;) ...]
+  ...
+  [TEST_N (EXEC &lt;execTargetN&gt; | CMND &lt;cmndExecN&gt;) ...]
+  [OVERALL_WORKING_DIRECTORY (&lt;overallWorkingDir&gt; | TEST_NAME)]
+  [FAIL_FAST]
+  [KEYWORDS &lt;keyword1&gt; &lt;keyword2&gt; ...]
+  [COMM [serial] [mpi]]
+  [OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;]
+  [CATEGORIES &lt;category1&gt; &lt;category2&gt; ...]
+  [HOST &lt;host1&gt; &lt;host2&gt; ...]
+  [XHOST &lt;host1&gt; &lt;host2&gt; ...]
+  [HOSTTYPE &lt;hosttype1&gt; &lt;hosttype2&gt; ...]
+  [XHOSTTYPE &lt;hosttype1&gt; &lt;hosttype2&gt; ...]
+  [FINAL_PASS_REGULAR_EXPRESSION &lt;regex&gt; | FINAL_FAIL_REGULAR_EXPRESSION &lt;regex&gt;]
+  [ENVIRONMENT &lt;var1&gt;=&lt;value1&gt; &lt;var2&gt;=&lt;value2&gt; ...]
+  )
+</pre>
+<p>Each and every atomic test or command needs to pass (as defined below) in
+order for the overall test to pass.</p>
+<p>Each atomic test case is either a package-built executable or just a basic
+command.  An atomic test command takes the form:</p>
+<pre class="literal-block">
+TEST_&lt;i&gt;
+   EXEC &lt;exeRootName&gt; [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY &lt;dir&gt;]
+      | CMND &lt;cmndExec&gt;
+   [ARGS &lt;arg1&gt; &lt;arg2&gt; ... &lt;argn&gt;]
+   [MESSAGE &quot;&lt;message&gt;&quot;]
+   [WORKING_DIRECTORY &lt;workingDir&gt;]
+   [NUM_MPI_PROCS &lt;numProcs&gt;]
+   [OUTPUT_FILE &lt;outputFile&gt;]
+   [NO_ECHO_OUTPUT]]
+   [PASS_ANY
+     | PASS_REGULAR_EXPRESSION &quot;&lt;regex&gt;&quot;
+     | PASS_REGULAR_EXPRESSION_ALL &quot;&lt;regex1&gt;&quot; &quot;&lt;regex2&gt;&quot; ... &quot;&lt;regexn&gt;&quot;
+     | FAIL_REGULAR_EXPRESSION &quot;&lt;regex&gt;&quot;
+     | STANDARD_PASS_OUTPUT
+     ]
+</pre>
+<p>ToDO: Add documnetation for [X]HOST[TYPE]</p>
+<p>Some overall arguments are:</p>
+<blockquote>
+<p><tt class="docutils literal">&lt;testName&gt;</tt></p>
+<blockquote>
+The name of the test (which will have <tt class="docutils literal">${PACKAGE_NAME}_</tt> prepended to
+the name) that will be used to name the output CMake script file as well
+as the CTest test name passed into <tt class="docutils literal">ADD_TEST()</tt>.</blockquote>
+<p><tt class="docutils literal">TEST_&lt;i&gt; (EXEC &lt;execTarget0&gt; | CMND &lt;cmndExec0&gt;) ...</tt></p>
+<blockquote>
+Defines test command to be run for the ith test command.  Each of these
+test commands must be in sequential order.  The details for each atomic
+test are given below.</blockquote>
+<p><tt class="docutils literal">OVERALL_WORKING_DIRECTORY &lt;overallWorkingDir&gt;</tt></p>
+<blockquote>
+If specified, then the working directory <tt class="docutils literal">&lt;overallWorkingDir&gt;</tt> will be
+created and all of the test commands by default will be run from within
+this directory.  If the value <tt class="docutils literal"><span class="pre">&lt;overallWorkingDir&gt;=TEST_NAME</span></tt> is
+given, then the working directory will be given the name
+<tt class="docutils literal">${PACKAGE_NAME}_&lt;testName&gt;</tt>.  If the directory
+<tt class="docutils literal">&lt;overallWorkingDir&gt;</tt> exists before the test runs, it will be deleted
+and created again.  Therefore, if you want to preserve the contents of
+this directory between test runs you need to copy the files it somewhere
+else.</blockquote>
+<p><tt class="docutils literal">FAIL_FAST</tt></p>
+<blockquote>
+If specified, then the remaining test commands will be aborted when any
+test command fails.  Otherwise, all of the test cases will be run.</blockquote>
+<p><tt class="docutils literal">RUN_SERIAL</tt></p>
+<blockquote>
+If specified then no other tests will be allowed to run while this test
+is running.  This is useful for devices(like cuda cards) that require
+exclusive access for processes/threads.  This just sets the CTest test
+property <tt class="docutils literal">RUN_SERIAL</tt> using the built-in CMake function
+<tt class="docutils literal">SET_TESTS_PROPERTIES()</tt>.</blockquote>
+<p><tt class="docutils literal">COMM [serial] [mpi]</tt></p>
+<blockquote>
+If specified, selects if the test will be added in serial and/or MPI
+mode.  See the <tt class="docutils literal">COMM</tt> argument in the script
+<a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> for more details.</blockquote>
+<p><tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt></p>
+<blockquote>
+If specified, gives the default number of processes that each executable
+command runs on.  If <tt class="docutils literal">&lt;numProcs&gt;</tt> is greater than
+<tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt> then the test will be excluded.  If not
+specified, then the default number of processes for an MPI build will be
+<tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt>.  For serial builds, this argument is
+ignored.</blockquote>
+<p><tt class="docutils literal">CATEGORIES &lt;category1&gt; &lt;category2&gt; ...</tt></p>
+<blockquote>
+Gives the test categories this test will be added.  See
+<tt class="docutils literal">TRIBITS_ADD_TEST()</tt> for more details.</blockquote>
+<p><tt class="docutils literal">ENVIRONMENT <span class="pre">&lt;var1&gt;=&lt;value1&gt;</span> <span class="pre">&lt;var2&gt;=&lt;value2&gt;</span> ..</tt>.</p>
+<blockquote>
+If passed in, the listed environment varaibles will be set before
+calling the test.  This is set using the built-in test property
+<tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
+</blockquote>
+<p>Each test command is either package-built test executable or some general
+command executable and is defined as either <tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> or <tt class="docutils literal">CMND
+&lt;cmndExec&gt;</tt>:</p>
+<blockquote>
+<p><tt class="docutils literal">EXEC &lt;exeRootName&gt; [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY &lt;dir&gt;]</tt></p>
+<blockquote>
+If specified, then <tt class="docutils literal">&lt;exeRootName&gt;</tt> gives the the name of an executable
+target that will be run as the command.  The full executable path is
+determined in exactly the same way it is in the <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>
+function (see <a class="reference internal" href="#determining-the-exectuable-or-command-to-run">Determining the Exectuable or Command to Run</a>).
+If this is an MPI build, then the executable will be run with MPI using
+<tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> or <tt class="docutils literal">OVERALL_NUM_MPI_PROCS
+&lt;overallNumProcs&gt;</tt> (if <tt class="docutils literal">NUM_MPI_PROCS</tt> is not set for this test
+case).  If the number of maximum MPI processes allowed is less than this
+number of MPI processes, then the test will <em>not</em> be run.  Note that
+<tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> is basically equivalent to <tt class="docutils literal">CMND &lt;cmndExec&gt;</tt>
+when <tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> are specified.  In this case,
+you can pass in <tt class="docutils literal">&lt;exeRootName&gt;</tt> to any command you would like and it
+will get run with MPI in MPI mode just link any other command.</blockquote>
+<p><tt class="docutils literal">CMND &lt;cmndExec&gt;</tt></p>
+<blockquote>
+If specified, then <tt class="docutils literal">&lt;cmndExec&gt;</tt> gives the executable for a command to
+be run.  In this case, MPI will never be used to run the executable even
+when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).</blockquote>
+</blockquote>
+<p>By default, the output (stdout/stderr) for each test command is captured and
+is then echoed to stdout for the overall test.  This is done in order to be
+able to grep the result to determine pass/fail.</p>
+<p>Other miscellaneous arguments for each <tt class="docutils literal">TEST_&lt;i&gt;</tt> block include:</p>
+<blockquote>
+<p><tt class="docutils literal">DIRECTORY &lt;dir&gt;</tt></p>
+<blockquote>
+If specified, then the executable is assumed to be in the directory
+given by relative &lt;dir&gt;.  See <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>.</blockquote>
+<p><tt class="docutils literal">MESSAGE &quot;&lt;message&gt;&quot;</tt></p>
+<blockquote>
+If specified, then the string in <tt class="docutils literal">&quot;&lt;message&gt;&quot;</tt> will be print before
+this test command is run.  This allows adding some documentation about
+each individual test invocation to make the test output more
+understandable.</blockquote>
+<p><tt class="docutils literal">WORKING_DIRECTORY &lt;workingDir&gt;</tt></p>
+<blockquote>
+If specified, then the working directory <tt class="docutils literal">&lt;workingDir&gt;</tt> will be
+created and the test will be run from within this directory.  If the
+value <tt class="docutils literal">&lt;workingDir&gt; = TEST_NAME</tt> is given, then the working directory
+will be given the name <tt class="docutils literal">${PACKAGE_NAME}_&lt;testName&gt;</tt>.  If the directory
+&lt;workingDir&gt; exists before the test runs, it will be deleted and created
+again.  Therefore, if you want to preserve the contents of this
+directory between test runs you need to copy it somewhere else.  Using
+<tt class="docutils literal">WORKING_DIRECTORY` for individual test commands allows creating
+independent working directories for each test case.&nbsp; This would be
+useful if a single ``OVERALL_WORKING_DIRECTORY</tt> was not sufficient for
+some reason.</blockquote>
+<p><tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt></p>
+<blockquote>
+If specified, then &lt;<tt class="docutils literal">numProcs&gt;</tt> is the number of processors used for MPI
+executables.  If not specified, this will default to <tt class="docutils literal">&lt;overallNumProcs&gt;</tt>
+from <tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt>.</blockquote>
+<p><tt class="docutils literal">OUTPUT_FILE &lt;outputFile&gt;</tt></p>
+<blockquote>
+If specified, then stdout and stderr for the test case will be sent to
+<tt class="docutils literal">&lt;outputFile&gt;</tt>.</blockquote>
+<p><tt class="docutils literal">NO_ECHO_OUTPUT</tt></p>
+<blockquote>
+If specified, then the output for the test command will not be echoed to
+the output for the entire test command.</blockquote>
+</blockquote>
+<p>By default, an atomic test line is assumed to pass if the executable returns
+a non-zero value.  However, a test case can also be defined to pass based
+on:</p>
+<blockquote>
+<p><tt class="docutils literal">PASS_ANY</tt></p>
+<blockquote>
+If specified, the test command 'i' will be assumed to pass reguardless
+of the return value or any other output.  This would be used when a
+command that is to follow will determine pass or fail based on output
+from this command in some way.</blockquote>
+<p><tt class="docutils literal">PASS_REGULAR_EXPRESSION &quot;&lt;regex&gt;&quot;</tt></p>
+<blockquote>
+If specified, the test command 'i' will be assumed to pass if it matches
+the given regular expression.  Otherwise, it is assumed to fail.</blockquote>
+<p><tt class="docutils literal">PASS_REGULAR_EXPRESSION_ALL &quot;&lt;regex1&gt;&quot; &quot;&lt;regex2&gt;&quot; ... &quot;&lt;regexn&gt;&quot;</tt></p>
+<blockquote>
+If specified, the test command 'i' will be assumed to pas if the output
+matches all of the provided regular expressions.  Note that this is not
+a capability of raw ctest and represents an extension provided by
+TriBITS.</blockquote>
+<p><tt class="docutils literal">FAIL_REGULAR_EXPRESSION &quot;&lt;regex&gt;&quot;</tt></p>
+<blockquote>
+If specified, the test command 'i' will be assumed to fail if it matches
+the given regular expression.  Otherwise, it is assumed to pass.</blockquote>
+<p><tt class="docutils literal">STANDARD_PASS_OUTPUT</tt></p>
+<blockquote>
+If specified, the test command 'i' will be assumed to pass if the string
+expression &quot;Final Result: PASSED&quot; is found in the ouptut for the test.</blockquote>
+</blockquote>
+<p>By default, the overall test will be assumed to pass if it prints:</p>
+<pre class="literal-block">
+&quot;OVERALL FINAL RESULT: TEST PASSED&quot;
+</pre>
+<p>However, this can be changed by setting one of the following optional arguments:</p>
+<blockquote>
+<p><tt class="docutils literal">FINAL_PASS_REGULAR_EXPRESSION &lt;regex&gt;</tt></p>
+<blockquote>
+If specified, the test will be assumed to pass if the output matches
+&lt;regex&gt;.  Otherwise, it will be assumed to fail.</blockquote>
+<p>FINAL_FAIL_REGULAR_EXPRESSION &lt;regex&gt;</p>
+<blockquote>
+If specified, the test will be assumed to fail if the output matches
+&lt;regex&gt;.  Otherwise, it will be assumed to fail.</blockquote>
+</blockquote>
+<p><strong>Implementation Details:</strong></p>
+<p>ToDo: Describe the generation of the <tt class="docutils literal">*.cmake</tt> file and what gets added
+with ADD_TEST().</p>
+<p><strong>Debugging and Examining Test Generation:</strong></p>
+<p>ToDo: Describe setting <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt> and seeing
+what info it prints out.</p>
+<p>ToDo: Describe how to examine the generated CTest files to see what test(s)
+actually got added (or not added) and what the pass/fail criteria is.</p>
+<p><strong>Disabling Tests Externally:</strong></p>
+<p>The test can be disabled externally by setting the CMake cache variable
+<tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
+case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
+when running the test.</p>
+</div>
 <div class="section" id="tribits-package-postprocess">
-<h2><a class="toc-backref" href="#id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
+<h2><a class="toc-backref" href="#id23">4.17&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
 <p>Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
 downstream packages are processed.</p>
@@ -1237,7 +1474,7 @@ macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 </div>
 <div class="section" id="references">
-<h1><a class="toc-backref" href="#id23">5&nbsp;&nbsp;&nbsp;References</a></h1>
+<h1><a class="toc-backref" href="#id24">5&nbsp;&nbsp;&nbsp;References</a></h1>
 <table class="docutils citation" frame="void" id="scale" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -1246,9 +1483,9 @@ macro but limitations of the CMake language make it necessary to do so.</p>
 </table>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id24">6&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id25">6&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id25">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id26">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)

@@ -45,7 +45,7 @@ INCLUDE(PrintVar)
 
 
 #
-# TRIBITS_ADD_ADVANCED_TEST(...)
+# @FUNCTION: TRIBITS_ADD_ADVANCED_TEST()
 # 
 # Function that creates an advanced test defined using one or more executable
 # commands that is run as a separate CMake script.
@@ -54,7 +54,7 @@ INCLUDE(PrintVar)
 # actually a sequence of one or more separate commands strung together in some
 # way to define the final pass/fail.
 #
-# An advanced test is defined as:
+# Usage::
 #
 #   TRIBITS_ADD_ADVANCED_TEST(
 #     <testName>
@@ -77,13 +77,13 @@ INCLUDE(PrintVar)
 #     )
 #
 # Each and every atomic test or command needs to pass (as defined below) in
-# order for the overall test to pass
+# order for the overall test to pass.
 #
 # Each atomic test case is either a package-built executable or just a basic
-# command.  An atomic test command takes the form:
+# command.  An atomic test command takes the form::
 #
 #   TEST_<i>
-#      EXEC <execTarget> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <directory>]
+#      EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]
 #         | CMND <cmndExec>
 #      [ARGS <arg1> <arg2> ... <argn>]
 #      [MESSAGE "<message>"]
@@ -102,173 +102,183 @@ INCLUDE(PrintVar)
 #
 # Some overall arguments are:
 #
-#   <testName>
+#   ``<testName>``
 #
-#     The name of the test (which will have ${PACKAGE_NAME}_
-#     appended) that will be used to name the output CMake script file as well as
-#     the CTest test name passed into ADD_TEST(...).
+#     The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
+#     the name) that will be used to name the output CMake script file as well
+#     as the CTest test name passed into ``ADD_TEST()``.
 #
-#   TEST_<i> (EXEC <execTarget0> | CMND <cmndExec0>) ...
+#   ``TEST_<i> (EXEC <execTarget0> | CMND <cmndExec0>) ...``
 #
-#     Defines test command <i>.  Each of these test commands must be in
-#     sequential order.  The details for each atomic test are given below.
+#     Defines test command to be run for the ith test command.  Each of these
+#     test commands must be in sequential order.  The details for each atomic
+#     test are given below.
 #
-#   OVERALL_WORKING_DIRECTORY <overallWorkingDir>
+#   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 #
-#     If specified, then the working directory <overallWorkingDir> will be
+#     If specified, then the working directory ``<overallWorkingDir>`` will be
 #     created and all of the test commands by default will be run from within
-#     this directory.  If the value <overallWorkingDir> = TEST_NAME is given,
-#     then the working directory will be given the name
-#     ${PACKAGE_NAME}_<testName>.  If the directory <overallWorkingDir> exists
-#     before the test runs, it will be deleted and created again.  Therefore,
-#     if you want to preserve the contents of this directory between test runs
-#     you need to copy it somewhere else.
+#     this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
+#     given, then the working directory will be given the name
+#     ``${PACKAGE_NAME}_<testName>``.  If the directory
+#     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
+#     and created again.  Therefore, if you want to preserve the contents of
+#     this directory between test runs you need to copy the files it somewhere
+#     else.
 #
-#   KEYWORDS <keyword1> <keyword2> ...
-#
-#     If specified, gives a list of keywords added to a test.  These keywords
-#     can then be used to select tests to be run with 'ctest'.
-#
-#   FAIL_FAST
+#   ``FAIL_FAST``
 #
 #     If specified, then the remaining test commands will be aborted when any
 #     test command fails.  Otherwise, all of the test cases will be run.
 #
-#   RUN_SERIAL
+#   ``RUN_SERIAL``
 #
 #     If specified then no other tests will be allowed to run while this test
-#     is running. This is useful for devices(like cuda cards) that require
-#     exclusive access for processes/threads.
+#     is running.  This is useful for devices(like cuda cards) that require
+#     exclusive access for processes/threads.  This just sets the CTest test
+#     property ``RUN_SERIAL`` using the built-in CMake function
+#     ``SET_TESTS_PROPERTIES()``.
 #
-#   COMM [serial] [mpi]
+#   ``COMM [serial] [mpi]``
 #
 #     If specified, selects if the test will be added in serial and/or MPI
-#     mode.  If the COMM argument is missing, the test will be added in both
-#     serial and MPI builds of the code.  See the COMM argument in the script
-#     TRIBITS_ADD_TEST(...) for more details.
+#     mode.  See the ``COMM`` argument in the script
+#     `TRIBITS_ADD_TEST()`_ for more details.
 #
-#   OVERALL_NUM_MPI_PROCS <overallNumProcs>
+#   ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
 #
 #     If specified, gives the default number of processes that each executable
-#     command run on and can also result in the test being exluded all
-#     together based on comparison to MPI_EXEC_MAX_NUMPROCS.  See the COMM
-#     argument in the script TRIBITS_ADD_TEST(...) for more details.
+#     command runs on.  If ``<numProcs>`` is greater than
+#     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
+#     specified, then the default number of processes for an MPI build will be
+#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
+#     ignored.
 #
-#   CATEGORIES <category1> <category2> ...
+#   ``CATEGORIES <category1> <category2> ...``
 #
 #     Gives the test categories this test will be added.  See
-#     TRIBITS_ADD_TEST(...) for more details.
+#     ``TRIBITS_ADD_TEST()`` for more details.
+#
+#   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
+#
+#     If passed in, the listed environment varaibles will be set before
+#     calling the test.  This is set using the built-in test property
+#     ``ENVIRONMENT``.
 #
 # Each test command is either package-built test executable or some general
-# command executable and is defined as either:
+# command executable and is defined as either ``EXEC <exeRootName>`` or ``CMND
+# <cmndExec>``:
 #
-#   EXEC <execTarget>
+#   ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
 #
-#     If specified, then <execTarget> gives the the name of an executable
-#     target that will be run as the command.  The value <execTarget> is same
-#     string that was passed in as the first argument to
-#     TRIBITS_ADD_EXECUTABLE( <execTarget>...) used to define the executable.
-#     If this is an MPI build, then <execTarget> will be run with MPI using
-#     NUM_MPI_PROCS <numProcs> or OVERALL_NUM_MPI_PROCS <overallNumProcs> (if
-#     NUM_MPI_PROCS is not set for this test case).  If the number of maximum
-#     MPI processes allowed is less than this number of MPI processes, then
-#     the test will *not* be run.  If NOEXEPREFIX is specified, then
-#     ${PACKAGE_NAME}_ will not be added the the beginning.  If NOEXESUFFIX is
-#     specified, then '.exe' will not be added to the end.  Note that EXEC
-#     <execTarget> is basically equivalent to CMND <cmndExec> when NOEXEPREFIX
-#     and NOEXESUFFIX are specified.  In this case, you can pass in
-#     <execTarget> to any command you would like and it will get run with MPI
-#     in MPI mode just link any other command.
+#     If specified, then ``<exeRootName>`` gives the the name of an executable
+#     target that will be run as the command.  The full executable path is
+#     determined in exactly the same way it is in the `TRIBITS_ADD_TEST()`_
+#     function (see `Determining the Exectuable or Command to Run`_).
+#     If this is an MPI build, then the executable will be run with MPI using
+#     ``NUM_MPI_PROCS <numProcs>`` or ``OVERALL_NUM_MPI_PROCS
+#     <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not set for this test
+#     case).  If the number of maximum MPI processes allowed is less than this
+#     number of MPI processes, then the test will *not* be run.  Note that
+#     ``EXEC <exeRootName>`` is basically equivalent to ``CMND <cmndExec>``
+#     when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In this case,
+#     you can pass in ``<exeRootName>`` to any command you would like and it
+#     will get run with MPI in MPI mode just link any other command.
 #
-#   CMND <cmndExec>
+#   ``CMND <cmndExec>``
 #
-#     If specified, then <cmndExec> gives the executable for a command to be
-#     run.  In this case, MPI will never be used to run the executable even
+#     If specified, then ``<cmndExec>`` gives the executable for a command to
+#     be run.  In this case, MPI will never be used to run the executable even
 #     when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).
 #
-# By defualt, the output (stdout/stderr) for each test command is captured and
+# By default, the output (stdout/stderr) for each test command is captured and
 # is then echoed to stdout for the overall test.  This is done in order to be
 # able to grep the result to determine pass/fail.
 #
-# Other miscellaneous arguments include:
+# Other miscellaneous arguments for each ``TEST_<i>`` block include:
 #
-#   DIRECTORY <directory>
+#   ``DIRECTORY <dir>``
 #
 #     If specified, then the executable is assumed to be in the directory
-#     given by relative <directory>.
+#     given by relative <dir>.  See `TRIBITS_ADD_TEST()`_.
 #
-#   MESSAGE "<message>"
+#   ``MESSAGE "<message>"``
 #
-#     If specified, then the string in <message> will be print before this
-#     test command is run.
+#     If specified, then the string in ``"<message>"`` will be print before
+#     this test command is run.  This allows adding some documentation about
+#     each individual test invocation to make the test output more
+#     understandable.
 #
-#   WORKING_DIRECTORY <workingDir>
+#   ``WORKING_DIRECTORY <workingDir>``
 #
-#     If specified, then the working directory <workingDir> will be created
-#     and the test will be run from within this directory.  If the value
-#     <workingDir> = TEST_NAME is given, then the working directory will be
-#     given the name ${PACKAGE_NAME}_<testName>.  If the directory
+#     If specified, then the working directory ``<workingDir>`` will be
+#     created and the test will be run from within this directory.  If the
+#     value ``<workingDir> = TEST_NAME`` is given, then the working directory
+#     will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
 #     <workingDir> exists before the test runs, it will be deleted and created
 #     again.  Therefore, if you want to preserve the contents of this
-#     directory between test runs you need to copy it somewhere else.
+#     directory between test runs you need to copy it somewhere else.  Using
+#     ``WORKING_DIRECTORY` for individual test commands allows creating
+#     independent working directories for each test case.  This would be
+#     useful if a single ``OVERALL_WORKING_DIRECTORY`` was not sufficient for
+#     some reason.
 #
-#   NUM_MPI_PROCS <numProcs>
+#   ``NUM_MPI_PROCS <numProcs>``
 #
-#     If specified, then <numProcs> is the number of processors used for MPI
-#     executables.  If not specified, this will default to <overallNumProcs>
-#     from OVERALL_NUM_MPI_PROCS <overallNumProcs>.
+#     If specified, then <``numProcs>`` is the number of processors used for MPI
+#     executables.  If not specified, this will default to ``<overallNumProcs>``
+#     from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
 #
-#   OUTPUT_FILE <outputFile>
+#   ``OUTPUT_FILE <outputFile>``
 #
-#     If specified, then stdout and stderr will be sent to <outputFile>.
+#     If specified, then stdout and stderr for the test case will be sent to
+#     ``<outputFile>``.
 #
-#   NO_ECHO_OUTPUT
+#   ``NO_ECHO_OUTPUT``
 #
 #     If specified, then the output for the test command will not be echoed to
 #     the output for the entire test command.
-#
-#   ENVIRONMENT <var1>=<value1> <var2>=<value2> ...
-#
-#     If passed in, set the environment varaibles before calling the test.
 #
 # By default, an atomic test line is assumed to pass if the executable returns
 # a non-zero value.  However, a test case can also be defined to pass based
 # on:
 #
-#   PASS_ANY
+#   ``PASS_ANY``
 #
 #     If specified, the test command 'i' will be assumed to pass reguardless
 #     of the return value or any other output.  This would be used when a
 #     command that is to follow will determine pass or fail based on output
 #     from this command in some way.
 #
-#   PASS_REGULAR_EXPRESSION "<regex>"
+#   ``PASS_REGULAR_EXPRESSION "<regex>"``
 #
 #     If specified, the test command 'i' will be assumed to pass if it matches
 #     the given regular expression.  Otherwise, it is assumed to fail.
 #
-#   PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
+#   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
 #
 #     If specified, the test command 'i' will be assumed to pas if the output
-#     matches all of the provided regular expressions.
+#     matches all of the provided regular expressions.  Note that this is not
+#     a capability of raw ctest and represents an extension provided by
+#     TriBITS.
 #
-#   FAIL_REGULAR_EXPRESSION "<regex>"
+#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
 #
 #     If specified, the test command 'i' will be assumed to fail if it matches
 #     the given regular expression.  Otherwise, it is assumed to pass.
 #
-#   STANDARD_PASS_OUTPUT
+#   ``STANDARD_PASS_OUTPUT``
 #
 #     If specified, the test command 'i' will be assumed to pass if the string
 #     expression "Final Result: PASSED" is found in the ouptut for the test.
 #
-# By default, the overall test will be assumed to pass if it prints:
+# By default, the overall test will be assumed to pass if it prints::
 #
-#  "OVERALL FINAL RESULT: TEST PASSED"
+#   "OVERALL FINAL RESULT: TEST PASSED"
 #
 # However, this can be changed by setting one of the following optional arguments:
 #
-#   FINAL_PASS_REGULAR_EXPRESSION <regex>
+#   ``FINAL_PASS_REGULAR_EXPRESSION <regex>``
 #
 #     If specified, the test will be assumed to pass if the output matches
 #     <regex>.  Otherwise, it will be assumed to fail.
@@ -278,14 +288,26 @@ INCLUDE(PrintVar)
 #     If specified, the test will be assumed to fail if the output matches
 #     <regex>.  Otherwise, it will be assumed to fail.
 #
-# NOTES:
+# **Implementation Details:**
 #
-# 1) The test can be disabled by setting the variable
-# ${PACKAGE_NAME}_<testName>_DISABLE=ON (perhaps in the cache).  This allows
-# tests to be disable on a case-by-case basis.  This is the name that shows up
-# in 'ctest -N' when running the test.
+# ToDo: Describe the generation of the ``*.cmake`` file and what gets added
+# with ADD_TEST().
 #
-
+# **Debugging and Examining Test Generation:**
+#
+# ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing
+# what info it prints out.
+#
+# ToDo: Describe how to examine the generated CTest files to see what test(s)
+# actually got added (or not added) and what the pass/fail criteria is.
+#
+# **Disabling Tests Externally:**
+#
+# The test can be disabled externally by setting the CMake cache variable
+# ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
+# case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
+# when running the test.
+#
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

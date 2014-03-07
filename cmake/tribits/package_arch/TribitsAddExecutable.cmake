@@ -61,7 +61,7 @@ INCLUDE(ParseVariableArguments)
 # Usage::
 #
 #   TRIBITS_ADD_EXECUTABLE(
-#     <execName>  [NOEXEPREFIX]  [NOEXESUFFIX]
+#     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
 #     SOURCES <src1> <src2> ...
 #     [CATEGORIES <category1>  <category2> ...]
 #     [HOST <host1> <host2> ...]
@@ -77,30 +77,33 @@ INCLUDE(ParseVariableArguments)
 #     [INSTALLABLE]
 #     )
 #
-# The arguments are:
+# **Formal Arguments:**
 #
-# * ``<execName>``: The base name of the exectuable and CMake target.
+#   ``<exeRootName>``
+#
+#     The base name of the exectuable and CMake target.
 #
 # ToDo: Document other arguments!
 #
-# .. _tribits_executable_name:
+# .. _Executable and Target Name:
 #
 # **Executable and Target Name:**
 #
 # By default, the actual name of the executable and target will be::
 #
-#   ${PACKAGE_NAME}_<execName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+#   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 #
 # If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
 # is removed.  If the option ``NOEXESUFFIX`` is passed in, the suffix
-# ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.  The reason that
-# a default prefix is appended to the executable name is because the primary
-# reason to create an executable is typically to create a test or an example
-# that is private to the package.  This prefix helps to namespace the
-# exexutable and its target so as to avoid name clashes with targets in other
-# packages.  Also, if ``INSTALLABLE`` is set and this executable gets
-# installed into the ``<install>/bin/`` directory, then this prefix helps to
-# avoid clashing with executables installed by other packages.
+# ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.
+#
+# The reason that a default prefix is appended to the executable name is
+# because the primary reason to create an executable is typically to create a
+# test or an example that is private to the package.  This prefix helps to
+# namespace the exexutable and its target so as to avoid name clashes with
+# targets in other packages.  Also, if ``INSTALLABLE`` is set and this
+# executable gets installed into the ``<install>/bin/`` directory, then this
+# prefix helps to avoid clashing with executables installed by other packages.
 #
 # **Postcondition:**
 # 

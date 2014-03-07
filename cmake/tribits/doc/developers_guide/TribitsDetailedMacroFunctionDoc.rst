@@ -581,7 +581,7 @@ using the built-in CMake comamnd ``ADD_EXECUTABLE()``.
 Usage::
 
   TRIBITS_ADD_EXECUTABLE(
-    <execName>  [NOEXEPREFIX]  [NOEXESUFFIX]
+    <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
     SOURCES <src1> <src2> ...
     [CATEGORIES <category1>  <category2> ...]
     [HOST <host1> <host2> ...]
@@ -597,30 +597,33 @@ Usage::
     [INSTALLABLE]
     )
 
-The arguments are:
+**Formal Arguments:**
 
-* ``<execName>``: The base name of the exectuable and CMake target.
+  ``<exeRootName>``
+
+    The base name of the exectuable and CMake target.
 
 ToDo: Document other arguments!
 
-.. _tribits_executable_name:
+.. _Executable and Target Name:
 
 **Executable and Target Name:**
 
 By default, the actual name of the executable and target will be::
 
-  ${PACKAGE_NAME}_<execName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+  ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 
 If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
 is removed.  If the option ``NOEXESUFFIX`` is passed in, the suffix
-``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.  The reason that
-a default prefix is appended to the executable name is because the primary
-reason to create an executable is typically to create a test or an example
-that is private to the package.  This prefix helps to namespace the
-exexutable and its target so as to avoid name clashes with targets in other
-packages.  Also, if ``INSTALLABLE`` is set and this executable gets
-installed into the ``<install>/bin/`` directory, then this prefix helps to
-avoid clashing with executables installed by other packages.
+``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.
+
+The reason that a default prefix is appended to the executable name is
+because the primary reason to create an executable is typically to create a
+test or an example that is private to the package.  This prefix helps to
+namespace the exexutable and its target so as to avoid name clashes with
+targets in other packages.  Also, if ``INSTALLABLE`` is set and this
+executable gets installed into the ``<install>/bin/`` directory, then this
+prefix helps to avoid clashing with executables installed by other packages.
 
 **Postcondition:**
 
@@ -634,7 +637,7 @@ Add a test or a set of tests for a single executable or command.
 Usage::
 
   TRIBITS_ADD_TEST(
-    <execRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
+    <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
     [DIRECTORY <directory>]
     [ADD_DIR_TO_NAME]
@@ -657,7 +660,7 @@ Usage::
 
 **Formal Arguments:**
 
-  ``<execRootName>``
+  ``<exeRootName>``
 
     The name of the exectuble or path to the exectuable to run for the test
     (see `Determining the Exectuable or Command to Run`_).  This name is
@@ -667,19 +670,19 @@ Usage::
   ``NOEXEPREFIX``
 
    If specified, then the prefix ``${PACKAGE_NAME}_`` is not assumed to be
-   prepended to ``<execRootName>``.
+   prepended to ``<exeRootName>``.
 
   ``NOEXESUFFIX``
 
      If specified, then the postfix
      ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be
-     post-pended to ``<execRootName>``.
+     post-pended to ``<exeRootName>``.
 
   ``NAME <testRootName>``
 
     If specified, gives the root name of the test.
     If not specified, then ``<testRootName>`` is taken to be
-    ``<execRootName>``.  The actual test name will always prefixed as
+    ``<exeRootName>``.  The actual test name will always prefixed as
     ``${PACKAGE_NAME}_<testRootName>`` passed into the call to the built-in
     CMake command ``ADD_TEST(...)``.  The main purpose of this argument is to
     allow multiple tests to be defined for the same executable.  CTest
@@ -688,7 +691,7 @@ Usage::
   ``NAME_POSTFIX <testNamePostfix>``
 
     If specified, gives a postfix that will be added to the standard test
-    name based on ``<execRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
+    name based on ``<exeRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
     the ``NAME <testRootName>`` argument is given, this argument is ignored.
  
   ``DIRECTORY <dir>``
@@ -709,11 +712,11 @@ Usage::
  
   ``RUN_SERIAL``
 
-      If specified then no other tests will be allowed to run while this
-      test is running. This is useful for devices(like cuda cards) that
-      require exclusive access for processes/threads.  This just sets the
-      CTest test property ``RUN_SERIAL`` using the built-in CMake function
-      ``SET_TESTS_PROPERTIES()``.
+    If specified then no other tests will be allowed to run while this test
+    is running. This is useful for devices(like cuda cards) that require
+    exclusive access for processes/threads.  This just sets the CTest test
+    property ``RUN_SERIAL`` using the built-in CMake function
+    ``SET_TESTS_PROPERTIES()``.
  
   ``ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...``
 
@@ -753,11 +756,10 @@ Usage::
 
     If specified, gives the number of processes that the test will be
     defined to run.  If ``<numProcs>`` is greater than
-    ${MPI_EXEC_MAX_NUMPROCS} then the test will be excluded.  If not
+    ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
     specified, then the default number of processes for an MPI build will be
     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
-    ignored.  ToDo: Force this to be 1 for serial builds and add test for
-    this!
+    ignored.
  
   ``HOST <host1> <host2> ...``
 
@@ -868,7 +870,10 @@ up tests to run arbitrary executables, see below.
 By default, the command to run for the executable is determined by first
 getting the exectuable name which by default is assumed to be::
 
-  ${PACKAGE_NAME}_<execRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+  ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+
+which is (by no coincidence) idential to how it is selected in
+``TRIBITS_ADD_EXECUTABLE()`` (see `Executable and Target Name`_).
 
 If ``NONEXEPREFIX`` is passed in, the prefix ``${PACKAGE_NAME}_`` is not
 prepended to the assumed name.  If ``NOEXESUFFIX`` is passed in, then
@@ -880,9 +885,9 @@ directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
 changed using the ``DIRECTORY <dir>`` argument.  
 
 If an arbitrary exectuable is to be run for the test, then pass in
-``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set ``<execRootName>`` to the
-relative or absolute path of the exeutable to be run.  If ``<execRootName>``
-is not an absolute path, then ``${CMAKE_CURRENT_BINARY_DIR}/<execRootName>``
+``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set ``<exeRootName>`` to the
+relative or absolute path of the exeutable to be run.  If ``<exeRootName>``
+is not an absolute path, then ``${CMAKE_CURRENT_BINARY_DIR}/<exeRootName>``
 is set as the executable to run.
 
 Whatever executable path is specified using this logic, if the executable is
@@ -895,15 +900,15 @@ not found, then when ``ctest`` goes to run the test, it will mark it as
 
 By default, the base test name is selected to be::
 
-  ${PACKAGE_NAME}_<execRootName>
+  ${PACKAGE_NAME}_<exeRootName>
 
 If ``NAME <testRootName>`` is passed in, then ``<testRootName>`` is used
-instead of ``<execRootName>``.
+instead of ``<exeRootName>``.
 
 If ``NAME_POSTFIX <testNamePostfix>`` is passed in, then the base test name
 is selected to be::
 
-  ${PACKAGE_NAME}_<execRootName>_<testNamePostfix>
+  ${PACKAGE_NAME}_<exeRootName>_<testNamePostfix>
 
 If ``ADD_DIR_TO_NAME`` is passed in, then the directory name realtive to the
 package directory name is added to the name as well to help disambiguate the
@@ -935,12 +940,276 @@ actually got added (or not added) and what the pass/fail criteria is.
 **Disabling Tests Externally:**
 
 The test can be disabled externally by setting the CMake cache variable
-``${FULL_TEST_NAME}_DISABLE=TRUE`` (perhaps in the cache).  This allows
-tests to be disable on a case-by-case basis.  This is the *exact* name that
-shows up in 'ctest -N' when running the test.  If multiple tests are added
-in this funtion through multiple argument sets to ``ARGS`` or through
-multiple ``POSTFIX_AND_ARGS_<IDX>`` arguments, then
+``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
+case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
+when running the test.  If multiple tests are added in this funtion through
+multiple argument sets to ``ARGS`` or through multiple
+``POSTFIX_AND_ARGS_<IDX>`` arguments, then
 ``${FULL_TEST_NAME}_DISABLE=TRUE`` must be set for each test individually.
+
+TRIBITS_ADD_ADVANCED_TEST()
+---------------------------
+
+Function that creates an advanced test defined using one or more executable
+commands that is run as a separate CMake script.
+
+This function allows you to add a single CTest test as a single unit that is
+actually a sequence of one or more separate commands strung together in some
+way to define the final pass/fail.
+
+Usage::
+
+  TRIBITS_ADD_ADVANCED_TEST(
+    <testName>
+    TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
+    [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
+    ...
+    [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
+    [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
+    [FAIL_FAST]
+    [KEYWORDS <keyword1> <keyword2> ...]
+    [COMM [serial] [mpi]]
+    [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
+    [CATEGORIES <category1> <category2> ...]
+    [HOST <host1> <host2> ...]
+    [XHOST <host1> <host2> ...]
+    [HOSTTYPE <hosttype1> <hosttype2> ...]
+    [XHOSTTYPE <hosttype1> <hosttype2> ...]
+    [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
+    [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+    )
+
+Each and every atomic test or command needs to pass (as defined below) in
+order for the overall test to pass.
+
+Each atomic test case is either a package-built executable or just a basic
+command.  An atomic test command takes the form::
+
+  TEST_<i>
+     EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]
+        | CMND <cmndExec>
+     [ARGS <arg1> <arg2> ... <argn>]
+     [MESSAGE "<message>"]
+     [WORKING_DIRECTORY <workingDir>]
+     [NUM_MPI_PROCS <numProcs>]
+     [OUTPUT_FILE <outputFile>]
+     [NO_ECHO_OUTPUT]]
+     [PASS_ANY
+       | PASS_REGULAR_EXPRESSION "<regex>"
+       | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
+       | FAIL_REGULAR_EXPRESSION "<regex>"
+       | STANDARD_PASS_OUTPUT
+       ]
+
+ToDO: Add documnetation for [X]HOST[TYPE]
+
+Some overall arguments are:
+
+  ``<testName>``
+
+    The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
+    the name) that will be used to name the output CMake script file as well
+    as the CTest test name passed into ``ADD_TEST()``.
+
+  ``TEST_<i> (EXEC <execTarget0> | CMND <cmndExec0>) ...``
+
+    Defines test command to be run for the ith test command.  Each of these
+    test commands must be in sequential order.  The details for each atomic
+    test are given below.
+
+  ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
+
+    If specified, then the working directory ``<overallWorkingDir>`` will be
+    created and all of the test commands by default will be run from within
+    this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
+    given, then the working directory will be given the name
+    ``${PACKAGE_NAME}_<testName>``.  If the directory
+    ``<overallWorkingDir>`` exists before the test runs, it will be deleted
+    and created again.  Therefore, if you want to preserve the contents of
+    this directory between test runs you need to copy the files it somewhere
+    else.
+
+  ``FAIL_FAST``
+
+    If specified, then the remaining test commands will be aborted when any
+    test command fails.  Otherwise, all of the test cases will be run.
+
+  ``RUN_SERIAL``
+
+    If specified then no other tests will be allowed to run while this test
+    is running.  This is useful for devices(like cuda cards) that require
+    exclusive access for processes/threads.  This just sets the CTest test
+    property ``RUN_SERIAL`` using the built-in CMake function
+    ``SET_TESTS_PROPERTIES()``.
+
+  ``COMM [serial] [mpi]``
+
+    If specified, selects if the test will be added in serial and/or MPI
+    mode.  See the ``COMM`` argument in the script
+    `TRIBITS_ADD_TEST()`_ for more details.
+
+  ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
+
+    If specified, gives the default number of processes that each executable
+    command runs on.  If ``<numProcs>`` is greater than
+    ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
+    specified, then the default number of processes for an MPI build will be
+    ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
+    ignored.
+
+  ``CATEGORIES <category1> <category2> ...``
+
+    Gives the test categories this test will be added.  See
+    ``TRIBITS_ADD_TEST()`` for more details.
+
+  ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
+
+    If passed in, the listed environment varaibles will be set before
+    calling the test.  This is set using the built-in test property
+    ``ENVIRONMENT``.
+
+Each test command is either package-built test executable or some general
+command executable and is defined as either ``EXEC <exeRootName>`` or ``CMND
+<cmndExec>``:
+
+  ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
+
+    If specified, then ``<exeRootName>`` gives the the name of an executable
+    target that will be run as the command.  The full executable path is
+    determined in exactly the same way it is in the `TRIBITS_ADD_TEST()`_
+    function (see `Determining the Exectuable or Command to Run`_).
+    If this is an MPI build, then the executable will be run with MPI using
+    ``NUM_MPI_PROCS <numProcs>`` or ``OVERALL_NUM_MPI_PROCS
+    <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not set for this test
+    case).  If the number of maximum MPI processes allowed is less than this
+    number of MPI processes, then the test will *not* be run.  Note that
+    ``EXEC <exeRootName>`` is basically equivalent to ``CMND <cmndExec>``
+    when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In this case,
+    you can pass in ``<exeRootName>`` to any command you would like and it
+    will get run with MPI in MPI mode just link any other command.
+
+  ``CMND <cmndExec>``
+
+    If specified, then ``<cmndExec>`` gives the executable for a command to
+    be run.  In this case, MPI will never be used to run the executable even
+    when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).
+
+By default, the output (stdout/stderr) for each test command is captured and
+is then echoed to stdout for the overall test.  This is done in order to be
+able to grep the result to determine pass/fail.
+
+Other miscellaneous arguments for each ``TEST_<i>`` block include:
+
+  ``DIRECTORY <dir>``
+
+    If specified, then the executable is assumed to be in the directory
+    given by relative <dir>.  See `TRIBITS_ADD_TEST()`_.
+
+  ``MESSAGE "<message>"``
+
+    If specified, then the string in ``"<message>"`` will be print before
+    this test command is run.  This allows adding some documentation about
+    each individual test invocation to make the test output more
+    understandable.
+
+  ``WORKING_DIRECTORY <workingDir>``
+
+    If specified, then the working directory ``<workingDir>`` will be
+    created and the test will be run from within this directory.  If the
+    value ``<workingDir> = TEST_NAME`` is given, then the working directory
+    will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
+    <workingDir> exists before the test runs, it will be deleted and created
+    again.  Therefore, if you want to preserve the contents of this
+    directory between test runs you need to copy it somewhere else.  Using
+    ``WORKING_DIRECTORY` for individual test commands allows creating
+    independent working directories for each test case.  This would be
+    useful if a single ``OVERALL_WORKING_DIRECTORY`` was not sufficient for
+    some reason.
+
+  ``NUM_MPI_PROCS <numProcs>``
+
+    If specified, then <``numProcs>`` is the number of processors used for MPI
+    executables.  If not specified, this will default to ``<overallNumProcs>``
+    from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
+
+  ``OUTPUT_FILE <outputFile>``
+
+    If specified, then stdout and stderr for the test case will be sent to
+    ``<outputFile>``.
+
+  ``NO_ECHO_OUTPUT``
+
+    If specified, then the output for the test command will not be echoed to
+    the output for the entire test command.
+
+By default, an atomic test line is assumed to pass if the executable returns
+a non-zero value.  However, a test case can also be defined to pass based
+on:
+
+  ``PASS_ANY``
+
+    If specified, the test command 'i' will be assumed to pass reguardless
+    of the return value or any other output.  This would be used when a
+    command that is to follow will determine pass or fail based on output
+    from this command in some way.
+
+  ``PASS_REGULAR_EXPRESSION "<regex>"``
+
+    If specified, the test command 'i' will be assumed to pass if it matches
+    the given regular expression.  Otherwise, it is assumed to fail.
+
+  ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
+
+    If specified, the test command 'i' will be assumed to pas if the output
+    matches all of the provided regular expressions.  Note that this is not
+    a capability of raw ctest and represents an extension provided by
+    TriBITS.
+
+  ``FAIL_REGULAR_EXPRESSION "<regex>"``
+
+    If specified, the test command 'i' will be assumed to fail if it matches
+    the given regular expression.  Otherwise, it is assumed to pass.
+
+  ``STANDARD_PASS_OUTPUT``
+
+    If specified, the test command 'i' will be assumed to pass if the string
+    expression "Final Result: PASSED" is found in the ouptut for the test.
+
+By default, the overall test will be assumed to pass if it prints::
+
+  "OVERALL FINAL RESULT: TEST PASSED"
+
+However, this can be changed by setting one of the following optional arguments:
+
+  ``FINAL_PASS_REGULAR_EXPRESSION <regex>``
+
+    If specified, the test will be assumed to pass if the output matches
+    <regex>.  Otherwise, it will be assumed to fail.
+
+  FINAL_FAIL_REGULAR_EXPRESSION <regex>
+
+    If specified, the test will be assumed to fail if the output matches
+    <regex>.  Otherwise, it will be assumed to fail.
+
+**Implementation Details:**
+
+ToDo: Describe the generation of the ``*.cmake`` file and what gets added
+with ADD_TEST().
+
+**Debugging and Examining Test Generation:**
+
+ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing
+what info it prints out.
+
+ToDo: Describe how to examine the generated CTest files to see what test(s)
+actually got added (or not added) and what the pass/fail criteria is.
+
+**Disabling Tests Externally:**
+
+The test can be disabled externally by setting the CMake cache variable
+``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
+case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
+when running the test.
 
 TRIBITS_PACKAGE_POSTPROCESS()
 -----------------------------

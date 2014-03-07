@@ -49,7 +49,7 @@ INCLUDE(TribitsAddTestHelpers)
 # Usage::
 #
 #   TRIBITS_ADD_TEST(
-#     <execRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
+#     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
 #     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
 #     [DIRECTORY <directory>]
 #     [ADD_DIR_TO_NAME]
@@ -72,7 +72,7 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Formal Arguments:**
 #
-#   ``<execRootName>``
+#   ``<exeRootName>``
 #
 #     The name of the exectuble or path to the exectuable to run for the test
 #     (see `Determining the Exectuable or Command to Run`_).  This name is
@@ -82,19 +82,19 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``NOEXEPREFIX``
 #
 #    If specified, then the prefix ``${PACKAGE_NAME}_`` is not assumed to be
-#    prepended to ``<execRootName>``.
+#    prepended to ``<exeRootName>``.
 #
 #   ``NOEXESUFFIX``
 #
 #      If specified, then the postfix
 #      ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be
-#      post-pended to ``<execRootName>``.
+#      post-pended to ``<exeRootName>``.
 #
 #   ``NAME <testRootName>``
 #
 #     If specified, gives the root name of the test.
 #     If not specified, then ``<testRootName>`` is taken to be
-#     ``<execRootName>``.  The actual test name will always prefixed as
+#     ``<exeRootName>``.  The actual test name will always prefixed as
 #     ``${PACKAGE_NAME}_<testRootName>`` passed into the call to the built-in
 #     CMake command ``ADD_TEST(...)``.  The main purpose of this argument is to
 #     allow multiple tests to be defined for the same executable.  CTest
@@ -103,7 +103,7 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``NAME_POSTFIX <testNamePostfix>``
 #
 #     If specified, gives a postfix that will be added to the standard test
-#     name based on ``<execRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
+#     name based on ``<exeRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
 #     the ``NAME <testRootName>`` argument is given, this argument is ignored.
 #  
 #   ``DIRECTORY <dir>``
@@ -124,11 +124,11 @@ INCLUDE(TribitsAddTestHelpers)
 #  
 #   ``RUN_SERIAL``
 #
-#       If specified then no other tests will be allowed to run while this
-#       test is running. This is useful for devices(like cuda cards) that
-#       require exclusive access for processes/threads.  This just sets the
-#       CTest test property ``RUN_SERIAL`` using the built-in CMake function
-#       ``SET_TESTS_PROPERTIES()``.
+#     If specified then no other tests will be allowed to run while this test
+#     is running. This is useful for devices(like cuda cards) that require
+#     exclusive access for processes/threads.  This just sets the CTest test
+#     property ``RUN_SERIAL`` using the built-in CMake function
+#     ``SET_TESTS_PROPERTIES()``.
 #  
 #   ``ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...``
 #
@@ -168,11 +168,10 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #     If specified, gives the number of processes that the test will be
 #     defined to run.  If ``<numProcs>`` is greater than
-#     ${MPI_EXEC_MAX_NUMPROCS} then the test will be excluded.  If not
+#     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
 #     specified, then the default number of processes for an MPI build will be
 #     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
-#     ignored.  ToDo: Force this to be 1 for serial builds and add test for
-#     this!
+#     ignored.
 #  
 #   ``HOST <host1> <host2> ...``
 #
@@ -283,7 +282,10 @@ INCLUDE(TribitsAddTestHelpers)
 # By default, the command to run for the executable is determined by first
 # getting the exectuable name which by default is assumed to be::
 #
-#   ${PACKAGE_NAME}_<execRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+#   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+#
+# which is (by no coincidence) idential to how it is selected in
+# ``TRIBITS_ADD_EXECUTABLE()`` (see `Executable and Target Name`_).
 #
 # If ``NONEXEPREFIX`` is passed in, the prefix ``${PACKAGE_NAME}_`` is not
 # prepended to the assumed name.  If ``NOEXESUFFIX`` is passed in, then
@@ -295,9 +297,9 @@ INCLUDE(TribitsAddTestHelpers)
 # changed using the ``DIRECTORY <dir>`` argument.  
 #
 # If an arbitrary exectuable is to be run for the test, then pass in
-# ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set ``<execRootName>`` to the
-# relative or absolute path of the exeutable to be run.  If ``<execRootName>``
-# is not an absolute path, then ``${CMAKE_CURRENT_BINARY_DIR}/<execRootName>``
+# ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set ``<exeRootName>`` to the
+# relative or absolute path of the exeutable to be run.  If ``<exeRootName>``
+# is not an absolute path, then ``${CMAKE_CURRENT_BINARY_DIR}/<exeRootName>``
 # is set as the executable to run.
 #
 # Whatever executable path is specified using this logic, if the executable is
@@ -310,15 +312,15 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # By default, the base test name is selected to be::
 #
-#   ${PACKAGE_NAME}_<execRootName>
+#   ${PACKAGE_NAME}_<exeRootName>
 #
 # If ``NAME <testRootName>`` is passed in, then ``<testRootName>`` is used
-# instead of ``<execRootName>``.
+# instead of ``<exeRootName>``.
 #
 # If ``NAME_POSTFIX <testNamePostfix>`` is passed in, then the base test name
 # is selected to be::
 #
-#   ${PACKAGE_NAME}_<execRootName>_<testNamePostfix>
+#   ${PACKAGE_NAME}_<exeRootName>_<testNamePostfix>
 #
 # If ``ADD_DIR_TO_NAME`` is passed in, then the directory name realtive to the
 # package directory name is added to the name as well to help disambiguate the
@@ -350,11 +352,11 @@ INCLUDE(TribitsAddTestHelpers)
 # **Disabling Tests Externally:**
 #
 # The test can be disabled externally by setting the CMake cache variable
-# ``${FULL_TEST_NAME}_DISABLE=TRUE`` (perhaps in the cache).  This allows
-# tests to be disable on a case-by-case basis.  This is the *exact* name that
-# shows up in 'ctest -N' when running the test.  If multiple tests are added
-# in this funtion through multiple argument sets to ``ARGS`` or through
-# multiple ``POSTFIX_AND_ARGS_<IDX>`` arguments, then
+# ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
+# case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
+# when running the test.  If multiple tests are added in this funtion through
+# multiple argument sets to ``ARGS`` or through multiple
+# ``POSTFIX_AND_ARGS_<IDX>`` arguments, then
 # ``${FULL_TEST_NAME}_DISABLE=TRUE`` must be set for each test individually.
 #
 FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
