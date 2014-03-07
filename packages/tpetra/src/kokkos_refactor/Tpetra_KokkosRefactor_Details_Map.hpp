@@ -87,24 +87,25 @@ namespace Tpetra {
     /// \note Structs given to functors just get copied over directly.
     template<class LO, class GO, class DeviceType>
     struct MapData {
-      GO minMyGID;
-      GO maxMyGID;
+      GO minMyGID; //!< My process' minimum GID
+      GO maxMyGID; //!< My process' maximum GID
+      //! Whether insertion into GID->LID table failed
       bool failed;
+      //! Whether insertion into GID->LID table encountered a duplicate GID
       bool duplicate;
 
+      //! Default constructor (to make this a proper value type).
       MapData () :
         minMyGID (0), maxMyGID (0), failed (false), duplicate (false)
       {}
     };
 
     /// \class GlobalToLocalTableFiller
-    /// \brief Kokkos functor for filling GID->LID lookup table.
+    /// \brief Kokkos reduce functor for filling GID->LID table and
+    ///   computing min and max GID
     ///
     /// The functor is a reduce functor, not a for functor, because it
     /// also conveniently computes the min and max locally owned GID.
-    /// It assumes that in the input MapData struct,
-    /// firstContiguousGID and lastContiguousGID are set correctly.
-    /// Nothing else in the struct need be set correctly, or at all.
     template<class LO, class GO, class DeviceType>
     class GlobalToLocalTableFiller {
     public:
@@ -112,6 +113,16 @@ namespace Tpetra {
       typedef typename DeviceType::size_type size_type;
       typedef MapData<LO, GO, DeviceType> value_type;
 
+      /// \brief Constructor
+      ///
+      /// \param glMap [out] GID->LID table to fill; must already be
+      ///   preallocated with sufficient space.
+      /// \param entries [in] GIDs to put into GID->LID table.  These
+      ///   are only the zero or more "noncontiguous GIDs" that follow
+      ///   the initial sequence of one or more contiguous GIDs
+      ///   [firstContiguousGID, lastContiguousGID].
+      /// \param firstContiguousGID [in] The first contiguous GID.
+      /// \param lastContiguousGID [in] The last contiguous GID.
       GlobalToLocalTableFiller (const Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
                                 const Kokkos::View<const GO*, DeviceType>& entries,
                                 const GO firstContiguousGID,
@@ -209,16 +220,19 @@ namespace Tpetra {
     /// \brief Fill the GID->LID lookup table, and compute the local
     ///   min and max GID.  Return them through the returned struct.
     ///
-    /// \param glMap [in/out] The GID->LID lookup table.  It must
-    ///   already have been allocated with the necessary size.
+    /// \param glMap [out] GID->LID table to fill; must already be
+    ///   preallocated with sufficient space.
+    /// \param entries [in] GIDs to put into GID->LID table.  These
+    ///   are only the zero or more "noncontiguous GIDs" that follow
+    ///   the initial sequence of one or more contiguous GIDs
+    ///   [firstContiguousGID, lastContiguousGID].
+    /// \param firstContiguousGID [in] The first contiguous GID.
+    /// \param lastContiguousGID [in] The last contiguous GID.
     ///
-    /// \param entries [in] The local list of GIDs.  It must contain
-    ///   at least one GID.
-    ///
-    /// \param mapData [in] Struct, in which the first and last
-    ///   contiguous GIDs in entries (inclusive range; entries must
-    ///   contain at least one GID, so the minimum range is a
-    ///   singleton) are set correctly.
+    /// \return Pair, whose first element is a struct containing the
+    ///   min and max GID on the calling process, and whose second
+    ///   element is the number of failed inserts into the GID->LID
+    ///   table (should be zero).
     template<class LO, class GO, class DeviceType>
     std::pair<MapData<LO, GO, DeviceType>, typename DeviceType::size_type>
     fillGlobalToLocalTable (Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
@@ -250,6 +264,12 @@ namespace Tpetra {
       return std::make_pair (result, numFailed);
     }
 
+    /// \class Map
+    /// \brief Device implementation of Tpetra::Map
+    /// \tparam LO The local ordinal type
+    /// \tparam GO The global ordinal type
+    /// \tparam DeviceType The Kokkos device type
+    ///
     /// All methods marked \c const may be called in Kokkos parallel
     /// kernels.  No method that is not marked \c const may be called
     /// in a Kokkos parallel kernel.
@@ -288,6 +308,7 @@ namespace Tpetra {
         uniform_ (false)
       {}
 
+      //! Contiguous uniform constructor.
       Map (const GO globalNumIndices,
            const GO indexBase,
            const Teuchos::Comm<int>& comm,
@@ -443,7 +464,7 @@ namespace Tpetra {
         lastContiguousGID_ = maxMyGID_;
       }
 
-
+      //! Contiguous but possibly nonuniform constructor.
       Map (const GO globalNumIndices,
            const LO myNumIndices,
            const GO indexBase,
@@ -582,6 +603,7 @@ namespace Tpetra {
         distributed_ = checkIsDist (comm);
       }
 
+      //! Possibly noncontiguous constructor.
       Map (const GO globalNumIndices,
            const Kokkos::View<const GO*, DeviceType>& myGlobalIndices,
            const GO indexBase,
