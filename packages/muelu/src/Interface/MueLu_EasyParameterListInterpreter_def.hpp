@@ -135,10 +135,10 @@ namespace MueLu {
       Cycle_ = cycleMap[cycleType];
     }
 
-    this->maxCoarseSize_    = paramList.get<int>("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
-    this->numDesiredLevel_  = paramList.get<int>("max levels",          Hierarchy::GetDefaultMaxLevels());
-    this->graphOutputLevel_ = paramList.get<int>("debug: graph level", -1);
-    this->blockSize_        = paramList.get<int>("number of equations", 1);
+    this->maxCoarseSize_       = paramList.get<int> ("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
+    this->numDesiredLevel_     = paramList.get<int> ("max levels",          Hierarchy::GetDefaultMaxLevels());
+    this->graphOutputLevel_    = paramList.get<int> ("debug: graph level", -1);
+    this->blockSize_           = paramList.get<int> ("number of equations", 1);
 
     // Save level data
     if (paramList.isSublist("print")) {
