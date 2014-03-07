@@ -723,13 +723,36 @@ namespace Tpetra {
                       const Teuchos::ArrayView<LocalOrdinal> & LIDs) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      GIDs.size () > 0 && getGlobalNumElements () == 0, std::runtime_error,
-      Teuchos::typeName (*this) << "::getRemoteIndexList: The Map has zero "
-      "entries (globally), so you may not call this method.");
+      this->getComm ().is_null (), std::logic_error, "Tpetra::Map (Kokkos "
+      "refactor)::getRemoteIndexList (3 args): getComm() returns null.  "
+      "Please report this bug to the Tpetra developers.");
+
+    // mfh 03 Mar 2014: The exception test below should be commented
+    // out; it's valid to give getRemoteIndexList GIDs that the Map
+    // doesn't own, and a Map with zero GIDs doesn't own any GIDs.
+    //
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   GIDs.size () > 0 && getGlobalNumElements () == 0, std::runtime_error,
+    //   "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): The Map has "
+    //   "zero entries (globally), so you may not call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDs.size () != PIDs.size (), std::invalid_argument,
+      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): GIDs.size ()"
+      " = " << GIDs.size () << " != PIDs.size () = " << PIDs.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDs.size () != LIDs.size (), std::invalid_argument,
+      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): GIDs.size ()"
+      " = " << GIDs.size () << " != LIDs.size () = " << LIDs.size () << ".");
+
     // getRemoteIndexList must be called collectively, and Directory
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      directory_.is_null (), std::logic_error,
+      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): "
+      "setupDirectory() failed to construct the directory.  "
+      "Please report this bug to the Tpetra developers.");
     return directory_->getDirectoryEntries (*this, GIDs, PIDs, LIDs);
   }
 
@@ -740,13 +763,33 @@ namespace Tpetra {
                       const Teuchos::ArrayView<int> & PIDs) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      GIDs.size () > 0 && getGlobalNumElements () == 0, std::runtime_error,
-      Teuchos::typeName (*this) << "::getRemoteIndexList: The Map has zero "
-      "entries (globally), so you may not call this method.");
+      this->getComm ().is_null (), std::logic_error, "Tpetra::Map (Kokkos "
+      "refactor)::getRemoteIndexList (2 args): getComm() returns null.  "
+      "Please report this bug to the Tpetra developers.");
+
+    // mfh 03 Mar 2014: SubmapImport test 2 actually triggers the
+    // commented-out exception test below.  If I leave it commented
+    // out, the test passes.  (It should be commented out; it's valid
+    // to give getRemoteIndexList GIDs that the Map doesn't own.)
+    //
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   GIDs.size () > 0 && getGlobalNumElements () == 0, std::runtime_error,
+    //   "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (2 args): The Map has "
+    //   "zero entries (globally), so you may not call this method.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      GIDs.size () != PIDs.size (), std::invalid_argument,
+      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (2 args): GIDs.size ()"
+      " = " << GIDs.size () << " != PIDs.size () = " << PIDs.size () << ".");
+
     // getRemoteIndexList must be called collectively, and Directory
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      directory_.is_null (), std::logic_error,
+      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (2 args): "
+      "setupDirectory() failed to construct the directory.  "
+      "Please report this bug to the Tpetra developers.");
     return directory_->getDirectoryEntries (*this, GIDs, PIDs);
   }
 

@@ -507,6 +507,8 @@ namespace Tpetra {
       using Teuchos::rcp;
       using Teuchos::typeName;
       using Teuchos::TypeNameTraits;
+      using std::cerr;
+      using std::endl;
 
       // This class' implementation of getEntriesImpl() currently
       // encodes the following assumptions:
@@ -835,6 +837,8 @@ namespace Tpetra {
       using Teuchos::ArrayView;
       using Teuchos::as;
       using Teuchos::RCP;
+      using std::cerr;
+      using std::endl;
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const size_t numEntries = globalIDs.size ();
@@ -1009,6 +1013,7 @@ namespace Tpetra {
           }
         }
       }
+
       return res;
     }
   } // namespace Details

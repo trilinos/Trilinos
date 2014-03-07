@@ -175,10 +175,19 @@ namespace Tpetra {
     friend class CrsGraph;
 
   public:
-    typedef LocalOrdinal                         local_ordinal_type;
-    typedef GlobalOrdinal                        global_ordinal_type;
-    typedef Node                                 node_type;
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+    //! This class' first template parameter; the type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! This class' second template parameter; the type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! This class' third template parameter; the Kokkos Node type.
+    typedef Node node_type;
+
+    //! The Map specialization used by this class.
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
+    //! The Import specialization used by this class.
+    typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
+    //! The Export specialization used by this class.
+    typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
 
     //! @name Constructor/Destructor Methods
     //@{

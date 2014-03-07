@@ -592,6 +592,7 @@ namespace Tpetra {
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
         using Teuchos::rcp;
+
         if (mapIn.isUniform ()) {
           const Tpetra::LocalGlobal lg = mapIn.isDistributed () ?
             Tpetra::GloballyDistributed : Tpetra::LocallyReplicated;
@@ -627,6 +628,7 @@ namespace Tpetra {
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
         using Teuchos::rcp;
+
         if (mapIn.isUniform ()) {
           const Tpetra::LocalGlobal lg = mapIn.isDistributed () ?
             Tpetra::GloballyDistributed : Tpetra::LocallyReplicated;
@@ -661,15 +663,15 @@ namespace Tpetra {
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        Teuchos::RCP<out_map_type> mapOut (new out_map_type ()); // Make an empty Map.
+        using Teuchos::RCP;
+        typedef typename OutDeviceType::host_mirror_device_type
+          host_mirror_device_type;
+        RCP<out_map_type> mapOut (new out_map_type ()); // Make an empty Map.
 
-        // Fill the new Map with shallow copies of all of the original
-        // Map's data.  This is safe because Map is immutable, so users
-        // can't change the original Map.
         mapOut->comm_ = mapIn.comm_;
         mapOut->node_ = nodeOut;
         mapOut->mapDevice_.template create_copy_view<OutDeviceType> (mapIn.mapDevice_);
-        mapOut->mapHost_.template create_copy_view<typename OutDeviceType::host_mirror_device_type> (mapIn.mapHost_);
+        mapOut->mapHost_.template create_copy_view<host_mirror_device_type> (mapIn.mapHost_);
 
         // mfh 02 Apr 2013: While Map only needs to create the Directory
         // on demand in getRemoteIndexList, we have a Directory here that

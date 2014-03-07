@@ -2274,10 +2274,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "replaceDomainMapAndImporter";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       myGraph_.is_null (), std::runtime_error,
-      ": This method requires that the matrix have a graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStaticGraph(), std::runtime_error,
-      ": This method does not work if the matrix has a const graph.");
+      ": This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
   }
 

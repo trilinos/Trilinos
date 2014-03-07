@@ -498,7 +498,9 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & userRemotePIDs)
+  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+               bool useRemotePIDs,
+               Teuchos::Array<int>& userRemotePIDs)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -509,22 +511,30 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Array<int>::difference_type size_type;
-    const Map<LO, GO, Node> & source = *getSourceMap ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getSourceMap ().is_null (), std::logic_error, "Tpetra::Import::"
+      "setupExport: Source Map is null.  Please report this bug to the Tpetra "
+      "developers.");
+    const Map<LO, GO, Node>& source = * (getSourceMap ());
 
     Teuchos::OSTab tab (out_);
 
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source.getComm ()->getRank ();
-      os << myRank << ": Import::setupExport" << endl;
-      *out_ << os.str ();
-    }
+    // if (debug_ && ! out_.is_null ()) {
+    //   std::ostringstream os;
+    //   const int myRank = source.getComm ()->getRank ();
+    //   os << myRank << ": Import::setupExport:" << endl;
+    // }
 
     // Sanity checks
-    TEUCHOS_TEST_FOR_EXCEPTION((!useRemotePIDs && (userRemotePIDs.size() > 0)),std::invalid_argument,
-                               "Tpetra::Import::setupExport: remotePIDs are non-empty but their use has not been requested");
-    TEUCHOS_TEST_FOR_EXCEPTION((userRemotePIDs.size() > 0) && (remoteGIDs.size() != userRemotePIDs.size()),std::invalid_argument,
-                               "Tpetra::Import::setupExport: remotePIDs must either be of size zero or match the size of remoteGIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
+      "Tpetra::Import::setupExport: remotePIDs are non-empty but their use has "
+      "not been requested.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      userRemotePIDs.size () > 0 && remoteGIDs.size () != userRemotePIDs.size (),
+      std::invalid_argument, "Tpetra::Import::setupExport: remotePIDs must "
+      "either be of size zero or match the size of remoteGIDs.");
 
     // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
     // the process ID of the process that owns that GID.
@@ -552,18 +562,18 @@ namespace Tpetra {
     Array<int> newRemotePIDs;
     LookupStatus lookup = AllIDsPresent;
 
-    if(!useRemotePIDs) {
-      newRemotePIDs.resize(remoteGIDsView.size());
-      lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs());
+    if (! useRemotePIDs) {
+      newRemotePIDs.resize (remoteGIDsView.size ());
+      if (debug_ && ! out_.is_null ()) {
+        std::ostringstream os;
+        const int myRank = source.getComm ()->getRank ();
+        os << myRank << ": Import::setupExport: about to call "
+          "getRemoteIndexList on source Map" << endl;
+        *out_ << os.str ();
+      }
+      lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs ());
     }
-    Array<int> &remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
-
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source.getComm ()->getRank ();
-      os << myRank << ": Import::setupExport: finished lookup" << endl;
-      *out_ << os.str ();
-    }
+    Array<int>& remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
 
     TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
       "::setupExport(): the source Map wasn't able to figure out which process "
@@ -639,22 +649,32 @@ namespace Tpetra {
     ImportData_->distributor_.createFromRecvs (remoteGIDsView ().getConst (),
                                                remoteProcIDs, exportGIDs,
                                                ImportData_->exportPIDs_);
+    // if (debug_ && ! out_.is_null ()) {
+    //   std::ostringstream os;
+    //   const int myRank = source.getComm ()->getRank ();
+    //   os << myRank << ": Import::setupExport: Getting LIDs" << endl;
+    //   *out_ << os.str ();
+    // }
 
     // Find the LIDs corresponding to the (outgoing) GIDs in
     // exportGIDs.  For sparse matrix-vector multiply, this tells the
     // calling process how to index into the source vector to get the
     // elements which it needs to send.
+    //
+    // NOTE (mfh 03 Mar 2014) This is now a candidate for a
+    // thread-parallel kernel, but only if using the new thread-safe
+    // Map implementation.
     const size_type numExportIDs = exportGIDs.size ();
     if (numExportIDs > 0) {
-      ImportData_->exportLIDs_.resize(numExportIDs);
-
+      ImportData_->exportLIDs_.resize (numExportIDs);
       ArrayView<const GO> expGIDs = exportGIDs ();
       ArrayView<LO> expLIDs = ImportData_->exportLIDs_ ();
       for (size_type k = 0; k < numExportIDs; ++k) {
         expLIDs[k] = source.getLocalElement (expGIDs[k]);
       }
     }
-    if (debug_) {
+
+    if (debug_ && ! out_.is_null ()) {
       std::ostringstream os;
       const int myRank = source.getComm ()->getRank ();
       os << myRank << ": Import::setupExport: done" << endl;
@@ -992,7 +1012,7 @@ namespace Tpetra {
       ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
 
       // Grab the remotePIDs
-      Array<int> remotePIDs1, remotePIDs2; 
+      Array<int> remotePIDs1, remotePIDs2;
       Tpetra::Import_Util::getRemotePIDs(*this,remotePIDs1);
       Tpetra::Import_Util::getRemotePIDs(rhs,remotePIDs2);
 
@@ -1002,22 +1022,22 @@ namespace Tpetra {
       remotePGIDs2.resize(remotePIDs2.size());
 
       for(size_type k=0; k < remotePIDs1.size(); k++)
-	remotePGIDs1[k] = std::pair<int,GO>(remotePIDs1[k],this->getTargetMap()->getGlobalElement(remoteLIDs1[k]));
+        remotePGIDs1[k] = std::pair<int,GO>(remotePIDs1[k],this->getTargetMap()->getGlobalElement(remoteLIDs1[k]));
 
       for(size_type k=0; k < remotePIDs2.size(); k++)
-	remotePGIDs2[k] = std::pair<int,GO>(remotePIDs2[k],rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]));
+        remotePGIDs2[k] = std::pair<int,GO>(remotePIDs2[k],rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]));
 
 
       // Sort and merge the (PID,GID) pairs (with the LIDs along for the ride at least for the sort)
       std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
       std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
       std::merge(remotePGIDs1.begin(), remotePGIDs1.end(),
-		 remotePGIDs2.begin(), remotePGIDs2.end(),
-		 std::back_inserter(remotePGUnion));      
+                 remotePGIDs2.begin(), remotePGIDs2.end(),
+                 std::back_inserter(remotePGUnion));
       typename Array<std::pair<int,GO> >::iterator it = std::unique(remotePGUnion.begin(),remotePGUnion.end());
       remotePGUnion.resize(std::distance(remotePGUnion.begin(),it));
 
-      // Assign the remote LIDs in order; copy out 
+      // Assign the remote LIDs in order; copy out
       numRemoteIDsUnion = remotePGUnion.size();
       remoteLIDsUnion.resize(numRemoteIDsUnion);
       remotePIDsUnion.resize(numRemoteIDsUnion);
@@ -1027,23 +1047,23 @@ namespace Tpetra {
         remoteLIDsUnion[k] = curTgtLid++;
         remotePIDsUnion[k] = remotePGUnion[k].first;
         remoteGIDsUnion[k] = remotePGUnion[k].second;
-      }     
+      }
 
       // Update the unionTgtGIDs
       const size_type oldSize = unionTgtGIDs.size();
       unionTgtGIDs.resize(oldSize + numRemoteIDsUnion);
       for(size_type k=0; k<numRemoteIDsUnion; k++)
-	unionTgtGIDs[oldSize+k] = remoteGIDsUnion[k];
+        unionTgtGIDs[oldSize+k] = remoteGIDsUnion[k];
 
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
       {
-	// For debugging purposes only
-	Array<GO> remoteGIDs1(remotePIDs1.size());
-	Array<GO> remoteGIDs2(remotePIDs2.size());
-	for(size_type k=0; k < remotePIDs1.size(); k++)
-	  remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
-	for(size_type k=0; k < remotePIDs2.size(); k++)
-	  remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
+        // For debugging purposes only
+        Array<GO> remoteGIDs1(remotePIDs1.size());
+        Array<GO> remoteGIDs2(remotePIDs2.size());
+        for(size_type k=0; k < remotePIDs1.size(); k++)
+          remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
+        for(size_type k=0; k < remotePIDs2.size(); k++)
+          remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
 
         std::ostringstream os;
         os << myRank << ": remoteGIDs1           : " << toString (remoteGIDs1 ()) << endl;
@@ -1202,7 +1222,7 @@ namespace Tpetra {
       exportLIDsUnion[k] = srcMap->getLocalElement (exportGIDsUnion[k]);
     }
 #endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
- 
+
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     {
       std::ostringstream os;
