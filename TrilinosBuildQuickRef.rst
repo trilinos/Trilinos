@@ -254,7 +254,7 @@ b) Configuring Trilinos to test all effects of changing a given package(s)::
   depend on <TRIBITS_PACKAGE> in this case.  This speeds up and robustifies
   pre-checkin testing.
 
-c) Configuring to build all stable packages with tests and examples::
+c) Configuring to build all packages with tests and examples::
 
     $ ./do-configure \
        -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
@@ -268,8 +268,8 @@ c) Configuring to build all stable packages with tests and examples::
   Trilinos_ENABLE_TESTS:BOOL=ON.
 
   NOTE: By default, setting Trilinos_ENABLE_ALL_PACKAGES=ON only enables
-  Primary Stable Code.  To have this also enable all secondary stable code,
-  you must also you must set Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
+  primary tested (PT) code.  To have this also enable all secondary tested
+  (ST) code, one must also set Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON.
 
 d) Disable a package and all its dependencies::
 
@@ -1007,6 +1007,19 @@ expensive tests that are run approximately weekly.  PERFORMANCE tests are for
 performance testing only.
 
 
+Disabling specific tests
+------------------------
+
+Any TriBTS added ctest test (i.e. listed in ``ctest -N``) can be disabled at
+configure time by setting::
+
+  -D <fullTestName>_DISABLE:BOOL=ON
+
+where ``<fulltestName>`` must exactly match the test listed out by ``ctest
+-N``.  Of course specific tests can also be excluded from ``ctest`` using the
+``-E`` argument.
+
+
 Enabling support for coverage testing
 -------------------------------------
 
@@ -1583,7 +1596,7 @@ Currently, this options includes::
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_BRANCH "" )
