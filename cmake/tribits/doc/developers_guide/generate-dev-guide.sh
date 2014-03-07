@@ -56,7 +56,6 @@ echo "Generating HTML and PDF files ..."
 echo
 ../../python/generate-docutils-output.py \
   --file-base=TribitsDevelopersGuide \
-  --generate-html=rst2html.py --generate-latex=rst2latex.py \
   $ARGS
 
 # NOTE: This above invocation by default overrides the DocUtils html and latex
