@@ -129,6 +129,11 @@ namespace MueLu {
         hieraList.remove("maxCoarseSize");
       }
 
+      this->implicitPRrebalance_ = Hierarchy::GetDefaultPRrebalance();
+      if (hieraList.isParameter("rebalance P and R")) {
+        this->implicitPRrebalance_ = !hieraList.get<bool>("rebalance P and R");
+        hieraList.remove("rebalance P and R");
+      }
 
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
