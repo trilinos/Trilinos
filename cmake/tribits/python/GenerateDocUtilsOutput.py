@@ -36,6 +36,14 @@ def generateFile(filePath, generateCmnd, outFile=None, workingDir="", runTwice=F
 
 def addCmndLineOptions(clp):
 
+  # Find the right default for the current system
+  rst2html = "rst2html"
+  rst2latex = "rst2latex"
+  rst2htmlWhich = getCmndOutput("which rst2html", True, False)
+  if rst2htmlWhich == "" or re.match(".+no rst2html.+", rst2htmlWhich):
+    rst2thml = rst2thml+".py"
+    rst2latex = rst2latex+".py"
+
   clp.add_option(
     "--file-base", dest="fileBase", type="string",
     default="",
@@ -47,14 +55,14 @@ def addCmndLineOptions(clp):
   clp.add_option(
     "--generate-html", dest="generateHtml", type="string",
     help="Generate the HTML output file using provided script (i.e. rst2html)" \
-      " [Default 'rst2html.py']",
-    default="rst2html.py" )
+      " [Default '"+rst2html+"']",
+    default=rst2html )
     
   clp.add_option(
     "--generate-latex", dest="generateLatex", type="string",
     help="Generate the Latex (*.tex) output file using provided script" \
-      " (i.e. rst2latex) [Default 'rst2latex.py']",
-    default="rst2latex.py" )
+      " (i.e. rst2latex) [Default '"+rst2latex+"']",
+    default=rst2latex )
     
   clp.add_option(
     "--generate-pdf", dest="generatePDF", type="string",

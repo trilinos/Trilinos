@@ -9,6 +9,9 @@ given <outputFileBase>.rst file.  What output is generated is controlled by
 the options --generate-html, --generate-latex, and --generate-pdf.  This
 requires that the Docutils commands be installed on the system as well as
 latex (if generating PDF output).
+
+NOTE: The right default programs for --generate-html, --generate-latex, and
+--generate-pdf will try to be chosen for given system automatically.
 """
 
 import sys
