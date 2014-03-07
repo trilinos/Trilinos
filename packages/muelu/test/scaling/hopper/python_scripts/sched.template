@@ -13,9 +13,9 @@ args[4]="_CMD4_"
 args[5]="_CMD5_"
 
 for ((ii=1; ii <= $num_runs; ii++)); do
-  for ((jj=1; jj <= $num_cmds && jj <= 5; jj++)); do
-    echo "---- run ${ii} of ${num_runs} ----"
+  echo "---- run ${ii} of ${num_runs} ----"
 
+  for ((jj=1; jj <= $num_cmds && jj <= 5; jj++)); do
     run_cmd="_SCHED_ARGS_ -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ ${args[jj]}"
 
     # epetra
