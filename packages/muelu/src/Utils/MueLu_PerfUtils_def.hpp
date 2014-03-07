@@ -122,7 +122,11 @@ namespace MueLu {
 
     // Create communicator only for active processes
     RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();
+#ifdef HAVE_MPI
     RCP<const Teuchos::Comm<int> >     comm = origComm->split((numMyRows > 0) ? 0 : MPI_UNDEFINED, 0);
+#else
+    RCP<const Teuchos::Comm<int> >     comm = origComm->split((numMyRows > 0) ? 0 : -1, 0);
+#endif
 
     if (comm.is_null())
       return ss.str();
