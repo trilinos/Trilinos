@@ -21,10 +21,10 @@ kl_init (
 {
     struct bilist *spacel;	/* space for all listspace entries */
     struct bilist **spaceb;	/* space for all buckets entries */
-    int       sizeb;		/* size of set of buckets */
-    int       sizel;		/* size of set of pointers for all vertices */
+    size_t    sizeb;		/* size of set of buckets */
+    size_t    sizel;		/* size of set of pointers for all vertices */
     int       i, j;		/* loop counters */
-    double   *array_alloc_2D_ret(int dim1, int dim2, size_t size);
+    double   *array_alloc_2D_ret(size_t dim1, size_t dim2, size_t size);
 
     /* Allocate appropriate data structures for buckets, and listspace. */
 
