@@ -48,6 +48,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
   const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases = physicsBlock.getBases();
   std::map<std::string,std::vector<std::string> > basisBucket;
+
+  std::vector<panzer::StrPureBasisPair> allFields = physicsBlock.getProvidedDOFs();;
+  allFields.insert(allFields.end(),additionalFields_.begin(),additionalFields_.end());
   bucketByBasisType(physicsBlock.getProvidedDOFs(),basisBucket);
 
   // add this for HCURL and HDIV basis, only want to add them once: evaluate vector fields at centroid
@@ -231,6 +234,13 @@ typeSupported() const
     return true;
 
   return false;
+}
+
+template <typename EvalT>
+void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
+addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis)
+{
+  additionalFields_.push_back(std::make_pair(fieldName,basis));
 }
 
 }
