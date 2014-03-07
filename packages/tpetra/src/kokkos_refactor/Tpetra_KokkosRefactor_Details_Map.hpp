@@ -247,44 +247,6 @@ namespace Tpetra {
       Kokkos::parallel_reduce (numEnt, filler, result);
       const size_type numFailed = glMap.failed_inserts ();
 
-// #if 1
-//       const size_type mapSize = glMap.size ();
-//       TEUCHOS_TEST_FOR_EXCEPTION(
-//         mapSize != numEnt, std::logic_error, "fillGlobalToLocalTable: After "
-//         "parallel_reduce to fill GID->LID table, size of table = " << mapSize
-//         << " != number of GIDs to put in table = " << numEnt << ".");
-
-//       bool bad = false;
-//       Teuchos::Array<GO> badGlobals;
-
-//       for (size_type k = 0; k < numEnt; ++k) {
-//         const GO globalIndex = entries[k];
-//         const size_type ind = glMap.find (globalIndex);
-//         if (! glMap.valid_at (ind)) {
-//           bad = true;
-//           badGlobals.push_back (globalIndex);
-//         }
-//       }
-
-//       // Get the GID->LID table's keys and values as Teuchos::Array.
-//       Teuchos::Array<GO> keys;
-//       Teuchos::Array<LO> vals;
-//       keys.reserve (mapSize);
-//       vals.reserve (mapSize);
-//       for (size_type k = 0; k < mapSize; ++k) {
-//         keys.push_back (glMap.key_at (k));
-//         vals.push_back (glMap.value_at (k));
-//       }
-
-//       TEUCHOS_TEST_FOR_EXCEPTION(
-//         bad, std::logic_error, "fillGlobalToLocalTable: This noncontiguous "
-//         "Map's GID->LID lookup is broken.  The following GIDs are in this "
-//         "process' GID list, but attempting to look up their LIDs fails: "
-//         << badGlobals () << ".  The Map's GID list is " << lgMapAv << ".  The "
-//         "keys in the UnorderedMap are " << keys () << " and their values are "
-//         << vals () << ".");
-// #endif // 1
-
       return std::make_pair (result, numFailed);
     }
 
@@ -691,18 +653,6 @@ namespace Tpetra {
           const size_t numNonContig =
             static_cast<size_t> (myNumIndices_) - numContig;
 
-// #if 1
-//           {
-//             std::ostringstream os;
-//             os << "&&& Proc " << comm.getRank () << ": {"
-//                << "numContig: " << numContig
-//                << ", numNonContig: " << numNonContig
-//                << ", myNumIndices_: " << myNumIndices_
-//                << "}" << std::endl;
-//             std::cerr << os.str ();
-//           }
-// #endif // 1
-
           // Make a view of the given GIDs, _not_ including the
           // initial sequence of contiguous GIDs.  The GID -> LID
           // table does not store this initial sequence.
@@ -717,21 +667,6 @@ namespace Tpetra {
             << ", computed offset into noncontiguous entries incorrectly.  "
             "nonContigEntries.dimension_0() = " << nonContigEntries.dimension_0 ()
             << ", but numNonContig = " << numNonContig << ".");
-
-// #if 1
-//           {
-//             std::ostringstream os;
-//             Teuchos::ArrayView<const GO> myGlobalIndicesAv (myGlobalIndices.ptr_on_device (),
-//                                                             myGlobalIndices.dimension_0 ());
-//             Teuchos::ArrayView<const GO> nonContigEntriesAv (nonContigEntries.ptr_on_device (),
-//                                                              nonContigEntries.dimension_0 ());
-//             os << "&&& Proc " << comm.getRank () << ": {"
-//                << "myGlobalIndices: " << myGlobalIndicesAv
-//                << ", nonContigEntries: " << nonContigEntriesAv
-//                << "}" << std::endl;
-//             std::cerr << os.str ();
-//           }
-// #endif // 1
 
           TEUCHOS_TEST_FOR_EXCEPTION(
             numNonContig != 0 && nonContigEntries(0) != lgMap_(numContig),
@@ -778,34 +713,6 @@ namespace Tpetra {
           // on NVIDIA GPUs, since lookups can go through (read-only)
           // texture cache.
           glMap_ = glMap;
-
-// #if 1
-//           {
-//             std::ostringstream os;
-//             const size_type mapSize = glMap.size ();
-
-//             // Get the final GID->LID table's keys and values as Teuchos::Array.
-//             Teuchos::Array<GO> keys;
-//             Teuchos::Array<LO> vals;
-//             keys.reserve (mapSize);
-//             vals.reserve (mapSize);
-//             for (size_type k = 0; k < mapSize; ++k) {
-//               keys.push_back (glMap_.key_at (k));
-//               vals.push_back (glMap_.value_at (k));
-//             }
-
-//             os << "&&& Proc " << comm.getRank () << ": Done with "
-//                << "glMap_ assignment: {"
-//                << "numNonContig: " << numNonContig
-//                << ", final GID->LID table: {"
-//                << "size: " << glMap_.size ()
-//                << ", capacity: " << glMap_.capacity ()
-//                << ", keys: " << keys ()
-//                << ", values: " << vals ()
-//                << "}}" << std::endl;
-//             std::cerr << os.str ();
-//           }
-// #endif // 1
         }
         else {
           // mfh 10 Feb 2014: A common case for users of Map is to
@@ -1018,27 +925,6 @@ namespace Tpetra {
         //   "The Map has " << globalNumIndices_ << " > 0 global indices, but the "
         //   "min global index " << minAllGID_ << " over all process(es) does not "
         //   "equal the given indexBase " << indexBase_ << ".");
-
-// #if 1
-//         {
-//           int locallyBad = 0;
-//           try {
-//             validateLocally (comm.getRank ());
-//           } catch (std::exception& e) {
-//             locallyBad = 1;
-//             std::ostringstream os;
-//             os << "!!! Proc " << comm.getRank () << ": Tpetra::Details::Map: "
-//                << "Exception: " << e.what () << std::endl;
-//             std::cerr << os.str ();
-//           }
-//           int globallyBad = 0;
-//           reduceAll<int, int> (comm, Teuchos::REDUCE_MAX, locallyBad, outArg (globallyBad));
-
-//           TEUCHOS_TEST_FOR_EXCEPTION(
-//             globallyBad == 1, std::logic_error, "Tpetra::Details::Map: "
-//             "Failed local validation on some process.");
-//         }
-// #endif // 1
       }
 
       //! Make this Map a copy of the input Map, but for a (possibly) different device.

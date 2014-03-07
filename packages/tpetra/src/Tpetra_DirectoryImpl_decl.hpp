@@ -335,72 +335,10 @@ namespace Tpetra {
       clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-// #if 1
-//         const Teuchos::Comm<int>& comm = * (cloneMap.getComm ());
-//         const int myRank = comm.getRank ();
-//         {
-//           std::ostringstream os;
-//           os << "DDD Proc " << myRank << ": Directory clone" << std::endl;
-//           std::cerr << os.str ();
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-//         }
-
-//         {
-//           std::ostringstream os;
-//           // os << "DDD Proc " << myRank << ": Directory clone input: {"
-//           //    << "directoryMap_.is_null(): "
-//           //    << (directoryMap_.is_null () ? "true" : "false")
-//           //    << "cloneMap.getNode ().is_null(): "
-//           //    << (cloneMap.getNode ().is_null () ? "true" : "false")
-//           //    << "}" << std::endl;
-//           std::cerr << os.str ();
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-
-//           std::cerr << std::flush;
-
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-//         }
-// #endif // 1
-
         RCP<Dir2> dir (new Dir2 (cloneMap));
-
-// #if 1
-//         {
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-
-//           std::ostringstream os;
-//           os << "DDD Proc " << myRank << ": Directory clone: past Directory ctor" << std::endl;
-//           std::cerr << os.str ();
-
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-//         }
-// #endif // 1
 
         dir->directoryMap_ =
           directoryMap_->template clone<Node2> (cloneMap.getNode ());
-
-// #if 1
-//         {
-//           std::ostringstream os;
-//           os << "DDD Proc " << myRank << ": Directory clone: cloned Directory Map" << std::endl;
-//           std::cerr << os.str ();
-
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-//         }
-// #endif // 1
-
         dir->PIDs_ = PIDs_;
         dir->LIDs_ = LIDs_;
 #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
@@ -409,17 +347,6 @@ namespace Tpetra {
 #endif
         dir->useHashTables_ = useHashTables_;
 
-// #if 1
-//         {
-//           std::ostringstream os;
-//           os << "DDD Proc " << myRank << ": Directory clone DONE" << std::endl;
-//           std::cerr << os.str ();
-
-//           comm.barrier ();
-//           comm.barrier ();
-//           comm.barrier ();
-//         }
-// #endif // 1
         return dir;
       }
 

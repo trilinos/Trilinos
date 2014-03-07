@@ -2410,20 +2410,6 @@ namespace Tpetra {
       mergeAllIndices();
     }
 
-// #if 1
-//     {
-//       const int myRank = getRowMap ()->getComm ()->getRank ();
-
-//       getRowMap ()->getComm ()->barrier ();
-//       getRowMap ()->getComm ()->barrier ();
-//       getRowMap ()->getComm ()->barrier ();
-
-//       std::ostringstream os;
-//       os << "!!! Proc " << myRank << ": Done merging indices" << std::endl;
-//       std::cerr << os.str ();
-//     }
-// #endif // 1
-
     makeImportExport(); // Make Import and Export objects
     computeGlobalConstants();
     // fill local objects
@@ -3349,16 +3335,6 @@ namespace Tpetra {
 
     } // if the graph is globally indexed
 
-// #if 1
-//     const int myRank = this->getRowMap ()->getComm ()->getRank ();
-//     {
-//       std::ostringstream os;
-//       os << "!!! Proc " << myRank << ": Making column Map with indices "
-//          << myColumns () << std::endl;
-//       std::cerr << os.str ();
-//     }
-// #endif // 1
-
     const global_size_t gstInv =
       Teuchos::OrdinalTraits<global_size_t>::invalid ();
     // FIXME (mfh 05 Mar 2014) Doesn't the index base of a Map have to
@@ -3369,15 +3345,6 @@ namespace Tpetra {
     colMap_ = rcp (new map_type (gstInv, myColumns, indexBase,
                                  domainMap_->getComm (),
                                  domainMap_->getNode ()));
-
-// #if 1
-//     {
-//       std::ostringstream os;
-//       os << "!!! Proc " << myRank << ": Made column Map; it reports its "
-//          << "indices as " << colMap_->getNodeElementList () << std::endl;
-//       std::cerr << os.str ();
-//     }
-// #endif // 1
 
     checkInternalState ();
   }
