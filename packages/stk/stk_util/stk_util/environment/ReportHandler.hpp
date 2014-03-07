@@ -173,22 +173,22 @@ void handle_invalid_arg(const char* expr,
  * functions.  Inline functions do not work because the __FILE__ and __LINE__ expansions take place
  * before the compiler inlining.
  */
-#define XSTR_TRACE_LINE(s) STR_TRACE_LINE(s)
-#define STR_TRACE_LINE(s) #s
+#define XSTK_STR_TRACE_LINE(s) STK_STR_TRACE_LINE(s)
+#define STK_STR_TRACE_LINE(s) #s
 
 #ifdef __PRETTY_FUNCTION__
 
 #define COUT_TRACE  " Function::Line="<<__PRETTY_FUNCTION__<<":"<<__LINE__
-#define STR_TRACE   (std::string(__FILE__) +  ":" + XSTR_TRACE_LINE(__LINE__) + " in " + std::string(__PRETTY_FUNCTION__))
+#define STK_STR_TRACE   (std::string(__FILE__) +  ":" + XSTK_STR_TRACE_LINE(__LINE__) + " in " + std::string(__PRETTY_FUNCTION__))
 
 #else
 
 #define COUT_TRACE  " File::Line="<<__FILE__<<":"<<__LINE__
-#define STR_TRACE   (std::string(__FILE__) +  ":" + XSTR_TRACE_LINE(__LINE__))
+#define STK_STR_TRACE   (std::string(__FILE__) +  ":" + XSTK_STR_TRACE_LINE(__LINE__))
 
 #endif
 
-#define StackTrace std::string(std::string("  exception thrown from ") + stk::source_relative_path(STR_TRACE))
+#define StackTrace std::string(std::string("  exception thrown from ") + stk::source_relative_path(STK_STR_TRACE))
 
 // The do-while is necessary to prevent usage of this macro from changing
 // program semantics (e.g. dangling-else problem). The obvious implementation:
@@ -204,7 +204,7 @@ void handle_invalid_arg(const char* expr,
       std::ostringstream stk_util_internal_throw_require_oss;           \
       stk_util_internal_throw_require_oss << message;                   \
       stk::handler( #expr,                                              \
-                    STR_TRACE,                                          \
+                    STK_STR_TRACE,                                      \
                     stk_util_internal_throw_require_oss );              \
     }                                                                   \
   } while (false)
@@ -217,7 +217,7 @@ void handle_invalid_arg(const char* expr,
     std::ostringstream stk_util_internal_throw_require_oss;             \
     stk_util_internal_throw_require_oss << message;                     \
     stk::handler( "",                                                   \
-                  STR_TRACE,                                            \
+                  STK_STR_TRACE,                                        \
                   stk_util_internal_throw_require_oss );                \
 } while (false)
 
