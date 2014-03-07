@@ -962,6 +962,19 @@ expensive tests that are run approximately weekly.  PERFORMANCE tests are for
 performance testing only.
 
 
+Disabling specific tests
+------------------------
+
+Any TriBTS added ctest test (i.e. listed in ``ctest -N``) can be disabled at
+configure time by setting::
+
+  -D <fullTestName>_DISABLE:BOOL=ON
+
+where ``<fulltestName>`` must exactly match the test listed out by ``ctest
+-N``.  Of course specific tests can also be excluded from ``ctest`` using the
+``-E`` argument.
+
+
 Enabling support for coverage testing
 -------------------------------------
 
