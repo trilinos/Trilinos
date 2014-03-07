@@ -1094,10 +1094,10 @@ namespace Tpetra {
                  globalIndex <= lastContiguousGID_) {
           return static_cast<LO> (globalIndex - firstContiguousGID_);
         }
-        else if (myNumIndices_ == 0) {
-          return getInvalidLocalIndex ();
-        }
         else {
+          // This also works if this process owns no indices.
+          // In that case, glMap_ will be empty, so this branch
+          // will always return the invalid LID.
           const typename global_to_local_table_type::size_type i =
             glMap_.find (globalIndex);
           return glMap_.valid_at (i) ? // if the GID is in the map, ...
@@ -1111,7 +1111,9 @@ namespace Tpetra {
       /// If the given local index is not valid on the calling process,
       /// return Teuchos::OrdinalTraits<GO>::invalid().
       KOKKOS_INLINE_FUNCTION GO getGlobalIndex (const LO localIndex) const {
-        if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
+        if (localIndex < getMinLocalIndex () ||
+            localIndex > getMaxLocalIndex ()) {
+          // This process will always take this branch if it owns no indices.
           return getInvalidGlobalIndex ();
         }
         else if (isContiguous ()) {
@@ -1125,7 +1127,8 @@ namespace Tpetra {
       //! Whether the given local index is owned by (valid on) the calling process.
       KOKKOS_INLINE_FUNCTION bool
       isOwnedLocalIndex (const LO localIndex) const {
-        return localIndex >= getMinLocalIndex () && localIndex <= getMaxLocalIndex ();
+        return localIndex >= getMinLocalIndex () &&
+          localIndex <= getMaxLocalIndex ();
       }
 
       //! Whether the given global index is owned by the calling process.
@@ -1228,7 +1231,7 @@ namespace Tpetra {
         }
       }
 
-
+    private:
       void validateLocally (const int myRank) {
         TEUCHOS_TEST_FOR_EXCEPTION(
           invalidGlobalIndex_ != Teuchos::OrdinalTraits<GO>::invalid (),
@@ -1296,7 +1299,6 @@ namespace Tpetra {
         }
       }
 
-    private:
       /// \brief Whether this Map is globally distributed or locally replicated.
       ///
       /// \param comm [in] This Map's communicator.
