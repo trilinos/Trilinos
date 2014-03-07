@@ -73,9 +73,12 @@ ENDFUNCTION()
 
 
 #
+# @FUNCTION: TRIBITS_CONFIGURE_FILE()
+#
 # Macro that configures the package's main config.h file
 #
-
+# ToDo: Document everything this macro does!
+#
 FUNCTION(TRIBITS_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

@@ -63,17 +63,18 @@ INCLUDE(TribitsProjectImpl)
 
 
 #
-# Defines a TriBITS project.
+# @MACRO: TRIBITS_PROJECT()
 #
-# Requires that PROJECT_NAME be defined before calling this macro.
+# Defines and processes a TriBITS project.
+#
+# Requires that ``PROJECT_NAME`` be defined before calling this macro.
 #
 # Note, this is just a shell of a macro that calls the real implementation.
-# This allows someone to set ${PROJECT_NAME}_TRIBITS_DIR in the env and point
+# This allows someone to set ``${PROJECT_NAME}_TRIBITS_DIR`` in the env and point
 # to a different Tribits implementation to test before snapshoting.
 #
-# ToDo: Give documentation
+# ToDo: Give documentation!
 #
-
 MACRO(TRIBITS_PROJECT)
 
   TRIBITS_PROJECT_IMPL(${ARGN})

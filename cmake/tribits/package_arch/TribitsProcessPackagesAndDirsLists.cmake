@@ -61,51 +61,55 @@ INCLUDE(TribitsListHelpers)
 #
 #    TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
 #       <pkg0>  <pkg0_dir>  <pkg0_classifications>
+#       <pkg1>  <pkg1_dir>  <pkg1_classifications>
 #       ...
-#       <pkgnm1>  <pkgnm1_dir>  <pkgnm1_classifications>
 #       )
 #
 # This macro sets up a 2D array of NumPackages by NumColumns listing out the
 # packages for a TriBITS repository.  Each row (with 3 entries) specifies a
 # package which contains the three columns:
 #
-# * **PACKAGE**: The name of the TriBITS package.  This name must be unique
-#   across all other TriBITS packages in this or any other TriBITS repo that
-#   might be combined into a single TriBITS project meta-build.  The name
-#   should be a valid identifier (e.g. matches the regex
+# * **PACKAGE** (1st column): The name of the TriBITS package.  This name must
+#   be unique across all other TriBITS packages in this or any other TriBITS
+#   repo that might be combined into a single TriBITS project meta-build.  The
+#   name should be a valid identifier (e.g. matches the regex
 #   ``[a-zA-Z_][a-zA-Z0-9_]*``).
 #
-# * **DIR**: The relative directory for the package.  This is relative to the
-#   TriBITS repository base directory.  Under this directory will be a
-#   package-specific 'cmake/' directory with file 'cmake/Dependencies.cmake'
-#   and a base-level CMakeLists.txt file.  The entire contents of the package
-#   including all of the source code and all of the tests should be contained
-#   under this directory.  The TriBITS testing infrastructure relies on the
-#   mapping of changed files to these base directories when deciding what
-#   packages are modified and need to be retested (along with downstream
-#   packages).
+# * **DIR** (2nd column): The relative directory for the package.  This is
+#   relative to the TriBITS repository base directory.  Under this directory
+#   will be a package-specific 'cmake/' directory with file
+#   'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+#   entire contents of the package including all of the source code and all of
+#   the tests should be contained under this directory.  The TriBITS testing
+#   infrastructure relies on the mapping of changed files to these base
+#   directories when deciding what packages are modified and need to be
+#   retested (along with downstream packages).
 #
-# * **CLASSIFICATION**: Gives the testing group PT, ST, EX and
+# * **CLASSIFICATION** (3nd column): Gives the testing group PT, ST, EX and
 #   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
 #   by a coma with no space in between such as "RS,PT" for a "Research
 #   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
 #   treats this a one field in the array.  The maturity level can be left off
 #   in which case it is assumed to be UM for "Unspecified Maturity".
 #
-#  NOTE: This macro just sets the varaible
-#  ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in the current
-#  scope.  The advantages of using this macro instead of directly setting this
-#  varible include:
+# NOTE: This macro just sets the varaible::
 #
-#  * Asserts that REPOSITORY_NAME is defined and set
+#   ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 #
-#  * Avoids having to hard-code the assumed repository name
-#    ${REPOSITORY_NAME}.  This provides more flexibility for how other TriBITS
-#    project name a given TriBITS repo (i.e. the name of repo subdirs).
+# in the current
+# scope.  The advantages of using this macro instead of directly setting this
+# varible include:
 #
-#  * Avoid mispelling the name of the varible
-#    ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.  If you misspell
-#    the name of the macro, it is an immediate error in CMake.
+# * Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+#
+# * Avoids having to hard-code the assumed repository name
+#   ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
+#   TriBITS project name a given TriBITS repo (i.e. the name of repo
+#   subdirs).
+#
+# * Avoid mispelling the name of the varible
+#   ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
+#   misspell the name of the macro, it is an immediate error in CMake.
 #
 MACRO(TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS)
   ASSERT_DEFINED(REPOSITORY_NAME)

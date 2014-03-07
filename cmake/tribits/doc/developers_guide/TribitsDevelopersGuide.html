@@ -322,28 +322,31 @@ ul.auto-toc {
 <li><a class="reference internal" href="#structure-of-a-tribits-project" id="id4">2&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></li>
 <li><a class="reference internal" href="#tribits-global-project-settings" id="id5">3&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></li>
 <li><a class="reference internal" href="#tribits-macros-and-functions" id="id6">4&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul class="auto-toc">
-<li><a class="reference internal" href="#tribits-define-repository-packages-dirs-classifications" id="id7">4.1&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-tpls-findmods-classifications" id="id8">4.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()</a></li>
-<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id9">4.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
-<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id10">4.4&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id11">4.5&nbsp;&nbsp;&nbsp;TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
-<li><a class="reference internal" href="#tribits-package" id="id12">4.6&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-package-decl" id="id13">4.7&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DECL()</a></li>
-<li><a class="reference internal" href="#tribits-package-def" id="id14">4.8&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DEF()</a></li>
-<li><a class="reference internal" href="#tribits-process-subpackages" id="id15">4.9&nbsp;&nbsp;&nbsp;TRIBITS_PROCESS_SUBPACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-add-test-directories" id="id16">4.10&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-add-example-directories" id="id17">4.11&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id18">4.12&nbsp;&nbsp;&nbsp;TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
-<li><a class="reference internal" href="#tribits-add-library" id="id19">4.13&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></li>
-<li><a class="reference internal" href="#tribits-add-executable" id="id20">4.14&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></li>
-<li><a class="reference internal" href="#tribits-add-test" id="id21">4.15&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-add-advanced-test" id="id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-package-postprocess" id="id23">4.17&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-project" id="id7">4.1&nbsp;&nbsp;&nbsp;TRIBITS_PROJECT()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-packages-dirs-classifications" id="id8">4.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-tpls-findmods-classifications" id="id9">4.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()</a></li>
+<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id10">4.4&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
+<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id11">4.5&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id12">4.6&nbsp;&nbsp;&nbsp;TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
+<li><a class="reference internal" href="#tribits-package" id="id13">4.7&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-package-decl" id="id14">4.8&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DECL()</a></li>
+<li><a class="reference internal" href="#tribits-package-def" id="id15">4.9&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DEF()</a></li>
+<li><a class="reference internal" href="#tribits-process-subpackages" id="id16">4.10&nbsp;&nbsp;&nbsp;TRIBITS_PROCESS_SUBPACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-add-test-directories" id="id17">4.11&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-add-example-directories" id="id18">4.12&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id19">4.13&nbsp;&nbsp;&nbsp;TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
+<li><a class="reference internal" href="#tribits-configure-file" id="id20">4.14&nbsp;&nbsp;&nbsp;TRIBITS_CONFIGURE_FILE()</a></li>
+<li><a class="reference internal" href="#tribits-add-library" id="id21">4.15&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></li>
+<li><a class="reference internal" href="#tribits-add-executable" id="id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></li>
+<li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id23">4.17&nbsp;&nbsp;&nbsp;TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
+<li><a class="reference internal" href="#tribits-add-test" id="id24">4.18&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-add-advanced-test" id="id25">4.19&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-package-postprocess" id="id26">4.20&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#references" id="id24">5&nbsp;&nbsp;&nbsp;References</a></li>
-<li><a class="reference internal" href="#appendix" id="id25">6&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id26">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#references" id="id27">5&nbsp;&nbsp;&nbsp;References</a></li>
+<li><a class="reference internal" href="#appendix" id="id28">6&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id29">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
 </ul>
 </li>
 </ul>
@@ -398,61 +401,72 @@ packages <tt class="docutils literal">CMakeLists.txt</tt> and other files.</p>
 <!-- the file TribitsDetailedMacroFunctionDocTemplate.rst in the script -->
 <!-- generate-dev-guide.sh.  Only the file TribitsDetailedMacroFunctionDoc.rst -->
 <!-- should be directly modified! -->
+<div class="section" id="tribits-project">
+<h2><a class="toc-backref" href="#id7">4.1&nbsp;&nbsp;&nbsp;TRIBITS_PROJECT()</a></h2>
+<p>Defines and processes a TriBITS project.</p>
+<p>Requires that <tt class="docutils literal">PROJECT_NAME</tt> be defined before calling this macro.</p>
+<p>Note, this is just a shell of a macro that calls the real implementation.
+This allows someone to set <tt class="docutils literal">${PROJECT_NAME}_TRIBITS_DIR</tt> in the env and point
+to a different Tribits implementation to test before snapshoting.</p>
+<p>ToDo: Give documentation!</p>
+</div>
 <div class="section" id="tribits-define-repository-packages-dirs-classifications">
-<h2><a class="toc-backref" href="#id7">4.1&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></h2>
+<h2><a class="toc-backref" href="#id8">4.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></h2>
 <p>Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a PackagesList.cmake file for a given TriBITS repo.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
    &lt;pkg0&gt;  &lt;pkg0_dir&gt;  &lt;pkg0_classifications&gt;
+   &lt;pkg1&gt;  &lt;pkg1_dir&gt;  &lt;pkg1_classifications&gt;
    ...
-   &lt;pkgnm1&gt;  &lt;pkgnm1_dir&gt;  &lt;pkgnm1_classifications&gt;
    )
 </pre>
 <p>This macro sets up a 2D array of NumPackages by NumColumns listing out the
 packages for a TriBITS repository.  Each row (with 3 entries) specifies a
 package which contains the three columns:</p>
 <ul class="simple">
-<li><strong>PACKAGE</strong>: The name of the TriBITS package.  This name must be unique
-across all other TriBITS packages in this or any other TriBITS repo that
-might be combined into a single TriBITS project meta-build.  The name
-should be a valid identifier (e.g. matches the regex
+<li><strong>PACKAGE</strong> (1st column): The name of the TriBITS package.  This name must
+be unique across all other TriBITS packages in this or any other TriBITS
+repo that might be combined into a single TriBITS project meta-build.  The
+name should be a valid identifier (e.g. matches the regex
 <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
-<li><strong>DIR</strong>: The relative directory for the package.  This is relative to the
-TriBITS repository base directory.  Under this directory will be a
-package-specific 'cmake/' directory with file 'cmake/Dependencies.cmake'
-and a base-level CMakeLists.txt file.  The entire contents of the package
-including all of the source code and all of the tests should be contained
-under this directory.  The TriBITS testing infrastructure relies on the
-mapping of changed files to these base directories when deciding what
-packages are modified and need to be retested (along with downstream
-packages).</li>
-<li><strong>CLASSIFICATION</strong>: Gives the testing group PT, ST, EX and
+<li><strong>DIR</strong> (2nd column): The relative directory for the package.  This is
+relative to the TriBITS repository base directory.  Under this directory
+will be a package-specific 'cmake/' directory with file
+'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+entire contents of the package including all of the source code and all of
+the tests should be contained under this directory.  The TriBITS testing
+infrastructure relies on the mapping of changed files to these base
+directories when deciding what packages are modified and need to be
+retested (along with downstream packages).</li>
+<li><strong>CLASSIFICATION</strong> (3nd column): Gives the testing group PT, ST, EX and
 the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
 by a coma with no space in between such as &quot;RS,PT&quot; for a &quot;Research
 Stable&quot;, &quot;Primary Tested&quot; package.  No spaces are allowed so that CMake
 treats this a one field in the array.  The maturity level can be left off
 in which case it is assumed to be UM for &quot;Unspecified Maturity&quot;.</li>
 </ul>
-<blockquote>
-<p>NOTE: This macro just sets the varaible
-${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in the current
+<p>NOTE: This macro just sets the varaible:</p>
+<pre class="literal-block">
+${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+</pre>
+<p>in the current
 scope.  The advantages of using this macro instead of directly setting this
 varible include:</p>
 <ul class="simple">
-<li>Asserts that REPOSITORY_NAME is defined and set</li>
+<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
 <li>Avoids having to hard-code the assumed repository name
-${REPOSITORY_NAME}.  This provides more flexibility for how other TriBITS
-project name a given TriBITS repo (i.e. the name of repo subdirs).</li>
+<tt class="docutils literal">${REPOSITORY_NAME}</tt>.  This provides more flexibility for how other
+TriBITS project name a given TriBITS repo (i.e. the name of repo
+subdirs).</li>
 <li>Avoid mispelling the name of the varible
-${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.  If you misspell
-the name of the macro, it is an immediate error in CMake.</li>
+<tt class="docutils literal">${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS</tt>.  If you
+misspell the name of the macro, it is an immediate error in CMake.</li>
 </ul>
-</blockquote>
 </div>
 <div class="section" id="tribits-define-repository-tpls-findmods-classifications">
-<h2><a class="toc-backref" href="#id8">4.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()</a></h2>
+<h2><a class="toc-backref" href="#id9">4.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()</a></h2>
 <p>Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
 TPLsList.cmake fil for a given TriBITS repo.</p>
@@ -460,54 +474,57 @@ TPLsList.cmake fil for a given TriBITS repo.</p>
 <pre class="literal-block">
 TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
   &lt;tpl0_name&gt;   &lt;tpl0_findmod&gt;  &lt;tpl0_classification&gt;
+  &lt;tpl1_name&gt;   &lt;tpl1_findmod&gt;  &lt;tpl1_classification&gt;
   ...
-  &lt;tplnm1_name&gt;   &lt;tplnm1_findmod&gt;  &lt;tplnm1_classification&gt;
+  )
 </pre>
 <p>This macro sets up a 2D array of NumTPLS by NumColumns listing out the
 TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
 package which contains the three columns:</p>
 <ul class="simple">
-<li><strong>TPL</strong>: The name of the TriBITS TPL &lt;TPL_NAME&gt;.  This name must be unique
-across all other TriBITS TPLs in this or any other TriBITS repo that might
-be combined into a single TriBITS project meta-build.  However, a TPL can
-be redefined (see below).  The name should be a valid identifier
-(e.g. matches the regex <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
-<li><strong>FINDMOD</strong>: The relative directory for the find module, usually with the
-name FindTPL&lt;TPL_NAME&gt;.cmake.  This is relative to the repository base
-directory.  If just the base path for the find module is given, ending
-with &quot;/&quot; (e.g. &quot;cmake/tpls/&quot;) then the find module will be assumed to be
-under that this directory with the standard name
-(e.g. &quot;cmake/tpls/FindTPL&lt;TPL_NAME&gt;.cmake&quot;).  A standard way to write a
-FindTPL&lt;TPL_NAME&gt;.cmake module is to use the function
+<li><strong>TPL</strong> (1st column): The name of the TriBITS TPL <tt class="docutils literal">&lt;TPL_NAME&gt;</tt>.  This
+name must be unique across all other TriBITS TPLs in this or any other
+TriBITS repo that might be combined into a single TriBITS project
+meta-build.  However, a TPL can be redefined (see below).  The name should
+be a valid identifier (e.g. matches the regex <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
+<li><strong>FINDMOD</strong> (2nd column): The relative directory for the find module,
+usually with the name <tt class="docutils literal"><span class="pre">FindTPL&lt;TPL_NAME&gt;.cmake</span></tt>.  This is relative to
+the repository base directory.  If just the base path for the find module
+is given, ending with &quot;/&quot; (e.g. &quot;cmake/tpls/&quot;) then the find module will
+be assumed to be under that this directory with the standard name
+(e.g. <tt class="docutils literal"><span class="pre">cmake/tpls/FindTPL&lt;TPL_NAME&gt;.cmake</span></tt>).  A standard way to write a
+<tt class="docutils literal"><span class="pre">FindTPL&lt;TPL_NAME&gt;.cmake</span></tt> module is to use the function
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a>.</li>
-<li><strong>CLASSIFICATION</strong>: Gives the testing group PT, ST, EX and the maturity
-level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated by a coma
-with no space in between such as &quot;RS,PT&quot; for a &quot;Research Stable&quot;, &quot;Primary
-Tested&quot; package.  No spaces are allowed so that CMake treats this a one
-field in the array.  The maturity level can be left off in which case it
-is assumed to be UM for &quot;Unspecified Maturity&quot;.</li>
+<li><strong>CLASSIFICATION</strong> (3rd column): Gives the testing group PT, ST, EX and
+the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
+by a coma with no space in between such as &quot;RS,PT&quot; for a &quot;Research
+Stable&quot;, &quot;Primary Tested&quot; package.  No spaces are allowed so that CMake
+treats this a one field in the array.  The maturity level can be left off
+in which case it is assumed to be UM for &quot;Unspecified Maturity&quot;.</li>
 </ul>
-<p>NOTE: A TPL defined in a upstream repo can listed again, which allows
-redefining the find module that is used to specificy the TPL.  This allows
-downstream repos to add additional requirements on a given TPL.  However,
-the downstream repo's find module file must find the TPL components that are
+<p>A TPL defined in a upstream repo can listed again, which allows redefining
+the find module that is used to specificy the TPL.  This allows downstream
+repos to add additional requirements on a given TPL.  However, the
+downstream repo's find module file must find the TPL components that are
 fully compatible with the upstream's find module.</p>
-<p>NOTE: This macro just sets the varaible
-${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS in the current
-scope.  The advantages of using this macro instead of directly setting this
-varible include:</p>
+<p>This macro just sets the varaible:</p>
+<pre class="literal-block">
+${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+</pre>
+<p>in the current scope.  The advantages of using this macro instead of
+directly setting this varible include:</p>
 <ul class="simple">
-<li>Asserts that REPOSITORY_NAME is defined and set</li>
-<li>Avoids having to hard-code the assumed repository name ${REPOSITORY_NAME}.
+<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
+<li>Avoids having to hard-code the assumed repository name <tt class="docutils literal">${REPOSITORY_NAME}</tt>.
 This provides more flexibility for how other TriBITS project name a given
 TriBITS repo (i.e. the name of repo subdirs).</li>
 <li>Avoid mispelling the name of the varible
-${REPOSITORY_NAME}_.  If you misspell
-the name of the macro, it is an immediate error in CMake.</li>
+<tt class="docutils literal">${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS</tt>.  If you misspell the
+name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-define-package-dependencies">
-<h2><a class="toc-backref" href="#id9">4.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h2>
+<h2><a class="toc-backref" href="#id10">4.4&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h2>
 <p>Define the dependenices for a given TriBITS SE package (i.e. a top-level
 package or a subpackage).</p>
 <p>Usage:</p>
@@ -636,7 +653,7 @@ are empty.  This is a error checking property of the TriBITS system to avoid
 misspelling the names of these variables.</p>
 </div>
 <div class="section" id="tribits-allow-missing-external-packages">
-<h2><a class="toc-backref" href="#id10">4.4&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h2>
+<h2><a class="toc-backref" href="#id11">4.5&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h2>
 <p>Macro used in Dependencies.cmake files to allow some upstream dependent packages
 to be missing.</p>
 <p>Usage:</p>
@@ -657,7 +674,7 @@ misspelled package names so it is important to only use it when it
 absolutely is needed.</p>
 </div>
 <div class="section" id="tribits-tpl-declare-libraries">
-<h2><a class="toc-backref" href="#id11">4.5&nbsp;&nbsp;&nbsp;TRIBITS_TPL_DECLARE_LIBRARIES()</a></h2>
+<h2><a class="toc-backref" href="#id12">4.6&nbsp;&nbsp;&nbsp;TRIBITS_TPL_DECLARE_LIBRARIES()</a></h2>
 <p>Function that sets up cache variables for users to specify where to find a
 TPL's headers and libraries.  This function is typically called inside of a
 file <tt class="docutils literal"><span class="pre">FindTPL&lt;tpl_name&gt;.cmake</span></tt> file.</p>
@@ -726,9 +743,9 @@ correct list of libraries to link to.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package">
-<h2><a class="toc-backref" href="#id12">4.6&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE()</a></h2>
-<p>Macro called at the very beginning of a ${PROJECT_NAME} package's top-level
-CMakeLists.txt file.</p>
+<h2><a class="toc-backref" href="#id13">4.7&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE()</a></h2>
+<p>Macro called at the very beginning of a package's top-level CMakeLists.txt
+file.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE(
@@ -740,13 +757,13 @@ TRIBITS_PACKAGE(
   )
 </pre>
 <p>See <a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> for the documentation for the arguments and
-<a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> and <a class="reference internal" href="#tribits-package">TRIBITS_PACKAGE()</a> for a description of the
-arguments and the side-effects (and varibles set) of calling this macro.</p>
+<a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> and <a class="reference internal" href="#tribits-package">TRIBITS_PACKAGE()</a> for a description the
+side-effects (and varibles set) after calling this macro.</p>
 </div>
 <div class="section" id="tribits-package-decl">
-<h2><a class="toc-backref" href="#id13">4.7&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DECL()</a></h2>
-<p>Macro called at the very beginning of a ${PROJECT_NAME}
-package's top-level CMakeLists.txt file when a packages has subpackages.</p>
+<h2><a class="toc-backref" href="#id14">4.8&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DECL()</a></h2>
+<p>Macro called at the very beginning of a package's top-level CMakeLists.txt
+file when a packages has subpackages.</p>
 <p>If the package does not have subpackages, just call <a class="reference internal" href="#tribits-package">TRIBITS_PACKAGE()</a>
 which calls this macro.</p>
 <p>Usage:</p>
@@ -760,40 +777,53 @@ TRIBITS_PACKAGE_DECL(
   )
 </pre>
 <p>The arguments are:</p>
-<ul class="simple">
-<li><tt class="docutils literal">&lt;packageName&gt;</tt>: Gives the name of the Package, mostly just for checking
-and documentation purposes.  This much match the name of the package
-provided in the PackagesLists.cmake or it is an error.</li>
-<li><tt class="docutils literal">ENABLE_SHADOWING_WARNINGS</tt>:If specified, then shadowing warnings will
+<blockquote>
+<p><tt class="docutils literal">&lt;packageName&gt;</tt></p>
+<blockquote>
+Gives the name of the Package, mostly just for checking and
+documentation purposes.  This much match the name of the package
+provided in the PackagesLists.cmake or it is an error.</blockquote>
+<p><tt class="docutils literal">ENABLE_SHADOWING_WARNINGS</tt></p>
+<blockquote>
+If specified, then shadowing warnings will
 be turned on for supported platforms/compilers.  The default is for
 shadowing warnings to be turned off.  Note that this can be overridden
 globally by setting the cache variable
-${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.</li>
-<li><tt class="docutils literal">DISABLE_STRONG_WARNINGS</tt>: If specified, then all strong warnings will
-be turned off, if they are not already turned off by global cache
-variables.  Strong warnings are turned on by default in development mode.</li>
-<li><tt class="docutils literal">CLEANED</tt>:If specified, then warnings will be promoted to errors for all
-defined warnings.</li>
-<li><tt class="docutils literal">DISABLE_CIRCULAR_REF_DETECTION_FAILURE</tt>: If specified, then the
+${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.</blockquote>
+<p><tt class="docutils literal">DISABLE_STRONG_WARNINGS</tt></p>
+<blockquote>
+If specified, then all strong warnings will be turned off, if they are
+not already turned off by global cache variables.  Strong warnings are
+turned on by default in development mode.</blockquote>
+<p><tt class="docutils literal">CLEANED</tt></p>
+<blockquote>
+If specified, then warnings will be promoted to errors for all defined
+warnings.</blockquote>
+<p><tt class="docutils literal">DISABLE_CIRCULAR_REF_DETECTION_FAILURE</tt></p>
+<blockquote>
+If specified, then the
 standard grep looking for RCPNode circular references that causes tests to
 fail will be disabled.  Note that if these warnings are being produced
 then it means that the test is leaking memory and user like may also be
-leaking memory.</li>
-</ul>
+leaking memory.</blockquote>
+</blockquote>
 <p>There are several side-effects of calling this macro:</p>
 <ul class="simple">
-<li>The package's list of targets varibles aree initialized to emtpy.</li>
+<li>The the varibles listed the packages set of library targets
+<tt class="docutils literal">${PACKAGE_NAME}_LIB_TARGETS</tt> and all targets
+<tt class="docutils literal">${PACKAGE_NAME}_ALL_TARGETS</tt> and are initialized to emtpy.</li>
 <li>The local varibles <tt class="docutils literal">PACKAGE_SOURCE_DIR</tt> and <tt class="docutils literal">PACKAGE_BINARY_DIR</tt> are
 set for this package's use in its CMakeLists.txt files.</li>
 <li>Package-specific compiler options are set up in package-scoped (i.e., the
 package's subdir and its subdirs) in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAG</tt>.</li>
-<li>This packages's cmake subdir is added to <tt class="docutils literal">CMAKE_MODULE_PATH</tt> so that the
-package's try-compile modules can be read in with just a raw <tt class="docutils literal">INCLUDE()</tt>
-leaving off the full path and the <tt class="docutils literal">*.cmake</tt> extension.</li>
+<li>This packages's cmake subdir <tt class="docutils literal"><span class="pre">${PACKAGE_SOURCE_DIR}/cmake</span></tt> is added to
+<tt class="docutils literal">CMAKE_MODULE_PATH</tt> locally so that the package's try-compile modules
+can be read in with just a raw <tt class="docutils literal">INCLUDE()</tt> leaving off the full path and
+the <tt class="docutils literal">*.cmake</tt> extension.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package-def">
-<h2><a class="toc-backref" href="#id14">4.8&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DEF()</a></h2>
+<h2><a class="toc-backref" href="#id15">4.9&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_DEF()</a></h2>
 <p>Macro called after subpackages are processed in order to
 handle the libraries, tests, and examples of the final package.</p>
 <p>Usage:</p>
@@ -811,7 +841,7 @@ list of libraries, etc.) are initialized to emtpy.</li>
 </ul>
 </div>
 <div class="section" id="tribits-process-subpackages">
-<h2><a class="toc-backref" href="#id15">4.9&nbsp;&nbsp;&nbsp;TRIBITS_PROCESS_SUBPACKAGES()</a></h2>
+<h2><a class="toc-backref" href="#id16">4.10&nbsp;&nbsp;&nbsp;TRIBITS_PROCESS_SUBPACKAGES()</a></h2>
 <p>Macro that processes subpackages for packages that have them.  This is
 called in the parent packages top-level CMakeLists.txt file.</p>
 <p>Usage:</p>
@@ -822,7 +852,7 @@ TRIBITS_PROCESS_SUBPACKAGES()
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>.</p>
 </div>
 <div class="section" id="tribits-add-test-directories">
-<h2><a class="toc-backref" href="#id16">4.10&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST_DIRECTORIES()</a></h2>
+<h2><a class="toc-backref" href="#id17">4.11&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST_DIRECTORIES()</a></h2>
 <p>Macro called to add a set of test directories for an SE package.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -839,7 +869,7 @@ extended in the futgure in order to modify behavior related to adding tests
 and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-add-example-directories">
-<h2><a class="toc-backref" href="#id17">4.11&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h2>
+<h2><a class="toc-backref" href="#id18">4.12&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h2>
 <p>Macro called to conditionally add a set of example directories for an SE
 package.</p>
 <p>Usage:</p>
@@ -857,7 +887,7 @@ be extended in the futgure in order to modify behavior related to adding
 tests and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-set-st-for-dev-mode">
-<h2><a class="toc-backref" href="#id18">4.12&nbsp;&nbsp;&nbsp;TRIBITS_SET_ST_FOR_DEV_MODE()</a></h2>
+<h2><a class="toc-backref" href="#id19">4.13&nbsp;&nbsp;&nbsp;TRIBITS_SET_ST_FOR_DEV_MODE()</a></h2>
 <p>Function that allows packages to easily make a feature <tt class="docutils literal">ST</tt> for
 development builds and <tt class="docutils literal">PT</tt> for release builds by default.</p>
 <p>Usage:</p>
@@ -872,8 +902,13 @@ development mode reducing testing time which includes only <tt class="docutils l
 while still having important functionality available to users by default in
 a release.</p>
 </div>
+<div class="section" id="tribits-configure-file">
+<h2><a class="toc-backref" href="#id20">4.14&nbsp;&nbsp;&nbsp;TRIBITS_CONFIGURE_FILE()</a></h2>
+<p>Macro that configures the package's main config.h file</p>
+<p>ToDo: Document everything this macro does!</p>
+</div>
 <div class="section" id="tribits-add-library">
-<h2><a class="toc-backref" href="#id19">4.13&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></h2>
+<h2><a class="toc-backref" href="#id21">4.15&nbsp;&nbsp;&nbsp;TRIBITS_ADD_LIBRARY()</a></h2>
 <p>Function used to add a CMake library target using <tt class="docutils literal">ADD_LIBRARY()</tt>.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -908,7 +943,7 @@ using <tt class="docutils literal">INSTALL(FILES &lt;h1&gt; &lt;h2&gt; <span cla
 created through calling the build-in command <tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libName&gt;</span> <span class="pre">...)</span></tt>.</p>
 </div>
 <div class="section" id="tribits-add-executable">
-<h2><a class="toc-backref" href="#id20">4.14&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></h2>
+<h2><a class="toc-backref" href="#id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_ADD_EXECUTABLE()</a></h2>
 <p>Function used to create an executable (typically for a test or example),
 using the built-in CMake comamnd <tt class="docutils literal">ADD_EXECUTABLE()</tt>.</p>
 <p>Usage:</p>
@@ -955,8 +990,115 @@ prefix helps to avoid clashing with executables installed by other packages.</p>
 <p><strong>Postcondition:</strong></p>
 <p>ToDo: Document post conditions!</p>
 </div>
+<div class="section" id="tribits-copy-files-to-binary-dir">
+<h2><a class="toc-backref" href="#id23">4.17&nbsp;&nbsp;&nbsp;TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></h2>
+<p>Function that copies a list of files from a soruce directory to a
+destination directory at configure time, typically so that it can be used in
+one or more tests.  This sets up all of the custom CMake commands and
+targets to ensure that the files in the destiation directory are always up
+to date just by building the <tt class="docutils literal">ALL</tt> target.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  &lt;targetName&gt;
+  [SOURCE_FILES &lt;file1&gt; &lt;file2&gt; ...]
+  [SOURCE_DIR &lt;sourceDir&gt;]
+  [DEST_FILES &lt;dfile1&gt; &lt;dfile2&gt; ...]
+  [DEST_DIR &lt;destDir&gt;]
+  [TARGETDEPS &lt;targDep1&gt; &lt;targDep2&gt; ...]
+  [EXEDEPS &lt;exeDep1&gt; &lt;exeDep2&gt; ...]
+  [NOEXEPREFIX]
+  [CATEGORIES &lt;category1&gt;  &lt;category2&gt; ...]
+  )
+</pre>
+<p>This function has a few valid calling modes:</p>
+<p><strong>1) Source files and destination files have the same name</strong>:</p>
+<pre class="literal-block">
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  &lt;targetName&gt;
+  SOURCE_FILES &lt;file1&gt; &lt;file2&gt; ...
+  [SOURCE_DIR &lt;sourceDir&gt;]
+  [DEST_DIR &lt;destDir&gt;]
+  [TARGETDEPS &lt;targDep1&gt; &lt;targDep2&gt; ...]
+  [EXEDEPS &lt;exeDep1&gt; &lt;exeDep2&gt; ...]
+  [NOEXEPREFIX]
+  [CATEGORIES &lt;category1&gt;  &lt;category2&gt; ...]
+  )
+</pre>
+<p>In this case, the names of the source files and the destination files
+are the same but just live in different directories.</p>
+<p><strong>2) Source files have a prefix different from the destination files</strong>:</p>
+<pre class="literal-block">
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  &lt;targetName&gt;
+  DEST_FILES &lt;file1&gt; &lt;file2&gt; ...
+  SOURCE_PREFIX &lt;srcPrefix&gt;
+  [SOURCE_DIR &lt;sourceDir&gt;]
+  [DEST_DIR &lt;destDir&gt;]
+  [EXEDEPS &lt;exeDep1&gt; &lt;exeDep2&gt; ...]
+  [NOEXEPREFIX]
+  [CATEGORIES &lt;category1&gt;  &lt;category2&gt; ...]
+  )
+</pre>
+<p>In this case, the source files have the same basic name as the
+destination files except they have the prefix 'srcPrefix' appended
+to the name.</p>
+<p><strong>3) Source files and destination files have completely different names</strong>:</p>
+<pre class="literal-block">
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  &lt;targetName&gt;
+  SOURCE_FILES &lt;sfile1&gt; &lt;sfile2&gt; ...
+  [SOURCE_DIR &lt;sourceDir&gt;]
+  DEST_FILES &lt;dfile1&gt; &lt;dfile2&gt; ...
+  [DEST_DIR &lt;destDir&gt;]
+  [EXEDEPS &lt;exeDep1&gt; &lt;exeDep2&gt; ...]
+  [NOEXEPREFIX]
+  [CATEGORIES &lt;category1&gt;  &lt;category2&gt; ...]
+  )
+</pre>
+<p>In this case, the source files and destination files have completely
+different prefixes.</p>
+<p>The individual arguments are:</p>
+<blockquote>
+<p><tt class="docutils literal">SOURCE_FILES &lt;file1&gt; &lt;file2&gt; ...</tt></p>
+<blockquote>
+Listing of the source files relative to the source directory given by
+the argument <tt class="docutils literal">SOURCE_DIR &lt;sourceDir&gt;</tt>.  If omited, this list will be
+the same as <tt class="docutils literal">DEST_FILES</tt> with the argument <tt class="docutils literal">SOURCE_PREFIX
+&lt;srcPrefix&gt;</tt> appended.</blockquote>
+<p><tt class="docutils literal">SOURCE_DIR &lt;sourceDir&gt;</tt></p>
+<blockquote>
+Optional argument that gives (absolute) the base directory for all of the
+source files.  If omited, this takes the default value of
+<tt class="docutils literal">${CMAKE_CURRENT_SOURCE_DIR}</tt>.</blockquote>
+<p><tt class="docutils literal">DEST_FILES &lt;file1&gt; &lt;file2&gt; ...</tt></p>
+<blockquote>
+Listing of the destination files relative to the destination directory
+given by the argument <tt class="docutils literal">DEST_DIR &lt;destDir&gt;</tt> If omited, this list will
+be the same as given by the <tt class="docutils literal">SOURCE_FILES</tt> list.</blockquote>
+<p><tt class="docutils literal">DEST_DIR &lt;destDir&gt;</tt></p>
+<blockquote>
+Optional argument that gives the (absolute) base directory for all of the
+destination files.  If omited, this takes the default value of
+<tt class="docutils literal">${CMAKE_CURRENT_BINARY_DIR}</tt></blockquote>
+<p><tt class="docutils literal">TARGETDEPS &lt;targDep1&gt; &lt;targDep2&gt; ...</tt></p>
+<blockquote>
+Listing of general CMake targets that these files will be added as
+dependencies to.</blockquote>
+<p><tt class="docutils literal">EXEDEPS &lt;exeDep1&gt; &lt;exeDep2&gt; ...</tt></p>
+<blockquote>
+Listing of executable targets that these files will be added as
+dependencies to.  By default the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> will is
+appended to the names of the targets.  This ensures that if the
+executable target is built that these files will also be copied as well.</blockquote>
+<p><tt class="docutils literal">NOEXEPREFIX</tt></p>
+<blockquote>
+Option that determines if the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> will be
+appended to the arguments in the <tt class="docutils literal">EXEDEPS</tt> list.</blockquote>
+</blockquote>
+</div>
 <div class="section" id="tribits-add-test">
-<h2><a class="toc-backref" href="#id21">4.15&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST()</a></h2>
+<h2><a class="toc-backref" href="#id24">4.18&nbsp;&nbsp;&nbsp;TRIBITS_ADD_TEST()</a></h2>
 <p>Add a test or a set of tests for a single executable or command.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -1213,6 +1355,8 @@ tests. See below.</p>
 </dl>
 <p><strong>Determining Pass/Fail:</strong></p>
 <p>ToDo: Fill in!</p>
+<p><strong>Setting additional test properties:</strong></p>
+<p>ToDo: Fill in!</p>
 <p><strong>Debugging and Examining Test Generation:</strong></p>
 <p>ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
 info it prints out.</p>
@@ -1228,7 +1372,7 @@ multiple argument sets to <tt class="docutils literal">ARGS</tt> or through mult
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt> must be set for each test individually.</p>
 </div>
 <div class="section" id="tribits-add-advanced-test">
-<h2><a class="toc-backref" href="#id22">4.16&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></h2>
+<h2><a class="toc-backref" href="#id25">4.19&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></h2>
 <p>Function that creates an advanced test defined using one or more executable
 commands that is run as a separate CMake script.</p>
 <p>This function allows you to add a single CTest test as a single unit that is
@@ -1449,6 +1593,8 @@ If specified, the test will be assumed to fail if the output matches
 <p><strong>Implementation Details:</strong></p>
 <p>ToDo: Describe the generation of the <tt class="docutils literal">*.cmake</tt> file and what gets added
 with ADD_TEST().</p>
+<p><strong>Setting additional test properties:</strong></p>
+<p>ToDo: Fill in!</p>
 <p><strong>Debugging and Examining Test Generation:</strong></p>
 <p>ToDo: Describe setting <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt> and seeing
 what info it prints out.</p>
@@ -1461,7 +1607,7 @@ case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
 when running the test.</p>
 </div>
 <div class="section" id="tribits-package-postprocess">
-<h2><a class="toc-backref" href="#id23">4.17&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
+<h2><a class="toc-backref" href="#id26">4.20&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
 <p>Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
 downstream packages are processed.</p>
@@ -1474,7 +1620,7 @@ macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 </div>
 <div class="section" id="references">
-<h1><a class="toc-backref" href="#id24">5&nbsp;&nbsp;&nbsp;References</a></h1>
+<h1><a class="toc-backref" href="#id27">5&nbsp;&nbsp;&nbsp;References</a></h1>
 <table class="docutils citation" frame="void" id="scale" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -1483,9 +1629,9 @@ macro but limitations of the CMake language make it necessary to do so.</p>
 </table>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id25">6&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id28">6&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id26">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id29">6.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)

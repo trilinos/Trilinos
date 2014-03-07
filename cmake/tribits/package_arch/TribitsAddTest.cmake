@@ -341,6 +341,10 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # ToDo: Fill in!
 #
+# **Setting additional test properties:**
+#
+# ToDo: Fill in!
+#
 # **Debugging and Examining Test Generation:**
 #
 # ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what

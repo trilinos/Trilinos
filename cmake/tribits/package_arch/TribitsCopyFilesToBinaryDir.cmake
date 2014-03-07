@@ -43,96 +43,123 @@ INCLUDE(ParseVariableArguments)
 
 
 #
-# Function that copies a list of source files to a list of destination
-# files between two base directories.
+# @FUNCTION: TRIBITS_COPY_FILES_TO_BINARY_DIR()
+#
+# Function that copies a list of files from a soruce directory to a
+# destination directory at configure time, typically so that it can be used in
+# one or more tests.  This sets up all of the custom CMake commands and
+# targets to ensure that the files in the destiation directory are always up
+# to date just by building the ``ALL`` target.
+#
+# Usage::
+#
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#     <targetName>
+#     [SOURCE_FILES <file1> <file2> ...]
+#     [SOURCE_DIR <sourceDir>]
+#     [DEST_FILES <dfile1> <dfile2> ...]
+#     [DEST_DIR <destDir>]
+#     [TARGETDEPS <targDep1> <targDep2> ...]
+#     [EXEDEPS <exeDep1> <exeDep2> ...]
+#     [NOEXEPREFIX]
+#     [CATEGORIES <category1>  <category2> ...]
+#     )
 #
 # This function has a few valid calling modes:
 #
-# 1) Source files and destination files have the same name:
+# **1) Source files and destination files have the same name**::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
-#     SOURCE_FILES file1 file2 ...
-#     [SOURCE_DIR sourceDir]
-#     [DEST_DIR destDir]
-#     [TARGETDEPS targDep1 targDep2 ...]
-#     [EXEDEPS exeDep1 exeDep2 ...]
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#     <targetName>
+#     SOURCE_FILES <file1> <file2> ...
+#     [SOURCE_DIR <sourceDir>]
+#     [DEST_DIR <destDir>]
+#     [TARGETDEPS <targDep1> <targDep2> ...]
+#     [EXEDEPS <exeDep1> <exeDep2> ...]
 #     [NOEXEPREFIX]
 #     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
-#   In this case, the names of the source files and the destination files
-#   are the same but just live in different directories.
+# In this case, the names of the source files and the destination files
+# are the same but just live in different directories.
 #
-# 2) Source files have a prefix different from the destination files:
+# **2) Source files have a prefix different from the destination files**::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
-#     DEST_FILES file1 file2 ...
-#     SOURCE_PREFIX srcPrefix
-#     [SOURCE_DIR sourceDir]
-#     [DEST_DIR destDir]
-#     [EXEDEPS exeDep1 exeDep2 ...]
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#     <targetName>
+#     DEST_FILES <file1> <file2> ...
+#     SOURCE_PREFIX <srcPrefix>
+#     [SOURCE_DIR <sourceDir>]
+#     [DEST_DIR <destDir>]
+#     [EXEDEPS <exeDep1> <exeDep2> ...]
 #     [NOEXEPREFIX]
 #     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
-#   In this case, the source files have the same basic name as the
-#   destination files except they have the prefix 'srcPrefix' appended
-#   to the name.
+# In this case, the source files have the same basic name as the
+# destination files except they have the prefix 'srcPrefix' appended
+# to the name.
 #
-# 3) Source files and destination files have completely different names:
+# **3) Source files and destination files have completely different names**::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
-#     SOURCE_FILES sfile1 sfile2 ...
-#     [SOURCE_DIR sourceDir]
-#     DEST_FILES dfile1 dfile2 ...
-#     [DEST_DIR destDir]
-#     [EXEDEPS exeDep1 exeDep2 ...]
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#     <targetName>
+#     SOURCE_FILES <sfile1> <sfile2> ...
+#     [SOURCE_DIR <sourceDir>]
+#     DEST_FILES <dfile1> <dfile2> ...
+#     [DEST_DIR <destDir>]
+#     [EXEDEPS <exeDep1> <exeDep2> ...]
 #     [NOEXEPREFIX]
 #     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
-#   In this case, the source files and destination files have completely
-#   different prefixes.
+# In this case, the source files and destination files have completely
+# different prefixes.
 #
-# Here is the documentation for the individual arguments:
+# The individual arguments are:
 #
-#   SOURCE_FILES file1 file2 ...
-#     Listing of the source files relative to the source directory given
-#     by the SOURCE_DIR argument 'sourceDir'.  If omited, this list will
-#     be the same as DEST_FILES with the SOURCE_PREFIX argument 'srcPrefix'
-#     appended.
+#   ``SOURCE_FILES <file1> <file2> ...``
 #
-#   SOURCE_DIR sourceDir
+#     Listing of the source files relative to the source directory given by
+#     the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
+#     the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
+#     <srcPrefix>`` appended.
+#
+#   ``SOURCE_DIR <sourceDir>``
+#
 #     Optional argument that gives (absolute) the base directory for all of the
 #     source files.  If omited, this takes the default value of 
-#     ${CMAKE_CURRENT_SOURCE_DIR}.
+#     ``${CMAKE_CURRENT_SOURCE_DIR}``.
 #
-#   DEST_FILES file1 file2 ...
-#     Listing of the destination files relative to the destination directory given
-#     by the DEST_DIR argument 'destDir'  If omited, this list will be
-#     the same as given by the SOURCE_FILES list.
+#   ``DEST_FILES <file1> <file2> ...``
 #
-#   DEST_DIR destDir
+#     Listing of the destination files relative to the destination directory
+#     given by the argument ``DEST_DIR <destDir>`` If omited, this list will
+#     be the same as given by the ``SOURCE_FILES`` list.
+#
+#   ``DEST_DIR <destDir>``
+#
 #     Optional argument that gives the (absolute) base directory for all of the
 #     destination files.  If omited, this takes the default value of 
-#     ${CMAKE_CURRENT_BINARY_DIR}
+#     ``${CMAKE_CURRENT_BINARY_DIR}``
 #
-#   TARGETDEPS targDep1 targDep2 ...
+#   ``TARGETDEPS <targDep1> <targDep2> ...``
+#
 #     Listing of general CMake targets that these files will be added as
 #     dependencies to.
 #
-#   EXEDEPS exeDep1 exeDep2 ...
+#   ``EXEDEPS <exeDep1> <exeDep2> ...``
+#
 #     Listing of executable targets that these files will be added as
-#     dependencies to.  By default the prefix '${PACKAGE_NAME}_' will
-#     is appended to the names of the targets.  Also, the '.exe' suffix
-#     will be post-pended as well.  This ensures that if the executable
-#     target is built that these files will also be copied as well.
+#     dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
+#     appended to the names of the targets.  This ensures that if the
+#     executable target is built that these files will also be copied as well.
 #
-#   NOEXEPREFIX
-#     Option that determines if the prefix '${PACKAGE_NAME}_' will be appended
-#     to the arguments in the EXEDEPS list. 
+#   ``NOEXEPREFIX``
 #
-
+#     Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
+#     appended to the arguments in the ``EXEDEPS`` list.
+#
 FUNCTION(TRIBITS_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
 
   #

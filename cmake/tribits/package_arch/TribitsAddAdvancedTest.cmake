@@ -293,6 +293,10 @@ INCLUDE(PrintVar)
 # ToDo: Describe the generation of the ``*.cmake`` file and what gets added
 # with ADD_TEST().
 #
+# **Setting additional test properties:**
+#
+# ToDo: Fill in!
+#
 # **Debugging and Examining Test Generation:**
 #
 # ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing

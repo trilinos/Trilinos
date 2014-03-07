@@ -3,6 +3,19 @@
 .. generate-dev-guide.sh.  Only the file TribitsDetailedMacroFunctionDoc.rst
 .. should be directly modified!
 
+TRIBITS_PROJECT()
+-----------------
+
+Defines and processes a TriBITS project.
+
+Requires that ``PROJECT_NAME`` be defined before calling this macro.
+
+Note, this is just a shell of a macro that calls the real implementation.
+This allows someone to set ``${PROJECT_NAME}_TRIBITS_DIR`` in the env and point
+to a different Tribits implementation to test before snapshoting.
+
+ToDo: Give documentation!
+
 TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()
 ---------------------------------------------------------
 
@@ -13,51 +26,55 @@ Usage::
 
    TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
       <pkg0>  <pkg0_dir>  <pkg0_classifications>
+      <pkg1>  <pkg1_dir>  <pkg1_classifications>
       ...
-      <pkgnm1>  <pkgnm1_dir>  <pkgnm1_classifications>
       )
 
 This macro sets up a 2D array of NumPackages by NumColumns listing out the
 packages for a TriBITS repository.  Each row (with 3 entries) specifies a
 package which contains the three columns:
 
-* **PACKAGE**: The name of the TriBITS package.  This name must be unique
-  across all other TriBITS packages in this or any other TriBITS repo that
-  might be combined into a single TriBITS project meta-build.  The name
-  should be a valid identifier (e.g. matches the regex
+* **PACKAGE** (1st column): The name of the TriBITS package.  This name must
+  be unique across all other TriBITS packages in this or any other TriBITS
+  repo that might be combined into a single TriBITS project meta-build.  The
+  name should be a valid identifier (e.g. matches the regex
   ``[a-zA-Z_][a-zA-Z0-9_]*``).
 
-* **DIR**: The relative directory for the package.  This is relative to the
-  TriBITS repository base directory.  Under this directory will be a
-  package-specific 'cmake/' directory with file 'cmake/Dependencies.cmake'
-  and a base-level CMakeLists.txt file.  The entire contents of the package
-  including all of the source code and all of the tests should be contained
-  under this directory.  The TriBITS testing infrastructure relies on the
-  mapping of changed files to these base directories when deciding what
-  packages are modified and need to be retested (along with downstream
-  packages).
+* **DIR** (2nd column): The relative directory for the package.  This is
+  relative to the TriBITS repository base directory.  Under this directory
+  will be a package-specific 'cmake/' directory with file
+  'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+  entire contents of the package including all of the source code and all of
+  the tests should be contained under this directory.  The TriBITS testing
+  infrastructure relies on the mapping of changed files to these base
+  directories when deciding what packages are modified and need to be
+  retested (along with downstream packages).
 
-* **CLASSIFICATION**: Gives the testing group PT, ST, EX and
+* **CLASSIFICATION** (3nd column): Gives the testing group PT, ST, EX and
   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
   by a coma with no space in between such as "RS,PT" for a "Research
   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
   treats this a one field in the array.  The maturity level can be left off
   in which case it is assumed to be UM for "Unspecified Maturity".
 
- NOTE: This macro just sets the varaible
- ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in the current
- scope.  The advantages of using this macro instead of directly setting this
- varible include:
+NOTE: This macro just sets the varaible::
 
- * Asserts that REPOSITORY_NAME is defined and set
+  ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 
- * Avoids having to hard-code the assumed repository name
-   ${REPOSITORY_NAME}.  This provides more flexibility for how other TriBITS
-   project name a given TriBITS repo (i.e. the name of repo subdirs).
+in the current
+scope.  The advantages of using this macro instead of directly setting this
+varible include:
 
- * Avoid mispelling the name of the varible
-   ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.  If you misspell
-   the name of the macro, it is an immediate error in CMake.
+* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+
+* Avoids having to hard-code the assumed repository name
+  ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
+  TriBITS project name a given TriBITS repo (i.e. the name of repo
+  subdirs).
+
+* Avoid mispelling the name of the varible
+  ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
+  misspell the name of the macro, it is an immediate error in CMake.
 
 TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()
 ---------------------------------------------------------
@@ -70,53 +87,56 @@ Usage::
 
   TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
     <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
+    <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
     ...
-    <tplnm1_name>   <tplnm1_findmod>  <tplnm1_classification>
+    )
 
 This macro sets up a 2D array of NumTPLS by NumColumns listing out the
 TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
 package which contains the three columns:
 
-* **TPL**: The name of the TriBITS TPL <TPL_NAME>.  This name must be unique
-  across all other TriBITS TPLs in this or any other TriBITS repo that might
-  be combined into a single TriBITS project meta-build.  However, a TPL can
-  be redefined (see below).  The name should be a valid identifier
-  (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
+* **TPL** (1st column): The name of the TriBITS TPL ``<TPL_NAME>``.  This
+  name must be unique across all other TriBITS TPLs in this or any other
+  TriBITS repo that might be combined into a single TriBITS project
+  meta-build.  However, a TPL can be redefined (see below).  The name should
+  be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 
-* **FINDMOD**: The relative directory for the find module, usually with the
-  name FindTPL<TPL_NAME>.cmake.  This is relative to the repository base
-  directory.  If just the base path for the find module is given, ending
-  with "/" (e.g. "cmake/tpls/") then the find module will be assumed to be
-  under that this directory with the standard name
-  (e.g. "cmake/tpls/FindTPL<TPL_NAME>.cmake").  A standard way to write a
-  FindTPL<TPL_NAME>.cmake module is to use the function
+* **FINDMOD** (2nd column): The relative directory for the find module,
+  usually with the name ``FindTPL<TPL_NAME>.cmake``.  This is relative to
+  the repository base directory.  If just the base path for the find module
+  is given, ending with "/" (e.g. "cmake/tpls/") then the find module will
+  be assumed to be under that this directory with the standard name
+  (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard way to write a
+  ``FindTPL<TPL_NAME>.cmake`` module is to use the function
   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
 
-* **CLASSIFICATION**: Gives the testing group PT, ST, EX and the maturity
-  level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated by a coma
-  with no space in between such as "RS,PT" for a "Research Stable", "Primary
-  Tested" package.  No spaces are allowed so that CMake treats this a one
-  field in the array.  The maturity level can be left off in which case it
-  is assumed to be UM for "Unspecified Maturity".
+* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
+  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
+  by a coma with no space in between such as "RS,PT" for a "Research
+  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
+  treats this a one field in the array.  The maturity level can be left off
+  in which case it is assumed to be UM for "Unspecified Maturity".
 
-NOTE: A TPL defined in a upstream repo can listed again, which allows
-redefining the find module that is used to specificy the TPL.  This allows
-downstream repos to add additional requirements on a given TPL.  However,
-the downstream repo's find module file must find the TPL components that are
+A TPL defined in a upstream repo can listed again, which allows redefining
+the find module that is used to specificy the TPL.  This allows downstream
+repos to add additional requirements on a given TPL.  However, the
+downstream repo's find module file must find the TPL components that are
 fully compatible with the upstream's find module.
 
-NOTE: This macro just sets the varaible
-${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS in the current
-scope.  The advantages of using this macro instead of directly setting this
-varible include:
+This macro just sets the varaible::
 
-* Asserts that REPOSITORY_NAME is defined and set
-* Avoids having to hard-code the assumed repository name ${REPOSITORY_NAME}.
+ ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+
+in the current scope.  The advantages of using this macro instead of
+directly setting this varible include:
+
+* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+* Avoids having to hard-code the assumed repository name ``${REPOSITORY_NAME}``.
   This provides more flexibility for how other TriBITS project name a given
   TriBITS repo (i.e. the name of repo subdirs).
 * Avoid mispelling the name of the varible
-  ${REPOSITORY_NAME}_.  If you misspell
-  the name of the macro, it is an immediate error in CMake.
+  ``${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS``.  If you misspell the
+  name of the macro, it is an immediate error in CMake.
 
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
 -------------------------------------
@@ -362,8 +382,8 @@ intended for the user to set and/or use:
 TRIBITS_PACKAGE()
 -----------------
 
-Macro called at the very beginning of a ${PROJECT_NAME} package's top-level
-CMakeLists.txt file.
+Macro called at the very beginning of a package's top-level CMakeLists.txt
+file.
 
 Usage::
 
@@ -376,14 +396,14 @@ Usage::
     )
 
 See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
-`TRIBITS_PACKAGE_DECL()`_ and `TRIBITS_PACKAGE()`_ for a description of the
-arguments and the side-effects (and varibles set) of calling this macro.
+`TRIBITS_PACKAGE_DECL()`_ and `TRIBITS_PACKAGE()`_ for a description the
+side-effects (and varibles set) after calling this macro.
 
 TRIBITS_PACKAGE_DECL()
 ----------------------
 
-Macro called at the very beginning of a ${PROJECT_NAME}
-package's top-level CMakeLists.txt file when a packages has subpackages.
+Macro called at the very beginning of a package's top-level CMakeLists.txt
+file when a packages has subpackages.
 
 If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
 which calls this macro.
@@ -400,32 +420,44 @@ Usage::
 
 The arguments are:
 
-* ``<packageName>``: Gives the name of the Package, mostly just for checking
-  and documentation purposes.  This much match the name of the package
-  provided in the PackagesLists.cmake or it is an error.
+  ``<packageName>``
 
-* ``ENABLE_SHADOWING_WARNINGS``:If specified, then shadowing warnings will
-  be turned on for supported platforms/compilers.  The default is for
-  shadowing warnings to be turned off.  Note that this can be overridden
-  globally by setting the cache variable
-  ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
+    Gives the name of the Package, mostly just for checking and
+    documentation purposes.  This much match the name of the package
+    provided in the PackagesLists.cmake or it is an error.
 
-* ``DISABLE_STRONG_WARNINGS``: If specified, then all strong warnings will
-  be turned off, if they are not already turned off by global cache
-  variables.  Strong warnings are turned on by default in development mode.
+  ``ENABLE_SHADOWING_WARNINGS``
 
-* ``CLEANED``:If specified, then warnings will be promoted to errors for all
-  defined warnings.
+    If specified, then shadowing warnings will
+    be turned on for supported platforms/compilers.  The default is for
+    shadowing warnings to be turned off.  Note that this can be overridden
+    globally by setting the cache variable
+    ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
 
-* ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``: If specified, then the
-  standard grep looking for RCPNode circular references that causes tests to
-  fail will be disabled.  Note that if these warnings are being produced
-  then it means that the test is leaking memory and user like may also be
-  leaking memory.
+  ``DISABLE_STRONG_WARNINGS``
+
+    If specified, then all strong warnings will be turned off, if they are
+    not already turned off by global cache variables.  Strong warnings are
+    turned on by default in development mode.
+ 
+  ``CLEANED``
+
+    If specified, then warnings will be promoted to errors for all defined
+    warnings.
+ 
+  ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
+
+    If specified, then the
+    standard grep looking for RCPNode circular references that causes tests to
+    fail will be disabled.  Note that if these warnings are being produced
+    then it means that the test is leaking memory and user like may also be
+    leaking memory.
 
 There are several side-effects of calling this macro:
 
-* The package's list of targets varibles aree initialized to emtpy.
+* The the varibles listed the packages set of library targets
+  ``${PACKAGE_NAME}_LIB_TARGETS`` and all targets
+  ``${PACKAGE_NAME}_ALL_TARGETS`` and are initialized to emtpy.
 
 * The local varibles ``PACKAGE_SOURCE_DIR`` and ``PACKAGE_BINARY_DIR`` are
   set for this package's use in its CMakeLists.txt files.
@@ -433,9 +465,10 @@ There are several side-effects of calling this macro:
 * Package-specific compiler options are set up in package-scoped (i.e., the
   package's subdir and its subdirs) in ``CMAKE_<LANG>_FLAG``.
 
-* This packages's cmake subdir is added to ``CMAKE_MODULE_PATH`` so that the
-  package's try-compile modules can be read in with just a raw ``INCLUDE()``
-  leaving off the full path and the ``*.cmake`` extension.
+* This packages's cmake subdir ``${PACKAGE_SOURCE_DIR}/cmake`` is added to
+  ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
+  can be read in with just a raw ``INCLUDE()`` leaving off the full path and
+  the ``*.cmake`` extension.
 
 TRIBITS_PACKAGE_DEF()
 ---------------------
@@ -531,6 +564,13 @@ This allows some sections of a TriBITS package to be considered ``ST`` for
 development mode reducing testing time which includes only ``PT`` code.,
 while still having important functionality available to users by default in
 a release.
+
+TRIBITS_CONFIGURE_FILE()
+------------------------
+
+Macro that configures the package's main config.h file
+
+ToDo: Document everything this macro does!
 
 TRIBITS_ADD_LIBRARY()
 ---------------------
@@ -628,6 +668,124 @@ prefix helps to avoid clashing with executables installed by other packages.
 **Postcondition:**
 
 ToDo: Document post conditions!
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR()
+----------------------------------
+
+Function that copies a list of files from a soruce directory to a
+destination directory at configure time, typically so that it can be used in
+one or more tests.  This sets up all of the custom CMake commands and
+targets to ensure that the files in the destiation directory are always up
+to date just by building the ``ALL`` target.
+
+Usage::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    [SOURCE_FILES <file1> <file2> ...]
+    [SOURCE_DIR <sourceDir>]
+    [DEST_FILES <dfile1> <dfile2> ...]
+    [DEST_DIR <destDir>]
+    [TARGETDEPS <targDep1> <targDep2> ...]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+This function has a few valid calling modes:
+
+**1) Source files and destination files have the same name**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    SOURCE_FILES <file1> <file2> ...
+    [SOURCE_DIR <sourceDir>]
+    [DEST_DIR <destDir>]
+    [TARGETDEPS <targDep1> <targDep2> ...]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the names of the source files and the destination files
+are the same but just live in different directories.
+
+**2) Source files have a prefix different from the destination files**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    DEST_FILES <file1> <file2> ...
+    SOURCE_PREFIX <srcPrefix>
+    [SOURCE_DIR <sourceDir>]
+    [DEST_DIR <destDir>]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the source files have the same basic name as the
+destination files except they have the prefix 'srcPrefix' appended
+to the name.
+
+**3) Source files and destination files have completely different names**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    SOURCE_FILES <sfile1> <sfile2> ...
+    [SOURCE_DIR <sourceDir>]
+    DEST_FILES <dfile1> <dfile2> ...
+    [DEST_DIR <destDir>]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the source files and destination files have completely
+different prefixes.
+
+The individual arguments are:
+
+  ``SOURCE_FILES <file1> <file2> ...``
+
+    Listing of the source files relative to the source directory given by
+    the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
+    the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
+    <srcPrefix>`` appended.
+
+  ``SOURCE_DIR <sourceDir>``
+
+    Optional argument that gives (absolute) the base directory for all of the
+    source files.  If omited, this takes the default value of 
+    ``${CMAKE_CURRENT_SOURCE_DIR}``.
+
+  ``DEST_FILES <file1> <file2> ...``
+
+    Listing of the destination files relative to the destination directory
+    given by the argument ``DEST_DIR <destDir>`` If omited, this list will
+    be the same as given by the ``SOURCE_FILES`` list.
+
+  ``DEST_DIR <destDir>``
+
+    Optional argument that gives the (absolute) base directory for all of the
+    destination files.  If omited, this takes the default value of 
+    ``${CMAKE_CURRENT_BINARY_DIR}``
+
+  ``TARGETDEPS <targDep1> <targDep2> ...``
+
+    Listing of general CMake targets that these files will be added as
+    dependencies to.
+
+  ``EXEDEPS <exeDep1> <exeDep2> ...``
+
+    Listing of executable targets that these files will be added as
+    dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
+    appended to the names of the targets.  This ensures that if the
+    executable target is built that these files will also be copied as well.
+
+  ``NOEXEPREFIX``
+
+    Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
+    appended to the arguments in the ``EXEDEPS`` list.
 
 TRIBITS_ADD_TEST()
 ------------------
@@ -929,6 +1087,10 @@ ToDo: Explain how multiple tests can be added with different sets of
 
 ToDo: Fill in!
 
+**Setting additional test properties:**
+
+ToDo: Fill in!
+
 **Debugging and Examining Test Generation:**
 
 ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
@@ -1195,6 +1357,10 @@ However, this can be changed by setting one of the following optional arguments:
 
 ToDo: Describe the generation of the ``*.cmake`` file and what gets added
 with ADD_TEST().
+
+**Setting additional test properties:**
+
+ToDo: Fill in!
 
 **Debugging and Examining Test Generation:**
 

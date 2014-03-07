@@ -55,53 +55,56 @@ INCLUDE(Split)
 #
 #   TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
 #     <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
+#     <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
 #     ...
-#     <tplnm1_name>   <tplnm1_findmod>  <tplnm1_classification>
+#     )
 #
 # This macro sets up a 2D array of NumTPLS by NumColumns listing out the
 # TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
 # package which contains the three columns:
 #
-# * **TPL**: The name of the TriBITS TPL <TPL_NAME>.  This name must be unique
-#   across all other TriBITS TPLs in this or any other TriBITS repo that might
-#   be combined into a single TriBITS project meta-build.  However, a TPL can
-#   be redefined (see below).  The name should be a valid identifier
-#   (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
+# * **TPL** (1st column): The name of the TriBITS TPL ``<TPL_NAME>``.  This
+#   name must be unique across all other TriBITS TPLs in this or any other
+#   TriBITS repo that might be combined into a single TriBITS project
+#   meta-build.  However, a TPL can be redefined (see below).  The name should
+#   be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 #
-# * **FINDMOD**: The relative directory for the find module, usually with the
-#   name FindTPL<TPL_NAME>.cmake.  This is relative to the repository base
-#   directory.  If just the base path for the find module is given, ending
-#   with "/" (e.g. "cmake/tpls/") then the find module will be assumed to be
-#   under that this directory with the standard name
-#   (e.g. "cmake/tpls/FindTPL<TPL_NAME>.cmake").  A standard way to write a
-#   FindTPL<TPL_NAME>.cmake module is to use the function
+# * **FINDMOD** (2nd column): The relative directory for the find module,
+#   usually with the name ``FindTPL<TPL_NAME>.cmake``.  This is relative to
+#   the repository base directory.  If just the base path for the find module
+#   is given, ending with "/" (e.g. "cmake/tpls/") then the find module will
+#   be assumed to be under that this directory with the standard name
+#   (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard way to write a
+#   ``FindTPL<TPL_NAME>.cmake`` module is to use the function
 #   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
 #
-# * **CLASSIFICATION**: Gives the testing group PT, ST, EX and the maturity
-#   level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated by a coma
-#   with no space in between such as "RS,PT" for a "Research Stable", "Primary
-#   Tested" package.  No spaces are allowed so that CMake treats this a one
-#   field in the array.  The maturity level can be left off in which case it
-#   is assumed to be UM for "Unspecified Maturity".
+# * **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
+#   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
+#   by a coma with no space in between such as "RS,PT" for a "Research
+#   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
+#   treats this a one field in the array.  The maturity level can be left off
+#   in which case it is assumed to be UM for "Unspecified Maturity".
 #
-# NOTE: A TPL defined in a upstream repo can listed again, which allows
-# redefining the find module that is used to specificy the TPL.  This allows
-# downstream repos to add additional requirements on a given TPL.  However,
-# the downstream repo's find module file must find the TPL components that are
+# A TPL defined in a upstream repo can listed again, which allows redefining
+# the find module that is used to specificy the TPL.  This allows downstream
+# repos to add additional requirements on a given TPL.  However, the
+# downstream repo's find module file must find the TPL components that are
 # fully compatible with the upstream's find module.
 #
-# NOTE: This macro just sets the varaible
-# ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS in the current
-# scope.  The advantages of using this macro instead of directly setting this
-# varible include:
+# This macro just sets the varaible::
 #
-# * Asserts that REPOSITORY_NAME is defined and set
-# * Avoids having to hard-code the assumed repository name ${REPOSITORY_NAME}.
+#  ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+#
+# in the current scope.  The advantages of using this macro instead of
+# directly setting this varible include:
+#
+# * Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+# * Avoids having to hard-code the assumed repository name ``${REPOSITORY_NAME}``.
 #   This provides more flexibility for how other TriBITS project name a given
 #   TriBITS repo (i.e. the name of repo subdirs).
 # * Avoid mispelling the name of the varible
-#   ${REPOSITORY_NAME}_.  If you misspell
-#   the name of the macro, it is an immediate error in CMake.
+#   ``${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS``.  If you misspell the
+#   name of the macro, it is an immediate error in CMake.
 #
 MACRO(TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS)
   ASSERT_DEFINED(REPOSITORY_NAME)
