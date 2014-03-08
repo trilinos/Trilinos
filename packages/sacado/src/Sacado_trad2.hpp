@@ -2121,6 +2121,9 @@ ADcontext<Double>::Hvprod(int n, ADvar<Double> **x, Double *v, Double *hv)
 				for(i = 0; i < m; i++)
 					t += g[i] * d[i].c->dO;
 				a->dO = t;
+                                break;
+                        case Hv_const:
+                          ;
 			 }
 			}
 		}
@@ -2222,6 +2225,8 @@ ADcontext<Double>::Hvprod(int n, ADvar<Double> **x, Double *v, Double *hv)
 					for(k = j; j < m; j++)
 						d[j].c->aO += t * *(h += k++);
 					}
+                        case Hv_const:
+                          ;
 			 }
 			}
 		}
