@@ -13,6 +13,54 @@ FUNCTION(PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_L
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(PROCESS_ETI_TEMPLATE)
 
+FUNCTION(TRANSFORM_CPP_TO_CU SOURCES NEW_SOURCES ENABLE_TRANSFORM)
+
+  IF(ENABLE_TRANSFORM)
+    # If CUDA is enabled, replace each .cpp file with a generated .cu
+    # file in the sources list that #include's the .cpp file
+    SET(CUDA_SOURCES "")
+    SET(NON_CUDA_SOURCES "")
+    FOREACH(CPP_FILE ${SOURCES})
+      IF("${CPP_FILE}" MATCHES ".+\\.cpp$")
+        # Strip .cpp and leading path
+        STRING(REGEX REPLACE ".*/(.+)\\.cpp$" "\\1" BASE_FILE "${CPP_FILE}")
+
+        # Create .cu file
+        SET(CU_FILE "${CMAKE_CURRENT_BINARY_DIR}/${BASE_FILE}_CU.cu")
+        STRING(CONFIGURE "#include <@CPP_FILE@>\n" CU_STRING)
+
+        # Write .cu file, only if it doesn't exist or contents changed
+        SET(WRITE_CU_FILE TRUE)
+        IF (EXISTS "${CU_FILE}")
+          FILE(READ "${CU_FILE}" EXISTING_CU_STRING)
+          IF (CU_STRING STREQUAL EXISTING_CU_STRING)
+            SET(WRITE_CU_FILE FALSE)
+          ENDIF()
+        ENDIF()
+        IF(WRITE_CU_FILE)
+          FILE(WRITE ${CU_FILE} ${CU_STRING})
+        ENDIF()
+
+        # Add .cu file to list of nvcc sources
+        APPEND_SET(CUDA_SOURCES ${CU_FILE})
+      ELSE()
+        # Add file to list of non-nvcc sources
+        APPEND_SET(NON_CUDA_SOURCES ${CU_FILE})
+      ENDIF()
+    ENDFOREACH()
+
+    # CUDA compile the cuda sources
+    CUDA_COMPILE(CUDA_COMPILED_SOURCES ${CUDA_SOURCES})
+
+    # Set list of sources
+    SET(${NEW_SOURCES} ${NON_CUDA_SOURCES} ${CUDA_COMPILED_SOURCES} PARENT_SCOPE)
+  ELSE()
+    # If CUDA is not enabled, do nothing
+    SET(${NEW_SOURCES} ${SOURCES} PARENT_SCOPE)
+  ENDIF()
+
+ENDFUNCTION(TRANSFORM_CPP_TO_CU)
+
 #
 # A) Package-specific configuration options
 #
@@ -568,10 +616,6 @@ IF (Stokhos_ENABLE_Sacado)
           "TpetraExt_CLASS_FILE_NAME.cpp"
           TPETRA_SRCS)
         LIST(APPEND TPETRA_SOURCES ${TPETRA_SRCS})
-
-        LIST(APPEND TPETRA_SOURCES
-          sacado/kokkos/vector/tpetra/Tpetra_CrsMatrix.cpp
-          )
       ENDIF()
 
       # Belos is a required dependency for Ifpack2, so we need the Belos
@@ -583,12 +627,14 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
+      TRANSFORM_CPP_TO_CU("${TPETRA_SOURCES}" TPETRA_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
       TRIBITS_ADD_LIBRARY(
         stokhos_tpetra
         HEADERS ${TPETRA_HEADERS}
-        SOURCES ${TPETRA_SOURCES}
+        SOURCES ${TPETRA_CUDA_SOURCES}
         DEPLIBS ${STOKHOS_DEPLIBS}
         )
+      SET_PROPERTY(TARGET stokhos_tpetra APPEND PROPERTY LINKER_LANGUAGE CXX)
       LIST(APPEND STOKHOS_DEPLIBS stokhos_tpetra)
 
       IF (Stokhos_ENABLE_Amesos2)
@@ -600,10 +646,11 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/amesos2/Stokhos_Amesos2_MP_Vector.hpp
           )
 
+        TRANSFORM_CPP_TO_CU("${AMESOS2_SOURCES}" AMESOS2_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
         TRIBITS_ADD_LIBRARY(
           stokhos_amesos2
           HEADERS ${AMESOS2_HEADERS}
-          SOURCES ${AMESOS2_SOURCES}
+          SOURCES ${AMESOS2_CUDA_SOURCES}
           DEPLIBS ${STOKHOS_DEPLIBS}
           )
         SET_PROPERTY(TARGET stokhos_amesos2 APPEND PROPERTY LINKER_LANGUAGE CXX)
@@ -649,12 +696,14 @@ IF (Stokhos_ENABLE_Sacado)
           LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
         ENDIF()
 
+        TRANSFORM_CPP_TO_CU("${IFPACK2_SOURCES}" IFPACK2_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
         TRIBITS_ADD_LIBRARY(
           stokhos_ifpack2
           HEADERS ${IFPACK2_HEADERS}
-          SOURCES ${IFPACK2_SOURCES}
+          SOURCES ${IFPACK2_CUDA_SOURCES}
           DEPLIBS ${STOKHOS_DEPLIBS}
           )
+        SET_PROPERTY(TARGET stokhos_ifpack2 APPEND PROPERTY LINKER_LANGUAGE CXX)
         LIST(APPEND STOKHOS_DEPLIBS stokhos_ifpack2)
 
       ENDIF()
@@ -668,12 +717,14 @@ IF (Stokhos_ENABLE_Sacado)
           APPEND_GLOB(MUELU_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
         ENDIF()
 
+        TRANSFORM_CPP_TO_CU("${MUELU_SOURCES}" MUELU_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
         TRIBITS_ADD_LIBRARY(
           stokhos_muelu
           HEADERS ${MUELU_HEADERS}
-          SOURCES ${MUELU_SOURCES}
+          SOURCES ${MUELU_CUDA_SOURCES}
           DEPLIBS ${STOKHOS_DEPLIBS}
           )
+        SET_PROPERTY(TARGET stokhos_muelu APPEND PROPERTY LINKER_LANGUAGE CXX)
         LIST(APPEND STOKHOS_DEPLIBS stokhos_muelu)
       ENDIF()
 
