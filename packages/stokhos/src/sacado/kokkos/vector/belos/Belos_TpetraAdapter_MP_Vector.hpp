@@ -1339,8 +1339,12 @@ namespace { // anonymous
       if (pcomm->getSize () == 1)
         Kokkos::deep_copy(C_view, C_view_dev);
       else {
-        c_host_view_type C_view_tmp(Kokkos::allocate_without_initializing,
-                                    "C_tmp", strideC, numColsC);
+        typedef typename c_1d_view_type::HostMirror c_1d_host_view_type;
+        c_1d_host_view_type C_1d_view_tmp(Kokkos::allocate_without_initializing,
+                                          "C_tmp", strideC*numColsC);
+        c_host_view_type C_view_tmp(Kokkos::view_without_managing,
+                                    C_1d_view_tmp.ptr_on_device(),
+                                    strideC, numColsC);
         Kokkos::deep_copy(C_view_tmp, C_view_dev);
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
                         C_view_tmp.ptr_on_device(), C_view.ptr_on_device());

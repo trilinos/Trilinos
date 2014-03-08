@@ -868,7 +868,6 @@ namespace Sacado {
   namespace MP {
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
     std::ostream& operator << (std::ostream& os,
                                const Expr<T>& x) {
       typedef typename T::storage_type storage_type;

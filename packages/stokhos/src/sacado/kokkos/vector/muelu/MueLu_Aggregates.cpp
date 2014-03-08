@@ -59,6 +59,10 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   MUELU_INST_LO_GO_N(int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
 #endif
 
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+  MUELU_INST_LO_GO_N(int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+#endif
+
 #endif
 
 

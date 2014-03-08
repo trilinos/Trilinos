@@ -61,6 +61,10 @@ namespace Ifpack2 {
   IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
 #endif
 
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+  IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+#endif
+
 } // namespace Ifpack2
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
