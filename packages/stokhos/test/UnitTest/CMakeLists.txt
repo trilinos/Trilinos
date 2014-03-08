@@ -496,19 +496,19 @@ IF(Stokhos_ENABLE_Sacado)
             )
         ENDIF()
 
-        # IF (Kokkos_ENABLE_Cuda AND KokkosClassic_ENABLE_KokkosCompat)
-        #   CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda.cu)
-        #   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        #     TpetraCrsMatrixMPVectorUnitTest_Cuda
-        #     SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
-        #             ${CUDA_SOURCES}
-        #     COMM serial mpi
-        #     STANDARD_PASS_OUTPUT
-        #     NUM_MPI_PROCS 4
-        #     RUN_SERIAL
-        #     DEPLIBS stokhos kokkoscore kokkoslinalg
-        #     )
-        # ENDIF()
+        IF (Kokkos_ENABLE_Cuda AND KokkosClassic_ENABLE_KokkosCompat)
+          CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda.cu)
+          TRIBITS_ADD_EXECUTABLE_AND_TEST(
+            TpetraCrsMatrixMPVectorUnitTest_Cuda
+            SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
+                    ${CUDA_SOURCES}
+            COMM serial mpi
+            STANDARD_PASS_OUTPUT
+            NUM_MPI_PROCS 4
+            RUN_SERIAL
+            DEPLIBS stokhos kokkoscore kokkoslinalg
+            )
+        ENDIF()
 
         TRIBITS_COPY_FILES_TO_BINARY_DIR(copyMueLuFiles
           DEST_FILES muelu_cheby.xml
