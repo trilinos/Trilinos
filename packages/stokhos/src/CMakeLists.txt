@@ -578,14 +578,17 @@ IF (Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    TRIBITS_ADD_LIBRARY(
-      stokhos_sacado
-      HEADERS ${SACADO_HEADERS}
-      SOURCES ${SACADO_SOURCES}
-      DEPLIBS ${STOKHOS_DEPLIBS}
-      )
-    LIST(APPEND STOKHOS_DEPLIBS stokhos_sacado)
+  ENDIF()
 
+  TRIBITS_ADD_LIBRARY(
+    stokhos_sacado
+    HEADERS ${SACADO_HEADERS}
+    SOURCES ${SACADO_SOURCES}
+    DEPLIBS ${STOKHOS_DEPLIBS}
+    )
+  LIST(APPEND STOKHOS_DEPLIBS stokhos_sacado)
+
+  IF (Stokhos_ENABLE_KokkosCore)
     IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       SET(TPETRA_HEADERS "")
