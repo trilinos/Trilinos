@@ -87,7 +87,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -95,7 +95,7 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 

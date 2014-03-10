@@ -165,7 +165,6 @@ namespace Galeri {
       std::vector<Scalar> Values(nnz);
       std::vector<GlobalOrdinal> Indices(nnz);
       Scalar one = (Scalar) 1.0;
-      Scalar two = (Scalar) 2.0;
       comm->barrier();
       if (comm->getRank() == 0) {
         std::cout << "starting global insert" << std::endl;
