@@ -145,13 +145,19 @@ namespace Sacado {
         StringName<S>::eval() + " >"; }
   };
 
-  //! Specialization of IsEqual to Vector types
+  //! Specialization of %IsEqual to Vector types
   template <typename S>
   struct IsEqual< MP::Vector<S> > {
     static bool eval(const MP::Vector<S>& x,
                      const MP::Vector<S>& y) {
       return x.isEqualTo(y);
     }
+  };
+
+  //! Specialization of %IsStaticallySized to Vector types
+  template <typename S>
+  struct IsStaticallySized< MP::Vector<S> > {
+    static const bool value = S::is_static;
   };
 
 } // namespace Sacado

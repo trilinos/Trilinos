@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 #include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
 #include "Tpetra_CrsMatrix.hpp"
