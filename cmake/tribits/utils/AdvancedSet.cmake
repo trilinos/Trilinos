@@ -38,6 +38,21 @@
 # @HEADER
 
 
+#
+# @MACRO: ADVANCED_SET()
+#
+# Macro that sets a variable and marks it as advanced (removes boiler-plate
+# and duplication).
+#
+# Usage::
+#
+#   ADVANCED_SET(<varName> [other arguments])
+#
+# This is identical to::
+#
+#   ADVANCED_SET(<varName> [other arguments])
+#   MARK_AS_ADVANCED(<varName>)
+# 
 MACRO(ADVANCED_SET VARNAME)
   SET(${VARNAME} ${ARGN})
   MARK_AS_ADVANCED(${VARNAME})

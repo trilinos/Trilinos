@@ -37,6 +37,20 @@
 # ************************************************************************
 # @HEADER
 
+#
+# @FUNCTION: PREPEND_CMNDLINE_ARGS()
+#
+# Utility function that prepends command-line arguments to a variable of
+# command-line options.
+#
+# Usage::
+#
+#   PREPEND_CMNDLINE_ARGS(<var> "<extraArgs>")
+#
+# This function just prepends the command-line arguments in the string
+# ``"<extraArgs>"`` but does not add an extra space if ``<var>`` is empty on
+# input.
+#
 FUNCTION(PREPEND_CMNDLINE_ARGS  CMNDLINE_VAR_NAME  EXTRAARGS)
   IF (${CMNDLINE_VAR_NAME})
     SET(${CMNDLINE_VAR_NAME} "${EXTRAARGS} ${${CMNDLINE_VAR_NAME}}" PARENT_SCOPE)

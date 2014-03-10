@@ -37,7 +37,21 @@
 # ************************************************************************
 # @HEADER
 
-
+#
+# @MACRO: ADVANCED_OPTION()
+#
+# Macro that sets an option and marks it as advanced (removes boiler-plate and
+# duplication).
+#
+# Usage::
+#
+#   ADVANCED_OPTION(<varName> [other arguments])
+#
+# This is identical to::
+#
+#   ADVANCED_OPTION(<varName> [other arguments])
+#   MARK_AS_ADVANCED(<varName>)
+# 
 MACRO(ADVANCED_OPTION VARNAME)
   OPTION(${VARNAME} ${ARGN})
   MARK_AS_ADVANCED(${VARNAME})

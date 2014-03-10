@@ -37,6 +37,38 @@
 # ************************************************************************
 # @HEADER
 
+#
+# @FUNCTION: ASSERT_DEFINED()
+#
+# Assert that a varaible is defined and if not call ``MESSAGE(SEND_ERROR ...)``.
+#
+# Usage::
+#
+#   ASSERT_DEFINED(<varName>)
+#
+# This is used to get around the problem of CMake not asserting the
+# defreferencing of undefined varibles.  For example, how do you know if you
+# did not mispell the name of a varible in an if statement like::
+#
+#   IF (SOME_VARBLE)
+#     ...
+#   ENDIF()
+#
+# ?  If you mispelled the varible ``SOME_VARBLE`` (which you likely did in
+#  this case), the the if statement will always be false.  To avoid this
+#  problem when you always expect the explicitly set, instead do::
+#
+#   ASSERT_DEFINED(SOME_VARBLE)
+#   IF (SOME_VARBLE)
+#     ...
+#   ENDIF()
+#
+# Now if you misspell the varible, it will asset and stop processing.  This is
+# not a perfect solution since you can mispell the varible name in the
+# following if statemnt but typically you would always just copy and paste
+# between the two statements so they are always the same.  This is the best we
+# can do in CMake unfortunately.
+#
 FUNCTION(ASSERT_DEFINED VARS)
   FOREACH(VAR ${VARS})
     IF(NOT DEFINED ${VAR})
@@ -44,3 +76,7 @@ FUNCTION(ASSERT_DEFINED VARS)
     ENDIF()
   ENDFOREACH()
 ENDFUNCTION()
+
+# ToDo: The VARS arg This really needs to be repalced with ${ARGV}.  I fear
+# that only the first arg passed in is asserted.  However, to change this now
+# is breaking backward compatibility.

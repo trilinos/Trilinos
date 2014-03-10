@@ -39,6 +39,18 @@
 
 INCLUDE(PrintVar)
 
+
+#
+# @FUNCTION: CONCAT_STRINGS()
+#
+# Concatenate a set of string argumnets.
+#
+# Usage::
+#
+#   CONCAT_STRINGS(<outputVar> "<str0>" "<str1>" ...)
+#
+# On output, ``<outputVar>`` is set to ``"<str0><str1>..."``.
+#
 FUNCTION(CONCAT_STRINGS OUTPUT_STRING_VAR)
   #MESSAGE("CONCAT_STRINGS OUTPUT_STRING_VAR: ${OUTPUT_STRING_VAR} {${ARGN}}")
   #PRINT_VAR(${OUTPUT_STRING_VAR})

@@ -38,6 +38,14 @@ understanding of CMake, one will have trouble resolving problems when they
 might occur.
 
 
+TriBITS Develoepr and User Roles
+================================
+
+ToDo: Discuss the three different primary roles for related to TriBITS (core
+TriBITS system development, TriBITS project architect, TriBITS project
+developer, TriBITS project user).
+
+
 Brief CMake Language Tutorial
 ==============================
 
@@ -152,6 +160,23 @@ then it must be quoted as::
 
   SOME_MACRO(a "${SOME_OHTER_VAR}" c)
 
+Related to this problem is that if you mispell the name of a variable in a
+CMake if statement like::
+
+   IF (SOME_VARBLE)
+     ...
+   ENDIF()
+
+then it will always be false.  To avoid this problem, use the utility function
+`ASSERT_DEFINED()`_ as::
+
+   ASSERT_DEFINED(SOME_VARBLE)
+   IF (SOME_VARBLE)
+     ...
+   ENDIF()
+
+In this case, the mispelled variable would be caught.
+
 A quick note of some strange CMake langauge behavior is case sensitivity:
 
 * Calls of built-in and user-defined functions is *case insensitive*!  That is
@@ -178,11 +203,11 @@ good thing that CMake varibles are not case insensitive.  Case insenstivity
 would make it much harder and more expensive to parse argument lists (see 
 
 The other mistakes that people make is not understanding how CMake scopes
-variables and other entities.
+variables and other entities.  CMake defaults a global scope (i.e. "cache"
+varibles) and several nested local scopes that are created by
+``ADD_SUBDIRECTORY()`` and entering FUNCTIONS.  See `DUAL_SCOPE_SET()`_ for a
+short discussion of these scoping rules.
 
-
-
-In cases where a varible 
 
 
 
@@ -218,13 +243,36 @@ parameters can have project-specific defaults, etc.
 TriBITS Macros and Functions
 ============================
 
-The following subsections give detailed documentation for the macros and
+The following subsections give detailed documentation for the CMake macros and
 functions that make up the core TriBITS system.  These are what are used by
 TriBITS project developers in their ``CMakeLists.txt`` and other files.  These
 are listed in approximately the order they will be encounted in a project or
 packages ``CMakeLists.txt`` and other files.
 
-.. include:: TribitsDetailedMacroFunctionDoc.rst
+.. include:: TribitsMacroFunctionDoc.rst
+
+
+General Utility Macros and Functions
+=====================================
+
+The following subsections give detailed documentation for some CMake macros
+and functions which are *not* a core part of the TriBITS system but are
+included in the TriBITS system that are used inside of the TriBITS system and
+are provided as a convenience to TriBITS project developers.  One will see
+many of these functions and macros used throughout the implementation of
+TriBITS and even in the ``CMakeLists.txt`` files for projects that use
+TriBITS.
+
+These macros and functions are *not* prefixed with ``TRIBITS_``.  There is
+really not a large risk to defining and using these non-namespaces utility
+functions and macros.  It turns out that CMake allows you to redefine any
+macro or function, even built-in ones, inside of your project so even if CMake
+did add new comamnds that clashed with these names, there would be no
+conflicit.  When overridding a built-in command ``some_bultin_command()``, you
+can always access the original built-in command as ``_some_bultin_command()``.
+
+
+.. include:: UtilsMacroFunctionDoc.rst
 
 
 References

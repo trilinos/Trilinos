@@ -37,7 +37,20 @@
 # ************************************************************************
 # @HEADER
 
-
+#
+# @MACRO: APPEND_SET()
+#
+# Utility function to append elements to a varible (reduces boiler-plate
+# code).
+#
+# Usage::
+#
+#   APPEND_SET(<varName> <arg0> <arg1> ...)
+#
+# Just calls::
+#
+#   LIST(APPEND <varName> <arg0> <arg1> ...)
+#
 MACRO(APPEND_SET VARNAME)
-  SET(${VARNAME} ${${VARNAME}} ${ARGN})
+  LIST(APPEND ${VARNAME} ${ARGN})
 ENDMACRO()

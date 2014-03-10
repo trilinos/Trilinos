@@ -90,7 +90,10 @@ ENDFUNCTION()
 #
 # What this macro does is very simple yet very powerful.  What it does is to
 # allow you to create your own keyword-based macros and functions like CMake
-# has.  For example, you can have the user-defined macro::
+# has.
+#
+# For example, consider the following user-defined macro that uses both
+# positional and keyword-based arguments using ``PARSE_ARGUMENTS()``::
 #
 #   MACRO(PARSE_SPECIAL_VARS  BASE_NAME)
 #
@@ -129,7 +132,7 @@ ENDFUNCTION()
 #
 # **PERFORMANCE:** This function will scale as::
 #
-#   `O( (len(<argNamesList>) * len(<optionNamesList>)) * len(<inputArgsList>))
+#   O( (len(<argNamesList>) * len(<optionNamesList>)) * len(<inputArgsList>) )
 #
 # Therefore, this could scale very badly for large lests of argument and
 # option names and input argument lists.

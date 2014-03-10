@@ -46,10 +46,8 @@ echo "Extracting TriBITS documentation from *.cmake files ..."
 echo
 ../../python/extract_rst_cmake_doc.py \
   --extract-from=../../package_arch/,../../utils/ \
-  --rst-file-pairs=TribitsDetailedMacroFunctionDocTemplate.rst:TribitsDetailedMacroFunctionDoc.rst \
+  --rst-file-pairs=TribitsMacroFunctionDocTemplate.rst:TribitsMacroFunctionDoc.rst,UtilsMacroFunctionDocTemplate.rst:UtilsMacroFunctionDoc.rst \
   $EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
-
-
 
 echo
 echo "Generating HTML and PDF files ..."
@@ -57,8 +55,3 @@ echo
 ../../python/generate-docutils-output.py \
   --file-base=TribitsDevelopersGuide \
   $ARGS
-
-# NOTE: This above invocation by default overrides the DocUtils html and latex
-# generators to use the versions without the *.py prefix.  When you install
-# docutils from source, you get the *.py prefix.  When you install using the
-# yum package on a Linux machine, you don't get the *.py prefix.  What a pain!

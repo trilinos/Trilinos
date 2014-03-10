@@ -37,6 +37,20 @@
 # ************************************************************************
 # @HEADER
 
+#
+# @FUNCTION: APPEND_CMNDLINE_ARGS()
+#
+# Utility function that appends command-line arguments to a variable of
+# command-line options.
+#
+# Usage::
+#
+#   APPEND_CMNDLINE_ARGS(<var> "<extraArgs>")
+#
+# This function just appends the command-line arguments in the string
+# ``"<extraArgs>"`` but does not add an extra space if ``<var>`` is empty on
+# input.
+#
 FUNCTION(APPEND_CMNDLINE_ARGS  CMNDLINE_VAR_NAME  EXTRAARGS)
   IF (${CMNDLINE_VAR_NAME})
     SET(${CMNDLINE_VAR_NAME} "${${CMNDLINE_VAR_NAME}} ${EXTRAARGS}" PARENT_SCOPE)

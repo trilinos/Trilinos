@@ -37,7 +37,20 @@
 # ************************************************************************
 # @HEADER
 
-
+#
+# @MACRO: GLOBAL_NULL_SET()
+#
+# Set a variable as a null internal global (cache) variable (removes boiler
+# plate).
+#
+# Usage::
+#
+#   GLOBAL_NULL_SET(<varName>)
+#
+# This just calls::
+#
+#   SET(<varName> "" CACHE INTERNAL "")
+#
 MACRO(GLOBAL_NULL_SET VARNAME)
   SET(${VARNAME} "" CACHE INTERNAL "")
 ENDMACRO()

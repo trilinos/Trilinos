@@ -1359,6 +1359,21 @@ However, this can be changed by setting one of the following optional arguments:
     If specified, the test will be assumed to fail if the output matches
     <regex>.  Otherwise, it will be assumed to fail.
 
+**Argument Ordering:***
+
+For the most part, the listed arguments can appear in any order except for
+the following restrictions:
+
+* The `<testName>`` argument must be the first listed (it is the only
+  positional argument.
+* The test cases ``TEST_<IDX>`` must be listed in order (i.e. ``TEST_0
+  ... TEST_1 ...``) and the test cases must be consecutive.
+* All of the arguments for a test case must appear below its ``TEST_<IDX>``
+  keyword and before the next ``TEST_<IDX+1>``` keyword or the next global
+  keyword.
+
+Other than that, the keyword argumnets and options can appear in any order.
+
 **Implementation Details:**
 
 ToDo: Describe the generation of the ``*.cmake`` file and what gets added

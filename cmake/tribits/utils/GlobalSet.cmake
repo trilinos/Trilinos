@@ -38,6 +38,20 @@
 # @HEADER
 
 
+#
+# @MACRO: GLOBAL_SET()
+#
+# Set a variable as an internal global (cache) variable (removes boiler
+# plate).
+#
+# Usage::
+#
+#   GLOBAL_SET(<varName> [other args])
+#
+# This just calls::
+#
+#   SET(<varName> [other args] CACHE INTERNAL "")
+#
 MACRO(GLOBAL_SET VARNAME)
   SET(${VARNAME} ${ARGN} CACHE INTERNAL "")
 ENDMACRO()
