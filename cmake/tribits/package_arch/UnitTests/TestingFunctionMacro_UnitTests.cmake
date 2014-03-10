@@ -371,12 +371,20 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
     "${PACKEXEN}_somePostfix;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
     )
 
-  MESSAGE("Add a test with the directory overridden")
+  MESSAGE("Add a test with the relative directory overridden")
   GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
   TRIBITS_ADD_TEST( ${EXEN} DIRECTORY "../somedir" ARGS arg1 )
   UNITTEST_COMPARE_CONST(
     PACKAGE_ADD_TEST_ADD_TEST_INPUT
     "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/../somedir/${PACKEXEN}.exe;arg1"
+    )
+
+  MESSAGE("Add a test with the absolute directory overridden")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  TRIBITS_ADD_TEST( ${EXEN} DIRECTORY "/some/abs/path" ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};/some/abs/path/${PACKEXEN}.exe;arg1"
     )
 
 ENDFUNCTION()
@@ -1334,7 +1342,7 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_DIRECTROY)
       "NUM_CMNDS 2"
     )
   
-  MESSAGE("\n*** Two tests, second test with DIRECTORY argument \n")
+  MESSAGE("\n*** Two tests, second test with relative DIRECTORY argument \n")
   SET(TEST_NAME PackageAddAdvancedTestDirectory_None)
   TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET()
   TRIBITS_ADD_ADVANCED_TEST( ${TEST_NAME} TEST_0 EXEC ${EXEN} TEST_1 EXEC ${EXEN} DIRECTORY ../dir2 )
@@ -1345,7 +1353,20 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_DIRECTROY)
       "TEST_1_CMND \"${CMAKE_CURRENT_BINARY_DIR}/../dir2/${PACKEXEN}\""
       "NUM_CMNDS 2"
     )
+
   
+  MESSAGE("\n*** Two tests, second test with absolute DIRECTORY argument \n")
+  SET(TEST_NAME PackageAddAdvancedTestDirectory_None)
+  TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  TRIBITS_ADD_ADVANCED_TEST( ${TEST_NAME} TEST_0 EXEC ${EXEN} TEST_1 EXEC ${EXEN} DIRECTORY /some/abs/path )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_${TEST_NAME}.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\""
+      "TEST_1_CMND \"/some/abs/path/${PACKEXEN}\""
+      "NUM_CMNDS 2"
+    )
+
   MESSAGE("\n*** Two tests, both tests with DIRECTORY argument \n")
   SET(TEST_NAME PackageAddAdvancedTestDirectory_None)
   TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET()
@@ -1851,4 +1872,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(213)
+UNITTEST_FINAL_RESULT(217)
