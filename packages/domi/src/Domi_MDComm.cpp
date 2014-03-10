@@ -152,7 +152,7 @@ MDComm::MDComm(const MDComm & parent,
 {
   if (parent.onSubcommunicator())
   {
-    int numDims = parent.getNumDims();
+    int numDims = parent.numDims();
     TEUCHOS_TEST_FOR_EXCEPTION(
       ((axis < 0) || (axis >= numDims)),
       RangeError,
@@ -257,12 +257,12 @@ MDComm::MDComm(const MDComm & parent,
   _axisCommSizes(parent._axisCommSizes),
   _periodic(parent._periodic),
   _axisRanks(parent._axisRanks),
-  _axisStrides(parent.getNumDims())
+  _axisStrides(parent.numDims())
 {
   if (parent.onSubcommunicator())
   {
     // Sanity check
-    size_type numDims = parent.getNumDims();
+    size_type numDims = parent.numDims();
     TEUCHOS_TEST_FOR_EXCEPTION(
       ((axis < 0) || (axis >= numDims)),
       RangeError,
@@ -342,7 +342,7 @@ MDComm::MDComm(const MDComm & parent,
                const Teuchos::ArrayView< Slice > & slices)
 {
   // Sanity check
-  size_type numDims = parent.getNumDims();
+  size_type numDims = parent.numDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
     slices.size() != numDims,
     InvalidArgument,
@@ -439,7 +439,7 @@ MDComm::getEpetraComm() const
 ////////////////////////////////////////////////////////////////////////
 
 int
-MDComm::getNumDims() const
+MDComm::numDims() const
 {
   return _axisCommSizes.size();
 }
@@ -455,10 +455,10 @@ MDComm::getAxisCommSize(int axis) const
     "MDComm::getAxisCommSize()");
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _axisCommSizes[axis];
 }
@@ -474,10 +474,10 @@ MDComm::isPeriodic(int axis) const
     "MDComm::isPeriodic()");
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _periodic[axis];
 }
@@ -493,10 +493,10 @@ MDComm::getAxisRank(int axis) const
     "MDComm::getAxisRank()");
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _axisRanks[axis];
 }
@@ -512,10 +512,10 @@ MDComm::getLowerNeighbor(int axis) const
     "MDComm::getLowerNeighbor()");
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if (_axisRanks[axis] == 0)
   {
@@ -543,10 +543,10 @@ MDComm::getUpperNeighbor(int axis) const
     "MDComm::getUpperNeighbor()");
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if (_axisRanks[axis] == _axisCommSizes[axis] - 1)
   {

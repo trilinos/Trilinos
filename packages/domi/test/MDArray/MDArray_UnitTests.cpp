@@ -56,7 +56,7 @@ using MDArrayUnitTestHelpers::generateMDArray;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, defaultConstructor, T )
 {
   MDArray< T > a;
-  TEST_EQUALITY_CONST(a.num_dims(), 1);
+  TEST_EQUALITY_CONST(a.numDims(), 1);
   TEST_EQUALITY_CONST(a.dimension(0), 0);
   TEST_EQUALITY_CONST(a.size(), 0);
   TEST_EQUALITY_CONST(a.strides()[0], 1);
@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, simpleConstructor, T )
 {
   typedef typename MDArray< T >::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(2,3));
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 3);
   TEST_EQUALITY_CONST(a.size(), 6);
@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndValConstructor, T )
   typedef typename MDArray< T >::dim_type dim_type;
   T val = 1;
   MDArray< T > a(tuple< dim_type >(2,2), val);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 2);
   TEST_EQUALITY_CONST(a.size(), 4);
@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndOrderConstructor, T )
 {
   typedef typename MDArray< T >::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(3,3), Domi::C_ORDER);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 3);
   TEST_EQUALITY_CONST(a.dimension(1), 3);
   TEST_EQUALITY_CONST(a.size(), 9);
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsValAndOrderConstructor, T )
   typedef typename MDArray< T >::dim_type dim_type;
   T val = 2;
   MDArray< T > a(tuple< dim_type >(2,2,2), val, Domi::ROW_MAJOR);
-  TEST_EQUALITY_CONST(a.num_dims(), 3);
+  TEST_EQUALITY_CONST(a.numDims(), 3);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 2);
   TEST_EQUALITY_CONST(a.dimension(2), 2);
@@ -402,12 +402,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, illegalAt, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, clearEmpty, T )
 {
   MDArray< T > a = generateMDArray< T >(10,10);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 10);
   TEST_EQUALITY_CONST(a.dimension(1), 10);
   TEUCHOS_ASSERT(!a.empty());
   a.clear();
-  TEST_EQUALITY_CONST(a.num_dims(), 1);
+  TEST_EQUALITY_CONST(a.numDims(), 1);
   TEST_EQUALITY_CONST(a.dimension(0), 0);
   TEUCHOS_ASSERT(a.empty());
 }
@@ -422,12 +422,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, resize, T )
 {
   typedef typename MDArray< T >::dim_type dim_type;
   MDArray< T > a = generateMDArray< T >(11,4);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 11);
   TEST_EQUALITY_CONST(a.dimension(1),  4);
   TEUCHOS_ASSERT(!a.empty());
   a.resize(tuple< dim_type >(5,9,3));
-  TEST_EQUALITY_CONST(a.num_dims(), 3);
+  TEST_EQUALITY_CONST(a.numDims(), 3);
   TEST_EQUALITY_CONST(a.dimension(0), 5);
   TEST_EQUALITY_CONST(a.dimension(1), 9);
   TEST_EQUALITY_CONST(a.dimension(2), 3);
@@ -453,24 +453,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, swap, T )
 {
   MDArray< T > a = generateMDArray< T >(2,3);
   MDArray< T > b = generateMDArray< T >(4,5);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 3);
-  TEST_EQUALITY_CONST(b.num_dims(), 2);
+  TEST_EQUALITY_CONST(b.numDims(), 2);
   TEST_EQUALITY_CONST(b.dimension(0), 4);
   TEST_EQUALITY_CONST(b.dimension(1), 5);
   a.swap(b);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 4);
   TEST_EQUALITY_CONST(a.dimension(1), 5);
-  TEST_EQUALITY_CONST(b.num_dims(), 2);
+  TEST_EQUALITY_CONST(b.numDims(), 2);
   TEST_EQUALITY_CONST(b.dimension(0), 2);
   TEST_EQUALITY_CONST(b.dimension(1), 3);
   swap(a,b);
-  TEST_EQUALITY_CONST(a.num_dims(), 2);
+  TEST_EQUALITY_CONST(a.numDims(), 2);
   TEST_EQUALITY_CONST(a.dimension(0), 2);
   TEST_EQUALITY_CONST(a.dimension(1), 3);
-  TEST_EQUALITY_CONST(b.num_dims(), 2);
+  TEST_EQUALITY_CONST(b.numDims(), 2);
   TEST_EQUALITY_CONST(b.dimension(0), 4);
   TEST_EQUALITY_CONST(b.dimension(1), 5);
 }

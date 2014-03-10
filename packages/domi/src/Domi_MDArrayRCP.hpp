@@ -274,7 +274,7 @@ public:
 
   /** \brief Return the number of dimensions
    */
-  inline int num_dims() const;
+  inline int numDims() const;
 
   /** \brief Return the array of dimensions
    */
@@ -944,7 +944,7 @@ MDArrayRCP< T >::operator=(const MDArrayRCP< T > & r_ptr)
 
 template< typename T >
 int
-MDArrayRCP< T >::num_dims() const
+MDArrayRCP< T >::numDims() const
 {
   return _dimensions.size();
 }

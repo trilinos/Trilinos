@@ -303,7 +303,7 @@ public:
    * sub-communicator and this processor does not belong to the
    * sub-communicator.
    */
-  int getNumDims() const;
+  int numDims() const;
 
   /** \brief Get the communicator size along the given axis
    *

@@ -246,7 +246,7 @@ public:
 
   /** \brief Return the number of dimensions
    */
-  inline int num_dims() const;
+  inline int numDims() const;
 
   /** \brief Return the array of dimensions
    */
@@ -859,7 +859,7 @@ MDArrayView< T >::~MDArrayView()
 
 template< typename T >
 int
-MDArrayView< T >::num_dims() const
+MDArrayView< T >::numDims() const
 {
   return _dimensions.size();
 }
@@ -1469,7 +1469,7 @@ MDArrayView< T >::toString(int indent) const
   for (size_type i = 0; i < _dimensions[0]; i++)
   {
     // If 1D, output an element, else output a sub-array recursively
-    if (num_dims() == 1)
+    if (numDims() == 1)
       ss << operator()(i);
     else
       ss << operator[](i).toString(indent+1);
@@ -1479,7 +1479,7 @@ MDArrayView< T >::toString(int indent) const
       ss << ",";
       // If 1D, follow the comma with a space, else a newline and
       // indentation spacing
-      if (num_dims() == 1)
+      if (numDims() == 1)
 	ss << " ";
       else
       {

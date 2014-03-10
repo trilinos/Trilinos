@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesConstructor )
   }
   MDComm mdComm(comm, axisCommSizes);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
   // Construct an MDComm
   MDComm mdComm(comm, axisCommSizes, periodic);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 
   MDComm mdComm(comm, plist);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
   // Construct an MDComm
   MDComm mdComm(comm, plist);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   TEST_EQUALITY(mdComm.getAxisCommSize(0), comm->getSize());
   TEST_ASSERT(not mdComm.isPeriodic(0));
@@ -265,7 +265,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesConstructor )
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, axisCommSizes);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   for (int axis = 0; axis < numDims && axis < axisCommSizes.size(); ++axis)
   {
@@ -287,7 +287,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesPeriodicConstructor )
   // Construct the MDComm
   MDComm mdComm(comm, numDims, axisCommSizes, periodic);
 
-  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+  TEST_EQUALITY(mdComm.numDims(), numDims);
 
   for (int axis = 0; axis < numDims && axis < axisCommSizes.size(); ++axis)
   {
@@ -580,7 +580,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
   // Do some unit tests
   if (partOfSubComm)
   {
-    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    TEST_EQUALITY(subMDComm.numDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
@@ -589,7 +589,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
   }
   else
   {
-    TEST_EQUALITY(subMDComm.getNumDims(), 0);
+    TEST_EQUALITY(subMDComm.numDims(), 0);
   }
 #ifdef HAVE_EPETRA
   if (partOfSubComm)
@@ -666,7 +666,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
   // Do some unit tests
   if (partOfSubComm)
   {
-    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    TEST_EQUALITY(subMDComm.numDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
@@ -675,7 +675,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
   }
   else
   {
-    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+    TEST_EQUALITY_CONST(subMDComm.numDims(), 0);
   }
 #ifdef HAVE_EPETRA
   if (partOfSubComm)
@@ -752,7 +752,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
   // Do some unit tests
   if (partOfSubComm)
   {
-    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    TEST_EQUALITY(subMDComm.numDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
@@ -761,7 +761,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
   }
   else
   {
-    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+    TEST_EQUALITY_CONST(subMDComm.numDims(), 0);
   }
 #ifdef HAVE_EPETRA
   if (partOfSubComm)
@@ -832,7 +832,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
   if (partOfSubComm)
   {
     TEST_EQUALITY_CONST(subMDComm.onSubcommunicator(), true);
-    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    TEST_EQUALITY(subMDComm.numDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
@@ -843,7 +843,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
   {
     TEST_EQUALITY_CONST(subMDComm.onSubcommunicator()         , false);
     TEST_EQUALITY_CONST(subMDComm.getTeuchosComm().getRawPtr(), 0    );
-    TEST_EQUALITY_CONST(subMDComm.getNumDims()                , 0    );
+    TEST_EQUALITY_CONST(subMDComm.numDims()                , 0    );
 
     TEST_THROW(subMDComm.getAxisCommSize(0) , Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getAxisRank(0)     , Domi::SubcommunicatorError);
@@ -904,7 +904,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
     if (partOfSubComm)
     {
       TEST_ASSERT(reducedMdComm.onSubcommunicator());
-      TEST_EQUALITY(reducedMdComm.getNumDims(), newDims);
+      TEST_EQUALITY(reducedMdComm.numDims(), newDims);
       for (int newAxis = 0; newAxis < newDims; ++newAxis)
       {
         int axisRank = reducedMdComm.getAxisRank(newAxis);
@@ -1039,7 +1039,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
   // Do some unit tests
   if (partOfSubComm)
   {
-    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    TEST_EQUALITY(subMDComm.numDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
@@ -1048,7 +1048,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
   }
   else
   {
-    TEST_EQUALITY(subMDComm.getNumDims(), 0);
+    TEST_EQUALITY(subMDComm.numDims(), 0);
   }
 }
 

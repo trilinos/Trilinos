@@ -67,7 +67,7 @@ namespace Domi
  * (MDArray, MDArrayView and MDArrayRCP), the class is templated on
  * parameter class MDARRAY, which is intended to be any one of the
  * three MDArray types.  The MDARRAY class is expected to support the
- * the typedefs size_type, dim_type, and value_type, the num_dims()
+ * the typedefs size_type, dim_type, and value_type, the numDims()
  * method and the _ptr, _strides, _dimensions, and _layout attributes.
  *
  * It is intended that the array class that will use the MDIterator
@@ -261,7 +261,7 @@ MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
   _strides(mdarray._strides),
   _ptr(mdarray._ptr),
   _layout(mdarray._layout),
-  _index(mdarray.num_dims())
+  _index(mdarray.numDims())
 {
   if (end_index)
     assign_end_index();

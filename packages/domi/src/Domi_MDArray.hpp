@@ -391,7 +391,7 @@ public:
 
   /** \brief Return the number of dimensions
    */
-  inline int num_dims() const;
+  inline int numDims() const;
 
   /** \brief Return an array of dimensions
    */
@@ -581,7 +581,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 1D, an
    * exception will be thrown.
    */
-  inline reference operator()(dim_type i);
+  inline T & operator()(dim_type i);
 
   /** \brief Non-const 2D element access operator
    *
@@ -593,7 +593,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 2D, an
    * exception will be thrown.
    */
-  inline reference operator()(dim_type i, dim_type j);
+  inline T & operator()(dim_type i, dim_type j);
 
   /** \brief Non-const 3D element access operator
    *
@@ -607,7 +607,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 3D, an
    * exception will be thrown.
    */
-  inline reference operator()(dim_type i, dim_type j, dim_type k);
+  inline T & operator()(dim_type i, dim_type j, dim_type k);
 
   /** \brief Non-const 4D element access operator
    *
@@ -623,7 +623,7 @@ public:
    * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 4D, an
    * exception will be thrown.
    */
-  inline reference operator()(dim_type i, dim_type j, dim_type k, dim_type m);
+  inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m);
 
   /** \brief Non-const 5D element access operator
    *
@@ -781,7 +781,7 @@ public:
    *        number of arguments as the number of dimensions of the
    *        <tt>MDArray</tt>.
    */
-  reference at(dim_type i, ...);
+  T & at(dim_type i, ...);
 
   /** \brief Const single element access method with bounds checking
    *
@@ -829,7 +829,7 @@ public:
 
   /** \brief Return a const raw pointer to the beginning of the
    *         <tt>MDArray</tt> or NULL if unsized. */
-  inline const_pointer getRawPtr() const;
+  inline const T * getRawPtr() const;
 
   //@}
 
@@ -997,7 +997,7 @@ MDArray< T >::~MDArray()
 
 template< typename T >
 int
-MDArray< T >::num_dims() const
+MDArray< T >::numDims() const
 {
   return _dimensions.size();
 }

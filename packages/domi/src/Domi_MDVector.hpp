@@ -226,7 +226,7 @@ public:
    * sub-communicator and this processor does not belong to the
    * sub-communicator.
    */
-  int getNumDims() const;
+  int numDims() const;
 
   /** \brief Get the size along the given axis
    *
@@ -663,16 +663,15 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(mdMap->getNumDims()),
+  _sliceBndryPad(mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
 {
-  typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
 
   // Obtain the array of dimensions
-  int numDims = _mdMap->getNumDims();
+  int numDims = _mdMap->numDims();
   Teuchos::Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = _mdMap->getLocalDim(axis,true);
@@ -693,15 +692,15 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(source),
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
-  _sliceBndryPad(mdMap->getNumDims()),
+  _sliceBndryPad(mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
-  int numDims = _mdMap->getNumDims();
+  int numDims = _mdMap->numDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numDims != _mdArrayRcp.num_dims(),
+    numDims != _mdArrayRcp.numDims(),
     InvalidArgument,
     "MDMap and source array do not have the same number of dimensions");
 
@@ -747,7 +746,7 @@ MDVector(const TeuchosCommRCP teuchosComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->getNumDims()),
+  _sliceBndryPad(_mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -755,7 +754,7 @@ MDVector(const TeuchosCommRCP teuchosComm,
   setObjectLabel("Domi::MDVector");
 
   // Obtain the array of dimensions
-  int numDims = _mdMap->getNumDims();
+  int numDims = _mdMap->numDims();
   Teuchos::Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = _mdMap->getLocalDim(axis,true);
@@ -778,7 +777,7 @@ MDVector(const MDCommRCP mdComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->getNumDims()),
+  _sliceBndryPad(_mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -786,7 +785,7 @@ MDVector(const MDCommRCP mdComm,
   setObjectLabel("Domi::MDVector");
 
   // Obtain the array of dimensions
-  int numDims = _mdMap->getNumDims();
+  int numDims = _mdMap->numDims();
   Teuchos::Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = _mdMap->getLocalDim(axis,true);
@@ -809,21 +808,65 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(parent.getNumDims()),
+  _sliceBndryPad(),
   _sendMessages(),
   _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
 
+  // Obtain the parent MDMap
+  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent->getMDMap();
+
   // Obtain the new, sliced MDMap
-  _mdMap =
-    Teuchos::rcp(new MDMap< Node >(*(parent->getMDMap()),
-                                   axis,
-                                   index));
-  // Take a slice of this MDVector's MDArrayView
-  MDArrayView< Scalar > newView(_mdArrayView, axis, index);
-  _mdArrayView = newView;
+  _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
+                                          axis,
+                                          index));
+
+  // Check that we are on the new sub-communicator
+  if (_mdMap->onSubcommunicator())
+  {
+    // Convert the index from global to local.  We start by building a
+    // globalIndex, which is the global index of the origin on this
+    // processor with the value of the given axis replaced with the
+    // given index.
+    Teuchos::Array< dim_type > globalIndex(3);
+    for (int myAxis = 0; myAxis < parentMdMap->numDims(); ++myAxis)
+      if (myAxis == axis)
+        globalIndex[myAxis] = index;
+      else
+        globalIndex[myAxis] =
+          parentMdMap->getGlobalBounds(myAxis,false).start();
+
+    // Now convert that global index to a global ID
+    size_type globalID = parentMdMap->getGlobalIndex(globalIndex);
+
+    // Now convert that global ID to a local ID.  In general, this can
+    // throw a Domi::RangeError, but we should be OK because we know
+    // we are on the sub-communicator, and we chose our global index
+    // values to ensure we are on-processor.
+    size_type localID  = parentMdMap->getLocalIndex(globalID);
+
+    // Convert the local ID to a local index.
+    Teuchos::Array< dim_type > localIndex =
+      parentMdMap->getLocalAxisIndex(localID);
+
+    // Obtain the new MDArrayView using the local index
+    MDArrayView< Scalar > newView(_mdArrayView, axis, localIndex[axis]);
+    _mdArrayView = newView;
+
+    // Compute the new slice boundary padding
+    for (int myAxis = 0; myAxis < parentMdMap->numDims(); ++axis)
+      if (myAxis != axis)
+        _sliceBndryPad.append(parent._sliceBndryPad[myAxis]);
+  }
+  else
+  {
+    // We are not on the sub-communicator, so clear out the data
+    // buffer and view
+    _mdArrayRcp.clear();
+    _mdArrayView = MDArrayView< Scalar >();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -840,22 +883,70 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(parent.getNumDims()),
+  _sliceBndryPad(parent._sliceBndryPad),
   _sendMessages(),
   _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
 
+  // Obtain the parent MDMap
+  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent->getMDMap();
+
   // Obtain the new, sliced MDMap
-  _mdMap =
-    Teuchos::rcp(new MDMap< Node >(*(parent->getMDMap()),
-                                                        axis,
-                                                        slice,
-                                                        bndryPad));
-  // Take a slice of this MDVector's MDArrayView
-  MDArrayView< Scalar > newView(_mdArrayView, axis, slice);
-  _mdArrayView = newView;
+  _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
+                                          axis,
+                                          slice,
+                                          bndryPad));
+
+  // Check that we are on the new sub-communicator
+  if (_mdMap->onSubcommunicator())
+  {
+    // Convert the slice start index from global to local.  We start
+    // by building a globalIndex, which is the global index of the
+    // origin on this processor.  If the start index of the given
+    // slice is on this processor, then the value of the given axis is
+    // replaced with the given slice start index.
+    Teuchos::Array< dim_type > globalIndex(3);
+    for (int myAxis = 0; myAxis < parentMdMap->numDims(); ++myAxis)
+    {
+      globalIndex[myAxis] =
+        parentMdMap->getGlobalBounds(myAxis,false).start();
+      if (myAxis == axis)
+        if (globalIndex[myAxis] < slice.start())
+          globalIndex[myAxis] = slice.start();
+    }
+
+    // Now convert that global index to a global ID
+    size_type globalID = parentMdMap->getGlobalIndex(globalIndex);
+
+    // Now convert that global ID to a local ID.  In general, this can
+    // throw a Domi::RangeError, but we should be OK because we know
+    // we are on the sub-communicator, and we chose our global index
+    // values to ensure we are on-processor.
+    size_type localID  = parentMdMap->getLocalIndex(globalID);
+
+    // Convert the local ID to a local index and compute the start index
+    Teuchos::Array< dim_type > localIndex =
+      parentMdMap->getLocalAxisIndex(localID);
+    dim_type start = std::max(0, localIndex[axis] - bndryPad);
+
+    // Now get the stop index of the local slice
+    dim_type length = slice.stop() - slice.start();
+    dim_type stop = std::min(localIndex[axis] + length + bndryPad,
+                             parentMdMap->getLocalDim(axis,true));
+
+    // Obtain the new MDArrayView using the local slice
+    MDArrayView< Scalar > newView(_mdArrayView, axis, Slice(start,stop));
+    _mdArrayView = newView;
+  }
+  else
+  {
+    // We are not on the sub-communicator, so clear out the data
+    // buffer and view
+    _mdArrayRcp.clear();
+    _mdArrayView = MDArrayView< Scalar >();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -906,9 +997,9 @@ template< class Scalar,
           class Node >
 int
 MDVector< Scalar, Node >::
-getNumDims() const
+numDims() const
 {
-  return _mdMap->getNumDims();
+  return _mdMap->numDims();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1120,7 +1211,7 @@ getDataNonConst(bool includePadding)
   if (includePadding)
     return _mdArrayView;
   MDArrayView< Scalar > newArray(_mdArrayView);
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     int lo = getLowerPadSize(axis);
     int hi = getLocalDim(axis,true) - getUpperPadSize(axis);
@@ -1140,7 +1231,7 @@ getData(bool includePadding) const
   if (includePadding)
     return _mdArrayView.getConst();
   MDArrayView< Scalar > newArray(_mdArrayView);
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     int lo = getLowerPadSize(axis);
     int hi = getLocalDim(axis,true) - getUpperPadSize(axis);
@@ -1329,8 +1420,8 @@ normWeighted(const MDVector< Scalar, Node > & weights) const
                      1,
                      &local_wNorm,
                      &global_wNorm);
-  Teuchos::Array< dim_type > dimensions(getNumDims());
-  for (int i = 0; i < getNumDims(); ++i)
+  Teuchos::Array< dim_type > dimensions(numDims());
+  for (int i = 0; i < numDims(); ++i)
     dimensions[i] = _mdMap->getGlobalDim(i);
   size_type n = computeSize(dimensions);
   if (n == 0) return 0;
@@ -1356,8 +1447,8 @@ meanValue() const
                      1,
                      &local_sum,
                      &global_sum);
-  Teuchos::Array< dim_type > dimensions(getNumDims());
-  for (int i = 0; i < getNumDims(); ++i)
+  Teuchos::Array< dim_type > dimensions(numDims());
+  for (int i = 0; i < numDims(); ++i)
     dimensions[i] = _mdMap->getGlobalDim(i);
   size_type n = computeSize(dimensions);
   if (n == 0) return 0;
@@ -1374,8 +1465,8 @@ description() const
 {
   using Teuchos::TypeNameTraits;
 
-  Teuchos::Array< dim_type > dims(getNumDims());
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  Teuchos::Array< dim_type > dims(numDims());
+  for (int axis = 0; axis < numDims(); ++axis)
     dims[axis] = getGlobalDim(axis, true);
 
   std::ostringstream oss;
@@ -1440,8 +1531,8 @@ describe(Teuchos::FancyOStream &out,
       {
         out << "Label: \"" << getObjectLabel() << "\"" << endl;
       }
-      Teuchos::Array< dim_type > globalDims(getNumDims());
-      for (int axis = 0; axis < getNumDims(); ++axis)
+      Teuchos::Array< dim_type > globalDims(numDims());
+      for (int axis = 0; axis < numDims(); ++axis)
         globalDims[axis] = getGlobalDim(axis, true);
       out << "Global dimensions: " << globalDims << endl;
     }
@@ -1454,8 +1545,8 @@ describe(Teuchos::FancyOStream &out,
           // VERB_MEDIUM and higher prints getLocalLength()
           out << "Process: " << myImageID << endl;
           Teuchos::OSTab tab2(out);
-          Teuchos::Array< dim_type > localDims(getNumDims());
-          for (int axis = 0; axis < getNumDims(); ++axis)
+          Teuchos::Array< dim_type > localDims(numDims());
+          for (int axis = 0; axis < numDims(); ++axis)
             localDims[axis] = getLocalDim(axis, true);
           out << "Local dimensions: " << localDims << endl;
 
@@ -1520,7 +1611,7 @@ void
 MDVector< Scalar, Node >::
 updateCommPad()
 {
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     updateCommPad(axis);
   }
@@ -1654,7 +1745,7 @@ operator[](dim_type index) const
                                   _nextAxis,
                                   index);
   int newAxis = _nextAxis + 1;
-  if (newAxis >= result.getNumDims()) newAxis = 0;
+  if (newAxis >= result.numDims()) newAxis = 0;
   result._nextAxis = newAxis;
   return result;
 }
@@ -1672,7 +1763,7 @@ operator[](Slice slice) const
                                   slice,
                                   _sliceBndryPad[_nextAxis]);
   int newAxis = _nextAxis + 1;
-  if (newAxis >= result.getNumDims()) newAxis = 0;
+  if (newAxis >= result.numDims()) newAxis = 0;
   result._nextAxis = newAxis;
   return result;
 }
@@ -1687,7 +1778,7 @@ initializeMessages()
 {
   // #define DOMI_MDVECTOR_OUTPUT_INITIALIZE
 
-  int ndims = getNumDims();
+  int ndims = numDims();
   Teuchos::Array<int> sizes(ndims);
   Teuchos::Array<int> subsizes(ndims);
   Teuchos::Array<int> starts(ndims);

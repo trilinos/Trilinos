@@ -308,7 +308,7 @@ public:
    * sub-communicator and this processor does not belong to the
    * sub-communicator.
    */
-  int getNumDims() const;
+  int numDims() const;
 
   /** \brief Get the size along the given axis
    *
@@ -900,26 +900,26 @@ MDMap(const MDCommRCP mdComm,
       const Layout layout,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
-  _globalDims(mdComm->getNumDims()),
+  _globalDims(mdComm->numDims()),
   _globalBounds(),
-  _globalRankBounds(mdComm->getNumDims()),
+  _globalRankBounds(mdComm->numDims()),
   _globalStrides(),
   _globalMin(0),
   _globalMax(),
-  _localDims(mdComm->getNumDims(), 0),
+  _localDims(mdComm->numDims(), 0),
   _localBounds(),
   _localStrides(),
   _localMin(0),
   _localMax(),
-  _commPadSizes(mdComm->getNumDims(), 0),
+  _commPadSizes(mdComm->numDims(), 0),
   _pad(),
-  _bndryPadSizes(mdComm->getNumDims(), 0),
+  _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(),
   _layout(layout),
   _node(node)
 {
   // Temporarily store the number of dimensions
-  int numDims = mdComm->getNumDims();
+  int numDims = mdComm->numDims();
 
   // Check the global dimensions
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1000,7 +1000,7 @@ MDMap(TeuchosCommRCP teuchosComm,
   // have to do it again here.
 
   // Temporarily store the number of dimensions
-  int numDims = _mdComm->getNumDims();
+  int numDims = _mdComm->numDims();
 
   // Check the global dimensions
   Teuchos::Array< dim_type > dimensions =
@@ -1093,20 +1093,20 @@ MDMap(MDCommRCP mdComm,
       Teuchos::ParameterList & plist,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
-  _globalDims(mdComm->getNumDims()),
+  _globalDims(mdComm->numDims()),
   _globalBounds(),
-  _globalRankBounds(mdComm->getNumDims()),
+  _globalRankBounds(mdComm->numDims()),
   _globalStrides(),
   _globalMin(0),
   _globalMax(),
-  _localDims(mdComm->getNumDims(), 0),
+  _localDims(mdComm->numDims(), 0),
   _localBounds(),
   _localStrides(),
   _localMin(0),
   _localMax(),
-  _commPadSizes(mdComm->getNumDims(), 0),
+  _commPadSizes(mdComm->numDims(), 0),
   _pad(),
-  _bndryPadSizes(mdComm->getNumDims(), 0),
+  _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(),
   _layout(),
   _node(node)
@@ -1115,7 +1115,7 @@ MDMap(MDCommRCP mdComm,
   plist.validateParameters(*getValidParameters());
 
   // Temporarily store the number of dimensions
-  int numDims = _mdComm->getNumDims();
+  int numDims = _mdComm->numDims();
 
   // Check the global dimensions
   Teuchos::Array< dim_type > dimensions =
@@ -1223,7 +1223,7 @@ MDMap(const MDMap< Node > & parent,
 {
   if (parent.onSubcommunicator())
   {
-    int numDims = parent.getNumDims();
+    int numDims = parent.numDims();
     TEUCHOS_TEST_FOR_EXCEPTION(
       ((axis < 0) || (axis >= numDims)),
       RangeError,
@@ -1257,7 +1257,7 @@ MDMap(const MDMap< Node > & parent,
   // the new _mdComm, so we check it now.
   if (_mdComm->onSubcommunicator())
   {
-    int numDims = parent.getNumDims();
+    int numDims = parent.numDims();
     if (numDims == 1)
     {
       _globalDims.push_back(1);
@@ -1348,7 +1348,7 @@ MDMap(const MDMap< Node > & parent,
   if (parent.onSubcommunicator())
   {
     // Temporarily store the number of dimensions
-    int numDims = parent.getNumDims();
+    int numDims = parent.numDims();
 
     // Sanity check
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1509,7 +1509,7 @@ MDMap(const MDMap< Node > & parent,
       const Teuchos::ArrayView< int > & bndryPad)
 {
   // Temporarily store the number of dimensions
-  int numDims = parent.getNumDims();
+  int numDims = parent.numDims();
 
   // Sanity check on dimensions
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1561,9 +1561,9 @@ MDMap< Node >::getTeuchosComm() const
 
 template< class Node >
 int
-MDMap< Node >::getNumDims() const
+MDMap< Node >::numDims() const
 {
-  return _mdComm->getNumDims();
+  return _mdComm->numDims();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1621,10 +1621,10 @@ getGlobalDim(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if (withBndryPad)
     return _globalDims[axis];
@@ -1642,10 +1642,10 @@ getGlobalBounds(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if (withBndryPad)
     return _globalBounds[axis];
@@ -1667,10 +1667,10 @@ getLocalDim(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if (withPad)
     return _localDims[axis];
@@ -1688,10 +1688,10 @@ getGlobalRankBounds(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   int axisRank = getAxisRank(axis);
   if (withBndryPad)
@@ -1718,10 +1718,10 @@ getLocalBounds(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if (withPad)
     return _localBounds[axis];
@@ -1740,7 +1740,7 @@ bool
 MDMap< Node >::hasPadding() const
 {
   bool result = false;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
     if (_pad[axis][0] + _pad[axis][1]) result = true;
   return result;
 }
@@ -1753,10 +1753,10 @@ MDMap< Node >::getLowerPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _pad[axis][0];
 }
@@ -1769,10 +1769,10 @@ MDMap< Node >::getUpperPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _pad[axis][1];
 }
@@ -1785,10 +1785,10 @@ MDMap< Node >::getCommPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _commPadSizes[axis];
 }
@@ -1801,10 +1801,10 @@ MDMap< Node >::getLowerBndryPad(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _bndryPad[axis][0];
 }
@@ -1817,10 +1817,10 @@ MDMap< Node >::getUpperBndryPad(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _bndryPad[axis][1];
 }
@@ -1833,10 +1833,10 @@ MDMap< Node >::getBndryPadSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   return _bndryPadSizes[axis];
 }
@@ -1849,7 +1849,7 @@ MDMap< Node >::
 isPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     if (index[axis] < getLowerPadSize(axis))
       result = true;
@@ -1867,7 +1867,7 @@ MDMap< Node >::
 isCommPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     // Check the ranks of the lower and upper neighbor processors.  If
     // either of these values is non-negative, then we are on a
@@ -1894,7 +1894,7 @@ MDMap< Node >::
 isBndryPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     // Check the ranks of the lower and upper neighbor processors.  If
     // either of these values is -1, then we are on a processor that
@@ -1942,19 +1942,19 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
         "The maximum global ID of this MDMap is too large for an Epetra_Map");
 
       // Allocate the myElements MDArray and the index array
-      int numDims = getNumDims();
-      Teuchos::Array<dim_type> localDims(numDims);
-      for (int axis = 0; axis < numDims; ++axis)
+      int num_dims = numDims();
+      Teuchos::Array<dim_type> localDims(num_dims);
+      for (int axis = 0; axis < num_dims; ++axis)
         localDims[axis] = _localDims[axis];
       MDArray<int> myElements(localDims);
-      Teuchos::Array<int> index(numDims);
+      Teuchos::Array<int> index(num_dims);
 
       // Iterate over the local MDArray and assign global IDs
       for (MDArray<int>::iterator it = myElements.begin();
            it != myElements.end(); ++it)
       {
         int globalID = 0;
-        for (int axis = 0; axis < numDims; ++axis)
+        for (int axis = 0; axis < num_dims; ++axis)
         {
           int axisRank = getAxisRank(axis);
           int start    = _globalRankBounds[axis][axisRank].start() -
@@ -1985,10 +1985,10 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
                               "large for an Epetra_Map");
 
       // Allocate the myElements MDArray and the index array
-      int numDims = getNumDims();
-      Teuchos::Array<int> index(numDims);
-      Teuchos::Array<dim_type> myDims(numDims);
-      for (int axis = 0; axis < numDims; ++axis)
+      int num_dims = numDims();
+      Teuchos::Array<int> index(num_dims);
+      Teuchos::Array<dim_type> myDims(num_dims);
+      for (int axis = 0; axis < num_dims; ++axis)
       {
         myDims[axis] = _localDims[axis] - _pad[axis][0] - _pad[axis][1];
         int axisRank = getAxisRank(axis);
@@ -2004,7 +2004,7 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
            it != myElements.end(); ++it)
       {
         int globalID = 0;
-          for (int axis = 0; axis < numDims; ++axis)
+          for (int axis = 0; axis < num_dims; ++axis)
           {
             int axisRank = getAxisRank(axis);
             int start    = _globalRankBounds[axis][axisRank].start();
@@ -2042,17 +2042,17 @@ getEpetraAxisMap(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
   if ((withCommPad     && (_epetraAxisMaps.size()    == 0)) ||
       (not withCommPad && (_epetraAxisOwnMaps.size() == 0)))
   {
-    int numDims = getNumDims();
+    int num_dims = numDims();
     EpetraCommRCP epetraComm = _mdComm->getEpetraComm();
-    for (int axis=0; axis < numDims; ++axis)
+    for (int axis=0; axis < num_dims; ++axis)
     {
       Teuchos::Array<int> elements(getLocalDim(axis, withCommPad));
       int start = getGlobalRankBounds(axis,true).start();
@@ -2119,19 +2119,19 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
   if (withCommPad)
   {
     // Allocate the elementsMDArray and the index array
-    int numDims = getNumDims();
-    Teuchos::Array<dim_type> localDims(numDims);
-    for (int axis = 0; axis < numDims; ++axis)
+    int num_dims = numDims();
+    Teuchos::Array<dim_type> localDims(num_dims);
+    for (int axis = 0; axis < num_dims; ++axis)
       localDims[axis] = _localDims[axis];
     MDArray< GlobalOrdinal > elementMDArray(localDims);
-    Teuchos::Array< LocalOrdinal > index(numDims);
+    Teuchos::Array< LocalOrdinal > index(num_dims);
 
     // Iterate over the local MDArray and assign global IDs
     for (typename MDArray< GlobalOrdinal >::iterator it = elementMDArray.begin();
          it != elementMDArray.end(); ++it)
     {
       GlobalOrdinal globalID = 0;
-      for (int axis = 0; axis < numDims; ++axis)
+      for (int axis = 0; axis < num_dims; ++axis)
       {
         int axisRank        = getAxisRank(axis);
         GlobalOrdinal start = _globalRankBounds[axis][axisRank].start() -
@@ -2156,10 +2156,10 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
   else
   {
     // Allocate the elementMDArray MDArray and the index array
-    int numDims = getNumDims();
-    Teuchos::Array< LocalOrdinal > index(numDims);
-    Teuchos::Array< dim_type >     myDims(numDims);
-    for (int axis = 0; axis < numDims; ++axis)
+    int num_dims = numDims();
+    Teuchos::Array< LocalOrdinal > index(num_dims);
+    Teuchos::Array< dim_type >     myDims(num_dims);
+    for (int axis = 0; axis < num_dims; ++axis)
     {
       myDims[axis] =
         _localDims[axis] - _pad[axis][0] - _pad[axis][1];
@@ -2176,7 +2176,7 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
          it != elementMDArray.end(); ++it)
     {
       GlobalOrdinal globalID = 0;
-      for (int axis = 0; axis < numDims; ++axis)
+      for (int axis = 0; axis < num_dims; ++axis)
       {
         int axisRank        = getAxisRank(axis);
         GlobalOrdinal start = _globalRankBounds[axis][axisRank].start();
@@ -2239,12 +2239,12 @@ getTpetraAxisMap(int axis,
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
+    ((axis < 0) || (axis >= numDims())),
     RangeError,
     "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
+    numDims() << ")");
 #endif
-  int numDims = getNumDims();
+  int num_dims = numDims();
   TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
   Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));
   GlobalOrdinal start = getGlobalRankBounds(axis,true).start();
@@ -2275,21 +2275,21 @@ getGlobalAxisIndex(size_type globalIndex) const
     "invalid global index = " << globalIndex << " (should be between " <<
     _globalMin << " and " << _globalMax << ")");
 #endif
-  int numDims = getNumDims();
-  Teuchos::Array< dim_type > result(numDims);
+  int num_dims = numDims();
+  Teuchos::Array< dim_type > result(num_dims);
   size_type index = globalIndex;
   if (_layout == LAST_INDEX_FASTEST)
   {
-    for (int axis = 0; axis < numDims-1; ++axis)
+    for (int axis = 0; axis < num_dims-1; ++axis)
     {
       result[axis] = index / _globalStrides[axis];
       index        = index % _globalStrides[axis];
     }
-    result[numDims-1] = index;
+    result[num_dims-1] = index;
   }
   else
   {
-    for (int axis = numDims-1; axis > 0; --axis)
+    for (int axis = num_dims-1; axis > 0; --axis)
     {
       result[axis] = index / _globalStrides[axis];
       index        = index % _globalStrides[axis];
@@ -2313,21 +2313,21 @@ getLocalAxisIndex(size_type localIndex) const
     "invalid local index = " << localIndex << " (should be between " <<
     _localMin << " and " << _localMax << ")");
 #endif
-  int numDims = getNumDims();
-  Teuchos::Array< dim_type > result(numDims);
+  int num_dims = numDims();
+  Teuchos::Array< dim_type > result(num_dims);
   size_type index = localIndex;
   if (_layout == LAST_INDEX_FASTEST)
   {
-    for (int axis = 0; axis < numDims-1; ++axis)
+    for (int axis = 0; axis < num_dims-1; ++axis)
     {
       result[axis] = index / _localStrides[axis];
       index        = index % _localStrides[axis];
     }
-    result[numDims-1] = index;
+    result[num_dims-1] = index;
   }
   else
   {
-    for (int axis = numDims-1; axis > 0; --axis)
+    for (int axis = num_dims-1; axis > 0; --axis)
     {
       result[axis] = index / _localStrides[axis];
       index        = index % _localStrides[axis];
@@ -2353,7 +2353,7 @@ getGlobalIndex(size_type localIndex) const
 #endif
   Teuchos::Array< dim_type > localAxisIndex = getLocalAxisIndex(localIndex);
   size_type result = 0;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     dim_type globalAxisIndex = localAxisIndex[axis] +
       _globalRankBounds[axis][getAxisRank(axis)].start() - _pad[axis][0];
@@ -2371,11 +2371,11 @@ getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (globalAxisIndex.size() != getNumDims()),
+    (globalAxisIndex.size() != numDims()),
     InvalidArgument,
     "globalAxisIndex has " << globalAxisIndex.size() << " entries; expecting "
-    << getNumDims());
-  for (int axis = 0; axis < getNumDims(); ++axis)
+    << numDims());
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ((globalAxisIndex[axis] < 0) ||
@@ -2386,7 +2386,7 @@ getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const
   }
 #endif
   size_type result = 0;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
     result += globalAxisIndex[axis] * _globalStrides[axis];
   return result;
 }
@@ -2408,7 +2408,7 @@ getLocalIndex(size_type globalIndex) const
   Teuchos::Array< dim_type > globalAxisIndex =
     getGlobalAxisIndex(globalIndex);
   size_type result = 0;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     dim_type localAxisIndex = globalAxisIndex[axis] -
       _globalRankBounds[axis][getAxisRank(axis)].start() + _pad[axis][0];
@@ -2430,11 +2430,11 @@ getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (localAxisIndex.size() != getNumDims()),
+    (localAxisIndex.size() != numDims()),
     InvalidArgument,
     "localAxisIndex has " << localAxisIndex.size() << " entries; expecting "
-    << getNumDims());
-  for (int axis = 0; axis < getNumDims(); ++axis)
+    << numDims());
+  for (int axis = 0; axis < numDims(); ++axis)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ((localAxisIndex[axis] < 0) ||
@@ -2445,7 +2445,7 @@ getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const
   }
 #endif
   size_type result = 0;
-  for (int axis = 0; axis < getNumDims(); ++axis)
+  for (int axis = 0; axis < numDims(); ++axis)
     result += localAxisIndex[axis] * _localStrides[axis];
   return result;
 }
@@ -2462,12 +2462,12 @@ MDMap< Node >::isCompatible(const MDMap< Node > & mdMap) const
 
   // Check the number of dimensions.  Assume this check produces the
   // same result on all processors
-  int numDims = getNumDims();
-  if (numDims != mdMap.getNumDims()) return false;
+  int num_dims = numDims();
+  if (num_dims != mdMap.numDims()) return false;
 
   // Check the axisCommSizes.  Assume this check produces the same
   // result on all processes
-  for (int axis = 0; axis < numDims; ++axis)
+  for (int axis = 0; axis < num_dims; ++axis)
     if (getAxisCommSize(axis) != mdMap.getAxisCommSize(axis)) return false;
 
   // Check the global dimensions.  Assume this check produces the same
@@ -2479,7 +2479,7 @@ MDMap< Node >::isCompatible(const MDMap< Node > & mdMap) const
   // result
   int localResult  = 1;
   int globalResult = 1;
-  for (int axis = 0; axis < numDims; ++axis)
+  for (int axis = 0; axis < num_dims; ++axis)
     if (getLocalDim(axis,false) != mdMap.getLocalDim(axis,false))
       localResult = 0;
   Teuchos::reduceAll(*(getTeuchosComm()),
@@ -2540,10 +2540,10 @@ void
 MDMap< Node >::computeBounds()
 {
   // Initialization
-  int numDims = getNumDims();
+  int num_dims = numDims();
 
   // Decompose the multi-dimensional domain
-  for (int axis = 0; axis < numDims; ++axis)
+  for (int axis = 0; axis < num_dims; ++axis)
   {
     // Get the communicator info for this axis
     int axisCommSize = getAxisCommSize(axis);

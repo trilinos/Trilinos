@@ -119,7 +119,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_ASSERT(not mdVector.hasPadding());
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
@@ -238,7 +238,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_ASSERT(not mdVector.hasPadding());
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
@@ -314,7 +314,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_ASSERT(not mdVector.hasPadding());
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
@@ -387,7 +387,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_ASSERT(not mdVector.hasPadding());
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
@@ -444,7 +444,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_EQUALITY(mdVector.hasPadding(), comm->getSize() > 1);
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
@@ -511,7 +511,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_ASSERT(mdVector.hasPadding());
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
@@ -595,7 +595,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 
   // Perform unit tests of MDVector as a whole
   TEST_ASSERT(mdVector.onSubcommunicator());
-  TEST_EQUALITY(mdVector.getNumDims(), numDims);
+  TEST_EQUALITY(mdVector.numDims(), numDims);
   TEST_ASSERT(mdVector.hasPadding());
   TEST_EQUALITY(mdVector.getLayout(), Domi::DEFAULT_ORDER);
 
