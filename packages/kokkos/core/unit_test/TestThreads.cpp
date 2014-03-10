@@ -43,6 +43,10 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Macros.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
@@ -366,3 +370,4 @@ TEST_F( threads , compiler_macros )
 
 } // namespace Test
 
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */
