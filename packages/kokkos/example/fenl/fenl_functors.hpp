@@ -239,7 +239,7 @@ public:
 
         const typename SetType::insert_result result = node_node_set.insert( key );
 
-        if ( result.first == Kokkos::INSERT_SUCCESS ) {
+        if ( result.success() ) {
           if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
           if ( col_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
         }
