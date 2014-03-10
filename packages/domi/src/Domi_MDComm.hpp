@@ -138,21 +138,20 @@ public:
    *
    * \param teuchosComm [in] The Teuchos Communicator
    *
-   * \param axisCommSizes [in] An array containing the sizes of the
+   * \param commDims [in] An array containing the sizes of the
    *        <tt>MDComm</tt> along each axis.  The size of
-   *        <tt>axisCommSizes</tt> determines the number of
-   *        dimensions.  Negative values will be converted to positive
-   *        such that the product of the resulting axis sizes will
-   *        equal the number of processors in the Teuchos
-   *        communicator.
+   *        <tt>commDims</tt> determines the number of dimensions.
+   *        Negative values will be converted to positive such that
+   *        the product of the resulting axis sizes will equal the
+   *        number of processors in the Teuchos communicator.
    *
    * \param periodic [in] An array of ints which are simple flags
    *        denoting whether each axis is periodic.  If this array is
-   *        shorter than the size of axisCommSizes, the unspecified
-   *        axes are assumed to be zero (false).
+   *        shorter than the size of commDims, the unspecified axes
+   *        are assumed to be zero (false).
    */
   MDComm(const TeuchosCommRCP teuchosComm,
-         const Teuchos::ArrayView< int > & axisCommSizes,
+         const Teuchos::ArrayView< int > & commDims,
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
 
@@ -188,10 +187,10 @@ public:
    * \param numDims [in] The number of dimensions in the
    *        <tt>MDComm</tt>.
    *
-   * \param axisCommSizes [in] An array containing the sizes of the
+   * \param commDims [in] An array containing the sizes of the
    *        <tt>MDComm</tt> along each axis.  If the size of
-   *        <tt>axisCommSizes</tt> is less than <tt>numDims</tt>, then
-   *        the missing values are treated as unspecified.  Negative
+   *        <tt>commDims</tt> is less than <tt>numDims</tt>, then the
+   *        missing values are treated as unspecified.  Negative
    *        values will also be treated as unspecified.  Unspecified
    *        vlaues will be converted to positive such that the product
    *        of the resulting axis sizes will equal the number of
@@ -204,7 +203,7 @@ public:
    */
   MDComm(const TeuchosCommRCP teuchosComm,
          int numDims,
-         const Teuchos::ArrayView< int > & axisCommSizes,
+         const Teuchos::ArrayView< int > & commDims,
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
 
@@ -314,7 +313,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisCommSize(int axis) const;
+  int getCommDim(int axis) const;
 
   /** \brief Return the periodic flag for the given axis.
    *
@@ -327,7 +326,7 @@ public:
    */
   bool isPeriodic(int axis) const;
 
-  /** \brief Get the axis-rank along the given axis
+  /** \brief Get the comm index along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -336,7 +335,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisRank(int axis) const;
+  int getCommIndex(int axis) const;
 
   /** \brief Get the rank of the lower neighbor
    *
@@ -394,16 +393,16 @@ private:
 #endif
 
   // An array of the sizes of the communicator along each axis
-  Teuchos::Array< int > _axisCommSizes;
+  Teuchos::Array< int > _commDims;
 
   // An array of flags denoting periodic axes
   Teuchos::Array< int > _periodic;
 
-  // An array of the axis-ranks for this processor along each axis
-  Teuchos::Array< int > _axisRanks;
+  // The comm index for this processor along each axis
+  Teuchos::Array< int > _commIndex;
 
   // An array of the strides between processor ranks along each axis.
-  Teuchos::Array< int > _axisStrides;
+  Teuchos::Array< int > _commStrides;
 
 };
 

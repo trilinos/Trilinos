@@ -61,9 +61,9 @@ using MDArrayUnitTestHelpers::generateMDArray;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, defaultConstructor, T )
 {
   MDArrayView< T > av;
-  TEST_EQUALITY_CONST(av.numDims(), 1);
+  TEST_EQUALITY_CONST(av.numDims()   , 1);
   TEST_EQUALITY_CONST(av.dimension(0), 0);
-  TEST_EQUALITY_CONST(av.size(), 0);
+  TEST_EQUALITY_CONST(av.size()      , 0);
   TEST_EQUALITY_CONST(av.strides()[0], 1);
 }
 
@@ -72,10 +72,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, arrayViewDimsConstructor, T )
   typedef typename MDArrayView< T >::dim_type dim_type;
   Array< T > a(314);
   MDArrayView< T > av(a, tuple< dim_type >(12,25));
-  TEST_EQUALITY_CONST(av.numDims(),     2);
+  TEST_EQUALITY_CONST(av.numDims()   ,   2);
   TEST_EQUALITY_CONST(av.dimension(0),  12);
   TEST_EQUALITY_CONST(av.dimension(1),  25);
-  TEST_EQUALITY_CONST(av.size(),       300);
+  TEST_EQUALITY_CONST(av.size()      , 300);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, arrayViewDimsConstructorBad, T )
@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, copyConstructor, T )
   MDArray< T > a = generateMDArray< T >(3,4);
   MDArrayView< T > av = a.mdArrayView();
   MDArrayView< T > avc(av);
-  TEST_EQUALITY_CONST(avc.numDims(), av.numDims());
+  TEST_EQUALITY_CONST(avc.numDims()   , av.numDims()   );
   TEST_EQUALITY_CONST(avc.dimension(0), av.dimension(0));
   TEST_EQUALITY_CONST(avc.dimension(1), av.dimension(1));
   TEST_EQUALITY_CONST(avc(0,0), av(0,0));

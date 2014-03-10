@@ -66,34 +66,34 @@ typedef Domi::dim_type dim_type;
 using Domi::splitStringOfIntsWithCommas;
 using Domi::TeuchosCommRCP;
 
-string dims          = "20,16";
-string axisCommSizes = "-1";
-int    commPad       = 1;
-string commPads      = "";
-int    bndryPad      = 0;
-string bndryPads     = "";
-string periodic      = "";
-bool   verbose       = false;
+string dims      = "20,16";
+string commDims  = "-1";
+int    commPad   = 1;
+string commPads  = "";
+int    bndryPad  = 0;
+string bndryPads = "";
+string periodic  = "";
+bool   verbose   = false;
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions(true);
-  clp.setOption("dims"         , &dims,
+  clp.setOption("dims"     , &dims,
                 "Comma-separated global dimensions of Field");
-  clp.setOption("axisCommSizes", &axisCommSizes,
+  clp.setOption("commDims" , &commDims,
                 "Comma-separated number of processors along each axis");
-  clp.setOption("commPad"       , &commPad,
+  clp.setOption("commPad"  , &commPad,
                 "CommPad size along every axis");
-  clp.setOption("commPads"      , &commPads,
+  clp.setOption("commPads" , &commPads,
                 "Comma-separated list of commPad sizes along each axis");
-  clp.setOption("bndryPad"      , &bndryPad,
+  clp.setOption("bndryPad" , &bndryPad,
                 "CBndryPad size along every axis");
-  clp.setOption("bndryPads"     , &bndryPads,
+  clp.setOption("bndryPads", &bndryPads,
                 "Comma-separated list of bndryPad sizes on each axis");
-  clp.setOption("periodic"     , &periodic,
+  clp.setOption("periodic" , &periodic,
                 "Comma-separated list of axis periodicity flags (use 0,1)");
-  clp.setOption("verbose"      , "quiet"       , &verbose,
+  clp.setOption("verbose"  , "quiet"       , &verbose,
                 "Verbose or quiet output");
 }
 
@@ -109,15 +109,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
 
   // Convert the command-line arguments into usable arrays
   Array< dim_type > dimVals;
-  Array< int > axisCommSizeVals;
+  Array< int > commDimVals;
   Array< int > commPadVals;
   Array< int > bndryPadVals;
   Array< int > periodicFlags;
-  dimVals          = splitStringOfIntsWithCommas(dims         );
-  axisCommSizeVals = splitStringOfIntsWithCommas(axisCommSizes);
-  commPadVals      = splitStringOfIntsWithCommas(commPads      );
-  bndryPadVals     = splitStringOfIntsWithCommas(bndryPads     );
-  periodicFlags    = splitStringOfIntsWithCommas(periodic     );
+  dimVals       = splitStringOfIntsWithCommas(dims     );
+  commDimVals   = splitStringOfIntsWithCommas(commDims );
+  commPadVals   = splitStringOfIntsWithCommas(commPads );
+  bndryPadVals  = splitStringOfIntsWithCommas(bndryPads);
+  periodicFlags = splitStringOfIntsWithCommas(periodic );
 
   // Check for 2D or 3D
   int numDims = dimVals.size();
@@ -131,18 +131,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   // Print the arrays that will be passed to the MDMap constructor
   if (verbose && pid == 0)
     cout << endl
-         << "dims:          " << dimVals          << endl
-         << "axisCommSizes: " << axisCommSizeVals << endl
-         << "commPad:       " << commPad          << endl
-         << "commPads:      " << commPadVals      << endl
-         << "bndryPad:      " << bndryPad         << endl
-         << "bndryPads:     " << bndryPadVals     << endl
-         << "periodic:      " << periodicFlags    << endl;
+         << "dims:      " << dimVals       << endl
+         << "commDims:  " << commDimVals   << endl
+         << "commPad:   " << commPad       << endl
+         << "commPads:  " << commPadVals   << endl
+         << "bndryPad:  " << bndryPad      << endl
+         << "bndryPads: " << bndryPadVals  << endl
+         << "periodic:  " << periodicFlags << endl;
 
   // Construct the MDVector ParameterList
   Teuchos::ParameterList plist;
-  if (! axisCommSizeVals.empty())
-    plist.set("axis comm sizes", axisCommSizeVals);
+  if (! commDimVals.empty())
+    plist.set("comm dimensions", commDimVals);
   if (! periodicFlags.empty())
     plist.set("periodic", periodicFlags);
   plist.set("dimensions", dimVals);

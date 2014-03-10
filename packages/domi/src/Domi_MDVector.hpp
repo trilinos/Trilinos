@@ -237,7 +237,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisCommSize(int axis) const;
+  int getCommDim(int axis) const;
 
   /** \brief Return the periodic flag for the given axis.
    *
@@ -259,7 +259,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisRank(int axis) const;
+  int getCommIndex(int axis) const;
 
   /** \brief Get the rank of the lower neighbor
    *
@@ -1008,9 +1008,9 @@ template< class Scalar,
           class Node >
 int
 MDVector< Scalar, Node >::
-getAxisCommSize(int axis) const
+getCommDim(int axis) const
 {
-  return _mdMap->getAxisCommSize(axis);
+  return _mdMap->getCommDim(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1030,9 +1030,9 @@ template< class Scalar,
           class Node >
 int
 MDVector< Scalar, Node >::
-getAxisRank(int axis) const
+getCommIndex(int axis) const
 {
-  return _mdMap->getAxisRank(axis);
+  return _mdMap->getCommIndex(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////

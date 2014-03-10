@@ -319,7 +319,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisCommSize(int axis) const;
+  int getCommDim(int axis) const;
 
   /** \brief Return the periodic flag for the given axis.
    *
@@ -341,7 +341,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisRank(int axis) const;
+  int getCommIndex(int axis) const;
 
   /** \brief Get the rank of the lower neighbor
    *
@@ -738,7 +738,7 @@ public:
    * Two MDMaps are considered "compatible" if all of the following
    * are true:
    * <ol>
-   *   <li> The axisCommSizes of their underlying MDComms are
+   *   <li> The commDims of their underlying MDComms are
    *        identical.</li>
    *   <li> Their global dimensions are identical.</li>
    *   <li> Their local dimensions, not including padding, are
@@ -1240,7 +1240,7 @@ MDMap(const MDMap< Node > & parent,
     // Determine the axis rank for the processor on which the index
     // lives, and construct the MDComm
     int thisAxisRank = -1;
-    for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis); ++axisRank)
+    for (int axisRank = 0; axisRank < parent.getCommDim(axis); ++axisRank)
       if (index >= parent._globalRankBounds[axis][axisRank].start() &&
           index < parent._globalRankBounds[axis][axisRank].stop())
         thisAxisRank = axisRank;
@@ -1304,7 +1304,7 @@ MDMap(const MDMap< Node > & parent,
         }
         else
         {
-          int axisRank = parent.getAxisRank(axis);
+          int axisRank = parent.getCommIndex(axis);
           _globalMin += index * parent._globalStrides[axis];
           _globalMax -= (parent._globalBounds[axis].stop() - index) *
             parent._globalStrides[axis];
@@ -1373,7 +1373,7 @@ MDMap(const MDMap< Node > & parent,
       "Slice along axis " << axis << " is " << bounds << " but must be within "
       << parent.getGlobalBounds(axis));
     // Adjust _globalRankBounds
-    for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
+    for (int axisRank = 0; axisRank < parent.getCommDim(axis);
          ++axisRank)
     {
       dim_type start = _globalRankBounds[axis][axisRank].start();
@@ -1406,7 +1406,7 @@ MDMap(const MDMap< Node > & parent,
     // Build the slice for the MDComm sub-communicator constructor
     int pStart = -1;
     int pStop  = -1;
-    for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
+    for (int axisRank = 0; axisRank < parent.getCommDim(axis);
          ++axisRank)
     {
       if ((_globalRankBounds[axis][axisRank].start() - _bndryPad[axis][0]
@@ -1433,10 +1433,10 @@ MDMap(const MDMap< Node > & parent,
     // communicator, then we clear many of the data members.
     if (_mdComm->onSubcommunicator())
     {
-      int axisRank = getAxisRank(axis);
+      int axisRank = getCommIndex(axis);
       if (axisRank == 0)
         _pad[axis][0] = _bndryPad[axis][0];
-      if (axisRank == _mdComm->getAxisCommSize(axis)-1)
+      if (axisRank == _mdComm->getCommDim(axis)-1)
         _pad[axis][1] = _bndryPad[axis][1];
       dim_type start = parent._localBounds[axis].start();
       if (_globalBounds[axis].start() >
@@ -1478,7 +1478,7 @@ MDMap(const MDMap< Node > & parent,
       // The new sub-communicator may have fewer processors than the
       // parent communicator, so we need to fix _globalRankBounds
       Teuchos::Array< Slice > newRankBounds;
-      for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
+      for (int axisRank = 0; axisRank < parent.getCommDim(axis);
            ++axisRank)
         if ((axisRank >= axisRankSlice.start()) &&
             (axisRank <  axisRankSlice.stop() )   )
@@ -1570,9 +1570,9 @@ MDMap< Node >::numDims() const
 
 template< class Node >
 int
-MDMap< Node >::getAxisCommSize(int axis) const
+MDMap< Node >::getCommDim(int axis) const
 {
-  return _mdComm->getAxisCommSize(axis);
+  return _mdComm->getCommDim(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1588,9 +1588,9 @@ MDMap< Node >::isPeriodic(int axis) const
 
 template< class Node >
 int
-MDMap< Node >::getAxisRank(int axis) const
+MDMap< Node >::getCommIndex(int axis) const
 {
-  return _mdComm->getAxisRank(axis);
+  return _mdComm->getCommIndex(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1693,14 +1693,14 @@ getGlobalRankBounds(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     numDims() << ")");
 #endif
-  int axisRank = getAxisRank(axis);
+  int axisRank = getCommIndex(axis);
   if (withBndryPad)
   {
     dim_type start = _globalRankBounds[axis][axisRank].start();
     dim_type stop  = _globalRankBounds[axis][axisRank].stop();
-    if (getAxisRank(axis) == 0)
+    if (getCommIndex(axis) == 0)
       start -= _bndryPad[axis][0];
-    if (getAxisRank(axis) == getAxisCommSize(axis)-1)
+    if (getCommIndex(axis) == getCommDim(axis)-1)
       stop += _bndryPad[axis][1];
     return ConcreteSlice(start,stop);
   }
@@ -1956,7 +1956,7 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
         int globalID = 0;
         for (int axis = 0; axis < num_dims; ++axis)
         {
-          int axisRank = getAxisRank(axis);
+          int axisRank = getCommIndex(axis);
           int start    = _globalRankBounds[axis][axisRank].start() -
                          _pad[axis][0];
           globalID += (start + it.index(axis)) * _globalStrides[axis];
@@ -1991,10 +1991,10 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
       for (int axis = 0; axis < num_dims; ++axis)
       {
         myDims[axis] = _localDims[axis] - _pad[axis][0] - _pad[axis][1];
-        int axisRank = getAxisRank(axis);
+        int axisRank = getCommIndex(axis);
         if (axisRank == 0)
           myDims[axis] += _bndryPad[axis][0];
-        if (axisRank == getAxisCommSize(axis)-1)
+        if (axisRank == getCommDim(axis)-1)
           myDims[axis] += _bndryPad[axis][1];
       }
       MDArray<int> myElements(myDims());
@@ -2006,11 +2006,11 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
         int globalID = 0;
           for (int axis = 0; axis < num_dims; ++axis)
           {
-            int axisRank = getAxisRank(axis);
+            int axisRank = getCommIndex(axis);
             int start    = _globalRankBounds[axis][axisRank].start();
             if (axisRank == 0)
               start -= _bndryPad[axis][0];
-            if (axisRank == getAxisCommSize(axis)-1)
+            if (axisRank == getCommDim(axis)-1)
               start += _bndryPad[axis][1];
             globalID += (start + it.index(axis)) * _globalStrides[axis];
           }
@@ -2056,7 +2056,7 @@ getEpetraAxisMap(int axis,
     {
       Teuchos::Array<int> elements(getLocalDim(axis, withCommPad));
       int start = getGlobalRankBounds(axis,true).start();
-      if (withCommPad && (getAxisRank(axis) != 0)) start -= _pad[axis][0];
+      if (withCommPad && (getCommIndex(axis) != 0)) start -= _pad[axis][0];
       for (int i = 0; i < elements.size(); ++i)
         elements[i] = i + start;
       if (withCommPad)
@@ -2133,7 +2133,7 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
       GlobalOrdinal globalID = 0;
       for (int axis = 0; axis < num_dims; ++axis)
       {
-        int axisRank        = getAxisRank(axis);
+        int axisRank        = getCommIndex(axis);
         GlobalOrdinal start = _globalRankBounds[axis][axisRank].start() -
                               _pad[axis][0];
         globalID += (start + it.index(axis)) * _globalStrides[axis];
@@ -2163,10 +2163,10 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
     {
       myDims[axis] =
         _localDims[axis] - _pad[axis][0] - _pad[axis][1];
-      int axisRank = getAxisRank(axis);
+      int axisRank = getCommIndex(axis);
       if (axisRank == 0)
         myDims[axis] += _bndryPad[axis][0];
-      if (axisRank == getAxisCommSize(axis)-1)
+      if (axisRank == getCommDim(axis)-1)
         myDims[axis] += _bndryPad[axis][1];
     }
     MDArray< GlobalOrdinal > elementMDArray(myDims());
@@ -2178,11 +2178,11 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
       GlobalOrdinal globalID = 0;
       for (int axis = 0; axis < num_dims; ++axis)
       {
-        int axisRank        = getAxisRank(axis);
+        int axisRank        = getCommIndex(axis);
         GlobalOrdinal start = _globalRankBounds[axis][axisRank].start();
         if (axisRank == 0)
           start -= _bndryPad[axis][0];
-        if (axisRank == getAxisCommSize(axis)-1)
+        if (axisRank == getCommDim(axis)-1)
           start += _bndryPad[axis][1];
         globalID += (start + it.index(axis)) * _globalStrides[axis];
       }
@@ -2248,7 +2248,7 @@ getTpetraAxisMap(int axis,
   TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
   Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));
   GlobalOrdinal start = getGlobalRankBounds(axis,true).start();
-  if (withCommPad && (getAxisRank(axis) != 0)) start -= _pad[axis][0];
+  if (withCommPad && (getCommIndex(axis) != 0)) start -= _pad[axis][0];
   for (LocalOrdinal i = 0; i < elements.size(); ++i)
     elements[i] = i + start;
   return Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
@@ -2356,7 +2356,7 @@ getGlobalIndex(size_type localIndex) const
   for (int axis = 0; axis < numDims(); ++axis)
   {
     dim_type globalAxisIndex = localAxisIndex[axis] +
-      _globalRankBounds[axis][getAxisRank(axis)].start() - _pad[axis][0];
+      _globalRankBounds[axis][getCommIndex(axis)].start() - _pad[axis][0];
     result += globalAxisIndex * _globalStrides[axis];
   }
   return result;
@@ -2411,7 +2411,7 @@ getLocalIndex(size_type globalIndex) const
   for (int axis = 0; axis < numDims(); ++axis)
   {
     dim_type localAxisIndex = globalAxisIndex[axis] -
-      _globalRankBounds[axis][getAxisRank(axis)].start() + _pad[axis][0];
+      _globalRankBounds[axis][getCommIndex(axis)].start() + _pad[axis][0];
     TEUCHOS_TEST_FOR_EXCEPTION(
       (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
       RangeError,
@@ -2465,10 +2465,10 @@ MDMap< Node >::isCompatible(const MDMap< Node > & mdMap) const
   int num_dims = numDims();
   if (num_dims != mdMap.numDims()) return false;
 
-  // Check the axisCommSizes.  Assume this check produces the same
-  // result on all processes
+  // Check the commDims.  Assume this check produces the same result
+  // on all processes
   for (int axis = 0; axis < num_dims; ++axis)
-    if (getAxisCommSize(axis) != mdMap.getAxisCommSize(axis)) return false;
+    if (getCommDim(axis) != mdMap.getCommDim(axis)) return false;
 
   // Check the global dimensions.  Assume this check produces the same
   // result on all processes
@@ -2546,14 +2546,14 @@ MDMap< Node >::computeBounds()
   for (int axis = 0; axis < num_dims; ++axis)
   {
     // Get the communicator info for this axis
-    int axisCommSize = getAxisCommSize(axis);
-    for (int axisRank = 0; axisRank < axisCommSize; ++axisRank)
+    int commDim = getCommDim(axis);
+    for (int axisRank = 0; axisRank < commDim; ++axisRank)
     {
       // First estimates assuming even division of global dimensions
       // by the number of processors along this axis, and ignoring
       // communication and boundary padding.
       dim_type  localDim  = (_globalDims[axis] - 2*_bndryPadSizes[axis]) /
-                             axisCommSize;
+                             commDim;
       dim_type axisStart = axisRank * localDim;
 
       // Adjustments for non-zero remainder.  Compute the remainder
@@ -2564,11 +2564,11 @@ MDMap< Node >::computeBounds()
       // the lowest processor ranks), and provides better balance for
       // finite differencing systems with staggered data location.
       dim_type remainder = (_globalDims[axis] - 2*_bndryPadSizes[axis]) %
-                            axisCommSize;
-      if (axisCommSize - axisRank - 1 < remainder)
+                            commDim;
+      if (commDim - axisRank - 1 < remainder)
       {
         ++localDim;
-        axisStart += (remainder - axisCommSize + axisRank);
+        axisStart += (remainder - commDim + axisRank);
       }
 
       // Global adjustment for boundary padding
@@ -2580,7 +2580,7 @@ MDMap< Node >::computeBounds()
 
       // Set _localDims[axis] and _localBounds[axis] only if
       // axisRank equals the axis rank of this processor
-      if (axisRank == getAxisRank(axis))
+      if (axisRank == getCommIndex(axis))
       {
         // Local adjustment for padding.  Note that _pad should
         // already be corrected to be either the communication padding

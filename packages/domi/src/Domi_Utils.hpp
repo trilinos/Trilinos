@@ -260,9 +260,9 @@ SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
 
 ////////////////////////////////////////////////////////////////////////
 
-/** \brief Compute a valid axisCommSizes array, given the number of
+/** \brief Compute a valid commDims array, given the number of
  *         processors, the number of dimensions, and a candidate
- *         axisCommSizes array.
+ *         commDims array.
  *
  *  The candidate array can have fewer entries than the number of
  *  dimensions -- this function will fill in the extra ones.  It can
@@ -278,9 +278,9 @@ SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
  *  will be given a single process.
  */
 Teuchos::Array< int >
-regularizeAxisSizes(int numProcs,
-                    int numDims,
-                    const Teuchos::ArrayView< int > & axisCommSizes);
+regularizeCommDims(int numProcs,
+                   int numDims,
+                   const Teuchos::ArrayView< int > & commDims);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -288,8 +288,8 @@ regularizeAxisSizes(int numProcs,
  *         the number of processors along each axis.
  */
 Teuchos::Array< int >
-computeAxisRanks(int rank,
-                 const Teuchos::ArrayView< int > & axisCommSizes);
+computeCommIndexes(int rank,
+                   const Teuchos::ArrayView< int > & commDims);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -297,9 +297,9 @@ computeAxisRanks(int rank,
  *         the offset and the processors strides along each axis.
  */
 Teuchos::Array< int >
-computeAxisRanks(int rank,
-                 int offset,
-                 const Teuchos::ArrayView< int > & axisStrides);
+computeCommIndexes(int rank,
+                   int offset,
+                   const Teuchos::ArrayView< int > & commStrides);
 
 ////////////////////////////////////////////////////////////////////////
 

@@ -76,15 +76,15 @@ using Domi::MDMap;
 using Domi::MDVector;
 
 int numDims = 2;
-string axisCommSizesStr = "-1";
-Array< int > axisCommSizes;
+string commDimsStr = "-1";
+Array< int > commDims;
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions(true);
-  clp.setOption("numDims"  , &numDims     , "number of dimensions");
-  clp.setOption("axisCommSizes", &axisCommSizesStr, "comma-separated list of "
+  clp.setOption("numDims" , &numDims    , "number of dimensions");
+  clp.setOption("commDims", &commDimsStr, "comma-separated list of "
                 "number of processors along each axis");
 }
 
@@ -95,22 +95,22 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
-  // Check that the axisCommSizes are completely specified
-  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  // Check that the commDims are completely specified
+  TEST_EQUALITY(commDims.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_ASSERT(axisCommSizes[axis] > 0);
+    TEST_ASSERT(commDims[axis] > 0);
   }
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+    dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap and MDVector
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;
@@ -126,8 +126,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = mdVector.getAxisRank(axis);
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    int axisRank = mdVector.getCommIndex(axis);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
@@ -204,22 +204,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
-  // Check that the axisCommSizes are completely specified
-  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  // Check that the commDims are completely specified
+  TEST_EQUALITY(commDims.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_ASSERT(axisCommSizes[axis] > 0);
+    TEST_ASSERT(commDims[axis] > 0);
   }
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+    dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;
@@ -245,8 +245,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = mdVector.getAxisRank(axis);
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    int axisRank = mdVector.getCommIndex(axis);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
@@ -285,22 +285,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
-  // Check that the axisCommSizes are completely specified
-  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  // Check that the commDims are completely specified
+  TEST_EQUALITY(commDims.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_ASSERT(axisCommSizes[axis] > 0);
+    TEST_ASSERT(commDims[axis] > 0);
   }
 
   // Construct dimensions
   dim_type localDim = 9;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+    dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap and a source MDVector
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;
@@ -321,8 +321,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = mdVector.getAxisRank(axis);
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    int axisRank = mdVector.getCommIndex(axis);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
@@ -361,26 +361,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
-  // Check that the axisCommSizes are completely specified
-  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  // Check that the commDims are completely specified
+  TEST_EQUALITY(commDims.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_ASSERT(axisCommSizes[axis] > 0);
+    TEST_ASSERT(commDims[axis] > 0);
   }
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * axisCommSizes[axis];
+    dims[axis] = localDim * commDims[axis];
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("axis comm sizes", axisCommSizes);
-  plist.set("dimensions"     , dims         );
+  plist.set("comm dimensions", commDims);
+  plist.set("dimensions"     , dims    );
 
   // Construct an MDVector
   MDVector< Sca > mdVector(comm, plist);
@@ -394,8 +394,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = mdVector.getAxisRank(axis);
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    int axisRank = mdVector.getCommIndex(axis);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
@@ -419,15 +419,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+    dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct communication padding
   Array< int > commPad(numDims);
@@ -451,14 +451,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = mdVector.getAxisRank(axis);
+    int axisRank = mdVector.getCommIndex(axis);
     int lowerCommPad = 0;
     if (axisRank > 0) lowerCommPad = commPad[axis];
     int upperCommPad = 0;
-    if (axisRank < axisCommSizes[axis]-1) upperCommPad = commPad[axis];
+    if (axisRank < commDims[axis]-1) upperCommPad = commPad[axis];
     dim_type myDim = localDim + lowerCommPad + upperCommPad;
 
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY_CONST(mdVector.getGlobalBounds(axis).start(), 0);
@@ -486,14 +486,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * axisCommSizes[axis];
+    dims[axis] = localDim * commDims[axis];
 
   // Construct boundary padding
   Array< int > bndryPad(numDims);
@@ -502,9 +502,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("axis comm sizes"   , axisCommSizes);
-  plist.set("dimensions"        , dims         );
-  plist.set("boundary pad sizes", bndryPad     );
+  plist.set("comm dimensions"   , commDims);
+  plist.set("dimensions"        , dims    );
+  plist.set("boundary pad sizes", bndryPad);
 
   // Construct an MDVector
   MDVector< Sca > mdVector(comm, plist);
@@ -518,14 +518,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = mdVector.getAxisRank(axis);
+    int axisRank = mdVector.getCommIndex(axis);
     int lowerBndryPad = 0;
     if (axisRank == 0) lowerBndryPad = bndryPad[axis];
     int upperBndryPad = 0;
-    if (axisRank == axisCommSizes[axis]-1) upperBndryPad = bndryPad[axis];
+    if (axisRank == commDims[axis]-1) upperBndryPad = bndryPad[axis];
     dim_type myDim = localDim + lowerBndryPad + upperBndryPad;
 
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
     TEST_EQUALITY(mdVector.getGlobalDim(axis,false), dims[axis]               );
@@ -543,8 +543,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
     TEST_EQUALITY(globalRankBounds.start(), myStart);
     TEST_EQUALITY(globalRankBounds.stop() , myStop );
     globalRankBounds = mdVector.getGlobalRankBounds(axis,true);
-    if (axisRank == 0                    ) myStart -= bndryPad[axis];
-    if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
+    if (axisRank == 0               ) myStart -= bndryPad[axis];
+    if (axisRank == commDims[axis]-1) myStop  += bndryPad[axis];
     TEST_EQUALITY(globalRankBounds.start(), myStart);
     TEST_EQUALITY(globalRankBounds.stop( ), myStop );
     Slice localBounds  = mdVector.getLocalBounds(axis,true);
@@ -565,15 +565,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+    dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct communication and boundary padding
   Array< int > commPad(numDims);
@@ -602,14 +602,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
   // Perform unit tests of MDVector axis quantities
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank     = mdVector.getAxisRank(axis);
+    int axisRank     = mdVector.getCommIndex(axis);
     int lowerCommPad = commPad[axis];
     int upperCommPad = commPad[axis];
-    if (axisRank == 0                ) lowerCommPad = bndryPad[axis];
-    if (axisRank == axisCommSizes[axis]-1) upperCommPad = bndryPad[axis];
+    if (axisRank == 0               ) lowerCommPad = bndryPad[axis];
+    if (axisRank == commDims[axis]-1) upperCommPad = bndryPad[axis];
     dim_type myDim = localDim + lowerCommPad + upperCommPad;
 
-    TEST_EQUALITY(mdVector.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_EQUALITY(mdVector.getCommDim(axis), commDims[axis]);
     TEST_ASSERT(not mdVector.isPeriodic(axis));
     TEST_EQUALITY(mdVector.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
     TEST_EQUALITY(mdVector.getGlobalDim(axis,false), dims[axis]               );
@@ -627,8 +627,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
     TEST_EQUALITY(globalRankBounds.start(), myStart);
     TEST_EQUALITY(globalRankBounds.stop() , myStop );
     globalRankBounds = mdVector.getGlobalRankBounds(axis,true);
-    if (axisRank == 0                    ) myStart -= bndryPad[axis];
-    if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
+    if (axisRank == 0               ) myStart -= bndryPad[axis];
+    if (axisRank == commDims[axis]-1) myStop  += bndryPad[axis];
     TEST_EQUALITY(globalRankBounds.start(), myStart);
     TEST_EQUALITY(globalRankBounds.stop( ), myStop );
     Slice localBounds  = mdVector.getLocalBounds(axis,true);
@@ -649,22 +649,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisCommSizes from command line should be fully specified
-  axisCommSizes = Domi::splitStringOfIntsWithCommas(axisCommSizesStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
-  // Check that the axisCommSizes are completely specified
-  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  // Check that the commDims are completely specified
+  TEST_EQUALITY(commDims.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_ASSERT(axisCommSizes[axis] > 0);
+    TEST_ASSERT(commDims[axis] > 0);
   }
 
   // Construct dimensions
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+    dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap and MDVector
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;

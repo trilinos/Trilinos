@@ -75,7 +75,7 @@ RCP< const ParameterList > getValidParameters()
     ParameterList* plist = new ParameterList;
 
     ////////////////////////////////////////////////////////////////
-    // "axis comm sizes" parameter applies to MDComm
+    // "comm dimensions" parameter applies to MDComm
     ////////////////////////////////////////////////////////////////
     RCP< EnhancedNumberValidator< int > > axisCommNumber =
       rcp(new EnhancedNumberValidator< int >());
@@ -88,10 +88,10 @@ RCP< const ParameterList > getValidParameters()
       rcp< const ParameterEntryValidator >
       (new ArrayNumberValidator< int >(constAxisCommNumber));
 
-    Array< int > axisCommSizes(1);
-    axisCommSizes[0] = -1;
-    plist->set("axis comm sizes",
-               axisCommSizes, 
+    Array< int > commDims(1);
+    commDims[0] = -1;
+    plist->set("comm dimensions",
+               commDims, 
                "An array of ints that specifies the size of the "
                "MDComm along each axis. If the 'dimensions' parameter is "
                "present, then the length of that parameter determines the "
@@ -127,7 +127,7 @@ RCP< const ParameterList > getValidParameters()
                "A scalar or an array of int flags specifying whether axes are "
                "periodic. If a scalar is given, then all axes share that "
                "periodicity flag.  If an array is given and it is shorter than "
-               "the length of axisCommSizes array, then the unspecified "
+               "the length of commDims array, then the unspecified "
                "entries are given a default value of zero (not "
                "periodic).",
                periodicValidator);

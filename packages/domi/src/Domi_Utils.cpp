@@ -51,15 +51,15 @@ namespace Domi
 {
 
 Teuchos::Array< int >
-regularizeAxisSizes(int numProcs,
-                    int numDims,
-                    const Teuchos::ArrayView< int > & axisCommSizes)
+regularizeCommDims(int numProcs,
+                   int numDims,
+                   const Teuchos::ArrayView< int > & commDims)
 {
   // Allocate the return array, filled with the value -1
   Teuchos::Array< int > result(numDims, -1);
   // Copy the candidate array into the return array
-  for (int axis = 0; axis < numDims && axis < axisCommSizes.size(); ++axis)
-    result[axis] = axisCommSizes[axis];
+  for (int axis = 0; axis < numDims && axis < commDims.size(); ++axis)
+    result[axis] = commDims[axis];
   // Compute the block of processors accounted for, and the number of
   // unspecified axis sizes
   int block       = 1;
@@ -103,19 +103,19 @@ regularizeAxisSizes(int numProcs,
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::Array< int >
-computeAxisRanks(int rank,
-                 const Teuchos::ArrayView< int > & axisCommSizes)
+computeCommIndexes(int rank,
+                   const Teuchos::ArrayView< int > & commDims)
 {
-  Teuchos::Array< int > result(axisCommSizes.size());
+  Teuchos::Array< int > result(commDims.size());
   int relRank = rank;
   int stride = 1;
-  for (int axis = 0; axis < axisCommSizes.size()-1; ++axis)
-    stride *= axisCommSizes[axis];
-  for (int axis = axisCommSizes.size()-1; axis > 0; --axis)
+  for (int axis = 0; axis < commDims.size()-1; ++axis)
+    stride *= commDims[axis];
+  for (int axis = commDims.size()-1; axis > 0; --axis)
   {
     result[axis] = relRank / stride;
     relRank      = relRank % stride;
-    stride       = stride / axisCommSizes[axis-1];
+    stride       = stride / commDims[axis-1];
   }
   result[0] = relRank;
   return result;
@@ -124,16 +124,16 @@ computeAxisRanks(int rank,
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::Array< int >
-computeAxisRanks(int rank,
-                 int offset,
-                 const Teuchos::ArrayView< int > & axisStrides)
+computeCommIndexes(int rank,
+                   int offset,
+                   const Teuchos::ArrayView< int > & commStrides)
 {
-  Teuchos::Array< int > result(axisStrides.size());
+  Teuchos::Array< int > result(commStrides.size());
   int relRank = rank - offset;
-  for (int axis = axisStrides.size()-1; axis >= 0; --axis)
+  for (int axis = commStrides.size()-1; axis >= 0; --axis)
   {
-    result[axis] = relRank / axisStrides[axis];
-    relRank      = relRank % axisStrides[axis];
+    result[axis] = relRank / commStrides[axis];
+    relRank      = relRank % commStrides[axis];
   }
   return result;
 }
