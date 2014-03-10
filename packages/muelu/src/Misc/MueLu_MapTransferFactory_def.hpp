@@ -78,12 +78,11 @@ namespace MueLu {
   void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
     Monitor m(*this, "Contact Map transfer factory");
 
-    if (fineLevel.IsAvailable(mapName_, mapFact_.get())==false) {
-        GetOStream(Runtime0) << "MapTransferFactory::Build: User provided map " << mapName_ << " not found in Level class." << std::endl;
-    }
+    if (fineLevel.IsAvailable(mapName_, mapFact_.get())==false)
+      GetOStream(Runtime0) << "MapTransferFactory::Build: User provided map " << mapName_ << " not found in Level class." << std::endl;
 
     // fetch map extractor from level
-    RCP<const MapClass> transferMap = fineLevel.Get<RCP<const MapClass> >(mapName_,mapFact_.get());
+    RCP<const Map> transferMap = fineLevel.Get<RCP<const MapClass> >(mapName_,mapFact_.get());
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -115,11 +114,11 @@ namespace MueLu {
     }
 
     // build column maps
-    const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     std::sort(coarseMapGids.begin(), coarseMapGids.end());
     coarseMapGids.erase(std::unique(coarseMapGids.begin(), coarseMapGids.end()), coarseMapGids.end());
     Teuchos::ArrayView<GO> coarseMapGidsView(&coarseMapGids[0], coarseMapGids.size());
-    Teuchos::RCP<const MapClass> coarseTransferMap = MapFactoryClass::Build(Ptent->getColMap()->lib(), INVALID, coarseMapGidsView, Ptent->getColMap()->getIndexBase(), Ptent->getColMap()->getComm());
+    Teuchos::RCP<const Map> coarseTransferMap = MapFactory::Build(Ptent->getColMap()->lib(), INVALID, coarseMapGidsView, Ptent->getColMap()->getIndexBase(), Ptent->getColMap()->getComm());
 
     // store map extractor in coarse level
     coarseLevel.Set(mapName_, coarseTransferMap, mapFact_.get());
