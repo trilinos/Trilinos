@@ -38,13 +38,13 @@
 # @HEADER
 
 
-ADD_SUBDIRECTORY(DependencyUnitTests)
-
-
 ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
 IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   ADD_SUBDIRECTORY(CTestScriptsUnitTests)
 ENDIF()
+
+
+ADD_SUBDIRECTORY(DependencyUnitTests)
 
 
 INCLUDE(TribitsAddAdvancedTest)
