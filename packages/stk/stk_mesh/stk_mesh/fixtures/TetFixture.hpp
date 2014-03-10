@@ -105,7 +105,7 @@ class TetFixture
    */
   void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
-  void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
+  void generate_mesh( std::vector<size_t> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
   // When creating entities, you can tell TetFixture what parts to add
   // elements and nodes.
