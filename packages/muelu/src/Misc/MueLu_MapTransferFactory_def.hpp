@@ -49,10 +49,9 @@
 
 #include "MueLu_MapTransferFactory_decl.hpp"
 
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
@@ -82,7 +81,7 @@ namespace MueLu {
       GetOStream(Runtime0) << "MapTransferFactory::Build: User provided map " << mapName_ << " not found in Level class." << std::endl;
 
     // fetch map extractor from level
-    RCP<const Map> transferMap = fineLevel.Get<RCP<const MapClass> >(mapName_,mapFact_.get());
+    RCP<const Map> transferMap = fineLevel.Get<RCP<const Map> >(mapName_,mapFact_.get());
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -123,7 +122,6 @@ namespace MueLu {
     // store map extractor in coarse level
     coarseLevel.Set(mapName_, coarseTransferMap, mapFact_.get());
   }
-
 
 } // namespace MueLu
 

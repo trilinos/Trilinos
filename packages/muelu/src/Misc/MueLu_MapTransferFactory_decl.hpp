@@ -53,6 +53,11 @@
 #ifndef MUELU_MAPTRANSFERFACTORY_DECL_HPP_
 #define MUELU_MAPTRANSFERFACTORY_DECL_HPP_
 
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 
