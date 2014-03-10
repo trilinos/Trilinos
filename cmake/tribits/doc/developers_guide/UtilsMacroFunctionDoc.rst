@@ -353,9 +353,14 @@ sets the following varibles in the current scopt:
 * ``MyVar_OPT0="FALSE"``
 * ``MyVar_OPT1="TRUE"``
 
+Any initial arguments that are not recongnised as ``<argNamesList>`` keyword
+arguments will be put into the local varible ``<prefix>_DEFAULT_ARGS``.  If
+no arguments in ``${ARGN}`` match any in ``<argNamesList>``, then all
+non-option arguments are point into ``<prefix>_DEFAULT_ARGS``.
+
 This allows you to define user-defined macros and functions that have a
 mixture of positional arguments and keyword-based arguments like you can do
-in other languages.  The keyword-based arguments can be passed in in any
+in other languages.  The keyword-based arguments can be passed in any
 order and those that are missing are empty (or false) by default.
 
 If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED``is set to ``TRUE``, then a bunch
