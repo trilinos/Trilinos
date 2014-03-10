@@ -721,7 +721,7 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
-       const Teuchos::ArrayView<Scalar> &dots) const
+       const Teuchos::ArrayView<dot_type> &dots) const
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -777,7 +777,7 @@ namespace Tpetra {
       }
     }
     if (this->isDistributed()) {
-      Array<Scalar> ldots(dots);
+      Array<dot_type> ldots(dots);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
     }
   }
@@ -785,7 +785,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  norm2 (const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const
+  norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
@@ -797,6 +797,8 @@ namespace Tpetra {
     using Teuchos::ScalarTraits;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     typedef ScalarTraits<MT> STM;
+
+    typedef Kokkos::Details::ArithTraits<mag_type> ATM;
 
     // FIXME (mfh 15 Sep 2013) When migrating to use Kokkos::View, we
     // should have the post-reduce kernel do the square root(s) on the
@@ -837,15 +839,15 @@ namespace Tpetra {
     }
 
     if (this->isDistributed ()) {
-      Array<MT> lnorms (norms);
+      Array<mag_type> lnorms (norms);
       // FIXME (mfh 25 Apr 2012) Somebody explain to me why we're
       // calling Teuchos::reduceAll when MultiVector has a perfectly
       // good reduce() function.
       reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs),
                  lnorms.getRawPtr (), norms.getRawPtr ());
     }
-    for (typename ArrayView<MT>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
-      (*n) = STM::squareroot (*n);
+    for (typename ArrayView<mag_type>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
+      (*n) = ATM::sqrt (*n);
     }
   }
 

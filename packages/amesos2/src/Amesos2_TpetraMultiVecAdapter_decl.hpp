@@ -120,6 +120,7 @@ namespace Amesos2 {
       if(getComm()->getSize() == 1){
         return true;
       } // There may be other conditions to check
+      return false;
     }
 
     // TODO

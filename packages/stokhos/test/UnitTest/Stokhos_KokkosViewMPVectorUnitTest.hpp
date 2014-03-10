@@ -90,7 +90,7 @@ checkVectorView(const ViewType& v,
   // instead of last
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !view_type::is_static) {
+  if (is_right || !view_type::is_contiguous) {
     num_rows = h_a.dimension_0();
     num_cols = h_a.dimension_1();
   }
@@ -99,7 +99,7 @@ checkVectorView(const ViewType& v,
     num_cols = h_a.dimension_0();
   }
   bool success = true;
-  if (is_right || !view_type::is_static) {
+  if (is_right || !view_type::is_contiguous) {
     for (size_type i=0; i<num_rows; ++i) {
       for (size_type j=0; j<num_cols; ++j) {
         scalar_type val = h_a(i,j);
@@ -190,7 +190,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !Storage::is_static) {
+  if (is_right || !ViewType::is_contiguous) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_vector_coefficient<Scalar>(
@@ -260,7 +260,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, 
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !Storage::is_static) {
+  if (is_right || !ViewType::is_contiguous) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_vector_coefficient<Scalar>(
@@ -382,9 +382,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   VIEW_MP_VECTOR_TESTS_STORAGE_LAYOUT(STORAGE, LayoutLeft)              \
   VIEW_MP_VECTOR_TESTS_STORAGE_LAYOUT(STORAGE, LayoutRight)
 
-#define VIEW_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( SCALAR, ORDINAL, DEVICE ) \
-  typedef Stokhos::StaticFixedStorage<SCALAR,ORDINAL,global_num_cols,DEVICE> SFS;     \
-  VIEW_MP_VECTOR_TESTS_STORAGE( SFS )
+#define VIEW_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
+  typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,global_num_cols,DEVICE> SFS;     \
+  typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
+  VIEW_MP_VECTOR_TESTS_STORAGE( SFS )                                   \
+  VIEW_MP_VECTOR_TESTS_STORAGE( DS )
 
-#define VIEW_MP_VECTOR_TESTS_DEVICE( DEVICE ) \
-  VIEW_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( int, double, DEVICE )
+#define VIEW_MP_VECTOR_TESTS_DEVICE( DEVICE )                           \
+  VIEW_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( int, double, DEVICE )

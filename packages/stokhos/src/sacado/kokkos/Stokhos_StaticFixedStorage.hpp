@@ -92,6 +92,10 @@ namespace Stokhos {
       ss::fill(coeff_, Num, x);
     }
 
+    //! Constructor for creating a view (not allowed)
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
+
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const StaticFixedStorage& s) {

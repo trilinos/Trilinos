@@ -114,7 +114,7 @@ do_time_teuchos_double_dot(unsigned int m, unsigned int nloop)
   timer.start(true);
   double z;
   for (unsigned int j=0; j<nloop; j++) {
-    z = blas.DOT(m, &X[0], 1, &Y[0], 1);
+    z += blas.DOT(m, &X[0], 1, &Y[0], 1);
   }
   timer.stop();
 

@@ -4,7 +4,7 @@ IFS=$'\n'
 
 classListDir=../../../../../../muelu/src/Utils/ClassList/
 
-for i in SC-LO-GO-NO-LMO SC-LO-GO SC-LO
+for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
   do
 
   classList=$classListDir/$i.classList

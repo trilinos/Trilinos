@@ -370,6 +370,12 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
     typedef Node node_type;
+    //! The type for inner product (dot) products
+    /*!
+     * This is not used and exists here purely for backwards-compatibility
+     * with Kokkos-Refactor.
+     */
+    typedef Scalar dot_type;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;

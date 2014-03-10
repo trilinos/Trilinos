@@ -558,6 +558,9 @@ namespace Belos {
       return normalize (X, Teuchos::null, B);
     }
 
+    // Fix warning about hiding OrthoManager::projectAndNormalize()
+    using Belos::OrthoManager<Scalar, MV>::projectAndNormalize;
+
     int 
     projectAndNormalize (MV &X, 
 			 Teuchos::RCP<MV> MX,

@@ -39,15 +39,15 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_CrsMatrix.hpp"
-
+#include "Tpetra_ConfigDefs.hpp"
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+
 #include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
 #include "Tpetra_CrsGraph_def.hpp"
-
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
 
 #define TPETRA_CRSMATRIX_INSTANT_MP_VECTOR_N(N)               \
   INSTANTIATE_TPETRA_MP_VECTOR_N(TPETRA_CRSMATRIX_INSTANT, N) \

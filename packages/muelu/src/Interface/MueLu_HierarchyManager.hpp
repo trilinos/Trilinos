@@ -79,7 +79,7 @@ namespace MueLu {
 
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1), implicitPRrebalance_(Hierarchy::GetDefaultPRrebalance()) { }
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), implicitPRrebalance_(Hierarchy::GetDefaultPRrebalance()), graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }

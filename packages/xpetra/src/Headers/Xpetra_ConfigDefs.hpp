@@ -130,7 +130,6 @@ namespace Xpetra {
 
 #include <functional>
 
-#ifndef __CUDACC__
 // mem management
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -147,7 +146,6 @@ namespace Xpetra {
 #include <Teuchos_CommHelpers.hpp>
 // misc
 #include <Teuchos_ParameterList.hpp>
-#endif
 
 //! Namespace for Xpetra classes and methods
 namespace Xpetra {
@@ -209,7 +207,6 @@ namespace Xpetra {
   };
 
   // import Teuchos memory management classes into Xpetra
-#ifndef __CUDACC__
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::Array;
@@ -232,7 +229,6 @@ namespace Xpetra {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::sublist;
-#endif
 
   // Xpetra functor objects
   // inspired by SGI-specific project2nd, project1st

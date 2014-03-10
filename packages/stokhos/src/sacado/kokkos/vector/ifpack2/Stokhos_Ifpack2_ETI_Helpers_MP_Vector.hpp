@@ -57,6 +57,11 @@ namespace Details {
   // implemented, I think depending on the choice of TPLs
   TPETRA_INSTANTIATE_N_NOGPU(IFPACK2_INSTANT_MP_VECTOR_N)
 
+  // Add missing instantiations from Ifpack2 for double
+// #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+//   IFPACK2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+// #endif
+
 #ifdef DETAILS
 } // namespace Details
 #endif

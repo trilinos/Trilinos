@@ -140,7 +140,7 @@ namespace Xpetra {
       std::vector<size_t> strData = map.getStridingData();
       return rcp(new StridedMap(map.lib(), map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getNode()));
 
-      XPETRA_FACTORY_END;
+      //XPETRA_FACTORY_END;
     }
 
     //! Map constructor with a user-defined contiguous distribution. (for experts only. There is no special check whether the generated strided maps are valid)

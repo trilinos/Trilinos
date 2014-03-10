@@ -63,9 +63,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Currently excluding GPU nodes because SparseOps may not be
 // implemented, I think depending on the choice of TPLs
-//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
-MUELU_INST_N(KokkosClassic_SerialNode)
+TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
+//MUELU_INST_N(KokkosClassic_SerialNode)
 
 #endif
-
-

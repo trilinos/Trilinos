@@ -62,6 +62,8 @@
 #include "Tpetra_config.h"
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_MP_Vector.hpp"
+#include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
+#include "Kokkos_TeuchosCommAdapters_MP_Vector.hpp"
 #endif
 
 namespace Stokhos {
