@@ -58,8 +58,7 @@ IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
   MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
 ENDIF() 
 
-# Overrides that we have for CMake functions
-INCLUDE(CMakeOverrides)
+INCLUDE(TribitsIncludeDirectories)
 
 INCLUDE(TribitsConstants)
 INCLUDE(TribitsGlobalMacros)
