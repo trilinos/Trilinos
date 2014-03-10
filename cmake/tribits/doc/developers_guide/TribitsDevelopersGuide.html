@@ -1563,11 +1563,16 @@ multiple argument sets to <tt class="docutils literal">ARGS</tt> or through mult
 </div>
 <div class="section" id="tribits-add-advanced-test">
 <h2><a class="toc-backref" href="#id28">7.19&nbsp;&nbsp;&nbsp;TRIBITS_ADD_ADVANCED_TEST()</a></h2>
-<p>Function that creates an advanced test defined using one or more executable
-commands that is run as a separate CMake script.</p>
+<p>Function that creates an advanced test defined by stringing together one or
+more executables and/or commands that is run as a separate CMake -P script
+with very flixible pass/fail criteria.</p>
 <p>This function allows you to add a single CTest test as a single unit that is
 actually a sequence of one or more separate commands strung together in some
-way to define the final pass/fail.</p>
+way to define the final pass/fail.  You will want to use this function to
+add a test instead of <tt class="docutils literal">TRIBITS_ADD_TEST()</tt> when you need to run more than
+one command, or you need more sophisticated checking of the test result
+other than just greping STDOUT (i.e. by running programs to examine output
+files).</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_ADVANCED_TEST(
@@ -1590,14 +1595,13 @@ TRIBITS_ADD_ADVANCED_TEST(
   [ENVIRONMENT &lt;var1&gt;=&lt;value1&gt; &lt;var2&gt;=&lt;value2&gt; ...]
   )
 </pre>
-<p>Each and every atomic test or command needs to pass (as defined below) in
-order for the overall test to pass.</p>
 <p>Each atomic test case is either a package-built executable or just a basic
 command.  An atomic test command takes the form:</p>
 <pre class="literal-block">
 TEST_&lt;i&gt;
-   EXEC &lt;exeRootName&gt; [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY &lt;dir&gt;]
-      | CMND &lt;cmndExec&gt;
+   (EXEC &lt;exeRootName&gt; [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
+          [DIRECTORY &lt;dir&gt;]
+      | CMND &lt;cmndExec&gt;)
    [ARGS &lt;arg1&gt; &lt;arg2&gt; ... &lt;argn&gt;]
    [MESSAGE &quot;&lt;message&gt;&quot;]
    [WORKING_DIRECTORY &lt;workingDir&gt;]
@@ -1611,19 +1615,28 @@ TEST_&lt;i&gt;
      | STANDARD_PASS_OUTPUT
      ]
 </pre>
-<p>ToDO: Add documnetation for [X]HOST[TYPE]</p>
+<p>By default, each and every atomic test or command needs to pass (as defined below) in
+order for the overall test to pass.</p>
+<p><strong>Sections:</strong></p>
+<ul class="simple">
+<li><a class="reference internal" href="#overall-arguments-tribits-add-advanced-test">Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#test-idx-test-blocks-and-arguments-tribits-add-advanced-test">TEST_&lt;IDX&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#overall-pass-fail-tribits-add-advanced-test">Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#argument-ordering-tribits-add-advanced-test">Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#implementation-details-tribits-add-advanced-test">Implementation Details (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#setting-additional-test-properties-tribits-add-advanced-test">Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#disabling-tests-externally-tribits-add-advanced-test">Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+<li><a class="reference internal" href="#debugging-and-examining-test-generation-tribits-add-advanced-test">Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())</a></li>
+</ul>
+<p id="overall-arguments-tribits-add-advanced-test"><strong>Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
 <p>Some overall arguments are:</p>
 <blockquote>
 <p><tt class="docutils literal">&lt;testName&gt;</tt></p>
 <blockquote>
 The name of the test (which will have <tt class="docutils literal">${PACKAGE_NAME}_</tt> prepended to
 the name) that will be used to name the output CMake script file as well
-as the CTest test name passed into <tt class="docutils literal">ADD_TEST()</tt>.</blockquote>
-<p><tt class="docutils literal">TEST_&lt;i&gt; (EXEC &lt;execTarget0&gt; | CMND &lt;cmndExec0&gt;) ...</tt></p>
-<blockquote>
-Defines test command to be run for the ith test command.  Each of these
-test commands must be in sequential order.  The details for each atomic
-test are given below.</blockquote>
+as the CTest test name passed into <tt class="docutils literal">ADD_TEST()</tt>.  This must be the
+first argument.</blockquote>
 <p><tt class="docutils literal">OVERALL_WORKING_DIRECTORY &lt;overallWorkingDir&gt;</tt></p>
 <blockquote>
 If specified, then the working directory <tt class="docutils literal">&lt;overallWorkingDir&gt;</tt> will be
@@ -1662,16 +1675,31 @@ ignored.</blockquote>
 <p><tt class="docutils literal">CATEGORIES &lt;category1&gt; &lt;category2&gt; ...</tt></p>
 <blockquote>
 Gives the test categories this test will be added.  See
-<tt class="docutils literal">TRIBITS_ADD_TEST()</tt> for more details.</blockquote>
+<a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> for more details.</blockquote>
+<p><tt class="docutils literal">HOST &lt;host1&gt; &lt;host2&gt; ...</tt></p>
+<blockquote>
+The list of hosts to enable the test for (see <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).</blockquote>
+<p><tt class="docutils literal">XHOST &lt;host1&gt; &lt;host2&gt; ...</tt></p>
+<blockquote>
+The list of hosts <em>not</em> to enable the test for (see <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).</blockquote>
+<p><tt class="docutils literal">HOSTTYPE &lt;hosttype1&gt; &lt;hosttype2&gt; ...</tt></p>
+<blockquote>
+The list of host types to enable the test for (see <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).</blockquote>
+<p><tt class="docutils literal">XHOSTTYPE &lt;hosttype1&gt; &lt;hosttype2&gt; ...</tt></p>
+<blockquote>
+The list of host types <em>not</em> to enable the test for (see
+<a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).</blockquote>
 <p><tt class="docutils literal">ENVIRONMENT <span class="pre">&lt;var1&gt;=&lt;value1&gt;</span> <span class="pre">&lt;var2&gt;=&lt;value2&gt;</span> ..</tt>.</p>
 <blockquote>
 If passed in, the listed environment varaibles will be set before
 calling the test.  This is set using the built-in test property
 <tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
 </blockquote>
-<p>Each test command is either package-built test executable or some general
-command executable and is defined as either <tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> or <tt class="docutils literal">CMND
-&lt;cmndExec&gt;</tt>:</p>
+<p>Overall arguments that control overall pass/fail are described in ???.</p>
+<p id="test-idx-test-blocks-and-arguments-tribits-add-advanced-test"><strong>TEST_&lt;IDX&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p>Each test command block <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> runs either a package-built test
+executable or some general command executable and is defined as either
+<tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> or <tt class="docutils literal">CMND &lt;cmndExec&gt;</tt>:</p>
 <blockquote>
 <p><tt class="docutils literal">EXEC &lt;exeRootName&gt; [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY &lt;dir&gt;]</tt></p>
 <blockquote>
@@ -1765,6 +1793,7 @@ the given regular expression.  Otherwise, it is assumed to pass.</blockquote>
 If specified, the test command 'i' will be assumed to pass if the string
 expression &quot;Final Result: PASSED&quot; is found in the ouptut for the test.</blockquote>
 </blockquote>
+<p id="overall-pass-fail-tribits-add-advanced-test"><strong>Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
 <p>By default, the overall test will be assumed to pass if it prints:</p>
 <pre class="literal-block">
 &quot;OVERALL FINAL RESULT: TEST PASSED&quot;
@@ -1775,39 +1804,43 @@ expression &quot;Final Result: PASSED&quot; is found in the ouptut for the test.
 <blockquote>
 If specified, the test will be assumed to pass if the output matches
 &lt;regex&gt;.  Otherwise, it will be assumed to fail.</blockquote>
-<p>FINAL_FAIL_REGULAR_EXPRESSION &lt;regex&gt;</p>
+<p><tt class="docutils literal">FINAL_FAIL_REGULAR_EXPRESSION &lt;regex&gt;</tt></p>
 <blockquote>
 If specified, the test will be assumed to fail if the output matches
 &lt;regex&gt;.  Otherwise, it will be assumed to fail.</blockquote>
 </blockquote>
-<p><strong>Argument Ordering:*</strong></p>
+<p id="argument-ordering-tribits-add-advanced-test"><strong>Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
 <p>For the most part, the listed arguments can appear in any order except for
 the following restrictions:</p>
 <ul class="simple">
-<li>The <cite>&lt;testName&gt;`</cite> argument must be the first listed (it is the only
-positional argument.</li>
+<li>The <tt class="docutils literal">&lt;testName&gt;</tt> argument must be the first listed (it is the only
+positional argument).</li>
 <li>The test cases <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> must be listed in order (i.e. <tt class="docutils literal">TEST_0
-... TEST_1 ...</tt>) and the test cases must be consecutive.</li>
-<li>All of the arguments for a test case must appear below its <tt class="docutils literal">TEST_&lt;IDX&gt;</tt>
-keyword and before the next <tt class="docutils literal">TEST_&lt;IDX+1&gt;`</tt> keyword or the next global
-keyword.</li>
+... TEST_1 ...</tt>) and the test cases must be consecutive integers (i..e
+can't jump from <tt class="docutils literal">TEST_5</tt> to <tt class="docutils literal">TEST_7</tt>).</li>
+<li>All of the arguments for a test case must appear directly below its
+<tt class="docutils literal">TEST_&lt;IDX&gt;</tt> keyword and before the next <tt class="docutils literal">TEST_&lt;IDX+1&gt;</tt> keyword or
+before any trailing overall keyword arguments.</li>
+<li>None of the overall arguments (e.g. <tt class="docutils literal">CATEGORIES</tt>) can be inside listed
+inside of a <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> block but otherwise can be listed before or
+after all of the <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> blocks.</li>
 </ul>
 <p>Other than that, the keyword argumnets and options can appear in any order.</p>
-<p><strong>Implementation Details:</strong></p>
+<p id="implementation-details-tribits-add-advanced-test"><strong>Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
 <p>ToDo: Describe the generation of the <tt class="docutils literal">*.cmake</tt> file and what gets added
 with ADD_TEST().</p>
-<p><strong>Setting additional test properties:</strong></p>
+<p id="setting-additional-test-properties-tribits-add-advanced-test"><strong>Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
 <p>ToDo: Fill in!</p>
-<p><strong>Debugging and Examining Test Generation:</strong></p>
-<p>ToDo: Describe setting <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt> and seeing
-what info it prints out.</p>
-<p>ToDo: Describe how to examine the generated CTest files to see what test(s)
-actually got added (or not added) and what the pass/fail criteria is.</p>
-<p><strong>Disabling Tests Externally:</strong></p>
+<p id="disabling-tests-externally-tribits-add-advanced-test"><strong>Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
 case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
 when running the test.</p>
+<p id="debugging-and-examining-test-generation-tribits-add-advanced-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p>ToDo: Describe setting <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt> and seeing
+what info it prints out.</p>
+<p>ToDo: Describe how to examine the generated CTest files to see what test(s)
+actually got added (or not added) and what the pass/fail criteria is.</p>
 </div>
 <div class="section" id="tribits-package-postprocess">
 <h2><a class="toc-backref" href="#id29">7.20&nbsp;&nbsp;&nbsp;TRIBITS_PACKAGE_POSTPROCESS()</a></h2>

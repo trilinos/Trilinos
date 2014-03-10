@@ -1118,12 +1118,17 @@ multiple argument sets to ``ARGS`` or through multiple
 TRIBITS_ADD_ADVANCED_TEST()
 ---------------------------
 
-Function that creates an advanced test defined using one or more executable
-commands that is run as a separate CMake script.
+Function that creates an advanced test defined by stringing together one or
+more executables and/or commands that is run as a separate CMake -P script
+with very flixible pass/fail criteria.
 
 This function allows you to add a single CTest test as a single unit that is
 actually a sequence of one or more separate commands strung together in some
-way to define the final pass/fail.
+way to define the final pass/fail.  You will want to use this function to
+add a test instead of ``TRIBITS_ADD_TEST()`` when you need to run more than
+one command, or you need more sophisticated checking of the test result
+other than just greping STDOUT (i.e. by running programs to examine output
+files).
 
 Usage::
 
@@ -1147,15 +1152,13 @@ Usage::
     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
     )
 
-Each and every atomic test or command needs to pass (as defined below) in
-order for the overall test to pass.
-
 Each atomic test case is either a package-built executable or just a basic
 command.  An atomic test command takes the form::
 
   TEST_<i>
-     EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]
-        | CMND <cmndExec>
+     (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
+            [DIRECTORY <dir>]
+        | CMND <cmndExec>)
      [ARGS <arg1> <arg2> ... <argn>]
      [MESSAGE "<message>"]
      [WORKING_DIRECTORY <workingDir>]
@@ -1169,7 +1172,23 @@ command.  An atomic test command takes the form::
        | STANDARD_PASS_OUTPUT
        ]
 
-ToDO: Add documnetation for [X]HOST[TYPE]
+By default, each and every atomic test or command needs to pass (as defined below) in
+order for the overall test to pass.
+
+**Sections:**
+
+* `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+* `TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
+
+.. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):**
 
 Some overall arguments are:
 
@@ -1177,13 +1196,8 @@ Some overall arguments are:
 
     The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
     the name) that will be used to name the output CMake script file as well
-    as the CTest test name passed into ``ADD_TEST()``.
-
-  ``TEST_<i> (EXEC <execTarget0> | CMND <cmndExec0>) ...``
-
-    Defines test command to be run for the ith test command.  Each of these
-    test commands must be in sequential order.  The details for each atomic
-    test are given below.
+    as the CTest test name passed into ``ADD_TEST()``.  This must be the
+    first argument.
 
   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 
@@ -1228,7 +1242,24 @@ Some overall arguments are:
   ``CATEGORIES <category1> <category2> ...``
 
     Gives the test categories this test will be added.  See
-    ``TRIBITS_ADD_TEST()`` for more details.
+    `TRIBITS_ADD_TEST()`_ for more details.
+
+  ``HOST <host1> <host2> ...``
+
+    The list of hosts to enable the test for (see `TRIBITS_ADD_TEST()`_).
+
+  ``XHOST <host1> <host2> ...``
+
+    The list of hosts *not* to enable the test for (see `TRIBITS_ADD_TEST()`_).
+
+  ``HOSTTYPE <hosttype1> <hosttype2> ...``
+
+    The list of host types to enable the test for (see `TRIBITS_ADD_TEST()`_).
+
+  ``XHOSTTYPE <hosttype1> <hosttype2> ...``
+
+    The list of host types *not* to enable the test for (see
+    `TRIBITS_ADD_TEST()`_).
 
   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
 
@@ -1236,9 +1267,15 @@ Some overall arguments are:
     calling the test.  This is set using the built-in test property
     ``ENVIRONMENT``.
 
-Each test command is either package-built test executable or some general
-command executable and is defined as either ``EXEC <exeRootName>`` or ``CMND
-<cmndExec>``:
+Overall arguments that control overall pass/fail are described in ???.
+
+.. _TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+
+**TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):**
+
+Each test command block ``TEST_<IDX>`` runs either a package-built test
+executable or some general command executable and is defined as either
+``EXEC <exeRootName>`` or ``CMND <cmndExec>``:
 
   ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
 
@@ -1343,6 +1380,10 @@ on:
     If specified, the test command 'i' will be assumed to pass if the string
     expression "Final Result: PASSED" is found in the ouptut for the test.
 
+.. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):**
+
 By default, the overall test will be assumed to pass if it prints::
 
   "OVERALL FINAL RESULT: TEST PASSED"
@@ -1354,49 +1395,63 @@ However, this can be changed by setting one of the following optional arguments:
     If specified, the test will be assumed to pass if the output matches
     <regex>.  Otherwise, it will be assumed to fail.
 
-  FINAL_FAIL_REGULAR_EXPRESSION <regex>
+  ``FINAL_FAIL_REGULAR_EXPRESSION <regex>``
 
     If specified, the test will be assumed to fail if the output matches
     <regex>.  Otherwise, it will be assumed to fail.
 
-**Argument Ordering:***
+.. _Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):**
 
 For the most part, the listed arguments can appear in any order except for
 the following restrictions:
 
-* The `<testName>`` argument must be the first listed (it is the only
-  positional argument.
+* The ``<testName>`` argument must be the first listed (it is the only
+  positional argument).
 * The test cases ``TEST_<IDX>`` must be listed in order (i.e. ``TEST_0
-  ... TEST_1 ...``) and the test cases must be consecutive.
-* All of the arguments for a test case must appear below its ``TEST_<IDX>``
-  keyword and before the next ``TEST_<IDX+1>``` keyword or the next global
-  keyword.
+  ... TEST_1 ...``) and the test cases must be consecutive integers (i..e
+  can't jump from ``TEST_5`` to ``TEST_7``).
+* All of the arguments for a test case must appear directly below its
+  ``TEST_<IDX>`` keyword and before the next ``TEST_<IDX+1>`` keyword or
+  before any trailing overall keyword arguments.
+* None of the overall arguments (e.g. ``CATEGORIES``) can be inside listed
+  inside of a ``TEST_<IDX>`` block but otherwise can be listed before or
+  after all of the ``TEST_<IDX>`` blocks.
 
 Other than that, the keyword argumnets and options can appear in any order.
 
-**Implementation Details:**
+.. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):**
 
 ToDo: Describe the generation of the ``*.cmake`` file and what gets added
 with ADD_TEST().
 
-**Setting additional test properties:**
+.. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):**
 
 ToDo: Fill in!
 
-**Debugging and Examining Test Generation:**
+.. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):**
+
+The test can be disabled externally by setting the CMake cache variable
+``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
+case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
+when running the test.
+
+.. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):**
 
 ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing
 what info it prints out.
 
 ToDo: Describe how to examine the generated CTest files to see what test(s)
 actually got added (or not added) and what the pass/fail criteria is.
-
-**Disabling Tests Externally:**
-
-The test can be disabled externally by setting the CMake cache variable
-``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
-case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
-when running the test.
 
 TRIBITS_PACKAGE_POSTPROCESS()
 -----------------------------
