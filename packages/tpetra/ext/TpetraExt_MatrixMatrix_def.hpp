@@ -949,8 +949,11 @@ void setMaxNumEntriesPerRow(
 template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
-  size_t Aest=(A.getNodeNumRows()>0)? A.getNodeNumEntries()/A.getNodeNumEntries():100;
-  size_t Best=(B.getNodeNumRows()>0)? B.getNodeNumEntries()/B.getNodeNumEntries():100;
+  size_t Aest = 100, Best=100;
+  if(A.getNodeNumEntries() > 0) 
+    Aest = (A.getNodeNumRows()>0)? A.getNodeNumEntries()/A.getNodeNumEntries():100;
+  if(B.getNodeNumEntries() > 0) 
+    Best=(B.getNodeNumRows()>0)? B.getNodeNumEntries()/B.getNodeNumEntries():100;
 
   size_t nnzperrow=(size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow*=nnzperrow;
@@ -991,21 +994,23 @@ void mult_A_B_newmatrix(
   if(Bview.importMatrix.is_null()) {
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
-
     // Bcol2Ccol is trivial
     for(size_t i=0; i<Bview.colMap->getNodeNumElements(); i++) {
       Bcol2Ccol[i] = Teuchos::as<LocalOrdinal>(i);
     }
-
   }
   else { 
-    // We need to either do a full or
-    if(!Bimport.is_null() && !Iimport.is_null())
+    // Choose the right variant of setUnion
+    if(!Bimport.is_null() && !Iimport.is_null()){
       Cimport = Bimport->setUnion(*Iimport);
-    else if(!Bimport.is_null() && Iimport.is_null()) 
+      Ccolmap = Cimport->getTargetMap();
+    }
+    else if(!Bimport.is_null() && Iimport.is_null()) {
       Cimport = Bimport->setUnion();
-    else if(Bimport.is_null() && !Iimport.is_null()) 
+    }
+    else if(Bimport.is_null() && !Iimport.is_null()) {
       Cimport = Iimport->setUnion();
+    }
     else
       throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
 
@@ -1015,19 +1020,14 @@ void mult_A_B_newmatrix(
       throw std::runtime_error("Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
     
     // NOTE: This is not efficient and should be folded into setUnion
-    Icol2Ccol.resize(Bview.importColMap->getNodeNumElements());    
-    ArrayView<const GlobalOrdinal> GIDlist = Ccolmap->getNodeElementList();
-    
-    for(size_t i=0; i<Ccolmap->getNodeNumElements(); i++) {
-      GlobalOrdinal GID = GIDlist[i];
-      LocalOrdinal B_LID = Bview.colMap->getLocalElement(GID);
-      if(B_LID != LO_INVALID) Bcol2Ccol[B_LID] = i;
-      else {
-	LocalOrdinal I_LID = Bview.importColMap->getLocalElement(GID);
-	if(I_LID == LO_INVALID) throw std::runtime_error("TpetraExt::MMM column map from setUnion is garbage");
-	Icol2Ccol[I_LID] = i;
-      }
-    }
+    Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
+    ArrayView<const GlobalOrdinal> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
+    ArrayView<const GlobalOrdinal> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
+
+    for(size_t i=0; i<Bview.origMatrix->getColMap()->getNodeNumElements(); i++) 
+      Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
+    for(size_t i=0; i<Bview.importMatrix->getColMap()->getNodeNumElements(); i++) 
+      Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
   }
   
 #ifdef ENABLE_MMM_TIMINGS
@@ -1066,14 +1066,12 @@ void mult_A_B_newmatrix(
   Cvals.resize(CSR_alloc);
 
   // Run through all the hash table lookups once and for all
-  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
   Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
   Array<LocalOrdinal> targetMapToImportRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
 
   if(Aview.colMap->isSameAs(*Bview.rowMap)){
     // Maps are the same: Use local IDs as the hash
     for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-      Acol2Brow[i]=i;
       LocalOrdinal B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
       if(B_LID != LO_INVALID) targetMapToOrigRow[i] = B_LID;
       else {
@@ -1085,7 +1083,6 @@ void mult_A_B_newmatrix(
   else {
     // Maps are not the same:  Use the map's hash
     for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-      Acol2Brow[i]=Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(i));
       LocalOrdinal B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
       if(B_LID != LO_INVALID) targetMapToOrigRow[i] = B_LID;
       else {
@@ -1095,13 +1092,8 @@ void mult_A_B_newmatrix(
     }
   }
   
-  // Static Profile stuff
-  Array<size_t> NumEntriesPerRow(m);
-  size_t NumMyDiagonals=0;
-
   // For each row of A/C
   for(size_t i=0; i<m; i++){			       
-    bool found_diagonal=false;
     Crowptr[i]=CSR_ip;
 
     for(size_t k=Arowptr[i]; k<Arowptr[i+1]; k++){
@@ -1109,14 +1101,12 @@ void mult_A_B_newmatrix(
       Scalar       Aval    = Avals[k];
       if(Aval==0) continue;
       
-
       if(targetMapToOrigRow[Ak] != LO_INVALID){
 	// Local matrix
 	size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Ak]);
+
 	for(size_t j=Browptr[Bk]; j<Browptr[Bk+1]; ++j) {
 	  LocalOrdinal Cj=Bcol2Ccol[Bcolind[j]];
-
-	  if(Teuchos::as<size_t>(Cj)==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
 
 	  if(c_status[Cj]==INVALID || c_status[Cj]<OLD_ip){
 	    // New entry
@@ -1131,11 +1121,9 @@ void mult_A_B_newmatrix(
       }
       else{
 	// Remote matrix
-	size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Ak]);
+      	size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Ak]);
 	for(size_t j=Irowptr[Ik]; j<Irowptr[Ik+1]; ++j) {
 	  LocalOrdinal Cj=Icol2Ccol[Icolind[j]];
-	  
-	  if(Teuchos::as<size_t>(Cj)==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
 
 	  if(c_status[Cj]==INVALID || c_status[Cj]<OLD_ip){
 	    // New entry
@@ -1149,7 +1137,6 @@ void mult_A_B_newmatrix(
 	}
       }
     }
-    NumEntriesPerRow[i]=CSR_ip-Crowptr[i];
 
     // Resize for next pass if needed
     if(CSR_ip + n > CSR_alloc){
@@ -1183,7 +1170,8 @@ void mult_A_B_newmatrix(
 #endif
 
   // Final FillComplete
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(),Aview.origMatrix->getRangeMap(),Cimport);  
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(),Aview.origMatrix->getRangeMap(),Cimport); 
+
 }
 
 
