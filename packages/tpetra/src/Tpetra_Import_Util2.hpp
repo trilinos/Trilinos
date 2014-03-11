@@ -437,6 +437,7 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   SourceMatrix.getAllValues(Source_rowptr,Source_colind,Source_vals);
 
   const map_type& sourceColMap = * (SourceMatrix.getColMap());
+  ArrayView<const GO> globalColElts = sourceColMap.getNodeElementList();
 
   // SameIDs: Copy the data over
   for(i=0; i<numSameIDs; i++) {
@@ -444,12 +445,9 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
     size_t ToRow   = CSR_rowptr[i];
     NewStartRow[i] += Source_rowptr[i+1]-Source_rowptr[i];
 
-    if(Source_rowptr[i+1]-Source_rowptr[i] !=SourceMatrix.getNumEntriesInLocalRow(i))
-      throw std::runtime_error("U&CWOPIDS : Same counts mismatch");
-
     for(j=Source_rowptr[i]; j<Source_rowptr[i+1]; j++) {
       CSR_vals[ToRow + j - FromRow]   = Source_vals[j];
-      CSR_colind[ToRow + j - FromRow] = sourceColMap.getGlobalElement(Source_colind[j]);
+      CSR_colind[ToRow + j - FromRow] = globalColElts[Source_colind[j]];
       TargetPids[ToRow + j - FromRow] = (SourcePids[Source_colind[j]] != MyPID) ? SourcePids[Source_colind[j]] : -1;
     }
   }
@@ -462,12 +460,9 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
 
     NewStartRow[permuteToLIDs[i]] += Source_rowptr[FromLID+1]-Source_rowptr[FromLID];
 
-    if(Source_rowptr[FromLID+1]-Source_rowptr[FromLID] !=SourceMatrix.getNumEntriesInLocalRow(FromLID))
-      throw std::runtime_error("U&CWOPIDS : Pemute counts mismatch");
-
     for(j=Source_rowptr[FromLID]; j<Source_rowptr[FromLID+1]; j++) {
       CSR_vals[ToRow + j - FromRow]   = Source_vals[j];
-      CSR_colind[ToRow + j - FromRow] = sourceColMap.getGlobalElement(Source_colind[j]);
+      CSR_colind[ToRow + j - FromRow] = globalColElts[Source_colind[j]];
       TargetPids[ToRow + j - FromRow] = (SourcePids[Source_colind[j]] != MyPID) ? SourcePids[Source_colind[j]] : -1;
     }
   }
@@ -659,8 +654,6 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
 
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
   // This is a sort with two auxillary arrays: RemoteColIndices and RemotePermuteIDs.
-  // NTS: Iterators, I hate you so much.  
-  //  Tpetra::sort3<Teuchos::Array<int>::iterator,Teuchos::Array<GlobalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
   Tpetra::sort3(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
 
   // Stash the RemotePIDs  
@@ -676,17 +669,11 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   while ( StartNext < NumRemoteColGIDs ) {
     if (PIDList[StartNext]==PIDList[StartNext-1]) StartNext++;
     else {
-      //      Tpetra::sort2<Teuchos::Array<LocalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(RemoteColIndices.begin()+StartCurrent,RemoteColIndices.begin()+StartNext,RemotePermuteIDs.begin()+StartCurrent);
       Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent);
       StartCurrent = StartNext; StartNext++;
     }
   }
-  //  Tpetra::sort2<Teuchos::Array<LocalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(RemoteColIndices.begin()+StartCurrent,RemoteColIndices.begin()+StartNext,RemotePermuteIDs.begin()+StartCurrent); 
     Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent); 
-  // NTS: The above sorting code is almost guaranteed not to work since iterators hate me.
-
-  // NTS: Can I get rid of the template parameters for the sort calls?
-    
 
   // Reverse the permutation to get the information we actually care about
   Teuchos::Array<LocalOrdinal> ReverseRemotePermuteIDs(NumRemoteColGIDs);
