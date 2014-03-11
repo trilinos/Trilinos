@@ -1,0 +1,17 @@
+C $Id: cmdlist.blk,v 1.1 1991/02/21 15:42:33 gdsjaar Exp $
+C $Log: cmdlist.blk,v $
+C Revision 1.1  1991/02/21 15:42:33  gdsjaar
+C Initial revision
+C
+      CHARACTER*8 CMDTBL(22)
+      SAVE CMDTBL
+C      --CMDTBL - the valid commands table
+
+C   --Command table follows.  Remember to change the dimensioned size when
+C   --changing the table.
+      DATA CMDTBL /
+     *   'AXISYMME', 'CAVITY  ', 'COMMENT ', 'DELTIME ', 'DENSITY ',
+     *   'EXIT    ', 'EXODUS  ', 'GAP     ', 'GENESIS ', 'HELP    ',
+     *   'LIMITS  ', 'LIST    ', 'LOCATE  ', 'METHOD  ', 'OVERLAP ',
+     *   'PLANAR  ', 'PROPERTI', 'QUADRATU', 'TIMES   ', 'TMAX    ',
+     *   'TMIN    ', '        '/

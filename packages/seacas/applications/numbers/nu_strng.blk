@@ -1,0 +1,8 @@
+C $Id: strng.blk,v 1.1 1991/02/21 15:45:49 gdsjaar Exp $
+C $Log: strng.blk,v $
+C Revision 1.1  1991/02/21 15:45:49  gdsjaar
+C Initial revision
+C
+      COMMON /STRNG/ STR1(32), STR2(32), STR3(32), STR4(32), STR5(32),
+     *   STR6(32), STR7(32), STR8(32), STRR(256)
+      CHARACTER*16 STR1, STR2, STR3, STR4, STR5, STR6, STR7, STR8, STRR
