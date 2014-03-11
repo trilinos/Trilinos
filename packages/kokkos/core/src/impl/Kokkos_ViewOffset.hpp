@@ -462,12 +462,12 @@ struct ViewOffset< ShapeType , LayoutLeft
 };
 
 //----------------------------------------------------------------------------
-// LayoutRight AND ( 1 >= rank OR 0 == rank_dynamic ) : has padding / striding
+// LayoutRight AND ( 1 >= rank OR 1 >= rank_dynamic ) : no padding / striding
 template < class ShapeType >
 struct ViewOffset< ShapeType , LayoutRight
                  , typename enable_if<( 1 >= ShapeType::rank
                                         ||
-                                        0 == ShapeType::rank_dynamic
+                                        1 >= ShapeType::rank_dynamic
                                       )>::type >
   : public ShapeType
 {
@@ -638,12 +638,12 @@ struct ViewOffset< ShapeType , LayoutRight
 };
 
 //----------------------------------------------------------------------------
-// LayoutRight AND ( 1 < rank AND 0 < rank_dynamic ) : has padding / striding
+// LayoutRight AND ( 1 < rank AND 1 < rank_dynamic ) : has padding / striding
 template < class ShapeType >
 struct ViewOffset< ShapeType , LayoutRight
                  , typename enable_if<( 1 < ShapeType::rank
                                         &&
-                                        0 < ShapeType::rank_dynamic
+                                        1 < ShapeType::rank_dynamic
                                       )>::type >
   : public ShapeType
 {
