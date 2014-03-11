@@ -1306,6 +1306,26 @@ ComputePreconditioner(const bool CheckPreconditioner)
     if (List_.get("aggregation: use tentative restriction", false))
       agg_->minimizing_energy = -1;
 
+    // structured grid semicoarsening in z direction
+    if (agg_->semicoarsen_levels = List_.get("semicoarsen: number of levels", -1)) {
+      agg_->coarsen_rate      =  List_.get("semicoarsen: coarsen rate", -1);
+      ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
+      ml_->Amat[LevelID_[0]].NumZDir= List_.get("semicoarsen: line direction nodes", -1);
+      ml_->Amat[LevelID_[0]].Zorientation= List_.get("semicoarsen: line orientation", -1);
+            /* -1: not specified */ /*  1: vertical      */ /*  2: horizontal    */
+      if (agg_->coarsen_rate == -1) {
+         if (Comm().MyPID() == 0)
+           std::cerr << ErrorMsg_ << "Must specify 'semicoarsen: coarsen rate' when using semicoarsening" << std::endl;
+         ML_EXIT(-1);
+      }                           
+      if (ml_->Amat[LevelID_[0]].NumZDir == -1) {
+         if (Comm().MyPID() == 0)
+           std::cerr << ErrorMsg_ << "Must specify 'semicoarsen: line direction nodes' when using semicoarsening" << std::endl;
+         ML_EXIT(-1);
+      }
+    }
+
+
     // energy minimization
     if (List_.get("energy minimization: enable", false)) {
       if (verbose_) {
