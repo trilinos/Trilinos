@@ -75,9 +75,11 @@ extern void test_device_cuda_reduce_dynamic();
 extern void test_device_cuda_reduce_dynamic_view();
 extern void test_device_cuda_multi_reduce();
 extern void test_device_cuda_shared_request();
+extern void test_device_cuda_view_aggregate();
 extern void test_device_cuda_atomic();
 extern void test_device_cuda_scan();
 extern void test_device_cuda_team_scan();
+extern void test_device_cuda_compiler_macros();
 
 TEST_F( cuda, view_impl )
 {
@@ -129,6 +131,11 @@ TEST_F( cuda, tile )
   test_device_cuda_tile();
 }
 
+TEST_F( cuda , view_aggregate )
+{
+  test_device_cuda_view_aggregate();
+}
+
 TEST_F( cuda, atomic )
 {
   test_device_cuda_atomic();
@@ -144,6 +151,10 @@ TEST_F( cuda , team_scan )
   test_device_cuda_team_scan();
 }
 
+TEST_F( cuda , compiler_macros )
+{
+  test_device_cuda_compiler_macros();
+}
 
 }
 

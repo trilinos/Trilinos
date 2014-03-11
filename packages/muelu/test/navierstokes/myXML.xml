@@ -159,8 +159,8 @@
     <!-- BLOCK SMOOTHERS -->
     <ParameterList name="myBlockSmoother">
       <Parameter name="factory" type="string" value="BlockedGaussSeidelSmoother"/>
-      <Parameter name="sweeps" type="int" value="3"/>
-      <Parameter name="omega" type="double" value="1.0"/>
+      <Parameter name="Sweeps" type="int" value="3"/>
+      <Parameter name="Damping factor" type="double" value="1.0"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
 	<!-- <Parameter name="group" type="string" value="M1"/> -->

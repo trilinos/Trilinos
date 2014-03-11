@@ -68,6 +68,8 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestMultiReduce.hpp>
+#include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -219,6 +221,14 @@ TEST_F( openmp , view_remap )
 
 //----------------------------------------------------------------------------
 
+
+TEST_F( openmp , view_aggregate )
+{
+  TestViewAggregate< Kokkos::OpenMP >();
+}
+
+//----------------------------------------------------------------------------
+
 TEST_F( openmp , scan )
 {
   for ( int i = 0 ; i < 1000 ; ++i ) {
@@ -237,6 +247,12 @@ TEST_F( openmp , team_scan )
   TestScanRequest< Kokkos::OpenMP >( 10000 );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
+}
 
 } // namespace test
 

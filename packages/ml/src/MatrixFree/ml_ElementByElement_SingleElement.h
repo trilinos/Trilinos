@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_ELEMENT_BY_ELEMENT_SINGLE_ELEMENT_H
 #define ML_ELEMENT_BY_ELEMENT_SINGLE_ELEMENT_H
@@ -23,7 +23,7 @@
 
 namespace ML_Epetra {
 
-class ElementByElement_SingleElement: public Epetra_Operator 
+class ElementByElement_SingleElement: public Epetra_Operator
 {
   public:
     ElementByElement_SingleElement(Epetra_Comm& Comm,
@@ -73,9 +73,9 @@ class ElementByElement_SingleElement: public Epetra_Operator
         }
       }
 
-      // build the map for the operator, which is the "extended" 
+      // build the map for the operator, which is the "extended"
       // version of GraphMap
-      
+
       std::vector<int> MyGlobalElements2(Graph_->ColMap().NumMyElements() * NumPDEEqns);
       int* MyGlobalElements = Graph_->RowMap().MyGlobalElements();
       int NumMyElements = Graph_->RowMap().NumMyElements();
@@ -85,9 +85,9 @@ class ElementByElement_SingleElement: public Epetra_Operator
           MyGlobalElements2[i * NumPDEEqns + j] = MyGlobalElements[i] * NumPDEEqns + j;
       OperatorMap_ = new Epetra_Map(-1, NumMyElements * NumPDEEqns,
                                     &MyGlobalElements2[0], 0, Comm_);
-      
+
       // expand the column map as well
-      
+
       MyGlobalElements = Graph_->ColMap().MyGlobalElements();
       NumMyElements = Graph_->ColMap().NumMyElements();
 
@@ -100,7 +100,7 @@ class ElementByElement_SingleElement: public Epetra_Operator
       ColImporter_ = new Epetra_Import(*OperatorColMap_, *OperatorMap_);
 
       // memory allocation for element-by-element multiplication
-      
+
       DenseX.Reshape(NumPDEEqns * NumVerticesPerFE, NumMyFEs_);
       DenseY.Reshape(NumPDEEqns * NumVerticesPerFE, NumMyFEs_);
 
@@ -161,7 +161,7 @@ class ElementByElement_SingleElement: public Epetra_Operator
         ML_CHK_ERR(-1);
       return(0);
     }
-  
+
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     {
       assert (X.NumVectors() == 1); // FIXME
@@ -198,43 +198,43 @@ class ElementByElement_SingleElement: public Epetra_Operator
             ColX[0][ptr[i] * NumPDEEqns_ + j] += DenseY(i * NumPDEEqns_ + j, ie);
         }
       }
-      
+
       Y.PutScalar(0.0);
       ML_CHK_ERR(Y.Export(ColX, *ColImporter_, Add));
       ML_CHK_ERR(ResetMyBoundaryRows(Y));
       return(0);
     }
-  
+
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     {
       ML_CHK_ERR(-1);
     }
-  
+
     double NormInf() const
     {
       return(-1.0);
     }
-  
+
     const char* Label() const
     {
       return("ML_Epetra::ElementByElementMatrix");
     }
-  
+
     bool UseTranspose() const
     {
       return(false);
     }
-  
+
     bool HasNormInf() const
     {
       return(false);
     }
-  
+
     const Epetra_Comm& Comm() const
     {
       return(Comm_);
     }
-  
+
     const Epetra_Map& OperatorDomainMap() const
     {
       return(*OperatorMap_);

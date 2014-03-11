@@ -265,8 +265,8 @@ Relaxation<MatrixType>::getValidParameters () const
     const bool checkDiagEntries = false;
     pl->set ("relaxation: check diagonal entries", checkDiagEntries);
 
-    Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices=Teuchos::null;
-    pl->set<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices",localSmoothingIndices);
+    Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = Teuchos::null;
+    pl->set("relaxation: local smoothing indices", localSmoothingIndices);
 
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
@@ -496,7 +496,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // we need to create an auxiliary vector, Xcopy
       RCP<const MV> Xcopy;
       if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-        Xcopy = rcp (new MV (X));
+        Xcopy = rcp (new MV(Tpetra::createCopy(X)));
       }
       else {
         Xcopy = rcpFromRef (X);
@@ -1319,7 +1319,6 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
   if(!localSmoothingIndices_.is_null())
     A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
@@ -1352,49 +1351,48 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
 
 
 template<class MatrixType>
-std::string Relaxation<MatrixType>::description() const {
-  using Teuchos::TypeNameTraits;
+std::string Relaxation<MatrixType>::description () const {
   std::ostringstream os;
-
-  std::string status;
-  if (isInitialized ()) {
-    status = "initialized";
-    if (isComputed ()) {
-      status += ", computed";
-    } else {
-      status += ", not computed";
-    }
-  } else {
-    status = "not initialized";
-  }
-
-  std::string type;
-  if (PrecType_ == Ifpack2::Details::JACOBI) {
-    type = "Jacobi";
-  } else if (PrecType_ == Ifpack2::Details::GS) {
-    type = "Gauss-Seidel";
-  } else if (PrecType_ == Ifpack2::Details::SGS) {
-    type = "Symmetric Gauss-Seidel";
-  } else {
-    type = "INVALID";
-  }
 
   // Output is a valid YAML dictionary in flow style.  If you don't
   // like everything on a single line, you should call describe()
   // instead.
-  os << "\"Ifpack2::Relaxation\": { "
-     << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\", "
-     << "Status: " << status << ", "
-     << "\"relaxation: type\": " << type << ", "
-     << "\"relaxation: sweeps\": " << NumSweeps_ << ", "
-     << "\"relaxation: damping factor\": " << DampingFactor_ << ", ";
-  if (DoL1Method_) {
-    os << "\"relaxation: use l1\": " << DoL1Method_ << ", "
-       << "\"relaxation: l1 eta\": " << L1Eta_ << ", ";
+  os << "\"Ifpack2::Relaxation\": {";
+
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  // It's useful to print this instance's relaxation method (Jacobi,
+  // Gauss-Seidel, or symmetric Gauss-Seidel).  If you want more info
+  // than that, call describe() instead.
+  os << "Type: ";
+  if (PrecType_ == Ifpack2::Details::JACOBI) {
+    os << "Jacobi";
+  } else if (PrecType_ == Ifpack2::Details::GS) {
+    os << "Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::SGS) {
+    os << "Symmetric Gauss-Seidel";
+  } else {
+    os << "INVALID";
   }
-  os << "\"Global number of rows\": " << A_->getGlobalNumRows () << ", "
-     << "\"Global number of columns\": " << A_->getGlobalNumCols ()
-     << " }";
+
+  os  << ", " << "sweeps: " << NumSweeps_ << ", "
+      << "damping factor: " << DampingFactor_ << ", ";
+  if (DoL1Method_) {
+    os << "use l1: " << DoL1Method_ << ", "
+       << "l1 eta: " << L1Eta_ << ", ";
+  }
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << A_->getGlobalNumEntries();
+  }
+
+  os << "}";
   return os.str ();
 }
 
@@ -1432,8 +1430,13 @@ describe (Teuchos::FancyOStream &out,
     // Output is valid YAML; hence the quotes, to protect the colons.
     out << "\"Ifpack2::Relaxation\":" << endl;
     OSTab tab2 (out);
-    out << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\"" << endl
-        << "Label: " << this->getObjectLabel () << endl
+    out << "MatrixType: \"" << TypeNameTraits<MatrixType>::name () << "\""
+        << endl;
+    if (this->getObjectLabel () != "") {
+      out << "Label: " << this->getObjectLabel () << endl;
+    }
+    out << "Initialized: " << (isInitialized () ? "true" : "false") << endl
+        << "Computed: " << (isComputed () ? "true" : "false") << endl
         << "Parameters: " << endl;
     {
       OSTab tab3 (out);
@@ -1458,12 +1461,10 @@ describe (Teuchos::FancyOStream &out,
           << "\"relaxation: use l1\": " << DoL1Method_ << endl
           << "\"relaxation: l1 eta\": " << L1Eta_ << endl;
     }
-    out << "Computed quantities: " << endl;
+    out << "Computed quantities:" << endl;
     {
       OSTab tab3 (out);
-      out << "initialized: " << (isInitialized () ? "true" : "false") << endl
-          << "computed: " << (isComputed () ? "true" : "false") << endl
-          << "Condition number estimate: " << Condest_ << endl
+      out << "Condition number estimate: " << Condest_ << endl
           << "Global number of rows: " << A_->getGlobalNumRows () << endl
           << "Global number of columns: " << A_->getGlobalNumCols () << endl;
     }

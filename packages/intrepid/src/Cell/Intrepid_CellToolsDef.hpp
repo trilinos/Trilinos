@@ -936,6 +936,10 @@ namespace Intrepid {
       case shards::Wedge<6>::key:
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
+
+      case shards::Pyramid<5>::key:
+	    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+	    break;
         
       // Standard Extended topologies
       case shards::Triangle<6>::key:    
@@ -1167,6 +1171,10 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
       
+    case shards::Pyramid<5>::key:
+	  HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+	  break;
+
     // Standard Extended topologies
     case shards::Triangle<6>::key:    
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<Scalar, FieldContainer<Scalar> >() );
@@ -1347,6 +1355,9 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
     case shards::Wedge<6>::key:
     case shards::Wedge<18>::key:
       cellCenter(0) = 1./3.;    cellCenter(1) =  1./3.;     cellCenter(2) = 0.0;    break;
+
+    case shards::Pyramid<5>::key:
+      cellCenter(0) = 0.;       cellCenter(1) = 0.;         cellCenter(2) = 0.25;    break;
       
       // These extended topologies are not used for mapping purposes
     case shards::Quadrilateral<8>::key:

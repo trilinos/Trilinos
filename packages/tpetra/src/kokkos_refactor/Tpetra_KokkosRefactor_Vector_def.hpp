@@ -115,7 +115,8 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const {
+  typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot_type
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const {
     using Teuchos::outArg;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
@@ -126,11 +127,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
-    Scalar gbldot;
+    dot_type gbldot;
     //gbldot = MVT::Dot(this->lclMV_,a.lclMV_);
     Kokkos::MV_Dot(&gbldot,this->view_.d_view,a.view_.d_view);
     if (this->isDistributed()) {
-      Scalar lcldot = gbldot;
+      dot_type lcldot = gbldot;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcldot,outArg(gbldot));
     }
     return gbldot;
@@ -166,7 +167,9 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm2() const {
+  typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm2() const {
+    /*
     using Teuchos::ScalarTraits;
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -176,6 +179,10 @@ namespace Tpetra {
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
     }
     return ScalarTraits<Mag>::squareroot(norm);
+    */
+    mag_type norm;
+    this->norm2( Teuchos::arrayView(&norm,1) );
+    return norm;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -213,16 +220,31 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
-    std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    oss << "{length="<<this->getGlobalLength()
-        << "}";
-    return oss.str();
+  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  description () const
+  {
+    using Teuchos::TypeNameTraits;
+
+    std::ostringstream out;
+    out << "\"Tpetra::Vector\": {";
+    out << "Template parameters: {Scalar: " << TypeNameTraits<Scalar>::name ()
+        << ", LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name ()
+        << ", GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name ()
+        << ", Node" << Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>::name ()
+        << "}, ";
+    if (this->getObjectLabel () != "") {
+      out << "Label: \"" << this->getObjectLabel () << "\", ";
+    }
+    out << "Global length: " << this->getGlobalLength ();
+    out << "}";
+
+    return out.str ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  {
     using std::endl;
     using std::setw;
     using Teuchos::VERB_DEFAULT;
@@ -231,11 +253,13 @@ namespace Tpetra {
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-    const int myImageID = comm->getRank(),
-              numImages = comm->getSize();
+
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+    const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
+    const int myImageID = comm.getRank ();
+    const int numImages = comm.getSize ();
+
     size_t width = 1;
     for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
       ++width;
@@ -271,18 +295,27 @@ namespace Tpetra {
             }
           }
         }
-        comm->barrier();
+        comm.barrier();
       }
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-    createCopy( const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src) {
-    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
-    MV cpy(src.getMap());
-    Kokkos::deep_copy(cpy.getLocalView(),src.getLocalView());
-    return cpy;
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal,
+         Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal,
+                           Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
+  {
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> V;
+
+    V dest (src.getMap ());
+    Kokkos::deep_copy (dest.getLocalView (), src.getLocalView ());
+
+    // The Kokkos refactor specializations have view semantics, so
+    // returning the Vector directly, rather than through RCP, only
+    // involves a shallow copy.
+    return dest;
   }
 } // namespace Tpetra
 

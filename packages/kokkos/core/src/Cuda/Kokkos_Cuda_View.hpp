@@ -185,7 +185,7 @@ struct CudaTextureFetch {
 
     template< typename iType >
     KOKKOS_INLINE_FUNCTION
-    double operator[]( const iType & i ) const
+    ValueType operator[]( const iType & i ) const
     {
   #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
   // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
@@ -253,107 +253,99 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-struct CudaTexture {};
+struct ViewCudaTexture {};
 
 #if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
-/** \brief  Replace LayoutDefault specialization */
-template< typename ScalarType , typename Rank , typename RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< RandomAccess > >
-{ typedef CudaTexture type ; };
+/** \brief  Replace ViewDefault specialization with Cuda texture fetch specialization
+ *          if 'const' value type and random access.
+ */
+template< class ValueType , class MemoryTraits >
+struct ViewSpecialize< const ValueType , void , LayoutLeft , CudaSpace , MemoryTraits >
+{
+  typedef typename if_c< MemoryTraits::RandomAccess , ViewCudaTexture , ViewDefault >::type type ;
+};
 
-template< typename ScalarType , typename Rank , typename RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< (RandomAccess | Unmanaged) > >
-{ typedef CudaTexture type ; };
+template< class ValueType , class MemoryTraits >
+struct ViewSpecialize< const ValueType , void , LayoutRight , CudaSpace , MemoryTraits >
+{
+  typedef typename if_c< MemoryTraits::RandomAccess , ViewCudaTexture , ViewDefault >::type type ;
+};
 
-
-template< typename ScalarType , typename Rank , typename RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< RandomAccess > >
-{ typedef CudaTexture type ; };
-
-template< typename ScalarType , typename Rank , typename RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , Rank , RankDynamic ,
-                       CudaSpace , MemoryTraits< (RandomAccess | Unmanaged) > >
-{ typedef CudaTexture type ; };
 #endif
 
 //----------------------------------------------------------------------------
 
 template<>
-struct ViewAssignment< CudaTexture , CudaTexture , void >
+struct ViewAssignment< ViewCudaTexture , ViewCudaTexture , void >
 {
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
-                  const View<ST,SL,SD,SM,CudaTexture> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewCudaTexture> & dst ,
+                  const View<ST,SL,SD,SM,ViewCudaTexture> & src ,
                   const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+    typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
+    //typedef typename DstViewType::memory_space  memory_space ; // unused
+    //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
-    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
+    dst.m_tracking.decrement( dst.m_texture.ptr );
 
     dst.m_texture  = src.m_texture ;
     dst.m_stride   = src.m_stride ;
+    dst.m_tracking = src.m_tracking ;
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
-    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
+    dst.m_tracking.increment( dst.m_texture.ptr );
   }
 };
 
 
 template<>
-struct ViewAssignment< CudaTexture , LayoutDefault , void >
+struct ViewAssignment< ViewCudaTexture , ViewDefault , void >
 {
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   inline
-  ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+  ViewAssignment(       View<DT,DL,DD,DM,ViewCudaTexture> & dst ,
+                  const View<ST,SL,SD,SM,ViewDefault> & src ,
                   const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
+    // typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+    typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type  shape_type ;
-    typedef typename DstViewType::scalar_type scalar_type ;
+    typedef typename DstViewType::value_type  value_type ;
     typedef typename DstViewType::stride_type stride_type ;
 
-    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
+    dst.m_tracking.decrement( dst.m_texture.ptr );
 
-    dst.m_texture = CudaTextureFetch< scalar_type >( src.m_ptr_on_device );
+    dst.m_texture = CudaTextureFetch< value_type >( src.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
     stride_type::assign( dst.m_stride , src.m_stride.value );
+    dst.m_tracking  = src.m_tracking ;
 
-    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
+    dst.m_tracking.increment( dst.m_texture.ptr );
   }
 };
 
@@ -367,7 +359,7 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
 
 namespace Kokkos {
 template< class T , class L, class D , class M >
-class View< T , L , D , M , Impl::CudaTexture >
+class View< T , L , D , M , Impl::ViewCudaTexture >
   : public ViewTraits< T , L , D , M >
 {
 public:
@@ -384,14 +376,14 @@ private:
   typedef Impl::CalculateOffset< typename traits::array_layout ,
                          typename traits::shape_type > calculate_offset;
 
-
-  Impl::CudaTextureFetch<typename traits::scalar_type > m_texture ;
+  Impl::CudaTextureFetch<typename traits::value_type > m_texture ;
   typename traits::shape_type           m_shape ;
   stride_type                           m_stride ;
+  Impl::ViewTracking< traits >          m_tracking ;
 
 public:
 
-  typedef Impl::CudaTexture specialize ;
+  typedef Impl::ViewCudaTexture specialize ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -441,19 +433,20 @@ public:
    }
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_texture.ptr ); }
+  ~View() { m_tracking.decrement( m_texture.ptr ); }
 
   View( const View & rhs )
     : m_texture( rhs.m_texture )
     , m_stride(  rhs.m_stride )
     {
-      m_shape = rhs.m_shape ;
-      Impl::ViewTracking< traits >::increment( m_texture.ptr );
+      m_shape    = rhs.m_shape ;
+      m_tracking = rhs.m_tracking ;
+      m_tracking.increment( m_texture.ptr );
     }
 
   View & operator = ( const View & rhs )
     {
-      (void)Impl::ViewAssignment< Impl::CudaTexture , Impl::CudaTexture >( *this , rhs );
+      (void)Impl::ViewAssignment< Impl::ViewCudaTexture , Impl::ViewCudaTexture >( *this , rhs );
       return *this ;
     }
 
@@ -461,13 +454,13 @@ public:
   View( const View<RT,RL,RD,RM,RS> & rhs )
     : m_texture(0)
     {
-      Impl::ViewAssignment< Impl::CudaTexture , RS >( *this , rhs );
+      Impl::ViewAssignment< Impl::ViewCudaTexture , RS >( *this , rhs );
     }
 
   template< class RT , class RL, class RD, class RM , class RS >
   View & operator = ( const View<RT,RL,RD,RM,RS> & rhs )
     {
-      Impl::ViewAssignment< Impl::CudaTexture , RS >( *this , rhs );
+      Impl::ViewAssignment< Impl::ViewCudaTexture , RS >( *this , rhs );
       return *this ;
     }
 
@@ -482,16 +475,16 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          Impl::is_same<TT,typename traits::scalar_type>::value &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
-    : m_texture( Impl::CudaTextureFetch< typename traits::scalar_type >(ptr))
+          Impl::is_same<TT,typename traits::value_type>::value
+        ), const size_t >::type n7 = 0 )
+    : m_texture( Impl::CudaTextureFetch< typename traits::value_type >(ptr))
     {
-      typedef typename traits::shape_type   shape_type ;
-      typedef typename traits::scalar_type  scalar_type ;
+      typedef typename traits::shape_type  shape_type ;
+      //typedef typename traits::value_type  value_type ; // unused
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
+      m_tracking = false ;
     }
 
   //------------------------------------
@@ -504,7 +497,7 @@ public:
 
   template < typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits , 1 , iType0 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type , traits, typename traits::array_layout, 1 , iType0 >::type
     operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -514,7 +507,7 @@ public:
 
   template < typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits , 1 , iType0 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type , traits , typename traits::array_layout, 1 , iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -524,7 +517,7 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits, 2, iType0, iType1 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type , traits, typename traits::array_layout, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
@@ -535,8 +528,8 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
-                                      traits, 3, iType0, iType1, iType2 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type ,
+                                      traits, typename traits::array_layout, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
@@ -547,8 +540,8 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
-                                      traits, 4, iType0, iType1, iType2, iType3 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type ,
+                                      traits, typename traits::array_layout, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
@@ -560,8 +553,8 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
-                                      traits, 5, iType0, iType1, iType2, iType3, iType4 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type ,
+                                      traits, typename traits::array_layout, 5, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
@@ -574,8 +567,8 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
-                                      traits, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type ,
+                                      traits, typename traits::array_layout, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
@@ -588,8 +581,8 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
-                                      traits, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type ,
+                                      traits, typename traits::array_layout, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
@@ -602,8 +595,8 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
-                                      traits, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6, iType7 >::type
+  typename Impl::ViewEnableArrayOper< typename traits::value_type ,
+                                      traits, typename traits::array_layout, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6, iType7 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
@@ -616,7 +609,7 @@ public:
   //------------------------------------
 
   KOKKOS_FORCEINLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_texture.ptr ; }
+  typename traits::value_type * ptr_on_device() const { return m_texture.ptr ; }
 
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >

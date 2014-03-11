@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef ML_GRADDIV_H
@@ -19,7 +19,7 @@
 // Some compilers think this name is too long...
 #define GradDivPreconditioner GDP
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_common.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -37,20 +37,20 @@
 namespace ML_Epetra
 {
 
- 
+
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
   int SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite=true);
 
   /*! The preconditioner(s) for the equations:
     - grad \lambda div B + \mu^{-1} B = f
-    discretized using compatible discretizations (face elements). 
-    Since the preconditioners involve both a face and nodal component, different 
+    discretized using compatible discretizations (face elements).
+    Since the preconditioners involve both a face and nodal component, different
     combinations of additive and/or multiplicative preconditioners can be used.  These options are
     controlled with the "refmaxwell: mode" option in the  Techos::ParameterList.
     The sublists "graddiv: 11list" and "graddiv: 22list" will be passed on
     to the edge and nodal sub-solvers appropriately.
 
-    
+
     Details on this preconditioner can be found in Bochev, Siefert, Tuminaro, Xu and Zhu, 2007.
   */
   class GradDivPreconditioner: public virtual ML_Preconditioner
@@ -58,39 +58,39 @@ namespace ML_Epetra
   public:
 
     //@{ \name Constructors.
-    
+
     //! Constructs a GradDivPreconditioner.
     // WARNING: All of these matrices will be shallow pointed to.  Please be
     //sure the matrices last until after RefMaxwellPreconditioner does.
     GradDivPreconditioner(const Epetra_CrsMatrix & K2_Matrix,                  // Face Grad-div + Mass
-			  const Epetra_CrsMatrix & FaceNode_Matrix,            // Face-to-node interpolation matrix    
+			  const Epetra_CrsMatrix & FaceNode_Matrix,            // Face-to-node interpolation matrix
 			  const Epetra_CrsMatrix & D1_Clean_Matrix,            // Discrete curl w/o BCs
 			  const Epetra_CrsMatrix & D0_Clean_Matrix,            // Discrete gradient w/o BCs
 			  const Epetra_CrsMatrix & K0_Matrix,                  // Nodal Laplacian (for aggregation)
 			  const Teuchos::ParameterList& List,
 			  const bool ComputePrec = true);
     //@}
-    
+
 
     //! @name Destructor
-    //@{ 
+    //@{
     //! Destructor
     ~GradDivPreconditioner();
     //@}
 
-    
+
     //@{ \name Mathematical functions.
-    
+
     //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
       return(-1);}
-    
+
     //! Apply the preconditioner w/ RHS B and get result X
     int ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
-    
+
     //@}
 
-    
+
     //@{ \name Attribute access functions
 
     //! Computes the multilevel hierarchy.
@@ -98,12 +98,12 @@ namespace ML_Epetra
       specified in the input ParameterList), or takes default values otherwise, and creates the ML
       objects for aggregation and hierarchy. Allocated data can be freed used DestroyPreconditioner(),
       or by the destructor,
-      
+
       In a Newton-type procedure, several linear systems have to be solved, Often, these systems
-      are not too different. In this case, it might be convenient to keep the already 
+      are not too different. In this case, it might be convenient to keep the already
       computed preconditioner (with hierarchy, coarse solver, smoothers), and use it to
-      precondition the next linear system. ML offers a way to determine whether the 
-      already available preconditioner is "good enough" for the next linear system. 
+      precondition the next linear system. ML offers a way to determine whether the
+      already available preconditioner is "good enough" for the next linear system.
       The user should proceed as follows:
       - define \c "reuse: enable" == \c true
       - solve the first linear system. ML tries to estimate the rate of convergence, and record it;
@@ -133,16 +133,16 @@ namespace ML_Epetra
 
     //! Returns the current UseTranspose setting.
     bool UseTranspose() const {return(false);};
-  
+
     //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
     bool HasNormInf() const{return(false);};
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
     const Epetra_Comm& Comm() const{return(*Comm_);};
-  
+
     //! Returns the Epetra_Map object associated with the domain of this operator.
     const Epetra_Map& OperatorDomainMap() const {return(*DomainMap_);};
-  
+
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map& OperatorRangeMap() const {return(*RangeMap_);};
 
@@ -153,8 +153,8 @@ namespace ML_Epetra
 
   private:
 
-    
-    //@{ \name Internal data    
+
+    //@{ \name Internal data
 
     //! Matrix: Face Grad-div + Mass
     const Epetra_CrsMatrix * K2_Matrix_;
@@ -172,14 +172,14 @@ namespace ML_Epetra
     const Epetra_CrsMatrix * D0_Clean_Matrix_;
     //! Nodal Laplacian (for aggregation)
     const Epetra_CrsMatrix * TMT_Matrix_;
-    
+
 #ifdef HAVE_ML_EPETRAEXT
     //! Structure for compatibility between Epetra and ML column maps.
     EpetraExt::CrsMatrix_SolverMap K2_Matrix_Trans_;
     EpetraExt::CrsMatrix_SolverMap K1_Matrix_Trans_;
     EpetraExt::CrsMatrix_SolverMap FaceNode_Matrix_Trans_;
     EpetraExt::CrsMatrix_SolverMap D0_Clean_Matrix_Trans_;
-    EpetraExt::CrsMatrix_SolverMap D0_Matrix_Trans_;    
+    EpetraExt::CrsMatrix_SolverMap D0_Matrix_Trans_;
     EpetraExt::CrsMatrix_SolverMap TMT_Matrix_Trans_;
 #endif
 
@@ -208,7 +208,7 @@ namespace ML_Epetra
     bool verbose_;
 
     //! Extreme Verbosity flag
-    mutable bool very_verbose_;    
+    mutable bool very_verbose_;
 
     //! Print hierarchy flag
     int print_hierarchy;
@@ -227,7 +227,7 @@ namespace ML_Epetra
     int NumConstructions_;
     //! CPU time for construction of the preconditioner.
     double ConstructionTime_;
-    //@}        
+    //@}
   };// end GradDivPreconditioner
 }//end namespace ML_Epetra
 

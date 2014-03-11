@@ -89,10 +89,8 @@ typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Mu
 typedef Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory;
 #endif
 
-#ifdef HAVE_XPETRA_EXPERIMENTAL
 #ifdef XPETRA_MATRIXFACTORY2_SHORT
 typedef Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory2;
-#endif
 #endif
 
 #ifdef XPETRA_TPETRACRSMATRIX_SHORT

@@ -161,7 +161,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
         continue;
 
       Intrepid::FieldContainer<double> vertices;
-      mesh.getElementVertices(itr->second,vertices);
+      mesh.getElementVertices(itr->second,pb.elementBlockID(),vertices);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
          = panzer::buildWorksets(pb, itr->second, vertices);
@@ -262,8 +262,8 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   }
 
   Intrepid::FieldContainer<double> vertex_coordinates_a, vertex_coordinates_b;
-  mesh.getElementVertices(local_cell_ids_a,vertex_coordinates_a);
-  mesh.getElementVertices(local_cell_ids_b,vertex_coordinates_b);
+  mesh.getElementVertices(local_cell_ids_a,pb_a.elementBlockID(),vertex_coordinates_a);
+  mesh.getElementVertices(local_cell_ids_b,pb_b.elementBlockID(),vertex_coordinates_b);
 
   // worksets to be returned
   Teuchos::RCP<std::vector<panzer::Workset> > worksets;
@@ -341,7 +341,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
          = mesh.getCellTopology(pb.elementBlockID());
 
       Intrepid::FieldContainer<double> vertices;
-      mesh.getElementVertices(local_cell_ids,vertices);
+      mesh.getElementVertices(local_cell_ids,pb.elementBlockID(),vertices);
   
       return panzer::buildBCWorkset(pb, local_cell_ids, local_side_ids, vertices);
   }

@@ -48,9 +48,11 @@
 #ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
-#include <Zoltan2_MeshInput.hpp>
+#include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StrideData.hpp>
 #include <vector>
+
+#include <im_exodusII_l.h
 
 namespace Zoltan2 {
 
@@ -153,29 +155,31 @@ public:
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim} const {
-    if (dim < 0 || dim >= dimension_) {
+    if (dim != dimension_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ";" <<__LINE__
 	   << "  Invalid dimension " << dim << std::endl;
       throw std::runtime_error(emsg.str());
     }
 
-    size_t length;
-    
     if (MESH_REGION == etype) {
-      Rcoords_[dim].getStridedList(length, coords, stride);
+      coords = Rcoords_;
+      stride = 1;
     }
 
     if (MESH_FACE == etype) {
-      Fcoords_[dim].getStridedList(length, coords, stride);
+      coords = Fcoords_;
+      stride = 1;
     }
 
     if (MESH_EDGE == etype) {
-      Ecoords_[dim].getStridedList(length, coords, stride);
+      coords = Ecoords_;
+      stride = 1;
     }
 
     if (MESH_VERTEX == etype) {
-      Vcoords_[dim].getStridedList(length, coords, stride);
+      coords = Vcoords_;
+      stride = 1;
     }
   }
 
@@ -183,9 +187,8 @@ private:
   lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 
-  int dimension_;
-  ArrayRCP<&StridedData<lno_t, scalar_t> > Rcoords_, Fcoords_, Ecoords_,
-					Vcoords_;
+  long long dimension_;
+  double * Rcoords_, Fcoords_, Ecoords_, Vcoords_, Acoords_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -193,26 +196,26 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
+PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
+  dimension_(0)
 {
   setPrimaryEntityType(typestr);
 
   int error = 0;
   int exoid = 0;
-  int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
-  error += im_ex_get_init ( exoid, "PAMGEN Inline Mesh", &num_dim, &num_nodes,
-			    &num_elem, &num_elem_blk, &num_node_sets,
-			    &num_side_sets);
+  long long num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+  im_ex_get_init_l ( exoid, "PAMGEN Inline Mesh", &dimension_,
+		     &num_nodes, &num_elem, &num_elem_blk,
+		     &num_node_sets, &num_side_sets);
 
-  double * Vcoord = (double *)malloc(num_nodes*num_dim*sizeof(double));
-  double * Acoord = (double *)malloc(num_elem*num_dim*sizeof(double));
+  Vcoords_ = (double *)malloc(num_nodes * dimension_ * sizeof(double));
 
-  error += im_ex_get_coord(exoid, Vcoord, Vcoord+num_nodes,
-			   Vcoord+2*num_nodes);
+  error += im_ex_get_coord_l(exoid, Vcoords_, Vcoords_ + num_nodes,
+			   Vcoords_ + 2 * num_nodes);
 
-  if (3 == num_dim && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem*sizeof(int));
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
+  if (3 == dimension_ && num_elem) {
+    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
+    error += im_ex_get_elem_num_map_l(exoid, element_num_map);
 
     RnumIds_ = num_elem;
     RidList_ = element_num_map;
@@ -221,9 +224,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
     RidList_ = NULL;
   }
 
-  if (2 == num_dim && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem*sizeof(int));
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
+  if (2 == dimension_ && num_elem) {
+    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
+    error += im_ex_get_elem_num_map_l(exoid, element_num_map);
 
     FnumIds_ = num_elem;
     FidList_ = element_num_map;
@@ -237,7 +240,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
 
   if (num_nodes) {
     int * node_num_map = (int *)malloc(num_nodes * sizeof(int));
-    error += im_ex_get_node_num_map(exoid, node_num_map);
+    error += im_ex_get_node_num_map_l(exoid, node_num_map);
 
     VnumIds_ = num_nodes;
     VidList_ = node_num_map;
@@ -246,61 +249,79 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
     VidList_ = NULL;
   }
 
-  dimension_ = num_dim;
+  long long *elem_blk_ids       = new long long [num_elem_blk];
+  long long *num_nodes_per_elem = new long long [num_elem_blk];
+  long long *num_attr           = new long long [num_elem_blk];
+  long long *num_elem_this_blk  = new long long [num_elem_blk];
+  char **elem_type              = new char * [num_elem_blk];
+  long long **connect           = new long long * [num_elem_blk];
 
-  int * elem_blk_ids       = (int *)malloc(num_elem_blk*sizeof(int));
-  int * num_nodes_per_elem = (int *)malloc(num_elem_blk*sizeof(int));
-  int * num_attr           = (int *)malloc(num_elem_blk*sizeof(int));
-  int * num_elem_this_blk  = (int *)malloc(num_elem_blk*sizeof(int));
-  char ** elem_type        = (char **)malloc(num_elem_blk*sizeof(char *));
-  int ** connect           = (int **)malloc(num_elem_blk*sizeof(int*));
+  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
 
-  error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
-
-  for(int i = 0; i < num_elem_blk; i++){
-    char * elem_type[i] = (char *)malloc((MAX_STR_LENGTH + 1)*sizeof(char));
-    error += im_ex_get_elem_block(exoid, elem_blk_id[i], elem_type[i],
-				  (int*)&(num_elem_this_blk[i]),
-				  (int*)&(num_nodes_per_elem[i]),
-				  (int*)&(num_attr[i]));
+  for(long long i = 0; i < num_elem_blk; i++){
+    elem_type[i] = new char [MAX_STR_LENGTH + 1];
+    error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
+				  (long long*)&(num_elem_this_blk[i]),
+				  (long long*)&(num_nodes_per_elem[i]),
+				  (long long*)&(num_attr[i]));
   }
 
+  Acoords_ = (double *)malloc(num_elem * dimension_ * sizeof(double));
   int a = 0;
 
-  for(int b = 0; b < num_elem_blk; b++){
-    int * connect[b] = (int*)malloc(num_nodes_per_elem[b]*
-				    num_elem_this_blk[b]*sizeof(int));
-    error += im_ex_get_elem_conn(exoid,elem_blk_id[b],connect[b]);
+  for(long long b = 0; b < num_elem_blk; b++){
+    connect[b] = new long long [num_nodes_per_elem[b] *
+				num_elem_this_blk[b]];
+    error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
 
     for(int i = 0; i < num_elem_this_blk[b]; i++){
-      Acoord[a] = 0;
-      Acoord[num_nodes+a] = 0;
+      Acoords_[a] = 0;
+      Acoords_[num_nodes + a] = 0;
 
-      if (3 == num_dim) {
-	Acoord[2*num_nodes+a] = 0;
+      if (3 == dimension_) {
+	Acoords_[2 * num_nodes + a] = 0;
       }
 
       for(int j = 0; j < num_nodes_per_elem[b]; j++){
-	Acoord[a] +=
-	  Vcoords[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
-	Acoord[num_nodes+a] +=
-	  Vcoords[connect[b]
-		  [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	Acoords_[a] +=
+	  Vcoords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
+	Acoords_[num_nodes + a] +=
+	  Vcoords_[connect[b]
+		 [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
 
-	if(3 == num_dim) {
-	  Acoord[2*num_nodes+a] +=
-	    Vcoords[connect[b]
-		    [2*num_nodes+i*num_elem_this_blk[b]+
-		     num_nodes_per_elem[b]]-1];
+	if(3 == dimension_) {
+	  Acoords_[2 * num_nodes + a] +=
+	    Vcoords_[connect[b]
+		   [2*num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] -
+		   1];
 	}
       }
 
-      Acoord[a] /= num_nodes_per_elem[b];
-      Acoord[num_nodes+a] /= num_nodes_per_elem[b];
-      Acoord[2*num_nodes+a] /= num_nodes_per_elem[b];
+      Acoords_[a] /= num_nodes_per_elem[b];
+      Acoords_[num_nodes + a] /= num_nodes_per_elem[b];
+
+      if(3 == dimension_) {
+	Acoords_[2 * num_nodes + a] /= num_nodes_per_elem[b];
+      }
+
       a++;
     }
   }
+
+  if (3 == dimension_) {
+    Rcoords_ = Acoords_;
+  } else {
+    Rcoords_ = NULL;
+  }
+
+  if (2 == dimension_) {
+    Fcoords_ = Acoords_;
+  } else {
+    Fcoords_ = NULL;
+  }
+
+  Ecoords_ = NULL;
+
 }
 
   

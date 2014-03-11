@@ -110,7 +110,8 @@ namespace MueLu {
 
     // Options shared algo1 and algo2
     void SetMinNodesPerAggregate(int minNodesPerAggregate) { algo1_.SetMinNodesPerAggregate(minNodesPerAggregate); algo2_.SetMinNodesPerAggregate(minNodesPerAggregate); }
-    int GetMinNodesPerAggregate() const { return algo1_.GetMinNodesPerAggregate(); TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, ""); }
+    int GetMinNodesPerAggregate() const { return algo1_.GetMinNodesPerAggregate(); //TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
+    }
 
     //@}
 

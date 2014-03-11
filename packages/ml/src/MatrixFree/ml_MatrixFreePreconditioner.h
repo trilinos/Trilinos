@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_MATRIX_FREE_PRECONDITIONER
 #define ML_MATRIX_FREE_PRECONDITIONER
@@ -52,7 +52,7 @@ This file requires ML to be configured with the following options:
 - \c --enable-epetra
 - \c --enable-epetraext
 - \c --enable-teuchos
-    
+
 The following options are suggested:
 - \c --enable-amesos
 - \c --enable-ifpack
@@ -60,12 +60,12 @@ The following options are suggested:
 This class does not support Maxwell problems. It has been tested on symmetric problems; however it can in principle be used with non-symmetric problems as well.
 
 \author Marzio Sala, ETHZ/D-INFK
-*/  
-class MatrixFreePreconditioner : public Epetra_Operator 
+*/
+class MatrixFreePreconditioner : public Epetra_Operator
 {
   public:
     //@{ \name Constructors and destructors.
-    
+
     //! Constructor
     MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
@@ -78,7 +78,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
     // @}
     // @{ \name Query methods.
-    
+
     //! Sets the use of the transpose of the operator (NOT SUPPORTED).
     int SetUseTranspose(bool UseTranspose);
 
@@ -146,7 +146,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
       return(*MLP_);
     }
-    
+
     //! Returns the restriction operator as an Epetra_CrsMatrix.
     const Epetra_CrsMatrix& R() const
     {
@@ -165,7 +165,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(Comm().MyPID());
     }
 
-    //! Returns the number of processors in the communicator. 
+    //! Returns the number of processors in the communicator.
     inline int NumProc() const
     {
       return(Comm().NumProc());
@@ -180,17 +180,17 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Returns the total CPU time spent in \c this class.
     double TotalCPUTime() const;
 
-    bool CheckSPD(const Epetra_Operator& Op, 
+    bool CheckSPD(const Epetra_Operator& Op,
                   const bool UseApply = true,
                   const int NumChecks = 1,
                   const int NumVectors = 1) const;
 
     // @}
     // @{ \name Construction methods.
-    
+
     //! Performs coarsening for a given operator \c A.
-    int Coarsen(ML_Operator* A, ML_Aggregate** aggr, ML_Operator** P, 
-                ML_Operator** R, ML_Operator** C, int NumPDEEqns = 1, 
+    int Coarsen(ML_Operator* A, ML_Aggregate** aggr, ML_Operator** P,
+                ML_Operator** R, ML_Operator** C, int NumPDEEqns = 1,
                 int NullSpaceDim = 1, double* NullSpace = NULL);
 
     //! Probes for the block diagonal of the given operator.
@@ -203,7 +203,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
     // @}
     // @{ \name Basic smoothers
-    
+
     //! Applies the pre-smoother (using zero starting solution).
     int ApplyPreSmoother(Epetra_MultiVector& X) const;
 
@@ -228,9 +228,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
     int ApplyInvBlockDiag(const double alpha, Epetra_MultiVector& X,
                           const double gamma, const Epetra_MultiVector& B) const;
 
-    // @} 
+    // @}
     // @{ \name Timing
-    
+
     inline void ResetStartTime() const
     {
       Time_->ResetStartTime();
@@ -258,9 +258,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
       }
     }
 
-    // @} 
+    // @}
     // @{ \name Private data
-    
+
     //! Toggles output level.
     bool verbose_;
     //! Communicator for ML.
@@ -269,7 +269,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     const Epetra_Comm& Comm_;
 
     //! Label of this object
-    std::string Label_; 
+    std::string Label_;
     //! Set to \c true if the preconditioner has been successfully computed.
     bool IsComputed_;
     //! Type of preconditioner (additive or hybrid)
@@ -308,7 +308,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Time object.
     mutable Teuchos::RefCountPtr<Epetra_Time> Time_;
     mutable std::map<std::string, double> TimeTable;
-    // @} 
+    // @}
 
 }; // class MatrixFreePreconditioner
 

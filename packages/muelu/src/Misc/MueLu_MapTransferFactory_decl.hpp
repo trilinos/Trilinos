@@ -53,6 +53,11 @@
 #ifndef MUELU_MAPTRANSFERFACTORY_DECL_HPP_
 #define MUELU_MAPTRANSFERFACTORY_DECL_HPP_
 
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 
@@ -87,7 +92,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -95,7 +100,7 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 

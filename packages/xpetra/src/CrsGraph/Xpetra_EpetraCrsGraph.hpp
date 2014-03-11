@@ -53,6 +53,7 @@
 #include "Xpetra_CrsGraph.hpp"
 
 #include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraExport.hpp"
 #include "Xpetra_EpetraImport.hpp"
 #include "Xpetra_EpetraUtils.hpp"
 
@@ -63,17 +64,8 @@ namespace Xpetra {
   // TODO: move that elsewhere
   RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph& graph);
   const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph);
-  //
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatOps>
-  class CrsMatrix;
-#endif
-
-  class EpetraCrsGraph
-    : public CrsGraph<int, int>
-  {
+  class EpetraCrsGraph : public CrsGraph<int, int> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
@@ -148,6 +140,9 @@ namespace Xpetra {
 
     //! Returns the importer associated with this graph.
     RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraph::getImporter"); return toXpetra(graph_->Importer()); }
+
+    //! Returns the exporter associated with this graph.
+    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraph::getExporter"); return toXpetra(graph_->Exporter()); }
 
     //! Returns the number of global rows in the graph.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsGraph::getGlobalNumRows"); return graph_->NumGlobalRows(); }

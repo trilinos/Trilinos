@@ -1,27 +1,12 @@
 #!/bin/sh
 #
-# bash script to compare Epetra and Tpetra timings from MueLu_ScalingTest.exe side-by-side.
+# bash script to compare Epetra and Tpetra timings side-by-side.
 #
 # syntax:
-#    mueprof.sh [-h] file
-#
-# prerequisites:
-#
-# 1) Timer parent/child relations must be written out by putting
-#
-#       MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
-#
-#    at the end of your program.
-#
-# optional arguments:
-#   -h           help
-#
-# required arguments:
-#
-#   file  epetra or tpetra screen dumps
+#    mueprof.sh [-h] [ARGS] file1 file2
 #
 # example:
-#    mueprof.sh screen.tpetra
+#    mueprof.sh screen.tpetra screen.epetra
 #
 # Borrowed the command line parsing from
 # http://blog.mafr.de/2007/08/05/cmdline-options-in-shell-scripts
@@ -30,13 +15,27 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=$(dirname $SCRIPT)
 
-USAGE="Usage: `basename $0` [-h] file"
-OPTDESCR="\n  -h  help\n"
+USAGE="Usage: `basename $0` [-h] [ARGS] file1 file2"
+OPTDESCR="\n\t-h \thelp\n\t-n \twhich solver block to analyze [1]\n
+          \t-s \twhich linear algebra lib to sort by: \"Epetra\",[\"Tpetra\"]\n
+          \t-d \thow to display delta in times: \"ratio\",[\"diff\"]\n"
 
 numReqd=1;
+blockNumber=1;
+sortByLib="Tpetra"
+deltaDisplay="diff"
 # Parse command line options.
-while getopts ahsl OPT; do
+while getopts hn:s:d: OPT; do
     case "$OPT" in
+        d)
+            deltaDisplay=$OPTARG
+            ;;
+        s)
+            sortByLib=$OPTARG
+            ;;
+        n)
+            blockNumber=$OPTARG
+            ;;
         h)
             echo $USAGE
             echo -e $OPTDESCR
@@ -45,7 +44,6 @@ while getopts ahsl OPT; do
         \?)
             # getopts issues an error message
             echo $USAGE >&2
-            echo "2"
             exit 1
             ;;
     esac
@@ -61,7 +59,8 @@ if (( $# < $numReqd )); then
     exit 1
 fi
 
-file=$1;
+file1=$1;
+file2=$2;
 
 # Access additional arguments as usual through
 # variables $@, $*, $1, $2, etc. or using this loop:
@@ -70,10 +69,10 @@ file=$1;
 #done
 
 #if not defined, set path so that we can find mueprof.awk
-set ${AWKPATH:=$PATH}
+set ${AWKPATH:=./}
 export AWKPATH
 
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -f $SCRIPTPATH/mueprof.awk $file
+awk -v "blockNumber=$blockNumber" -v "sortByLib=$sortByLib" -v "etDelta=$deltaDisplay" -f $SCRIPTPATH/mueprof.awk $file1 $file2

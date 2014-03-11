@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -165,7 +165,7 @@ Perf fenl(
   typedef typename SparseMatrixType::StaticCrsGraphType
     SparseGraphType ;
 
-  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , SparseGraphType , FixtureType::ElemNode > 
+  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , SparseGraphType , FixtureType::ElemNode >
      NodeNodeGraphType ;
 
   typedef Kokkos::Example::FENL::ElementComputation< FixtureType , SparseMatrixType >
@@ -218,7 +218,7 @@ Perf fenl(
     fixture.recv_node() ,
     fixture.send_node() ,
     fixture.send_nodeid() ,
-    fixture.node_count_owned() , 
+    fixture.node_count_owned() ,
     fixture.node_count() - fixture.node_count_owned() );
 
   //------------------------------------
@@ -257,11 +257,11 @@ Perf fenl(
 
   Kokkos::Impl::Timer wall_clock ;
 
-  Perf perf_stats ;
+  Perf perf_stats = Perf() ;
 
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
 
-    Kokkos::Example::FENL::Perf perf ;
+    Perf perf = Perf() ;
 
     perf.global_elem_count = fixture.elem_count_global();
     perf.global_node_count = fixture.node_count_global();
@@ -271,18 +271,26 @@ Perf fenl(
     // from the element->to->node identifier array.
     // The graph only has rows for the owned nodes.
 
-    wall_clock.reset();
+    typename NodeNodeGraphType::Times graph_times;
 
     const NodeNodeGraphType
-      mesh_to_graph( fixture.elem_node() , fixture.node_count_owned() );
+      mesh_to_graph( fixture.elem_node() , fixture.node_count_owned(), graph_times );
 
+    perf.map_ratio          = maximum(comm, graph_times.ratio);
+    perf.fill_node_set      = maximum(comm, graph_times.fill_node_set);
+    perf.scan_node_count    = maximum(comm, graph_times.scan_node_count);
+    perf.fill_graph_entries = maximum(comm, graph_times.fill_graph_entries);
+    perf.sort_graph_entries = maximum(comm, graph_times.sort_graph_entries);
+    perf.fill_element_graph = maximum(comm, graph_times.fill_element_graph);
+
+    wall_clock.reset();
     // Create the sparse matrix from the graph:
 
     SparseMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
 
     Device::fence();
 
-    perf.graph_time = maximum( comm , wall_clock.seconds() );
+    perf.create_sparse_matrix = maximum( comm , wall_clock.seconds() );
 
     //----------------------------------
 
@@ -342,8 +350,8 @@ Perf fenl(
     const DirichletComputationType dirichlet(
       fixture , nodal_solution , jacobian , nodal_residual ,
       2 /* apply at 'z' ends */ ,
-      manufactured_solution.T_zmin , 
-      manufactured_solution.T_zmax ); 
+      manufactured_solution.T_zmin ,
+      manufactured_solution.T_zmax );
 
     //----------------------------------
     // Nonlinear Newton iteration:
@@ -370,7 +378,7 @@ Perf fenl(
 
       if ( ! use_atomic ) {
         gatherfill.apply();
-      } 
+      }
 
       Device::fence();
       perf.fill_time = maximum( comm , wall_clock.seconds() );
@@ -478,7 +486,7 @@ Perf fenl(
 
       Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
       Kokkos::deep_copy( h_nodal_solution , nodal_solution );
-    
+
       double error_max = 0 ;
       for ( unsigned inode = 0 ; inode < fixture.node_count_owned() ; ++inode ) {
         const double answer = manufactured_solution( h_node_coord( inode , 2 ) );
@@ -491,7 +499,12 @@ Perf fenl(
       perf_stats = perf ;
     }
     else {
-      perf_stats.graph_time = std::min( perf_stats.graph_time , perf.graph_time );
+      perf_stats.fill_node_set = std::min( perf_stats.fill_node_set , perf.fill_node_set );
+      perf_stats.scan_node_count = std::min( perf_stats.scan_node_count , perf.scan_node_count );
+      perf_stats.fill_graph_entries = std::min( perf_stats.fill_graph_entries , perf.fill_graph_entries );
+      perf_stats.sort_graph_entries = std::min( perf_stats.sort_graph_entries , perf.sort_graph_entries );
+      perf_stats.fill_element_graph = std::min( perf_stats.fill_element_graph , perf.fill_element_graph );
+      perf_stats.create_sparse_matrix = std::min( perf_stats.create_sparse_matrix , perf.create_sparse_matrix );
       perf_stats.fill_time = std::min( perf_stats.fill_time , perf.fill_time );
       perf_stats.bc_time = std::min( perf_stats.bc_time , perf.bc_time );
       perf_stats.cg_time = std::min( perf_stats.cg_time , perf.cg_time );

@@ -47,16 +47,19 @@
 #define KOKKOS_MACROS_HPP
 
 #include <KokkosCore_config.h>
+#include <impl/Kokkos_Compiler_Macros.hpp>
 
 namespace Kokkos {
 class HostSpace ;
 class CudaSpace ;
 } // namespace Kokkos
 
+
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) 
+#if defined( __CUDACC__ )
 
 // Compiling with CUDA compiler.
 
@@ -218,6 +221,7 @@ namespace Kokkos { typedef HostSpace ExecutionSpace ; }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
 
 #endif /* #ifndef KOKKOS_MACROS_HPP */
 

@@ -77,7 +77,7 @@
 /* #undef HAVE_EPETRA_TESTS */
 
 /* Define if want to build with Teuchos enabled */
-/* #undef HAVE_EPETRA_TEUCHOS */
+#define HAVE_EPETRA_TEUCHOS
 
 /* Define if want to build examples */
 /* #undef HAVE_EXAMPLES */

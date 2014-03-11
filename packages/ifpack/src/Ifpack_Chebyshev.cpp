@@ -105,9 +105,9 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
-  UseBlockMode_(false),  
+  UseBlockMode_(false),
   SolveNormalEquations_(false),
-  IsRowMatrix_(false), 
+  IsRowMatrix_(false),
   ZeroStartingSolution_(true)
 {
 }
@@ -151,7 +151,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   Matrix_(Teuchos::rcp(Operator,false)),
   UseBlockMode_(false),
   SolveNormalEquations_(false),
-  IsRowMatrix_(true), 
+  IsRowMatrix_(true),
   ZeroStartingSolution_(true)
 {
 }
@@ -164,12 +164,12 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
   LambdaMin_            = List.get("chebyshev: min eigenvalue", LambdaMin_);
   LambdaMax_            = List.get("chebyshev: max eigenvalue", LambdaMax_);
   PolyDegree_           = List.get("chebyshev: degree",PolyDegree_);
-  MinDiagonalValue_     = List.get("chebyshev: min diagonal value", 
+  MinDiagonalValue_     = List.get("chebyshev: min diagonal value",
                                    MinDiagonalValue_);
-  ZeroStartingSolution_ = List.get("chebyshev: zero starting solution", 
+  ZeroStartingSolution_ = List.get("chebyshev: zero starting solution",
                                    ZeroStartingSolution_);
 
-  Epetra_Vector* ID     = List.get("chebyshev: operator inv diagonal", 
+  Epetra_Vector* ID     = List.get("chebyshev: operator inv diagonal",
                                    (Epetra_Vector*)0);
   EigMaxIters_          = List.get("chebyshev: eigenvalue max iterations",EigMaxIters_);
 
@@ -181,7 +181,7 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
     BlockList_          = List.get("chebyshev: block list",BlockList_);
 
     // Since we know we're doing a matrix inverse, clobber the block list
-    // w/"invert" if it's set to multiply      
+    // w/"invert" if it's set to multiply
     Teuchos::ParameterList Blist;
     Blist=BlockList_.get("blockdiagmatrix: list",Blist);
     string dummy("invert");
@@ -189,13 +189,13 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
     if(ApplyMode==string("multiply")){
       Blist.set("apply mode","invert");
       BlockList_.set("blockdiagmatrix: list",Blist);
-    }    
-  }  
+    }
+  }
 #endif
 
   SolveNormalEquations_ = List.get("chebyshev: solve normal equations",SolveNormalEquations_);
 
-  if (ID != 0) 
+  if (ID != 0)
   {
     InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(*ID) );
   }
@@ -268,7 +268,7 @@ int Ifpack_Chebyshev::Initialize()
   }
   else
   {
-    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=       
+    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=
         Operator_->OperatorRangeMap().NumGlobalElements64())
       IFPACK_CHK_ERR(-2); // only square operators
   }
@@ -296,36 +296,43 @@ int Ifpack_Chebyshev::Compute()
 
 #ifdef HAVE_IFPACK_EPETRAEXT
   // Check to see if we can run in block mode
-  if(IsRowMatrix_ && InvDiagonal_ == Teuchos::null && UseBlockMode_){
-    const Epetra_CrsMatrix *CrsMatrix=dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
-    
+  if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null && UseBlockMode_){
+    const Epetra_CrsMatrix *CrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
+
     // If we don't have CrsMatrix, we can't use the block preconditioner
-    if(!CrsMatrix) UseBlockMode_=false;    
-    else{
+    if (!CrsMatrix) {
+      UseBlockMode_ = false;
+
+    } else {
       int ierr;
-      InvBlockDiagonal_=Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*CrsMatrix));
-      if(InvBlockDiagonal_==Teuchos::null) IFPACK_CHK_ERR(-6);
+      InvBlockDiagonal_ = Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*CrsMatrix));
+      if (InvBlockDiagonal_ == Teuchos::null)
+        IFPACK_CHK_ERR(-6);
 
-      ierr=InvBlockDiagonal_->SetParameters(BlockList_);
-      if(ierr) IFPACK_CHK_ERR(-7);
+      ierr = InvBlockDiagonal_->SetParameters(BlockList_);
+      if (ierr)
+        IFPACK_CHK_ERR(-7);
 
-      ierr=InvBlockDiagonal_->Compute();
-      if(ierr) IFPACK_CHK_ERR(-8);
+      ierr = InvBlockDiagonal_->Compute();
+      if (ierr)
+        IFPACK_CHK_ERR(-8);
     }
 
     // Automatically Compute Eigenvalues
-    double lambda_max=0;
-    PowerMethod(EigMaxIters_,lambda_max);
-    LambdaMax_=lambda_max;
+    double lambda_max = 0;
+    PowerMethod(EigMaxIters_, lambda_max);
+    LambdaMax_ = lambda_max;
+
     // Test for Exact Preconditioned case
-    if(ABS(LambdaMax_-1) < 1e-6) LambdaMax_=LambdaMin_=1.0;
-    else LambdaMin_=LambdaMax_/EigRatio_;
-  }    
+    if (ABS(LambdaMax_-1) < 1e-6)
+      LambdaMax_ = LambdaMin_ = 1.0;
+    else
+      LambdaMin_ = LambdaMax_/EigRatio_;
+  }
 #endif
-  
-  if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null && !UseBlockMode_)
-  {
-    InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().Map()) );
+
+  if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null && !UseBlockMode_) {
+    InvDiagonal_ = Teuchos::rcp(new Epetra_Vector(Matrix().Map()));
 
     if (InvDiagonal_ == Teuchos::null)
       IFPACK_CHK_ERR(-5);
@@ -341,7 +348,7 @@ int Ifpack_Chebyshev::Compute()
       else
         (*InvDiagonal_)[i] = 1.0 / diag;
     }
-    // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one 
+    // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one
     double lambda_max=0;
     if (LambdaMax_ == -1) {
       PowerMethod(Matrix(), *InvDiagonal_, EigMaxIters_, lambda_max);
@@ -388,24 +395,24 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
       os << "Minimum value on stored inverse diagonal = " << MinVal << endl;
       os << "Maximum value on stored inverse diagonal = " << MaxVal << endl;
     }
-    if (ZeroStartingSolution_) 
+    if (ZeroStartingSolution_)
       os << "Using zero starting solution" << endl;
     else
       os << "Using input starting solution" << endl;
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
-       << "  " << std::setw(15) << InitializeTime_ 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_
+       << "  " << std::setw(15) << InitializeTime_
        << "              0.0              0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+    os << "Compute()       "   << std::setw(5) << NumCompute_
        << "  " << std::setw(15) << ComputeTime_
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
     if (ComputeTime_ != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_
        << "  " << std::setw(15) << ApplyInverseTime_
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
     if (ApplyInverseTime_ != 0.0)
@@ -421,7 +428,7 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
 
 //==============================================================================
 double Ifpack_Chebyshev::
-Condest(const Ifpack_CondestType CT, 
+Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
 	Epetra_RowMatrix* Matrix_in)
 {
@@ -445,7 +452,6 @@ void Ifpack_Chebyshev::SetLabel()
 int Ifpack_Chebyshev::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
 
@@ -453,7 +459,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     return 0;
 
   int nVec = X.NumVectors();
-  int len = X.MyLength();
+  int len  = X.MyLength();
   if (nVec != Y.NumVectors())
     IFPACK_CHK_ERR(-2);
 
@@ -473,91 +479,97 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 #ifdef HAVE_IFPACK_EPETRAEXT
   EpetraExt_PointToBlockDiagPermute* IBD=0;
-  if (UseBlockMode_) IBD=&*InvBlockDiagonal_;
+  if (UseBlockMode_)
+    IBD = &*InvBlockDiagonal_;
 #endif
-  
 
   //--- Do a quick solve when the matrix is identity
-  double *invDiag=0;
-  if(!UseBlockMode_) invDiag=InvDiagonal_->Values();
+  double *invDiag = 0;
+  if (!UseBlockMode_)
+    invDiag = InvDiagonal_->Values();
+
   if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_)) {
 #ifdef HAVE_IFPACK_EPETRAEXT
-    if(UseBlockMode_) IBD->ApplyInverse(*Xcopy,Y);
+    if (UseBlockMode_)
+      IBD->ApplyInverse(*Xcopy, Y);
     else
 #endif
     if (nVec == 1) {
       double *yPointer = yPtr[0], *xPointer = xPtr[0];
       for (int i = 0; i < len; ++i)
-        yPointer[i] = xPointer[i]*invDiag[i];
-    }
-    else {
-      int i, k;
-      for (i = 0; i < len; ++i) {
+        yPointer[i] = xPointer[i] * invDiag[i];
+
+    } else {
+      for (int i = 0; i < len; ++i) {
         double coeff = invDiag[i];
-        for (k = 0; k < nVec; ++k)
+        for (int k = 0; k < nVec; ++k)
           yPtr[k][i] = xPtr[k][i] * coeff;
       }
     } // if (nVec == 1)
+
     return 0;
   } // if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_))
 
   //--- Initialize coefficients
   // Note that delta stores the inverse of ML_Cheby::delta
   double alpha = LambdaMax_ / EigRatio_;
-  double beta = 1.1 * LambdaMax_;
+  double beta  = 1.1 * LambdaMax_;
   double delta = 2.0 / (beta - alpha);
   double theta = 0.5 * (beta + alpha);
-  double s1 = theta * delta;
+  double s1    = theta * delta;
 
-  //--- Define vectors
+  // Temporary vectors
   // In ML_Cheby, V corresponds to pAux and W to dk
-  Epetra_MultiVector V(X);
-  Epetra_MultiVector W(X);
+  // NOTE: we would like to move the construction to the Compute()
+  // call, but that is not possible as we don't know how many
+  // vectors are in the multivector
+  bool               zeroOut = false;
+  Epetra_MultiVector V(X.Map(), X.NumVectors(), zeroOut);
+  Epetra_MultiVector W(X.Map(), X.NumVectors(), zeroOut);
 #ifdef HAVE_IFPACK_EPETRAEXT
-  Epetra_MultiVector Temp(X);
+  Epetra_MultiVector Temp(X.Map(), X.NumVectors(), zeroOut);
 #endif
-  
+
   double *vPointer = V.Values(), *wPointer = W.Values();
 
   double oneOverTheta = 1.0/theta;
-  int i, j, k;
-
 
   //--- If solving normal equations, multiply RHS by A^T
-  if(SolveNormalEquations_){
-    Apply_Transpose(Operator_,Y,V);
-    Y=V;
+  if (SolveNormalEquations_) {
+    Apply_Transpose(Operator_, Y, V);
+    Y = V;
   }
 
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
   if (ZeroStartingSolution_ == false) {
     Operator_->Apply(Y, V);
+
     // Compute W = invDiag * ( X - V )/ Theta
-#ifdef HAVE_IFPACK_EPETRAEXT    
-    if(UseBlockMode_) {
-      Temp.Update(oneOverTheta,X,-oneOverTheta,V,0.0);
-      IBD->ApplyInverse(Temp,W);
+#ifdef HAVE_IFPACK_EPETRAEXT
+    if (UseBlockMode_) {
+      Temp.Update(oneOverTheta, X, -oneOverTheta, V, 0.0);
+      IBD->ApplyInverse(Temp, W);
 
       // Perform additional matvecs for normal equations
       // CMS: Testing this only in block mode FOR NOW
-      if(SolveNormalEquations_){
-	IBD->ApplyInverse(W,Temp);
-	Apply_Transpose(Operator_,Temp,W);
+      if (SolveNormalEquations_){
+        IBD->ApplyInverse(W, Temp);
+        Apply_Transpose(Operator_, Temp, W);
       }
     }
     else
 #endif
     if (nVec == 1) {
       double *xPointer = xPtr[0];
-      for (i = 0; i < len; ++i)
+      for (int i = 0; i < len; ++i)
         wPointer[i] = invDiag[i] * (xPointer[i] - vPointer[i]) * oneOverTheta;
-    }
-    else {
-      for (i = 0; i < len; ++i) {
+
+    } else {
+      for (int i = 0; i < len; ++i) {
         double coeff = invDiag[i]*oneOverTheta;
         double *wi = wPointer + i, *vi = vPointer + i;
-        for (k = 0; k < nVec; ++k) {
+        for (int k = 0; k < nVec; ++k) {
           *wi = (xPtr[k][i] - (*vi)) * coeff;
           wi = wi + len; vi = vi + len;
         }
@@ -565,144 +577,144 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     } // if (nVec == 1)
     // Update the vector Y
     Y.Update(1.0, W, 1.0);
-  }
-  else {
+
+  } else { // if (ZeroStartingSolution_ == false)
     // Compute W = invDiag * X / Theta
-#ifdef HAVE_IFPACK_EPETRAEXT    
-    if(UseBlockMode_) {
-      IBD->ApplyInverse(X,W);
+#ifdef HAVE_IFPACK_EPETRAEXT
+    if (UseBlockMode_) {
+      IBD->ApplyInverse(X, W);
 
       // Perform additional matvecs for normal equations
       // CMS: Testing this only in block mode FOR NOW
-      if(SolveNormalEquations_){
-	IBD->ApplyInverse(W,Temp);
-	Apply_Transpose(Operator_,Temp,W);
+      if (SolveNormalEquations_) {
+        IBD->ApplyInverse(W, Temp);
+        Apply_Transpose(Operator_, Temp, W);
       }
 
       W.Scale(oneOverTheta);
-      Y.Update(1.0, W, 0.0);      
+      Y.Update(1.0, W, 0.0);
     }
     else
 #endif
     if (nVec == 1) {
       double *xPointer = xPtr[0];
-      for (i = 0; i < len; ++i){
+      for (int i = 0; i < len; ++i)
         wPointer[i] = invDiag[i] * xPointer[i] * oneOverTheta;
-      }
+
       memcpy(yPtr[0], wPointer, len*sizeof(double));
-    }
-    else {
-      for (i = 0; i < len; ++i) {
+
+    } else {
+      for (int i = 0; i < len; ++i) {
         double coeff = invDiag[i]*oneOverTheta;
         double *wi = wPointer + i;
-        for (k = 0; k < nVec; ++k) {
+        for (int k = 0; k < nVec; ++k) {
           *wi = xPtr[k][i] * coeff;
           wi = wi + len;
         }
       }
-      for (k = 0; k < nVec; ++k)
+
+      for (int k = 0; k < nVec; ++k)
         memcpy(yPtr[k], wPointer + k*len, len*sizeof(double));
     } // if (nVec == 1)
   } // if (ZeroStartingSolution_ == false)
-  
+
   //--- Apply the polynomial
   double rhok = 1.0/s1, rhokp1;
   double dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
   if (nVec == 1) {
     double *xPointer = xPtr[0];
-    for (k = 0; k < degreeMinusOne; ++k) {
+    for (int k = 0; k < degreeMinusOne; ++k) {
       Operator_->Apply(Y, V);
       rhokp1 = 1.0 / (2.0*s1 - rhok);
       dtemp1 = rhokp1 * rhok;
       dtemp2 = 2.0 * rhokp1 * delta;
-      rhok = rhokp1;
+      rhok   = rhokp1;
+
       // Compute W = dtemp1 * W
       W.Scale(dtemp1);
+
       // Compute W = W + dtemp2 * invDiag * ( X - V )
-#ifdef HAVE_IFPACK_EPETRAEXT    
-    if(UseBlockMode_) {
-      //NTS: We can clobber V since it will be reset in the Apply
-      V.Update(dtemp2,X,-dtemp2);
-      IBD->ApplyInverse(V,Temp);
-
-      // Perform additional matvecs for normal equations
-      // CMS: Testing this only in block mode FOR NOW
-      if(SolveNormalEquations_){
-	IBD->ApplyInverse(V,Temp);
-	Apply_Transpose(Operator_,Temp,V);
-      }
-
-      W.Update(1.0,Temp,1.0);
-    }
-    else{
-#endif
-      for (i = 0; i < len; ++i)
-        wPointer[i] += dtemp2* invDiag[i] * (xPointer[i] - vPointer[i]);
 #ifdef HAVE_IFPACK_EPETRAEXT
-    }
+      if (UseBlockMode_) {
+        //NTS: We can clobber V since it will be reset in the Apply
+        V.Update(dtemp2, X, -dtemp2);
+        IBD->ApplyInverse(V, Temp);
+
+        // Perform additional matvecs for normal equations
+        // CMS: Testing this only in block mode FOR NOW
+        if (SolveNormalEquations_) {
+          IBD->ApplyInverse(V, Temp);
+          Apply_Transpose(Operator_, Temp, V);
+        }
+
+        W.Update(1.0, Temp, 1.0);
+      }
+      else
 #endif
+      for (int i = 0; i < len; ++i)
+        wPointer[i] += dtemp2* invDiag[i] * (xPointer[i] - vPointer[i]);
 
       // Update the vector Y
       Y.Update(1.0, W, 1.0);
     } // for (k = 0; k < degreeMinusOne; ++k)
-  }
-  else {
-    for (k = 0; k < degreeMinusOne; ++k) {
+
+  } else { // if (nVec == 1) {
+    for (int k = 0; k < degreeMinusOne; ++k) {
       Operator_->Apply(Y, V);
       rhokp1 = 1.0 / (2.0*s1 - rhok);
       dtemp1 = rhokp1 * rhok;
       dtemp2 = 2.0 * rhokp1 * delta;
-      rhok = rhokp1;
+      rhok   = rhokp1;
+
       // Compute W = dtemp1 * W
       W.Scale(dtemp1);
+
       // Compute W = W + dtemp2 * invDiag * ( X - V )
-#ifdef HAVE_IFPACK_EPETRAEXT    
-    if(UseBlockMode_) {
-      //We can clobber V since it will be reset in the Apply
-      V.Update(dtemp2,X,-dtemp2);
-      IBD->ApplyInverse(V,Temp);
-
-      // Perform additional matvecs for normal equations
-      // CMS: Testing this only in block mode FOR NOW
-      if(SolveNormalEquations_){
-	IBD->ApplyInverse(V,Temp);
-	Apply_Transpose(Operator_,Temp,V);
-      }
-
-
-      W.Update(1.0,Temp,1.0);
-    }
-    else{
-#endif
-      for (i = 0; i < len; ++i) {
-        double coeff = invDiag[i]*dtemp2;
-        double *wi = wPointer + i, *vi = vPointer + i;
-        for (j = 0; j < nVec; ++j) {
-          *wi += (xPtr[j][i] - (*vi)) * coeff;
-          wi = wi + len; vi = vi + len;
-        }
-      }
 #ifdef HAVE_IFPACK_EPETRAEXT
-    }
-#endif      
+      if (UseBlockMode_) {
+        // We can clobber V since it will be reset in the Apply
+        V.Update(dtemp2, X, -dtemp2);
+        IBD->ApplyInverse(V, Temp);
+
+        // Perform additional matvecs for normal equations
+        // CMS: Testing this only in block mode FOR NOW
+        if (SolveNormalEquations_) {
+          IBD->ApplyInverse(V,Temp);
+          Apply_Transpose(Operator_,Temp,V);
+        }
+
+        W.Update(1.0, Temp, 1.0);
+      }
+      else
+#endif
+        for (int i = 0; i < len; ++i) {
+          double coeff = invDiag[i]*dtemp2;
+          double *wi = wPointer + i, *vi = vPointer + i;
+          for (int j = 0; j < nVec; ++j) {
+            *wi += (xPtr[j][i] - (*vi)) * coeff;
+            wi = wi + len; vi = vi + len;
+          }
+        }
+
       // Update the vector Y
       Y.Update(1.0, W, 1.0);
     } // for (k = 0; k < degreeMinusOne; ++k)
   } // if (nVec == 1)
 
-  
-  // Flops are updated in each of the following. 
+
+  // Flops are updated in each of the following.
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
+
   return(0);
 }
 
 //==============================================================================
 int Ifpack_Chebyshev::
-PowerMethod(const Epetra_Operator& Operator, 
-            const Epetra_Vector& InvPointDiagonal, 
-            const int MaximumIterations, 
+PowerMethod(const Epetra_Operator& Operator,
+            const Epetra_Vector& InvPointDiagonal,
+            const int MaximumIterations,
             double& lambda_max)
 {
   // this is a simple power method
@@ -733,9 +745,9 @@ PowerMethod(const Epetra_Operator& Operator,
 
 //==============================================================================
 int Ifpack_Chebyshev::
-CG(const Epetra_Operator& Operator, 
-   const Epetra_Vector& InvPointDiagonal, 
-   const int MaximumIterations, 
+CG(const Epetra_Operator& Operator,
+   const Epetra_Vector& InvPointDiagonal,
+   const int MaximumIterations,
    double& lambda_min, double& lambda_max)
 {
 #ifdef HAVE_IFPACK_AZTECOO
@@ -812,21 +824,21 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
 //==============================================================================
 #ifdef HAVE_IFPACK_EPETRAEXT
 int Ifpack_Chebyshev::
-CG(const int MaximumIterations, 
+CG(const int MaximumIterations,
    double& lambda_min, double& lambda_max)
 {
   IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
                      // I turned it off.
 
   if(!UseBlockMode_) IFPACK_CHK_ERR(-1);
-  
+
 #ifdef HAVE_IFPACK_AZTECOO
   Epetra_Vector x(Operator_->OperatorDomainMap());
   Epetra_Vector y(Operator_->OperatorRangeMap());
   x.Random();
   y.PutScalar(0.0);
   Epetra_LinearProblem LP(const_cast<Epetra_RowMatrix*>(&*Matrix_), &x, &y);
-  
+
   AztecOO solver(LP);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, AZ_none);
@@ -838,7 +850,7 @@ CG(const int MaximumIterations,
 
   lambda_min = status[AZ_lambda_min];
   lambda_max = status[AZ_lambda_max];
-  
+
   return(0);
 #else
   cout << "You need to configure IFPACK with support for AztecOO" << endl;

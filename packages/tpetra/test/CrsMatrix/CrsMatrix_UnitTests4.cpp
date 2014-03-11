@@ -398,7 +398,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(normY,normZ);
     } else {
-      TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,testingTol<Mag>());
+      TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,2.0*testingTol<Mag>());
     }
   }
 
@@ -539,6 +539,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ThreeArraysESFC, LO, GO, Scalar, Node )
   {
+
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -607,6 +608,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, SetAllValues, LO, GO, Scalar, Node )
   {
+
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;

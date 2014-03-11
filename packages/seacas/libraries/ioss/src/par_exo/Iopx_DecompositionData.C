@@ -2464,10 +2464,10 @@ namespace Iopx {
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
-      this32->get_set_mesh_var(exodusId, type, id, field, ioss_data);
+      return this32->get_set_mesh_var(exodusId, type, id, field, ioss_data);
     } else {
       const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
-      this64->get_set_mesh_var(exodusId, type, id, field, ioss_data);
+      return this64->get_set_mesh_var(exodusId, type, id, field, ioss_data);
     }
   }
 
@@ -3007,6 +3007,7 @@ namespace Iopx {
         }
       }
     }
+    return 0;
   }
 
   template void DecompositionData<int>::create_implicit_global_map(const std::vector<int> &owning_proc,

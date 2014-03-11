@@ -43,6 +43,8 @@
 #define THYRA_MULTI_VECTOR_BASE_DECL_HPP
 
 #include "Thyra_LinearOpBase_decl.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
 
@@ -488,7 +490,9 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 template<class Scalar>
-class MultiVectorBase : virtual public LinearOpBase<Scalar>
+class MultiVectorBase : virtual public LinearOpBase<Scalar>, 
+                        virtual public RowStatLinearOpBase<Scalar>,
+                        virtual public ScaledLinearOpBase<Scalar>
 {
 public:
 
@@ -1083,7 +1087,44 @@ protected:
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     ) = 0;
 
+  /** From RowStatLinearOpBase */
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+
+  /** From RowStatLinearOpBase */
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatVec) const;
+
+  /** From ScaledLinearOpBase */
+  virtual bool supportsScaleLeftImpl() const;
+ 	
+  /** From ScaledLinearOpBase */
+  virtual bool supportsScaleRightImpl() const;
+ 	
+  /** From ScaledLinearOpBase */
+  virtual void scaleLeftImpl(const VectorBase< Scalar > &row_scaling);
+ 	
+  /** From ScaledLinearOpBase */
+  virtual void scaleRightImpl(const VectorBase< Scalar > &col_scaling);
+
   //@}
+
+  /** Compute the absolute row sum of this multivector. Note that the
+    * implementation is suboptimal in that it requires an intermediate
+    * step of computing the absolute value of the multivector, then a "apply"
+    * operation by the rows. 
+    *
+    * \param[out] output A vector constructed from the range vector space.
+    */
+  void absRowSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const;
+
+  /** Compute the absolute column sum of this multivector. Note that the
+    * implementation uses the <code>norms_1</code> function.
+    *
+    * \param[out] output A vector constructed from the domain vector space.
+    */
+  void absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const;
 
 public:
 

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*
 #define AZ_CONVR0
@@ -10,19 +10,19 @@
 */
 
 /*****************************************************************************/
-/* Sample driver for AZTEC/ML package. The software is tested by reading     */ 
+/* Sample driver for AZTEC/ML package. The software is tested by reading     */
 /* input to drive ML from a file (ml_inputfile). Matrices can be created     */
 /* by using Aztec's AZ_matrix_capture capability and then running            */
 /* ml/util/az_capt2read.c (see comments for ways using matlab to create      */
-/* matrices).                                                                */ 
+/* matrices).                                                                */
 /*****************************************************************************/
 
 /*******************************************************************************
 Here is a sample input file:
 #
-#  Test input file ML 
-#       
-# Notes: 
+#  Test input file ML
+#
+# Notes:
 #   1) Capitalization should not matter
 #   2) Lines starting with # are comments
 #   3) Parallel Partitioning File is not used
@@ -30,10 +30,10 @@ Here is a sample input file:
 #   4) comments in [] indicate available options.
 #   5) The matrix must be stored in a file '.data' according
 #      to Aztec's AZ_read_msr() format.
-#   6) Including the file 'rhsfile' will cause this 
+#   6) Including the file 'rhsfile' will cause this
 #      data (stored in Aztec's AZ_read_msr() format)
 #      to be used as righthand side.
-#   7) Including the file 'initguessfile' will cause this 
+#   7) Including the file 'initguessfile' will cause this
 #      data (stored in Aztec's AZ_read_msr() format)
 #      to be used as righthand side.
 #   8) rigid body mode information can be input by
@@ -42,32 +42,32 @@ Here is a sample input file:
 #      starts from 0 and increases. Each file
 #      should contain 1 rigid body mode.
 #   9) The utility ml/util/az_capt2read.c (see comments)
-#      can be used to convert matlab/Aztec type data into 
+#      can be used to convert matlab/Aztec type data into
 #      AZ_read_msr() format.
 #
 -----------------------------------------------
       General Problem Specifications
 -----------------------------------------------
 Number of DOF per node       = 1
-Parallel Partitioning File   = myfile  
-Output Frequency             = 2       
+Parallel Partitioning File   = myfile
+Output Frequency             = 2
 Tolerance                    = 1.0e-11
 
 -----------------------------------------------
       Solution Specifications
 -----------------------------------------------
 Max Number of Levels         = 4
-Type of Smoother             = SymGaussSeidel 
-#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+Type of Smoother             = SymGaussSeidel
+#                              [Parasails, GaussSeidel, SymGaussSeidel,
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 7
 Coarse grid solver           = SuperLU
-#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                              [Parasails, GaussSeidel, SymGaussSeidel,
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis,
 #                               SuperLU]
 Coarse Grid iterations       = 1
 Outer Iteration              = Cg
-#                              [Cg, Bicgstab, Tfqmr, Gmres] 
+#                              [Cg, Bicgstab, Tfqmr, Gmres]
 
 -----------------------------------------------
       Aggregation Specifications
@@ -76,7 +76,7 @@ Type of Aggregation          = Mis
 #                              [Mis, Uncoupled, Coupled]
 Aggregate threshold          = 0.0
 Max coarse size              = 30
-Smoothed aggregation damping = 1.5 
+Smoothed aggregation damping = 1.5
 Spectral norm calculation    = Anorm
 #                              [Anorm, Calc]
 # end of sample inputfile
@@ -86,7 +86,7 @@ Spectral norm calculation    = Anorm
 Output files:
     PPn_1 (n = 1,...,numproc)   Matrix-vector product.  Matrix is the
                                 prolongator P, and vector is the vector whose
-                                i_th entry is the aggregate that i belongs to. 
+                                i_th entry is the aggregate that i belongs to.
 
     aggn_0 (n=1,...,numproc)    (Node,aggregate) pairs.
 *******************************************************************************/
@@ -157,7 +157,7 @@ extern int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
                           ML_Operator *original2);
 
 /*
-extern int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges,ML_Operator **Tmat_array, 
+extern int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges,ML_Operator **Tmat_array,
 					   ML_Operator **Tmat_trans_array,
 					   ML **newml, ML_Operator *M);
 */
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
     setup_time, start_time, *yyy, *vvv, *zzz;
   /* A Josh hack - double *blockrhs */
   double *blockrhs;
-  
+
   double *M_val = NULL;
   int *M_bindx = NULL, *M_data_org = NULL;
   AZ_MATRIX *M_mat, *blockmat;
@@ -386,7 +386,7 @@ Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst di
   printf("N procs = %d\n",proc_config[AZ_N_procs]);
   if (proc_config[AZ_N_procs] == 1) i = AZ_linear;
   else i = AZ_file;
-  AZ_input_update("edge_partition",&Nlocal_edges, &global_edge_inds, 
+  AZ_input_update("edge_partition",&Nlocal_edges, &global_edge_inds,
 		  proc_config, Nglobal_edges, num_PDE_eqns,i);
 
   /********************************************************************/
@@ -804,7 +804,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
 
 #endif
 #else
-  AZ_input_msr_matrix("Ke_mat.az", global_edge_inds, &Ke_val, &Ke_bindx, 
+  AZ_input_msr_matrix("Ke_mat.az", global_edge_inds, &Ke_val, &Ke_bindx,
                       Nlocal_edges, proc_config);
 #endif
 
@@ -814,8 +814,8 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   }
 
   AZ_transform_norowreordering(proc_config, &global_edge_externs, Ke_bindx,
-			       Ke_val, global_edge_inds, &reordered_glob_edges, 
-			       &reordered_edge_externs, &Ke_data_org, Nlocal_edges, 0, 0, 0, 
+			       Ke_val, global_edge_inds, &reordered_glob_edges,
+			       &reordered_edge_externs, &Ke_data_org, Nlocal_edges, 0, 0, 0,
 			       &cpntr,	       AZ_MSR_MATRIX);
 
 
@@ -825,16 +825,16 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   Ke_mat = AZ_matrix_create( Nlocal_edges );
   AZ_set_MSR(Ke_mat, Ke_bindx, Ke_val, Ke_data_org, 0, NULL, AZ_LOCAL);
   Ke_mat->matrix_type    = Ke_data_org[AZ_matrix_type];
-  Ke_data_org[AZ_N_rows] = Ke_data_org[AZ_N_internal] + 
+  Ke_data_org[AZ_N_rows] = Ke_data_org[AZ_N_internal] +
     Ke_data_org[AZ_N_border];
 
   /* rst: Read in the mass matrix */
 
-  AZ_input_msr_matrix("M_mat.az", global_edge_inds, &M_val, &M_bindx, 
+  AZ_input_msr_matrix("M_mat.az", global_edge_inds, &M_val, &M_bindx,
                       Nlocal_edges, proc_config);
   AZ_transform_norowreordering(proc_config, &junk1, M_bindx,
 			       M_val, global_edge_inds, &junk2,
-			       &junk3, &M_data_org, Nlocal_edges, 0, 0, 0, 
+			       &junk3, &M_data_org, Nlocal_edges, 0, 0, 0,
 			       &junk4,	       AZ_MSR_MATRIX);
 
   /* Create an Aztec matrix wrapper */
@@ -855,7 +855,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   /* Set rhs */
 
   /*rhs=(double *) ML_allocate(Nlocal_edges*sizeof(double));*/
- 
+
   if(0)
   {
     printf("%d: rhsfile file pointer is NULL\n",proc_config[AZ_node]); fflush(stdout);
@@ -864,7 +864,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
     fflush(stdout);
     rhs = (double *)
 	      ML_allocate(2*(Nlocal_edges + Ke_mat->data_org[AZ_N_external])
-                      *sizeof(double)); 
+                      *sizeof(double));
     for (i = 0; i < 2*Nlocal_edges; i++) rhs[i] = 0.0;
     rhs[Nlocal_edges/2] = 1.;
     rhs[Nlocal_edges/2+1] = -1.;
@@ -904,7 +904,7 @@ free(xxx);
   {
     rhs = (double *)
 	  ML_allocate(2*(Nlocal_edges + Ke_mat->data_org[AZ_N_external])
-          *sizeof(double)); 
+          *sizeof(double));
 /* read in real rhs here */
     fp = fopen("rhsfile_re","r");
     if (proc_config[AZ_node] == 0)
@@ -914,7 +914,7 @@ free(xxx);
     }
     AZ_input_msr_matrix("rhsfile_re", global_edge_inds, &rhs, &garbage,
                                     Nlocal_edges, proc_config);
-    
+
     dtemp = sqrt(abs(ML_gdot(Nlocal_edges, rhs, rhs, ml_M->comm)));
     printf("\n\n\n%20.15e\n\n\n",dtemp);
 
@@ -926,11 +926,11 @@ free(xxx);
        fflush(stdout);
     }
 
-/* create block rhs 
+/* create block rhs
    double *blockrhs; */
    blockrhs = (double *)
 	      ML_allocate(2*(Nlocal_edges + Ke_mat->data_org[AZ_N_external])
-                      *sizeof(double)); 
+                      *sizeof(double));
    for (i=0; i < Nlocal_edges; i++) blockrhs[i] = rhs[i];
 
 /* read in imaginary rhs here */
@@ -979,7 +979,7 @@ free(xxx);
 
   if (proc_config[AZ_N_procs] == 1) i = AZ_linear;
   else i = AZ_file;
-  AZ_input_update("node_partition",&Nlocal_nodes, &global_node_inds, 
+  AZ_input_update("node_partition",&Nlocal_nodes, &global_node_inds,
 		  proc_config, Nglobal_nodes, num_PDE_eqns,i);
 
   /********************************************************************/
@@ -1039,40 +1039,40 @@ free(xxx);
 
     Kn_bindx[Kn_bindx[i]+0] = northwestback3d(ii,jj,kk,nx);
     Kn_bindx[Kn_bindx[i]+1] = southeastback3d(ii,jj,kk,nx);
-    Kn_bindx[Kn_bindx[i]+2] = southwestfront3d(ii,jj,kk,nx);  
-    Kn_bindx[Kn_bindx[i]+6] = northeastback3d(ii,jj,kk,nx);  
-    Kn_bindx[Kn_bindx[i]+7] = southeastfront3d(ii,jj,kk,nx);  
-    Kn_bindx[Kn_bindx[i]+8] = northeastfront3d(ii,jj,kk,nx);  
-    Kn_bindx[Kn_bindx[i]+9] = northwestfront3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+2] = southwestfront3d(ii,jj,kk,nx);
+    Kn_bindx[Kn_bindx[i]+6] = northeastback3d(ii,jj,kk,nx);
+    Kn_bindx[Kn_bindx[i]+7] = southeastfront3d(ii,jj,kk,nx);
+    Kn_bindx[Kn_bindx[i]+8] = northeastfront3d(ii,jj,kk,nx);
+    Kn_bindx[Kn_bindx[i]+9] = northwestfront3d(ii,jj,kk,nx);
     if (ii == 0) ii = nx -1;
     else ii--;
-    Kn_bindx[Kn_bindx[i]+10] = northwestfront3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+10] = northwestfront3d(ii,jj,kk,nx);
 if (ii==nx-1) Kn_bindx[Kn_bindx[i]+10] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+11] = northwestback3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+11] = northwestback3d(ii,jj,kk,nx);
 if (ii==nx-1) Kn_bindx[Kn_bindx[i]+11] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+12] = southwestfront3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+12] = southwestfront3d(ii,jj,kk,nx);
 if (ii==nx-1) Kn_bindx[Kn_bindx[i]+12] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+13] = southwestback3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+13] = southwestback3d(ii,jj,kk,nx);
 if (ii==nx-1) Kn_bindx[Kn_bindx[i]+13] = -1; /* rst dirichlet */
 
     if (jj == 0) jj = nx -1;
     else jj--;
-    Kn_bindx[Kn_bindx[i]+14] = southwestback3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+14] = southwestback3d(ii,jj,kk,nx);
 if ((ii==nx-1) || (jj==nx-1)) Kn_bindx[Kn_bindx[i]+14] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+15] = southwestfront3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+15] = southwestfront3d(ii,jj,kk,nx);
 if ((ii==nx-1) || (jj==nx-1)) Kn_bindx[Kn_bindx[i]+15] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+16] = southeastfront3d(ii,jj,kk,nx);  
-if (ii==nx-1) Kn_bindx[Kn_bindx[i]+16] = southwestfront3d(0,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+16] = southeastfront3d(ii,jj,kk,nx);
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+16] = southwestfront3d(0,jj,kk,nx);
 if (jj==nx-1) Kn_bindx[Kn_bindx[i]+16] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+17] = southeastback3d(ii,jj,kk,nx);  
-if (ii==nx-1) Kn_bindx[Kn_bindx[i]+17] = southwestback3d(0,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+17] = southeastback3d(ii,jj,kk,nx);
+if (ii==nx-1) Kn_bindx[Kn_bindx[i]+17] = southwestback3d(0,jj,kk,nx);
 if (jj==nx-1) Kn_bindx[Kn_bindx[i]+17] = -1; /* rst dirichlet */
 
     if (ii == nx-1) ii = 0;
     else ii++;
-    Kn_bindx[Kn_bindx[i]+18] = southeastback3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+18] = southeastback3d(ii,jj,kk,nx);
 if (jj==nx-1) Kn_bindx[Kn_bindx[i]+18] = -1; /* rst dirichlet */
-    Kn_bindx[Kn_bindx[i]+19] = southeastfront3d(ii,jj,kk,nx);  
+    Kn_bindx[Kn_bindx[i]+19] = southeastfront3d(ii,jj,kk,nx);
 if (jj==nx-1) Kn_bindx[Kn_bindx[i]+19] = -1; /* rst dirichlet */
 
     if (kk == 0) kk = nx -1;
@@ -1119,7 +1119,7 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   }
 
 #else
-  AZ_input_msr_matrix("Kn_mat.az", global_node_inds, &Kn_val, &Kn_bindx, 
+  AZ_input_msr_matrix("Kn_mat.az", global_node_inds, &Kn_val, &Kn_bindx,
 		      Nlocal_nodes, proc_config);
   if (proc_config[AZ_node] == 0)
   {
@@ -1127,9 +1127,9 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   }
 #endif
 
-  AZ_transform_norowreordering(proc_config, &global_node_externs, Kn_bindx, 
-			       Kn_val, global_node_inds, &reordered_glob_nodes, 
-			       &reordered_node_externs, &Kn_data_org, Nlocal_nodes, 0, 0, 0, 
+  AZ_transform_norowreordering(proc_config, &global_node_externs, Kn_bindx,
+			       Kn_val, global_node_inds, &reordered_glob_nodes,
+			       &reordered_node_externs, &Kn_data_org, Nlocal_nodes, 0, 0, 0,
 			       &cpntr, AZ_MSR_MATRIX);
   Kn_mat = AZ_matrix_create( Nlocal_nodes );
   AZ_set_MSR(Kn_mat, Kn_bindx, Kn_val, Kn_data_org, 0, NULL, AZ_LOCAL);
@@ -1157,7 +1157,7 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
   }
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
   nx = (int) pow( ((double) Nglobal_edges/3) + .00001,.333333333334);
-#ifdef HARDWIRE2D 
+#ifdef HARDWIRE2D
   nx = (int) sqrt( ((double) Nglobal_nodes) + .00001);
 #endif
   Tmat_bindx = (int    *) malloc((3*Nlocal_edges+5)*sizeof(int));
@@ -1184,7 +1184,7 @@ if (kk==nx-1) Kn_bindx[Kn_bindx[i]+5] = -1; /* rst dirichlet */
     inv3dindex(global_edge_inds[i], &ii, &jj, &kk, nx, &horv);
 nx++; /* rst dirichlet */
     if (horv == HORIZONTAL) {
-      Tmat_bindx[Tmat_bindx[i]] = southwestback3d(ii,jj,kk,nx); 
+      Tmat_bindx[Tmat_bindx[i]] = southwestback3d(ii,jj,kk,nx);
       Tmat_val[Tmat_bindx[i]] = -1.;
 if ((ii==0)||(jj==0)||(kk==0)) Tmat_val[Tmat_bindx[i]]=0.; /* rst dirichlet */
       Tmat_bindx[Tmat_bindx[i]+1] = southeastback3d(ii,jj,kk,nx);
@@ -1216,7 +1216,7 @@ nx = nx--; /* rst dirichlet */
     AZ_sort(&(Tmat_bindx[Tmat_bindx[i]]),Tmat_bindx[i+1]-Tmat_bindx[i],NULL,&(Tmat_val[Tmat_bindx[i]]));
   }
 #else
-  AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmat_val, 
+  AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmat_val,
 			     &Tmat_bindx,  Nlocal_edges, proc_config);
   if (proc_config[AZ_node] == 0)
   {
@@ -1245,7 +1245,7 @@ nx = nx--; /* rst dirichlet */
     }
   }
 
-  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
 							  ML_CSR_MSRdata));
   csr_data->columns = Tmat_bindx;
   csr_data->values  = Tmat_val;
@@ -1269,10 +1269,10 @@ nx = nx--; /* rst dirichlet */
   /* ML matrices and stuff them into the ml grid hierarchies.         */
   /*------------------------------------------------------------------*/
 
-  
-  AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat, 
+
+  AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat,
 		 proc_config);
-  AZ_ML_Set_Amat(ml_nodes, N_levels-1, Nlocal_nodes, Nlocal_nodes, Kn_mat, 
+  AZ_ML_Set_Amat(ml_nodes, N_levels-1, Nlocal_nodes, Nlocal_nodes, Kn_mat,
 		 proc_config);
   ml_edges->Amat[N_levels-1].N_nonzeros = Ke_bindx[Nlocal_edges];
 
@@ -1314,20 +1314,20 @@ nx = nx--; /* rst dirichlet */
         matrix is created. */
 
      /* Read in a copy of Tmat that will contain boundary conditions. */
-   
+
      if (proc_config[AZ_node] == 0)
      {
         printf("Reading T matrix\n"); fflush(stdout);
      }
-     AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmatbc_val, 
+     AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmatbc_val,
    			     &Tmatbc_bindx,  Nlocal_edges, proc_config);
      if (proc_config[AZ_node] == 0)
      {
         printf("Done reading T matrix\n"); fflush(stdout);
      }
-   
+
      /* compress out any zeros which might occur due to empty rows  */
-   
+
      lower = Tmatbc_bindx[0];
      Nnz = Tmatbc_bindx[Nlocal_edges];
      for (i = 0; i < Nlocal_edges; i++) {
@@ -1346,14 +1346,14 @@ nx = nx--; /* rst dirichlet */
          lower++;
        }
      }
-   
-     csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+
+     csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
    							  ML_CSR_MSRdata));
      csr_data->columns = Tmatbc_bindx;
      csr_data->values  = Tmatbc_val;
      ML_MSR2CSR(csr_data, Nlocal_edges, &Ncols);
      Nexterns = Kn_data_org[AZ_N_external];
-   
+
      AZ_Tmat_transform2ml(Nexterns, global_node_externs, reordered_node_externs,
    		       Tmatbc_bindx, Tmatbc_val, csr_data->rowptr, Nlocal_nodes,
    		       global_node_inds, ml_edges->comm, Nlocal_edges, &Tmatbc);
@@ -1364,7 +1364,7 @@ nx = nx--; /* rst dirichlet */
                                        "correspond to Dirichlet points.\n");
      printf("\nProcessor %d owns %d rows of Ke.\n",proc_config[AZ_node],
              Amat->outvec_leng);
-   
+
      data = (struct ML_CSR_MSRdata *) (Tmatbc->data);
      row_ptr = data->rowptr;
      bindx = data->columns;
@@ -1491,7 +1491,7 @@ nx = nx--; /* rst dirichlet */
           row_start++;
        }
     }
-    if ( itemp > 2) 
+    if ( itemp > 2)
       pr_error("Too many nonzeros per row in Tmat   %d\n", itemp);
 
     if (itemp == 1)
@@ -1564,7 +1564,7 @@ nx = nx--; /* rst dirichlet */
   printf("%d:Tmat->invec_leng = %d\n",Tmat->comm->ML_mypid,Tmat->invec_leng);
   printf("%d:Tmat->outvec_leng = %d\n",Tmat->comm->ML_mypid,Tmat->outvec_leng);
   fflush(stdout);
-  
+
   ML_az_sort(pcounts, nblocks, proc_id, NULL);
 
   i = 0; j = 0;
@@ -1606,7 +1606,7 @@ nx = nx--; /* rst dirichlet */
   /********************************************************************/
   /* Set some ML parameters.                                          */
   /*------------------------------------------------------------------*/
-	
+
   ML_Set_ResidualOutputFrequency(ml_edges, context->output);
   ML_Set_Tolerance(ml_edges, context->tol);
   ML_Aggregate_Create( &ag );
@@ -1661,11 +1661,11 @@ nx = nx--; /* rst dirichlet */
 
   for (i = 0; i < Nrigid; i++) {
     sprintf(filename,"rigid_body_mode%d",i+1);
-    AZ_input_msr_matrix(filename, global_edge_inds, &mode, &garbage, Nlocal_edges, 
+    AZ_input_msr_matrix(filename, global_edge_inds, &mode, &garbage, Nlocal_edges,
 			proc_config);
 
     /*
-     *  Rescale matrix/rigid body modes and checking 
+     *  Rescale matrix/rigid body modes and checking
      *
      AZ_sym_rescale_sl(mode, Ke_mat->Ke_data_org, options, proc_config, scaling);
      Ke_mat->matvec(mode, rigid, Ke_mat, proc_config);
@@ -1674,11 +1674,11 @@ nx = nx--; /* rst dirichlet */
 
     for (j = 0; j < i; j++) {
       alpha = -AZ_gdot(Nlocal_edges, mode, &(rigid[j*Nlocal_edges]), proc_config)/
-	AZ_gdot(Nlocal_edges, &(rigid[j*Nlocal_edges]), &(rigid[j*Nlocal_edges]), 
+	AZ_gdot(Nlocal_edges, &(rigid[j*Nlocal_edges]), &(rigid[j*Nlocal_edges]),
 		proc_config);
       daxpy_(&Nlocal_edges, &alpha,  &(rigid[j*Nlocal_edges]),  &one, mode, &one);
     }
-   
+
     /* rhs orthogonalization */
 
     alpha = -AZ_gdot(Nlocal_edges, mode, rhs, proc_config)/
@@ -1693,7 +1693,7 @@ nx = nx--; /* rst dirichlet */
 
   for (j = 0; j < Nrigid; j++) {
     alpha = -AZ_gdot(Nlocal_edges, rhs, &(rigid[j*Nlocal_edges]), proc_config)/
-      AZ_gdot(Nlocal_edges, &(rigid[j*Nlocal_edges]), &(rigid[j*Nlocal_edges]), 
+      AZ_gdot(Nlocal_edges, &(rigid[j*Nlocal_edges]), &(rigid[j*Nlocal_edges]),
 	      proc_config);
     daxpy_(&Nlocal_edges, &alpha,  &(rigid[j*Nlocal_edges]),  &one, rhs, &one);
   }
@@ -1704,10 +1704,10 @@ nx = nx--; /* rst dirichlet */
 
 #ifdef HierarchyCheck
   xxx = (double *) ML_allocate(2*(3+Nlocal_edges + Ke_mat->data_org[AZ_N_external])
-                               *sizeof(double)); 
+                               *sizeof(double));
 
 
-  for (iii = 0; iii < 2*Nlocal_edges; iii++) xxx[iii] = 0.0; 
+  for (iii = 0; iii < 2*Nlocal_edges; iii++) xxx[iii] = 0.0;
 
   /* Set xxx */
 
@@ -1751,7 +1751,7 @@ nx = nx--; /* rst dirichlet */
   {printf("Starting reuse\n"); fflush(stdout);}
   ML_Operator_Clean(&(ml_edges->Amat[N_levels-1]));
   ML_Operator_Init(&(ml_edges->Amat[N_levels-1]),ml_edges->comm);
-  AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat, 
+  AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat,
 		 proc_config);
 
   ML_Gen_MGHierarchy_ReuseExistingOperators(ml_edges);
@@ -1781,7 +1781,7 @@ nx = nx--; /* rst dirichlet */
      ML_Krylov_Set_Amatrix(kdata, block_data->Ke_mat );
 
      ML_Krylov_Solve(kdata, block_data->Ke_mat->outvec_leng, NULL, NULL);
-     ml_edges->Amat[j].lambda_max = 
+     ml_edges->Amat[j].lambda_max =
                       ML_Krylov_Get_MaxEigenvalue(kdata);
      ML_Krylov_Destroy( &kdata );
 
@@ -1884,14 +1884,14 @@ nx = nx--; /* rst dirichlet */
   for (level = N_levels-1; level > coarsest_level; level--)
   {
       num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
-		
+
       /*  Sparse approximate inverse smoother that acutally does both */
       /*  pre and post smoothing.                                     */
 
       if (ML_strcmp(context->smoother,"Parasails") == 0)
 	  {
-	  ML_Gen_Smoother_ParaSails(ml_edges , level, ML_PRESMOOTHER, nsmooth, 
-				    parasails_sym, parasails_thresh, 
+	  ML_Gen_Smoother_ParaSails(ml_edges , level, ML_PRESMOOTHER, nsmooth,
+				    parasails_sym, parasails_thresh,
 				    parasails_nlevels, parasails_filter,
 				    parasails_loadbal, parasails_factorized);
 	  }
@@ -1943,7 +1943,7 @@ nx = nx--; /* rst dirichlet */
 	      temp1[1] = Tmat_array[level-1]->outvec_leng;
 	      temp1[3] = Tmat_array[level-1]->invec_leng;
 	    }
-	    else { 
+	    else {
 	      temp1[1] = 0;
 	      temp1[3] = 0;
 	    }
@@ -2002,7 +2002,7 @@ nx = nx--; /* rst dirichlet */
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
       /* elasticity problems.  However, I don't believe that this is very */
-      /* efficient in parallel.                                           */       
+      /* efficient in parallel.                                           */
       /*
          blocks = (int *) ML_allocate(sizeof(int)*ml_edges->Amat[level].invec_leng);
 	nblocks = ml_edges->Amat[level].invec_leng;
@@ -2057,7 +2057,7 @@ nx = nx--; /* rst dirichlet */
   if (ML_strcmp(context->coarse_solve,"Parasails") == 0)
   {
       ML_Gen_Smoother_ParaSails(ml_edges , coarsest_level, ML_PRESMOOTHER,
-				nsmooth, parasails_sym, parasails_thresh, 
+				nsmooth, parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
   }
@@ -2086,11 +2086,11 @@ nx = nx--; /* rst dirichlet */
     }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
-				Tmat_array, Tmat_trans_array, Tmatbc, 
+				Tmat_array, Tmat_trans_array, Tmatbc,
 edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
     else
        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
-				Tmat_array, Tmat_trans_array, NULL, 
+				Tmat_array, Tmat_trans_array, NULL,
 				edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
@@ -2106,7 +2106,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   }
   else if (ML_strcmp(context->coarse_solve,"Aggregate") == 0) {
     ML_Gen_Blocks_Aggregates(ag, coarsest_level, &nblocks, &blocks);
-    ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , coarsest_level, ML_BOTH, 
+    ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , coarsest_level, ML_BOTH,
 					 nsmooth,1., nblocks, blocks);
   }
   else if (ML_strcmp(context->coarse_solve,"Jacobi") == 0) {
@@ -2118,7 +2118,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
     nblocks = ml_edges->Amat[coarsest_level].invec_leng/25;
     nblocks++;
     ML_Gen_Blocks_Metis(ml_edges, coarsest_level, &nblocks, &blocks);
-    ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , coarsest_level, ML_BOTH, 
+    ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , coarsest_level, ML_BOTH,
 					 nsmooth,1., nblocks, blocks);
     if (blocks != NULL) ML_free(blocks);
   }
@@ -2155,13 +2155,13 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
         omega = (double) ML_DEFAULT;
          if (level == N_levels-1)
 	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-					 Tmat_array, Tmat_trans_array, 
+					 Tmat_array, Tmat_trans_array,
 					 Tmat, Tmat_trans, Tmatbc,
 				edge_smoother,edge_args, nodal_smoother,nodal_args);
          else
 	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
 					 Tmat_array, Tmat_trans_array,
-					 Tmat, Tmat_trans,NULL, 
+					 Tmat, Tmat_trans,NULL,
 				edge_smoother,edge_args, nodal_smoother,nodal_args);
      }
   }
@@ -2180,14 +2180,14 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
      if (coarsest_level == N_levels-1)
 	     //jes
         ML_Gen_Smoother_BlockHiptmair(ml_edges , coarsest_level, ML_BOTH,
-				 nsmooth,Tmat_array, Tmat_trans_array, 
-				 Tmat, Tmat_trans, Tmatbc, 
+				 nsmooth,Tmat_array, Tmat_trans_array,
+				 Tmat, Tmat_trans, Tmatbc,
 				edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
      else
 	     //jes
-        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth, 
-				 Tmat_array, Tmat_trans_array, Tmat, 
-				 Tmat_trans, NULL, 
+        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
+				 Tmat_array, Tmat_trans_array, Tmat,
+				 Tmat_trans, NULL,
 				edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   }
   else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0)
@@ -2204,11 +2204,11 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
      fflush(stdout);
   }
 #endif /* ifdef ReuseOps */
-		
+
   mg_cycle_type = ML_MGV;
-  ML_Gen_Solver(ml_edges, mg_cycle_type, N_levels-1, coarsest_level); 
+  ML_Gen_Solver(ml_edges, mg_cycle_type, N_levels-1, coarsest_level);
   AZ_defaults(options, params);
-	
+
   if (ML_strcmp(context->krylov,"Cg") == 0) {
     options[AZ_solver]   = AZ_cg;
   }
@@ -2238,20 +2238,20 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 500; 
+  options[AZ_max_iter] = 500;
   options[AZ_poly_ord] = 5;
   options[AZ_kspace]   = 30;
   options[AZ_orthog]   = AZ_classic;
   params[AZ_tol]       = context->tol;
   options[AZ_output]   = context->output;
-	
-  AZ_set_ML_preconditioner(&Pmat, Ke_mat, ml_edges, options); 
-  setup_time = AZ_second() - start_time;
-	
-  xxx = (double *) ML_allocate(2*(3+Nlocal_edges + Ke_mat->data_org[AZ_N_external])
-                               *sizeof(double)); 
 
-  for (iii = 0; iii < 2*Nlocal_edges; iii++) xxx[iii] = 0.0; 
+  AZ_set_ML_preconditioner(&Pmat, Ke_mat, ml_edges, options);
+  setup_time = AZ_second() - start_time;
+
+  xxx = (double *) ML_allocate(2*(3+Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                               *sizeof(double));
+
+  for (iii = 0; iii < 2*Nlocal_edges; iii++) xxx[iii] = 0.0;
 
 
   /* Set xxx */
@@ -2277,7 +2277,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   /*
   fp = fopen("randomvec","w");
   for (i=0; i<Nlocal_edges; i++)
-     fprintf(fp,"%20.15f\n",xxx[i]); 
+     fprintf(fp,"%20.15f\n",xxx[i]);
   fclose(fp);
   */
 
@@ -2300,7 +2300,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
     if (fp != NULL) {
     fclose(fp);
     if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
-    AZ_input_msr_matrix("initguessfile", global_node_inds, &xxx, &garbage, Nlocal_nodes, 
+    AZ_input_msr_matrix("initguessfile", global_node_inds, &xxx, &garbage, Nlocal_nodes,
     proc_config);
     options[AZ_conv] = AZ_expected_values;
     }
@@ -2327,17 +2327,17 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
 
     options[AZ_keep_info] = 1;
 
-    AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling); 
+    AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling);
 
     /*
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
-      if (proc_config[AZ_node] == 0) 
+      if (proc_config[AZ_node] == 0)
       printf("\n-------- Second solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling); 
-      if (proc_config[AZ_node] == 0) 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling);
+      if (proc_config[AZ_node] == 0)
       printf("\n-------- Third solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, NULL, scaling);
       */
   }
   else
@@ -2354,7 +2354,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
 
     /*
       options[AZ_precond] = AZ_none;
-     
+
       Ke_mat->matvec(xxx, rhs, Ke_mat, proc_config);
       for (i = 0; i < Nlocal_edges; i++)
          printf("%7d     %7d %20.15e %20.15e\n",i+1,i+1,xxx[i],rhs[i]);
@@ -2373,7 +2373,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
 
 
   //sfksdkfksdfkskdfksdfksdk
- 
+
   /**** check various operators and vectors ****/
   if ( -1 < ML_Get_PrintLevel() )
   {
@@ -2395,23 +2395,23 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
 
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, rhs, rhs, ml_edges->comm));
     printf("||rhs|| = %20.15e\n",dtemp);
-    
+
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, xxx, xxx, ml_edges->comm));
     printf("||xxx|| = %20.15e\n",dtemp);
-    
+
     yyy = (double *) malloc( 2 * Mmat_ml->outvec_leng * sizeof(double) );
     ML_Operator_Apply(Mmat_ml, Mmat_ml->invec_leng, rhs, Mmat_ml->outvec_leng, yyy);
     dtemp = sqrt(ML_gdot(Mmat_ml->outvec_leng, yyy, yyy, ml_edges->comm));
     printf("||Mmat_ml * rhs|| = %20.15e\n",dtemp);
     //ML_Operator_Print(Mmat_ml,"Mmat_ml");
-    
+
     Amat = &(ml_edges->Amat[N_levels-1]);
     ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
     printf("||Ke_mat * rhs|| = %20.15e\n",dtemp);
 
     //ML_Operator_Print(Amat,"Amat1");
-    
+
     ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
     printf("||Ke_mat * xxx|| = %20.15e\n",dtemp);
@@ -2469,9 +2469,9 @@ edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
     /* rst: create the aztec block 2x2 matrix. Shove in Ke and M   */
     /* into the data structure and associate the new matrix-vector */
     /* product routine with this matrix.                           */
-   blockmat = AZ_matrix_create((Ke_mat->data_org[AZ_N_internal] + 
+   blockmat = AZ_matrix_create((Ke_mat->data_org[AZ_N_internal] +
 				 Ke_mat->data_org[AZ_N_border])*2);
-   aztec_block_data.N = Ke_mat->data_org[AZ_N_internal] + 
+   aztec_block_data.N = Ke_mat->data_org[AZ_N_internal] +
      Ke_mat->data_org[AZ_N_border];
    aztec_block_data.Ke = Ke_mat;
    aztec_block_data.M = M_mat;
@@ -2510,17 +2510,17 @@ blockmat->matvec(xxx, rhs, blockmat, proc_config);
 
     options[AZ_pre_calc] = AZ_reuse;
     /*
-      if (proc_config[AZ_node] == 0) 
+      if (proc_config[AZ_node] == 0)
       printf("\n-------- Second solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
-      if (proc_config[AZ_node] == 0) 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling);
+      if (proc_config[AZ_node] == 0)
       printf("\n-------- Third solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling);
       */
   }
   solve_time = AZ_second() - start_time;
 
-  if (proc_config[AZ_node] == 0) 
+  if (proc_config[AZ_node] == 0)
     printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
   ML_Smoother_Arglist_Delete(&nodal_args);
@@ -2552,9 +2552,9 @@ blockmat->matvec(xxx, rhs, blockmat, proc_config);
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-		
+
   return 0;
-		
+
 }
 
 int northwest2d(int i, int j, int n)
@@ -2845,7 +2845,7 @@ void compress_matrix(double val[], int bindx[], int N_points)
 /* Generate the new grid hierarchy for 2x2 block matrices from the original */
 /* hierarchy stored in 'ml_edges'.                                          */
 
-int ML_Gxn_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
+int ML_Gxn_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 				    ML_Operator **Tmat_trans_array,
 				    ML **new_ml , ML_Operator *originalM)
 {
@@ -2899,7 +2899,7 @@ int ML_Gxn_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      /* This stuff sets the 'to' and 'from' field in P */
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
-     ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[mesh_level]), 
+     ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[mesh_level]),
 			     &(block_ml->SingleLevel[old_mesh_level]));
 
      /* Make 2x2 block diagonal R */
@@ -2911,28 +2911,28 @@ int ML_Gxn_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
      ML_Operator_Set_1Levels(blockmat,
-                             &(block_ml->SingleLevel[old_mesh_level]), 
+                             &(block_ml->SingleLevel[old_mesh_level]),
 			     &(block_ml->SingleLevel[mesh_level]));
-				  
+
      /* Make 2x2 block diagonal A */
 
      original = &(ml_edges->Amat[mesh_level]);
      blockmat = &(block_ml->Amat[mesh_level]);
      /*  newM = ML_Operator_Create(ml_edges->comm);
-	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original, 
+	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original,
 	 &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
      //JJH
      */
      newM = ML_Operator_Create(ml_edges->comm);
-     ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM, 
+     ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM,
             &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
      lastM = newM;
-     
+
      /* comment these two out if you want to do rap */
      ML_make_block_matrix(blockmat, original, newM);
      //     blockmat->M_mat = newM;
    printf("should not be here\n"); exit(1);
-     blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
+     blockmat->getrow->pre_comm = ML_CommInfoOP_Create();
               /* ugh. The superlu interface seems to not work */
               /* with an empty communication object */
 
@@ -2985,7 +2985,7 @@ int block_matvec(void *data, int inlen, double invec[],
   /***********/
   /* multiply by (2,2) block (stiffness)*/
   ml_operator_wrapper->diag_matvec(ml_operator_wrapper->diag_matvec_data, inlen/2,
-				     &(invec[inlen/2]), outlen/2, 
+				     &(invec[inlen/2]), outlen/2,
 				     &(outvec[outlen/2]));
   /* multiply by (2,1) block (mass)*/
   if (ml_operator_wrapper->offdiag_matvec != NULL) {
@@ -3019,18 +3019,18 @@ int blockdiag_getrow(void *data, int N_requested,
 
   if (requested_rows[0] < mat->outvec_leng/2)
     return(ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
-				      N_requested, requested_rows, allocated, 
+				      N_requested, requested_rows, allocated,
 				      columns, values, row_lengths));
   else {
     /* shift requested row to (1,1) block */
     newrow = requested_rows[0] - mat->outvec_leng/2;
     status = ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
-					N_requested, &newrow, allocated, 
+					N_requested, &newrow, allocated,
 					columns, values, row_lengths);
 
     /* post process data so that columns correspond to (2,2) block */
     if (status != 0) {
-      for (i = 0; i < row_lengths[0]; i++) 
+      for (i = 0; i < row_lengths[0]; i++)
 	columns[i] += mat->invec_leng/2;
     }
     return(status);
@@ -3065,13 +3065,13 @@ int block_getrow(void *data, int N_requested,
   {
     /* (1,1) block */
     status = ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
-				      N_requested, requested_rows, allocated, 
+				      N_requested, requested_rows, allocated,
 				      columns, values, row_lengths);
     if (status == 0) return(status);
     if (ml_operator_wrapper->offdiag_getrow != NULL) {
       /* (1,2) block */
       status = ml_operator_wrapper->offdiag_getrow(ml_operator_wrapper->offdiag_getrow_data,
-				      N_requested, requested_rows, 100, 
+				      N_requested, requested_rows, 100,
 				      workcol, workval, work_lengths);
       if (status == 0) return(status);
     }
@@ -3087,13 +3087,13 @@ int block_getrow(void *data, int N_requested,
     newrow = requested_rows[0] - mat->outvec_leng/2;
     /* (2,2) block */
     status = ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
-					N_requested, &newrow, 100, 
+					N_requested, &newrow, 100,
 					workcol, workval, work_lengths);
     if (status == 0) return(status);
 
     /* post process data so that columns correspond to (2,2) block */
     if (status != 0) {
-      for (i = 0; i < work_lengths[0]; i++) 
+      for (i = 0; i < work_lengths[0]; i++)
 	workcol[i] += mat->invec_leng/2;
     }
 
@@ -3101,7 +3101,7 @@ int block_getrow(void *data, int N_requested,
     if (ml_operator_wrapper->offdiag_getrow != NULL) {
       status = ml_operator_wrapper->offdiag_getrow(
 		                      ml_operator_wrapper->offdiag_getrow_data,
-				      N_requested, &newrow, allocated, 
+				      N_requested, &newrow, allocated,
 				      columns, values, row_lengths);
       if (status == 0) return(status);
 
@@ -3116,7 +3116,7 @@ int block_getrow(void *data, int N_requested,
     columns[i + row_lengths[0]] = workcol[i];
     values[i + row_lengths[0]] = workval[i];
   }
-  row_lengths[0] += work_lengths[0]; 
+  row_lengths[0] += work_lengths[0];
   return(1);
 }
 
@@ -3175,7 +3175,7 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
     }
   } //if
 
-  ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*original1->invec_leng, 
+  ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*original1->invec_leng,
 				scale_fact*original1->outvec_leng, ML_INTERNAL,
 				ml_operator_wrapper,
 				scale_fact*original1->outvec_leng,
@@ -3208,7 +3208,7 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
 
   ML_Operator_Set_Getrow(blockmat, ML_INTERNAL, scale_fact*
 			 original1->outvec_leng, block_getrow /*blockdiag_getrow*/);
-  
+
   return 1;
 }
 
@@ -3228,12 +3228,12 @@ void aztec_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
 
   if (aztec_block_data->M != NULL)
   {
-    aztec_block_data->M->matvec( &(x[aztec_block_data->N]), z, 
+    aztec_block_data->M->matvec( &(x[aztec_block_data->N]), z,
                                  aztec_block_data->M, proc_config);
     for (i = 0; i < aztec_block_data->N; i++) y[i] -= z[i];
   }
 
-  aztec_block_data->Ke->matvec( &(x[aztec_block_data->N]), 
+  aztec_block_data->Ke->matvec( &(x[aztec_block_data->N]),
                                 &(y[aztec_block_data->N]),
 				aztec_block_data->Ke, proc_config);
 

@@ -177,6 +177,17 @@ struct ScalarTraits<float>
   static inline __device__ __host__ float t() { return FLT_MANT_DIG; }
   static inline __device__ __host__ float base() { return FLT_RADIX; }
   static inline __device__ __host__ float log10(float x ) { return ::log10f(x); }
+
+  static inline __device__ __host__ float prec()  { return eps()*base(); }
+  static inline __device__ __host__ float rnd()   { return 1.0f; }
+  static inline __device__ __host__ float sfmin() { return FLT_MIN; }
+  static inline __device__ __host__ float emin()  { return FLT_MIN_EXP; }
+  static inline __device__ __host__ float rmin()  { return FLT_MIN; }
+  static inline __device__ __host__ float emax()  { return FLT_MAX_EXP; }
+  static inline __device__ __host__ float rmax()  { return FLT_MAX; }
+  static inline __device__ __host__ float nan()   { return 0.0f/std::sin(0.0f); }
+  static inline __device__ __host__ const char* name() { return "float"; }
+
   // Dummy operations, need to exist for parsing when compiling everything with NVCC
   static inline __device__ __host__ float random() { return 9.0f; }
   static inline __device__ __host__ void seedrandom(unsigned int ) {}
@@ -205,6 +216,17 @@ struct ScalarTraits<double>
   static inline __device__ __host__ double t() { return DBL_MANT_DIG; }
   static inline __device__ __host__ double base() { return FLT_RADIX; }
   static inline __device__ __host__ double log10(double x ) { return ::log10(x); }
+
+  static inline __device__ __host__ double prec()  { return eps()*base(); }
+  static inline __device__ __host__ double rnd()   { return 1.0; }
+  static inline __device__ __host__ double sfmin() { return DBL_MIN; }
+  static inline __device__ __host__ double emin()  { return DBL_MIN_EXP; }
+  static inline __device__ __host__ double rmin()  { return DBL_MIN; }
+  static inline __device__ __host__ double emax()  { return DBL_MAX_EXP; }
+  static inline __device__ __host__ double rmax()  { return DBL_MAX; }
+  static inline __device__ __host__ double nan()   { return 0.0/std::sin(0.0); }
+  static inline __device__ __host__ const char* name() { return "double"; }
+
   // Dummy operations, need to exist for parsing when compiling everything with NVCC
   static inline __device__ __host__ double random() { return 9.0; }
   static inline __device__ __host__ void seedrandom(unsigned int ) {}

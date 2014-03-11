@@ -50,6 +50,9 @@
 #include <set>
 #include <map>
 
+// Turn on to enable the special MMM timers
+// #define ENABLE_MMM_TIMINGS
+
 
 /*! \file TpetraExt_MMHelpers_decl.hpp
 

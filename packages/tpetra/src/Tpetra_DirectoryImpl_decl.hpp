@@ -132,7 +132,7 @@ namespace Tpetra {
       ///   work.
       LookupStatus
       getEntries (const map_type& map,
-		  const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                  const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                   const Teuchos::ArrayView<int> &nodeIDs,
                   const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                   const bool computeLIDs) const;
@@ -141,7 +141,7 @@ namespace Tpetra {
       //! Actually do the work of getEntries(), with no input validation.
       virtual LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const = 0;
@@ -180,7 +180,7 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
@@ -231,7 +231,7 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
@@ -277,7 +277,7 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
@@ -328,7 +328,7 @@ namespace Tpetra {
 
       //! Constructor.
       DistributedNoncontiguousDirectory (const map_type& map,
-					 const tie_break_type& tie_break);
+                                         const tie_break_type& tie_break);
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -336,6 +336,7 @@ namespace Tpetra {
       {
         typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         RCP<Dir2> dir (new Dir2 (cloneMap));
+
         dir->directoryMap_ =
           directoryMap_->template clone<Node2> (cloneMap.getNode ());
         dir->PIDs_ = PIDs_;
@@ -345,6 +346,7 @@ namespace Tpetra {
         dir->lidToLidTable_ = lidToLidTable_;
 #endif
         dir->useHashTables_ = useHashTables_;
+
         return dir;
       }
 
@@ -358,20 +360,20 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
     private:
-      /// \brief Initialization routine that unifies the implementation of 
+      /// \brief Initialization routine that unifies the implementation of
       ///        the two constructors
-      /// 
+      ///
       /// If the pointer to the TieBreak object is null this proceeds using
       /// a simple ordering to break any ownership ties. Otherwise the
       /// tie_break object is used to determine ownership.
       void
       initialize (const map_type& map,
-		  Teuchos::Ptr<const tie_break_type> tie_break);
+                  Teuchos::Ptr<const tie_break_type> tie_break);
 
       /// \brief This Directory's Map which describes the distribution of its data.
       ///

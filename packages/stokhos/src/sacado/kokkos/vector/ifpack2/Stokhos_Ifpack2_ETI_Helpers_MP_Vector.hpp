@@ -41,6 +41,7 @@
 
 #include "Tpetra_ETIHelperMacros.h"
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_Ifpack2_MP_Vector.hpp"
 
 #define IFPACK2_INSTANT_MP_VECTOR_N(N)               \
   INSTANTIATE_TPETRA_MP_VECTOR_N(IFPACK2_LOCAL_INSTANT, N)
@@ -55,6 +56,11 @@ namespace Details {
   // Currently excluding GPU nodes because SparseOps may not be
   // implemented, I think depending on the choice of TPLs
   TPETRA_INSTANTIATE_N_NOGPU(IFPACK2_INSTANT_MP_VECTOR_N)
+
+  // Add missing instantiations from Ifpack2 for double
+// #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+//   IFPACK2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+// #endif
 
 #ifdef DETAILS
 } // namespace Details

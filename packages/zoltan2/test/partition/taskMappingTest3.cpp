@@ -358,9 +358,11 @@ int main(int argc, char *argv[]){
 
                 task_communication_xadj_,
                 task_communication_adj_,
+		NULL,
 
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
+		
                 partArraysize,
                 partArray,
                 machineDimensions

@@ -12,7 +12,7 @@ main() {
       for (k = 0; k < Nlist; k++) {
 	if (list_node[k] > node) break;
       }
-      for (j = Nlist-1; j >= k; j--) 
+      for (j = Nlist-1; j >= k; j--)
 	list_node[j+1] = list_node[j];
       list_node[k] = node;
       Nlist++;

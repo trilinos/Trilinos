@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -38,12 +38,12 @@
 #endif
 
 // ============================================================================
-void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector, 
-						      int size, 
-						      double* L_inf, 
+void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector,
+						      int size,
+						      double* L_inf,
 						      double* L_2)
 {
- 
+
   double* Linf = new double[NumPDEEqns_];
   double* L2   = new double[NumPDEEqns_];
 
@@ -53,8 +53,8 @@ void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector,
   }
 
   for (int i = 0 ; i < size ; ++i) {
-    // Linf norm 
-    if (fabs(vector[i]) > Linf[i % NumPDEEqns_]) 
+    // Linf norm
+    if (fabs(vector[i]) > Linf[i % NumPDEEqns_])
       Linf[i % NumPDEEqns_] = fabs(vector[i]);
     // L2 norm
     L2[i % NumPDEEqns_] += vector[i] * vector[i];
@@ -76,16 +76,16 @@ void ML_Epetra::MultiLevelPreconditioner::VectorNorms(double* vector,
 
 // ============================================================================
 int ML_Epetra::MultiLevelPreconditioner::
-AnalyzeHierarchy(const bool AnalyzeMatrices, 
+AnalyzeHierarchy(const bool AnalyzeMatrices,
                  const int PreCycles, const int PostCycles,
                  const int MLCycles)
 {
 
   // sanity checks
 
-  if (RowMatrix_ == 0) 
+  if (RowMatrix_ == 0)
     ML_CHK_ERR(-1); // Matrix not yet set
-  if (ml_ == 0) 
+  if (ml_ == 0)
     ML_CHK_ERR(-4); // at present does not work with Maxwell (easy fix?)
 
   // execution begins
@@ -130,18 +130,18 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
          << "  value before the application of the solver" << std::endl;
     std::cout << "  (0 == perfect solution, 1 == no effect)" << std::endl;
     std::cout << std::endl;
-    std::cout.width(40); std::cout.setf(std::ios::left); 
+    std::cout.width(40); std::cout.setf(std::ios::left);
     std::cout << "Solver";
-    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout.width(10); std::cout.setf(std::ios::left);
     std::cout << "  Linf";
-    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout.width(10); std::cout.setf(std::ios::left);
     std::cout << "   L2";
     std::cout << std::endl;
-    std::cout.width(40); std::cout.setf(std::ios::left); 
+    std::cout.width(40); std::cout.setf(std::ios::left);
     std::cout << "------";
-    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout.width(10); std::cout.setf(std::ios::left);
     std::cout << "  ----";
-    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout.width(10); std::cout.setf(std::ios::left);
     std::cout << "   --";
     std::cout << std::endl;
     std::cout << std::endl;
@@ -157,7 +157,7 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
 
   if (Comm().MyPID() == 0) {
     std::cout << std::endl;
-    std::cout << "*** Total time for analysis = " 
+    std::cout << "*** Total time for analysis = "
          << GetClock() - time << " (s)" << std::endl;
     ML_print_line("-",80);
     std::cout << std::endl;
@@ -176,7 +176,7 @@ MultiLevelPreconditioner::AnalyzeSmoothers(const int NumPreCycles,
 
   // sanity checks
 
-  if (IsPreconditionerComputed() == false) 
+  if (IsPreconditionerComputed() == false)
     ML_CHK_ERR(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
@@ -221,12 +221,12 @@ MultiLevelPreconditioner::AnalyzeSmoothers(const int NumPreCycles,
 
       if (Comm().MyPID() == 0) {
 	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
-	  std::cout << "Presmoother  (level " << LevelID_[ilevel] 
+	  std::cout << "Presmoother  (level " << LevelID_[ilevel]
 	       << ", eq " << eq << ")\t\t";
-	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout.width(10); std::cout.setf(std::ios::left);
 	  std::cout << after_Linf[eq] / before_Linf[eq];
 	  std::cout << ' ';
-	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout.width(10); std::cout.setf(std::ios::left);
 	  std::cout << after_L2[eq] / before_L2[eq] << std::endl;
 	}
         std::cout << std::endl;
@@ -256,17 +256,17 @@ MultiLevelPreconditioner::AnalyzeSmoothers(const int NumPreCycles,
 
       if (Comm().MyPID() == 0) {
 	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
-	  std::cout << "Postsmoother (level " << LevelID_[ilevel] 
+	  std::cout << "Postsmoother (level " << LevelID_[ilevel]
 	       << ", eq " << eq << ")\t\t";
-	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout.width(10); std::cout.setf(std::ios::left);
 	  std::cout << after_Linf[eq] / before_Linf[eq];
 	  std::cout << ' ';
-	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout.width(10); std::cout.setf(std::ios::left);
 	  std::cout << after_L2[eq] / before_L2[eq] << std::endl;;
 	}
         std::cout << std::endl;
       }
-    } 
+    }
   } // for( ilevel )
 
   if (Comm().MyPID() == 0) std::cout << std::endl;
@@ -283,7 +283,7 @@ MultiLevelPreconditioner::AnalyzeCoarse()
 
   // sanity checks
 
-  if (IsPreconditionerComputed() == false) 
+  if (IsPreconditionerComputed() == false)
     ML_CHK_ERR(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
@@ -321,10 +321,10 @@ MultiLevelPreconditioner::AnalyzeCoarse()
       for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
         std::cout << "Coarse Solver (level " << level
           << ", eq " << eq << ")\t\t";
-        std::cout.width(10); std::cout.setf(std::ios::left); 
+        std::cout.width(10); std::cout.setf(std::ios::left);
         std::cout << after_Linf[eq] / before_Linf[eq];
         std::cout << ' ';
-        std::cout.width(10); std::cout.setf(std::ios::left); 
+        std::cout.width(10); std::cout.setf(std::ios::left);
         std::cout << after_L2[eq] / before_L2[eq] << std::endl;
       }
     }
@@ -344,7 +344,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
 
   // sanity checks
 
-  if (IsPreconditionerComputed() == false) 
+  if (IsPreconditionerComputed() == false)
     ML_CHK_ERR(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
@@ -360,10 +360,10 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
 
   assert(NumMyRows() == ml_->Amat[LevelID_[0]].outvec_leng);
   int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - NumMyRows();
-  if (Nghost < 0) Nghost = 0; 
+  if (Nghost < 0) Nghost = 0;
 
-  double * tmp_rhs = new double[NumMyRows()]; 
-  double * tmp_sol = new double[NumMyRows() + Nghost]; 
+  double * tmp_rhs = new double[NumMyRows()];
+  double * tmp_sol = new double[NumMyRows() + Nghost];
 
   // random solution and zero rhs
   RandomAndZero(tmp_sol, tmp_rhs,NumMyRows());
@@ -371,7 +371,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
   VectorNorms(tmp_sol, NumMyRows(), before_Linf, before_L2);
 
   // run the cycle
-  for (int i=0 ; i < NumCycles ; ++i) 
+  for (int i=0 ; i < NumCycles ; ++i)
     ML_Cycle_MG(&(ml_->SingleLevel[ml_->ML_finest_level]),
 		tmp_sol, tmp_rhs,
 		ML_NONZERO, ml_->comm, ML_NO_RES_NORM, ml_);
@@ -381,10 +381,10 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
   if (Comm().MyPID() == 0) {
     for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
       std::cout << "complete ML cycle (eq" << eq << ")\t\t\t";
-      std::cout.width(10); std::cout.setf(std::ios::left); 
+      std::cout.width(10); std::cout.setf(std::ios::left);
       std::cout << after_Linf[eq] / before_Linf[eq];
       std::cout << ' ';
-      std::cout.width(10); std::cout.setf(std::ios::left); 
+      std::cout.width(10); std::cout.setf(std::ios::left);
       std::cout << after_L2[eq] / before_L2[eq] << std::endl;
     }
   }

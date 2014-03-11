@@ -105,11 +105,8 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 #ifdef HAVE_MPI
  
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=M.getNewTimer("M5 CMap 1");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM M5 CMap 1")));
 #endif
 
  // So we need to merge the ColMap of B and the TargetMap of Bimport in an AztecOO/Ifpack/ML compliant order.
@@ -165,9 +162,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   Cremotepids.resize(Psize);
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("M5 CMap 2");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM M5 CMap 2")));
 #endif
 
   // **********************
@@ -215,9 +210,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("M5 CMap 3");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM M5 CMap 3")));
 #endif
 
 
@@ -348,12 +341,8 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
     }
   } // end while
 
-
-
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("M5 CMap 4");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM M5 CMap 4")));
 #endif
 
   // Resize the RemotePIDs down
@@ -365,9 +354,6 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // Make the map
   unionmap=new Epetra_Map((int_type) -1,Cstart,&Cgids[0], (int_type) B.ColMap().IndexBase64(),
 	  B.Comm(),B.ColMap().DistributedGlobal(),(int_type) B.ColMap().MinAllGID64(),(int_type) B.ColMap().MaxAllGID64());
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
   return 0;
 #else
   return -1;
@@ -402,11 +388,8 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 			Epetra_CrsMatrix& C
 ){
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=M.getNewTimer("M5 SerialCore");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix SerialCore")));
 #endif
 
   // *****************************
@@ -526,18 +509,14 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   CSR_rowptr[m]=CSR_ip;
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("Final Sort");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix Final Sort")));
 #endif
 
   // Sort the entries
   Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("Fast IE");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix Fast IE")));
 #endif
 
   // Do a fast build of C's importer
@@ -561,17 +540,11 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
     Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("ESFC");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix ESFC")));
 #endif
 
   // Update the CrsGraphData
   C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,0,NumMyDiagonals);
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   return 0;
 }
@@ -589,6 +562,11 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 		   std::vector<int> & Bcol2Ccol,
 		   std::vector<int> & Bimportcol2Ccol,
 		   Epetra_CrsMatrix& C){
+
+#ifdef ENABLE_MMM_TIMINGS
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Reuse SerialCore")));
+#endif
 
   // *****************************
   // Improved Parallel Gustavson in Local IDs
@@ -679,6 +657,10 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
     }
     OLD_ip=CSR_ip;
   }
+
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Reuse Final Sort")));
+#endif
 
   // Sort the entries
   Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
@@ -916,21 +898,16 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
   if(Bview.importMatrix) Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM;
 #endif  
 
   // If the user doesn't want us to call FillComplete, use the general routine
   if(!call_FillComplete_on_result) {
 #ifdef ENABLE_MMM_TIMINGS
-    mtime=M.getNewTimer("M4 Multiply");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM General Multiply")));
 #endif
     rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,false);
-#ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-#endif
     return rv;
   }
 
@@ -946,20 +923,16 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
   // It's a new matrix that hasn't been fill-completed, use the general routine
   if(!NewFlag && ExtractFailFlag){
 #ifdef ENABLE_MMM_TIMINGS
-    mtime=M.getNewTimer("M4 Multiply");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM General Multiply")));
 #endif
     rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,call_FillComplete_on_result);
-#ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-#endif
     return rv;
   }
 
+
 #ifdef ENABLE_MMM_TIMINGS
-  if(NewFlag) mtime=M.getNewTimer("M5 CMap");
-  else mtime=M.getNewTimer("M5r CMap");
-  mtime->start();
+  if(NewFlag) MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix CMap")));
+  else MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Reuse CMap")));
 #endif
 
   // If new, build & clobber a colmap for C
@@ -979,10 +952,8 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  if(NewFlag) mtime=M.getNewTimer("M5 Lookups");
-  else mtime=M.getNewTimer("M5r Lookups");
-  mtime->start();
+  if(NewFlag)  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix Lookups")));
+  else MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Reuse Lookups")));
 #endif
 
   // ********************************************
@@ -1013,10 +984,8 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
       
     }
   }
-	
-
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
+  MM=Teuchos::null;
 #endif
 
   // Call the appropriate core routine
@@ -1070,6 +1039,11 @@ int jacobi_A_B_reuse(double omega,
 		     std::vector<int> & Bimportcol2Ccol,
 		     Epetra_CrsMatrix& C){
 
+#ifdef ENABLE_MMM_TIMINGS
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi Reuse SerialCore")));
+#endif
+
   // *****************************
   // Improved Parallel Gustavson in Local IDs
   // *****************************
@@ -1122,7 +1096,7 @@ int jacobi_A_B_reuse(double omega,
 
     // Entries of B
     for(k=Browptr[i]; k<Browptr[i+1]; k++){
-      int Bk      = Bcolind[k];
+      //      int Bk      = Bcolind[k];
       double Bval = Bvals[k];
       if(Bval==0) continue;
       int Ck=Bcol2Ccol[Bcolind[k]];
@@ -1180,6 +1154,9 @@ int jacobi_A_B_reuse(double omega,
     OLD_ip=CSR_ip;
   }
 
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi Reuse Final Sort")));
+#endif
   // Sort the entries
   Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
@@ -1202,11 +1179,8 @@ int jacobi_A_B_newmatrix(double omega,
 			 Epetra_CrsMatrix& C)
 {
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=M.getNewTimer("J5 SerialCore");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi NewMatrix SerialCore")));
 #endif
 
   // *****************************
@@ -1273,7 +1247,7 @@ int jacobi_A_B_newmatrix(double omega,
 
     // Entries of B
     for(k=Browptr[i]; k<Browptr[i+1]; k++){
-      int Bk      = Bcolind[k];
+      //int Bk      = Bcolind[k];
       double Bval = Bvals[k];
       if(Bval==0) continue;
       int Ck=Bcol2Ccol[Bcolind[k]];
@@ -1344,18 +1318,14 @@ int jacobi_A_B_newmatrix(double omega,
   CSR_rowptr[m]=CSR_ip;
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("J5 Final Sort");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi NewMatrix Final Sort")));
 #endif
 
   // Sort the entries
   Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("J5 Fast IE");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi NewMatrix Fast IE")));
 #endif
 
   // Do a fast build of C's importer
@@ -1379,17 +1349,11 @@ int jacobi_A_B_newmatrix(double omega,
     Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=M.getNewTimer("J5 ESFC");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi NewMatrix ESFC")));
 #endif
 
   // Update the CrsGraphData
   C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,0,NumMyDiagonals);
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   return 0;
 }
@@ -1419,22 +1383,17 @@ int MatrixMatrix::Tjacobi_A_B(double omega,
   if(Bview.importMatrix) Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM;
 #endif  
 
   // If the user doesn't want us to call FillComplete, use the general routine
   if(!call_FillComplete_on_result) {
 #ifdef ENABLE_MMM_TIMINGS
-    mtime=M.getNewTimer("M4 Jacobi");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi General Multiply")));
 #endif
     throw std::runtime_error("jacobi_A_B_general not implemented");
     //    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,false);
-#ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-#endif
     return rv;
   }
 
@@ -1450,21 +1409,16 @@ int MatrixMatrix::Tjacobi_A_B(double omega,
   // It's a new matrix that hasn't been fill-completed, use the general routine
   if(!NewFlag && ExtractFailFlag){
 #ifdef ENABLE_MMM_TIMINGS
-    mtime=M.getNewTimer("M4 Jacobi");
-    mtime->start();
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi General Multiply")));
 #endif
     throw std::runtime_error("jacobi_A_B_general not implemented");
     //    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,call_FillComplete_on_result);
-#ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-#endif
     return rv;
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  if(NewFlag) mtime=M.getNewTimer("J5 CMap");
-  else mtime=M.getNewTimer("J5r CMap");
-  mtime->start();
+  if(NewFlag) MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi Newmatrix CMap")));
+  else MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi Reuse CMap")));
 #endif
 
   // If new, build & clobber a colmap for C
@@ -1484,10 +1438,8 @@ int MatrixMatrix::Tjacobi_A_B(double omega,
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  if(NewFlag) mtime=M.getNewTimer("J5 Lookups");
-  else mtime=M.getNewTimer("J5r Lookups");
-  mtime->start();
+  if(NewFlag) MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi Newmatrix Lookups")));
+  else MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: Jacobi Reuse Lookups")));
 #endif
 
   // ********************************************
@@ -1519,10 +1471,6 @@ int MatrixMatrix::Tjacobi_A_B(double omega,
     }
   }
 	
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   // Call the appropriate core routine
   if(NewFlag) {

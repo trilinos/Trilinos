@@ -356,11 +356,70 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, FillLevel, Scalar, LocalOrdinal,
 
 } //unit test FillLevel()
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  // Test that ILU(k) can be done on a parallel sparse matrix with noncontiguous row map.
+  // See bug #6033.
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   crs_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
+
+  using Teuchos::RCP;
+
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  int nx = 2; 
+  size_t numElementsPerProc = nx*nx;
+
+  //create noncontiguous row map.
+  Teuchos::Array<GlobalOrdinal> eltList;
+  GlobalOrdinal offset = 2*numElementsPerProc;
+  for (size_t i=0; i<numElementsPerProc; ++i)
+    eltList.push_back(comm->getRank()*offset + 2*i);
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  RCP<const map_type> map = Teuchos::rcp(new map_type(INVALID, eltList(), 0, comm));
+
+  //Construct a nondiagonal matrix.  It's not tridiagonal because of processor boundaries.
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = one + one;
+  RCP<crs_matrix_type > A = Teuchos::rcp(new crs_matrix_type(map, 1));
+  Teuchos::Array<GlobalOrdinal> col(3);
+  Teuchos::Array<Scalar>        val(3);
+  size_t numLocalElts = map->getNodeNumElements();
+  for(LocalOrdinal l_row = 0; (size_t) l_row < numLocalElts; l_row++) {
+    GlobalOrdinal g_row = map->getGlobalElement(l_row);
+    size_t i=0;
+    col[i] = g_row;
+    val[i++] = two;
+    if (l_row>0)              {col[i] = map->getGlobalElement(l_row-1); val[i++] = -one;}
+    if ((size_t)l_row<numLocalElts-1) {col[i] = map->getGlobalElement(l_row+1); val[i++] = -one;}
+    A->insertGlobalValues(g_row, col(0,i), val(0,i));
+  }
+  A->fillComplete();
+
+  RCP<const crs_matrix_type> constA = A;
+  Ifpack2::RILUK<crs_matrix_type> prec(constA);
+
+  Teuchos::ParameterList params;
+  GlobalOrdinal lof=1;
+  params.set("fact: iluk level-of-fill", lof);
+  params.set("fact: iluk level-of-overlap", 0);
+
+  prec.setParameters(params);
+  prec.initialize();
+  prec.compute();
+
+} //unit test Parallel()
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, FillLevel, double, int, int)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Parallel, double, int, int)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION

@@ -121,6 +121,8 @@ namespace panzer {
     
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const = 0;
 
+    virtual const std::vector<std::vector<std::string> > & getCoordinateDOFs() const = 0;
+
     virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const = 0;
 
     virtual std::string getElementBlockId() const = 0;

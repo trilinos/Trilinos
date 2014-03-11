@@ -67,6 +67,9 @@
 /* Define when enabling Tpetra for refactoring to new KokkosCore interface */
 /* #undef TPETRA_HAVE_KOKKOS_REFACTOR */
 
+/* Define if you want to use the new Kokkos refactor version of Map */
+/* #undef TPETRA_USE_KOKKOS_REFACTOR_MAP */
+
 /* Define if user requested explicit instantiation of classes into libtpetra */
 /* #undef HAVE_TPETRA_EXPLICIT_INSTANTIATION */
 

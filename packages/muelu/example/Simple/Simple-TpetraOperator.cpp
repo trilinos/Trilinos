@@ -74,13 +74,32 @@
 #endif
 
 int main(int argc, char *argv[]) {
+
+// Include header to get abbreviation typedefs
+//
+// MueLu_UseShortNamesScalar.hpp (included by MueLu_UseShortNames.hpp)
+// typedefs MueLu classes like
+// MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+// to "short names" (Hierarchy, in this case).  Including the header
+// file here ensures that the typedefs don't pollute the global
+// namespace; they just go into the body of main(). This header file
+// also includes xpetra/src/Headers/Xpetra_UseShortNames.hpp, which
+// sets up abbreviation typedefs like SC (for Scalar, the scalar
+// type), LO (for LocalOrdinal, the local ordinal type), GO
+// (GlobalOrdinal, the global ordinal type), and NO (the Kokkos Node
+// type).  MueLu_UseDefaultTypes.hpp (included above) sets up defaults
+// for common template parameters like Scalar, LocalOrdinal, and
+// GlobalOrdinal.
 #include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
-  using Teuchos::RCP; // reference count pointers
-  using Teuchos::rcp; //
+  // Teuchos::RCP is a reference-counted "smart pointer" comparable to
+  // std::shared_ptr.  Teuchos::rcp is its "nonmember constructor"
+  // function.
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   //
-  // MPI initialization using Teuchos
+  // Use Teuchos to initialize MPI
   //
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
@@ -136,7 +155,12 @@ int main(int argc, char *argv[]) {
   RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<SC, LO, GO, NO, LMO>(A)); //TODO: should not be needed
   RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
 
-  // Multigrid Hierarchy
+  // Create the multigrid hierarchy
+  //
+  // MueLu_UseShortNames.hpp (see note above) typedefs
+  // MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  // to Hierarchy.  This lets use use Hierarchy here without needing
+  // to qualify its namespace or template parameters.
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
   H->setVerbLevel(Teuchos::VERB_HIGH);
 

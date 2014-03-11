@@ -69,7 +69,7 @@ static char *fname="graph.txt";
 /* Structure to hold graph data */
 
 typedef struct{
-  int numMyVertices; /* total vertices in my partition */
+  int numMyVertices; /* total vertices in my part */
 
   ZOLTAN_ID_TYPE *vertexGID;    /* global ID of each of my vertices */
   int *nborIndex;    /* index into nbor info, last element is total nbors */
@@ -117,7 +117,8 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
-static void showGraphPartitions(int myRank, struct Zoltan_DD_Struct *dd);
+static void printGraph(int, GRAPH_DATA *);
+static void showGraphParts(int myRank, struct Zoltan_DD_Struct *dd);
 static void read_input_file(int myRank, int numProcs, char *fname, GRAPH_DATA *myData);
 
 int main(int argc, char *argv[])
@@ -171,8 +172,8 @@ int main(int argc, char *argv[])
 
   /******************************************************************
   ** Create a distributed data directory which maps vertex
-  ** global IDs to their current partition number.  We'll use this
-  ** after migrating vertices, to update the partition in which
+  ** global IDs to their current part number.  We'll use this
+  ** after migrating vertices, to update the parts in which
   ** our vertices neighbors are.
   **
   ** Our local IDs (array "lids") are of type ZOLTAN_ID_TYPE because
@@ -189,8 +190,8 @@ int main(int argc, char *argv[])
                            myGraph.numMyVertices,  /* hash table size */
                            0);                     /* debug level */
 
-  parts = malloc(myGraph.numMyVertices * sizeof(int));
-  lids = malloc(myGraph.numMyVertices * sizeof(ZOLTAN_ID_TYPE));
+  parts = (int *) malloc(myGraph.numMyVertices * sizeof(int));
+  lids = (ZOLTAN_ID_TYPE *) malloc(myGraph.numMyVertices * sizeof(ZOLTAN_ID_TYPE));
   
   for (i=0; i < myGraph.numMyVertices; i++){
     parts[i] = myRank;   /* part number of this vertex */
@@ -243,31 +244,32 @@ int main(int argc, char *argv[])
   Zoltan_Set_Mid_Migrate_PP_Fn(zz, mid_migrate,&myGraph);
 
   /******************************************************************
-  ** Visualize the graph partitioning before calling Zoltan.
+  ** Visualize the graph partition before calling Zoltan.
   ******************************************************************/
 
   if (myRank== 0){
     printf("\nGraph partition before calling Zoltan\n");
   }
 
-  showGraphPartitions(myRank, myGraph.dd);
+  printGraph(myRank, &myGraph);
+  showGraphParts(myRank, myGraph.dd);
 
   /******************************************************************
   ** Zoltan can now partition the simple graph.
-  ** In this simple example, we assume the number of partitions is
+  ** In this simple example, we assume the number of parts is
   ** equal to the number of processes.  Process rank 0 will own
-  ** partition 0, process rank 1 will own partition 1, and so on.
+  ** part 0, process rank 1 will own part 1, and so on.
   ******************************************************************/
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
-        &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
+        &changes,        /* 1 if partition was changed, 0 otherwise */ 
         &numGidEntries,  /* Number of integers used for a global ID */
         &numLidEntries,  /* Number of integers used for a local ID */
         &numImport,      /* Number of vertices to be sent to me */
         &importGlobalGids,  /* Global IDs of vertices to be sent to me */
         &importLocalGids,   /* Local IDs of vertices to be sent to me */
         &importProcs,    /* Process rank for source of each incoming vertex */
-        &importToPart,   /* New partition for each incoming vertex */
+        &importToPart,   /* New part for each incoming vertex */
         &numExport,      /* Number of vertices I must send to other processes*/
         &exportGlobalGids,  /* Global IDs of the vertices I must send */
         &exportLocalGids,   /* Local IDs of the vertices I must send */
@@ -284,7 +286,7 @@ int main(int argc, char *argv[])
   /*fprintf(stderr,"%d export %d import %d\n",myRank,numExport,numImport);*/
 
   /******************************************************************
-  ** Update the data directory with the new partition numbers
+  ** Update the data directory with the new part numbers
   ******************************************************************/
 
   for (i=0; i < numExport; i++){
@@ -299,7 +301,7 @@ int main(int argc, char *argv[])
                         myGraph.numMyVertices);
 
   /******************************************************************
-  ** Migrate vertices to new partitions
+  ** Migrate vertices to new parts
   ******************************************************************/
 
   rc = Zoltan_Migrate(zz, 
@@ -310,24 +312,22 @@ int main(int argc, char *argv[])
 
 
   /******************************************************************
-  ** Use the data dictionary to find neighbors' partitions
+  ** Use the data dictionary to find neighbors' parts
   ******************************************************************/
 
-  start_gid = myGraph.numMyVertices - numImport;
-  num_nbors = myGraph.nborIndex[myGraph.numMyVertices] - myGraph.nborIndex[start_gid];
-
   rc = Zoltan_DD_Find(dd,
-             (ZOLTAN_ID_PTR)(myGraph.nborGID + start_gid), NULL, NULL, 
-              myGraph.nborPart + start_gid, num_nbors, NULL);
+             (ZOLTAN_ID_PTR)(myGraph.nborGID), NULL, NULL, 
+              myGraph.nborPart, myGraph.nborIndex[myGraph.numMyVertices], NULL);
 
   /******************************************************************
-  ** Visualize the graph partitioning after calling Zoltan.
+  ** Visualize the graph partition after calling Zoltan.
   ******************************************************************/
 
   if (myRank == 0){
     printf("Graph partition after calling Zoltan\n");
   }
-  showGraphPartitions(myRank, myGraph.dd);
+  printGraph(myRank, &myGraph);
+  showGraphParts(myRank, myGraph.dd);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -345,8 +345,6 @@ int main(int argc, char *argv[])
   ** all done ***********
   **********************/
 
-  MPI_Finalize();
-
   if (myGraph.vertex_capacity > 0){
     free(myGraph.vertexGID);
     free(myGraph.nborIndex);
@@ -355,10 +353,12 @@ int main(int argc, char *argv[])
       free(myGraph.nborPart);
     }
   }
+  Zoltan_DD_Destroy(&dd);
 
   if (parts) free(parts);
   if (lids) free(lids);
 
+  MPI_Finalize();
   return 0;
 }
 
@@ -384,7 +384,7 @@ static void get_message_sizes(void *data, int gidSize, int lidSize, int num_ids,
 
   for (i=0; i < num_ids; i++){
     len = graph->nborIndex[localID[i]+1] - graph->nborIndex[localID[i]];
-    sizes[i] = len * sizeof(ZOLTAN_ID_TYPE);
+    sizes[i] = (len+1) * sizeof(ZOLTAN_ID_TYPE);
   }
 }
 
@@ -407,8 +407,9 @@ static void pack_object_messages(void *data, int gidSize, int lidSize, int num_i
     num_nbors = graph->nborIndex[lid+1] - graph->nborIndex[lid];
 
     ibuf = (ZOLTAN_ID_TYPE *)(buf + idx[i]);
+    ibuf[0] = num_nbors;
 
-    for (j=0; j < num_nbors; j++){
+    for (j=1; j <= num_nbors; j++){
       ibuf[j] = *nbors++;
     }
   }
@@ -478,9 +479,10 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
 
   num_nbors = 0;
   for (i=0; i < num_ids; i++){
-    num_nbors += size[i];
+    num_nbors += (size[i]);
   }
-  num_nbors /= sizeof(int);        /* number of incoming neighbors */
+  num_nbors /= sizeof(ZOLTAN_ID_TYPE); /* number of incoming neighbors */
+  num_nbors -= num_ids;
 
   num_nbors += next_nbor;          /* plus number of existing neighbors */
 
@@ -500,12 +502,12 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
 
   for (i=0; i < num_ids; i++){
     graph->vertexGID[next_vertex] = globalIDs[i];
-    len = size[i] / sizeof(int);
+    ibuf = (ZOLTAN_ID_TYPE *)(buf + idx[i]);
+    len = ibuf[0];
 
-    if (len > 0){
-      ibuf = (ZOLTAN_ID_TYPE *)(buf + idx[i]);
-      memcpy(graph->nborGID + next_nbor, ibuf, len * sizeof(ZOLTAN_ID_TYPE));
-    }
+    if (len > 0)
+      memcpy(graph->nborGID + next_nbor, &ibuf[1],
+             len * sizeof(ZOLTAN_ID_TYPE));
     graph->nborIndex[next_vertex+1] = graph->nborIndex[next_vertex] + len;
     next_vertex++;
     next_nbor += len;
@@ -697,9 +699,29 @@ int i, val[2];
   exit(1);
 }
 
-/* Draw the partition assignments of the objects.  We know the globals IDs are [1,25] */
 
-static void showGraphPartitions(int me, struct Zoltan_DD_Struct *dd)
+/* Print the entries in the graph data structure */
+
+static void printGraph(int me, GRAPH_DATA *graph)
+{
+int i, j;
+  printf("%d PG nVtx %d vtxCap %d nborCap %d\n",
+         me, graph->numMyVertices,
+         graph->vertex_capacity, graph->nbor_capacity);
+
+  for (i = 0; i < graph->numMyVertices; i++) {
+    printf("%d PG %d with %d: ",
+           me, graph->vertexGID[i], graph->nborIndex[i+1]-graph->nborIndex[i]);
+    for (j = graph->nborIndex[i]; j < graph->nborIndex[i+1]; j++)
+      printf("(%d,%d) ", graph->nborGID[j], graph->nborPart[j]);
+    printf("\n");
+    fflush(stdout);
+  }
+}
+
+
+/* Draw the part assignments of the objects.  We know the globals IDs are [1,25] */
+static void showGraphParts(int me, struct Zoltan_DD_Struct *dd)
 {
 int i, j, rc, part, cuts, prevPart, nparts=0;
 int *partCount;

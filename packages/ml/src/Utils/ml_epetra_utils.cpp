@@ -49,7 +49,7 @@ using namespace Teuchos;
 #endif
 
 
-// ====================================================================== 
+// ======================================================================
 
 typedef struct {
   ML_Epetra::FilterType Type;
@@ -132,17 +132,17 @@ int ML_Epetra_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
     Epetra_Vector X(View, VbrA->DomainMap(), p);
     Epetra_Vector Y(View, VbrA->RangeMap(), ap);
     VbrA->Multiply(false, X, Y);
-  } else {   
+  } else {
     Epetra_Vector X(View, A->OperatorDomainMap(), p);
     Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
-  
+
     A->Multiply(false, X, Y);
   }
 
   return 1;
 }
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
                                                   int out, double *ap)
@@ -156,7 +156,7 @@ int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
 
   Epetra_Vector X(View, A->OperatorDomainMap(), p);
   Epetra_Vector Y(View, A->OperatorRangeMap(), ap);
-  
+
 #ifndef ML_MODIFIED_EPETRA_CRS_MATVEC
   A->Multiply(false, X, Y);
 #else
@@ -172,7 +172,7 @@ int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
   return 1;
 }
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
                                                   int out, double *ap)
@@ -191,9 +191,9 @@ int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
   return 1;
 }
 
-// ====================================================================== 
+// ======================================================================
 
-int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p, 
+int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
                             int out, double *ap)
 {
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
@@ -206,11 +206,11 @@ int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
 
   // FIXME: DOES NOT WORK IN PARALLEL!
   assert (A->Comm().NumProc() == 1);
-  
+
   for (int i = 0 ; i < NumMyRows ; ++i) {
     ap[i] = 0.0;
     int ierr;
-    ierr = ML_Epetra_getrow_Filter(mat_in, 1, &i, allocated_space, 
+    ierr = ML_Epetra_getrow_Filter(mat_in, 1, &i, allocated_space,
                                    &columns[0], &values[0], &row_lengths);
     assert (ierr == 1); ierr++;
 
@@ -221,15 +221,15 @@ int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
   return 1;
 }
 
-// ====================================================================== 
+// ======================================================================
 // General getrow for Epetra matrix classes.
 // This function is deprecated, use one of the following instead:
 // - ML_Epetra_RowMatrix_getrow
 // - ML_Epetra_CrsMatrix_getrow
 // - ML_Epetra_VbrMatrix_getrow
-// ====================================================================== 
+// ======================================================================
 
-int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[], 
+int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[])
 {
@@ -259,7 +259,7 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
   mat_in = (ML_Operator *) data;
 
   Epetra_RowMatrix *Abase = (Epetra_RowMatrix *) ML_Get_MyGetrowData(mat_in);
-  
+
   Epetra_CrsMatrix * Acrs = dynamic_cast<Epetra_CrsMatrix *>(Abase);
   int MatrixIsCrsMatrix = (Acrs!=0); // If this pointer is non-zero,
                                   // the cast to Epetra_CrsMatrix worked
@@ -284,9 +284,9 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
     // general RowMatrix case
     MatrixIsRowMatrix = true;
     MaxPerRow = Abase->MaxNumEntries();
-    Values = new double [MaxPerRow]; 
-    Indices = new int [MaxPerRow]; 
-  }  
+    Values = new double [MaxPerRow];
+    Indices = new int [MaxPerRow];
+  }
 
   for (int i = 0; i < N_requested_rows; i++)
   {
@@ -300,9 +300,9 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
       // of the local row (no memory allocation occurs).
       int PDEEqn = LocalRow % NumPDEEqns;
       int LocalBlockRow = LocalRow/NumPDEEqns;
-      
+
       int RowDim;
-      int NumBlockEntries;    
+      int NumBlockEntries;
       ierr = Avbr->ExtractMyBlockRowView(LocalBlockRow,RowDim,
                      NumBlockEntries, BlockIndices, Entries);
       // I do here some stuff because Vbr matrices must
@@ -312,7 +312,7 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
           delete [] Indices;
           delete [] Values;
         }
-        return(0); 
+        return(0);
       }
       NumEntries = NumBlockEntries*NumPDEEqns;
       if (nz_ptr + NumEntries > allocated_space) {
@@ -322,14 +322,14 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
         }
         return(0);
       }
-      
+
       for( int j=0 ; j<NumBlockEntries ; ++j ) {
     for( int k=0 ; k<NumPDEEqns ; ++k ) {
       columns[nz_ptr] = BlockIndices[j]*NumPDEEqns+k;
       values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
     }
       }
-      row_lengths[i] = NumBlockEntries*NumPDEEqns;      
+      row_lengths[i] = NumBlockEntries*NumPDEEqns;
     }
     else
       ierr = Abase->ExtractMyRowCopy(LocalRow, MaxPerRow, NumEntries,
@@ -352,7 +352,7 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
         }
          return(0);
       }
-      
+
       for (int j=0; j<NumEntries; j++) {
         columns[nz_ptr] = Indices[j];
         values[nz_ptr++] = Values[j];
@@ -364,17 +364,17 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
     delete [] Indices;
     delete [] Values;
   }
-  
+
   return(1);
 #endif
 }
 
-// ====================================================================== 
+// ======================================================================
 // Getrow for RowMatrix that are not Epetra_CrsMatrix or Epetra_VbrMatrix
-// ====================================================================== 
+// ======================================================================
 
-int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows, 
-                               int requested_rows[], int allocated_space, 
+int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
+                               int requested_rows[], int allocated_space,
                                int columns[], double values[],
                                int row_lengths[])
 {
@@ -385,7 +385,7 @@ int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
   mat_in = (ML_Operator *) data;
 
   Epetra_RowMatrix* A = (Epetra_RowMatrix *) ML_Get_MyGetrowData(mat_in);
-  
+
   for (int i = 0; i < N_requested_rows; i++)
   {
     int ierr;
@@ -395,7 +395,7 @@ int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
       return(0); // to avoid Epetra print something on std::cout
     ierr = A->ExtractMyRowCopy(LocalRow, allocated_space, NumEntries,
                                values + nz_ptr, columns + nz_ptr);
-    if (ierr) 
+    if (ierr)
       return(0); //JJH I think this is the correct thing to return if
                  //    A->ExtractMyRowCopy returns something nonzero ..
 
@@ -411,12 +411,12 @@ int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
   return(1);
 }
 
-// ====================================================================== 
+// ======================================================================
 // Specialized getrow for Epetra_CrsMatrix class.
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
-            int requested_rows[], 
+            int requested_rows[],
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[])
 {
@@ -428,7 +428,7 @@ int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
   mat_in = (ML_Operator *) data;
 
   Epetra_CrsMatrix *Acrs =  (Epetra_CrsMatrix *) ML_Get_MyGetrowData(mat_in);
-  
+
   for (int i = 0; i < N_requested_rows; i++)
   {
     int LocalRow = requested_rows[i];
@@ -443,7 +443,7 @@ int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
     row_lengths[i] = NumEntries;
     if (nz_ptr + NumEntries > allocated_space)
       return(0);
-      
+
     for (int j=0; j<NumEntries; j++) {
       columns[nz_ptr] = Indices[j];
       values[nz_ptr++] = Values[j];
@@ -453,12 +453,12 @@ int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
   return(1);
 } //ML_Epetra_CrsMatrix_getrow
 
-// ====================================================================== 
+// ======================================================================
 // Specialized getrow for Epetra_CrsMatrix class.
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
-                                    int requested_rows[], 
+                                    int requested_rows[],
                                     int allocated_space, int columns[], double values[],
                                     int row_lengths[])
 {
@@ -470,7 +470,7 @@ int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
   mat_in = (ML_Operator *) data;
 
   Epetra_CrsMatrix *Acrs =  (Epetra_CrsMatrix *) ML_Get_MyGetrowData(mat_in);
-  
+
   for (int i = 0; i < N_requested_rows; i++)
   {
     int LocalRow = requested_rows[i];
@@ -485,7 +485,7 @@ int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
     row_lengths[i] = NumEntries;
     if (nz_ptr + NumEntries > allocated_space)
       return(0);
-      
+
     for (int j=0; j<NumEntries; j++) {
       columns[nz_ptr] = Indices[j];
       values[nz_ptr++] = 1.0;
@@ -496,12 +496,12 @@ int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
 } //ML_Epetra_CrsMatrix_getrow
 
 
-// ====================================================================== 
+// ======================================================================
 // Specialized getrow for Epetra_VbrMatrix class.
-// ====================================================================== 
+// ======================================================================
 
-int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows, 
-                               int requested_rows[], int allocated_space, 
+int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
+                               int requested_rows[], int allocated_space,
                                int columns[], double values[],
                                int row_lengths[])
 {
@@ -535,12 +535,12 @@ int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
     // of the local row (no memory allocation occurs).
     int PDEEqn = LocalRow % NumPDEEqns;
     int LocalBlockRow = LocalRow/NumPDEEqns;
-    
+
     int RowDim;
-    int NumBlockEntries;    
+    int NumBlockEntries;
     int ierr = Avbr->ExtractMyBlockRowView(LocalBlockRow,RowDim,
                    NumBlockEntries, BlockIndices, Entries);
-    if (ierr) return(0); 
+    if (ierr) return(0);
     NumEntries = NumBlockEntries*NumPDEEqns;
     if (nz_ptr + NumEntries > allocated_space)
       return(0);
@@ -551,13 +551,13 @@ int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
         values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
       }
     }
-    row_lengths[i] = NumBlockEntries*NumPDEEqns;      
+    row_lengths[i] = NumBlockEntries*NumPDEEqns;
   }
 
   return(1);
 } //ML_Epetra_VbrMatrix_getrow
 
-// ====================================================================== 
+// ======================================================================
 
 #ifdef HAVE_ML_TEUCHOS
 void ML_Set_Filter(Teuchos::ParameterList& List)
@@ -572,10 +572,10 @@ void ML_Set_Filter(Teuchos::ParameterList& List)
 }
 #endif
 
-// ====================================================================== 
+// ======================================================================
 
-int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows, 
-                            int requested_rows[], int allocated_space, 
+int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
+                            int requested_rows[], int allocated_space,
                             int columns[], double values[], int row_lengths[])
 {
   int ierr, eqn;
@@ -678,7 +678,7 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
   return(1);
 }
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_comm_wrapper(double vec[], void *data)
 {
@@ -693,11 +693,11 @@ int ML_Epetra_comm_wrapper(double vec[], void *data)
 			   vec); //loc only
     X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
   }
-  
+
   return(1);
 }
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data)
 {
@@ -712,11 +712,11 @@ int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data)
 			   vec); //loc only
     X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
   }
-  
+
   return(1);
 }
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_VbrMatrix_comm_wrapper(double vec[], void *data)
 {
@@ -732,11 +732,11 @@ int ML_Epetra_VbrMatrix_comm_wrapper(double vec[], void *data)
 			   vec); //ghosted
     Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
 			   vec); //loc only
-  
+
 //  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
     X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
   }
-  
+
   return(1);
 }
 
@@ -746,7 +746,7 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 {
   int isize, osize;
 
-  // FIXME ?? 
+  // FIXME ??
   //osize = A->NumMyRows();
   osize = A->OperatorRangeMap().NumMyElements();
   isize = A->OperatorDomainMap().NumMyElements();
@@ -763,8 +763,8 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
                                 (void*) Acrs, osize,
                                 NULL, 0);
 
-    ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
-                          ML_Epetra_CrsMatrix_comm_wrapper, (void *) Acrs, 
+    ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm),
+                          ML_Epetra_CrsMatrix_comm_wrapper, (void *) Acrs,
                           newMatrix->comm, isize, N_ghost);
 
     ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
@@ -780,8 +780,8 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
                                 (void*) A, osize,
                                 NULL, 0);
 
-    ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
-                          ML_Epetra_comm_wrapper, (void *) A, 
+    ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm),
+                          ML_Epetra_comm_wrapper, (void *) A,
                           newMatrix->comm, isize, N_ghost);
 
     ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
@@ -801,7 +801,7 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map **rangemap,
                           Epetra_Map **colmap,int base, const Epetra_Comm &EpetraComm )
 {
-  
+
   int    isize_offset, osize_offset;
   int Nghost;
   ML_Comm *comm;
@@ -834,39 +834,39 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
 
   //vector<double> global_osize(osize);
   std::vector<int>    global_osize_as_int(osize);
-  
+
   for (int i = 0 ; i < isize; i++) {
           global_isize[i] = (double) (isize_offset + i);
           global_isize_as_int[i] = isize_offset + i;
   }
-          
+
   for (int i = 0 ; i < osize; i++) {
     //global_osize[i] = (double) (osize_offset + i);
     global_osize_as_int[i] = osize_offset + i;
   }
   for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
 
-  if(rangemap) *rangemap=new Epetra_Map( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ; 
-  if(domainmap) *domainmap=new Epetra_Map( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
+  if(rangemap) *rangemap=new Epetra_Map( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ;
+  if(domainmap) *domainmap=new Epetra_Map( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ;
 
 
   /* Build the column map first to make sure we get communication patterns correct.  This uses
      the ML_Operator comm, which could be (much) bigger than EpetraComm.  This should be ok,
      however, since only 'active' processors in the ML comm participate.
   */
-  ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
+  ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm,
  		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
 
-  for ( int j = isize; j < isize+Nghost; j++ ) { 
+  for ( int j = isize; j < isize+Nghost; j++ ) {
     global_isize_as_int[j] = (int) global_isize[j];
   }
-  
-  if(colmap) *colmap=new Epetra_Map( -1, isize+Nghost, &global_isize_as_int[0], base, EpetraComm ) ; 
+
+  if(colmap) *colmap=new Epetra_Map( -1, isize+Nghost, &global_isize_as_int[0], base, EpetraComm ) ;
 
 }/*end ML_Build_Epetra_Maps*/
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // This is a *ultra* lightweight wrap of an Epetra_CrsMatrix in ML.  This uses a
 // "may change for experts only" function ExtractCrsDataPointers.
 //
@@ -883,16 +883,16 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
     int isize, osize;
     osize = A->OperatorRangeMap().NumMyElements();
     isize = A->OperatorDomainMap().NumMyElements();
-    
-    int N_ghost = A->RowMatrixColMap().NumMyElements() - isize; 
-    if (N_ghost < 0) N_ghost = 0; 
-    
+
+    int N_ghost = A->RowMatrixColMap().NumMyElements() - isize;
+    if (N_ghost < 0) N_ghost = 0;
+
     /* Do the "View" Wrap */
     struct ML_CSR_MSRdata *epetra_csr= (struct ML_CSR_MSRdata*)malloc(sizeof(struct ML_CSR_MSRdata));
     epetra_csr->Nnz = A->NumGlobalNonzeros();
     newMatrix->N_nonzeros = A->NumMyNonzeros();
     epetra_csr->Nrows=osize;
-    epetra_csr->Ncols=isize;  
+    epetra_csr->Ncols=isize;
     A->ExtractCrsDataPointers(epetra_csr->rowptr,epetra_csr->columns,epetra_csr->values);
 
     /* Sanity Check */
@@ -901,30 +901,30 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
       free(epetra_csr);
       return ML_Operator_WrapEpetraMatrix(A,newMatrix);
     }/*end if*/
-    
+
     /* Set the appropriate function pointers + data */
-    ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,(void*) epetra_csr, osize,NULL,0);  
-    ML_CommInfoOP_Generate(&(newMatrix->getrow->pre_comm),ML_Epetra_CrsMatrix_comm_wrapper, (void *) A, 
+    ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,(void*) epetra_csr, osize,NULL,0);
+    ML_CommInfoOP_Generate(&(newMatrix->getrow->pre_comm),ML_Epetra_CrsMatrix_comm_wrapper, (void *) A,
                            newMatrix->comm, isize, N_ghost);
     ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,CSR_getrow);
-    ML_Operator_Set_ApplyFunc (newMatrix, CSR_matvec);  
+    ML_Operator_Set_ApplyFunc (newMatrix, CSR_matvec);
     newMatrix->data_destroy=free;
-    newMatrix->type = ML_TYPE_CRS_MATRIX;  
+    newMatrix->type = ML_TYPE_CRS_MATRIX;
   }/*end if*/
   else{
     if(verbose && !A->Comm().MyPID()) printf("WARNING: Matrix storage not optimized [%s], reverting to heavyweight wrap.\n",A->Label());
     return ML_Operator_WrapEpetraMatrix(A,newMatrix);
   }/*end else*/
-  return rv;      
+  return rv;
 }/*end ML_Operator_WrapEpetraCrsMatrix*/
 
-// ================================================ ====== ==== ==== == 
+// ================================================ ====== ==== ==== ==
 // Thie provides a lightweight wrap of an ML_Operator in Epetra.  The Epetra
 // object needs to be setup correctly beforehand or else this will have
 // disasterous consequences.  We assume that the ML_Operator will persist until
 // after the Epetra_CrsMatrix is destroyed, if this is set in View mode.
 // -Chris Siefert 11/20/2006.
-void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV,int base){ 
+void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV,int base){
 
 #define LIGHTWEIGHT_WRAP
 #ifdef LIGHTWEIGHT_WRAP
@@ -936,10 +936,10 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   /* Build the Column Map */
   Epetra_Map *DomainMap,*ColMap;
   ML_Build_Epetra_Maps(A,&DomainMap,NULL,&ColMap,base,Comm);
-  
+
   /* Allocate the Epetra_CrsMatrix Object */
   *Result=new Epetra_CrsMatrix(CV,RowMap,*ColMap,base);
-  
+
   /* Fill the matrix */
   for(int row=0;row<A->outvec_leng;row++){
     cols=&(M_->columns[M_->rowptr[row]]);
@@ -948,7 +948,7 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   }/*end for*/
   (*Result)->FillComplete(*DomainMap,RowMap);
   if(CV!=View) (*Result)->OptimizeStorage();
-  
+
   /* Cleanup */
   delete DomainMap; delete ColMap;
 #else
@@ -959,7 +959,7 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 }/*end Epetra_CrsMatrix_Wrap_ML_Operator*/
 
 
-// ====================================================================== 
+// ======================================================================
 //! Does an P^TAP for Epetra_CrsMatrices using ML's kernels.
 int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose){
   ML_Comm* comm;
@@ -973,24 +973,24 @@ int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix
   ML_Operator *R_       = ML_Operator_Create(comm);
   ML_Operator *A_       = ML_Operator_Create(comm);
   ML_Operator *P_       = ML_Operator_Create(comm);
-  ML_Operator *Result_  = ML_Operator_Create(comm);    
+  ML_Operator *Result_  = ML_Operator_Create(comm);
 
-  /* Do the wrapping */  
+  /* Do the wrapping */
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&P,P_,verbose);
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,A_,verbose);
-  
-  /* Build the transpose */ 
+
+  /* Build the transpose */
   ML_Operator_Transpose_byrow(P_,R_);
 
   /* Triple mat-product */
   ML_rap(R_,A_,P_ ,Result_, ML_CSR_MATRIX);
-  
+
   /* Wrap back */
   int nnz;
   double time;
   ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,true,time,0,false);
   Result->OptimizeStorage();
-  
+
   /* Cleanup */
   ML_Operator_Destroy(&R_);
   ML_Operator_Destroy(&A_);
@@ -1015,22 +1015,22 @@ int ML_Epetra::ML_Epetra_RAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix 
   ML_Operator *R_       = ML_Operator_Create(comm);
   ML_Operator *A_       = ML_Operator_Create(comm);
   ML_Operator *P_       = ML_Operator_Create(comm);
-  ML_Operator *Result_  = ML_Operator_Create(comm);    
+  ML_Operator *Result_  = ML_Operator_Create(comm);
 
-  /* Do the wrapping */  
+  /* Do the wrapping */
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&P,P_,verbose);
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&R,R_,verbose);
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,A_,verbose);
-  
+
   /* Triple mat-product */
   ML_rap(R_,A_,P_ ,Result_, ML_CSR_MATRIX);
-  
+
   /* Wrap back */
   int nnz;
   double time;
   ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,true,time,0,false);
   Result->OptimizeStorage();
-  
+
   /* Cleanup */
   ML_Operator_Destroy(&R_);
   ML_Operator_Destroy(&A_);
@@ -1053,27 +1053,27 @@ int* ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & 
     if (ierr == 0) {
       int nz=0;
       for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
-      if (nz == 1) dirichletRows[numBCRows++] = i;      
+      if (nz == 1) dirichletRows[numBCRows++] = i;
     }/*end if*/
   }/*end fpr*/
   return dirichletRows;
 }/*end FindLocalDiricheltRowsFromOnesAndZeros*/
 
 
-// ====================================================================== 
+// ======================================================================
  //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
 Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix){
   const Epetra_Map & ColMap = Matrix.ColMap();
   int indexBase = ColMap.IndexBase();
   Epetra_Map* mapPtr = 0;
-  
+
   if(Matrix.RowMap().GlobalIndicesInt())
     mapPtr = new Epetra_Map((int) Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
   else if(Matrix.RowMap().GlobalIndicesLongLong())
     mapPtr = new Epetra_Map(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
   else
     assert(false);
-  
+
   Epetra_Map& globalMap = *mapPtr;
 
   // create the exporter from this proc's column map to global 1-1 column map
@@ -1083,7 +1083,7 @@ Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *diric
   Epetra_IntVector globColsToZero(globalMap);
   // create a vector of local column indices that we will export from
   Epetra_IntVector *myColsToZero= new Epetra_IntVector(ColMap);
-  myColsToZero->PutValue(0);  
+  myColsToZero->PutValue(0);
 
   // for each local column j in a local dirichlet row, set myColsToZero[j]=1
   for (int i=0; i < numBCRows; i++) {
@@ -1106,19 +1106,19 @@ Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *diric
 }/*end FindLocalDirichletColumnsFromRows*/
 
 
-  // ====================================================================== 
+  // ======================================================================
 Epetra_IntVector * ML_Epetra::LocalRowstoColumns(int *Rows, int numRows,const Epetra_CrsMatrix & Matrix){
   const Epetra_Map & ColMap = Matrix.ColMap();
   int indexBase = ColMap.IndexBase();
   Epetra_Map* mapPtr = 0;
-  
+
   if(Matrix.RowMap().GlobalIndicesInt())
     mapPtr = new Epetra_Map((int) Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
   else if(Matrix.RowMap().GlobalIndicesLongLong())
     mapPtr = new Epetra_Map(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
   else
     assert(false);
-  
+
   Epetra_Map& globalMap = *mapPtr;
 
   // create the exporter from this proc's column map to global 1-1 column map
@@ -1128,10 +1128,10 @@ Epetra_IntVector * ML_Epetra::LocalRowstoColumns(int *Rows, int numRows,const Ep
   Epetra_IntVector globColsToZero(globalMap);
   // create a vector of local column indices that we will export from
   Epetra_IntVector *myColsToZero= new Epetra_IntVector(ColMap);
-  myColsToZero->PutValue(0);  
+  myColsToZero->PutValue(0);
 
   // flag all local columns corresponding to the local rows specified
-  for (int i=0; i < numRows; i++) 
+  for (int i=0; i < numRows; i++)
     (*myColsToZero)[Matrix.LCID(Matrix.GRID(Rows[i]))]=1;
 
   // export to the global column map
@@ -1144,7 +1144,7 @@ Epetra_IntVector * ML_Epetra::LocalRowstoColumns(int *Rows, int numRows,const Ep
   return myColsToZero;
 }/*end LocalRowstoColumns*/
 
-  // ====================================================================== 
+  // ======================================================================
 void ML_Epetra::Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix)
 {
   /* This function zeros out *rows* of Matrix that correspond to Dirichlet rows.
@@ -1155,7 +1155,7 @@ void ML_Epetra::Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, c
 
      Comments: The graph of Matrix is unchanged.
   */
-  
+
   // -------------------------
   // now zero out the rows
   // -------------------------
@@ -1171,12 +1171,12 @@ void ML_Epetra::Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, c
 
 
 
-// ====================================================================== 
+// ======================================================================
 void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_IntVector &dirichletColumns,const Epetra_CrsMatrix & Matrix){
   /* This function zeros out columns of Matrix.
      Input:
          dirichletColumns   outpuy from FindLocalDirichletColumnsFromRow
-         Matrix             matrix to nuke columns of 
+         Matrix             matrix to nuke columns of
      Output:
          Matrix             matrix with columns zeroed out
 
@@ -1194,13 +1194,13 @@ void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_IntVector &dirichletColumn
 }/* end Apply_BCsToMatrixColumns */
 
 
-// ====================================================================== 
+// ======================================================================
 void ML_Epetra::Apply_BCsToMatrixColumns(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix){
   /* This function zeros out columns of Matrix.
      Input:
          dirichletRows      output from FindLocalDirichletRowsFromOnesAndZeros
          numBCRows          output from FindLocalDirichletRowsFromOnesAndZeros
-         Matrix             matrix to nuke columns of 
+         Matrix             matrix to nuke columns of
      Output:
          Matrix             matrix with columns zeroed out
 
@@ -1208,10 +1208,10 @@ void ML_Epetra::Apply_BCsToMatrixColumns(const int *dirichletRows, int numBCRows
   */
   Epetra_IntVector* dirichletColumns=FindLocalDirichletColumnsFromRows(dirichletRows,numBCRows,Matrix);
   Apply_BCsToMatrixColumns(*dirichletColumns,Matrix);
-  delete dirichletColumns;  
+  delete dirichletColumns;
 }/* end Apply_BCsToMatrixColumns */
 
-// ====================================================================== 
+// ======================================================================
 void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatrix, const Epetra_RowMatrix & iMatrix){
   const Epetra_CrsMatrix *BoundaryMatrix = dynamic_cast<const Epetra_CrsMatrix*> (&iBoundaryMatrix);
   const Epetra_CrsMatrix *Matrix = dynamic_cast<const Epetra_CrsMatrix*>(&iMatrix);
@@ -1232,7 +1232,7 @@ void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatri
 
 
 
-// ====================================================================== 
+// ======================================================================
 void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix,double tol)
 #define ABS(x) ((x)>0?(x):(-(x)))
 {
@@ -1261,17 +1261,17 @@ void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix,double tol)
     }/*end for*/
     if(cidx!=-1) {
       for (j=0; j < numEntries; j++)
-        vals[j]=0.0;      
-      vals[cidx]=1.0;     
+        vals[j]=0.0;
+      vals[cidx]=1.0;
     }
   }/*end for*/
-  
+
 }/*end Apply_OAZToMatrix*/
 
 
 
 
-// ====================================================================== 
+// ======================================================================
 void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix)
 {
   /* This function does row/column ones-and-zeros on a matrix, given the
@@ -1294,12 +1294,12 @@ void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetr
   /* Zero the columns */
   for (int i=0; i < Matrix.NumMyRows(); i++) {
     Matrix.ExtractMyRowView(i,numEntries,vals,cols);
-    for (int j=0; j < numEntries; j++) 
+    for (int j=0; j < numEntries; j++)
       if ((*dirichletColumns)[ cols[j] ] > 0)
-        vals[j] = 0.0;          
+        vals[j] = 0.0;
   }/*end for*/
 
-  
+
   /* Zero the rows, add ones to diagonal */
   for (int i=0; i < numBCRows; i++) {
     Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
@@ -1309,14 +1309,14 @@ void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetr
       else vals[j] = 0.0;
   }/*end for*/
 
-  delete dirichletColumns;  
+  delete dirichletColumns;
 }/*end Apply_OAZToMatrix*/
 
 
 
 
 
-// ====================================================================== 
+// ======================================================================
 void ML_Epetra::Apply_BCsToGradient(
              const Epetra_RowMatrix & iEdgeMatrix,
              const Epetra_RowMatrix & iGrad)
@@ -1358,7 +1358,7 @@ void ML_Epetra::Apply_BCsToGradient(
       }
     }
   }
-  
+
   // -------------------------
   // now zero out the rows
   // -------------------------
@@ -1402,7 +1402,7 @@ Epetra_RowMatrix* ML_Epetra::ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
 #endif
 
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
                               int out, double *ap)
@@ -1411,10 +1411,10 @@ int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
   ML_RETURN(-1);
 }
 
-// ====================================================================== 
+// ======================================================================
 
 int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
-                              int requested_rows[], int allocated_space, 
+                              int requested_rows[], int allocated_space,
                               int columns[], double values[],
                               int row_lengths[])
 {
@@ -1425,7 +1425,7 @@ int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
   mat_in = (ML_Operator *) data;
 
   Epetra_CrsGraph *Graph =  (Epetra_CrsGraph *) ML_Get_MyGetrowData(mat_in);
-  
+
   for (int i = 0; i < N_requested_rows; i++)
   {
     int LocalRow = requested_rows[i];
@@ -1439,7 +1439,7 @@ int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
     row_lengths[i] = NumEntries;
     if (nz_ptr + NumEntries > allocated_space)
       return(0);
-      
+
     for (int j=0; j<NumEntries; j++) {
       columns[nz_ptr] = Indices[j];
       values[nz_ptr++] = 1.0; // simply set each entry to 1
@@ -1449,7 +1449,7 @@ int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
   return(1);
 } //ML_Epetra_CrsGraph_getrow
 
-// ====================================================================== 
+// ======================================================================
 int ML_Epetra_CrsGraph_comm_wrapper(double vec[], void *data)
 {
   Epetra_CrsGraph*A = (Epetra_CrsGraph*) data;
@@ -1465,21 +1465,21 @@ int ML_Epetra_CrsGraph_comm_wrapper(double vec[], void *data)
     Epetra_Map ColMap2(-1, ColMap.NumMyElements(), ColMap.MyGlobalElements(), ColMap.IndexBase(), ColMap.Comm());
     Epetra_Import Importer(ColMap2, RowMap2);
 
-    Epetra_Vector X_target(View, 
+    Epetra_Vector X_target(View,
                            ColMap2,
                            //A->Importer()->TargetMap(),
 			   vec); //ghosted
-    Epetra_Vector X_source(View, 
-                           RowMap2, 
+    Epetra_Vector X_source(View,
+                           RowMap2,
                            //A->Importer()->SourceMap(),
 			   vec); //loc only
-  
-    X_target.Import(X_source, 
+
+    X_target.Import(X_source,
                      Importer,
-                    //*(A->Importer()), 
+                    //*(A->Importer()),
                     Insert);
   }
-  
+
   return(1);
 }
 // ======================================================================
@@ -1499,8 +1499,8 @@ int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatri
                                 (void*) Graph, osize,
                                 NULL, 0);
 
-  ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
-                         ML_Epetra_CrsGraph_comm_wrapper, (void *) Graph, 
+  ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm),
+                         ML_Epetra_CrsGraph_comm_wrapper, (void *) Graph,
                          newMatrix->comm, isize, N_ghost);
 
   ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
@@ -1534,13 +1534,13 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
 }
 
 // ======================================================================
-int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result, 
+int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
 			 ML_Operator *Mat1, ML_Operator *Mat2)
 {
   //---------------------------------------------------------------------------
   Epetra_CrsMatrix *Mat1_epet = (Epetra_CrsMatrix *) Mat1->data;
   Epetra_CrsMatrix *Mat2_epet = (Epetra_CrsMatrix *) Mat2->data;
-  
+
   //---------------------------------------------------------------------------
   // for temporary use create a linear row map, range map, domain map and a matrix
   Epetra_Map* linrowmap = new Epetra_Map(Mat1_epet->RowMap().NumGlobalElements(),
@@ -1553,12 +1553,12 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
                                             Mat2_epet->OperatorDomainMap().NumMyElements(),0,
                                             Mat2_epet->Comm());
   Epetra_CrsMatrix* tmpresult = new Epetra_CrsMatrix(Copy,*linrowmap,500,false);
-  
+
 
   // see results as ML_Operator
   //ML_Operator_Print(Mat2,"Mat2");
   //ML_Operator_Print(Mat1Mat2,"Mat1Mat2");
-  
+
   // warning
   // when either Mat1 or Mat2 contain empty columns, this routine fails.
   // This is due to difering philosophies in ML and Epetra w.r.t
@@ -1569,15 +1569,15 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   // (One fix proposed by Ray would be to add another layer of indirect addressing to
   // the ML_Epetra_CrsMatrix_getrow to fix this. But this will come at
   // some price and in most cases will not be needed)
-  
+
   //---------------------------------------------------------------------------
   // The result matrix Mat1Mat2:
-  // - ML created a new row numbering that is a linear map for the rows 
+  // - ML created a new row numbering that is a linear map for the rows
   //   no matter what the input maps were
   // - row indices are local
   // - ML created a column numbering matching the new row map
   // - col indices are global
-  
+
   //---------------------------------------------------------------------------
   // fill the temporary matrix tmpresult which has linear maps as well
   int allocated = 0, row_length;
@@ -1589,7 +1589,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     std::cout << "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n";
     exit(-1);
   }
-  for (int i=0; i<Mat1Mat2->getrow->Nrows; ++i) 
+  for (int i=0; i<Mat1Mat2->getrow->Nrows; ++i)
   {
     // get the row
     ML_get_matrix_row(Mat1Mat2, 1, &i, &allocated, &bindx, &val,&row_length, 0);
@@ -1599,7 +1599,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     // the row index global_rows[i] is the true Epetra grid
     // we have columns bindx which are global but refer to MLs linear map
     // this matches the map of tmpresult
-    int err = tmpresult->InsertGlobalValues(global_rows[i],row_length, 
+    int err = tmpresult->InsertGlobalValues(global_rows[i],row_length,
                                             val,bindx);
     if (err!=0 && err != 1) std::cout << "tmpresult->InsertGlobalValues returned " << err << std::endl;
   }
@@ -1607,7 +1607,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   if (val != NULL) ML_free(val);
 
   int err = tmpresult->FillComplete(*lindomainmap,*linrangemap);
-  if (err) 
+  if (err)
   {
     std::cerr <<"Error in Epetra_CrsMatrix FillComplete" << err << std::endl;
     EPETRA_CHK_ERR(err);
@@ -1639,7 +1639,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
     countold += count;
     count=0;
   }
-  
+
   //if (comm.MyPID()==0)
   //for (int i=0; i<(int)gcolumns.size(); ++i) std::cout << "gcolumns[ " << i << "] = " << gcolumns[i] << std::endl;
   //---------------------------------------------------------------------------
@@ -1666,7 +1666,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
       // get the gcid in the tmpresult matrix
       // gcid in tmpresult is from the linear column map
       int tmpgcid = tmpresult->GCID(indices[j]);
-      if (tmpgcid<0 || tmpgcid>=(int)gcolumns.size()) 
+      if (tmpgcid<0 || tmpgcid>=(int)gcolumns.size())
         std::cout << "Cannot find tmpgcid " << tmpgcid << " for lcid (out of range)\n";
       // get the gcid from the lookup vector
       gcid[j] = gcolumns[tmpgcid];
@@ -1686,7 +1686,7 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   delete tmpresult;
   gcolumns.clear();
   gcid.clear();
-  
+
   // wrap the result
   ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix *) Result_epet, Result);
 
@@ -1727,10 +1727,10 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
   ML_Operator_Destroy(&BBt_ml);
 
   return dynamic_cast<Epetra_CrsMatrix*>(result);
-   
+
 }
 
-// ====================================================================== 
+// ======================================================================
 
 Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt_crs, double scalar)
 {
@@ -1768,7 +1768,7 @@ Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt
   ML_Operator_Destroy(&BBt_ml);
 
   return BBt_crs;
-   
+
 }
 
 int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int length)
@@ -1785,13 +1785,13 @@ int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int le
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
 
 Epetra_CrsMatrix * Q  = NULL;
-Epetra_FECrsMatrix *  Qt = NULL; 
+Epetra_FECrsMatrix *  Qt = NULL;
 
 // ======================================================================
 ML_Operator * ML_BuildQ( int StartingNumElements,
@@ -1803,20 +1803,20 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 			 int ComputeNewNullSpace,
 			 double * StartingBdry, double * ReorderedBdry,
 			 USR_COMM mpi_communicator,
-			 ML_Comm *ml_communicator ) 
+			 ML_Comm *ml_communicator )
 {
-  
+
   ML_Operator * ML_Q2;
-  
+
 #ifdef ML_MPI
   Epetra_MpiComm Comm( mpi_communicator );
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   Epetra_Map StartingMap(-1,StartingNumElements*NumPDEEqns,0,Comm);
   Epetra_Map ReorderedMap(-1,ReorderedNumElements*NumPDEEqns,0,Comm);
-  
+
   Q = new Epetra_CrsMatrix(Copy,StartingMap,1);
 
   int * MyGlobalElements = StartingMap.MyGlobalElements();
@@ -1845,36 +1845,36 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
       Q->InsertGlobalValues(GlobalRow, 1, &zero, &GlobalCol );
     }
   }
-  
+
   Q->FillComplete(ReorderedMap,StartingMap);
-  
+
   {int itemp;
   Comm.MaxAll(&ComputeNewNullSpace,&itemp,1);
   if( itemp == 1 ) ComputeNewNullSpace = 1;
   }
-  
+
   if( ComputeNewNullSpace == 1 ) {
 
     if( NumPDEEqns == NullSpaceDim ) {
 
       double ** StartArrayOfPointers = new double * [NullSpaceDim];
       double ** ReordArrayOfPointers = new double * [NullSpaceDim];
-      
+
       for( int k=0 ; k<NullSpaceDim ; ++k ) {
 	StartArrayOfPointers[k] = StartingNullSpace+k*StartingNumElements*NumPDEEqns;
 	ReordArrayOfPointers[k] = ReorderedNullSpace+k*ReorderedNumElements*NumPDEEqns;
       }
-      
+
       Epetra_MultiVector startNS(View,StartingMap,StartArrayOfPointers,NullSpaceDim);
       Epetra_MultiVector reordNS(View,ReorderedMap,ReordArrayOfPointers,NullSpaceDim);
-      
+
       Q->Multiply(true,startNS,reordNS);
-      
+
       delete [] StartArrayOfPointers;
       delete [] ReordArrayOfPointers;
 
     } else {
-      
+
       Epetra_Vector startNS2(StartingMap);
       Epetra_Vector reordNS2(ReorderedMap);
 
@@ -1893,7 +1893,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
   double * Start = NULL;
   double * Reord = NULL;
-  
+
   if( StartingNumElements != 0 ) Start = new double[StartingNumElements*NumPDEEqns];
   if( ReorderedNumElements != 0 ) Reord = new double[ReorderedNumElements*NumPDEEqns];
 
@@ -1909,14 +1909,14 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
   Q->Multiply(true,xxx,yyy);
 
-  ML_Q2 = ML_Operator_Create( ml_communicator );  
-  
+  ML_Q2 = ML_Operator_Create( ml_communicator );
+
   ML_Operator_WrapEpetraMatrix(Q, ML_Q2);
 
   for( int i=0 ; i<ReorderedNumElements ; ++i ) {
     ReorderedBdry[i] = yyy[i*NumPDEEqns];
   }
-  
+
   if( Start != NULL ) delete [] Start;
   if( Reord != NULL ) delete [] Reord;
 
@@ -1934,7 +1934,7 @@ int ML_ApplyQ(int StartingNumElements,
   int NumPDEEqns = Q->OperatorRangeMap().NumMyElements() / StartingNumElements;
 
   if (NumPDEEqns == 1) {
- 
+
     // in this case I can go on with pointers
     double** StartArrayOfPointers = new double * [NumVectors];
     double** ReordArrayOfPointers = new double * [NumVectors];
@@ -1988,14 +1988,14 @@ int ML_ApplyQ(int StartingNumElements,
   return 0;
 }
 
-void ML_DestroyQ(void) 
+void ML_DestroyQ(void)
 {
 
   delete Q;
   Q = NULL;
 
   return;
-  
+
 } /* ML_DestroyQ */
 
 #if 0
@@ -2006,14 +2006,14 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
 			  int ReorderedNumElements,
 			  int reordered_decomposition[],
 			  USR_COMM mpi_communicator,
-			  ML_Comm *ml_communicator ) 
+			  ML_Comm *ml_communicator )
 {
-  
+
   ML_Operator * ML_Qt2;
 
   std::cout << "CHECK MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << std::endl;
   exit( EXIT_FAILURE );
-  
+
 #ifndef ML_MPI
   /* ********************************************************************** */
   /* ONe should not call this function with one processor only (as he has   */
@@ -2047,24 +2047,24 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
   // Q will be applied to vectors defined on StartingMap,
   // and the output vector will be defined on ReorderdMap
   Qt->FillComplete(ReorderedMap,StartingMap);
-  
+
   ML_Qt2 = ML_Operator_Create( ml_communicator );
 
   ML_Operator_WrapEpetraMatrix( Qt, ML_Qt2);
 
   return ML_Qt2;
 #endif
-  
+
 } /* ML_BuildQt */
 
-void ML_DestroyQt( void ) 
+void ML_DestroyQt( void )
 {
 
   delete Qt;
   Qt = NULL;
 
   return;
-  
+
 } /* ML_DestroyQt */
 #endif
 
@@ -2087,11 +2087,11 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   comm = Amat->comm;
 #ifdef ML_MPI
   MPI_Comm mpi_comm ;
-  mpi_comm = comm->USR_comm; 
-  Epetra_MpiComm EpetraComm( mpi_comm ) ; 
+  mpi_comm = comm->USR_comm;
+  Epetra_MpiComm EpetraComm( mpi_comm ) ;
 #else
-  Epetra_SerialComm EpetraComm ; 
-#endif  
+  Epetra_SerialComm EpetraComm ;
+#endif
 
   Epetra_Time Time(EpetraComm);
 
@@ -2124,35 +2124,35 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 
   //vector<double> global_osize(osize);
   std::vector<int>    global_osize_as_int(osize);
-  
+
   for (int i = 0 ; i < isize; i++) {
           global_isize[i] = (double) (isize_offset + i);
           global_isize_as_int[i] = isize_offset + i;
   }
-          
+
   for (int i = 0 ; i < osize; i++) {
     //global_osize[i] = (double) (osize_offset + i);
     global_osize_as_int[i] = osize_offset + i;
   }
   for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
 
-  Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ; 
-  Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
+  Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ;
+  Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ;
 
 
   /* Build the column map first to make sure we get communication patterns
      correct */
-  ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
+  ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm,
  		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
 
-  for ( int j = isize; j < isize+Nghost; j++ ) { 
+  for ( int j = isize; j < isize+Nghost; j++ ) {
     global_isize_as_int[j] = (int) global_isize[j];
   }
-  
-  Epetra_Map  colmap( -1, isize+Nghost, &global_isize_as_int[0], base, EpetraComm ) ; 
-  
-  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, colmap, base ); 
-  
+
+  Epetra_Map  colmap( -1, isize+Nghost, &global_isize_as_int[0], base, EpetraComm ) ;
+
+  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, colmap, base );
+
 
   // MS // introduced variable allocation for colInd and colVal
   // MS // improved efficiency in InsertGlobalValues
@@ -2165,7 +2165,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   int    ncnt;
 
   MaxNumNonzeros=0;
-  
+
   for (int i = 0; i < osize; i++)
   {
     ierr = ML_Operator_Getrow(Amat,1,&i,allocated,&colInd[0],&colVal[0],&ncnt);
@@ -2191,12 +2191,12 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
     if(ncnt==allocated){
       allocated *= 2;
       colInd.resize(allocated);
-      colVal.resize(allocated);      
+      colVal.resize(allocated);
     }
-    
+
     // MS // check out how many nonzeros we have
     // MS // NOTE: this may result in a non-symmetric pattern for CrsMatrix
-    
+
     NumNonzeros = 0;
     bool has_diagonal=false;
     for (int j = 0; j < ncnt; j++) {
@@ -2207,7 +2207,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
         NumNonzeros++;
       }
     }
-    
+
     if( NumNonzeros == 0 && CheckNonzeroRow ) {
       if(verbose)
         std::cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
@@ -2227,10 +2227,10 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
       colVal[NumNonzeros] = 1.0;
       NumNonzeros++;
     }
-      
+
     MaxNumNonzeros = EPETRA_MAX(NumNonzeros,MaxNumNonzeros);
-    
-    CrsMatrix->InsertGlobalValues(global_osize_as_int[i], NumNonzeros, 
+
+    CrsMatrix->InsertGlobalValues(global_osize_as_int[i], NumNonzeros,
 				  &colVal[0], &colInd[0]);
   }
 
@@ -2240,7 +2240,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   CPUTime = Time.ElapsedTime();
 
   return 0;
-  
+
 } /* ML_Operator2EpetraCrsMatrix for rectangular matrices*/
 
 
@@ -2265,15 +2265,15 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
   comm = Ke->comm;
 #ifdef ML_MPI
   MPI_Comm mpi_comm ;
-  mpi_comm = comm->USR_comm; 
-  Epetra_MpiComm EpetraComm( mpi_comm ) ; 
+  mpi_comm = comm->USR_comm;
+  Epetra_MpiComm EpetraComm( mpi_comm ) ;
 #else
-  Epetra_SerialComm EpetraComm ; 
-#endif  
+  Epetra_SerialComm EpetraComm ;
+#endif
 
   Epetra_Time Time(EpetraComm);
 
-  if (Ke->getrow->pre_comm == NULL) 
+  if (Ke->getrow->pre_comm == NULL)
     Nghost_nodes = 0;
   else {
     if (Ke->getrow->pre_comm->total_rcv_length <= 0)
@@ -2298,31 +2298,31 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
   EpetraComm.ScanSum(&Nrows,&row_offset,1); row_offset-=Nrows;
 
   EpetraComm.SumAll(&Nnodes,&Nnodes_global,1);
-  EpetraComm.SumAll(&Nrows,&Nrows_global,1);  
+  EpetraComm.SumAll(&Nrows,&Nrows_global,1);
 
-  assert( Nnodes_global == Nrows_global ) ; 
+  assert( Nnodes_global == Nrows_global ) ;
 
   global_nodes = new double[Nnodes+Nghost_nodes+1];
   global_nodes_as_int = new int[Nnodes+Nghost_nodes+1];
 
   global_rows = new double[Nrows+1];
   global_rows_as_int = new int[Nrows+1];
-  
+
   for (int i = 0 ; i < Nnodes; i++) global_nodes[i] = (double) (node_offset + i);
   for (int i = 0 ; i < Nrows; i++) {
     global_rows[i] = (double) (row_offset + i);
     global_rows_as_int[i] = row_offset + i;
   }
   for (int i = 0 ; i < Nghost_nodes; i++) global_nodes[i+Nnodes] = -1;
-  
-  Epetra_Map  EpetraMap( Nrows_global, Nrows, global_rows_as_int, 0, EpetraComm ) ; 
-  
-  CrsMatrix = new Epetra_CrsMatrix( Copy, EpetraMap, 0 ); 
-  
-  ML_exchange_bdry(global_nodes,Ke->getrow->pre_comm, 
+
+  Epetra_Map  EpetraMap( Nrows_global, Nrows, global_rows_as_int, 0, EpetraComm ) ;
+
+  CrsMatrix = new Epetra_CrsMatrix( Copy, EpetraMap, 0 );
+
+  ML_exchange_bdry(global_nodes,Ke->getrow->pre_comm,
  		 Ke->invec_leng,comm,ML_OVERWRITE,NULL);
 
-  for ( int j = 0; j < Nnodes+Nghost_nodes; j++ ) { 
+  for ( int j = 0; j < Nnodes+Nghost_nodes; j++ ) {
     global_nodes_as_int[j] = (int) global_nodes[j];
   }
 
@@ -2338,7 +2338,7 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
   int    ncnt;
 
   MaxNumNonzeros=0;
-  
+
   for (int i = 0; i < Nrows; i++) {
     ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
 
@@ -2376,18 +2376,18 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
       NumNonzeros++;
     }
     MaxNumNonzeros = EPETRA_MAX(NumNonzeros,MaxNumNonzeros);
-    
-    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros, 
+
+    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros,
 				   colVal, colInd);
-    
-    //    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], ncnt, 
+
+    //    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], ncnt,
     //				   colVal, colInd);
   }
 
   delete [] colInd;
   delete [] colVal;
   }
-  
+
   delete [] global_nodes_as_int;
   delete [] global_rows_as_int;
   delete [] global_rows;
@@ -2398,7 +2398,7 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
   CPUTime = Time.ElapsedTime();
 
   return 0;
-  
+
 } /* ML_Operator2EpetraCrsMatrix */
 #endif
 
@@ -2426,7 +2426,7 @@ Epetra_FECrsMatrix* FakeMatrix = 0;
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
@@ -2437,7 +2437,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 				  ML_Operator** NewOp)
 {
 
-  if (Op->invec_leng != Op->outvec_leng) 
+  if (Op->invec_leng != Op->outvec_leng)
     return(-1); // works only with square matrices
 
   int NumMyRows = Op->outvec_leng;
@@ -2469,7 +2469,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 
   Epetra_Map Map(-1,NumMyRows,0,Comm);
   int NumGlobalRows = Map.NumGlobalElements();
-  
+
   // create the auxiliary matrix as VBR matrix. This should help
   // to save memory with respect to the creation of "pure" VBR
   // matrices.
@@ -2479,7 +2479,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
   // FIXME: I can compute it in this case
 
   FakeMatrix = new Epetra_FECrsMatrix(Copy,Map, MaxNnzRow);
-  
+
   if (FakeMatrix == 0)
     return(-10); // problems occur
 
@@ -2508,10 +2508,10 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
   }
 
   // get global column number
- 
+
   int Nghost;
 
-  if (Op->getrow->pre_comm == NULL) 
+  if (Op->getrow->pre_comm == NULL)
     Nghost = 0;
   else {
     if (Op->getrow->pre_comm->total_rcv_length <= 0)
@@ -2519,13 +2519,13 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
     Nghost = Op->getrow->pre_comm->total_rcv_length;
   }
 
-  std::vector<double> global;        
-  std::vector<int>    global_as_int; 
+  std::vector<double> global;
+  std::vector<int>    global_as_int;
   global.resize(NumMyRows+Nghost+1);
   global_as_int.resize(NumMyRows+Nghost+1);
 
   int offset;
-  Comm.ScanSum(&NumMyRows,&offset,1); 
+  Comm.ScanSum(&NumMyRows,&offset,1);
   offset -= NumMyRows;
 
   for (int i = 0 ; i < NumMyRows; i++) {
@@ -2533,7 +2533,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
     global_as_int[i] = offset + i;
   }
 
-  for (int i = 0 ; i < Nghost; i++) 
+  for (int i = 0 ; i < Nghost; i++)
     global[i+NumMyRows] = -1;
 
   ML_exchange_bdry(&global[0],Op->getrow->pre_comm,
@@ -2542,7 +2542,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
   for ( int j = 0; j < NumMyRows+Nghost; j++ ) {
     global_as_int[j] = (int) global[j];
   }
-  
+
   // =================== //
   // cycle over all rows //
   // =================== //
@@ -2597,7 +2597,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 
     for (int j = 0 ; j < NnzRow ; j += NumPDEEqns) {
 
-     if (colInd[j]%NumPDEEqns == 0) { 
+     if (colInd[j]%NumPDEEqns == 0) {
 
       // insert diagonal later
       if (colInd[j] != i) {
@@ -2618,12 +2618,12 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	double d2 = tmp1*tmp1 + tmp2*tmp2 + tmp3*tmp3;
 	if( d2 == 0.0 ) {
 	  std::cerr << std::endl;
-	  std::cerr << "distance between node " << i/NumPDEEqns << " and node " 
+	  std::cerr << "distance between node " << i/NumPDEEqns << " and node "
 	    << colInd[j]/NumPDEEqns << std::endl
 	    << "is zero. Coordinates of these nodes are" << std::endl
-	    << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl  
-	    << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl  
-	    << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl  
+	    << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl
+	    << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl
+	    << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl
 	    << "Now proceeding with distance = 1.0" << std::endl;
 	  std::cerr << std::endl;
 	  d2 = 1.0;
@@ -2633,19 +2633,19 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 
 	GlobalCol = global_as_int[colInd[j]];
 	assert( GlobalCol != -1 );
-	
+
 	// insert this value on all rows
 	for( int k=0 ; k<NumPDEEqns ; ++k ) {
 	  int row = GlobalRow+k;
 	  int col = GlobalCol+k;
 	  if( row >= NumGlobalRows || col >= NumGlobalRows ) {
-	    std::cerr << "trying to insert element (" << row 
+	    std::cerr << "trying to insert element (" << row
 	         << "," << col << "), " << std::endl
 		 << "while NumGlobalRows = " << NumGlobalRows << std::endl
 		 << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << std::endl
 		 << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
 	  }
-	    
+
 	  // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
 	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
 	    int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
@@ -2661,19 +2661,19 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	total -= val;
 
 	// put (j,i) element as well. this works also for
-	// off-process elements. 
+	// off-process elements.
 	if( SymmetricPattern == 1 ) {
 	  for( int k=0 ; k<NumPDEEqns ; ++k ) {
 	    int row = GlobalCol+k;
 	    int col = GlobalRow+k;
 	    if( row >= NumGlobalRows || col >= NumGlobalRows ) {
-	      std::cerr << "trying to insert element (" << row 
+	      std::cerr << "trying to insert element (" << row
 		<< "," << col << "), " << std::endl
 		<< "while NumGlobalRows = " << NumGlobalRows << std::endl
 		<< "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << std::endl
 		<< "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
 	    }
-	    if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
+	    if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
 	      int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
 	      if( ierr ) {
 		std::cerr << "InsertGlobalValues return value = " << ierr << std::endl
@@ -2685,7 +2685,7 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 	  }
 	  total -= val;
 	}
-      } 
+      }
     }
 
     }
@@ -2715,11 +2715,11 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 
   *NewOp = ML_Operator_Create(Op->comm);
   ML_Operator_WrapEpetraMatrix(FakeMatrix,*NewOp);
-  
+
   return(0);
 }
 
-int ML_Operator_Destroy_DiscreteLaplacian() 
+int ML_Operator_Destroy_DiscreteLaplacian()
 {
 
   if (FakeMatrix != 0) {
@@ -2782,10 +2782,10 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
   Epetra_Map* map = 0;
   int proc        = comm.MyPID();
   int nproc       = comm.NumProc();
-  
+
   FILE *fp = fopen(filename,"r");
   if (!fp) return 0;
-  if (proc) 
+  if (proc)
   {
     fclose(fp);
     fp = 0;
@@ -2804,7 +2804,7 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
   comm.Broadcast(&ok,1,0);
   if (!ok) return 0;
   else numeq_total = ok;
-  
+
   int* gupdate = new int[numeq_total];
   if (proc==0)
   {
@@ -2817,13 +2817,13 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
      }
      fclose(fp); fp = 0;
   }
-   
+
   comm.Broadcast(gupdate,numeq_total,0);
   for (int i=0; i< numeq_total; i++)
      if (gupdate[i]==proc) numeq++;
-     
+
   int* update = new int[numeq];
-  
+
   int counter=0;
   for (int i=0; i<numeq_total; i++)
   {
@@ -2832,11 +2832,11 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
         update[counter] = i;
         ++counter;
      }
-  }   
+  }
   delete [] gupdate; gupdate = 0;
-  
+
   map = new Epetra_Map(numeq_total,numeq,update,0,comm);
-  
+
   return map;
 }
 
@@ -2871,9 +2871,9 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
    int  numeq_total = map.NumGlobalElements();
    int  nproc       = comm.NumProc();
    int  proc        = comm.MyPID();
-   
+
    Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy,map,map,0);
-   
+
    for (int activeproc=0; activeproc<nproc; activeproc++)
    {
       int ok=0;
@@ -2882,7 +2882,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
       {
          std::cout << "Proc " << proc << " is reading the Epetra_CrsMatrix .."; fflush(stdout);
          fp = fopen(filename,"r");
-         if (fp) 
+         if (fp)
          {
             ok=1;
             fgets(buffer,9999,fp);
@@ -2904,7 +2904,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
          {
             fgets(buffer,9999,fp);
             int row = i;
-            if (!map.MyGID(row)) // it's not one of my rows 
+            if (!map.MyGID(row)) // it's not one of my rows
                continue;
             else                 // this row belongs to me, read it
             {
@@ -2921,13 +2921,13 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
                }
             }
          }
-         std::cout << std::endl;   
+         std::cout << std::endl;
          fclose(fp); fp = 0;
       }
       comm.Barrier();
    }
    A->FillComplete();
-   
+
    return A;
 }
 
@@ -2955,7 +2955,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
  | returns true on success, false otherwise                             |
  |                                                                      |
  *----------------------------------------------------------------------*/
-bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector, 
+bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
                                Epetra_Map& map,Epetra_Comm& comm, int ivec)
 {
   char  buffer[200];
@@ -2964,10 +2964,10 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
   int  numeq_total = map.NumGlobalElements();
   int  nproc       = comm.NumProc();
   int  proc        = comm.MyPID();
-   
+
   FILE *fp = fopen(filename,"r");
   if (!fp) return false;
-  if (proc) 
+  if (proc)
   {
     fclose(fp);
     fp = 0;
@@ -3020,10 +3020,10 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
      }
      comm.Barrier();
   }
-  
+
 
   return true;
-}                               
+}
 
 
 /*----------------------------------------------------------------------*
@@ -3058,7 +3058,7 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
  |                                                                      |
  *----------------------------------------------------------------------*/
 bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
-                                  Epetra_Comm& comm, 
+                                  Epetra_Comm& comm,
                                   int**blocks, int** block_pde)
 {
   char  buffer[1000];
@@ -3070,7 +3070,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
 
   FILE *fp = fopen(filename,"r");
   if (!fp) return false;
-  if (proc) 
+  if (proc)
   {
     fclose(fp);
     fp = 0;
@@ -3088,7 +3088,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
 
   *blocks    = new int[numeq];
   *block_pde = new int[numeq];
-  
+
   int block_counter=0;
   int numeq_counter=0;
   for (int activeproc=0; activeproc<nproc; activeproc++)
@@ -3160,7 +3160,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
      }
      comm.Broadcast(&block_counter,1,activeproc);
   }
-  
+
   if (nblocks != block_counter)
   {
      std::cout << "**ERR**  Something went wrong, final number of blocks: " << block_counter << std::endl
@@ -3169,7 +3169,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
   }
 
   return true;
-}                                  
+}
 
 /*----------------------------------------------------------------------*
  |                                                           m.gee 03/05|
@@ -3177,24 +3177,24 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
  | writes column of Epetra_Multivecotr to GID viz                       |
  |                                                                      |
  *----------------------------------------------------------------------*/
-bool Epetra_ML_writegidviz(char* filename, int label, 
-                           Epetra_MultiVector& vector, int ivec, 
+bool Epetra_ML_writegidviz(char* filename, int label,
+                           Epetra_MultiVector& vector, int ivec,
                            Epetra_Map& map, Epetra_Comm& comm)
 {
   char* bptr;
   char buffer[1000];
   char filename2[1000];
-  
+
   int  numeq_total = map.NumGlobalElements();
   int  numeq       = map.NumMyElements();
   int  proc        = comm.MyPID();
 
-  //----------------- reduce content of ivec Vector in vector to proc 0    
+  //----------------- reduce content of ivec Vector in vector to proc 0
   double* values  = vector[ivec];
   double* send    = new double[numeq_total];
   double* gvalues = new double[numeq_total];
   for (int i=0; i<numeq_total; i++) send[i] = 0.0;
-  for (int i=0; i<numeq; i++) 
+  for (int i=0; i<numeq; i++)
   {
      int gID = map.GID(i);
      if (gID==-1) {
@@ -3204,9 +3204,9 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   comm.SumAll(send,gvalues,numeq_total);
   delete [] send;
   if (proc) delete [] gvalues;
-  
+
   // ---------------------------------------------------open all files
-  // copy filename not to modify it 
+  // copy filename not to modify it
   strcpy(filename2,filename);
   int   ok    = 0;
   FILE* fin   = 0;
@@ -3222,7 +3222,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   {
      delete [] gvalues;
      return false;
-  } 
+  }
   bool newresfile=true;
   if (proc==0)
   {
@@ -3232,9 +3232,9 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      {
         fclose(foutm); foutm = 0;
      }
-     else // mesh file does not exist, create      
+     else // mesh file does not exist, create
         foutm = fopen("data.flavia.msh","w");
-     
+
      // try to open the mesh file for read to see whether it exists
      foutr = fopen("data.flavia.res","r");
      if (foutr) // result file exists, attach to it
@@ -3249,11 +3249,11 @@ bool Epetra_ML_writegidviz(char* filename, int label,
         newresfile=true;
      }
   }
-  
-  
+
+
   //----------------------------------- read the grid file
   int nnode      = 0;
-  int dofpernode = 0; 
+  int dofpernode = 0;
   int readnumeq  = 0;
   bool isshell=false;
   if (proc==0)
@@ -3265,12 +3265,12 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      nnode      = strtol(buffer,&bptr,10);
      dofpernode = strtol(bptr,&bptr,10);
      readnumeq  = strtol(bptr,&bptr,10);
-     if (strncmp(" SHELL",bptr,6)==0) 
+     if (strncmp(" SHELL",bptr,6)==0)
         isshell=true;
-     else                            
+     else
         isshell=false;
      if (readnumeq==numeq_total) ok=1;
-     else                        ok=0;  
+     else                        ok=0;
   }
   comm.Broadcast(&ok,1,0);
   if (!ok)
@@ -3278,7 +3278,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      delete [] gvalues;
      return false;
   }
-  
+
   //-------------------------- read nodal coordinates and dofs
   double* x   = 0;
   double* y   = 0;
@@ -3304,7 +3304,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
         y[node-1]   = strtod(bptr,&bptr);
         z[node-1]   = strtod(bptr,&bptr);
         for (int j=0; j<dofpernode; j++)
-           dof[node-1][j] = strtol(bptr,&bptr,10); 
+           dof[node-1][j] = strtol(bptr,&bptr,10);
      }
      // check whether we arrived at the line, were the elements begin
      fgets(buffer,999,fin);
@@ -3315,7 +3315,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
         delete [] dof[0]; delete [] dof;
      }
      else ok = 1;
-  }     
+  }
   comm.Broadcast(&ok,1,0);
   if (!ok)
   {
@@ -3353,11 +3353,11 @@ bool Epetra_ML_writegidviz(char* filename, int label,
         ok = 0;
         delete [] x; delete [] y; delete [] z;
         delete [] dof[0]; delete [] dof;
-        delete [] top[0]; delete [] top;        
+        delete [] top[0]; delete [] top;
      }
      else ok = 1;
      fclose(fin);   fin   = 0;
-  }  
+  }
   comm.Broadcast(&ok,1,0);
   if (!ok)
   {
@@ -3377,7 +3377,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      for (int i=0; i<nnode; i++)
      fprintf(foutm,"%6d   %20.10f   %20.10f   %20.10f\n",i+1,x[i],y[i],z[i]);
      fprintf(foutm,"%s","END COORDINATES\n");
-     
+
      // print elements
      fprintf(foutm,"%s","ELEMENTS\n");
      for (int i=0; i<nelement; i++)
@@ -3433,9 +3433,9 @@ bool Epetra_ML_writegidviz(char* filename, int label,
                  val = gvalues[thisdof];
               else
                  val = 0.0;
-              fprintf(foutr,"%20.10e   ",val); 
+              fprintf(foutr,"%20.10e   ",val);
            }
-           fprintf(foutr,"%s","\n"); 
+           fprintf(foutr,"%s","\n");
         }
      }
      else // results come from a shell element
@@ -3463,7 +3463,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
               else
                  val2 = 0.0;
               val -= val2;
-              fprintf(foutr,"%20.10e   ",val); 
+              fprintf(foutr,"%20.10e   ",val);
            }
            fprintf(foutr,"%s","\n"); fflush(foutr);
            // print the upper surface node
@@ -3484,7 +3484,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
               else
                  val2 = 0.0;
               val += val2;
-              fprintf(foutr,"%20.10e   ",val); 
+              fprintf(foutr,"%20.10e   ",val);
            }
            fprintf(foutr,"%s","\n"); fflush(foutr);
         }
@@ -3496,12 +3496,12 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   {
      delete [] x; delete [] y; delete [] z;
      delete [] dof[0]; delete [] dof;
-     delete [] top[0]; delete [] top;        
-     delete [] gvalues; 
+     delete [] top[0]; delete [] top;
+     delete [] gvalues;
      fflush(foutr); fclose(foutr);
   }
   return true;
-}                           
+}
 
 // ============================================================================
 
@@ -3593,20 +3593,20 @@ int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList
 
   Example:
    Input:
-    smoother: type (level 0) = symmetric Gauss-Seidel  
-    smoother: sweeps (level 0) = 1  
+    smoother: type (level 0) = symmetric Gauss-Seidel
+    smoother: sweeps (level 0) = 1
    Output:
-    smoother: list (level 0) -> 
-     smoother: type = symmetric Gauss-Seidel  
-     smoother: sweeps = 1  
+    smoother: list (level 0) ->
+     smoother: type = symmetric Gauss-Seidel
+     smoother: sweeps = 1
 */
 void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
 {
   newList.setName(List.name());
-  
+
   // Copy general (= not level-specific) options and sublists to the new list.
   // - Coarse and level-specific parameters are not copied yet. They will be moved to sublists later.
-  // - Already existing level-specific lists are copied to the new list but the coarse list is not copied 
+  // - Already existing level-specific lists are copied to the new list but the coarse list is not copied
   //   yet because it has to be modified before copy (s/coarse/smoother/)
   for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); ++param)
     {
@@ -3625,7 +3625,7 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
     ParameterList &newCoarseList = newList.sublist("coarse: list");
     for (ParameterList::ConstIterator param=coarseList.begin(); param!=coarseList.end() ; ++param) {
       const std::string & pname=coarseList.name(param);
-      
+
       if (pname.find("coarse:",0) == 0) {
         // change "coarse: " to "smoother:"
         newCoarseList.setEntry("smoother: "+pname.substr(8),coarseList.entry(param));
@@ -3642,19 +3642,19 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
       if (pname.find(" (level",0) != std::string::npos && pname.find("smoother: list (level",0) != 0 && pname.find("aggregation: list (level",0) != 0)
         {
           // Copy level-specific parameters (smoother and aggregation)
-              
+
           // Scan pname (ex: pname="smoother: type (level 2)")
-          std::string type, option;  
+          std::string type, option;
           int levelID=-1;
           {
             typedef Teuchos::ArrayRCP<char>::size_type size_type;    // (!)
             Teuchos::Array<char> ctype  (size_type(pname.size()+1));
             Teuchos::Array<char> coption(size_type(pname.size()+1));
-              
+
             int matched = sscanf(pname.c_str(),"%s %[^(](level %d)", ctype.getRawPtr(), coption.getRawPtr(), &levelID); // use [^(] instead of %s to allow for strings with white-spaces (ex: "ifpack list")
             type = std::string(ctype.getRawPtr());
             option = std::string(coption.getRawPtr()); option.resize(option.size () - 1); // remove final white-space
-              
+
             if (matched != 3 || (type != "smoother:" && type != "aggregation:")) {
               std::cout << "ML_CreateSublist(), Line " << __LINE__ << ". "
                         << "Error in creating level-specific sublists" << std::endl
@@ -3665,20 +3665,20 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
               exit(EXIT_FAILURE);
             }
           }
-            
+
           // Create/grab the corresponding sublist of newList
           ParameterList &newSubList = newList.sublist(type + " list (level " + Teuchos::toString(levelID) + ")");
           // Shove option w/o level number into sublist
           newSubList.setEntry(type + " " + option,List.entry(param));
-            
+
         } else if (pname.find("coarse:",0) == 0 && pname != "coarse: list") {
         // Copy coarse parameters
         ParameterList &newCoarseList = newList.sublist("coarse: list"); // the coarse sublist is created only if there is at least one "coarse:" parameter
         newCoarseList.setEntry("smoother: "+pname.substr(8),List.entry(param)); // change "coarse: " to "smoother:"
       } // end if
-        
+
     } // for
-    
+
 } //ML_CreateSublist()
 
 #endif
@@ -3704,7 +3704,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
 
   double apply_only_time = 0.0, total_time = 0.0;
 
-  if(!Filled()) 
+  if(!Filled())
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   Epetra_Time TotalTime(Comm());
@@ -3727,10 +3727,10 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
       EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
       xp = (double*) ImportVector_->Values();
     }
-		
+
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     if(Exporter() != 0)  yp = (double*) ExportVector_->Values();
-		
+
     // Do actual computation
     Epetra_Time ApplyTime(Comm());
     GeneralMV(xp, yp);
@@ -3743,7 +3743,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
     // Handle case of rangemap being a local replicated map
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
   }
-	
+
   else { // Transpose operation
 
     // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors

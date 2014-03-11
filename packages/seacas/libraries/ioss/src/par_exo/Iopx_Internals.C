@@ -101,14 +101,18 @@ void Internals::update_last_time_attribute(double value)
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Internals::update_last_time_attribute()";
 
-  int status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
-			       NC_DOUBLE, 1, &value);
-  if (status != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to define 'last_written_time' attribute to file id %d",
-	    exodusFilePtr);
-    ex_err(routine,errmsg,status);
+  double tmp = 0.0;
+  int status = nc_get_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time", &tmp);
+  if (status == NC_NOERR && value > tmp) {
+    status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
+			     NC_DOUBLE, 1, &value);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define 'last_written_time' attribute to file id %d",
+	      exodusFilePtr);
+      ex_err(routine,errmsg,status);
+    }
   }
 }
 
@@ -504,7 +508,6 @@ int Internals::write_meta_data(Mesh &mesh)
 
 
   // NON-Define mode output...
-  size_t my_proc = parallelUtil.parallel_rank();
   ierr=put_non_define_data(mesh);
   if (ierr != EX_NOERR) return(ierr);
 
@@ -682,7 +685,7 @@ int Internals::put_metadata(const Mesh &mesh)
   // For use later to determine whether a timestep is corrupt, we define an attribute
   // containing the last written time...
   {
-    double fake_time = -1.0;
+    double fake_time = -1.0e38;
     status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
 			     NC_DOUBLE, 1, &fake_time);
     if (status != NC_NOERR) {
@@ -933,52 +936,52 @@ int Internals::put_metadata(const Mesh &mesh)
   // ========================================================================
   // Blocks...
   if (!mesh.edgeblocks.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "edge block", mesh.edgeblocks.size(),
+    status += define_netcdf_vars(exodusFilePtr, "edge block", mesh.edgeblocks.size(),
 				DIM_NUM_ED_BLK, VAR_STAT_ED_BLK, VAR_ID_ED_BLK, VAR_NAME_ED_BLK);
   }
 
   if (!mesh.faceblocks.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "face block", mesh.faceblocks.size(),
+    status += define_netcdf_vars(exodusFilePtr, "face block", mesh.faceblocks.size(),
 				DIM_NUM_FA_BLK, VAR_STAT_FA_BLK, VAR_ID_FA_BLK, VAR_NAME_FA_BLK);
   }
 
   if (!mesh.elemblocks.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "element block", mesh.elemblocks.size(),
+    status += define_netcdf_vars(exodusFilePtr, "element block", mesh.elemblocks.size(),
 				DIM_NUM_EL_BLK, VAR_STAT_EL_BLK, VAR_ID_EL_BLK, VAR_NAME_EL_BLK);
   }
 
   // ========================================================================
   // Sets...
   if (!mesh.nodesets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesets.size(),
 				DIM_NUM_NS, VAR_NS_STAT, VAR_NS_IDS, VAR_NAME_NS);
   }
 
   if (!mesh.edgesets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "edge set", mesh.edgesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "edge set", mesh.edgesets.size(),
 				DIM_NUM_ES, VAR_ES_STAT, VAR_ES_IDS, VAR_NAME_ES);
   }
 
   if (!mesh.facesets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "face set", mesh.facesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "face set", mesh.facesets.size(),
 				DIM_NUM_FS, VAR_FS_STAT, VAR_FS_IDS, VAR_NAME_FS);
   }
 
   if (!mesh.elemsets.empty()) {
-    status = define_netcdf_vars(exodusFilePtr, "element set", mesh.elemsets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "element set", mesh.elemsets.size(),
 				DIM_NUM_ELS, VAR_ELS_STAT, VAR_ELS_IDS, VAR_NAME_ELS);
   }
 
   // ========================================================================
   // side sets...
   if (!mesh.sidesets.empty() > 0) {
-    status = define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesets.size(),
+    status += define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesets.size(),
 				DIM_NUM_SS, VAR_SS_STAT, VAR_SS_IDS, VAR_NAME_SS);
   }
 
   // ========================================================================
-  status = define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
-				  mesh.dimensionality, numdimdim, namestrdim);
+  status += define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
+				   mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR) return EX_FATAL;
 
   return(EX_NOERR);
@@ -2961,9 +2964,9 @@ namespace {
     char errmsg[MAX_ERR_LENGTH];
     const char *routine = "Internals::define_netcdf_vars()";
 
-    int status=nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
+    nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
 
-    status=nc_def_dim(exoid, dim_num, count, &dimid);
+    int status=nc_def_dim(exoid, dim_num, count, &dimid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,

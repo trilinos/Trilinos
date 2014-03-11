@@ -2,14 +2,12 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../TPL)
 
 SET(SOURCES
   UnitTestMain.cpp 
   TestSerial.cpp 
   TestThreads.cpp 
   TestHWLOC.cpp 
-  ../../TPL/gtest/gtest-all.cc
   )
 
 IF(Kokkos_ENABLE_OpenMP)
@@ -20,6 +18,7 @@ IF(Kokkos_ENABLE_Cuda)
 
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
   CUDA_COMPILE(OBJECTS_CUDA TestCudaFunctions.cu)
 
   LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )

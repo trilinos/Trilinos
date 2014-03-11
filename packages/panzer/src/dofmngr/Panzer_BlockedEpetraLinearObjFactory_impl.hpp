@@ -50,6 +50,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
 
+#include "EpetraExt_VectorOut.h"
+#include "EpetraExt_VectorIn.h"
+
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
@@ -128,6 +131,102 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::~BlockedEpetraLinearObjFact
 
 // LinearObjectFactory functions 
 /////////////////////////////////////////////////////////////////////
+
+template <typename Traits,typename LocalOrdinalT>
+void 
+BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+readVector(const std::string & identifier,LinearObjContainer & loc,int id) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::dyn_cast;
+  using Thyra::ProductVectorBase;
+
+  BlockedEpetraLinearObjContainer & eloc = dyn_cast<BlockedEpetraLinearObjContainer>(loc);
+
+   // extract the vector from linear object container
+  RCP<Thyra::VectorBase<double> > vec;
+  switch(id) {
+  case LinearObjContainer::X:
+    vec = eloc.get_x();
+    break;
+  case LinearObjContainer::DxDt:
+    vec = eloc.get_dxdt();
+    break;
+  case LinearObjContainer::F:
+    vec = eloc.get_f();
+    break;
+  default:
+    TEUCHOS_ASSERT(false);
+    break;
+  };
+
+  int blockRows = this->getBlockRowCount();
+  RCP<ProductVectorBase<double> > b_vec = Thyra::nonconstProductVectorBase(vec);
+
+  // convert to Epetra then write out each vector to file
+  for(int i=0;i<blockRows;i++) {
+    RCP<Thyra::VectorBase<double> > x = b_vec->getNonconstVectorBlock(i); 
+    RCP<Epetra_Vector> ex = Thyra::get_Epetra_Vector(*getMap(i),x);
+
+    // build the file name from the identifier
+    std::stringstream ss;
+    ss << identifier << "-" << i << ".mm";
+
+    // read in vector (wow the MM to Vector is a poorly designed interface!)
+    Epetra_Vector * ptr_ex = 0;
+    TEUCHOS_ASSERT(0==EpetraExt::MatrixMarketFileToVector(ss.str().c_str(),*getMap(i),ptr_ex));
+
+    *ex = *ptr_ex;
+    delete ptr_ex;
+  }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void 
+BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::dyn_cast;
+  using Thyra::ProductVectorBase;
+
+  const BlockedEpetraLinearObjContainer & eloc = dyn_cast<const BlockedEpetraLinearObjContainer>(loc);
+
+   // extract the vector from linear object container
+  RCP<const Thyra::VectorBase<double> > vec;
+  switch(id) {
+  case LinearObjContainer::X:
+    vec = eloc.get_x();
+    break;
+  case LinearObjContainer::DxDt:
+    vec = eloc.get_dxdt();
+    break;
+  case LinearObjContainer::F:
+    vec = eloc.get_f();
+    break;
+  default:
+    TEUCHOS_ASSERT(false);
+    break;
+  };
+
+  int blockRows = this->getBlockRowCount();
+  RCP<const ProductVectorBase<double> > b_vec = Thyra::productVectorBase(vec);
+
+  // convert to Epetra then write out each vector to file
+  for(int i=0;i<blockRows;i++) {
+    RCP<const Thyra::VectorBase<double> > x = b_vec->getVectorBlock(i); 
+    RCP<const Epetra_Vector> ex = Thyra::get_Epetra_Vector(*getMap(i),x);
+
+    // build the file name from the identifier
+    std::stringstream ss;
+    ss << identifier << "-" << i << ".mm";
+
+    // write out vector
+    TEUCHOS_ASSERT(0==EpetraExt::VectorToMatrixMarketFile(ss.str().c_str(),*ex));
+  }
+}
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const

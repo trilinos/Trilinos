@@ -9,6 +9,14 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_DEBUG_MueLu
+  ctest_linux_nightly_mpi_debug_muelu_typhon.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 330
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_MueLu_Tpetra
   ctest_linux_nightly_serial_debug_muelu_tpetra_typhon.cmake
   CTEST_INSTALLER_TYPE release

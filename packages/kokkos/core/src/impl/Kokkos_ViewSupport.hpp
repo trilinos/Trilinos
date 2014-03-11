@@ -61,11 +61,11 @@ struct ViewAssignable
   // Compatible 'const' qualifier
   // Cannot assign managed = unmannaged
   enum { assignable_value =
-    ( is_same< typename ViewLHS::scalar_type ,
-               typename ViewRHS::scalar_type >::value
+    ( is_same< typename ViewLHS::value_type ,
+               typename ViewRHS::value_type >::value
       ||
-      is_same< typename ViewLHS::scalar_type ,
-               typename ViewRHS::const_scalar_type >::value )
+      is_same< typename ViewLHS::value_type ,
+               typename ViewRHS::const_value_type >::value )
     &&
     is_same< typename ViewLHS::memory_space ,
              typename ViewRHS::memory_space >::value
@@ -284,24 +284,78 @@ namespace Impl {
  */
 template< class ViewTraits , class Enable = void >
 struct ViewTracking {
-  KOKKOS_INLINE_FUNCTION static void increment( const void * ) {}
-  KOKKOS_INLINE_FUNCTION static void decrement( const void * ) {}
+  KOKKOS_INLINE_FUNCTION void increment( const void * ) const {}
+  KOKKOS_INLINE_FUNCTION void decrement( const void * ) const {}
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking & ) { return *this ; }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking<T> & ) { return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const bool ) { return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  operator bool() const { return false ; }
 };
 
 template< class ViewTraits >
-struct ViewTracking< ViewTraits ,
-                     typename enable_if<(
-                       ViewTraits::is_managed &&
-                       Impl::is_same< HostSpace , ExecutionSpace >::value
-                     )>::type >
+struct ViewTracking< ViewTraits , typename enable_if< ViewTraits::is_managed >::type >
 {
+private:
+
+  enum { is_host_space = is_same< HostSpace , ExecutionSpace >::value };
+
+  bool m_flag ;
+
+  struct NoType {};
+
+public:
+
   typedef typename ViewTraits::memory_space memory_space ;
 
-  KOKKOS_INLINE_FUNCTION static void increment( const void * ptr )
-    { memory_space::increment( ptr ); }
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void increment( const T * ptr
+                , typename enable_if<( ! is_same<T,NoType>::value && is_host_space )>::type * = 0 ) const
+    { if ( m_flag ) memory_space::increment( ptr ); }
 
-  KOKKOS_INLINE_FUNCTION static void decrement( const void * ptr )
-    { memory_space::decrement( ptr ); }
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void increment( const T *
+                , typename enable_if<( ! is_same<T,NoType>::value && ! is_host_space )>::type * = 0 ) const
+    {}
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void decrement( const T * ptr
+                , typename enable_if<( ! is_same<T,NoType>::value && is_host_space )>::type * = 0 ) const
+    { if ( m_flag ) memory_space::decrement( ptr ); }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void decrement( const T *
+                , typename enable_if<( ! is_same<T,NoType>::value && ! is_host_space )>::type * = 0 ) const
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking() : m_flag( true ) {}
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking & rhs ) { m_flag = rhs.m_flag ; return *this ; }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking<T> & rhs ) { m_flag = rhs.operator bool(); return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const bool rhs ) { m_flag = rhs ; return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  operator bool() const { return m_flag ; }
 };
 
 } // namespace Impl

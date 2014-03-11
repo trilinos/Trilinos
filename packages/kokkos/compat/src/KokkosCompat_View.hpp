@@ -117,16 +117,16 @@ namespace Kokkos {
     class Deallocator {
     public:
       typedef ViewType view_type;
-      typedef typename ViewType::scalar_type ptr_t;
-      typedef typename view_type::scalar_type scalar_type;
+      typedef typename ViewType::value_type ptr_t;
+      typedef typename view_type::value_type value_type;
 
       // Constructor takes the View that owns the memory.
-      Deallocator (const ViewType& view) : view_ (view) {}
+      Deallocator (const ViewType& view__) : view_ (view__) {}
 
       // "Deallocation function" doesn't actually deallocate its input
       // pointer; the View is responsible for deallocation of its
       // memory.
-      void free (scalar_type*) {}
+      void free (value_type*) {}
       view_type view() { return view_;}
     private:
       view_type view_; // View that owns the memory
@@ -141,7 +141,7 @@ namespace Kokkos {
 
     // Create a "persisting view" from a Kokkos::View
     template <typename ViewType>
-    Teuchos::ArrayRCP<typename ViewType::scalar_type>
+    Teuchos::ArrayRCP<typename ViewType::value_type>
     persistingView(const ViewType& view) {
       // mfh (05 Sep 2013) We use a custom deallocator that keeps the
       // view, but otherwise does nothing.  It doesn't deallocate the
@@ -160,54 +160,59 @@ namespace Kokkos {
       // allocated (e.g.,) using new or malloc, but it's not a problem
       // here, because the custom deallocator does not free anything.
       // Nevertheless, it's better not to trouble the tracking system.
-      return Teuchos::arcp(view.ptr_on_device(), 0, view.size(),
+      return Teuchos::arcp(view.ptr_on_device(), 0, view.capacity(),
                            deallocator(view), false);
     }
 
     // Create a "persisting view" from a Kokkos::View
     template <typename ViewType>
-    Teuchos::ArrayRCP<typename ViewType::scalar_type>
+    Teuchos::ArrayRCP<typename ViewType::value_type>
     persistingView(
       const ViewType& view,
-      typename Teuchos::ArrayRCP<typename ViewType::scalar_type>::size_type offset,
-      typename Teuchos::ArrayRCP<typename ViewType::scalar_type>::size_type size) {
+      typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type offset,
+      typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type size) {
       return Teuchos::arcp(view.ptr_on_device()+offset, 0, size,
                            deallocator(view), false);
     }
 
     template <typename T, typename L, typename D, typename M, typename Ordinal>
     Kokkos::View<T*,L,D,M>
-    subview_range(const Kokkos::View<T*,L,D,M>& view,
-                  Ordinal begin, Ordinal end) {
+    subview_range (const Kokkos::View<T*,L,D,M>& view,
+                   const Ordinal begin,
+                   const Ordinal end)
+    {
       typedef Kokkos::View<T*,L,D,M> view_type;
-      return Kokkos::subview<view_type>(
-        view, std::make_pair<Ordinal,Ordinal>(begin,end));
+      return Kokkos::subview<view_type> (view, std::make_pair (begin, end));
     }
 
     template <typename T, typename L, typename D, typename M, typename Ordinal>
     Kokkos::View<T*,L,D,M>
-    subview_offset(const Kokkos::View<T*,L,D,M>& view,
-                   Ordinal offset, Ordinal size) {
+    subview_offset (const Kokkos::View<T*,L,D,M>& view,
+                    const Ordinal offset,
+                    const Ordinal size)
+    {
       typedef Kokkos::View<T*,L,D,M> view_type;
-      return Kokkos::subview<view_type>(
-        view, std::make_pair<Ordinal,Ordinal>(offset,offset+size));
+      return Kokkos::subview<view_type> (view, std::make_pair (offset, offset+size));
     }
 
     template <typename DT, typename DL, typename DD, typename DM,
               typename ST, typename SL, typename SD, typename SM,
               typename Ordinal>
     void
-    deep_copy_range(const Kokkos::View<DT*,DL,DD,DM>& dst,
-                    const Kokkos::View<ST*,SL,SD,SM>& src,
-                    Ordinal dst_begin, Ordinal src_begin, Ordinal src_end) {
+    deep_copy_range (const Kokkos::View<DT*,DL,DD,DM>& dst,
+                     const Kokkos::View<ST*,SL,SD,SM>& src,
+                     const Ordinal dst_begin,
+                     const Ordinal src_begin,
+                     const Ordinal src_end)
+    {
       typedef Kokkos::View<DT*,DL,DD,DM> dst_view_type;
       typedef Kokkos::View<ST*,SL,SD,SM> src_view_type;
-      Ordinal size = src_end - src_begin;
-      Ordinal dst_end = dst_begin + size;
+      const Ordinal size = src_end - src_begin;
+      const Ordinal dst_end = dst_begin + size;
       dst_view_type dst_sub = Kokkos::subview<dst_view_type>(
-        dst, std::make_pair<Ordinal,Ordinal>(dst_begin,dst_end));
+        dst, std::make_pair (dst_begin, dst_end));
       src_view_type src_sub = Kokkos::subview<src_view_type>(
-        src, std::make_pair<Ordinal,Ordinal>(src_begin,src_end));
+        src, std::make_pair (src_begin, src_end));
       Kokkos::deep_copy(dst_sub, src_sub);
     }
 
@@ -215,17 +220,20 @@ namespace Kokkos {
               typename ST, typename SL, typename SD, typename SM,
               typename Ordinal>
     void
-    deep_copy_offset(const Kokkos::View<DT*,DL,DD,DM>& dst,
-                     const Kokkos::View<ST*,SL,SD,SM>& src,
-                     Ordinal dst_offset, Ordinal src_offset, Ordinal size) {
+    deep_copy_offset (const Kokkos::View<DT*,DL,DD,DM>& dst,
+                      const Kokkos::View<ST*,SL,SD,SM>& src,
+                      const Ordinal dst_offset,
+                      const Ordinal src_offset,
+                      const Ordinal size)
+    {
       typedef Kokkos::View<DT*,DL,DD,DM> dst_view_type;
       typedef Kokkos::View<ST*,SL,SD,SM> src_view_type;
-      Ordinal dst_end = dst_offset + size;
-      Ordinal src_end = src_offset + size;
+      const Ordinal dst_end = dst_offset + size;
+      const Ordinal src_end = src_offset + size;
       dst_view_type dst_sub = Kokkos::subview<dst_view_type>(
-        dst, std::make_pair<Ordinal,Ordinal>(dst_offset,dst_end));
+        dst, std::make_pair (dst_offset, dst_end));
       src_view_type src_sub = Kokkos::subview<src_view_type>(
-        src, std::make_pair<Ordinal,Ordinal>(src_offset,src_end));
+        src, std::make_pair (src_offset, src_end));
       Kokkos::deep_copy(dst_sub, src_sub);
     }
 

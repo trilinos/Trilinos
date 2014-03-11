@@ -6,7 +6,7 @@
  *  should appear on a line of the form
  *      row_index col_index value
  *
- *  Note: 
+ *  Note:
  *     1) This routine should work with AZ_capture_matrix.dat and
  *        AZ_capture_rhs.dat files.
  *     2) row and column indices start from 1 (not 0).
@@ -21,7 +21,7 @@
  *
  *
  *  This routine can be used for vectors instead of matrices. In this
- *  case, each line should contain only 1 entry correspond to the vector 
+ *  case, each line should contain only 1 entry correspond to the vector
  *  element value.
  *
  */
@@ -35,9 +35,9 @@ int main(int argc, char *argv[])
    extern int mygetline(char string[]);
 
    /* We need to determine if there is some kind of header in the  */
-   /* file. First strip off any strings.                           */ 
+   /* file. First strip off any strings.                           */
 
-   
+
    ch = getchar();
    while ( ((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')))
    {
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
    fprintf(stderr,"Printing out zero entries.\n");
 #else
    fprintf(stderr,"Not printing out zero entries.\n");
-#endif 
+#endif
 
    flag = 0;
    if ( (i = sscanf(string,"%d%d%lf",&Nrows,&j,&val)) != 2)
@@ -118,10 +118,10 @@ int main(int argc, char *argv[])
        }
        if (row == current_row+1) printf("-1\n");
        else if (row > current_row+1) {
-          if (first_time) 
+          if (first_time)
              fprintf(stderr,"Warning: Empty rows (e.g. %d)?\n",current_row+1);
 	  if (empty) printf("0 0.0\n");
-          printf("-1\n"); 
+          printf("-1\n");
           for (i = current_row+1; i < row; i++) printf("%d 0.0\n-1\n",i-1);
           first_time = 0;
        }
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
        flag = mygetline(string);
    } /*while ( flag != 0) */
    printf("-1\n");
-   for (i = current_row; i < Nrows; i++) 
+   for (i = current_row; i < Nrows; i++)
       printf("0 0.0\n-1\n");
 }
 

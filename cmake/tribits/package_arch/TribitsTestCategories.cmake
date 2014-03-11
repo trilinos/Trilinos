@@ -43,7 +43,7 @@ INCLUDE(Join)
 
 
 # Define the valid categories that will be recognized in the CATEGORIES keyword
-SET(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS NIGHTLY  PERFORMANCE)
+SET(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS  NIGHTLY  WEEKLY  PERFORMANCE)
 
 # TODO: ABove, We may want only the final project to define these categories
 # and not just be general categories for all projects based on ProjectArch.

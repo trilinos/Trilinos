@@ -86,14 +86,17 @@ enum EReductionType {
 inline
 const char* toString( const EReductionType reductType )
 {
-  switch(reductType) {
+  switch (reductType) {
     case REDUCE_SUM: return "REDUCE_SUM";
     case REDUCE_MIN: return "REDUCE_MIN";
     case REDUCE_MAX: return "REDUCE_MAX";
     case REDUCE_AND: return "REDUCE_AND";
-    default: TEUCHOS_TEST_FOR_EXCEPT(true);
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "Teuchos::toString(EReductionType): "
+        "Invalid EReductionType value " << reductType << ".  Valid values "
+        "include REDUCE_SUM, REDUCE_MIN, REDUCE_MAX, and REDUCE_AND.");
   }
-  return 0; // Will never be called
 }
 
 /** \brief Get the process rank.
@@ -1109,32 +1112,38 @@ namespace Teuchos {
 // are deleted correctly.
 template<typename Ordinal, typename Packet>
 ValueTypeReductionOp<Ordinal,Packet>*
-createOp( const EReductionType reductType )
+createOp (const EReductionType reductType)
 {
   typedef ScalarTraits<Packet> ST;
-  switch(reductType) {
+  switch (reductType) {
     case REDUCE_SUM: {
-      return new SumValueReductionOp<Ordinal,Packet>();
-      break;
+      return new SumValueReductionOp<Ordinal,Packet> ();
     }
     case REDUCE_MIN: {
-      TEUCHOS_TEST_FOR_EXCEPT(!ST::isComparable);
-      return new MinValueReductionOp<Ordinal,Packet>();
-      break;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! ST::isComparable, std::invalid_argument, "Teuchos::createOp"
+        "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
+        << " is not less-than comparable, so it does not make sense to do a "
+        "MIN reduction with it.");
+      return new MinValueReductionOp<Ordinal,Packet> ();
     }
     case REDUCE_MAX: {
-      TEUCHOS_TEST_FOR_EXCEPT(!ST::isComparable);
-      return new MaxValueReductionOp<Ordinal,Packet>();
-      break;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! ST::isComparable, std::invalid_argument, "Teuchos::createOp"
+        "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
+        << " is not less-than comparable, so it does not make sense to do a "
+        "MAX reduction with it.");
+      return new MaxValueReductionOp<Ordinal,Packet> ();
     }
     case REDUCE_AND: {
-      return new ANDValueReductionOp<Ordinal, Packet>();
-      break;
+      return new ANDValueReductionOp<Ordinal, Packet> ();
     }
     default:
-      TEUCHOS_TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "Teuchos::createOp(EReductionType): "
+        "Invalid EReductionType value " << reductType << ".  Valid values "
+        "include REDUCE_SUM, REDUCE_MIN, REDUCE_MAX, and REDUCE_AND.");
   }
-  return 0; // Will never be called!
 }
 
 

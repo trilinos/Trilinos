@@ -14,6 +14,7 @@ repartition: keep proc 0 = 1
 repartition: partitioner = zoltan2
 max levels = 10   [default]
 debug: graph level = -1   [default]
+repartition: rebalance P and R = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
@@ -49,13 +50,14 @@ Level 1
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 100   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -100,12 +102,14 @@ Level 1
   alwaysKeepProc0 = 1
   
  type = Interpolation
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -135,13 +139,14 @@ Level 2
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 100   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -186,12 +191,14 @@ Level 2
   alwaysKeepProc0 = 1
   
  type = Interpolation
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -221,13 +228,14 @@ Level 3
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 100   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -272,12 +280,14 @@ Level 3
   alwaysKeepProc0 = 1
   
  type = Interpolation
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -304,11 +314,11 @@ Level 3
  A 2    1111   3331     3.00  1
  A 3     371   1111     2.99  1
  
- Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 9999, global cols = 9999, global nnz  = 29995}
+ Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94773, alpha: 20, lambdaMin: 0.0973864}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 3335, global cols = 3335, global nnz  = 10015}
+ Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.95236, alpha: 20, lambdaMin: 0.0976182}, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
  
- Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, global rows = 1111, global cols = 1111, global nnz  = 3331}
+ Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.9461, alpha: 20, lambdaMin: 0.097305}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
  
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother

@@ -241,7 +241,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
     } else {
       comm->barrier ();
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-      comm->barrier ();
+      //comm->barrier ();
     }
   }
 

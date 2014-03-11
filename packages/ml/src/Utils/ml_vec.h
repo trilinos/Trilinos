@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -52,7 +52,7 @@ extern "C"
 extern int  ML_DVector_Create( ML_DVector **, ML_Comm *com );
 extern int  ML_DVector_Init(ML_DVector *vec);
 extern int  ML_DVector_Destroy( ML_DVector ** );
-extern int  ML_DVector_Clean( ML_DVector *vec ); 
+extern int  ML_DVector_Clean( ML_DVector *vec );
 extern int  ML_DVector_LoadData( ML_DVector *, int, double * );
 extern int  ML_DVector_SetData( ML_DVector *, int, double * );
 extern int  ML_DVector_GetLength( ML_DVector * );

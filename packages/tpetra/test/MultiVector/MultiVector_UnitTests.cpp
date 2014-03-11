@@ -70,6 +70,29 @@
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors
 
+
+// Macro that marks a function as "possibly unused," in order to
+// suppress build warnings.
+#if ! defined(TRILINOS_UNUSED_FUNCTION)
+#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#  elif defined(__clang__)
+#    if __has_attribute(unused)
+#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#    else
+#      define TRILINOS_UNUSED_FUNCTION
+#    endif // Clang has 'unused' attribute
+#  elif defined(__IBMCPP__)
+// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
+//
+// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
+#    define TRILINOS_UNUSED_FUNCTION
+#  else // some other compiler
+#    define TRILINOS_UNUSED_FUNCTION
+#  endif
+#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
+
+
 namespace Teuchos {
   template <>
   ScalarTraits<int>::magnitudeType
@@ -169,9 +192,9 @@ namespace {
   template <class Scalar>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol() { return Teuchos::ScalarTraits<Scalar>::eps(); }
   template <>
-  int testingTol<int>() { return 0; }
+  TRILINOS_UNUSED_FUNCTION int testingTol<int>() { return 0; }
   template <>
-  long testingTol<long>() { return 0; }
+  TRILINOS_UNUSED_FUNCTION long testingTol<long>() { return 0; }
 
   //
   // UNIT TESTS
@@ -1714,8 +1737,7 @@ namespace {
     //   scale it by 2 in situ
     //   check that it equals B: subtraction in situ
     {
-      MV A2(A);
-      A2 = createCopy(A);
+      MV A2(createCopy(A));
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       A2.norm1(norms);
@@ -1724,8 +1746,8 @@ namespace {
     //   set A2 = A
     //   check that it equals B: scale,subtraction in situ
     {
-      MV A2(A);
-      A2 = createCopy(A);
+      MV A2(createCopy(A));
+
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       A2.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
@@ -1858,9 +1880,7 @@ namespace {
     }
     // check that C=A, C.Scale(2.0) == B
     {
-      MV C(map,numVectors,false);
-      //C = A;
-      C = createCopy(A);
+      MV C(createCopy(A));
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
@@ -1869,9 +1889,7 @@ namespace {
     }
     // check that C=A, C.Scale(tuple(2)) == B
     {
-      MV C(map,numVectors,false);
-      //C = A;
-      C = createCopy(A);
+      MV C(createCopy(A));
       Array<Scalar> twos(numVectors,as<Scalar>(2));
       C.scale(twos());
       C.update(-1.0,B,1.0);
@@ -1925,8 +1943,7 @@ namespace {
     //   scale it by 2 in situ
     //   check that it equals B: subtraction in situ
     {
-      V A2(A);
-      A2 = createCopy(A);
+      V A2(createCopy(A));
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       norm = A2.norm1(); A2.norm1(norms());
@@ -1936,8 +1953,7 @@ namespace {
     //   set A2 = A
     //   check that it equals B: scale,subtraction in situ
     {
-      V A2(A);
-      A2 = createCopy(A);
+      V A2(createCopy(A));
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       norm = A2.norm1(); A2.norm1(norms());
       TEST_EQUALITY(norm,M0);
@@ -1995,8 +2011,7 @@ namespace {
       for (size_t j=0; j < as<size_t>(inds.size()); ++j) {
         nsub[j] = norig[inds[j]];
       }
-      MV mvcopy(*mvview);
-      mvcopy = createCopy(*mvview);
+      MV mvcopy(createCopy(*mvview));
       mvcopy.normInf(ncopy());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
       // reset both the view and the copy of the view, ensure that they are independent
@@ -2015,9 +2030,7 @@ namespace {
       morig.randomize();
       // test copy constructor with
       // copy it
-      MV mcopy1(morig), mcopy2(morig);
-      mcopy1 = createCopy(morig);
-      mcopy2 = createCopy(morig);
+      MV mcopy1(createCopy(morig)), mcopy2(createCopy(morig));
 
       // verify that all three have identical values
       Array<Mag> norig(numVectors), ncopy1(numVectors), ncopy2(numVectors);
@@ -2057,9 +2070,7 @@ namespace {
     V morig(map);
     morig.randomize();
     // copy it
-    V mcopy1(morig), mcopy2(morig);
-    mcopy1 = createCopy(morig);
-    mcopy2 = createCopy(morig);
+    V mcopy1(createCopy(morig)), mcopy2(createCopy(morig));
     // verify that all three have identical values
     Magnitude norig, ncopy1, ncopy2;
     norig = morig.normInf();

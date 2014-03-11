@@ -188,6 +188,8 @@ namespace panzer {
     const std::vector<std::string>& getDOFNames() const;
     const std::vector<StrPureBasisPair>& getProvidedDOFs() const;
 
+    const std::vector<std::vector<std::string> > & getCoordinateDOFs() const;
+
     //! Returns the unique set of bases, key is the unique panzer::PureBasis::name() of the basis
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& getBases() const;
 
@@ -214,6 +216,10 @@ namespace panzer {
     
     Teuchos::RCP<const FieldLibraryBase> getFieldLibraryBase() const 
     { return m_field_lib.getConst(); }
+    
+    // return the Physics Block parameter list
+    Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
+    { return m_input_parameters; }
 
   protected:
     void initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
@@ -233,6 +239,8 @@ namespace panzer {
 
     std::vector<std::string> m_dof_names;
     std::vector<StrPureBasisPair> m_provided_dofs;
+    std::vector<std::vector<std::string> > m_coordinate_dofs; // coordinate DOFs (defines them)
+
     //! map of unique bases, key is the panzer::PureBasis::name() corresponding to its value
     std::map<std::string,Teuchos::RCP<panzer::PureBasis> > m_bases;
     //! map of unique integration rules, key is panzer::IntegrationRule::order() corresponding to its value

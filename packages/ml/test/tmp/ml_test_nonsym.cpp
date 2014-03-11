@@ -28,7 +28,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   // - first is nx
   // - second is problem type
   // - third is preconditioner
-  
+
   int nx, ny;
   nx = (int) strtol(argv[1],NULL,10);
   ny = nx;
@@ -70,27 +70,27 @@ int main(int argc, char *argv[])
     Epetra_Vector* readx = 0,* readb = 0,* readxexact = 0;
     Galeri::ReadHB(ProblemType.c_str(), Comm, Map, A, readx, readb, readxexact);
   }
-    
+
   // Build a linear system with trivial solution, using a random vector
   // as starting solution.
   Epetra_Vector LHS_exact(*Map); LHS_exact.Random();
   Epetra_Vector LHS(*Map); LHS.Random();
-  Epetra_Vector RHS(*Map); 
+  Epetra_Vector RHS(*Map);
   A->Multiply(false, LHS_exact, RHS);
 
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
-  // As we wish to use AztecOO, we need to construct a solver object 
+  // As we wish to use AztecOO, we need to construct a solver object
   // for this problem
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   // create a parameter list for ML options
   ParameterList MLList;
 
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   // output level, 0 being silent and 10 verbose
   MLList.set("ML output", 10);
   // maximum number of levels
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   // use Uncoupled scheme to create the aggregate
   MLList.set("aggregation: type", "Uncoupled");
 
-  // smoother is symmetric Gauss-Seidel. Example file 
+  // smoother is symmetric Gauss-Seidel. Example file
   // `ml/examples/TwoLevelDD/ml_2level_DD.cpp' shows how to use
   // AZTEC's preconditioners as smoothers
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
@@ -145,14 +145,14 @@ int main(int argc, char *argv[])
   }
   else
     exit(-1);
-               
+
   MLList.set("coarse: type","Amesos-KLU");
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_kspace, 60);
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
   // destroy the preconditioner
   delete MLPrec;
-  
+
   delete A;
   delete Map;
 

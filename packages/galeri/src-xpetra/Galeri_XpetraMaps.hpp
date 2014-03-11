@@ -149,14 +149,15 @@ namespace Galeri {
   template <class LocalOrdinal, class GlobalOrdinal, class Map>
   RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
     GlobalOrdinal n = -1, nx = -1, ny = -1, nz = -1, mx = -1, my = -1, mz = -1;
+
     // Get matrix dimensions
     if (list.isParameter("n"))  n  = list.get<GlobalOrdinal>("n");
     if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
     if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
     if (list.isParameter("nz")) nz = list.get<GlobalOrdinal>("nz");
-    if (list.isParameter("mx")) nz = list.get<GlobalOrdinal>("mx");
-    if (list.isParameter("my")) nz = list.get<GlobalOrdinal>("my");
-    if (list.isParameter("mz")) nz = list.get<GlobalOrdinal>("mz");
+    if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
+    if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
+    if (list.isParameter("mz")) mz = list.get<GlobalOrdinal>("mz");
 
     if (mapType == "Cartesian1D") {
       if (nx == -1) {

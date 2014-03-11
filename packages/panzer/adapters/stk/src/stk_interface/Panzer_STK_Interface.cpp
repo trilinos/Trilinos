@@ -93,13 +93,13 @@ const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 
 STK_Interface::STK_Interface()
-   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0)
+   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
 {
    metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
 }
 
 STK_Interface::STK_Interface(unsigned dim)
-   : dimension_(dim), initialized_(false), currentLocalId_(0)
+   : dimension_(dim), initialized_(false), currentLocalId_(0), useFieldCoordinates_(false)
 {
    std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension_);
    entity_rank_names.push_back("FAMILY_TREE");
@@ -163,6 +163,50 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
       if(field==0)
          field = &metaData_->declare_field<SolutionFieldType>(fieldName);     
       fieldNameToCellField_[key] = field;
+   }
+}
+
+void STK_Interface::addMeshCoordFields(const std::string & blockId,
+                                       const std::vector<std::string> & coordNames,
+                                       const std::string & dispPrefix)
+{
+   TEUCHOS_ASSERT(dimension_!=0);
+   TEUCHOS_ASSERT(dimension_==coordNames.size());
+   TEUCHOS_ASSERT(not initialized_);
+   TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
+                      "Unknown element block \"" << blockId << "\"");
+
+   // we only allow one alternative coordinate field
+   TEUCHOS_TEST_FOR_EXCEPTION(meshCoordFields_.find(blockId)!=meshCoordFields_.end(),std::invalid_argument,
+                              "STK_Interface::addMeshCoordFields: Can't set more than one set of coordinate "
+                              "fields for element block \""+blockId+"\".");
+
+   // Note that there is a distinction between the key which is used for lookups
+   // and the field that lives on the mesh, which is used for printing the displacement.
+
+   // just copy the coordinate names
+   meshCoordFields_[blockId] = coordNames;
+
+   // must fill in the displacement fields
+   std::vector<std::string> & dispFields = meshDispFields_[blockId];
+   dispFields.resize(dimension_);
+
+   for(unsigned i=0;i<dimension_;i++) {
+      std::pair<std::string,std::string> key = std::make_pair(coordNames[i],blockId);
+      std::string dispName = dispPrefix+coordNames[i];
+
+      dispFields[i] = dispName; // record this field as a
+                                // displacement field
+   
+      // add & declare field if not already added...currently assuming linears
+      if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
+
+         SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(dispName);
+         if(field==0) {
+            field = &metaData_->declare_field<SolutionFieldType>(dispName);     
+         }
+         fieldNameToSolution_[key] = field;
+      }
    }
 }
 
@@ -875,6 +919,28 @@ void STK_Interface::applyElementLoadBalanceWeights()
       loadBal[0] = blockWeight;
     }
   }
+}
+
+bool 
+STK_Interface::isMeshCoordField(const std::string & eBlock,
+                                const std::string & fieldName,
+                                int & axis) const
+{
+  std::map<std::string,std::vector<std::string> >::const_iterator blkItr = meshCoordFields_.find(eBlock);
+  if(blkItr==meshCoordFields_.end()) {
+    return false;
+  }
+
+  axis = 0;
+  for(axis=0;axis<blkItr->second.size();axis++) {
+    if(blkItr->second[axis]==fieldName) 
+      break; // found axis, break
+  }
+    
+  if(axis>=blkItr->second.size())
+    return false;
+ 
+  return true;
 }
 
 Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 

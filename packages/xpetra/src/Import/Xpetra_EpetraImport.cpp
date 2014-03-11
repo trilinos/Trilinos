@@ -65,8 +65,12 @@ namespace Xpetra {
   //   }
 
   RCP< const Import<int, int > > toXpetra(const Epetra_Import *import) {
-    RCP<const Epetra_Import> imp = rcp(new Epetra_Import(*import)); //NOTE: non consitent: return pointer, take ref
-    return rcp ( new Xpetra::EpetraImport(imp) );
+    if (import != NULL) {
+      RCP<const Epetra_Import> imp = rcp(new Epetra_Import(*import)); //NOTE: non consitent: return pointer, take ref
+      return rcp(new Xpetra::EpetraImport(imp));
+    }
+
+    return Teuchos::null;
   }
   //
 
@@ -80,17 +84,9 @@ namespace Xpetra {
     XPETRA_MONITOR("EpetraImport::getPermuteToLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getPermuteToLIDs not implemented"); }
 
-  size_t EpetraImport::getNumRemoteIDs() const {
-    XPETRA_MONITOR("EpetraImport::getNumRemoteIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getNumRemoteIDs not implemented"); }
-
   ArrayView< const int > EpetraImport::getRemoteLIDs() const {
     XPETRA_MONITOR("EpetraImport::getRemoteLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getRemoteLIDs not implemented"); }
-
-  size_t EpetraImport::getNumExportIDs() const {
-    XPETRA_MONITOR("EpetraImport::getNumExportIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getNumExportIDs not implemented"); }
 
   ArrayView< const int > EpetraImport::getExportLIDs() const {
     XPETRA_MONITOR("EpetraImport::getExportLIDs");

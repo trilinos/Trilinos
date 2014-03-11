@@ -40,12 +40,7 @@
 // @HEADER
 
 // MP::Vector includes
-#include "Stokhos_Sacado_Kokkos.hpp"
-
-// Kokkos includes
-#include "Kokkos_Serial.hpp"
-
-typedef Kokkos::Serial Kokkos_Serial;
+#include "Stokhos_Tpetra_MP_Vector.hpp"
 
 #define INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
   INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
@@ -56,18 +51,22 @@ typedef Kokkos::Serial Kokkos_Serial;
 
 #define INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 1, D, LO, GO, N)         \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 2, D, LO, GO, N)         \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 3, D, LO, GO, N)         \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 4, D, LO, GO, N)
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 3, D, LO, GO, N)
 
-#define INSTANTIATE_MP_VECTOR_SFS_D(INSTMACRO, D, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N)
+#define INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
+  typedef Stokhos::DynamicStorage<L,S,D> DS_ ## L ## _ ## S ## _ ## _ ## D; \
+  INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, DS_ ## L ## _ ## S ## _ ## _ ## D, LO, GO, N)
 
-#define INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_D(INSTMACRO, Kokkos_Serial, LO, GO, N)
+#define INSTANTIATE_MP_VECTOR_S_D(INSTMACRO, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
+
+#define INSTANTIATE_MP_VECTOR_S(INSTMACRO, LO, GO, N) \
+  typedef typename Stokhos::DeviceForNode<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
+  INSTANTIATE_MP_VECTOR_S_D(INSTMACRO, DFN_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
 #define INSTANTIATE_MP_VECTOR(INSTMACRO, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, LO, GO, N)
+  INSTANTIATE_MP_VECTOR_S(INSTMACRO, LO, GO, N)
 
 #define INSTANTIATE_TPETRA_MP_VECTOR_N(INSTMACRO, N)  \
-  INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, int, int, N)
+  INSTANTIATE_MP_VECTOR_S(INSTMACRO, int, int, N)

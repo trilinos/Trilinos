@@ -79,7 +79,7 @@ struct SparseRowView< Kokkos::CrsMatrix< Sacado::MP::Vector<Storage>,
                              SizeType> MatrixType;
   typedef typename MatrixType::values_type values_type;
   typedef typename MatrixType::index_type index_type;
-  typedef typename values_type::sacado_mp_vector_view_type scalar_type;
+  typedef typename values_type::view_value_type scalar_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
 
 private:
@@ -103,7 +103,7 @@ public:
   const int length;
 
   KOKKOS_INLINE_FUNCTION
-  scalar_type value (const int& i) const {
+  scalar_type & value (const int& i) const {
     return values_(offset_+i*stride_);
   }
 
@@ -134,7 +134,7 @@ struct SparseRowViewConst< Kokkos::CrsMatrix< Sacado::MP::Vector<Storage>,
                              SizeType> MatrixType;
   typedef typename MatrixType::values_type values_type;
   typedef typename MatrixType::index_type index_type;
-  typedef typename values_type::sacado_mp_vector_view_type scalar_type;
+  typedef typename values_type::view_value_type scalar_type;
   typedef const typename MatrixType::non_const_ordinal_type ordinal_type;
 
 private:
@@ -287,10 +287,6 @@ private:
     typedef typename Kokkos::LocalMPVectorView<output_vector_type,
                                                NumPerThread>::type output_local_view_type;
 
-    typedef typename matrix_local_view_type::Partition matrix_partition_type;
-    typedef typename input_local_view_type::Partition input_partition_type;
-    typedef typename output_local_view_type::Partition output_partition_type;
-
     typedef typename output_local_view_type::value_type scalar_type;
 
     const matrix_type  m_A;
@@ -311,19 +307,30 @@ private:
       // 2-D distribution of threads: num_vector_threads x num_row_threads
       // where the x-dimension are vector threads and the y dimension are
       // row threads
-      const size_type num_vector_threads = m_A.dev_config.block_dim.x;
-      const size_type num_row_threads = m_A.dev_config.block_dim.y;
-      const size_type vector_rank = dev.team_rank() % num_vector_threads;
-      const size_type row_rank = dev.team_rank() / num_vector_threads;
+      //
+      // Note:  The actual team size granted by Kokkos may not match the
+      // request, which we need to handle in the kernel launch
+      // (because this kernel is effectively templated on the team size).
+      // Currently Kokkos doesn't make this easy.
+      const size_type num_vector_threads = m_A.dev_config.block_dim.x ;
+      const size_type num_row_threads    = m_A.dev_config.block_dim.y ;
+      const size_type row_rank = dev.team_rank() / num_vector_threads ;
+      const size_type vec_rank = dev.team_rank() % num_vector_threads ;
 
       // Create local views with corresponding offset into the vector
       // dimension based on vector_rank and reduced number of vector entries
-      matrix_partition_type matrix_partition(vector_rank, num_vector_threads);
-      input_partition_type input_partition(vector_rank, num_vector_threads);
-      output_partition_type output_partition(vector_rank, num_vector_threads);
-      const matrix_local_view_type A(m_A.values, matrix_partition);
-      const input_local_view_type x(m_x, input_partition);
-      const output_local_view_type y(m_y, output_partition);
+
+      // Partition Sacado::MP::Vector as
+      // [ NumPerThread * rank .. NumPerThread * ( rank + 1 ) )
+      const Sacado::MP::VectorPartition part( NumPerThread * vec_rank ,
+                                              NumPerThread * (vec_rank + 1 ) );
+
+      const matrix_local_view_type A =
+        Kokkos::subview<matrix_local_view_type>( m_A.values, part );
+      const input_local_view_type  x =
+        Kokkos::subview<input_local_view_type>(  m_x , part );
+      const output_local_view_type y =
+        Kokkos::subview<output_local_view_type>( m_y , part );
 
       // const matrix_values_type A(m_A.values);
       // const input_vector_type x(m_x);
@@ -389,15 +396,16 @@ public:
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0) {
       if (is_cuda)
-        threads_per_vector = x.dimension_1();
+        threads_per_vector = x.sacado_size();
       else
         threads_per_vector = 1;
     }
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = x.sacado_size() / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != x.sacado_size(),
+      std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // By default, use a block size of 256 for GPU and number of hyperthreads
@@ -543,6 +551,11 @@ private:
       // 2-D distribution of threads: num_vector_threads x num_row_threads
       // where the x-dimension are vector threads and the y dimension are
       // row threads
+      //
+      // Note:  The actual team size granted by Kokkos may not match the
+      // request, which we need to handle in the kernel launch
+      // (because this kernel is effectively templated on the team size).
+      // Currently Kokkos doesn't make this easy.
       const size_type num_vector_threads = m_A.dev_config.block_dim.x;
       const size_type num_row_threads = m_A.dev_config.block_dim.y;
       const size_type vector_rank = dev.team_rank() % num_vector_threads;
@@ -629,15 +642,16 @@ public:
     size_type threads_per_vector = A.dev_config.block_dim.x;
     if (threads_per_vector == 0) {
       if (is_cuda)
-        threads_per_vector = x.dimension_1();
+        threads_per_vector = x.sacado_size();
       else
         threads_per_vector = 1;
     }
 
     // Check threads_per_vector evenly divides number of vector entries
-    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    size_type num_per_thread = x.sacado_size() / threads_per_vector;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      num_per_thread * threads_per_vector != x.sacado_size(),
+      std::logic_error,
       "Entries/thread * threads/vector must equal number of vector entries");
 
     // By default, use a block size of 256 for GPU and number of hyperthreads

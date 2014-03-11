@@ -350,7 +350,6 @@ int main(int argc, char *argv[]) {
     RCP<MueLu::RepartitionInterface<LO, GO, NO, LMO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO, LMO>());
     repInterface->SetFactory("A", Acfact);
     repInterface->SetFactory("AmalgamatedPartition", isoInterface);
-    repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
     // Repartitioning (creates "Importer" from "Partition")
     RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());

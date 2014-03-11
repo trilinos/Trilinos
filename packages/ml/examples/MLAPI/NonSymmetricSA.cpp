@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     List.set("krylov: type", "gmres");
     Krylov(A, LHS, RHS, Prec, List);
 
-    Finalize(); 
+    Finalize();
 
   }
   catch (const int e) {

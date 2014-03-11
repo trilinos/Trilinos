@@ -89,6 +89,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorAdapter<User>       base_adapter_t;
   typedef User user_t;
+  typedef User userCoord_t;
 
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
   typedef Xpetra::TpetraMultiVector<

@@ -105,6 +105,14 @@ public:
   //! Look up a content line by index
   const std::string& getContentLine(int i) const {return content_[i];}
 
+  //! Add string at the the end of a content line
+  void appendContentLine(const size_t& i, const std::string &str) {
+    content_[i].append(str);
+  }
+
+  //! Remove content line by index
+  void removeContentLine(const size_t& i);
+
   //!  Print to stream with the given indentation level. Output will be well-formed XML.
   void print(std::ostream& os, int indent) const ;
 

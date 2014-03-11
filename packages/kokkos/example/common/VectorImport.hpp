@@ -186,7 +186,7 @@ public:
   inline
   void operator()( const VectorType & v ) const
   {
-    typedef typename VectorType::scalar_type  scalar_type ;
+    typedef typename VectorType::value_type  scalar_type ;
 
     const int mpi_tag = 42 ;
     const unsigned chunk = v.dimension_1();

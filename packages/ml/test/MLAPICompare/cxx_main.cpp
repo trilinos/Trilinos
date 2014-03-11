@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef HAVE_CONFIG_H
@@ -50,7 +50,7 @@ using namespace MLAPI;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -63,9 +63,9 @@ int main(int argc, char *argv[])
   if (argc > 1) {
     ProblemSize = atoi(argv[1]);
   }
-    
+
   Init();
-  
+
   ParameterList GalerList;
   GalerList.set("nx", ProblemSize);
   GalerList.set("ny", ProblemSize * Comm.NumProc());
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   // ============== //
   // CHECK RESIDUAL //
   // ============== //
-  
+
   for (int ii = 0 ; ii < out_rep ; ++ii)
   {
     // =========== //
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     R_Epetra.PutScalar(0.0);
 
     Time.ResetStartTime();
-    for (int i = 0 ; i < rep ; ++i) 
+    for (int i = 0 ; i < rep ; ++i)
     {
       A_Epetra->Multiply(false, X_Epetra, R_Epetra);
       R_Epetra.Update(1.0, B_Epetra, -1.0);
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     MultiVector R_MLAPI(S); R_MLAPI = 0.0;
 
     Time.ResetStartTime();
-    for (int i = 0 ; i < rep ; ++i) 
+    for (int i = 0 ; i < rep ; ++i)
     {
       R_MLAPI = B_MLAPI - A_MLAPI * X_MLAPI;
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   // =================== //
   // TEST PRECONDITIONER //
   // =================== //
-  
+
   // =========================== parameters =================================
 
   double DampingFactor = 1.333;
@@ -167,14 +167,14 @@ int main(int argc, char *argv[])
   int MaxIters = 1550;
 
   // =========================== begin of ML part ===========================
-  
+
   ParameterList MLList;
   ParameterList IFPACKList;
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("max levels",10);
   MLList.set("increasing or decreasing","increasing");
   MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("aggregation: damping factor", DampingFactor); 
+  MLList.set("aggregation: damping factor", DampingFactor);
   MLList.set("coarse: max size",32);
   MLList.set("smoother: pre or post", "both");
   MLList.set("coarse: type","Amesos-KLU");
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
   //IFPACKList.set("relaxation: zero starting solution", false);
   MLList.set("smoother: ifpack list", IFPACKList);
   MLList.set("eigen-analysis: type", "Anorm");
-  
+
   MLList.set("ML output", 0);
   MLList.set("energy minimization: enable", false);
   MLList.set("energy minimization: type", 16);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   // build the MultiLevelPreconditioner first, and track down //
   // the number of iterations, the residual and the CPU-time  //
   // ======================================================== //
-  
+
   Time.ResetStartTime();
 
   MultiLevelPreconditioner* MLPPrec;
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
   // MLAPI interface. Iterations and residual should be the  //
   // same, then we compare the CPU time as well.             //
   // ======================================================= //
-  
+
   SetPrintLevel(0);
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
   MLList.set("output level", 0);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   MultiLevelSA* Cycle = new MultiLevelSA(A_MLAPI,MLList);
   MLAPIConstructionTime = Time.ElapsedTime();
 
-  Epetra_Operator* MLAPIPrec = 
+  Epetra_Operator* MLAPIPrec =
     new EpetraBaseOperator(A_Epetra->RowMatrixRowMap(),*Cycle);
   Time.ResetStartTime();
 
@@ -252,19 +252,19 @@ int main(int argc, char *argv[])
   delete MLAPIPrec;
   MLAPISolveTime = Time.ElapsedTime();
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
   {
     cout << "Iterations: " << MLPIters    << " vs. " << MLAPIIters    << endl;
     cout << "Residual  : " << MLPResidual << " vs. " << MLAPIResidual << endl;
-    cout << "CPU-time (const) : " << MLPConstructionTime     << " vs. " 
-         << MLAPIConstructionTime    
+    cout << "CPU-time (const) : " << MLPConstructionTime     << " vs. "
+         << MLAPIConstructionTime
          << ", diff = " << (MLAPIConstructionTime - MLPConstructionTime) / MLPConstructionTime  * 100 << endl;
-    cout << "CPU-time (solve) : " << MLPSolveTime     << " vs. " 
-         << MLAPISolveTime    
+    cout << "CPU-time (solve) : " << MLPSolveTime     << " vs. "
+         << MLAPISolveTime
          << ", diff = " << (MLAPISolveTime - MLPSolveTime) / MLPSolveTime * 100 << endl;
     double MLPTotal = MLPConstructionTime + MLPSolveTime;
     double MLAPITotal = MLAPIConstructionTime + MLAPISolveTime;
-    cout << "CPU-time (total) : " << MLPTotal     << " vs. " 
+    cout << "CPU-time (total) : " << MLPTotal     << " vs. "
          << MLAPITotal
          << ", diff = " << (MLAPITotal - MLPTotal) / MLPTotal * 100 << endl;
   }
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 #endif
 
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-galeri --enable-amesos --enable-ifpack");
-  
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

@@ -59,14 +59,14 @@
 #endif
 
 namespace Galeri {
-  
+
   namespace Xpetra {
 
     using Teuchos::RCP;
-    
+
     // Default traits
     template <class Map, class Vector>
-    class VectorTraits 
+    class VectorTraits
     {
     public:
       static RCP<Vector> Build(const RCP<const Map> &map, size_t numVectors, bool zeroOut) {

@@ -90,6 +90,10 @@ namespace MueLu {
 
     //@}
 
+#ifdef HAVE_MUELU_DEBUG
+    virtual void ResetDebugData() const = 0;
+#endif
+
   private:
 
     static int GenerateUniqueId();

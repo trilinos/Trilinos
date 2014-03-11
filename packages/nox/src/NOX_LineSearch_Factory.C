@@ -60,10 +60,10 @@
 #include "NOX_LineSearch_Polynomial.H"
 #include "NOX_LineSearch_MoreThuente.H"
 #include "NOX_LineSearch_NonlinearCG.H"
-#include "NOX_LineSearch_UserLimiting.H"
+#include "NOX_LineSearch_SafeguardedStep.H"
 #include "NOX_LineSearch_UserDefinedFactory.H"
 #ifdef HAVE_NOX_THYRA
-#include "NOX_LineSearch_UserDirectionChange.hpp"
+#include "NOX_LineSearch_SafeguardedDirection.hpp"
 #endif
 
 // ************************************************************************
@@ -101,11 +101,11 @@ buildLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd,
     line_search = Teuchos::rcp(new MoreThuente(gd, params));
   else if (method == "NonlinearCG")
     line_search = Teuchos::rcp(new NonlinearCG(gd, params));
-  else if (method == "User Limiting")
-    line_search = Teuchos::rcp(new UserLimiting(gd, params));
+  else if (method == "Safeguarded Step")
+    line_search = Teuchos::rcp(new SafeguardedStep(gd, params));
 #ifdef HAVE_NOX_THYRA
-  else if (method == "User Direction Change")
-    line_search = Teuchos::rcp(new UserDirectionChange(gd, params));
+  else if (method == "Safeguarded Direction")
+    line_search = Teuchos::rcp(new SafeguardedDirection(gd, params));
 #endif
   else if (method == "User Defined") {
     using namespace Teuchos;

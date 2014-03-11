@@ -56,7 +56,9 @@
 #include <cstdlib> // strtof, strtod, strtold
 #include <complex> // std::complex
 #include <limits> // std::numeric_limits
-
+#ifdef __CUDACC__
+#include <math_constants.h>
+#endif
 //
 // mfh 24 Dec 2013: Temporary measure for testing; will go away.
 //
@@ -558,18 +560,18 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_DEVICE_FUNCTION bool isInf (const float x) {
-#ifdef __CUDACC__
-    return isinf (x);
-#else
+#ifdef __APPLE__
     return std::isinf (x);
-#endif // __CUDACC__
+#else
+    return isinf (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION bool isNan (const float x) {
-#ifdef __CUDACC__
-    return isnan (x);
-#else
+#ifdef __APPLE__
     return std::isnan (x);
-#endif // __CUDACC__
+#else
+    return isnan (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION mag_type abs (const float x) {
     return ::fabs (x);
@@ -638,7 +640,8 @@ public:
   }
   static KOKKOS_DEVICE_FUNCTION float nan () {
 #ifdef __CUDA_ARCH__
-    return nan ();
+    return CUDART_NAN_F;
+    //return nan (); //this returns 0???
 #else
     // http://pubs.opengroup.org/onlinepubs/009696899/functions/nan.html
     return strtof ("NAN()", (char**) NULL);
@@ -692,14 +695,14 @@ public:
   static const bool is_complex = true;
 
   static bool isInf (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isinf (real (x)) || isinf (imag (x));
 #else
     return std::isinf (real (x)) || std::isinf (imag (x));
 #endif // __CUDACC__
   }
   static bool isNan (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isnan (real (x)) || isnan (imag (x));
 #else
     return std::isnan (real (x)) || std::isnan (imag (x));
@@ -827,18 +830,18 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
-#ifdef __CUDACC__
-    return isinf (x);
-#else
+#ifdef __APPLE__
     return std::isinf (x);
-#endif // __CUDACC__
+#else
+    return isinf (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
-#ifdef __CUDACC__
-    return isnan (x);
-#else
+#ifdef __APPLE__
     return std::isnan (x);
-#endif // __CUDACC__
+#else
+    return isnan (x);
+#endif // __APPLE__
   }
   static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
     return ::fabs (x);
@@ -878,10 +881,11 @@ public:
   }
   static KOKKOS_DEVICE_FUNCTION val_type nan () {
 #ifdef __CUDA_ARCH__
-    return nan ();
+    return CUDART_NAN;
+    //return nan (); // this returns 0 ???
 #else
     // http://pubs.opengroup.org/onlinepubs/009696899/functions/nan.html
-    return strtod ("NAN()", (char**) NULL);
+    return strtod ("NAN", (char**) NULL);
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
@@ -964,14 +968,14 @@ public:
   static const bool is_complex = false;
 
   static bool isInf (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isinf (x);
 #else
     return std::isinf (x);
 #endif // __CUDACC__
   }
   static bool isNan (const val_type& x) {
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(_CRAYC)
     return isnan (x);
 #else
     return std::isnan (x);

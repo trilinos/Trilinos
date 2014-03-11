@@ -124,9 +124,13 @@ namespace MueLu {
     void setProblemMatrix(RCP<Matrix>& A);
     void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA);
     void setPreconditioningMatrix(RCP<Matrix>& P);
+    void setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP);
     void setstiff(RCP<Matrix>& K);
+    void setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK);
     void setmass(RCP<Matrix>& M);
+    void setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM);
     void setdamp(RCP<Matrix>& C);
+    void setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC);
     void setcoords(RCP<MultiVector>& Coords);
     void setNullSpace(RCP<MultiVector> NullSpace);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
@@ -143,6 +147,7 @@ namespace MueLu {
     // Solve phase
     int solve(const RCP<TMV> B, RCP<TMV>& X);
     void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
+    void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
 
   private:

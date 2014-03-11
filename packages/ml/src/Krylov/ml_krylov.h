@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -32,7 +32,7 @@ typedef struct ML_Krylov_Struct ML_Krylov;
 /* prolongation operator.                                               */
 /* -------------------------------------------------------------------- */
 
-struct ML_Krylov_Struct 
+struct ML_Krylov_Struct
 {
    int           ML_id;
    int           ML_method;

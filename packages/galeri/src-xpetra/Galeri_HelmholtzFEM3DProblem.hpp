@@ -53,6 +53,7 @@
 #include "Galeri_Problem_Helmholtz.hpp"
 #include "Galeri_MultiVectorTraits.hpp"
 #include "Galeri_XpetraUtils.hpp"
+#include "Galeri_VelocityModel.hpp"
 
 // Finite element discretization for the indefinite Helmholtz equation
 
@@ -83,13 +84,14 @@ namespace Galeri {
 	omega_       = list.get("omega", 2.0*M_PI);
 	shift_       = list.get("shift", 0.0);
 	delta_       = list.get("delta", 2.0);
+	model_       = list.get("model", 0);
 	PMLx_left    = list.get("PMLx_left",  0);
 	PMLx_right   = list.get("PMLx_right", 0);
 	PMLy_left    = list.get("PMLy_left",  0);
-	PMLy_right   = list.get("PMLy_right", 0);	
+	PMLy_right   = list.get("PMLy_right", 0);
 	PMLz_left    = list.get("PMLz_left",  0);
-	PMLz_right   = list.get("PMLz_right", 0);	
-	
+	PMLz_right   = list.get("PMLz_right", 0);
+
 	// calculate info
 	Dx_    = hx_*nx_;
 	Dy_    = hy_*ny_;
@@ -104,6 +106,10 @@ namespace Galeri {
 	PMLwidthy_ = max(LBy_,Dy_-RBy_); if(PMLwidthy_==0) {  PMLwidthy_=1.0; }
 	PMLwidthz_ = max(LBz_,Dz_-RBz_); if(PMLwidthz_==0) {  PMLwidthz_=1.0; }
         nDim = 3;
+
+	// velocity model
+	velocitymodel_.setDim(nDim);
+	velocitymodel_.setModel(model_);
 
 	// currently AMG doesn't suport higher orders. set to linears
 	px_=1;
@@ -141,20 +147,22 @@ namespace Galeri {
       std::vector<Point>              nodes;
       std::vector< std::vector<LO> >  elements;
       std::vector<GO>                 local2Global_;
+      VelocityModel<SC,LO,GO>         velocitymodel_;
 
       // Helmholtz/PML parameters
       double   hx_, hy_, hz_, shift_, delta_, omega_;
-      int      PMLx_left, PMLx_right; 
+      int      PMLx_left, PMLx_right;
       int      PMLy_left, PMLy_right;
       int      PMLz_left, PMLz_right;
       double   Dx_, Dy_, Dz_;
+      int      model_;
       double   LBx_, RBx_, LBy_, RBy_, LBz_, RBz_;
       double   PMLwidthx_, PMLwidthy_, PMLwidthz_;
 
       void BuildMesh();
       void BuildPoints(std::vector<Point>& quadPoints, std::vector<double>& quadWeights);
       void EvalBasis(Point& quadPoint, std::vector<double>& vals, std::vector<double>& dxs, std::vector<double>& dys, std::vector<double>& dzs);
-      void EvalStretch(double& shiftx, double& shifty, double& shiftz, const std::vector<Point>& quadPoints, std::vector<Scalar>& sx, std::vector<Scalar>& sy, std::vector<Scalar>& sz);
+      void EvalStretch(double& shiftx, double& shifty, double& shiftz, const std::vector<Point>& quadPoints, std::vector<Scalar>& sx, std::vector<Scalar>& sy, std::vector<Scalar>& sz, std::vector<Scalar>& cs);
 
     };
 
@@ -190,7 +198,7 @@ namespace Galeri {
 
       // iterate over elements
       for (size_t i = 0; i < elements.size(); i++) {
-	
+
         SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
 
 	// element domain is [shiftx,shiftx+hx] x [shifty,shifty+hy] x [shiftz,shiftz+hz]
@@ -200,20 +208,21 @@ namespace Galeri {
 	double shiftz = nodes[elemNodes[0]].z;
 
 	// evaluate PML values at quadrature points for this element
-	std::vector<SC> stretchx, stretchy, stretchz;
-	EvalStretch(shiftx, shifty, shiftz, quadPoints, stretchx, stretchy, stretchz);
+	std::vector<SC> stretchx, stretchy, stretchz, cs;
+	EvalStretch(shiftx, shifty, shiftz, quadPoints, stretchx, stretchy, stretchz, cs);
 
         // Evaluate the stiffness matrix for the element
         for (size_t j = 0; j < quadPoints.size(); j++) {
 	  Scalar sx=stretchx[j];
 	  Scalar sy=stretchy[j];
 	  Scalar sz=stretchz[j];
+	  Scalar cc=cs[j]*cs[j];
 	  double qdwt=quadWeights[j];
 	  std::vector<double> curvals=vals[j];
 	  std::vector<double> curdxs=dxs[j];
 	  std::vector<double> curdys=dys[j];
 	  std::vector<double> curdzs=dzs[j];
-	  Scalar mass = qdwt*cpxshift*omega_*omega_*sx*sy*sz;
+	  Scalar mass = qdwt*cpxshift*omega_*omega_*sx*sy*sz/cc;
 	  Scalar pml1 = qdwt*sy*sz/sx;
 	  Scalar pml2 = qdwt*sx*sz/sy;
 	  Scalar pml3 = qdwt*sx*sy/sz;
@@ -273,7 +282,7 @@ namespace Galeri {
 
       // iterate over elements
       for (size_t i = 0; i < elements.size(); i++) {
-	
+
         SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
         SerialDenseMatrix<LO,SC> ME(numDofPerElem, numDofPerElem);
 
@@ -284,20 +293,21 @@ namespace Galeri {
 	double shiftz = nodes[elemNodes[0]].z;
 
 	// evaluate PML values at quadrature points for this element
-	std::vector<SC> stretchx, stretchy, stretchz;
-	EvalStretch(shiftx, shifty, shiftz, quadPoints, stretchx, stretchy, stretchz);
+	std::vector<SC> stretchx, stretchy, stretchz, cs;
+	EvalStretch(shiftx, shifty, shiftz, quadPoints, stretchx, stretchy, stretchz, cs);
 
         // Evaluate the stiffness matrix for the element
         for (size_t j = 0; j < quadPoints.size(); j++) {
 	  Scalar sx=stretchx[j];
 	  Scalar sy=stretchy[j];
 	  Scalar sz=stretchz[j];
+	  Scalar cc=cs[j]*cs[j];
 	  double qdwt=quadWeights[j];
 	  std::vector<double> curvals=vals[j];
 	  std::vector<double> curdxs=dxs[j];
 	  std::vector<double> curdys=dys[j];
 	  std::vector<double> curdzs=dzs[j];
-	  Scalar mass = qdwt*sx*sy*sz;
+	  Scalar mass = qdwt*sx*sy*sz/cc;
 	  Scalar pml1 = qdwt*sy*sz/sx;
 	  Scalar pml2 = qdwt*sx*sz/sy;
 	  Scalar pml3 = qdwt*sx*sy/sz;
@@ -368,7 +378,7 @@ namespace Galeri {
       nodes        .resize((nx+1)*(ny+1)*(nz+1));
       local2Global_.resize((nx+1)*(ny+1)*(nz+1));
       elements     .resize(nx*ny*nz);
-      
+
 #define NODE(i,j,k) ((k)*(ny+1)*(nx+1) + (j)*(nx+1) + (i))
 #define CELL(i,j,k) ((k)*ny*nx         + (j)*nx     + (i))
       for (int k = 0; k <= nz; k++)
@@ -446,7 +456,7 @@ namespace Galeri {
       double valy2=y/hy_;         double dy2=1/hy_;
       double valz1=(hz_-z)/hz_;   double dz1=-1/hz_;
       double valz2=z/hz_;         double dz2=1/hz_;
-      // linear function values, derivatives in x, y, and z directions   
+      // linear function values, derivatives in x, y, and z directions
       vals[0]=valx1*valy1*valz1;  dxs[0]=dx1*valy1*valz1;  dys[0]=valx1*dy1*valz1;  dzs[0]=valx1*valy1*dz1;
       vals[1]=valx2*valy1*valz1;  dxs[1]=dx2*valy1*valz1;  dys[1]=valx2*dy1*valz1;  dzs[1]=valx2*valy1*dz1;
       vals[2]=valx1*valy2*valz1;  dxs[2]=dx1*valy2*valz1;  dys[2]=valx1*dy2*valz1;  dzs[2]=valx1*valy2*dz1;
@@ -459,12 +469,12 @@ namespace Galeri {
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    void HelmholtzFEM3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalStretch(double& shiftx, double& shifty, double& shiftz, const std::vector<Point>& quadPoints,
-												      std::vector<Scalar>& sx, std::vector<Scalar>& sy, std::vector<Scalar>& sz) {
+    void HelmholtzFEM3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalStretch(double& shiftx, double& shifty, double& shiftz, const std::vector<Point>& quadPoints, std::vector<Scalar>& sx, std::vector<Scalar>& sy, std::vector<Scalar>& sz, std::vector<Scalar>& cs) {
       // For the current element domain, evaluate the PML stretching functions at the quadrature points
       sx.resize(quadPoints.size());
       sy.resize(quadPoints.size());
       sz.resize(quadPoints.size());
+      cs.resize(quadPoints.size());
       for(unsigned int i=0; i<quadPoints.size(); i++) {
 	double quadx=quadPoints[i].x;
 	double quady=quadPoints[i].y;
@@ -485,9 +495,11 @@ namespace Galeri {
 	Scalar pmlx(1.0,sigx);
 	Scalar pmly(1.0,sigy);
 	Scalar pmlz(1.0,sigz);
+	Scalar speed = velocitymodel_.getVelocity(curx,cury,curz);
 	sx[i]=pmlx;
 	sy[i]=pmly;
 	sz[i]=pmlz;
+	cs[i]=speed;
       }
 
     }

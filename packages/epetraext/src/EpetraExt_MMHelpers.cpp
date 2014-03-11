@@ -934,11 +934,8 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   int i,j;
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor MM(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=MM.getNewTimer("LWCRS C-3.1");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.1")));
 #endif
 
   // Scan all column indices and sort into two groups: 
@@ -1068,9 +1065,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     ColMapOwningPIDs_[NumLocalColGIDs+i] = RemoteOwningPIDs[i];
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("LWCRS C-3.2");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.2")));
 #endif
 
   // Make Column map with same element sizes as Domain map 
@@ -1079,9 +1074,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
 
 
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("LWCRS C-3.3");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.3")));
 #endif
 
   // Low-cost reindex of the matrix
@@ -1099,10 +1092,6 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   }
 
   assert((size_t)ColMap_.NumMyElements() == ColMapOwningPIDs_.size());
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   return(0);
 }
@@ -1602,14 +1591,10 @@ template<typename ImportType, typename int_type>
 void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter)
 {  
   // Do we need to use long long for GCIDs?
-  int SizeofIntType=-1;
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor MM(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=MM.getNewTimer("LWCRS C-1");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-1")));
 #endif
 
   // Fused constructor, import & FillComplete
@@ -1618,7 +1603,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if(use_lw) N = RowMapLW_->NumMyElements();
   else N = RowMapEP_->NumMyElements();
 
-  //  int MyPID = SourceMatrix.Comm().MyPID();
+  int MyPID = SourceMatrix.Comm().MyPID();
 
 #ifdef HAVE_MPI
   std::vector<int> ReverseSendSizes;
@@ -1749,9 +1734,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
   /*********************************************************************/
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("LWCRS C-2");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-2")));
 #endif
 
   // Count nnz
@@ -1777,14 +1760,14 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(sizeof(int_type) == sizeof(int)) {
     int * mycolind  = colind_.size() ? & colind_[0] : 0;
-    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,myrowptr,mycolind,myvals,SourcePids,TargetPids);
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,MyPID,myrowptr,mycolind,myvals,SourcePids,TargetPids);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(sizeof(int_type) == sizeof(long long)) {
     long long * mycolind  = colind_LL_.size() ? & colind_LL_[0] : 0;
-    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,myrowptr,mycolind,myvals,SourcePids,TargetPids);
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,N,mynnz,MyPID,myrowptr,mycolind,myvals,SourcePids,TargetPids);
   }
   else
 #endif
@@ -1794,9 +1777,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
   /**************************************************************/
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("LWCRS C-3");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-3")));
 #endif
 
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
@@ -1814,9 +1795,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /********************************************/
   // NOTE: If we have no entries the &blah[0] will cause the STL to die in debug mode
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("LWCRS C-4");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-4")));
 #endif
   if(N>0) Epetra_Util::SortCrsEntries(N, &rowptr_[0], &colind_[0], &vals_[0]);
 
@@ -1824,9 +1803,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /**** 6) Cleanup                         ****/
   /********************************************/
 #ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-  mtime=MM.getNewTimer("LWCRS C-5");
-  mtime->start();
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-5")));
 #endif
 
 #ifdef HAVE_MPI
@@ -1837,9 +1814,6 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   delete [] Imports_;
   delete [] Sizes_;
 
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
  }// end fused copy constructor
 
 
@@ -1853,12 +1827,10 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   DomainMap_(SourceMatrix.DomainMap())
 { 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor MM(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=MM.getNewTimer("LWCRS Total");
-  mtime->start();
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS Total")));
 #endif
+
   RowMapLW_= new LightweightMap(RowImporter.TargetMap());
    
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -1874,10 +1846,6 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   else
 #endif
     throw "EpetraExt::LightweightCrsMatrix: ERROR, GlobalIndices type unknown.";
-
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
 }
 

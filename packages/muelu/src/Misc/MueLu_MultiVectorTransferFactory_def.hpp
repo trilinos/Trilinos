@@ -95,7 +95,7 @@ namespace MueLu {
     RCP<Matrix>      transferOp = Get<RCP<Matrix> >(coarseLevel, "R");
 
     RCP<MultiVector> coarseVector = MultiVectorFactory::Build(transferOp->getRangeMap(), fineVector->getNumVectors());
-    GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
+    GetOStream(Runtime0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
 
     RCP<MultiVector> onesVector = MultiVectorFactory::Build(transferOp->getDomainMap(), 1);
     onesVector->putScalar(Teuchos::ScalarTraits<Scalar>::one());

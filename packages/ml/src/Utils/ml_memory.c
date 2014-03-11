@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -48,10 +48,10 @@ int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
    /* ----------------------------------------------------------------- */
 
    if (malloc_initialized == -1)
-   { 
+   {
       for (i=0; i<MAX_MALLOC_LOG; i++) malloc_leng_log[i] = -1;
       malloc_leng_log[0] = 0;
-      malloc_initialized = 0; 
+      malloc_initialized = 0;
    }
 
    /* ----------------------------------------------------------------- */
@@ -61,7 +61,7 @@ int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
 /*
 TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
    else if (leng == 0)
-   { 
+   {
       printf("ML_malloc warning : %s - leng = 0 (%d).\n",name,leng);
       (*memptr) = NULL;
       return 0;
@@ -98,11 +98,11 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       /* check if there is any available slot in the  bookkeeping array */
       /* -------------------------------------------------------------- */
 
-      for ( i = 1; i < MAX_MALLOC_LOG; i++ ) 
+      for ( i = 1; i < MAX_MALLOC_LOG; i++ )
          if (malloc_leng_log[i] == -1) break;
 
       /* -------------------------------------------------------------- */
-      /* if the reply is positive, register the allocation information  */ 
+      /* if the reply is positive, register the allocation information  */
       /* -------------------------------------------------------------- */
 
       if ( i < MAX_MALLOC_LOG )
@@ -117,7 +117,7 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
          malloc_name_log[i][1] = name[1];
          malloc_name_log[i][2] = name[2];
          var_ptr = (char*) ((ml_size_t) var_ptr + ndouble);
-         (*memptr) = (void *) var_ptr; 
+         (*memptr) = (void *) var_ptr;
          return i;
 
       /* -------------------------------------------------------------- */
@@ -129,7 +129,7 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       else
       {
          /*
-         if (malloc_initialized != 1) 
+         if (malloc_initialized != 1)
             printf("ML_malloc message : unable to track any more %s.\n",
                     name);
          */
@@ -139,7 +139,7 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
          int_ptr    = (int*) ((ml_size_t) var_ptr + nchunks*ndouble - ndouble);
          (*int_ptr) = -1;
          var_ptr = (char*) ((ml_size_t) var_ptr + ndouble);
-         (*memptr) = (void *) var_ptr; 
+         (*memptr) = (void *) var_ptr;
          return 0;
       }
    }
@@ -179,7 +179,7 @@ int ML_memory_free(void ** var_ptr)
                printf("ML_memory_free error : header invalid(%d).\n",index);
             exit(-1);
          }
-         int_ptr = (int *) ((ml_size_t) char_ptr + malloc_leng_log[index] - 
+         int_ptr = (int *) ((ml_size_t) char_ptr + malloc_leng_log[index] -
                                    2 * ndouble);
          index2   = (*int_ptr);
          if (index != index2-1)
@@ -196,15 +196,15 @@ int ML_memory_free(void ** var_ptr)
          }
          /* ########## This check may be messed up by pointer exchanges
          if ( ((ml_size_t) var_ptr) != malloc_addr_log[index])
-         { 
+         {
             printf("ML_memory_free warning : \n");
             printf("    %.3s - header and log mismatch.\n",
                                malloc_name_log[index]);
-            printf("MEM LOG %d : %d \n", index, (int) malloc_addr_log[index]); 
+            printf("MEM LOG %d : %d \n", index, (int) malloc_addr_log[index]);
          }
          ############## */
          malloc_leng_log[index] = -1;
-      } 
+      }
 /*
       else
          printf("ML_memory_free : variable not found.\n");
@@ -265,7 +265,7 @@ int ML_memory_check_var(void* var_ptr)
                printf("ML_memory_check_var error : header invalid(%d)\n",index);
             exit(-1);
          }
-         int_ptr = (int *) ((ml_size_t) char_ptr + malloc_leng_log[index] - 
+         int_ptr = (int *) ((ml_size_t) char_ptr + malloc_leng_log[index] -
                                    2 * ndouble);
          index2   = (*int_ptr);
          if (index != index2-1)
@@ -282,18 +282,18 @@ int ML_memory_check_var(void* var_ptr)
          }
          /* ########## This check may be messed up by pointer exchanges
          if ( ((ml_size_t) var_ptr) != malloc_addr_log[index])
-         { 
+         {
             printf("ML_memory_check_var warning : \n");
             printf("    %.3s - header and log mismatch.\n",
                                malloc_name_log[index]);
-            printf("MEM LOG %d : %d \n", index, (int) malloc_addr_log[index]); 
+            printf("MEM LOG %d : %d \n", index, (int) malloc_addr_log[index]);
          }
          ############## */
-      } 
+      }
       else
       {
          if ( global_comm != NULL )
-            printf("%d : ML_memory_check_var : invalid index = %d\n", 
+            printf("%d : ML_memory_check_var : invalid index = %d\n",
                    global_comm->ML_mypid, index);
          else
             printf("ML_memory_check_var : invalid index = %d\n", index);
@@ -312,17 +312,17 @@ int ML_memory_inquire()
 
    if (malloc_initialized == 1)
    {
-      printf("ML_memory_inquire : memory usage not available. \n"); 
+      printf("ML_memory_inquire : memory usage not available. \n");
       return 0;
    }
    else
    {
       isum = icnt = 0;
-      for ( i = 0; i < MAX_MALLOC_LOG; i++ ) 
+      for ( i = 0; i < MAX_MALLOC_LOG; i++ )
       {
          if ( malloc_leng_log[i] > 0 )
          {
-            icnt++; 
+            icnt++;
             isum += malloc_leng_log[i];
             printf("ML_memory_inquire : %d - %.3s (%ld bytes) is nonempty.\n",
                    i, malloc_name_log[i], malloc_leng_log[i]);
@@ -335,7 +335,7 @@ int ML_memory_inquire()
          printf("ML_memory_inquire : %d slots allocated. \n", icnt);
       }
 /*
-      else 
+      else
          printf("ML_memory_inquire Summary : nothing allocated.\n");
 */
       return isum;
@@ -352,17 +352,17 @@ int ML_memory_inquire_short(int id)
 
    if (malloc_initialized == 1)
    {
-      printf("ML_memory_inquire : memory usage not available. \n"); 
+      printf("ML_memory_inquire : memory usage not available. \n");
       return 0;
    }
    else
    {
       isum = icnt = 0;
-      for ( i = 0; i < MAX_MALLOC_LOG; i++ ) 
+      for ( i = 0; i < MAX_MALLOC_LOG; i++ )
       {
          if (malloc_leng_log[i] > 0)
          {
-            icnt++; 
+            icnt++;
             isum += malloc_leng_log[i];
          }
       }
@@ -393,7 +393,7 @@ int ML_memory_clean( char *name, int inlen )
          {
             if ( malloc_name_log[i][j] != name[j] )
             {
-               clean_flag = 1; 
+               clean_flag = 1;
                break;
             }
          }
@@ -447,8 +447,8 @@ void ML_print_it() {
 
 char *ML_allocate(unsigned int isize) {
 
-/* 
- *  Allocate memory and record the event by placing an entry in the 
+/*
+ *  Allocate memory and record the event by placing an entry in the
  *  ml_widget_head list. Also recored the size of this entry as well.
  *
  *  Note: we actually allocate more memory than is requested (7 doubles more).
@@ -481,7 +481,7 @@ char *ML_allocate(unsigned int isize) {
     ml_allo_count++;
 
     /* put trash in the space to make sure nobody is expecting zeros */
-    for (i = 0 ; i < size/sizeof(char) ; i++ ) 
+    for (i = 0 ; i < size/sizeof(char) ; i++ )
        ptr[i] = 'f';
 
 
@@ -708,7 +708,7 @@ data2 = (char *) &(new_dptr[4]);
        }
     }
 }
-   
+
 
 
 
@@ -716,20 +716,20 @@ data2 = (char *) &(new_dptr[4]);
 void ML_spit_it_out()
 {
 printf("malloc/free %d %d\n",ml_allo_count,ml_free_count);
-if (ml_allo_count != ml_free_count) 
+if (ml_allo_count != ml_free_count)
 printf("WHOA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
 ML_print_it();
 }
 #endif
 
 /*****************************************************************************
- *  ML_memory_check: 
+ *  ML_memory_check:
  *    Print out memory usage information in megabytes. ML_memory_check's
  *    arguments are used to print an identifying string along with the
  *    memory information and are identical to printf's arguments.
  *
  *    On return, ML_memory_check() returns a pointer to the last string
- *    that ML_memory_check() used when print. 
+ *    that ML_memory_check() used when print.
  *
  *    ML_memory_check(NULL) does not print and only returns a pointer to
  *    the last string used to print. This enables low level routines to
@@ -819,7 +819,7 @@ char * ML_memory_check(char *fmt, ... )
 #ifdef ML_TFLOP
    /* Memory statistics for Red Storm.  FYI, heap_info returns bytes. */
 #ifndef NO_HEAPINFO
-   heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);  
+   heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);
 #ifdef ML_MPI
    MPI_Comm_rank(MPI_COMM_WORLD,&mypid);
 #endif
@@ -918,10 +918,10 @@ char * ML_memory_check(char *fmt, ... )
 #ifdef ML_MPI
    MPI_Comm_rank(MPI_COMM_WORLD,&id);
    MPI_Comm_size(MPI_COMM_WORLD,&nnodes);
-   MPI_Reduce(isrcvec,imaxvec,ML_NIntStats,MPI_2INT,MPI_MAXLOC,0,MPI_COMM_WORLD); 
+   MPI_Reduce(isrcvec,imaxvec,ML_NIntStats,MPI_2INT,MPI_MAXLOC,0,MPI_COMM_WORLD);
    MPI_Reduce(isrcvec,iminvec,ML_NIntStats,MPI_2INT,MPI_MINLOC,0,MPI_COMM_WORLD);
    MPI_Reduce(isrcvec_copy,iavgvec,ML_NIntStats,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
-   MPI_Reduce(dsrcvec,dmaxvec,ML_NDblStats,MPI_DOUBLE_INT,MPI_MAXLOC,0,MPI_COMM_WORLD); 
+   MPI_Reduce(dsrcvec,dmaxvec,ML_NDblStats,MPI_DOUBLE_INT,MPI_MAXLOC,0,MPI_COMM_WORLD);
    MPI_Reduce(dsrcvec,dminvec,ML_NDblStats,MPI_DOUBLE_INT,MPI_MINLOC,0,MPI_COMM_WORLD);
    MPI_Reduce(dsrcvec_copy,davgvec,ML_NDblStats,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
    MPI_Reduce(&overflowDetected,&i,1,MPI_INT,MPI_MAX,0,MPI_COMM_WORLD);
@@ -942,7 +942,7 @@ char * ML_memory_check(char *fmt, ... )
 /*
    printf("%s(%d): blks = %ld, free = %ld, max free = %ld, used = %ld, total = %ld, %% used = %e, time = %e\n",
 	  ml_memory_label,id,fragments, total_free, largest_free, total_used,
-	  total_free+total_used, 
+	  total_free+total_used,
           ((double)total_used)/((double)(total_free+total_used)),elapsed_time);
 */
 
@@ -1038,7 +1038,7 @@ int ML_MaxAllocatableSize()
     if (junk == NULL)
       upper = mid;
     else {
-      lower = mid; 
+      lower = mid;
       free(junk);
     }
   }
@@ -1055,8 +1055,8 @@ int ML_MaxAllocatableSize()
 } /*ML_MaxAllocatableSize()*/
 
 /** ********************************************************************** **/
-    
-#include "ml_utils.h" 
+
+#include "ml_utils.h"
 #ifdef ML_MALLINFO
 #ifndef __APPLE__
 #include <malloc.h>
@@ -1069,19 +1069,19 @@ int ML_MaxMemorySize()
 {
 #ifdef ML_MALLINFO
   size_t fragments;
-  long long int total_free, largest_free, total_used; 
+  long long int total_free, largest_free, total_used;
   /* int percent; */
-  
-#ifndef  ML_TFLOP 
-  struct mallinfo M; 
-#endif 
+
+#ifndef  ML_TFLOP
+  struct mallinfo M;
+#endif
 #ifdef  ML_TFLOP
    unsigned long ultotal_free=0, ullargest_free=0, ultotal_used=0;
-#endif 
-  
-#ifdef ML_TFLOP 
+#endif
+
+#ifdef ML_TFLOP
 #ifndef NO_HEAPINFO
-  heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);  
+  heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);
   total_free=(int) (ultotal_free / 1024);
   largest_free= (int) (ullargest_free / 1024);
   total_used = (int) (ultotal_used /1024);
@@ -1091,18 +1091,18 @@ int ML_MaxMemorySize()
   total_used=0;
 #endif
 #else
-  /* use system call to get memory used information */ 
-  
-  M = mallinfo(); 
-  fragments = M.ordblks + M.smblks + M.hblks; 
-  total_free = M.fsmblks + M.fordblks; 
-  total_used = M.hblkhd + M.usmblks + M.uordblks; 
+  /* use system call to get memory used information */
+
+  M = mallinfo();
+  fragments = M.ordblks + M.smblks + M.hblks;
+  total_free = M.fsmblks + M.fordblks;
+  total_used = M.hblkhd + M.usmblks + M.uordblks;
   /*  total_free = ml_total_mem - total_used;  */
-  largest_free = -1024; 
-#endif 
-  /* convert to Kbytes */ 
-  
-  return( (int)(total_used/(1024*1024)) ); 
+  largest_free = -1024;
+#endif
+  /* convert to Kbytes */
+
+  return( (int)(total_used/(1024*1024)) );
 #else
   return -1;
 #endif

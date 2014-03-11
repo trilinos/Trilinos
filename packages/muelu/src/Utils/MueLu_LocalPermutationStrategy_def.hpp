@@ -190,7 +190,7 @@ namespace MueLu {
       p = RowColPairs.erase(p);
     }
 
-    if(RowColPairs.size()>0) GetOStream(Warnings0,0) << "MueLu::LocalPermutationStrategy: There are Row/col pairs left!" << std::endl;
+    if(RowColPairs.size()>0) GetOStream(Warnings0) << "MueLu::LocalPermutationStrategy: There are Row/col pairs left!" << std::endl;
 
     // Qperm should be fine
     // build matrices
@@ -214,16 +214,16 @@ namespace MueLu {
 
     /*for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
       if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
-        GetOStream(Warnings0,0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
+        GetOStream(Warnings0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permPmatrix->getNumEntriesInLocalRow(row) != 1)
-        GetOStream(Warnings0,0) <<"#entries in row " << row << " of permPmatrix is " << permPmatrix->getNumEntriesInLocalRow(row) << std::endl;
+        GetOStream(Warnings0) <<"#entries in row " << row << " of permPmatrix is " << permPmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permQTmatrix->getNumEntriesInLocalRow(row) != 1)
-        GetOStream(Warnings0,0) <<"#entries in row " << row << " of permQmatrix is " << permQTmatrix->getNumEntriesInLocalRow(row) << std::endl;
+        GetOStream(Warnings0) <<"#entries in row " << row << " of permQmatrix is " << permQTmatrix->getNumEntriesInLocalRow(row) << std::endl;
     }*/
 
     // build permP * A * permQT
-    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2,0),true,true);
-    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2,0),true,true);
+    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2),true,true);
+    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2),true,true);
 
     /*
     MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
@@ -245,7 +245,7 @@ namespace MueLu {
       else {
         invDiagVecData[i] = 1.0;
         lCntZeroDiagonals++;
-        //GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found zero on diagonal in row " << i << std::endl;
+        //GetOStream(Statistics0) << "MueLu::LocalPermutationStrategy: found zero on diagonal in row " << i << std::endl;
       }
     }
 
@@ -253,7 +253,7 @@ namespace MueLu {
     GO gCntZeroDiagonals  = 0;
     GO glCntZeroDiagonals = Teuchos::as<GlobalOrdinal>(lCntZeroDiagonals);  /* LO->GO conversion */
     sumAll(comm,glCntZeroDiagonals,gCntZeroDiagonals);
-    GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found " << gCntZeroDiagonals << " zeros on diagonal" << std::endl;
+    GetOStream(Statistics0) << "MueLu::LocalPermutationStrategy: found " << gCntZeroDiagonals << " zeros on diagonal" << std::endl;
 #endif
 
     Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1,Xpetra::StaticProfile));
@@ -265,7 +265,7 @@ namespace MueLu {
     }
     diagScalingOp->fillComplete();
 
-    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2,0), true, true);
+    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2), true, true);
     currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), genFactory);
 
     currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), genFactory);
@@ -310,8 +310,8 @@ namespace MueLu {
     currentLevel.Set("#WideRangeRowPermutations", 0, genFactory/*this*/);
     currentLevel.Set("#WideRangeColPermutations", 0, genFactory/*this*/);
 
-    GetOStream(Statistics0, 0) << "#Row    permutations/max possible permutations: " << gNumRowPermutations << "/" << diagPVec->getMap()->getGlobalNumElements() << std::endl;
-    GetOStream(Statistics0, 0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
+    GetOStream(Statistics0) << "#Row    permutations/max possible permutations: " << gNumRowPermutations << "/" << diagPVec->getMap()->getGlobalNumElements() << std::endl;
+    GetOStream(Statistics0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
 
 #else
 #warning PermutationFactory not compiling/working for Scalar==complex.

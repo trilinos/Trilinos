@@ -101,7 +101,6 @@ typedef struct RCB_Struct {
 } RCB_STRUCT;
 
 extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, double, int,int);
-extern void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

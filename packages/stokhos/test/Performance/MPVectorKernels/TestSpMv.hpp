@@ -132,18 +132,6 @@ test_mpvector_spmv(const int ensemble_length,
     vector_type(Kokkos::allocate_without_initializing,
                 "y", fem_length, ensemble_length);
 
-  // To do:  Fix it so this works:
-  // Kokkos::deep_copy( x , VectorType(1.0) );
-  Kokkos::View< value_type*, Layout, device_type, Kokkos::MemoryUnmanaged > xx(
-    x.ptr_on_device(), fem_length, ensemble_length);
-  Kokkos::deep_copy( xx , value_type(1.0) );
-
-  // To do:  Fix it so this works:
-  // Kokkos::deep_copy( y , VectorType(0.0) );
-  Kokkos::View< value_type*, Layout, device_type, Kokkos::MemoryUnmanaged > yy(
-    y.ptr_on_device(), fem_length, ensemble_length);
-  Kokkos::deep_copy( yy , value_type(1.0) );
-
   //------------------------------
 
   matrix_graph_type matrix_graph =
@@ -155,11 +143,21 @@ test_mpvector_spmv(const int ensemble_length,
   matrix_type matrix("block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
 
-  // To do:  Fix it so this works:
-  // Kokkos::deep_copy( matrix.values , VectorType(1.0) );
-  Kokkos::View< value_type*, device_type, Kokkos::MemoryUnmanaged > MM(
-    matrix.values.ptr_on_device(), graph_length * ensemble_length);
-  Kokkos::deep_copy( MM , value_type(1.0) );
+  //------------------------------
+  // Fill:
+
+  {
+    // The VectorType may be dynamic (with allocated memory)
+    // so cannot pass a VectorType value to the device.
+    // Get an array-of-intrinsic View and fill that view.
+    typename vector_type::array_type xx( x );
+    typename vector_type::array_type yy( y );
+    typename matrix_values_type::array_type mm( matrix_values );
+
+    Kokkos::deep_copy( xx , value_type(1.0) );
+    Kokkos::deep_copy( yy , value_type(1.0) );
+    Kokkos::deep_copy( mm , value_type(1.0) );
+  }
 
   //------------------------------
 

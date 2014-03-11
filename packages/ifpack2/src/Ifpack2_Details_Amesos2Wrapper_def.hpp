@@ -388,7 +388,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (X));
+      X_temp = rcp (new MV (createCopy(X)));
     } else {
       X_temp = rcpFromRef (X);
     }
@@ -412,28 +412,31 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
 
 template <class MatrixType>
-std::string Amesos2Wrapper<MatrixType>::description() const {
+std::string Amesos2Wrapper<MatrixType>::description () const {
   using Teuchos::TypeNameTraits;
   std::ostringstream os;
 
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
   os << "\"Ifpack2::Amesos2Wrapper\": {";
   if (this->getObjectLabel () != "") {
     os << "Label: \"" << this->getObjectLabel () << "\", ";
   }
   os << "Initialized: " << (isInitialized () ? "true" : "false")
-     << ", "
-     << "Computed: " << (isComputed () ? "true" : "false");
+     << ", Computed: " << (isComputed () ? "true" : "false");
 
   if (A_.is_null ()) {
     os << ", Matrix: null";
   }
   else {
     os << ", Matrix: not null"
-       << ", Number of rows: " << A_->getGlobalNumRows ()
-       << ", Number of columns: " << A_->getGlobalNumCols ();
+       << ", Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
   }
+
   os << "}";
-  return os.str();
+  return os.str ();
 }
 
 

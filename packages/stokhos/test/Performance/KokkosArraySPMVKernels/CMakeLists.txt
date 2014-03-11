@@ -28,13 +28,15 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
     DEPLIBS ${DEPLIBS}
     )
 
-  TRIBITS_ADD_EXECUTABLE(
-    SPMVHostScaling
-    SOURCES TestStochastic.hpp
-            HostScaling.cpp
-    COMM serial mpi
-    DEPLIBS stokhos kokkoscore
-    )
+  IF(Kokkos_ENABLE_Pthread)
+    TRIBITS_ADD_EXECUTABLE(
+      SPMVHostScaling
+      SOURCES TestStochastic.hpp
+              HostScaling.cpp
+      COMM serial mpi
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
 
   TRIBITS_ADD_EXECUTABLE(
     SPMVEpetra

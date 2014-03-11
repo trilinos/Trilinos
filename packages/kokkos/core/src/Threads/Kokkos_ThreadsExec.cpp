@@ -598,6 +598,11 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
   const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
+  // Forestall compiler warnings for unused variables.
+  (void) numa_count;
+  (void) cores_per_numa;
+  (void) threads_per_core;
+
   s << "Kokkos::Threads" ;
 
 #if defined( KOKKOS_HAVE_PTHREAD )

@@ -14,6 +14,7 @@ repartition: keep proc 0 = 1
 repartition: partitioner = zoltan2
 max levels = 10   [default]
 debug: graph level = -1   [default]
+repartition: rebalance P and R = 1   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
@@ -47,13 +48,14 @@ Level 1
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 100   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -98,12 +100,14 @@ Level 1
   alwaysKeepProc0 = 1
   
  type = Interpolation
+ implicit = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
+ implicit = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -131,13 +135,14 @@ Level 2
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 100   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -182,12 +187,14 @@ Level 2
   alwaysKeepProc0 = 1
   
  type = Interpolation
+ implicit = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
+ implicit = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -215,13 +222,14 @@ Level 3
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 100   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
       UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -266,12 +274,14 @@ Level 3
   alwaysKeepProc0 = 1
   
  type = Interpolation
+ implicit = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
+ implicit = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]

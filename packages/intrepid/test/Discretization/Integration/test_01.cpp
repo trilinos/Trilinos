@@ -49,9 +49,11 @@
 */
 
 #include "Intrepid_CubatureDirectLineGauss.hpp"
+#include "Intrepid_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid_CubatureDirectTriDefault.hpp"
 #include "Intrepid_CubatureDirectTetDefault.hpp"
 #include "Intrepid_CubatureTensor.hpp"
+#include "Intrepid_CubatureTensorPyr.hpp"
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -112,6 +114,14 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
         myCub = Teuchos::rcp(new CubatureTensor<double>(triCub,lineCub));
         }
       break;
+    case shards::Pyramid<>::key: {
+    	std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(3);
+        lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
+    	lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
+    	lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGaussJacobi20<double>(cubDegree));
+    	myCub = Teuchos::rcp(new CubatureTensorPyr<double>(lineCubs));
+        }
+      break;
 
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key),
@@ -119,7 +129,8 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
                             (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key),
                             (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key),
                             (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key),
-                            (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key),
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key) ),
                           std::invalid_argument,
                           ">>> ERROR (Unit Test -- Cubature -- Volume): Invalid cell type.");
   } // end switch
@@ -312,7 +323,7 @@ int main(int argc, char *argv[]) {
   double tol     = 100.0 * INTREPID_TOL;
 
   // list of analytic volume values, listed in the enumerated reference cell order up to CELL_HEXAPRISM
-  double volumeList[] = {0.0, 2.0, 1.0/2.0, 4.0, 1.0/6.0, 8.0, 1.0, 32.0};
+  double volumeList[] = {0.0, 2.0, 1.0/2.0, 4.0, 1.0/6.0, 8.0, 1.0, 4.0/3.0, 32.0};
 
   *outStream << "\nReference cell volumes:\n\n";
 
@@ -383,6 +394,17 @@ int main(int argc, char *argv[]) {
       }
     }
     *outStream << "\n\n";
+    shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
+    for (int deg=0; deg<=std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX,INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
+      testVol = computeRefVolume(pyr, deg);
+      *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[7]) << "\n";
+      if (std::abs(testVol - volumeList[7]) > tol) {
+        errorFlag = 1;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      }
+    }
+    *outStream << "\n\n";
     for (int deg=0; deg<=20; deg++) {
       Teuchos::RCP<CubatureDirectLineGauss<double> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(deg));
       CubatureTensor<double> hypercubeCub(lineCub, 5);
@@ -394,8 +416,8 @@ int main(int argc, char *argv[]) {
       for (int i=0; i<numCubPoints; i++)
         testVol += cubWeights[i];
       *outStream << std::setw(30) << "5-D Hypercube volume --> " << std::setw(10) << std::scientific << testVol <<
-                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[7]) << "\n";
-      if (std::abs(testVol - volumeList[7])/std::abs(testVol) > tol) {
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[8]) << "\n";
+      if (std::abs(testVol - volumeList[8])/std::abs(testVol) > tol) {
         errorFlag = 1;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }

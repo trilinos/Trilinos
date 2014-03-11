@@ -294,8 +294,10 @@ int Epetra_MultiVector::DoCopy(void)
       const int myLength = MyLength_;
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(to,from)
-#endif
       for (int j=0; j<myLength; j++) to[j] = from[j];
+#else
+      memcpy(to, from, myLength*sizeof(double));
+#endif
     }
 
   return(0);
@@ -557,13 +559,13 @@ int Epetra_MultiVector::ExtractCopy(double **ArrayOfPointers) const {
     {
       double * from = Pointers_[i];
       double * to = ArrayOfPointers[i];
-      for (int j=0; j<myLength; j++) *to++ = *from++;
+      memcpy(to, from, myLength*sizeof(double));
     }
-  
+
   return(0);
 }
-      
-      
+
+
 
 //=========================================================================
 

@@ -466,7 +466,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (X));
+      Xcopy = rcp (new MV (createCopy(X)));
     } else {
       Xcopy = rcpFromRef (X);
     }
@@ -488,18 +488,29 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
 template <class MatrixType>
 std::string Krylov<MatrixType>::description () const
 {
-  std::ostringstream out;
+  std::ostringstream os;
 
-  out << "\"Ifpack2::Krylov\": {";
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  os << "\"Ifpack2::Krylov\": {";
   if (this->getObjectLabel () != "") {
-    out << "Label: " << this->getObjectLabel () << ", ";
+    os << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  out << "Initialized: " << (isInitialized () ? "true" : "false")
-      << ", Computed: " << (isComputed () ? "true" : "false")
-      << ", Global number of rows: " << A_->getGlobalNumRows ()
-      << ", Global number of columns: " << A_->getGlobalNumCols ()
-      << "}";
-  return out.str ();
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Matrix: not null"
+       << ", Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+  }
+
+  os << "}";
+  return os.str ();
 }
 
 

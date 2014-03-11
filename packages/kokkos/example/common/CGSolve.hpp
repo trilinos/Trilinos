@@ -67,12 +67,10 @@ template< class ImportType , class SparseMatrixType , class VectorType >
 struct CGSolve< ImportType , SparseMatrixType , VectorType ,
   typename Kokkos::Impl::enable_if<(
     Kokkos::is_view< VectorType >::value &&
-    VectorType::rank == 1 &&
-    Kokkos::Impl::is_same< typename VectorType::value_type , 
-                           typename VectorType::scalar_type >::value 
+    VectorType::rank == 1
   )>::type >
 {
-  typedef typename VectorType::scalar_type scalar_type ;
+  typedef typename VectorType::value_type scalar_type ;
 
   size_t iteration ;
   double iter_time ;

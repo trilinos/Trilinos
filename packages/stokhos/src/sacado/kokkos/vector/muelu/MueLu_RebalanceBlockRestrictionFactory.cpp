@@ -48,6 +48,7 @@
 #if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_MueLu_MP_Vector.hpp"
 
 #include "Tpetra_ETIHelperMacros.h"
 #include "MueLu_RebalanceBlockRestrictionFactory_def.hpp"
@@ -62,8 +63,8 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Currently excluding GPU nodes because SparseOps may not be
 // implemented, I think depending on the choice of TPLs
-//TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
-MUELU_INST_N(KokkosClassic_SerialNode)
+TPETRA_INSTANTIATE_N_NOGPU(MUELU_INST_N)
+//MUELU_INST_N(KokkosClassic_SerialNode)
 
 #endif
 

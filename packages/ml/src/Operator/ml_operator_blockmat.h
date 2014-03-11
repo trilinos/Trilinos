@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef __MLOPERATOR_BLOCKMAT__
@@ -44,9 +44,9 @@ extern "C" {
 
 extern int ML_Operator_blockmat_matvec(ML_Operator *, int , double *, int, double *);
 extern int ML_Operator_blockmat_comm( double *x, void *data);
-extern int ML_Operator_blockmat_getrow(ML_Operator *, int, int *, int, int *, 
+extern int ML_Operator_blockmat_getrow(ML_Operator *, int, int *, int, int *,
 				       double *, int *);
-extern int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, 
+extern int  ML_Operator_Gen_blockmat(ML_Operator *blockmat,
 				     ML_Operator *original1,
 				     ML_Operator *original2);
 extern void  ML_Operator_blockmatdata_Destroy(void *data);

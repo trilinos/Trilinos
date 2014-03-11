@@ -42,6 +42,12 @@
 /* Define if we want Ifpack support graph preconditioner */
 /* #undef HAVE_IFPACK_SUPPORTGRAPH */
 
+/* Define if MPI parallel subdomain solvers are enabled */
+/* #undef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS */
+
+/* Define if Ifpack_DynamicFactory is enabled */
+/* #undef HAVE_IFPACK_DYNAMIC_FACTORY */
+
 /* Add macros for declaring functions deprecated */
 #define IFPACK_DEPRECATED
 

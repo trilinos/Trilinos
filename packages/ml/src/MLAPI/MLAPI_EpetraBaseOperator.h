@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -69,7 +69,7 @@ public:
   }
 
   //! Applies the operator to \c X, returns the results in \c Y.
-  virtual int Apply(const Epetra_MultiVector& X_Epetra, 
+  virtual int Apply(const Epetra_MultiVector& X_Epetra,
                     Epetra_MultiVector& Y_Epetra) const
   {
     // NOTE: no checks on maps. These checks can be
@@ -120,7 +120,7 @@ public:
   }
 
   //! NOT IMPLEMENTED.
-  virtual bool HasNormInf() const 
+  virtual bool HasNormInf() const
   {
     return(false);
   }
@@ -153,7 +153,7 @@ public:
   {
     return(Op_);
   }
-     
+
 private:
 
   //! Copy constructor (should not be used).
@@ -164,7 +164,7 @@ private:
 
   //! operator= (should not be used).
   EpetraBaseOperator& operator=(const EpetraBaseOperator& rhs)
-  { 
+  {
     return(*this);
   }
 

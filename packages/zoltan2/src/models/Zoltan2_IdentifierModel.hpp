@@ -129,15 +129,9 @@ public:
   // The Model interface.
   ////////////////////////////////////////////////////
 
-  inline size_t getLocalNumObjects() const
-  {
-    return getLocalNumIdentifiers();
-  }
+  inline size_t getLocalNumObjects() const {return getLocalNumIdentifiers();}
 
-  inline size_t getGlobalNumObjects() const
-  {
-    return getGlobalNumIdentifiers();
-  }
+  inline size_t getGlobalNumObjects() const {return getGlobalNumIdentifiers();}
 
 private:
 
@@ -170,8 +164,9 @@ template <typename Adapter>
 
   // Get the number of weights
   // Use max weight dim over all processes as userWeightDim_
-  userWeightDim_ = ia->getNumWeightsPerID();
-  Model<Adapter>::maxCount(*comm, userWeightDim_);
+  int tmp = ia->getNumWeightsPerID();
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1,
+      &tmp, &userWeightDim_);
 
   // Prepare to store views from input adapter
   // TODO:  Do we have to store these views, or can we get them on an 
@@ -212,7 +207,7 @@ template <typename Adapter>
 
   this->setWeightArrayLengths(weightArrayLengths, *comm_);
 
-  // TODO:  I don't little reason for idMap in IdentifierModel.
+  // TODO:  Why does an IdentifierModel need an IdentifierMap?
   // TODO:  Currently is useful only if gid_t is not Teuchos::Ordinal
   RCP<const idmap_t> idMap;
   try{

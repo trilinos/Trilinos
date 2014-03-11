@@ -68,7 +68,8 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
     validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating fatory for coalesced filtered graph");
-    validParamList->set< bool >                  ("lumping",                false, "Use lumping for dropped values");
+    validParamList->set< bool >                  ("lumping",                 true, "Use lumping for dropped values");
+    validParamList->set< bool > ("filtered matrix: reuse eigenvalue",        true, "Reuse eigenvalue from non-filtered matrix");
 
     return validParamList;
   }
@@ -90,18 +91,18 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     if (currentLevel.Get<bool>("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get()) == false) {
-      GetOStream(Runtime0,0) << "Filtered matrix is not being constructed as no filtering is being done" << std::endl;
+      GetOStream(Runtime0) << "Filtered matrix is not being constructed as no filtering is being done" << std::endl;
       Set(currentLevel, "A", A);
       return;
     }
 
     const ParameterList& pL = GetParameterList();
-    RCP<GraphBase>  G = Get< RCP<GraphBase> >(currentLevel, "Graph");
-    bool      lumping = pL.get<bool>("lumping");
-    size_t    blkSize = A->GetFixedBlockSize();
-
+    bool lumping = pL.get<bool>("lumping");
     if (lumping)
-      GetOStream(Runtime0,0) << "Lumping dropped entries" << std::endl;
+      GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
+
+    RCP<GraphBase> G       = Get< RCP<GraphBase> >(currentLevel, "Graph");
+    size_t         blkSize = A->GetFixedBlockSize();
 
     // Calculate max entries per row
     RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
@@ -170,8 +171,13 @@ namespace MueLu {
 
     filteredA->SetFixedBlockSize(blkSize);
 
-    // TODO: Can we reuse max eigenvalue from A?
-    // filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+    if (pL.get<bool>("filtered matrix: reuse eigenvalue")) {
+      // Reuse max eigenvalue from A
+      // It is unclear what eigenvalue is the best for the smoothing, but we already may have
+      // the D^{-1}A estimate in A, may as well use it.
+      // NOTE: ML does that too
+      filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+    }
 
     Set(currentLevel, "A", filteredA);
   }

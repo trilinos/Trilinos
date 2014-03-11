@@ -119,6 +119,8 @@ namespace panzer {
     
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const;
 
+    virtual const std::vector<std::vector<std::string> > & getCoordinateDOFs() const;
+
     virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const;
 
     virtual void setElementBlockId(const std::string & blockId);
@@ -242,6 +244,15 @@ namespace panzer {
     void addDOFTimeDerivative(const std::string & dofName,
                               const std::string & dotName = "");
 
+    /** Alert the panzer to the fact that a set of DOFs coorespond to coordinates.
+      * They may have to be handled differently.
+      *
+      * \param[in] dofNames Name of fields that will represent the coordinates
+      *                     (in order). Must be of dimension equal to the size
+      *                     of the problem. Also DOF must have been already added.
+      */
+    void setCoordinateDOFs(const std::vector<std::string> & dofNames);
+
     /** Alert the equation set default implementation to build the
      * required closure model(s) for this equation set.  You can make
      * multiple calls to this funciton to build multiple closure
@@ -356,6 +367,9 @@ namespace panzer {
     //! Key is the dof name and the value is the corresponding basis
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
 
+    //! Key is the coordinate prefix name and the value is the corresponding basis
+    std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_coord_prefixes;
+
     //! Key is the integration rule order and the value is the corresponding integration rule
     std::map<int,Teuchos::RCP<panzer::IntegrationRule> > m_int_rules;
 
@@ -367,6 +381,8 @@ namespace panzer {
     std::string m_block_id;
     std::string m_type;
     std::vector<std::string> m_closure_model_ids;
+
+    std::vector<std::vector<std::string> > m_coordinate_dofs;
 
   };
   

@@ -60,7 +60,7 @@ int find_first_set(uint32_t i)
 {
 #if defined( __CUDA_ARCH__ )
   return __ffs(i);
-#elif defined( __INTEL_COMPILER )
+#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
   return i ? _bit_scan_forward(i) + 1 : 0;
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
   return __builtin_ffs(i);

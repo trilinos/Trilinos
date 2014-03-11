@@ -416,6 +416,29 @@ public:
     const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
 
+private:
+  /// \brief Construct an MpiComm with a wrapped MPI_Comm and a default tag.
+  ///
+  /// This constructor has the same meaning as the one-argument
+  /// constructor that takes RCP<const OpaqueWrapper<MPI_Comm> >,
+  /// except that it sets the default message tag on all processes to
+  /// \c defaultTag.  This avoids the MPI_Bcast that the other two
+  /// constructors do.
+  ///
+  /// This constructor is declared private for now, because it is an
+  /// implementation detail of duplicate().  We may choose to expose
+  /// it in the future.
+  ///
+  /// Preconditions:
+  ///   - <tt>rawMpiComm.get() != NULL</tt>
+  ///   - <tt>*rawMpiComm != MPI_COMM_NULL</tt>
+  ///   - \c defaultTag is the same on all processes in the given
+  ///     communicator
+  MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
+           const int defaultTag);
+
+public:
+
   /**
    * \brief Construct a communicator with a new context with the same properties
    * as the original.
@@ -494,7 +517,7 @@ public:
   /// MpiComm:
   /// \code
   /// // Suppose that you've already created this MpiComm.
-  /// RCP<const MpiComm<int> > comm = ...; 
+  /// RCP<const MpiComm<int> > comm = ...;
   ///
   /// // Wrap the error handler.
   /// RCP<const OpaqueWrapper<MPI_Errhandler> > errHandler =
@@ -722,15 +745,16 @@ int MpiComm<Ordinal>::tagCounter_ = MpiComm<Ordinal>::minTag_;
 
 
 template<typename Ordinal>
-MpiComm<Ordinal>::MpiComm(
-  const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
-  )
+MpiComm<Ordinal>::
+MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(rawMpiComm.get()==NULL, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    rawMpiComm.get () == NULL, std::invalid_argument,
     "Teuchos::MpiComm constructor: The input RCP is null.");
-  TEUCHOS_TEST_FOR_EXCEPTION(*rawMpiComm == MPI_COMM_NULL,
-    std::invalid_argument, "Teuchos::MpiComm constructor: The given MPI_Comm "
-    "is MPI_COMM_NULL.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    *rawMpiComm == MPI_COMM_NULL, std::invalid_argument,
+    "Teuchos::MpiComm constructor: The given MPI_Comm is MPI_COMM_NULL.");
+
   rawMpiComm_ = rawMpiComm;
 
   // mfh 09 Jul 2013: Please resist the temptation to modify the given
@@ -746,6 +770,33 @@ MpiComm<Ordinal>::MpiComm(
   // handler on an MpiComm may call its setErrorHandler method.
 
   setupMembersFromComm ();
+}
+
+
+template<typename Ordinal>
+MpiComm<Ordinal>::
+MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
+         const int defaultTag)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    rawMpiComm.get () == NULL, std::invalid_argument,
+    "Teuchos::MpiComm constructor: The input RCP is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    *rawMpiComm == MPI_COMM_NULL, std::invalid_argument,
+    "Teuchos::MpiComm constructor: The given MPI_Comm is MPI_COMM_NULL.");
+
+  rawMpiComm_ = rawMpiComm;
+  // Set size_ (the number of processes in the communicator).
+  int err = MPI_Comm_size (*rawMpiComm_, &size_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm constructor: MPI_Comm_size failed with "
+    "error \"" << mpiErrorCodeToString (err) << "\".");
+  // Set rank_ (the calling process' rank).
+  err = MPI_Comm_rank (*rawMpiComm_, &rank_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm constructor: MPI_Comm_rank failed with "
+    "error \"" << mpiErrorCodeToString (err) << "\".");
+  tag_ = defaultTag; // set the default message tag
 }
 
 
@@ -934,6 +985,8 @@ MpiComm<Ordinal>::gather (const Ordinal sendBytes,
                           char recvBuffer[],
                           const int root) const
 {
+  (void) recvBytes; // silence compile warning for "unused parameter"
+
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::gather(...)"
     );
@@ -1597,8 +1650,13 @@ MpiComm<Ordinal>::duplicate() const
   // Wrap the raw communicator, and pass the (const) wrapped
   // communicator to MpiComm's constructor.  We created the raw comm,
   // so we have to supply a function that frees it after use.
-  RCP<OpaqueWrapper<MPI_Comm> > wrapped = opaqueWrapper<MPI_Comm> (newRawComm, details::safeCommFree);
-  RCP<MpiComm<Ordinal> > newComm (new MpiComm<Ordinal> (wrapped.getConst ()));
+  RCP<OpaqueWrapper<MPI_Comm> > wrapped =
+    opaqueWrapper<MPI_Comm> (newRawComm, details::safeCommFree);
+  // Since newComm's raw MPI_Comm is the result of an MPI_Comm_dup,
+  // its messages cannot collide with those of any other MpiComm.
+  // This means we can assign its tag without an MPI_Bcast.
+  RCP<MpiComm<Ordinal> > newComm =
+    rcp (new MpiComm<Ordinal> (wrapped.getConst (), minTag_));
   return rcp_implicit_cast<Comm<Ordinal> > (newComm);
 }
 
@@ -1622,9 +1680,13 @@ MpiComm<Ordinal>::split(const int color, const int key) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
-    return rcp(new MpiComm<Ordinal>(
-                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
-                                     opaqueWrapper(newComm,MPI_Comm_free))));
+    RCP<const OpaqueWrapper<MPI_Comm> > wrapped =
+      opaqueWrapper<MPI_Comm> (newComm, details::safeCommFree);
+    // Since newComm's raw MPI_Comm is the result of an
+    // MPI_Comm_split, its messages cannot collide with those of any
+    // other MpiComm.  This means we can assign its tag without an
+    // MPI_Bcast.
+    return rcp (new MpiComm<Ordinal> (wrapped, minTag_));
   }
 }
 
@@ -1690,7 +1752,11 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
     typedef OpaqueWrapper<MPI_Comm> ow_type;
     RCP<const ow_type> wrapper =
       rcp_implicit_cast<const ow_type> (opaqueWrapper (newComm, safeCommFree));
-    return rcp (new MpiComm<Ordinal> (wrapper));
+    // Since newComm's raw MPI_Comm is the result of an
+    // MPI_Comm_create, its messages cannot collide with those of any
+    // other MpiComm.  This means we can assign its tag without an
+    // MPI_Bcast.
+    return rcp (new MpiComm<Ordinal> (wrapper, minTag_));
   }
 }
 

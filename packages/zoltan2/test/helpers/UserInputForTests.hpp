@@ -140,6 +140,9 @@ public:
    *   \param  c  is the communicator for the processes that
    *         share the data.
    *   \param  debugInfo if true process zero will print out status.
+   *   \param  distributeInput if true, initial data will be distributed 
+   *           across processes.  Currently distributeInput=false is 
+   *           supported only for Zoltan input, not MatrixMarket files.
    *
    *  For example, if \c path is the path to the Zoltan1 test
    *  directory and \c testData is \c brack2_3, then we'll read
@@ -147,7 +150,8 @@ public:
    */
 
   UserInputForTests(string path, string testData, 
-    const RCP<const Comm<int> > &c, bool debugInfo=false);
+    const RCP<const Comm<int> > &c, bool debugInfo=false,
+    bool distributeInput=true);
 
   /*! \brief Constructor that generates an arbitrary sized sparse matrix.
    *   \param x the x dimension of the mesh that generates the matrix.
@@ -241,17 +245,18 @@ private:
   // read them into xyz_.  If it has weights,
   // read those into vtxWeights_ and edgWeights_.
 
-  void readZoltanTestData(string path, string testData);
+  void readZoltanTestData(string path, string testData,
+                          bool distributeInput);
 
   // Read Zoltan data that is in a .graph file.
-  void getChacoGraph(FILE *fptr, string name);
+  void getChacoGraph(FILE *fptr, string name, bool distributeInput);
 
   // Read Zoltan data that is in a .coords file.
   void getChacoCoords(FILE *fptr, string name);
 };
 
 UserInputForTests::UserInputForTests(string path, string testData, 
-  const RCP<const Comm<int> > &c, bool debugInfo):
+  const RCP<const Comm<int> > &c, bool debugInfo, bool distributeInput):
     verbose_(debugInfo),
     tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -264,7 +269,7 @@ UserInputForTests::UserInputForTests(string path, string testData,
     zoltan1 = true;
 
   if (zoltan1)
-    readZoltanTestData(path, testData);
+    readZoltanTestData(path, testData, distributeInput);
   else
     readMatrixMarketFile(path, testData);
   
@@ -785,7 +790,8 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   xyz_ = rcp(new tMVector_t(map, coordView.view(0, dim), dim));
 }
 
-void UserInputForTests::readZoltanTestData(string path, string testData)
+void UserInputForTests::readZoltanTestData(string path, string testData,
+                                           bool distributeInput)
 {
   int rank = tcomm_->getRank();
   FILE *graphFile = NULL;
@@ -824,7 +830,7 @@ void UserInputForTests::readZoltanTestData(string path, string testData)
   if (haveGraph){
     // Writes M_, vtxWeights_, and edgWeights_ and closes file.
     try{
-      getChacoGraph(graphFile, testData);
+      getChacoGraph(graphFile, testData, distributeInput);
     }
     Z2_FORWARD_EXCEPTIONS
 
@@ -842,7 +848,8 @@ void UserInputForTests::readZoltanTestData(string path, string testData)
   xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
 }
 
-void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
+void UserInputForTests::getChacoGraph(FILE *fptr, string fname,
+                                      bool distributeInput)
 {
   int rank = tcomm_->getRank();
   int graphCounts[5];
@@ -1002,16 +1009,25 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     fromMatrix->fillComplete();
   }
 
-  // Create a Tpetra::CrsMatrix with default row distribution.
+  
+  RCP<const map_t> toMap;
+  RCP<tcrsMatrix_t> toMatrix;
+  RCP<import_t> importer;
 
-  RCP<const map_t> toMap = rcp(new map_t(nvtxs, base, tcomm_));
-  RCP<tcrsMatrix_t> toMatrix = rcp(new tcrsMatrix_t(toMap, maxRowLen));
+  if (distributeInput) {
+    // Create a Tpetra::CrsMatrix with default row distribution.
+    toMap = rcp(new map_t(nvtxs, base, tcomm_));
+    toMatrix = rcp(new tcrsMatrix_t(toMap, maxRowLen));
 
-  // Import the data.
-
-  RCP<import_t> importer = rcp(new import_t(fromMap, toMap));
-  toMatrix->doImport(*fromMatrix, *importer, Tpetra::INSERT);
-  toMatrix->fillComplete();
+    // Import the data.
+    importer = rcp(new import_t(fromMap, toMap));
+    toMatrix->doImport(*fromMatrix, *importer, Tpetra::INSERT);
+    toMatrix->fillComplete();
+  }
+  else {
+    toMap = fromMap;
+    toMatrix = fromMatrix;
+  }
 
   M_ = toMatrix;
 
@@ -1047,9 +1063,13 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     RCP<tMVector_t> fromVertexWeights = 
       rcp(new tMVector_t(fromMap, vweights.view(0, vwgt_dim), vwgt_dim));
 
-    RCP<tMVector_t> toVertexWeights = rcp(new tMVector_t(toMap, vwgt_dim));
-
-    toVertexWeights->doImport(*fromVertexWeights, *importer, Tpetra::INSERT);
+    RCP<tMVector_t> toVertexWeights;
+    if (distributeInput) {
+      toVertexWeights = rcp(new tMVector_t(toMap, vwgt_dim));
+      toVertexWeights->doImport(*fromVertexWeights, *importer, Tpetra::INSERT);
+    }
+    else
+      toVertexWeights = fromVertexWeights;
 
     vtxWeights_ = toVertexWeights;
   }
@@ -1087,14 +1107,18 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
 
     arrayArray_t eweights = arcp(wgts, 0, ewgt_dim, true);
 
-    RCP<tMVector_t> fromEdgeWeights = 
-      rcp(new tMVector_t(fromMap, eweights.view(0, ewgt_dim), ewgt_dim));
-
-    RCP<tMVector_t> toEdgeWeights = rcp(new tMVector_t(toMap, ewgt_dim));
-
-    RCP<import_t> edgeImporter = rcp(new import_t(fromMap, toMap));
-
-    toEdgeWeights->doImport(*fromEdgeWeights, *edgeImporter, Tpetra::INSERT);
+    RCP<tMVector_t> fromEdgeWeights;
+    RCP<tMVector_t> toEdgeWeights;
+    RCP<import_t> edgeImporter;
+    if (distributeInput) {
+      fromEdgeWeights = 
+        rcp(new tMVector_t(fromMap, eweights.view(0, ewgt_dim), ewgt_dim));
+      toEdgeWeights = rcp(new tMVector_t(toMap, ewgt_dim));
+      edgeImporter = rcp(new import_t(fromMap, toMap));
+      toEdgeWeights->doImport(*fromEdgeWeights, *edgeImporter, Tpetra::INSERT);
+    }
+    else
+      toEdgeWeights = fromEdgeWeights;
 
     edgWeights_ = toEdgeWeights;
   }

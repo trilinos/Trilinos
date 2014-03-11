@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -34,7 +34,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -61,13 +61,13 @@ int main(int argc, char *argv[])
   Epetra_MultiVector RHS(VbrA->Map(), NumVectors);
   Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
 
-  Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(CrsA->Map()), 
+  Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(CrsA->Map()),
                                                          GaleriList);
-                                                         
+
   double* x_coord = (*Coord)[0];
   double* y_coord = (*Coord)[1];
 
-  for (int i = 0 ; i < CrsA->NumMyRows() ; ++i) 
+  for (int i = 0 ; i < CrsA->NumMyRows() ; ++i)
   {
     x_coord[i] *= 100;
   }
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
   MLList.set("viz: print starting solution", true);
 #endif
 
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*VbrA, MLList);
 
   // be sure that this is still ok
@@ -164,9 +164,9 @@ int main(int argc, char *argv[])
   double maxNorm=0.0;
   for (int i=0; i<NumVectors; i++)
     if (norm[i] > maxNorm) maxNorm = norm[i];
-    
+
   if (maxNorm > 1e-5) {
-    if (Comm.MyPID() == 0) printf("Test failed.\n"); 
+    if (Comm.MyPID() == 0) printf("Test failed.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -209,4 +209,4 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
-#endif 
+#endif

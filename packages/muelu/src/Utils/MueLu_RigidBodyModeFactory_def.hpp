@@ -77,11 +77,11 @@ namespace MueLu {
     if (currentLevel.GetLevelID() == 0) {
       if (currentLevel.IsAvailable(nspName_, NoFactory::get())) {
         nullspace = currentLevel.Get< RCP<MultiVector> >(nspName_, NoFactory::get());
-        GetOStream(Runtime1, 0) << "Use user-given rigid body modes " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
+        GetOStream(Runtime1) << "Use user-given rigid body modes " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
       }
       else {
         RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-        GetOStream(Runtime1, 0) << "Generating rigid body modes: dimension = " << numPDEs_ << std::endl;
+        GetOStream(Runtime1) << "Generating rigid body modes: dimension = " << numPDEs_ << std::endl;
 	RCP<const Map> xmap=A->getDomainMap();
 	if(numPDEs_==1)      { nullspace = MultiVectorFactory::Build(xmap, 1); }
 	else if(numPDEs_==2) { nullspace = MultiVectorFactory::Build(xmap, 3); }

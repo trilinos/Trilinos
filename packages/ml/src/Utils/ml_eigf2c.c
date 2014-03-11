@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /* ml_eigf2c.f -- translated by f2c (version 20000121).
    You must link the resulting object file with the libraries:
@@ -17,7 +17,7 @@
 #define TRUE_ (1)
 #include "ml_eigf2c.h"
 
-int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a, 
+int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a,
 		  int *lda, int *idigit)
 {
     /* System generated locals */
@@ -35,25 +35,25 @@ int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a,
 nd direct residuals", (ftnlen)44);
 
 #else
-#ifdef HAVE_ML_ARPACK    
+#ifdef HAVE_ML_ARPACK
     DMOUT_F77(lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
 nd direct residuals", (ftnlen)44);
-   
-       
+
+
 #endif
 #endif
-    
+
     return 0;
 } /* ml_c_pdmout__ */
 
 
 
 int ml_pdneupc__(USR_COMM *comm,
-		int *ivec, char *howmny, int *celect, double *d__, 
-		double *v, int *ldv, double *workev,  char *bmat, int *n, 
-		char *which, int *nev, double *tol, double *resid, int *ncv, 
-		int *iparam, int *ipntr, double *workd, double *workl, 
-		int *lworkl, int *ierr, ftnlen howmny_len, ftnlen bmat_len, 
+		int *ivec, char *howmny, int *celect, double *d__,
+		double *v, int *ldv, double *workev,  char *bmat, int *n,
+		char *which, int *nev, double *tol, double *resid, int *ncv,
+		int *iparam, int *ipntr, double *workd, double *workl,
+		int *lworkl, int *ierr, ftnlen howmny_len, ftnlen bmat_len,
 		ftnlen which_len)
 {
     /* System generated locals */
@@ -67,7 +67,7 @@ int ml_pdneupc__(USR_COMM *comm,
     static integer i__;
 
 #if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
-    static doublereal sigma, mu; 
+    static doublereal sigma, mu;
 #endif
 
     static logical *select;
@@ -109,26 +109,26 @@ int ml_pdneupc__(USR_COMM *comm,
 	printf("unknown value of howmny %c\n",*howmny);
 	exit(1);
     }
-    
+
 
 #ifdef HAVE_ML_PARPACK
-    
+
     PDNEUPD_F77(comm,
 	     &rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
-	     sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
-	     &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
+	     sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv,
+	     &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1],
 	     lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);
-       
-       
+
+
 #else
-#ifdef HAVE_ML_ARPACK    
-    
-    DNEUPD_F77(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, 
-	    &sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
-	    &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
+#ifdef HAVE_ML_ARPACK
+
+    DNEUPD_F77(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv,
+	    &sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv,
+	    &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1],
 	    lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);
-   
-    printf("\n\t\t Serial arpack iterations\n"); 
+
+    printf("\n\t\t Serial arpack iterations\n");
 
 #endif
 #endif

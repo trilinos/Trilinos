@@ -207,7 +207,9 @@ namespace Galeri {
       Scalar dd = this->list_.get("dd", 1.0);
       Scalar ee = this->list_.get("ee", 1.0);
 
-      this->A_ = BigStar2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee);
+      bool keepBCs = this->list_.get("keepBCs", false);
+
+      this->A_ = BigStar2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
@@ -232,7 +234,10 @@ namespace Galeri {
         ny = nx; nz = nx;
         TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
       }
-      this->A_ = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
+
+      bool keepBCs = this->list_.get("keepBCs", false);
+
+      this->A_ = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }

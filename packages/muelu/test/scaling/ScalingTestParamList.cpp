@@ -45,6 +45,8 @@
 // @HEADER
 #include <iostream>
 
+#include <Teuchos_XMLParameterListHelpers.hpp>
+
 #include <Xpetra_MultiVectorFactory.hpp>
 
 // Galeri
@@ -97,7 +99,6 @@ int main(int argc, char *argv[]) {
   Teuchos::FancyOStream& fancyout = *fancy;
   fancyout.setOutputToRootOnly(0);
 
-
   // =========================================================================
   // Parameters initialization
   // =========================================================================
@@ -108,7 +109,6 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
   std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,      "read parameters from a file [default = 'scalingTest.xml']");
-  bool        useEasy           = false;             clp.setOption("easy",    "noeasy",     &useEasy,          "use new parameter list interpreter [default = false]");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
   std::string solveType         = "cg";              clp.setOption("solver",                &solveType,        "solve type: (none | cg | gmres | standalone)");
@@ -129,10 +129,9 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   // Problem construction
   // =========================================================================
-  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
-
   comm->barrier();
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+  RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
   RCP<Matrix>      A;
   RCP<MultiVector> coordinates;
@@ -240,9 +239,18 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+  bool useEasy = true;
+  {
+    // XML files for the original interpreter always contain "Hierarchy" sublist
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+    if (paramList.isSublist("Hierarchy"))
+      useEasy = false;
+  }
+
   RCP<HierarchyManager> mueLuFactory;
   if (useEasy == false)
-    mueLuFactory = rcp(new ParameterListInterpreter(xmlFileName, *comm));
+    mueLuFactory = rcp(new ParameterListInterpreter    (xmlFileName, *comm));
   else
     mueLuFactory = rcp(new EasyParameterListInterpreter(xmlFileName, *comm));
 
@@ -250,16 +258,14 @@ int main(int argc, char *argv[]) {
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
   RCP<Hierarchy> H;
-  for (int i=0; i< numRebuilds+1; ++i) {
+  for (int i = 0; i <= numRebuilds; i++) {
+    A->SetMaxEigenvalueEstimate(-one);
+
     H = mueLuFactory->CreateHierarchy();
     H->GetLevel(0)->Set("A",           A);
     H->GetLevel(0)->Set("Nullspace",   nullspace);
     H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
-
-    if (i<numRebuilds)
-      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
   }
 
   comm->barrier();
@@ -269,7 +275,7 @@ int main(int argc, char *argv[]) {
   // System solution (Ax = b)
   // =========================================================================
   comm->barrier();
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
@@ -287,8 +293,11 @@ int main(int argc, char *argv[]) {
   }
   tm = Teuchos::null;
 
-  if (writeMatricesOPT > -2)
+  if (writeMatricesOPT > -2) {
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3.5 - Matrix output")));
     H->Write(writeMatricesOPT, writeMatricesOPT);
+    tm = Teuchos::null;
+  }
 
   comm->barrier();
   if (solveType == "none") {
@@ -367,7 +376,7 @@ int main(int argc, char *argv[]) {
 
   if (printTimings) {
     TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
-    MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
+    // MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
   }
 
   return 0;

@@ -63,12 +63,6 @@
 #define Set_HG_Size_Edge_Weights_Fn    Set_HG_Size_Edge_Wts_Fn 
 #define Set_HG_Edge_Weights_Fn         Set_HG_Edge_Wts_Fn 
 
-extern "C"{
-extern void Zoltan_RCB_Print_Structure(struct Zoltan_Struct *zz, int howMany); 
-extern void Zoltan_RIB_Print_Structure(struct Zoltan_Struct *zz, int howMany);
-extern void Zoltan_HSFC_Print_Structure(struct Zoltan_Struct *zz);
-}
-
 #ifdef TFLOP
   #include <string.h>
 #else

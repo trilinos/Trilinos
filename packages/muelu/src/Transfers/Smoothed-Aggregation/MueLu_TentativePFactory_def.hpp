@@ -64,14 +64,16 @@
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
-#include "MueLu_Utilities.hpp"
 #include "MueLu_TentativePFactory_decl.hpp"
+
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_NullspaceFactory.hpp" //FIXME
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_PerfUtils.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -123,16 +125,20 @@ namespace MueLu {
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 
-    RCP<ParameterList> params = rcp(new ParameterList());
-    params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    if (IsPrint(Statistics1)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      if (aggregates->AggregatesCrossProcessors())
+        params->set("printCommInfo",        true);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
                      const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo,
-                     const MultiVector & fineNullspace, RCP<const Map> coarseMap,
-                     RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
+                     const MultiVector& fineNullspace, RCP<const Map> coarseMap,
+                     RCP<MultiVector>& coarseNullspace, RCP<Matrix>& Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -413,7 +419,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
          // end default case (myAggSize >= NSDim)
       } else {  // special handling for myAggSize < NSDim (i.e. 1pt nodes)
         // construct R by hand, i.e. keep first myAggSize rows untouched
-        //GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
+        //GetOStream(Warnings0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
 
         localQR.reshape(NSDim,NSDim);
         for (size_t i=myAggSize; i<NSDim; i++) {
@@ -517,7 +523,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
     // ***********************************************************
 
     if (bExpert) {
-      GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
+      GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
       // The QR will have plenty of zeros if we're NSDim > 1.  If NSDim==1, we still might have a handful of BCs.
       // We need to shrink down the CRS arrays and copy them over the the "real" CrsArrays.
 
@@ -548,7 +554,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
       PtentCrs->setAllValues(ptent_rowptr,ptent_colind,ptent_values);
       PtentCrs->expertStaticFillComplete(coarseMap,fineA.getDomainMap());
     } else {
-      GetOStream(Runtime1,0) << "TentativePFactory : aggregates may cross process boundaries" << std::endl;
+      GetOStream(Runtime1) << "TentativePFactory : aggregates may cross process boundaries" << std::endl;
       // Import ghost parts of Q factors and insert into Ptentative.
       // First import just the global row numbers.
       RCP<Xpetra::Vector<GO,LO,GO,Node> > targetQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(rowMapForPtent);

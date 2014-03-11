@@ -580,6 +580,55 @@ namespace Thyra {
  * <tt>evalModel()</tt> function if it knows that the evaluation has failed
  * for some reason.
  *
+ * \section Thyra_ME_inexact_evals_sec Inexact function evaluations
+ *
+ * The <tt>%ModelEvaluator</tt> interface supports inexact function
+ * evaluations for <tt>f</tt> and <tt>g(j)</tt>.  This is supported through
+ * the use of the type <tt>ModelEvaluatorBase::Evaluation</tt> which
+ * associates an enum <tt>ModelEvaluatorBase::EEvalType</tt> with each
+ * <tt>VectorBase</tt> object.  By default, the evaluation type is
+ * <tt>ModelEvaluatorBase::EVAL_TYPE_EXACT</tt>.  However, a client ANA can
+ * request or allow more inexact (and faster) evaluations for different
+ * purposes.  For example,
+ * </tt>ModelEvaluatorBase::EVAL_TYPE_APPROX_DERIV</tt> would be used for
+ * finite difference approximations to the Jacobian-vector products and
+ * </tt>ModelEvaluatorBase::EVAL_TYPE_VERA_APPROX_DERIV</tt> would be used for
+ * finite difference Jacobian preconditioner approximations.
+ *
+ * The type <tt>ModelEvaluatorBase::Evaluation</tt> is designed so that it can
+ * be seamlessly copied to and from a <tt>Teuchos::RCP</tt> object storing the
+ * <tt>VectorBase</tt> object.  That means that if a client ANA requests an
+ * evaluation and just assumes an exact evaluation it can just set an
+ * <tt>RCP<VectorBase></tt> object and ignore the presences of the evaluation
+ * type.  Likewise, if a <tt>%ModelEvaluator</tt> subclass does not support
+ * inexact evaluations, it can simply grab the vector object out of the
+ * OutArgs object as an <tt>RCP<VectorBase></tt> object and ignore the
+ * evaluation type.  However, any generic software (e.g. DECORATORS and
+ * COMPOSITES) must handle these objects as <tt>%Evaluation</tt> objects and
+ * not <tt>RCP</tt> objects or the eval type info will be lost (see below).
+ *
+ * If some bit of software converts from an <tt>Evaluation</tt> object to an
+ * <tt>RCP</tt> and then coverts back to an <tt>Evaluation</tt> object
+ * (perhaps by accident), this will slice off the evaluation type enum value
+ * and the resulting eval type will be the default <tt>EVAL_TYPE_EXACT</tt>.
+ * The worse thing that will likely happen in this case is that a more
+ * expensive evaluation will occur.  Again, general software should avoid
+ * this.
+ *
+ * Design Consideration: By putting the evaluation type into the OutArg output
+ * object itself instead of using a different data object, we avoid the risk
+ * of having some bit of software setting the evaluation type enum as inexact
+ * for one part of the computation (e.g. a finite difference Jacobian mat-vec)
+ * and then another bit of software reusing the OutArgs object and be
+ * computing inexact evaluation when they really wanted an exact evaluation
+ * (e.g. a line search algorithm).  That could be a very difficult defect to
+ * track down in the ANA.  For example, this could cause a line search method
+ * to fail due to an inexact evaluation.  Therefore, the current design has
+ * the advantage of being biased toward exact evaluations and allowing clients
+ * and subclasses to ignore inexactness but has the disadvantage of allowing
+ * general code to slice off the evaluation type enum without even as much as
+ * a compile-time or any other type of warning.
+ *
  * \section Thyra_ME_checking_sec Compile-Time and Run-Time Safety and Checking
  *
  * The <tt>%ModelEvaluator</tt> interface is designed to allow for great

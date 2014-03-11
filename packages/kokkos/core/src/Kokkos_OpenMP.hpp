@@ -134,10 +134,6 @@ public:
   //! \name Function for the functor device interface */
   //@{
 
-  /** \TODO: compiler dependent implementation */
-  inline static void memory_fence() {};
-
-
   inline int league_rank() const ;
   inline int league_size() const ;
   inline int team_rank() const ;

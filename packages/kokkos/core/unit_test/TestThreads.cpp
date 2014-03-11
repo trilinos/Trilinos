@@ -64,6 +64,8 @@
 #include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
+#include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -353,6 +355,13 @@ TEST_F( threads , team_scan )
 {
   TestScanRequest< Kokkos::Threads >( 10 );
   TestScanRequest< Kokkos::Threads >( 10000 );
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( threads , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
 }
 
 } // namespace Test

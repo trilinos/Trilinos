@@ -109,13 +109,13 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getPermuteToLIDs() const;
 
     //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const;
+    size_t getNumRemoteIDs() const { XPETRA_MONITOR("EpetraImport::getNumRemoteIDs"); return import_->NumRemoteIDs(); }
 
     //! List of entries in the target Map to receive from other processes.
     ArrayView< const LocalOrdinal > getRemoteLIDs() const;
 
     //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const;
+    size_t getNumExportIDs() const { XPETRA_MONITOR("EpetraImport::getNumExportIDs"); return import_->NumExportIDs(); }
 
     //! List of entries in the source Map that will be sent to other processes.
     ArrayView< const LocalOrdinal > getExportLIDs() const;

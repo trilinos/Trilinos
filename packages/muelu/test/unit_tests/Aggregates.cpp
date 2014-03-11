@@ -103,7 +103,7 @@ namespace MueLuTests {
       if (procWinner[lnode] == myPid) {
         GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
 
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
+        std::vector<GO> gDofIds = amalgInfo.ComputeGlobalDOFs(gnodeid);
         aggSizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
       }
     }
@@ -128,7 +128,7 @@ namespace MueLuTests {
       LO myAgg = vertex2AggId[lnode];
       if (procWinner[lnode] == myPid) {
         GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
+        std::vector<GO> gDofIds = amalgInfo.ComputeGlobalDOFs(gnodeid);
         for (LO gDofId=0; gDofId < Teuchos::as<LO>(gDofIds.size()); gDofId++) {
           aggToRowMap[ myAgg ][ numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
           ++(numDofs[myAgg]);

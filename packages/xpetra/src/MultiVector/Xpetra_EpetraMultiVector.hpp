@@ -95,7 +95,7 @@ namespace Xpetra {
 
     //! Basic MultiVector constuctor.
     EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true)
-      : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(map), NumVectors, zeroOut))) { }
+      : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(map), Teuchos::as<int>(NumVectors), zeroOut))) { }
 
     //! MultiVector copy constructor.
     EpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
@@ -113,16 +113,16 @@ namespace Xpetra {
     //@{
 
     //! Replace value, using global (row) index.
-    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::replaceGlobalValue"); vec_->ReplaceGlobalValue(globalRow, vectorIndex, value); }
+    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::replaceGlobalValue"); vec_->ReplaceGlobalValue(globalRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Add value to existing value, using global (row) index.
-    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::sumIntoGlobalValue"); vec_->SumIntoGlobalValue(globalRow, vectorIndex, value); }
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::sumIntoGlobalValue"); vec_->SumIntoGlobalValue(globalRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Replace value, using local (row) index.
-    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::replaceLocalValue"); vec_->ReplaceMyValue(myRow, vectorIndex, value); }
+    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::replaceLocalValue"); vec_->ReplaceMyValue(myRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Add value to existing value, using local (row) index.
-    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::sumIntoLocalValue"); vec_->SumIntoMyValue(myRow, vectorIndex, value); }
+    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::sumIntoLocalValue"); vec_->SumIntoMyValue(myRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Set all values in the multivector with the given value.
     void putScalar(const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::putScalar"); vec_->PutScalar(value); }

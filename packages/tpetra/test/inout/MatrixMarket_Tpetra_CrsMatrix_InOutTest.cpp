@@ -525,8 +525,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   bool result = true; // current Boolean result; reused below
-  bool success = true; // used by TEST_EQUALITY
-  (void) success; // silence "unused variable" compiler warning
+  bool success = true;
 
   out << "Test: CrsMatrix Matrix Market I/O, w/ Map with index base "
       << indexBase << endl;
@@ -561,11 +560,14 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 
   out << "Comparing read-in matrix to original matrix" << endl;
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A, out);
-  TEST_EQUALITY( result, true );
+  bool local_success = true;
+  TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   if (! result) { // see if ignoring zero values helps
     result = compareCrsMatrixValues<crs_matrix_type> (*A_orig, *A, out);
-    TEST_EQUALITY( result, true );
+    local_success = true;
+    TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   }
+  success = success && local_success;
 
   out << "Writing out the original matrix" << endl;
   std::ostringstream outStr;
@@ -578,13 +580,16 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
     reader_type::readSparse (inStr2, rowMap, colMap, domainMap, rangeMap,
                              callFillComplete, tolerant, debug);
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2, out);
-  TEST_EQUALITY( result, true );
+  local_success = true;
+  TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   if (! result) { // see if ignoring zero values helps
     result = compareCrsMatrixValues<crs_matrix_type> (*A_orig, *A_orig2, out);
-    TEST_EQUALITY( result, true );
+    local_success = true;
+    TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   }
+  success = success && local_success;
 
-  return result;
+  return success;
 }
 
 } // namespace (anonymous)

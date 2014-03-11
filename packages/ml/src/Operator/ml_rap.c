@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -25,15 +25,23 @@
 /*                       matrix should be CSR or MSR.                   */
 /* -------------------------------------------------------------------- */
 
-void ML_rap(ML_Operator *Rmat, ML_Operator *Amat, 
+void ML_rap(ML_Operator *Rmat, ML_Operator *Amat,
             ML_Operator *Pmat, ML_Operator *Result, int matrix_type)
 {
   int         max_per_proc, i, j, N_input_vector;
    ML_Operator *APmat, *RAPmat, *Pcomm, *RAPcomm, *APcomm, *AP2comm, *tptr;
-   ML_CommInfoOP *getrow_comm; 
+   ML_CommInfoOP *getrow_comm;
    double      *scales = NULL;
+#  ifdef ML_TIMING
+   double tpre,tmult,tpost,ttotal;
+#  endif
 
    /* Check that N_input_vector is reasonable */
+
+#  ifdef ML_TIMING
+   tpre = GetClock();
+   ttotal = GetClock();
+#  endif
 
    N_input_vector = Pmat->invec_leng;
    getrow_comm = Pmat->getrow->pre_comm;
@@ -63,8 +71,8 @@ fflush(stdout);
    Pmat->getrow->use_loc_glob_map = ML_YES;
 
 
- 
-   if (Amat->getrow->pre_comm != NULL) 
+
+   if (Amat->getrow->pre_comm != NULL)
       ML_exchange_rows( Pmat, &Pcomm, Amat->getrow->pre_comm);
    else Pcomm = Pmat;
 
@@ -72,7 +80,19 @@ fflush(stdout);
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : A * P begins...\n");
 #endif
+
+#  ifdef ML_TIMING
+   tpre = GetClock() - tpre;
+   tmult = GetClock();
+#  endif
+
    ML_matmat_mult(Amat, Pcomm , &APmat);
+
+#  ifdef ML_TIMING
+   tmult = GetClock() - tmult;
+   tpost = GetClock();
+#  endif
+
 #ifdef DEBUG
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : A * P ends.\n");
@@ -82,7 +102,7 @@ fflush(stdout);
    Pmat->getrow->use_loc_glob_map = ML_NO;
    if (Amat->getrow->pre_comm != NULL) {
       tptr = Pcomm;
-      while ( (tptr!= NULL) && (tptr->sub_matrix != Pmat)) 
+      while ( (tptr!= NULL) && (tptr->sub_matrix != Pmat))
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(Pcomm);
@@ -98,18 +118,34 @@ fflush(stdout);
 
    if (Rmat->from != NULL)
       ML_DVector_GetDataPtr(Rmat->from->Amat_Normalization,&scales);
-   if (scales != NULL) 
+   if (scales != NULL)
       ML_Scale_CSR(APcomm, scales, 0);
 
-   if (Rmat->getrow->pre_comm != NULL) 
+   if (Rmat->getrow->pre_comm != NULL)
       ML_exchange_rows( APcomm, &AP2comm, Rmat->getrow->pre_comm);
    else AP2comm = APcomm;
+
+#  ifdef ML_TIMING
+   tpost = GetClock() - tpost;
+   if ( Pmat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5) {
+     int level=-1;
+     if (Amat->from != NULL)
+       level = Amat->from->levelnum-1;
+     printf("Timing summary (in seconds) for product RAP on level %d\n", level);
+     printf("     (level %d) RAP right: pre-multiply communication time    = %3.2e\n", level, tpre);
+     printf("     (level %d) RAP right: multiply time                      = %3.2e\n", level, tmult);
+     printf("     (level %d) RAP right: post-multiply communication time   = %3.2e\n", level, tpost);
+   }
+#  endif
 
 #ifdef DEBUG
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : R * AP begins...\n");
 #endif
 
+#  ifdef ML_TIMING
+   tmult = GetClock();
+#  endif
    ML_matmat_mult(Rmat,AP2comm, &RAPmat);
 
 #ifdef DEBUG
@@ -120,14 +156,19 @@ fflush(stdout);
    ML_RECUR_CSR_MSRdata_Destroy(AP2comm);
    ML_Operator_Destroy(&AP2comm);
 
-   if (Rmat->getrow->post_comm != NULL) 
+#  ifdef ML_TIMING
+   tmult = GetClock()-tmult;
+   tpost = GetClock();
+#  endif
+
+   if (Rmat->getrow->post_comm != NULL)
       ML_exchange_rows( RAPmat, &RAPcomm, Rmat->getrow->post_comm);
    else RAPcomm = RAPmat;
 
    scales = NULL;
    if (Rmat->to != NULL)
       ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&scales);
-   if (scales != NULL) 
+   if (scales != NULL)
       ML_Scale_CSR(RAPcomm, scales, 1);
 
    RAPcomm->num_PDEs = Amat->num_PDEs;
@@ -150,4 +191,19 @@ fflush(stdout);
    if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap ends.\n");
 #endif
+
+#  ifdef ML_TIMING
+   tpost = GetClock() - tpost;
+   ttotal = GetClock() - ttotal;
+   if ( Pmat->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5) {
+     int level=-1;
+     if (Amat->from != NULL)
+       level = Amat->from->levelnum-1;
+     printf("     (level %d) RAP left:  multiply time                    = %3.2e\n", level, tmult);
+     printf("     (level %d) RAP left:  post-multiply communication time = %3.2e\n", level, tpost);
+     printf("     -----------------------------------------------------------\n");
+     printf("     (level %d) total time                                  = %3.2e\n\n", level, ttotal);
+   }
+#  endif
+
 }

@@ -146,10 +146,10 @@ aexp:   AVAR                    { $$ = $1->value.avar;}
                                 { $$ = (*($1->value.arrfnct_d))($3);      }
         | AFNCT LPAR aexp RPAR  
                                 { $$ = (*($1->value.arrfnct_a))($3);      }
-        | AVAR EQUAL aexp          { $$ = $3; $1->value.avar = $3; 
+        | AVAR EQUAL aexp       { $$ = $3; delete $1->value.avar; $1->value.avar = $3; 
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::AVAR); }
-        | UNDVAR EQUAL aexp        { $$ = $3; $1->value.avar = $3; 
+        | UNDVAR EQUAL aexp     { $$ = $3; $1->value.avar = $3; 
                                   set_type(aprepro, $1, token::AVAR); }
         | aexp PLU aexp         { if ($1->cols == $3->cols && $1->rows == $3->rows ) {
                                      $$ = array_add($1, $3); 
@@ -322,19 +322,8 @@ exp:	  NUM			{ $$ = $1; 				}
 				  $$ = (double)($2 < 0 ? -floor(-($2)): floor($2) );
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }
-        | bool '?' exp ':' exp   { $$ = ($1) ? ($3) : ($5);              }
-        | AVAR LBRACK exp COMMA exp RBRACK { array *arr = $1->value.avar;
-                                      int cols = arr->cols;
-                                      int rows = arr->rows;
-                                      if ($3 < rows && $5 < cols) {
-                                        int offset = $3*cols+$5;
-                                        $$ = $1->value.avar->data[offset];
-                                      }
-                                      else {
-                                        yyerror(aprepro, "Row or Column index out of range"); 
-                                        yyerrok;
-                                      }
-                                    }
+        | bool QUEST exp COLON exp   { $$ = ($1) ? ($3) : ($5);              }
+        | AVAR LBRACK exp COMMA exp RBRACK { $$ = array_value($1->value.avar, $3, $5); }
         | AVAR LBRACK exp COMMA exp RBRACK EQUAL exp 
                                   { $$ = $8;
                                     array *arr = $1->value.avar;

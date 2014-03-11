@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -20,10 +20,10 @@
 /* Create a ML_Grid data structure                                      */
 /* -------------------------------------------------------------------- */
 
-int ML_Grid_Create( ML_Grid ** grid ) 
+int ML_Grid_Create( ML_Grid ** grid )
 {
    ML_Grid *ml_grid;
-  
+
    ML_memory_alloc( (void**) grid, sizeof(ML_Grid), "GR1" );
    ml_grid               = (*grid);
    ml_grid->ML_id        = ML_ID_GRID;
@@ -37,7 +37,7 @@ int ML_Grid_Create( ML_Grid ** grid )
 /* Initialize a ML_Grid data structure                                  */
 /* -------------------------------------------------------------------- */
 
-int ML_Grid_Init( ML_Grid *ml_grid ) 
+int ML_Grid_Init( ML_Grid *ml_grid )
 {
    ml_grid->ML_id        = ML_ID_GRID;
    ml_grid->Grid         = NULL;
@@ -50,10 +50,10 @@ int ML_Grid_Init( ML_Grid *ml_grid )
 /* Destroy a ML_Grid data structure                                     */
 /* -------------------------------------------------------------------- */
 
-int ML_Grid_Destroy( ML_Grid ** grid ) 
+int ML_Grid_Destroy( ML_Grid ** grid )
 {
    ML_Grid *ml_grid;
-  
+
    ml_grid               = (*grid);
    ml_grid->ML_id        = -1;
    ml_grid->Grid         = NULL;
@@ -70,7 +70,7 @@ int ML_Grid_Destroy( ML_Grid ** grid )
 /* Clean up a ML_Grid data structure                                    */
 /* -------------------------------------------------------------------- */
 
-int ML_Grid_Clean( ML_Grid *ml_grid ) 
+int ML_Grid_Clean( ML_Grid *ml_grid )
 {
    ml_grid->ML_id        = -1;
    ml_grid->Grid         = NULL;
@@ -135,7 +135,7 @@ int ML_Grid_Create_GridFunc( ML_Grid *grid )
    }
    if ( grid->gridfcn != NULL && grid->gf_SetOrLoad == 2 )
       ML_GridFunc_Destroy( (ML_GridFunc**) &(grid->gridfcn) );
-   
+
    ML_GridFunc_Create( &(grid->gridfcn) );
    grid->gf_SetOrLoad = 2;
    return 0;

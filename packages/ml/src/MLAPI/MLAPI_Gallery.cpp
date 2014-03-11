@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -20,7 +20,7 @@
 
 namespace MLAPI {
 
-// ====================================================================== 
+// ======================================================================
 Operator Gallery(const std::string ProblemType,
                  const Space& MySpace)
 {
@@ -32,7 +32,7 @@ Operator Gallery(const std::string ProblemType,
   Epetra_Map* Map = Galeri::CreateMap("Linear", GetEpetra_Comm(), GaleriList);
   Epetra_CrsMatrix* EpetraA = Galeri::CreateCrsMatrix(ProblemType, Map,
                                                       GaleriList);
-  
+
   Operator A(MySpace,MySpace,EpetraA);
 
   delete Map;
@@ -44,7 +44,7 @@ Operator Gallery(const std::string ProblemType,
 
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator GetShiftedLaplacian1D(const int NumGlobalElements,
                                const double Factor)
 {
@@ -72,8 +72,8 @@ Operator GetShiftedLaplacian1D(const int NumGlobalElements,
   return(A);
 }
 
-// ====================================================================== 
-Operator GetShiftedLaplacian2D(const int NX, const int NY, 
+// ======================================================================
+Operator GetShiftedLaplacian2D(const int NX, const int NY,
                                const double Factor,
                                const bool RandomScale)
 {
@@ -133,11 +133,11 @@ Operator GetShiftedLaplacian2D(const int NX, const int NY,
         for (int j = 0 ; j < NY ; ++j) {
           int row = i + j * NX;
           A(row, row) = 4.0 - LambdaMin;
-          if (i > 0) 
+          if (i > 0)
             A(row, row - 1) = -1.0;
           if (i < NX - 1)
             A(row, row + 1) = -1.0;
-          if (j > 0) 
+          if (j > 0)
             A(row, row - NX) = -1.0;
           if (j < NY - 1)
             A(row, row + NX) = -1.0;
@@ -152,7 +152,7 @@ Operator GetShiftedLaplacian2D(const int NX, const int NY,
   return (A);
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator ReadMatrix(const char* FileName)
 {
 
@@ -201,7 +201,7 @@ Operator ReadMatrix(const char* FileName)
   return(A);
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator GetRecirc2D(const int NX, const int NY, const double conv,
                      const double diff)
 {
@@ -214,7 +214,7 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
 
   if (GetMyPID() == 0) {
 
-    double HX = LX / (NX + 1);  
+    double HX = LX / (NX + 1);
     double HY = LY / (NY + 1);
 
     for (int ix = 0 ; ix < NX ; ++ix) {
@@ -275,13 +275,13 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
   return(A);
 }
 
-// ====================================================================== 
+// ======================================================================
 Teuchos::ParameterList ReadParameterList(const char* FileName)
 {
   std::ifstream fp;
 
   fp.open(FileName);
-  if (!fp.good()) 
+  if (!fp.good())
     ML_THROW("Error opening file " + std::string(FileName), -1);
 
   Teuchos::ParameterList List;
@@ -297,7 +297,7 @@ Teuchos::ParameterList ReadParameterList(const char* FileName)
     std::string name = line.substr(2, i - 2);
     std::string value = line.substr(i + 3);
 
-    if (type == 'i') 
+    if (type == 'i')
       List.set(name, atoi(value.c_str()));
     else if (type == 'f')
       List.set(name, (double)atof(value.c_str()));
@@ -318,7 +318,7 @@ Teuchos::ParameterList ReadParameterList(const char* FileName)
   return(List);
 }
 
-// ====================================================================== 
+// ======================================================================
 } // namespace MLAPI
 
 #endif // HAVE_ML_MLAPI

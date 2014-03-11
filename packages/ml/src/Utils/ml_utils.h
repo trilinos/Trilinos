@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -121,7 +121,7 @@ NEVADA::comm.IO_processor()) printf("--- Leaving: %s\n",__PRETTY_FUNCTION__);}
  if(Debug_Location()){ if( NEVADA::comm.rank() == NEVADA::comm.IO_processor())
 std::cout << "+++
  Entering: " << __FILE__ << ":" << __LINE__  << std::endl;}
-                                                                                 
+
  #define MLLeave() \
  if(Debug_Location()){ if( NEVADA::comm.rank() == NEVADA::comm.IO_processor())
 std::cout << "--- Leaving:
@@ -166,20 +166,20 @@ std::cout << "--- Leaving:
    void StopTimer(double* t0, double* delta);
    void ReportTimer(double t0, const char *msgString, ML_Comm *comm);
 
-   int    ML_crude_search( int, int, int * ); 
-   int    ML_sorted_search( int, int, int * ); 
-   int    ML_fastsorted_search( int, int, int * , int); 
-   int    ML_sorted_search2( int, int, int *, int, int ** ); 
+   int    ML_crude_search( int, int, int * );
+   int    ML_sorted_search( int, int, int * );
+   int    ML_fastsorted_search( int, int, int * , int);
+   int    ML_sorted_search2( int, int, int *, int, int ** );
    int    ML_search_insert_sort( int, int *, int *, int * );
    int    ML_split_dsort(double list[], int N, int *, int);
    int    ML_selection_dsort(double list[], int N, int *, int);
-   int    ML_sort( int, int * ); 
+   int    ML_sort( int, int * );
    void   ML_dsort2(double *, int N, int *);
 
    int    ML_Check_Context( void * );
-   int    ML_randomize( int , int * ); 
+   int    ML_randomize( int , int * );
    int    ML_random_init(void);
-   int    ML_get_random_seed();     
+   int    ML_get_random_seed();
    void   ML_set_random_seed(int seed);
    void   ML_random_vec(double u[], int N, ML_Comm *comm);
    double ML_srandom1(int *seed);
@@ -214,7 +214,7 @@ std::cout << "--- Leaving:
    int ML_gmin_int(int val, ML_Comm *comm);
    double ML_gmin_double(double val, ML_Comm *comm);
    /*ms*/
-   extern int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix, 
+   extern int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
                                            const char label[],
                                            int *, int *);
    extern int ML_build_global_numbering( ML_Operator *Amat,

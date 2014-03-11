@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -66,14 +66,14 @@ int main(int argc, char *argv[])
 #endif
     exit(EXIT_FAILURE);
   }
-    
+
   Epetra_Vector LHS(*Map); LHS.Random();
   Epetra_Vector RHS(*Map); RHS.PutScalar(0.0);
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   ParameterList MLList;
 
   if (argc > 1) {
@@ -92,11 +92,11 @@ int main(int argc, char *argv[])
   MLList.set("z-coordinates", z_coord);
   MLList.set("ML output",10);
 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
@@ -107,12 +107,12 @@ int main(int argc, char *argv[])
 
   // destroy the preconditioner
   delete MLPrec;
-  
+
   // compute the real residual
 
   double residual;
   LHS.Norm2(&residual);
-  
+
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
   }

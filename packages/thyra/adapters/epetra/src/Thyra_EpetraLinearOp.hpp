@@ -418,6 +418,15 @@ private:
   const Epetra_Map& getRangeMap() const;
   const Epetra_Map& getDomainMap() const;
 
+  /** \brief Compute the absolute row sum for this matrix.
+    * 
+    * A concrete implementation is required because Epetra
+    * does not support absolute row sums.
+    * 
+    * \note This only works for Epetra_CrsMatrix objects.
+    */
+  void computeAbsRowSum(Epetra_Vector & rowStatVec_in) const;
+
 };	// end class EpetraLinearOp
 
 

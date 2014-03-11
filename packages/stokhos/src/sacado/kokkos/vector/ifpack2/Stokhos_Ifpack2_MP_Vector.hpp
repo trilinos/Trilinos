@@ -42,10 +42,11 @@
 #ifndef STOKHOS_IFPACK2_MP_VECTOR_HPP
 #define STOKHOS_IFPACK2_MP_VECTOR_HPP
 
-// MP includes and specializations
-#include "Ifpack2_Krylov_MP_Vector.hpp"
+// This header file should be included whenever compiling any Ifpack2
+// code with Stokhos scalar types
 
-// Ifpack2 includes
-#include "Ifpack2_Factory.hpp"
+// MP includes and specializations
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Ifpack2_Krylov_MP_Vector.hpp"
 
 #endif // STOKHOS_IFPACK2_MP_VECTOR_HPP

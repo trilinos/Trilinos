@@ -67,7 +67,7 @@
 #endif // ! _OPENMP
 
 #ifdef KOKKOS_USE_CUSPARSE
-#  include <cusparse_v2.h>
+#  include <cusparse.h>
 #  include <Kokkos_CrsMatrix_CuSparse.hpp>
 #endif // KOKKOS_USE_CUSPARSE
 
@@ -95,19 +95,19 @@ namespace Kokkos {
 ///
 /// Here is an example loop over the entries in the row:
 /// \code
-/// typedef typename SparseRowView<MatrixType>::scalar_type scalar_type;
+/// typedef typename SparseRowView<MatrixType>::value_type value_type;
 /// typedef typename SparseRowView<MatrixType>::ordinal_type ordinal_type;
 ///
 /// SparseRowView<MatrixType> A_i = ...;
 /// const int numEntries = A_i.length;
 /// for (int k = 0; k < numEntries; ++k) {
-///   scalar_type A_ij = A_i.value (k);
+///   value_type A_ij = A_i.value (k);
 ///   ordinal_type j = A_i.colidx (k);
 ///   // ... do something with A_ij and j ...
 /// }
 /// \endcode
 ///
-/// MatrixType must provide the \c scalar_type and \c ordinal_type
+/// MatrixType must provide the \c value_type and \c ordinal_type
 /// typedefs.  In addition, it must make sense to use SparseRowView to
 /// view a row of MatrixType.  In particular, the values and column
 /// indices of a row must be accessible using the <tt>values</tt>
@@ -119,13 +119,13 @@ namespace Kokkos {
 template<class MatrixType>
 struct SparseRowView {
   //! The type of the values in the row.
-  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::value_type value_type;
   //! The type of the column indices in the row.
   typedef typename MatrixType::ordinal_type ordinal_type;
 
 private:
   //! Array of values in the row.
-  scalar_type* values_;
+  value_type* values_;
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
   //! Stride between successive entries in the row.
@@ -140,11 +140,11 @@ public:
   ///   each of the above arrays.
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
-  SparseRowView (scalar_type* const values,
-                 ordinal_type* const colidx,
+  SparseRowView (value_type* const values,
+                 ordinal_type* const colidx__,
                  const int stride,
                  const int count) :
-    values_ (values), colidx_ (colidx), stride_ (stride), length (count)
+    values_ (values), colidx_ (colidx__), stride_ (stride), length (count)
   {}
   /// \brief Constructor
   ///
@@ -155,11 +155,11 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowView (const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx,
+      const typename MatrixType::index_type& colidx__,
                  const int& stride,
                  const int& count,
                  const int& idx) :
-    values_ (&values(idx)), colidx_ (&colidx(idx)), stride_ (stride), length (count)
+    values_ (&values(idx)), colidx_ (&colidx__(idx)), stride_ (stride), length (count)
   {}
 
   /// \brief Number of entries in the row.
@@ -174,7 +174,7 @@ public:
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  scalar_type& value (const int& i) const {
+  value_type& value (const int& i) const {
     return values_[i*stride_];
   }
 
@@ -199,13 +199,13 @@ public:
 template<class MatrixType>
 struct SparseRowViewConst {
   //! The type of the values in the row.
-  typedef const typename MatrixType::non_const_scalar_type scalar_type;
+  typedef const typename MatrixType::non_const_value_type value_type;
   //! The type of the column indices in the row.
   typedef const typename MatrixType::non_const_ordinal_type ordinal_type;
 
 private:
   //! Array of values in the row.
-  scalar_type* values_;
+  value_type* values_;
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
   //! Stride between successive entries in the row.
@@ -220,11 +220,11 @@ public:
   ///   each of the above arrays.
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
-  SparseRowViewConst (scalar_type* const values,
-                      ordinal_type* const colidx,
+  SparseRowViewConst (value_type* const values,
+                      ordinal_type* const colidx__,
                       const int stride,
                       const int count) :
-    values_ (values), colidx_ (colidx), stride_ (stride), length (count)
+    values_ (values), colidx_ (colidx__), stride_ (stride), length (count)
   {}
   /// \brief Constructor
   ///
@@ -235,11 +235,11 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst (const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx,
+      const typename MatrixType::index_type& colidx__,
                  const int& stride,
                  const int& count,
                  const int& idx) :
-    values_ (&values(idx)), colidx_ (&colidx(idx)), stride_ (stride), length (count)
+    values_ (&values(idx)), colidx_ (&colidx__(idx)), stride_ (stride), length (count)
   {}
 
   /// \brief Number of entries in the row.
@@ -254,7 +254,7 @@ public:
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  scalar_type& value (const int& i) const {
+  value_type& value (const int& i) const {
     return values_[i*stride_];
   }
 
@@ -316,7 +316,7 @@ template<typename ScalarType,
 class CrsMatrix {
 public:
   typedef Device        device_type;
-  typedef ScalarType    scalar_type;
+  typedef ScalarType    value_type;
   typedef OrdinalType   ordinal_type;
   typedef MemoryTraits  memory_traits;
   typedef SizeType      size_type;
@@ -379,12 +379,12 @@ public:
   //! Type of the "row map" (which contains the offset for each row's data).
   typedef typename StaticCrsGraphType::row_map_type row_map_type;
   //! Kokkos Array type of the entries (values) in the sparse matrix.
-  typedef Kokkos::View<scalar_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
+  typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
   //! Const version of the type of the entries in the sparse matrix.
-  typedef typename values_type::const_scalar_type  const_scalar_type;
+  typedef typename values_type::const_value_type  const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  typedef typename values_type::non_const_scalar_type  non_const_scalar_type;
-  typedef typename index_type::non_const_scalar_type  non_const_ordinal_type;
+  typedef typename values_type::non_const_value_type  non_const_value_type;
+  typedef typename index_type ::non_const_value_type  non_const_ordinal_type;
 
 #ifdef KOKKOS_USE_CUSPARSE
   cusparseHandle_t cusparse_handle;
@@ -569,9 +569,9 @@ public:
   // FIXME (mfh 29 Sep 2013) See notes on the three-argument version
   // of this method below.
   void
-  insertInGraph(OrdinalType row, OrdinalType col)
+  insertInGraph(OrdinalType rowi, OrdinalType col)
   {
-    insertInGraph(row, &col, 1);
+    insertInGraph(rowi, &col, 1);
   }
 
   // FIXME (mfh 29 Sep 2013) We need a way to disable atomic updates
@@ -584,13 +584,13 @@ public:
   // support atomic updates) won't work on GPUs.
   KOKKOS_INLINE_FUNCTION
   void
-  sumIntoValues (const OrdinalType row,
+  sumIntoValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const size_t ncol,
                  ScalarType vals[],
                  const bool force_atomic = false) const
   {
-    SparseRowView<CrsMatrix> row_view = this->row (row);
+    SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const int length = row_view.length;
     for (size_t i = 0; i < ncol; ++i) {
       for (int j = 0; j < length; ++j) {
@@ -608,13 +608,13 @@ public:
   // FIXME (mfh 29 Sep 2013) See above notes on sumIntoValues.
   KOKKOS_INLINE_FUNCTION
   void
-  replaceValues (const OrdinalType row,
+  replaceValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const size_t ncol,
                  ScalarType vals[],
                  const bool force_atomic = false) const
   {
-    SparseRowView<CrsMatrix> row_view = this->row (row);
+    SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const int length = row_view.length;
     for (size_t i = 0; i < ncol; ++i) {
       for (int j = 0; j < length; ++j) {
@@ -715,10 +715,10 @@ public:
   // Furthermore, this should be a device function, by analogy with
   // UnorderedMap.
   void
-  insertInGraph (const OrdinalType row, OrdinalType *cols, const size_t ncol)
+  insertInGraph (const OrdinalType rowi, OrdinalType *cols, const size_t ncol)
   {
-    OrdinalType* const start = &h_entries_[rows_[row]];
-    OrdinalType* const end   = &h_entries_[rows_[row+1]];
+    OrdinalType* const start = &h_entries_[rows_[rowi]];
+    OrdinalType* const end   = &h_entries_[rows_[rowi+1]];
     for (size_t i = 0; i < ncol; ++i) {
       OrdinalType *iter = start;
       while (iter < end && *iter != -1 && *iter != cols[i]) {
@@ -813,7 +813,7 @@ generate (const std::string &label,
   srand(13721);
   h_row_map(0) = 0;
 
-  for (int row = 0; row < nrows; ++row) {
+  for (int rowi = 0; rowi < nrows; ++rowi) {
    // int varianz = (1.0 * rand() / INT_MAX - 0.5) * varianz_nel_row;
    // h_row_map(row + 1) = h_row_map(row) + elements_per_row + varianz;
   }
@@ -824,8 +824,8 @@ generate (const std::string &label,
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view(graph.entries);
 
-  for(int row = 0; row < nrows; row++) {
-    for(int k = h_row_map(row); k < h_row_map(row + 1); row++) {
+  for(int rowi = 0; rowi < nrows; rowi++) {
+    for(int k = h_row_map(rowi); k < h_row_map(rowi + 1); k++) {
       //int pos = (1.0 * rand() / INT_MAX - 0.5) * width_row;
 
       //if(pos < 0) pos += ncols;
@@ -902,16 +902,16 @@ generate (const std::string &label)
     rows_[++cur_row] = ptr_to;
   }
   OrdinalType nrows = rows_.size()-1;
-  OrdinalType nnz = ptr_to;
+  OrdinalType nnz_ = ptr_to;
 
-  h_entries_.resize(nnz);
+  h_entries_.resize(nnz_);
 
   //sort the rows
   for (OrdinalType i=0; i<nrows; ++i )
     std::sort(&h_entries_[i], &h_entries_[i+1]);
 
   // generate the matrix
-  import(label, nrows, nrows, nnz, NULL, &rows_[0], &h_entries_[0]);
+  import(label, nrows, nrows, nnz_, NULL, &rows_[0], &h_entries_[0]);
 
 }
 
@@ -1021,16 +1021,16 @@ template< class DeviceType , typename ScalarType >
 struct MV_MultiplyShflThreadsPerRow {
 private:
 
-  typedef typename Kokkos::Impl::remove_const< ScalarType >::type scalar_type ;
+  typedef typename Kokkos::Impl::remove_const< ScalarType >::type value_type ;
 
 #ifdef KOKKOS_HAVE_CUDA
   enum { shfl_possible =
     Kokkos::Impl::is_same< DeviceType , Kokkos::Cuda >::value &&
     (
-      Kokkos::Impl::is_same< scalar_type , unsigned int >::value ||
-      Kokkos::Impl::is_same< scalar_type , int >::value ||
-      Kokkos::Impl::is_same< scalar_type , float >::value ||
-      Kokkos::Impl::is_same< scalar_type , double >::value
+      Kokkos::Impl::is_same< value_type , unsigned int >::value ||
+      Kokkos::Impl::is_same< value_type , int >::value ||
+      Kokkos::Impl::is_same< value_type , float >::value ||
+      Kokkos::Impl::is_same< value_type , double >::value
     )};
 #else // NOT KOKKOS_HAVE_CUDA
   enum { shfl_possible = 0 };
@@ -1064,10 +1064,10 @@ template<class RangeVector,
 struct MV_MultiplyFunctor {
   typedef typename CrsMatrix::device_type                   device_type ;
   typedef typename CrsMatrix::ordinal_type                    size_type ;
-  typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
-  typedef typename Kokkos::View<scalar_type*, device_type>  range_values;
+  typedef typename CrsMatrix::non_const_value_type         value_type ;
+  typedef typename Kokkos::View<value_type*, device_type>  range_values;
 
-  typedef MV_MultiplyShflThreadsPerRow< device_type , scalar_type > ShflThreadsPerRow ;
+  typedef MV_MultiplyShflThreadsPerRow< device_type , value_type > ShflThreadsPerRow ;
 
   CoeffVector1 beta;
   CoeffVector2 alpha;
@@ -1084,18 +1084,22 @@ struct MV_MultiplyFunctor {
     const size_type iRow = i / ShflThreadsPerRow::device_value ;
     const int lane = i % ShflThreadsPerRow::device_value ;
 
-    scalar_type sum[UNROLL];
+    value_type sum[UNROLL];
     // FIXME (mfh 29 Sep 2013) These pragmas ("ivdep", "unroll", and
     // "loop count") should be protected by macros that identify the
     // compilers which support them.
     //
     // FIXME (mfh 29 Sep 2013) Is a "loop count" of "24" a good idea
     // when the matrix has many fewer entries per row than that?
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
     for (size_type k = 0 ; k < UNROLL ; ++k) {
       // NOTE (mfh 09 Aug 2013) This requires that assignment from int
-      // (in this case, 0) to scalar_type be defined.  It's not for
+      // (in this case, 0) to value_type be defined.  It's not for
       // types like arprec and dd_real.
       //
       // mfh 29 Sep 2013: On the other hand, arprec and dd_real won't
@@ -1110,14 +1114,22 @@ struct MV_MultiplyFunctor {
     if (doalpha != -1) {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
-#pragma loop count (15)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
       for (size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value ) {
-        const scalar_type val = row.value(iEntry);
+        const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] +=  val * m_x(ind, kk + k);
         }
@@ -1125,61 +1137,89 @@ struct MV_MultiplyFunctor {
     } else {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
-#pragma loop count (15)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
       for(size_type iEntry = lane ; iEntry < row.length ; iEntry+=ShflThreadsPerRow::device_value ) {
-        const scalar_type val = row.value(iEntry);
+        const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] -= val * m_x(ind, kk + k);
         }
       }
     }
-    for (int i=0; i < UNROLL; ++i) {
+    for (int ii=0; ii < UNROLL; ++ii) {
       if (ShflThreadsPerRow::device_value > 1)
-        sum[i] += shfl_down(sum[i], 1,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 1,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 2)
-        sum[i] += shfl_down(sum[i], 2,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 2,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 4)
-        sum[i] += shfl_down(sum[i], 4,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 4,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 8)
-        sum[i] += shfl_down(sum[i], 8,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 8,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 16)
-        sum[i] += shfl_down(sum[i], 16,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 16,ShflThreadsPerRow::device_value);
     }
     if (lane==0) {
       if(doalpha * doalpha != 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] *= alpha(kk + k);
         }
       }
 
       if (dobeta == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = sum[k];
         }
       } else if(dobeta == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) += sum[k];
         }
       } else if (dobeta == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = -m_y(iRow, kk + k) +  sum[k];
         }
       } else {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = beta(kk + k) * m_y(iRow, kk + k) + sum[k] ;
         }
@@ -1191,19 +1231,35 @@ struct MV_MultiplyFunctor {
   void strip_mine_1 (const size_type i) const {
     const size_type iRow = i/ShflThreadsPerRow::device_value;
     const int lane = i%ShflThreadsPerRow::device_value;
-    scalar_type sum = 0;
+    value_type sum = 0;
 
     if(doalpha != -1) {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
+#endif
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
     } else {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
+#endif
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum -= row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
@@ -1345,10 +1401,10 @@ struct MV_MultiplyFunctor {
   struct MV_MultiplySingleFunctor {
     typedef typename CrsMatrix::device_type                   device_type ;
     typedef typename CrsMatrix::ordinal_type                    size_type ;
-    typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
-    typedef typename Kokkos::View<scalar_type*, typename CrsMatrix::device_type> range_values;
+    typedef typename CrsMatrix::non_const_value_type         value_type ;
+    typedef typename Kokkos::View<value_type*, typename CrsMatrix::device_type> range_values;
 
-    typedef MV_MultiplyShflThreadsPerRow< device_type , scalar_type > ShflThreadsPerRow ;
+    typedef MV_MultiplyShflThreadsPerRow< device_type , value_type > ShflThreadsPerRow ;
 
     CoeffVector1 beta;
     CoeffVector2 alpha;
@@ -1363,19 +1419,33 @@ struct MV_MultiplyFunctor {
       const int lane = i%ShflThreadsPerRow::device_value;
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
       const size_type row_length = row.length ;
-      scalar_type sum = 0;
+      value_type sum = 0;
 
       if (doalpha != -1) {
 
-#pragma loop count (15)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
         for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
           sum += row.value(iEntry) * m_x(row.colidx(iEntry));
         }
       } else {
 
-#pragma loop count (15)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
         for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
           sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
         }
@@ -1502,10 +1572,10 @@ struct MV_MultiplyFunctor {
   struct MV_MultiplyTransposeFunctor {
     typedef typename CrsMatrix::device_type                   device_type ;
     typedef typename CrsMatrix::ordinal_type                    size_type ;
-    typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
-    typedef typename Kokkos::View<scalar_type*, device_type>  range_values;
+    typedef typename CrsMatrix::non_const_value_type         value_type ;
+    typedef typename Kokkos::View<value_type*, device_type>  range_values;
 
-    typedef MV_MultiplyShflThreadsPerRow< device_type , scalar_type > ShflThreadsPerRow ;
+    typedef MV_MultiplyShflThreadsPerRow< device_type , value_type > ShflThreadsPerRow ;
 
     CoeffVector1 beta;
     CoeffVector2 alpha;
@@ -1522,18 +1592,22 @@ struct MV_MultiplyFunctor {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
       for (size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value ) {
-        const scalar_type val = row.value(iEntry);
+        const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
         if(doalpha!=1) {
-          #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (size_type k = 0; k < n; ++k) {
-            atomic_add(&m_y(ind,k), alpha(k) * val * m_x(iRow, k));
+            atomic_add(&m_y(ind,k), value_type(alpha(k) * val * m_x(iRow, k)));
           }
         } else {
-          #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (size_type k = 0; k < n; ++k) {
-            atomic_add(&m_y(ind,k), val * m_x(iRow, k));
+            atomic_add(&m_y(ind,k), value_type(val * m_x(iRow, k)));
           }
         }
       }
@@ -1551,10 +1625,10 @@ struct MV_MultiplyFunctor {
   struct MV_MultiplyTransposeSingleFunctor {
     typedef typename CrsMatrix::device_type                   device_type ;
     typedef typename CrsMatrix::ordinal_type                    size_type ;
-    typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
-    typedef typename Kokkos::View<scalar_type*, device_type>  range_values;
+    typedef typename CrsMatrix::non_const_value_type         value_type ;
+    typedef typename Kokkos::View<value_type*, device_type>  range_values;
 
-    typedef MV_MultiplyShflThreadsPerRow< device_type , scalar_type > ShflThreadsPerRow ;
+    typedef MV_MultiplyShflThreadsPerRow< device_type , value_type > ShflThreadsPerRow ;
 
     CoeffVector1 beta;
     CoeffVector2 alpha;
@@ -1571,13 +1645,13 @@ struct MV_MultiplyFunctor {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
       for (size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value ) {
-        const scalar_type val = row.value(iEntry);
+        const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
         if(doalpha!=1) {
-          atomic_add(&m_y(ind), alpha(0) * val * m_x(iRow));
+          atomic_add(&m_y(ind), value_type(alpha(0) * val * m_x(iRow)));
         } else {
-          atomic_add(&m_y(ind), val * m_x(iRow));
+          atomic_add(&m_y(ind), value_type(val * m_x(iRow)));
         }
       }
     }
@@ -1597,11 +1671,14 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
              const TCrsMatrix &A,
              const DomainVector &x)
 {
+  //Special case for zero Rows RowMap
+  if(A.numRows() == -1) return;
+
   if (doalpha == 0) {
     if (dobeta==2) {
             MV_MulScalar(y,betav,y);
     } else {
-            MV_MulScalar(y,dobeta,y);
+            MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
     }
     return;
   } else {
@@ -1629,7 +1706,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
                   Kokkos::MemoryRandomAccess >
     CoeffVector2Type;
 
-    typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
+    typedef CrsMatrix<typename TCrsMatrix::const_value_type,
                       typename TCrsMatrix::ordinal_type,
                       typename TCrsMatrix::device_type,
                       typename TCrsMatrix::memory_traits,
@@ -1640,9 +1717,9 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
 #ifndef KOKKOS_FAST_COMPILE
 
     if(x.dimension_1()==1) {
-      typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomAccess> DomainVector1D;
-      typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
-      typedef View<typename RangeVectorType::scalar_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
+      typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomAccess> DomainVector1D;
+      typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
+      typedef View<typename RangeVectorType::value_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
 
        typedef MV_MultiplySingleFunctor<RangeVector1D, CrsMatrixType, DomainVector1D,
                                 CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
@@ -1687,7 +1764,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
     if (doalpha != 2) {
             alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
             typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-            typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+            typename CoeffVector2::value_type s_a = (typename CoeffVector2::value_type) doalpha;
 
             for (int i = 0; i < numVecs; ++i)
               h_a(i) = s_a;
@@ -1698,12 +1775,19 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
     if (dobeta != 2) {
             beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
             typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-            typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+            typename CoeffVector1::value_type s_b = (typename CoeffVector1::value_type) dobeta;
 
             for(int i = 0; i < numVecs; i++)
               h_b(i) = s_b;
 
             Kokkos::deep_copy(beta, h_b);
+    }
+
+    if (dobeta==2) {
+       MV_MulScalar(y,betav,y);
+    } else {
+      if (dobeta!=1)
+       MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
     }
 
     const typename CrsMatrixType::ordinal_type nrow = A.numRows();
@@ -1770,9 +1854,9 @@ MV_MultiplyTranspose (const CoeffVector1& betav,
 
 template<class RangeVector, class CrsMatrix, class DomainVector>
 void
-MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
+MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
              const RangeVector& y,
-             typename DomainVector::const_scalar_type s_a,
+             typename DomainVector::const_value_type s_a,
              const CrsMatrix& A,
              const DomainVector& x)
 {
@@ -1786,7 +1870,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
     return;
   }
 #endif // KOKKOS_USE_MKL*/
-  typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+  typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
   aVector a;
   aVector b;
   int numVecs = x.dimension_1();
@@ -1798,7 +1882,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return MV_MultiplyTranspose (a, y, a, A, x, 0, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, 0, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, 0, -1);
     else {
       a = aVector("a", numVecs);
@@ -1814,7 +1898,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, 1, -1);
     else {
       a = aVector("a", numVecs);
@@ -1825,12 +1909,12 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       Kokkos::deep_copy (a, h_a);
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 2);
     }
-  } else if (s_b == -1) {
+  } else if (s_b == static_cast<typename RangeVector::const_value_type> (-1)) {
     if (s_a == 0)
       return MV_MultiplyTranspose (a, y, a, A, x, -1, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, -1, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, -1, -1);
     else {
       a = aVector("a", numVecs);
@@ -1853,7 +1937,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return MV_MultiplyTranspose (b, y, a, A, x, 2, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (b, y, a, A, x, 2, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (b, y, a, A, x, 2, -1);
     else {
       a = aVector("a", numVecs);
@@ -1881,11 +1965,14 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
                const TCrsMatrix &A,
                const DomainVector &x)
   {
+    //Special case for zero Rows RowMap
+    if(A.numRows() == -1) return;
+
     if (doalpha == 0) {
       if (dobeta==2) {
               MV_MulScalar(y,betav,y);
       } else {
-              MV_MulScalar(y,dobeta,y);
+              MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
       }
       return;
     } else {
@@ -1913,7 +2000,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
                     Kokkos::MemoryRandomAccess >
       CoeffVector2Type;
 
-      typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
+      typedef CrsMatrix<typename TCrsMatrix::const_value_type,
                         typename TCrsMatrix::ordinal_type,
                         typename TCrsMatrix::device_type,
                         typename TCrsMatrix::memory_traits,
@@ -1924,9 +2011,9 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
 #ifndef KOKKOS_FAST_COMPILE
 
       if(x.dimension_1()==1) {
-        typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomAccess> DomainVector1D;
-        typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
-        typedef View<typename RangeVectorType::scalar_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
+        typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomAccess> DomainVector1D;
+        typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
+        typedef View<typename RangeVectorType::value_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
 
          typedef MV_MultiplySingleFunctor<RangeVector1D, CrsMatrixType, DomainVector1D,
                                   CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
@@ -1971,7 +2058,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       if (doalpha != 2) {
               alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
               typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-              typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+              typename CoeffVector2::value_type s_a = (typename CoeffVector2::value_type) doalpha;
 
               for (int i = 0; i < numVecs; ++i)
                 h_a(i) = s_a;
@@ -1982,7 +2069,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       if (dobeta != 2) {
               beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
               typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-              typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+              typename CoeffVector1::value_type s_b = (typename CoeffVector1::value_type) dobeta;
 
               for(int i = 0; i < numVecs; i++)
                 h_b(i) = s_b;
@@ -2050,7 +2137,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
                     Kokkos::MemoryRandomAccess >
       CoeffVector2Type;
 
-      typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
+      typedef CrsMatrix<typename TCrsMatrix::const_value_type,
                         typename TCrsMatrix::ordinal_type,
                         typename TCrsMatrix::device_type,
                         typename TCrsMatrix::memory_traits,
@@ -2088,7 +2175,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       if(doalpha!=2) {
               alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
               typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-              typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+              typename CoeffVector2::value_type s_a = (typename CoeffVector2::value_type) doalpha;
 
               for(int i = 0; i < numVecs; i++)
                 h_a(i) = s_a;
@@ -2098,7 +2185,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       if(dobeta!=2) {
               beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
               typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-              typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+              typename CoeffVector1::value_type s_b = (typename CoeffVector1::value_type) dobeta;
 
               for(int i = 0; i < numVecs; i++)
                 h_b(i) = s_b;
@@ -2207,7 +2294,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
     // that compares the Scalar and Device types to those accepted by
     // the TPL(s).
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
       return;
     }
 #endif // KOKKOS_USE_CUSPARSE
@@ -2216,7 +2303,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return;
     }
 #endif // KOKKOS_USE_MKL
-    typedef Kokkos::View<typename DomainVector::scalar_type*, typename DomainVector::device_type> aVector;
+    typedef Kokkos::View<typename DomainVector::value_type*, typename DomainVector::device_type> aVector;
     aVector a;
 
     return MV_Multiply (a, y, a, A, x, 0, 1);
@@ -2225,12 +2312,12 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
   template<class RangeVector, class CrsMatrix, class DomainVector>
   void
   MV_Multiply (const RangeVector& y,
-               typename DomainVector::const_scalar_type s_a,
+               typename DomainVector::const_value_type s_a,
                const CrsMatrix& A,
                const DomainVector& x)
   {
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
       return;
     }
 #endif // KOKKOS_USE_CUSPARSE
@@ -2239,11 +2326,11 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return;
     }
 #endif // KOKKOS_USE_MKL
-    typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+    typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
     aVector a;
     const int numVecs = x.dimension_1();
 
-    if (s_a == -1) {
+    if ((s_a < 1) && (s_a != 0)) {
       return MV_Multiply (a, y, a, A, x, 0, -1);
     } else if (s_a == 1) {
       return MV_Multiply (a, y, a, A, x, 0, 1);
@@ -2262,14 +2349,14 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
 
   template<class RangeVector, class CrsMatrix, class DomainVector>
   void
-  MV_Multiply (typename RangeVector::const_scalar_type s_b,
+  MV_Multiply (typename RangeVector::const_value_type s_b,
                const RangeVector& y,
-               typename DomainVector::const_scalar_type s_a,
+               typename DomainVector::const_value_type s_a,
                const CrsMatrix& A,
                const DomainVector& x)
   {
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
       return;
     }
 #endif // KOKKOSE_USE_CUSPARSE
@@ -2278,7 +2365,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       return;
     }
 #endif // KOKKOS_USE_MKL
-    typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+    typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
     aVector a;
     aVector b;
     int numVecs = x.dimension_1();
@@ -2290,7 +2377,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
         return MV_Multiply (a, y, a, A, x, 0, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, 0, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, 0, -1);
       else {
         a = aVector("a", numVecs);
@@ -2306,7 +2393,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
         return MV_Multiply (a, y, a, A, x, 1, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, 1, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, 1, -1);
       else {
         a = aVector("a", numVecs);
@@ -2317,12 +2404,12 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
         Kokkos::deep_copy (a, h_a);
         return MV_Multiply (a, y, a, A, x, 1, 2);
       }
-    } else if (s_b == -1) {
+    } else if (s_b == static_cast<typename RangeVector::const_value_type> (-1)) {
       if (s_a == 0)
         return MV_Multiply (a, y, a, A, x, -1, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, -1, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, -1, -1);
       else {
         a = aVector("a", numVecs);
@@ -2345,7 +2432,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
         return MV_Multiply (b, y, a, A, x, 2, 0);
       else if (s_a == 1)
         return MV_Multiply (b, y, a, A, x, 2, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (b, y, a, A, x, 2, -1);
       else {
         a = aVector("a", numVecs);

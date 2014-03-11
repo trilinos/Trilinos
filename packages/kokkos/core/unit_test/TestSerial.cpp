@@ -61,6 +61,8 @@
 #include <TestTile.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -146,6 +148,13 @@ TEST_F( serial , view_remap )
     ++value ;
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
   }}}}
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( serial , view_aggregate )
+{
+  TestViewAggregate< Kokkos::Serial >();
 }
 
 //----------------------------------------------------------------------------
@@ -243,6 +252,13 @@ TEST_F( serial, tile_16x16)
   ptrdiff_t errors = 0 ;
   Kokkos::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, ptrdiff_t(0) );
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( serial , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
 }
 
 } // namespace test

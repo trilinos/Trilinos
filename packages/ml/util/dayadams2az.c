@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     if ((flag != 0) && (string[0] >= '0') && (string[0] <= '9'))
        flag = sscanf(string,"%d%d",&Nrows, &Nnzs);
-    else 
+    else
        flag = scanf("%d%d",&Nrows, &Nnzs);
 
     if (flag != 2) {
@@ -80,9 +80,9 @@ string[j] = ' ';
        }
        if (row == current_row+1) printf("-1\n");
        else if (row > current_row+1) {
-          if (first_time) 
+          if (first_time)
              fprintf(stderr,"Warning: Empty rows (e.g. %d)?\n",current_row+1);
-          printf("-1\n"); 
+          printf("-1\n");
           for (i = current_row+1; i < row; i++) printf("%d 0.0\n-1\n",i-1);
           first_time = 0;
        }
@@ -109,4 +109,4 @@ int mygetline(char string[])
    if (i < 2) return(0);
    else return(1);
 }
- 
+

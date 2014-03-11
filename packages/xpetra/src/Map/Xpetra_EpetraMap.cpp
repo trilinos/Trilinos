@@ -342,8 +342,8 @@ namespace Xpetra {
   }
 
 
-//   const RCP< const Map<int, int> > toXpetra(const RCP< const Epetra_Map > &map) {
-//     return rcp( new EpetraMap(map) );
+//   const RCP<const Map<int,int> > toXpetra(const RCP<const Epetra_Map>& map) {
+//     return rcp(new EpetraMap(map));
 //   }
 
   const RCP< const Map<int, int> > toXpetra(const Epetra_BlockMap &map) {

@@ -47,19 +47,44 @@
 #include <string>
 
 
+// Macro that marks a function as "possibly unused," in order to
+// suppress build warnings.
+#if ! defined(TRILINOS_UNUSED_FUNCTION)
+#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#  elif defined(__clang__)
+#    if __has_attribute(unused)
+#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#    else
+#      define TRILINOS_UNUSED_FUNCTION
+#    endif // Clang has 'unused' attribute
+#  elif defined(__IBMCPP__)
+// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
+//
+// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
+#    define TRILINOS_UNUSED_FUNCTION
+#  else // some other compiler
+#    define TRILINOS_UNUSED_FUNCTION
+#  endif
+#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
+
+
 namespace Teuchos {
   namespace MatrixMarket {
     // Anonymous namespace for helper functions for SymmetrizingAdder.
     namespace {
-      bool isSkew (const std::string& symmType) {
+      TRILINOS_UNUSED_FUNCTION bool
+      isSkew (const std::string& symmType) {
         return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
       }
 
-      bool isConj (const std::string& symmType) {
+      TRILINOS_UNUSED_FUNCTION bool
+      isConj (const std::string& symmType) {
         return std::string::npos != symmType.find ("hermitian");
       }
 
-      bool needsSymmetrization (const std::string& symmType) {
+      TRILINOS_UNUSED_FUNCTION bool
+      needsSymmetrization (const std::string& symmType) {
         return symmType != "general";
       }
     } // namespace (anonymous)

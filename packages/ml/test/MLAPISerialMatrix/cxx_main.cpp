@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -41,11 +41,11 @@ void Check(const double ActualNorm, const double ExpectedNorm)
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
-      
+
   try
   {
     Init();
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     // to another Operator, let the DistributedMatrix disappear, then //
     // work with the other Operator.                                  //
     // ============================================================== //
-    
+
     if (true)
     {
       SerialMatrix A(S, S);
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
       Check(W.NormOne(), NumGlobalElements);
 
-      // perform an operator using A, then change its values. 
+      // perform an operator using A, then change its values.
       // NOTE: I can only assign B to a SerialMatrix object, not to a generic
       // Operator. Therefore B = A * A will not work, since A * A returns an
       // Operator, not a SerialMatrix.
@@ -110,14 +110,14 @@ int main(int argc, char *argv[])
 
     Check(W.NormOne(), 16.0 * NumGlobalElements);
   }
-  catch (const int e) 
+  catch (const int e)
   {
     cout << "Caught integer exception, code = " << e << endl;
   }
-  catch (...) 
+  catch (...)
   {
     cout << "problems here..." << endl;
-  } 
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-ifpack --enable-aztecoo");
-  
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

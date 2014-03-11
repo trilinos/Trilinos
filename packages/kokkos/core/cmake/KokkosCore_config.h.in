@@ -11,5 +11,6 @@
 #cmakedefine KOKKOS_HAVE_Winthread
 #cmakedefine KOKKOS_HAVE_OPENMP
 #cmakedefine KOKKOS_HAVE_HWLOC
+#cmakedefine KOKKOS_EXPRESSION_CHECK
 
 #endif

@@ -83,9 +83,7 @@ namespace Kokkos {
 /// </ol>
 enum UnorderedMapOpStatus
 {
-    ERASE_FAILED
-  , ERASE_SUCCESS
-  , INSERT_EXISTING
+    INSERT_EXISTING
   , INSERT_FAILED
   , INSERT_SUCCESS
 };
@@ -151,13 +149,16 @@ enum UnorderedMapOpStatus
 /// \tparam Device The Kokkos Device type.
 ///
 /// \tparam Hasher Definition of the hash function for instances of
-///   <tt>Key</tt>.  If you rely on the default template parameter for
-///   \c Hasher, then there must be a specialization of Kokkos::hash for
-///   \c Key (without the \c const, if \c Key is const).
+///   <tt>Key</tt>.  The default will calculate a bitwise hash.
+///
+/// \tparam EqualTo Definition of the equality function for instances of
+///   <tt>Key</tt>.  The default will do a bitwise equality comparison.
+///
 template <   typename Key
            , typename Value
            , typename Device
-           , typename Hasher = hash<typename Impl::remove_const<Key>::type>
+           , typename Hasher = pod_hash<typename Impl::remove_const<Key>::type>
+           , typename EqualTo = pod_equal_to<typename Impl::remove_const<Key>::type>
         >
 class UnorderedMap
 {
@@ -177,13 +178,14 @@ public:
 
   typedef Device device_type;
   typedef Hasher hasher_type;
+  typedef EqualTo  equal_to_type;
   typedef uint32_t size_type;
 
   //map_types
-  typedef UnorderedMap<declared_key_type,declared_value_type,device_type,hasher_type> declared_map_type;
-  typedef UnorderedMap<key_type,value_type,device_type,hasher_type>                   insertable_map_type;
-  typedef UnorderedMap<const_key_type,value_type,device_type,hasher_type>             modifiable_map_type;
-  typedef UnorderedMap<const_key_type,const_value_type,device_type,hasher_type>       const_map_type;
+  typedef UnorderedMap<declared_key_type,declared_value_type,device_type,hasher_type,equal_to_type> declared_map_type;
+  typedef UnorderedMap<key_type,value_type,device_type,hasher_type,equal_to_type>                   insertable_map_type;
+  typedef UnorderedMap<const_key_type,value_type,device_type,hasher_type,equal_to_type>             modifiable_map_type;
+  typedef UnorderedMap<const_key_type,const_value_type,device_type,hasher_type,equal_to_type>       const_map_type;
 
   static const bool is_set = Impl::is_same<void,value_type>::value;
   static const bool has_const_key = Impl::is_same<const_key_type,declared_key_type>::value;
@@ -196,7 +198,7 @@ public:
 
   typedef pair<UnorderedMapOpStatus, size_type> insert_result;
 
-  typedef UnorderedMap<Key,Value,typename Device::host_mirror_device_type,Hasher> HostMirror;
+  typedef UnorderedMap<Key,Value,typename Device::host_mirror_device_type,Hasher,EqualTo> HostMirror;
 
   //@}
 
@@ -233,6 +235,7 @@ public:
 
   UnorderedMap()
     : m_hasher()
+    , m_equal_to()
     , m_capacity()
     , m_available_indexes()
     , m_hash_lists()
@@ -249,12 +252,9 @@ public:
   ///   entries in the hash table.
   /// \param hash [in] Hasher function for \c Key instances.  The
   ///   default value usually suffices.
-  template <typename Integer>
-  UnorderedMap(  Integer requested_capacity
-               , hasher_type hasher = hasher_type()
-               , typename Impl::enable_if< (Impl::is_integral<Integer>::value && is_insertable_map),int>::type = 0
-              )
+  UnorderedMap(  size_type requested_capacity , hasher_type hasher = hasher_type(), equal_to_type equal = equal_to_type() )
     : m_hasher(hasher)
+    , m_equal_to(equal)
     , m_capacity(((requested_capacity + block_size -1)/block_size)*block_size)
     , m_available_indexes(AllocateWithoutInitializing(), "UnorderedMap available indexes", m_capacity/block_size)
     , m_hash_lists(AllocateWithoutInitializing(), "UnorderedMap hash list", Impl::find_hash_size(m_capacity))
@@ -264,6 +264,10 @@ public:
     , m_scalars("UnorderedMap scalars")
     , m_failed_insert_scratch("UnorderedMap scratch", (m_available_indexes.size() ? m_available_indexes.size() : 1))
   {
+    if (!is_insertable_map) {
+      throw std::runtime_error("Cannot construct a non-insertable (i.e. const key_type) unordered_map");
+    }
+
     Kokkos::deep_copy(m_available_indexes, invalid_index);
     Kokkos::deep_copy(m_hash_lists,invalid_index);
     Kokkos::deep_copy(m_next_index,invalid_index);
@@ -303,8 +307,7 @@ public:
   ///
   /// This is <i>not</i> a device function; it may <i>not</i> be
   /// called in a parallel kernel.
-  template <typename Integer>
-  bool rehash(Integer new_capacity = 0)
+  bool rehash(size_type new_capacity = 0)
   {
     if(!is_insertable_map) return false;
 
@@ -450,21 +453,19 @@ public:
 
       const size_type hash_value = m_hasher(k);
 
-      volatile size_type * curr_ptr = &m_hash_lists[ hash_value % m_hash_lists.size() ];
+      size_type * curr_ptr = &m_hash_lists[ hash_value % m_hash_lists.size() ];
 
-      size_type curr  = *curr_ptr;
+      size_type curr  = safe_load(curr_ptr);
       size_type new_index = invalid_index;
 
       do {
         {
           // Continue searching the unordered list for this key,
           // list will only be appended during insert phase.
-          // Need volatile as other threads will be updating.
-          const volatile key_type * const key_ptr = m_keys.ptr_on_device();
-
-          while (curr != invalid_index && key_ptr[curr] != k) {
-            curr_ptr = & m_next_index[curr];
-            curr = *curr_ptr;
+          // Need safe_load as other threads will be appending.
+          while (curr != invalid_index && !m_equal_to( safe_load(&m_keys[curr]), k) ) {
+            curr_ptr = &m_next_index[curr];
+            curr = safe_load(curr_ptr);
           }
         }
 
@@ -492,10 +493,11 @@ public:
 
           // Set key and value
           m_keys[new_index] = k;
+          //safe_store(&m_keys[new_index], k);
           if (!is_set) { m_values[new_index] = v; }
 
           // Do not proceed until key and value are updated in global memory
-          device_type::memory_fence();
+          memory_fence();
         }
 
         // Try to append the list.
@@ -527,15 +529,15 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  UnorderedMapOpStatus erase(key_type const& k) const
+  bool erase(key_type const& k) const
   {
-    UnorderedMapOpStatus result = ERASE_FAILED;
+    bool result = false;
 
     if(is_insertable_map && 0u < m_capacity && m_scalars().erasable) {
       size_type index = find(k);
       if (valid_at(index)) {
         free_index(index);
-        result = ERASE_SUCCESS;
+        result = true;
       }
     }
 
@@ -554,7 +556,7 @@ public:
   {
     size_type curr = 0u < m_capacity ? m_hash_lists( m_hasher(k) % m_hash_lists.size() ) : invalid_index ;
 
-    while (curr != invalid_index && m_keys(curr) != k) {
+    while (curr != invalid_index && !m_equal_to( m_keys[curr], k) ) {
       curr = m_next_index[curr];
     }
 
@@ -610,7 +612,7 @@ public:
   }
 
   template <typename SKey, typename SValue>
-  UnorderedMap( UnorderedMap<SKey,SValue,Device,Hasher> const& src,
+  UnorderedMap( UnorderedMap<SKey,SValue,Device,Hasher,EqualTo> const& src,
                 typename Impl::enable_if< Impl::UnorderedMapCanAssign<declared_key_type,declared_value_type,SKey,SValue>::value,int>::type = 0
               )
     : m_hasher(src.m_hasher)
@@ -628,7 +630,7 @@ public:
   template <typename SKey, typename SValue>
   typename Impl::enable_if< Impl::UnorderedMapCanAssign<declared_key_type,declared_value_type,SKey,SValue>::value
                            ,declared_map_type & >::type
-  operator=( UnorderedMap<SKey,SValue,Device,Hasher> const& src)
+  operator=( UnorderedMap<SKey,SValue,Device,Hasher,EqualTo> const& src)
   {
     m_hasher = src.m_hasher;
     m_capacity = src.m_capacity;
@@ -637,7 +639,7 @@ public:
     m_next_index = src.m_next_index;
     m_keys = src.m_keys;
     m_values = src.m_values;
-    m_scalars = src.scalars;
+    m_scalars = src.m_scalars;
     m_failed_insert_scratch = src.m_failed_insert_scratch;
     return *this;
   }
@@ -646,7 +648,7 @@ public:
   typename Impl::enable_if< Impl::is_same< typename Impl::remove_const<SKey>::type, key_type>::value &&
                             Impl::is_same< typename Impl::remove_const<SValue>::type, value_type>::value
                           >::type
-  create_copy_view( UnorderedMap<SKey, SValue, SDevice, Hasher> const& src)
+  create_copy_view( UnorderedMap<SKey, SValue, SDevice, Hasher,EqualTo> const& src)
   {
     if (m_available_indexes.ptr_on_device() != src.m_available_indexes.ptr_on_device()) {
       typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, typename SDevice::memory_space > deep_copy_pointer;
@@ -671,40 +673,42 @@ private: // private member functions
   {
     size_type new_index = invalid_index ;
 
+    bool * const has_failed_inserts = & m_scalars().has_failed_inserts;
+
     if ( is_insertable_map ) {
 
       const size_type num_blocks = m_available_indexes.size();
 
       // Search blocks for a free entry.
       // If a failed insert is encountered by any thread then abort the search.
-      for ( size_type i=0; new_index == invalid_index &&
-                           i < num_blocks &&
-                           ! m_scalars().has_failed_inserts ; ++i ) {
-
+      for ( size_type i=0; new_index == invalid_index && i < num_blocks && !*has_failed_inserts ; ++i )
+      {
         const size_type curr_block = (starting_block + i) % num_blocks;
 
-        volatile size_type * available_ptr = &m_available_indexes[curr_block];
+        size_type * available_ptr = &m_available_indexes[curr_block];
 
-        size_type available ;
+        size_type old_available = safe_load(available_ptr);
 
-        // Search current block for an available entry.
-        while ( new_index == invalid_index && ( 0u < ( available = *available_ptr ) ) ) {
+        while ( new_index == invalid_index && ( 0u < old_available ) && !*has_failed_inserts ) {
+          // Search current block for an available entry.
+          const size_type available = old_available;
 
           // Offset of first set bit in 'available':
           const int offset = Impl::find_first_set(available) - 1;
 
           // Try to unset that bit:
-          const size_type claim = available & ~(static_cast<size_type>(1) << offset);
+          const size_type new_available = available & ~(static_cast<size_type>(1) << offset);
 
-          if (atomic_compare_exchange_strong(available_ptr,available,claim)) {
+          old_available = atomic_compare_exchange(available_ptr, available, new_available);
+          if ( available == old_available) {
             new_index = (curr_block << Impl::power_of_two<block_size>::value) + offset;
           }
         }
       }
 
       if ( new_index == invalid_index ) {
-        if (!m_scalars().has_failed_inserts) {
-          m_scalars().has_failed_inserts = true;
+        if (*has_failed_inserts) {
+          *has_failed_inserts = true;
         }
         atomic_fetch_add(&m_failed_insert_scratch[starting_block],1u);
       }
@@ -722,14 +726,15 @@ private: // private member functions
     const size_type offset = i & (block_size-1u);
     const size_type increment = static_cast<size_type>(1) << offset;
 
-    volatile size_type * block_ptr = &m_available_indexes[block];
-    size_type available = * block_ptr;
-    size_type new_available = available | increment;
+    size_type * available_ptr = &m_available_indexes[block];
+    size_type old_available = safe_load(available_ptr);
+    size_type available;
 
-    while (!atomic_compare_exchange_strong(block_ptr,available,new_available)) {
-      available = * block_ptr;
-      new_available = available | increment;
-    }
+    do {
+      available = old_available;
+      const size_type new_available = available | increment;
+      old_available = atomic_compare_exchange(available_ptr, available, new_available);
+    } while (old_available != available);
 
     return true;
   }
@@ -760,6 +765,7 @@ private: // private member functions
 
 private: // private members
   hasher_type     m_hasher;
+  equal_to_type   m_equal_to;
   size_type       m_capacity;
   size_type_view  m_available_indexes;
   size_type_view  m_hash_lists;
@@ -769,7 +775,7 @@ private: // private members
   scalars_view    m_scalars;
   scratch_view    m_failed_insert_scratch;
 
-  template <typename KKey, typename VValue, typename DDevice, typename HHash>
+  template <typename KKey, typename VValue, typename DDevice, typename HHash, typename EEqualTo>
   friend class UnorderedMap;
 
   template <typename UMap>
@@ -788,9 +794,9 @@ private: // private members
 // Specialization of deep_copy for two UnorderedMap objects.
 template <  typename DKey, typename DT, typename DDevice
           , typename SKey, typename ST, typename SDevice
-          , typename Hasher >
-inline void deep_copy(         UnorderedMap<DKey, DT, DDevice, Hasher> & dst
-                       , const UnorderedMap<SKey, ST, SDevice, Hasher> & src )
+          , typename Hasher, typename EqualTo >
+inline void deep_copy(         UnorderedMap<DKey, DT, DDevice, Hasher, EqualTo> & dst
+                       , const UnorderedMap<SKey, ST, SDevice, Hasher, EqualTo> & src )
 {
   dst.create_copy_view(src);
 }

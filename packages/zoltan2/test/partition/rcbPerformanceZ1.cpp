@@ -63,7 +63,6 @@
 #include <string>
 
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>

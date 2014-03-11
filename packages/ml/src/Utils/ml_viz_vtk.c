@@ -7,12 +7,12 @@
  \author Jonathan Hu, SNL, 9214
 
  \date 8-March-2005
- 
+
 */
 /* ------------------------------------------------------------------------ */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include <assert.h>
@@ -139,13 +139,13 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
     for( i=0 ; i<Naggregates ; ++i ) reorder[i] = -1;
 
     srand(0); /* Initialize random seed */
-    
+
     for( i=0 ; i<Naggregates ; ++i ) {
 
       do {
 
     ok = 0;
-    
+
     j = (int)(1.0*(Naggregates)*rand()/RAND_MAX);
 
     if( j >=0 && j<Naggregates ) {
@@ -237,7 +237,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
     offset -= Naggregates;
 #else
     offset = 0;
-#endif  
+#endif
   }
 
 #ifdef ML_MPI
@@ -246,7 +246,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   vertex_offset -= Nrows;
 #else
   vertex_offset = 0;
-#endif  
+#endif
 
   if (Naggregates > 0) {
     aggregates = (int *) ML_allocate(maxAggSize * Naggregates * sizeof(int));
@@ -267,7 +267,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
           fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
           exit( EXIT_FAILURE );
         }
-  
+
         for (irow=0 ; irow<Nrows ; irow++ )
         {
           if( vector != NULL ) {
@@ -282,18 +282,18 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
             else {
               val = 0.0;
               myLocalAgg = 0;
-            }  
+            }
           }
           else {
             val = (double)(reorder[graph_decomposition[irow]] + offset);
             myLocalAgg = reorder[graph_decomposition[irow]];
           }
-  
+
           if (Naggregates > 0)
             aggregates[maxAggSize*(myLocalAgg) + index[myLocalAgg]++] =
-                irow +vertex_offset; 
-  
-          if( z == NULL ) 
+                irow +vertex_offset;
+
+          if( z == NULL )
             fprintf( fp, "%f %f 0.0\n", x[irow], y[irow]);
           else
             fprintf( fp, "%f %f %f\n", x[irow], y[irow], z[irow]);
@@ -312,11 +312,11 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
           fprintf( stderr, "*VIZ*ERR* cannot open file `%s'\n", base_filename );
           exit( EXIT_FAILURE );
         }
-  
+
         for (irow=0 ; irow<Nrows ; irow++ )
         {
           val = vector[irow];
-          if( z == NULL ) 
+          if( z == NULL )
             fprintf( fp, "%f %f 0.0\n", x[irow], y[irow]);
           else
             fprintf( fp, "%f %f %f\n", x[irow], y[irow], z[irow]);
@@ -384,7 +384,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   ML_Comm_Barrier(comm);
 
   /********************************************
-    Write out connectivity information. 
+    Write out connectivity information.
   *********************************************/
 
   for (ipid=0 ; ipid < nprocs ; ++ipid)
@@ -410,7 +410,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   }
 
   /****************************************************
-    Write out polyvertex (aggregate) information. 
+    Write out polyvertex (aggregate) information.
   ****************************************************/
 
 #ifdef UNSTRUCTURED
@@ -427,7 +427,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         fprintf(fp,"%d ",index[i]);
         for (j=0; j<index[i]; j++)
           fprintf(fp,"%d ",aggregates[i*maxAggSize + j]);
-        fprintf(fp,"\n"); 
+        fprintf(fp,"\n");
 
       }
       fclose(fp);
@@ -502,8 +502,8 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
           else {
               val = (double)(reorder[graph_decomposition[irow]] + offset);
            }
-  
-          fprintf(fp,"%d\n",(int) val);   
+
+          fprintf(fp,"%d\n",(int) val);
         }
         fclose(fp);
       }
@@ -522,7 +522,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         }
         for (irow=0 ; irow<Nrows ; irow++ ) {
           val = (double)(irow + vertex_offset);
-          fprintf(fp,"%d\n",(int) val);   
+          fprintf(fp,"%d\n",(int) val);
         }
         fclose(fp);
       }
@@ -542,7 +542,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
       fprintf(fp,"LOOKUP_TABLE default\n");
       fclose(fp);
     }
-  
+
     for (ipid=0 ; ipid < nprocs ; ++ipid)
     {
       if (ipid == mypid)
@@ -562,11 +562,11 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   ML_free(GlobRowOrdering);
   ML_free(values);
   ML_free(bindx);
-  
+
   if( reorder != NULL ) ML_free(reorder);
 
   return 0;
-  
+
 } /* ML_VisualizeWithVTK */
 
 /* ======================================================================== */
@@ -610,7 +610,7 @@ int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
       for (irow = 0 ; irow < Npoints ; ++irow) {
     val = vector[irow];
 
-    if( z == NULL ) 
+    if( z == NULL )
       fprintf( fp,
           "%f %f %f\n",
           x[irow], y[irow], val );
@@ -624,9 +624,9 @@ int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
     }
     ML_Comm_Barrier(comm);
   }
-  
+
   return 0;
-  
+
 } /* ML_PlotVTK */
 
 

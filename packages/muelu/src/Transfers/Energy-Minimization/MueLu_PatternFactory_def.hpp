@@ -92,7 +92,7 @@ namespace MueLu {
       bool optimizeStorage = true;
 
       for (int i = 0; i < k; i++) {
-        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2, 0), doFillComplete, optimizeStorage);
+        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         P.swap(AP);
       }
     }

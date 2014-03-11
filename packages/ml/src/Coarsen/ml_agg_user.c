@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /* ************************************************************************* */
 /* ************************************************************************* */
@@ -18,7 +18,7 @@
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
-#include "ml_agg_METIS.h" 
+#include "ml_agg_METIS.h"
 #include "ml_agg_user.h"
 #include "ml_viz_stats.h"
 #include "ml_agg_info.h"
@@ -71,7 +71,7 @@ int ML_SetUserPartitions(int (user)(ML_Operator* Amat, char* bdry_nodes,
 
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
+int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 			      ML_Operator **Pmatrix, ML_Comm *comm)
 {
   unsigned int nbytes, length;
@@ -145,7 +145,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   /* ============================================================= */
 
   diff_level = ml_ag->begin_level - ml_ag->cur_level;
-  if (diff_level == 0) 
+  if (diff_level == 0)
     ml_ag->curr_threshold = ml_ag->threshold;
   epsilon = ml_ag->curr_threshold;
   ml_ag->curr_threshold *= 0.5;
@@ -235,7 +235,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   if (mypid == 0 && 7 < ML_Get_PrintLevel())  {
     printf("%s %d (block) aggregates (globally)\n",
            str, j );
-  }   
+  }
 
   /* ********************************************************************** */
   /* I allocate room to copy aggr_index and pass this value to the user,    */
@@ -345,11 +345,11 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   nbytes = (Nrows+1) * sizeof( int );
   ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
   count = aggr_count;
-  for ( i = 0; i < Nrows; i+=num_PDE_eqns ) 
+  for ( i = 0; i < Nrows; i+=num_PDE_eqns )
   {
     if ( aggr_index[i] >= 0 )
     {
-      for ( j = 0; j < num_PDE_eqns; j++ ) 
+      for ( j = 0; j < num_PDE_eqns; j++ )
         ml_ag->aggr_info[level][i+j] = aggr_index[i];
       if (aggr_index[i] >= count) count = aggr_index[i] + 1;
     }
@@ -360,7 +360,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      *   exit(1);
      *}*/
   }
-  ml_ag->aggr_count[level] = count; /* for relaxing boundary points */ 
+  ml_ag->aggr_count[level] = count; /* for relaxing boundary points */
 
   /* ============================================================= */
   /* set up the new operator                                       */
@@ -369,20 +369,20 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   new_Nrows = Nrows;
   exp_Ncoarse = Nrows;
 
-  for ( i = 0; i < new_Nrows; i++ ) 
+  for ( i = 0; i < new_Nrows; i++ )
   {
-    if ( aggr_index[i] >= exp_Ncoarse ) 
+    if ( aggr_index[i] >= exp_Ncoarse )
     {
       printf("*ML*WRN* index out of bound %d = %d(%d)\n",
-             i, aggr_index[i], 
+             i, aggr_index[i],
              exp_Ncoarse);
     }
   }
-  nbytes = ( new_Nrows+1 ) * sizeof(int); 
+  nbytes = ( new_Nrows+1 ) * sizeof(int);
   ML_memory_alloc((void**)&(new_ia), nbytes, "AIA");
-  nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int); 
+  nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int);
   ML_memory_alloc((void**)&(new_ja), nbytes, "AJA");
-  nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double); 
+  nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double);
   ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
   for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
 
@@ -403,7 +403,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     exit( EXIT_FAILURE );
   }
 
-  for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
+  for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
     new_null[i] = 0.0;
 
   /* ------------------------------------------------------------- */
@@ -442,7 +442,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     {
       for (j = 0; j < num_PDE_eqns; j++)
       {
-        index = aggr_cnt_array[aggr_index[i]]++; 
+        index = aggr_cnt_array[aggr_index[i]]++;
         rows_in_aggs[aggr_index[i]][index] = i + j;
       }
     }
@@ -456,7 +456,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   /* ------------------------------------------------------------- */
 
   max_agg_size = 0;
-  for (i = 0; i < aggr_count; i++) 
+  for (i = 0; i < aggr_count; i++)
   {
     if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
   }
@@ -473,14 +473,14 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   /* perform block QR decomposition                                */
   /* ------------------------------------------------------------- */
 
-  for (i = 0; i < aggr_count; i++) 
+  for (i = 0; i < aggr_count; i++)
   {
     /* ---------------------------------------------------------- */
     /* set up the matrix we want to decompose into Q and R:       */
     /* ---------------------------------------------------------- */
 
     length = aggr_cnt_array[i];
-    if (nullspace_vect == NULL) 
+    if (nullspace_vect == NULL)
     {
       for (j = 0; j < (int) length; j++)
       {
@@ -498,7 +498,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
         }
       }
     }
-    else 
+    else
     {
       for (k = 0; k < nullspace_dim; k++)
       {
@@ -530,15 +530,15 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
     if (aggr_cnt_array[i] >= nullspace_dim) {
 
-      DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+      DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
                  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
       if (info != 0)
         pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
                  aggr_cnt_array[i],i);
 
-      if (work[0] > lwork) 
+      if (work[0] > lwork)
       {
-        lwork=(int) work[0]; 
+        lwork=(int) work[0];
         ML_memory_free((void**) &work);
         ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
       }
@@ -551,7 +551,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       for (j = 0; j < nullspace_dim; j++)
         for (k = j; k < nullspace_dim; k++)
-          new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+          new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
             qr_tmp[j+aggr_cnt_array[i]*k];
 
       /* ---------------------------------------------------------- */
@@ -564,7 +564,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                nullspace_dim);
         printf("ERROR : performing QR on a MxN matrix where M<N.\n");
       }
-      DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+      DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim,
                  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
       if (info != 0) {
         printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
@@ -572,9 +572,9 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
         pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
       }
 
-      if (work[0] > lwork) 
+      if (work[0] > lwork)
       {
-        lwork=(int) work[0]; 
+        lwork=(int) work[0];
         ML_memory_free((void**) &work);
         ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
       }
@@ -597,13 +597,13 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
         if ( index < Nrows )
         {
           index3 = new_ia[index];
-          for (k = 0; k < nullspace_dim; k++) 
+          for (k = 0; k < nullspace_dim; k++)
           {
             new_ja [index3+k] = i * nullspace_dim + k;
             new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
           }
         }
-        else 
+        else
         {
           fprintf( stderr,
                   "*ML*ERR* in QR: index out of bounds (%d - %d)\n",
@@ -619,7 +619,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       /* prolongator????                                                  */
       for (j = 0; j < nullspace_dim; j++)
         for (k = 0; k < nullspace_dim; k++)
-          new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+          new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
             qr_tmp[j+aggr_cnt_array[i]*k];
       for (j = 0; j < aggr_cnt_array[i]; j++) {
         index = rows_in_aggs[i][j];
@@ -635,7 +635,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
   }
 
-  ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
+  ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim,
                              new_null, Ncoarse*nullspace_dim);
   ML_memory_free( (void **) &new_null);
 
@@ -648,7 +648,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   csr_data->columns = new_ja;
   csr_data->values  = new_val;
 
-  ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows, 
+  ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows,
                                 csr_data, Nrows, NULL, 0);
   (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
   (*Pmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
@@ -675,7 +675,7 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   ML_memory_free((void**)&work);
 
   aggr_curr = aggr_head;
-  while ( aggr_curr != NULL ) 
+  while ( aggr_curr != NULL )
   {
     supernode = aggr_curr;
     aggr_curr = aggr_curr->next;

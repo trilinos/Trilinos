@@ -96,7 +96,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
   typedef typename fixture_type::device_type  device_type ;
-  typedef typename fixture_type::FEMeshType   mesh_type ;
+  //typedef typename fixture_type::FEMeshType   mesh_type ; // unused
 
   enum { ElementNodeCount = fixture_type::element_node_count };
 
@@ -193,7 +193,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 #if defined( KOKKOS_HAVE_MPI )
 
   typedef typename
-    fields_type::geom_state_array_type::scalar_type  comm_value_type ;
+    fields_type::geom_state_array_type::value_type  comm_value_type ;
 
   const unsigned comm_value_count = 6 ;
 
@@ -413,7 +413,7 @@ static void driver( const char * const label ,
 
     for(int j = 0; j < runs; j++){
 
-     perf = run<Scalar,fixture_type>(mesh,ix,iy,iz,steps,print_sample);
+     perf = run<scalar_type,fixture_type>(mesh,ix,iy,iz,steps,print_sample);
 
      if( j == 0 ) {
        best = perf ;

@@ -44,7 +44,7 @@
 // Soodhalter and Michael Parks).  This just tests compilation and
 // setParameters() for now.  Later, we'll test actually solving linear
 // systems.
-// 
+//
 #include <BelosConfigDefs.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <BelosTpetraTestFramework.hpp>
@@ -56,8 +56,8 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Teuchos::Comm;
   using Teuchos::FancyOStream;
@@ -83,17 +83,18 @@ main (int argc, char *argv[])
   //
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
-  // 
+  //
   // Other typedefs.
-  // 
+  //
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
+
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<node_type> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
+  RCP<node_type> node = Belos::Tpetra::getNode<node_type> ();
   RCP<oblackholestream> blackHole (new oblackholestream);
-  const int myRank = comm->getRank();
+  const int myRank = comm->getRank ();
 
   // Output stream that prints only on Rank 0.
   RCP<FancyOStream> out;
@@ -105,7 +106,7 @@ main (int argc, char *argv[])
 
   //
   // Get test parameters from command-line processor.
-  //  
+  //
   // CommandLineProcessor always understands int, but may not
   // understand global_ordinal_type.  We convert to the latter below.
   int numRows = comm->getSize() * 100;
@@ -114,13 +115,13 @@ main (int argc, char *argv[])
   bool debug = false;
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption("numRows", &numRows,
-		 "Global number of rows (and columns) in the sparse matrix to generate.");
+                 "Global number of rows (and columns) in the sparse matrix to generate.");
   cmdp.setOption("tolerant", "intolerant", &tolerant,
-		 "Whether to parse files tolerantly.");
-  cmdp.setOption("verbose", "quiet", &verbose, 
-		 "Print messages and results.");
-  cmdp.setOption("debug", "release", &debug, 
-		 "Run debugging checks and print copious debugging output.");
+                 "Whether to parse files tolerantly.");
+  cmdp.setOption("verbose", "quiet", &verbose,
+                 "Print messages and results.");
+  cmdp.setOption("debug", "release", &debug,
+                 "Run debugging checks and print copious debugging output.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     *out << "\nEnd Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
@@ -151,10 +152,10 @@ main (int argc, char *argv[])
   {
     typedef Belos::Tpetra::ProblemMaker<sparse_matrix_type> factory_type;
     factory_type factory (comm, node, out, tolerant, debug);
-    
+
     RCP<ParameterList> problemParams = parameterList ();
-    problemParams->set ("Global number of rows", 
-			static_cast<global_ordinal_type> (numRows));
+    problemParams->set ("Global number of rows",
+                        static_cast<global_ordinal_type> (numRows));
     problemParams->set ("Problem type", std::string ("Nonsymmetric"));
     factory.makeProblem (A, X_guess, X_exact, B, problemParams);
   }
@@ -162,15 +163,15 @@ main (int argc, char *argv[])
   RCP<MV> X (new MV (*X_guess));
 
   TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
-			     "The sparse matrix is null!");
+                             "The sparse matrix is null!");
   TEUCHOS_TEST_FOR_EXCEPTION(X_guess.is_null(), std::logic_error,
-			     "The initial guess X_guess is null!");
+                             "The initial guess X_guess is null!");
   TEUCHOS_TEST_FOR_EXCEPTION(X_exact.is_null(), std::logic_error,
-			     "The exact solution X_exact is null!");
+                             "The exact solution X_exact is null!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.is_null(), std::logic_error,
-			     "The right-hand side B is null!");
+                             "The right-hand side B is null!");
   TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::logic_error,
-			     "The approximate solution vector X is null!");
+                             "The approximate solution vector X is null!");
 
   typedef Belos::LinearProblem<scalar_type, MV, OP> problem_type;
   RCP<problem_type> problem (new problem_type (A, X, B));
@@ -180,13 +181,17 @@ main (int argc, char *argv[])
   *verbOut << "Solving linear system" << endl;
   Belos::ReturnType result = solver.solve ();
 
-  *verbOut << "Result of solve: " 
-	   << Belos::convertReturnTypeToString (result) 
-	   << endl;
+  *verbOut << "Result of solve: "
+           << Belos::convertReturnTypeToString (result)
+           << endl;
+
+  // Make sure that all the processes finished.
+  comm->barrier ();
+
   if (success) {
     *out << "\nEnd Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;
-  } 
+  }
   else {
     *out << "\nEnd Result: TEST FAILED" << endl;
     return EXIT_FAILURE;

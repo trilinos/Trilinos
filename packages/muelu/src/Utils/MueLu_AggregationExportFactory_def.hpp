@@ -105,7 +105,7 @@ namespace MueLu {
     LocalOrdinal DofsPerNode                 = Get< LocalOrdinal >            (fineLevel,"DofsPerNode");
     Teuchos::RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >   (fineLevel,"UnAmalgamationInfo");
 
-    GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
+    GetOStream(Runtime0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
     int numProcs = comm->getSize();
@@ -144,7 +144,7 @@ namespace MueLu {
     outFile = replaceAll(outFile, "%TIMESTEP", toString(timeStep));
     outFile = replaceAll(outFile, "%ITER",     toString(iter));
 
-    GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
+    GetOStream(Runtime0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
     GO numAggs = aggregates->GetNumAggregates();

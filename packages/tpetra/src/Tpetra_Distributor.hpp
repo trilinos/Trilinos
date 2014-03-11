@@ -64,6 +64,7 @@
 #if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_View.hpp"
+#include "Kokkos_TeuchosCommAdapters.hpp"
 #endif
 
 
@@ -1975,7 +1976,6 @@ namespace Tpetra {
     using std::endl;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::create_view;
-    using Kokkos::Compat::persistingView;
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
@@ -2094,10 +2094,10 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process imagesFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf =
-            persistingView (imports, curBufferOffset, lengthsFrom_[i]*numPackets);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
-                                                      tag, *comm_));
+          imports_view_type recvBuf =
+            subview_offset (imports, curBufferOffset, lengthsFrom_[i]*numPackets);
+          requests_.push_back (ireceive<int> (recvBuf, imagesFrom_[i],
+                                              tag, *comm_));
           if (debug_) {
             std::ostringstream os;
             os << myImageID << ": doPosts(3,"
@@ -2167,26 +2167,26 @@ namespace Tpetra {
             exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int, Packet> (tmpSend.ptr_on_device (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+            send<int> (tmpSend,
+                       as<int> (tmpSend.size ()),
+                       imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              persistingView (exports, startsTo_[p] * numPackets,
+            exports_view_type tmpSendBuf =
+              subview_offset (exports, startsTo_[p] * numPackets,
                               lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                     tag, *comm_));
+            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                             tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+            readySend<int> (tmpSend,
+                            as<int> (tmpSend.size ()),
+                            imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+            ssend<int> (tmpSend,
+                        as<int> (tmpSend.size ()),
+                        imagesTo_[p], tag, *comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
               "Distributor (3 args): Invalid send type.  We should never get "
@@ -2260,25 +2260,25 @@ namespace Tpetra {
             subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int, Packet> (tmpSend.ptr_on_device (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+            send<int> (tmpSend,
+                       as<int> (tmpSend.size ()),
+                       imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              persistingView (sendArray, 0, lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                     tag, *comm_));
+            exports_view_type tmpSendBuf =
+              subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                             tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+            readySend<int> (tmpSend,
+                            as<int> (tmpSend.size ()),
+                            imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+            ssend<int> (tmpSend,
+                        as<int> (tmpSend.size ()),
+                        imagesTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
@@ -2337,7 +2337,6 @@ namespace Tpetra {
     using std::endl;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::create_view;
-    using Kokkos::Compat::persistingView;
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
@@ -2463,10 +2462,10 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process imagesFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf =
-            persistingView (imports, curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
-                                                      tag, *comm_));
+          imports_view_type recvBuf =
+            subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
+          requests_.push_back (ireceive<int> (recvBuf, imagesFrom_[i],
+                                              tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -2541,25 +2540,25 @@ namespace Tpetra {
             subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-            send<int, Packet> (tmpSend.ptr_on_device (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+            send<int> (tmpSend,
+                       as<int> (tmpSend.size ()),
+                       imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+            readySend<int> (tmpSend,
+                            as<int> (tmpSend.size ()),
+                            imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              persistingView (exports, sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                     tag, *comm_));
+            exports_view_type tmpSendBuf =
+              subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
+            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                             tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+            ssend<int> (tmpSend,
+                        as<int> (tmpSend.size ()),
+                        imagesTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
@@ -2626,25 +2625,25 @@ namespace Tpetra {
               subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
             if (sendType == Details::DISTRIBUTOR_RSEND) {
-              readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                      as<int> (tmpSend.size ()),
-                                      imagesTo_[p], tag, *comm_);
+              readySend<int> (tmpSend,
+                              as<int> (tmpSend.size ()),
+                              imagesTo_[p], tag, *comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
-              ArrayRCP<const Packet> tmpSendBuf =
-                persistingView (sendArray, 0, numPacketsTo_p);
-              requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                       tag, *comm_));
+              exports_view_type tmpSendBuf =
+                subview_offset (sendArray, size_t(0), numPacketsTo_p);
+              requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                               tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
-              ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                  as<int> (tmpSend.size ()),
-                                  imagesTo_[p], tag, *comm_);
+              ssend<int> (tmpSend,
+                          as<int> (tmpSend.size ()),
+                          imagesTo_[p], tag, *comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
-              send<int, Packet> (tmpSend.ptr_on_device (),
-                                 as<int> (tmpSend.size ()),
-                                 imagesTo_[p], tag, *comm_);
+              send<int> (tmpSend,
+                         as<int> (tmpSend.size ()),
+                         imagesTo_[p], tag, *comm_);
             }
           }
         }

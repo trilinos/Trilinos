@@ -67,7 +67,7 @@
 #include <Xpetra_EpetraUtils.hpp>
 #include <Xpetra_EpetraMultiVector.hpp>
 #include <EpetraExt_BlockMapOut.h>
-#endif // HAVE_MUELU_EPETRAEXT
+#endif
 
 #ifdef HAVE_MUELU_TPETRA
 #include <MatrixMarket_Tpetra.hpp>
@@ -75,25 +75,24 @@
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
-#endif // HAVE_MUELU_TPETRA
+#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include <Xpetra_EpetraMap.hpp>
-#endif //ifdef HAVE_MUELU_EPETRA
+#endif
 
-#include <Xpetra_Map.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
-#include "Xpetra_DefaultPlatform.hpp"
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
-#include <XpetraExt_MatrixMatrix.hpp>  // standard matrix matrix routines
+#include <XpetraExt_MatrixMatrix.hpp>
 
 #include <MueLu_Utilities_decl.hpp>
 
@@ -1308,50 +1307,6 @@ namespace MueLu {
     }
 
     return boundaryNodes;
-  }
-
-  template <class SC, class LO, class GO, class NO, class LMO>
-  std::string Utils<SC, LO, GO, NO, LMO>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
-    std::ostringstream ss;
-    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols() << ", nnz = " << A.getGlobalNumEntries() << std::endl;
-
-    if (params.is_null())
-      return ss.str();
-
-    if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo")) {
-      RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
-      GO numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
-
-      // aggregate data
-      GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
-      GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
-      double  numMyNnz2 =  Teuchos::as<double>(numMyNnz)* numMyNnz,     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
-      double numMyRows2 = Teuchos::as<double>(numMyRows)*numMyRows, sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
-      maxAll(comm,                                       numMyNnz, maxNnz);
-      maxAll(comm,                                      numMyRows, maxNumRows);
-      sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
-      minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
-      minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-      sumAll(comm,                                      numMyNnz2, sum2Nnz);
-      sumAll(comm,                                     numMyRows2, sum2NumRows);
-
-      double avgNumRows = sumNumRows / numProcessesWithData;
-      double avgNnz     = sumNnz     / numProcessesWithData;
-      double devNumRows = (numProcessesWithData != 1 ? sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1)) : 0);
-      double devNnz     = (numProcessesWithData != 1 ? sqrt((sum2Nnz     -     sumNnz*    sumNnz/numProcessesWithData)/(numProcessesWithData-1)) : 0);
-
-      char buf[256];
-      ss << msgTag << " Load balancing info:" << std::endl;
-      ss << msgTag << "   # active processes: "   << numActiveProcesses << ",  # processes with data = " << numProcessesWithData << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNumRows,
-              (devNumRows/avgNumRows)*100, (minNumRows/avgNumRows-1)*100, (maxNumRows/avgNumRows-1)*100);
-      ss << msgTag << "   # rows per proc   : " << buf << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNnz,
-              (devNnz/avgNnz)*100, (minNnz/avgNnz-1)*100, (maxNnz/avgNnz-1)*100);
-      ss << msgTag << "   #  nnz per proc   : " << buf << std::endl;
-    }
-
-    return ss.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

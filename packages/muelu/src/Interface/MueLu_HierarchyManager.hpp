@@ -79,7 +79,7 @@ namespace MueLu {
 
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1) { }
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), implicitPRrebalance_(Hierarchy::GetDefaultPRrebalance()), graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -121,6 +121,13 @@ namespace MueLu {
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
+#ifdef HAVE_MUELU_DEBUG
+      // Reset factories' data used for debugging
+      for (int i = 0; i < levelManagers_.size(); i++)
+        levelManagers_[i]->ResetDebugData();
+
+#endif
+
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
       RCP<Level>  l  = H.GetLevel(0);
@@ -137,6 +144,8 @@ namespace MueLu {
       H.SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
+
+      H.SetPRrebalance(implicitPRrebalance_);
 
       // TODO: coarsestLevelManager
 
@@ -213,6 +222,7 @@ namespace MueLu {
     mutable int           numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
+    bool                  implicitPRrebalance_;
     int                   graphOutputLevel_;
     Teuchos::Array<int>   matricesToPrint_;
     Teuchos::Array<int>   prolongatorsToPrint_;

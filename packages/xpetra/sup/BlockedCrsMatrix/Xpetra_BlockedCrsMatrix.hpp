@@ -75,12 +75,9 @@
 
 #include "Xpetra_Matrix.hpp"
 
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+/** \file Xpetra_BlockedCrsMatrix.hpp
 
-/** \file Xpetra_Matrix.hpp
-
-  Declarations for the class Xpetra::Matrix.
+  Declarations for the class Xpetra::BlockedCrsMatrix.
 */
 namespace Xpetra {
 
@@ -307,7 +304,8 @@ public:
 
       // sum up number of local elements
       size_t numGlobalElements = 0;
-      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements)
+      Teuchos::reduceAll(*(rangemaps_->getFullMap()->getComm()), Teuchos::REDUCE_SUM, colmapentries.size(), Teuchos::outArg(numGlobalElements));
+
 
       const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
       fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());
@@ -823,16 +821,16 @@ private:
     B->scale(scalarB);
 
     size_t MaxNumEntries = std::max(A->getNodeMaxNumRowEntries(),B->getNodeMaxNumRowEntries());
-    std::vector<GlobalOrdinal> vecIndices(MaxNumEntries);
-    std::vector<Scalar>        vecValues (MaxNumEntries);
+    std::vector<LocalOrdinal> vecIndices(MaxNumEntries);
+    std::vector<Scalar>       vecValues (MaxNumEntries);
 
-    const Teuchos::ArrayView<GlobalOrdinal> Indices(&vecIndices[0], vecIndices.size());
-    const Teuchos::ArrayView<Scalar>        Values (&vecValues[0],  vecValues.size());
+    const Teuchos::ArrayView<LocalOrdinal> Indices(&vecIndices[0], vecIndices.size());
+    const Teuchos::ArrayView<Scalar>       Values (&vecValues[0],  vecValues.size());
     size_t NumEntries;
 
     Teuchos::ArrayView<const GlobalOrdinal> MyGlobalRowIds = A->getRowMap()->getNodeElementList(); // global row ids
 
-    if(scalarA)
+    if(scalarA != ScalarTraits< Scalar >::zero())
     {
       for(size_t i=0; i<A->getNodeNumRows(); ++i)
       {

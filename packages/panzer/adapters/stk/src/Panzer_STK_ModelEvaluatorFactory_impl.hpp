@@ -93,6 +93,7 @@
 #include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
+#include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
@@ -105,6 +106,7 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Piro_ConfigDefs.hpp"
 #include "Piro_NOXSolver.hpp"
+#include "Piro_LOCASolver.hpp"
 #include "Piro_RythmosSolver.hpp"
 
 #include "Epetra_MpiComm.h"
@@ -135,6 +137,10 @@ namespace panzer_stk {
   void ModelEvaluatorFactory<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
     paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+
+    // add in some addtional defaults that are hard to validate externally (this is because of the "disableRecursiveValidation" calls)
+    paramList->sublist("Initial Conditions").sublist("Vector File").validateParametersAndSetDefaults(
+      getValidParameters()->sublist("Initial Conditions").sublist("Vector File"));
     this->setMyParamList(paramList);
   }
 
@@ -151,8 +157,11 @@ namespace panzer_stk {
       pl->sublist("Solution Control").disableRecursiveValidation();
       pl->set<bool>("Use Discrete Adjoint",false);
       pl->sublist("Mesh").disableRecursiveValidation();
-      pl->sublist("Initial Conditions").disableRecursiveValidation();
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
+      pl->sublist("Initial Conditions").sublist("Vector File");
+      pl->sublist("Initial Conditions").sublist("Vector File").set("File Name","");
+      pl->sublist("Initial Conditions").sublist("Vector File").set<bool>("Enabled",false);
+      pl->sublist("Initial Conditions").disableRecursiveValidation();
       // pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo");
       pl->sublist("Output").set("Write to Exodus",true);
@@ -259,6 +268,12 @@ namespace panzer_stk {
     // for pseudo-transient, we need to enable transient solver support to get time derivatives into fill
     if (solncntl_params.get<std::string>("Piro Solver") == "NOX") {
       if (solncntl_params.sublist("NOX").get<std::string>("Nonlinear Solver") == "Pseudo-Transient")
+	is_transient = true;
+    }
+    // for eigenvalues, we need to enable transient solver support to
+    // get time derivatives into generalized eigenvale problem
+    if (solncntl_params.get<std::string>("Piro Solver") == "LOCA") {
+      if (solncntl_params.sublist("LOCA").sublist("Stepper").get<bool>("Compute Eigenvalues"))
 	is_transient = true;
     }
     m_is_transient = is_transient;
@@ -592,7 +607,11 @@ namespace panzer_stk {
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
 
-    {
+    Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
+
+    if(!p.sublist("Initial Conditions").sublist("Vector File").get<bool>("Enabled")) {
+      // read from exodus, or compute using field managers
+
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
@@ -609,17 +628,31 @@ namespace panzer_stk {
                                                  prefix,
                                                  phx_ic_field_managers);
 
-      Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
+      // set the vector to be filled
       Teuchos::RCP<panzer::ThyraObjContainer<double> > tloc = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc);
-
       Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
       tloc->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
 
       panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
+   }
+   else {
+      const std::string & vectorFile = p.sublist("Initial Conditions").sublist("Vector File").get<std::string>("File Name");
+      TEUCHOS_TEST_FOR_EXCEPTION(vectorFile=="",std::runtime_error,
+                                 "If \"Read From Vector File\" is true, then parameter \"Vector File\" cannot be the empty string.");
+ 
+      // set the vector to be filled
+      Teuchos::RCP<panzer::ThyraObjContainer<double> > tloc = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc);
+      Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
+      tloc->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
+      
+      // read the vector
+      linObjFactory->readVector(vectorFile,*loc,panzer::LinearObjContainer::X);
+   }
 
-      // Write the epetra vector into the STK mesh: use response library
-      //////////////////////////////////////////////////////////////////////////
+   // Write the IC vector into the STK mesh: use response library
+   //////////////////////////////////////////////////////////////////////////
 
+   {
       Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > solnWriter
           = initializeSolnWriterResponseLibrary(wkstContainer,globalIndexer,linObjFactory,mesh);
 
@@ -648,6 +681,19 @@ namespace panzer_stk {
       solnWriter->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
       solnWriter->evaluate<panzer::Traits::Residual>(ae_inargs);
 
+    }
+
+    // see if field coordinates are required, if so reset the workset container
+    // and set the coordinates to be associated with a field in the mesh
+    useDynamicCoordinates_ = false;
+    for(std::size_t p=0;p<physicsBlocks.size();p++) {
+      if(physicsBlocks[p]->getCoordinateDOFs().size()>0) {
+         mesh->setUseFieldCoordinates(true);
+         useDynamicCoordinates_ = true;
+         wkstContainer->clear(); // this serves to refresh the worksets 
+                                 // and put in new coordinates
+         break;
+      }
     }
 
     m_physics_me = thyra_me;
@@ -737,9 +783,9 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
-                                                                       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                                                                       const Teuchos::MpiComm<int> mpi_comm,
-                                                                       STK_Interface & mesh) const
+                                                                const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                                                                const Teuchos::MpiComm<int> mpi_comm,
+                                                                STK_Interface & mesh) const
   {
     // finish building mesh, set required field variables and mesh bulk data
     {
@@ -750,10 +796,31 @@ namespace panzer_stk {
 
 	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
 	const std::vector<panzer::StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
+	const std::vector<std::vector<std::string> > & coordinateDOFs = pb->getCoordinateDOFs(); 
+          // these are treated specially
 
 	// insert all fields into a set
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp> fieldNames;
 	fieldNames.insert(blockFields.begin(),blockFields.end());
+
+        // Now we will set up the coordinate fields (make sure to remove
+        // the DOF fields)
+        {
+          std::set<std::string> fields_to_remove;
+
+          // add mesh coordinate fields, setup their removal from fieldNames 
+          // set to prevent duplication
+          for(std::size_t i=0;i<coordinateDOFs.size();i++) {
+            mesh.addMeshCoordFields(pb->elementBlockID(),coordinateDOFs[i],"DISPL");
+            for(std::size_t j=0;j<coordinateDOFs[i].size();j++)
+              fields_to_remove.insert(coordinateDOFs[i][j]);
+          }
+
+          // remove the already added coordinate fields
+	  std::set<std::string>::const_iterator rmItr;
+  	  for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
+            fieldNames.erase(fieldNames.find(panzer::StrPureBasisPair(*rmItr,Teuchos::null)));
+        }
 
 	// add basis to DOF manager: block specific
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;
@@ -815,14 +882,24 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory<ScalarT>::
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
  		                  const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver)
+                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver,
+                                  const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory,
+                                  const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory
+                                  )
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_lin_obj_factory), std::runtime_error,
+    using Teuchos::is_null;
+    using Teuchos::Ptr;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(m_lin_obj_factory), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_global_indexer), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(m_global_indexer), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_mesh), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(m_mesh), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
+    Teuchos::Ptr<const panzer_stk::NOXObserverFactory> nox_observer_factory 
+        = is_null(in_nox_observer_factory) ? m_nox_observer_factory.ptr() : in_nox_observer_factory;
+    Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> rythmos_observer_factory
+        = is_null(in_rythmos_observer_factory) ? m_rythmos_observer_factory.ptr() : in_rythmos_observer_factory;
 
     Teuchos::ParameterList& p = *this->getNonconstParameterList();
     Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
@@ -832,15 +909,23 @@ namespace panzer_stk {
     std::string solver = solncntl_params.get<std::string>("Piro Solver");
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me_db
        = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me);
-    if (solver=="NOX") {
+    if ( (solver=="NOX") || (solver == "LOCA") ) {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_nox_observer_factory), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(nox_observer_factory), std::runtime_error,
 				 "No NOX obersver built!  Please call setNOXObserverFactory() member function if you plan to use a NOX solver.");
 
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = m_nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-      piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params,
-                                            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db)));
+
+      if (solver=="NOX")
+	piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params,
+							Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db)));
+      else if (solver == "LOCA")
+	piro = Teuchos::rcp(new Piro::LOCASolver<double>(piro_params,
+							 Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db),
+							 Teuchos::null));
+      TEUCHOS_ASSERT(nonnull(piro));
+
       // override printing to use panzer ostream
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
@@ -848,13 +933,13 @@ namespace panzer_stk {
     }
     else if (solver=="Rythmos") {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rythmos_observer_factory), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(rythmos_observer_factory), std::runtime_error,
 				 "No NOX obersver built!  Please call setrythmosObserverFactory() member function if you plan to use a Rythmos solver.");
 
       // install the nox observer
-      if(m_rythmos_observer_factory->useNOXObserver()) {
-	Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = m_nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
-	piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
+      if(rythmos_observer_factory->useNOXObserver()) {
+        Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
+        piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       }
 
       // override printing to use panzer ostream
@@ -871,10 +956,11 @@ namespace panzer_stk {
 
       // if you are using explicit RK, make sure to wrap the ME in an explicit model evaluator decorator
       Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > rythmos_me = thyra_me;
-      if(piro_params->sublist("Rythmos").get<std::string>("Stepper Type")=="Explicit RK")
-        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,true,false)); 
+      const std::string stepper_type = piro_params->sublist("Rythmos").get<std::string>("Stepper Type");
+      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler")
+        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,false)); 
 
-      piro_rythmos->initialize(piro_params, rythmos_me, m_rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
+      piro_rythmos->initialize(piro_params, rythmos_me, rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
 
       piro = piro_rythmos;
     }
@@ -1036,7 +1122,7 @@ namespace panzer_stk {
   
       // build an explicit model evaluator
       if(is_explicit)
-        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,true,false)); 
+        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,false)); 
   
       return thyra_me;
     }
@@ -1230,7 +1316,7 @@ namespace panzer_stk {
       Teuchos::setStringToIntegralParameter<int>(
       "Start Time Type",
       "From Input File",
-      "Enables or disables SUPG stabilization in the Momentum equation",
+      "Set the start time",
       Teuchos::tuple<std::string>("From Input File","From Exodus File"),
       &validPL
       );
@@ -1437,6 +1523,15 @@ namespace panzer_stk {
        if(m_req_handler==Teuchos::null) {
           reqHandler = Teuchos::rcp(new Teko::RequestHandler);
           m_req_handler = reqHandler;
+       }
+
+       std::string fieldName;
+       if(determineCoordinateField(*globalIndexer,fieldName)) {
+          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
+             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
+          Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,GO> > callback =
+                Teuchos::rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
+          reqHandler->addRequestCallback(callback);
        }
 
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);

@@ -1,5 +1,5 @@
 /*!
- * 
+ *
  *  \file ml_MultiLevelPreconditioner_Adapt.cpp
  *
  *  \brief Methods to define adaptive smoothed aggregation.
@@ -7,7 +7,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -40,11 +40,11 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
 
   if ((TentativeNullSpaceSize == 0) || (TentativeNullSpace == 0))
     ML_CHK_ERR(-1);
-   
+
   // ================================== //
   // get parameters from the input list //
   // ================================== //
-  
+
   // maximum number of relaxation sweeps
   int MaxSweeps = List_.get("adaptive: max sweeps", 10);
   // number of std::vector to be added to the tentative null space
@@ -60,7 +60,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   // compute the preconditioner, set null space from user //
   // (who will have to delete std::vector TentativeNullSpace)  //
   // ==================================================== //
-  
+
   double* NewNullSpace = 0;
   double* OldNullSpace = TentativeNullSpace;
   int OldNullSpaceSize = TentativeNullSpaceSize;
@@ -96,7 +96,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   // ====================== //
   // add one std::vector at time //
   // ====================== //
-  
+
   for (int istep = 0 ; istep < NumAdaptiveVectors ; ++istep) {
 
     if (verbose_) {
@@ -188,7 +188,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       ML_Operator_UnAmalgamateAndDropWeak(&(ml_->Amat[LevelID_[0]]),
                                           NumPDEEqns_, 0.0);
     }
-    
+
     // Destroy the old preconditioner
     DestroyPreconditioner();
 
@@ -253,7 +253,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       int NumRealEigenvectors = 0, NumImagEigenvectors = 0;
 
 #ifdef HAVE_ML_ANASAxI
-      // 2.- call Anasazi and store the results in eigenvectors      
+      // 2.- call Anasazi and store the results in eigenvectors
       ML_Anasazi::Interface(RowMatrix_,EigenVectors,&RealEigenvalues[0],
                             &ImagEigenvalues[0], AnasaziList, &RealEigenvectors[0], 0,
                             &NumRealEigenvectors, &NumImagEigenvectors, ml_);
@@ -281,7 +281,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
 
       // FIXME: this is not very efficient...
       for (int i = 0 ; i < NumRealEigenvectors ; ++i) {
-        for (int j = 0 ; j < NumMyRows() ; ++j) 
+        for (int j = 0 ; j < NumMyRows() ; ++j)
           (*LHS)[i][j] = RealEigenvectors[j + i * NumMyRows()];
       }
     }

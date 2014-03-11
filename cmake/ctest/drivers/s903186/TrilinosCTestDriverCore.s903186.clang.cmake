@@ -92,7 +92,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "Clang-3.0")
+  SET_DEFAULT(COMPILER_VERSION "Clang-3.3")
   
   IF (COMM_TYPE STREQUAL MPI)
     SET(TPL_ENABLE_MPI ON)
@@ -100,15 +100,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/trilinos/bin/clang-openmpi-1.4.5"
+      "-DMPI_BASE_DIR:PATH=/Users/trilinos/compilers/clang/openmpi_1.6.5_clang_3.3"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/trilinos/bin/clang-3.0/bin/clang++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/trilinos/bin/clang-3.0/bin/clang"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang"
       )
   
   ENDIF()

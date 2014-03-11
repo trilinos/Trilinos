@@ -71,7 +71,7 @@ namespace Tpetra {
     LookupStatus
     Directory<LO, GO, NT>::
     getEntries (const map_type& map,
-		const Teuchos::ArrayView<const GO> &globalIDs,
+                const Teuchos::ArrayView<const GO> &globalIDs,
                 const Teuchos::ArrayView<int> &nodeIDs,
                 const Teuchos::ArrayView<LO> &localIDs,
                 const bool computeLIDs) const
@@ -107,7 +107,7 @@ namespace Tpetra {
 
     template<class LO, class GO, class NT>
     ReplicatedDirectory<LO, GO, NT>::
-    ReplicatedDirectory (const map_type& map) 
+    ReplicatedDirectory (const map_type& map)
     {
       (void) map;
     }
@@ -159,7 +159,7 @@ namespace Tpetra {
     LookupStatus
     ContiguousUniformDirectory<LO, GO, NT>::
     getEntriesImpl (const map_type& map,
-		    const Teuchos::ArrayView<const GO> &globalIDs,
+                    const Teuchos::ArrayView<const GO> &globalIDs,
                     const Teuchos::ArrayView<int> &nodeIDs,
                     const Teuchos::ArrayView<LO> &localIDs,
                     const bool computeLIDs) const
@@ -368,7 +368,7 @@ namespace Tpetra {
     LookupStatus
     ReplicatedDirectory<LO, GO, NT>::
     getEntriesImpl (const map_type& map,
-		    const Teuchos::ArrayView<const GO> &globalIDs,
+                    const Teuchos::ArrayView<const GO> &globalIDs,
                     const Teuchos::ArrayView<int> &nodeIDs,
                     const Teuchos::ArrayView<LO> &localIDs,
                     const bool computeLIDs) const
@@ -411,7 +411,7 @@ namespace Tpetra {
     LookupStatus
     DistributedContiguousDirectory<LO, GO, NT>::
     getEntriesImpl (const map_type& map,
-		    const Teuchos::ArrayView<const GO> &globalIDs,
+                    const Teuchos::ArrayView<const GO> &globalIDs,
                     const Teuchos::ArrayView<int> &nodeIDs,
                     const Teuchos::ArrayView<LO> &localIDs,
                     const bool computeLIDs) const
@@ -507,6 +507,8 @@ namespace Tpetra {
       using Teuchos::rcp;
       using Teuchos::typeName;
       using Teuchos::TypeNameTraits;
+      using std::cerr;
+      using std::endl;
 
       // This class' implementation of getEntriesImpl() currently
       // encodes the following assumptions:
@@ -593,12 +595,27 @@ namespace Tpetra {
       // An ID not present in this lookup indicates that it lies outside
       // of the range [minAllGID,maxAllGID] (from map_).  this means
       // something is wrong with map_, our fault.
+      const LookupStatus lookupStatus =
+        directoryMap_->getRemoteIndexList (myGlobalEntries, sendImageIDs);
       TEUCHOS_TEST_FOR_EXCEPTION(
-        directoryMap_->getRemoteIndexList (myGlobalEntries, sendImageIDs) == IDNotPresent,
-        std::logic_error, Teuchos::typeName(*this) << " constructor: the "
-        "Directory Map could not find out where one or more of my Map's "
-        "elements should go.  This probably means there is a bug in Map or "
-        "Directory.  Please report this bug to the Tpetra developers.");
+        lookupStatus == IDNotPresent, std::logic_error, Teuchos::typeName(*this)
+        << " constructor: the Directory Map could not find out where one or "
+        "more of my Map's indices should go.  The input to getRemoteIndexList "
+        "is " << Teuchos::toString (myGlobalEntries) << ", and the output is "
+        << Teuchos::toString (sendImageIDs ()) << ".  The input Map itself has "
+        "the following entries on the calling process " <<
+        map.getComm ()->getRank () << ": " <<
+        Teuchos::toString (map.getNodeElementList ()) << ", and has "
+        << map.getGlobalNumElements () << " total global indices in ["
+        << map.getMinAllGlobalIndex () << "," << map.getMaxAllGlobalIndex ()
+        << "].  The Directory Map has "
+        << directoryMap_->getGlobalNumElements () << " total global indices in "
+        "[" << directoryMap_->getMinAllGlobalIndex () << "," <<
+        directoryMap_->getMaxAllGlobalIndex () << "], and the calling process "
+        "has GIDs [" << directoryMap_->getMinGlobalIndex () << "," <<
+        directoryMap_->getMaxGlobalIndex () << "].  "
+        "This probably means there is a bug in Map or Directory.  "
+        "Please report this bug to the Tpetra developers.");
 
       // Initialize the distributor using the list of process IDs to
       // which to send.  We'll use the distributor to send out triples
@@ -698,7 +715,7 @@ namespace Tpetra {
           rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
                                                     tableLids ()));
       }
-      else { 
+      else {
         if (tie_break == Teuchos::null) {
           // use array-based implementation of Directory storage
           // Allocate arrays implementing Directory storage.  Fill them
@@ -738,12 +755,12 @@ namespace Tpetra {
             const LO  LID = *iter++;
 
             const LO curLID = directoryMap_->getLocalElement (GID);
- 
+
             TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
               Teuchos::typeName(*this) << " constructor: Incoming global index "
               << GID << " does not have a corresponding local index in the "
               "Directory Map.  Please report this bug to the Tpetra developers.");
-            
+
             owned_ids[curLID].push_back (std::make_pair (PID, LID));
           }
 
@@ -754,7 +771,7 @@ namespace Tpetra {
             // produce tie break index
             const VectorType& pid_and_lid = owned_ids[i];
             if (pid_and_lid.size () > 0) {
-              // size and greater than zero, it makes sense to 
+              // size and greater than zero, it makes sense to
               // run a tie break
               std::size_t index = tie_break->selectedIndex (GID, pid_and_lid);
 
@@ -810,7 +827,7 @@ namespace Tpetra {
     LookupStatus
     DistributedNoncontiguousDirectory<LO, GO, NT>::
     getEntriesImpl (const map_type& map,
-		    const Teuchos::ArrayView<const GO> &globalIDs,
+                    const Teuchos::ArrayView<const GO> &globalIDs,
                     const Teuchos::ArrayView<int> &nodeIDs,
                     const Teuchos::ArrayView<LO> &localIDs,
                     const bool computeLIDs) const
@@ -820,6 +837,8 @@ namespace Tpetra {
       using Teuchos::ArrayView;
       using Teuchos::as;
       using Teuchos::RCP;
+      using std::cerr;
+      using std::endl;
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const size_t numEntries = globalIDs.size ();
@@ -994,6 +1013,7 @@ namespace Tpetra {
           }
         }
       }
+
       return res;
     }
   } // namespace Details

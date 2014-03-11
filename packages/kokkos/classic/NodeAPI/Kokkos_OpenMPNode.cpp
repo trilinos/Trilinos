@@ -56,7 +56,7 @@ namespace KokkosClassic {
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
     verbose_ (false)     // Default: No verbose status output
   {
-    ParameterList params = getDefaultParameters();
+    Teuchos::ParameterList params = getDefaultParameters();
     params.setParameters(pl);
     const int curNumThreads = params.get<int>("Num Threads");
     int verboseInt = params.get<int>("Verbose");
@@ -70,9 +70,9 @@ namespace KokkosClassic {
     verbose_ = verbose;
   }
 
-  ParameterList OpenMPNode::getDefaultParameters() 
+  Teuchos::ParameterList OpenMPNode::getDefaultParameters ()
   {
-    ParameterList params;
+    Teuchos::ParameterList params;
     params.set("Verbose",      0);
     params.set("Num Threads", -1);
     return params;
@@ -80,7 +80,7 @@ namespace KokkosClassic {
 
   OpenMPNode::~OpenMPNode() {}
 
-  void OpenMPNode::init (int numThreads) {
+  void OpenMPNode::init (const int numThreads) {
     // mfh 10 Jul 2012: Don't set the number of threads if it's
     // negative (the default value of the "Num Threads" parameter is
     // -1) or 0.
@@ -89,4 +89,8 @@ namespace KokkosClassic {
     }
   }
 
-}
+  std::string OpenMPNode::name () {
+    return "OpenMP";
+  }
+
+} // namespace KokkosClassic

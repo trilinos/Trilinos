@@ -1,13 +1,13 @@
 /*
  * Methods to set and/or compute the null space.
- * 
+ *
  * \author Marzio Sala, SNL 9214
- * 
+ *
  * \date Last updated on 19-Jan-05
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -29,7 +29,7 @@ using namespace Teuchos;
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
+int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 {
   int NullSpaceDim = NumPDEEqns_;
   double* NullSpacePtr = 0;
@@ -38,7 +38,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
   // to save time, the 1-level case will always use "default vectors"
   if (NumLevels_ == 1) option = "default vectors";
-  
+
   // Null space can be obtained in 3 ways:
   // 1. default vectors, one constant vector for each physical unknown
   // 2. precomputed, the user is furnishing a pointer to a double vector,
@@ -46,8 +46,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   // 3. by computing the eigenvalues of a suitable matrix (for instance, the
   //    lowest of A, or the largest of I-A). Default space can be added
   //    if required.
-  
-  if (option == "default vectors") 
+
+  if (option == "default vectors")
   {
     // sanity check for default null-space
     if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
@@ -70,7 +70,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     else                      NullSpaceDim = 6;
 
     if (in_x_coord == 0) {
-      if (Comm().MyPID() == 0) 
+      if (Comm().MyPID() == 0)
         std::cerr << ErrorMsg_ << "You asked for the near null-space from coordinates," << std::endl
              << ErrorMsg_ << "but x-coordinate vector is NULL!" << std::endl;
       ML_EXIT(EXIT_FAILURE);
@@ -85,27 +85,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
       std::cout << PrintMsg_ << "  (This option ignores any user-specified nullspace dimension.)" << std::endl;
     }
 
-  } //"elasticity from coordinates" 
+  } //"elasticity from coordinates"
 
-  else if (option == "pre-computed") 
+  else if (option == "pre-computed")
   {
     NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
     NullSpacePtr = List_.get("null space: vectors", NullSpacePtr);
 
     if (NullSpacePtr == 0) {
-      if (Comm().MyPID() == 0) 
+      if (Comm().MyPID() == 0)
         std::cerr << ErrorMsg_ << "Null space vectors is NULL!" << std::endl;
       ML_EXIT(EXIT_FAILURE);
     }
-    
+
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
 			       RowMatrix_->NumMyRows());
     if (verbose_)
       std::cout << PrintMsg_ << "Null space type      = user-supplied" << std::endl;
-  
+
   } //"pre-computed"
 #if FIXME
-  else if (option == "enriched") 
+  else if (option == "enriched")
   {
     NullSpaceDim = List_.get("null space: vectors to compute", 1);
 
@@ -113,17 +113,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     // This number can be doubled if the imaginary part is added.
     // Although, eigenvectors with 0-norm are discarded.
     if( NullSpaceDim == 0 ) NullSpaceDim = NumPDEEqns_;
-    
+
 #ifdef HAVE_ML_ANASAxI
 
     Epetra_Time Time(Comm());
-    
+
     bool UseDefaultVectors = List_.get("null space: add default vectors", true);
 
     // NOTE: NullSpaceDim always refers to the number of eigenvectors,
     //       if this flag is true we will keep also the imaginary part
     bool UseImaginaryComponents = List_.get("null space: add imaginary components", true);
-    
+
     if( verbose_ ) {
       std::cout << PrintMsg_ << "Enriching null space with " << NullSpaceDim << " vector(s)";
       if( UseImaginaryComponents ) std::cout << PrintMsg_ << ", both real and imaginary components";
@@ -147,7 +147,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     }
 
     NullSpacePtr = new double[TotalNullSpaceDim*NumMyRows()];
-    
+
     if( NullSpacePtr == 0 ) {
       std::cerr << ErrorMsg_ << "Not enough space to allocate " << TotalNullSpaceDim*NumMyRows()*8
 	   << " bytes" << std::endl
@@ -168,9 +168,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
     ParameterList AnasaziList;
-    
+
     {
-      
+
       std::string opt = List_.get("null space: matrix operation", "I-A");
       if( opt == "I-A" ) {
 	AnasaziList.set("eigen-analysis: matrix operation", opt);
@@ -182,11 +182,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 	AnasaziList.set("eigen-analysis: use diagonal scaling",true);
       } else if( opt == "A" ) {
 	AnasaziList.set("eigen-analysis: matrix operation", opt);
-	AnasaziList.set("eigen-analysis: action", "SM");	
+	AnasaziList.set("eigen-analysis: action", "SM");
 	AnasaziList.set("eigen-analysis: use diagonal scaling",false);
       } else if( opt == "D^{-1}A" ) {
 	AnasaziList.set("eigen-analysis: matrix operation", "A");
-	AnasaziList.set("eigen-analysis: action", "SM");	
+	AnasaziList.set("eigen-analysis: action", "SM");
 	AnasaziList.set("eigen-analysis: use diagonal scaling",true);
       } else {
 	std::cerr << ErrorMsg_ << "value for `null space: matrix operation' not recognized" << std::endl
@@ -199,11 +199,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
       AnasaziList.set("eigen-analysis: tolerance", List_.get("eigen-analysis: tolerance", 1.0e-1));
       AnasaziList.set("eigen-analysis: restart", List_.get("eigen-analysis: restart", 2));
     }
-    
+
     // this is the starting value -- random
     Epetra_MultiVector EigenVectors(OperatorDomainMap(),NullSpaceDim);
     EigenVectors.Random();
-    
+
     // call Anasazi. Real and imaginary part of the selected eigenvalues
     // will be copied into RealEigenvalues
 
@@ -212,7 +212,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     else                    RealEigenvectors = NullSpacePtr;
     if( UseImaginaryComponents ) ImagEigenvectors = RealEigenvectors+NullSpaceDim*NumMyRows();
     else                         ImagEigenvectors = 0;
-    
+
     ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
 			  ImagEigenvalues, AnasaziList, RealEigenvectors,
 			  ImagEigenvectors);
@@ -241,8 +241,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     if( Discarded && verbose_ ) {
       std::cout << PrintMsg_ << "Discarded " << Discarded << " eigenvectors" << std::endl;
     }
-    
-      
+
+
     if( 0 ) { // debugging only, print all computed eigenvectors
       for( int i=0 ; i<NumMyRows() ; ++i ) {
 	std::cout << i << ": ";
@@ -253,25 +253,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
       }
     }
 
-    
+
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim-Discarded,
 			       NullSpacePtr,
 			       NumMyRows());
 
     delete [] RealEigenvalues;
     delete [] ImagEigenvalues;
-    
+
     if( verbose_ ) std::cout << PrintMsg_ << "Total time for eigen-analysis = " << Time.ElapsedTime() << " (s)\n";
-    
+
 #else
      std::cout << "ML_Anasazi ERROR: you must compile with --with-ml_anasazi "  << std::endl
        << "ML_Anasazi ERROR: for eigen-analysis." << std::endl;
      exit( EXIT_FAILURE );
 #endif
 
-  } 
+  }
 #endif
-  else 
+  else
   {
     std::cerr << ErrorMsg_ << "Option `null space: type' not recognized ("
 	 << option << ")" << std::endl
@@ -279,18 +279,18 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <elasticity from coordinates> / <enriched>" << std::endl;
     exit(EXIT_FAILURE);
   }
-  
+
   // May need to scale the null space ??
 
   double * NullSpaceScaling = List_.get("null space: scaling", (double *)0);
 
-  if (NullSpaceScaling != 0) 
+  if (NullSpaceScaling != 0)
   {
-    if (verbose_) 
+    if (verbose_)
       std::cout << PrintMsg_ << "Scaling Null Space..." << std::endl;
     ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,
                                  RowMatrix_->RowMatrixRowMap().NumMyElements());
-  } 
+  }
 
   if (verbose_) std::cout << PrintMsg_ << "Null space dimension = " << NullSpaceDim << std::endl;
 

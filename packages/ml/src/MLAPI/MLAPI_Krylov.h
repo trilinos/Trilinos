@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -38,7 +38,7 @@ class MultiVector;
 */
 
 void Krylov(const Operator& A, const MultiVector& LHS,
-            const MultiVector& RHS, const BaseOperator& Prec, 
+            const MultiVector& RHS, const BaseOperator& Prec,
             Teuchos::ParameterList& List);
 
 } // namespace MLAPI

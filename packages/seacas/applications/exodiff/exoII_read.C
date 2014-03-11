@@ -707,7 +707,7 @@ const double* ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
     
     // Interpolate the values...
     for (size_t i=0; i < num_nodes; i++) {
-      st_results[i] = proportion * st_results[i] + (1.0 - proportion) * st_results2[i];
+      st_results[i] = (1.0-proportion) * st_results[i] + proportion * st_results2[i];
     }
   }
   return st_results;
@@ -815,7 +815,7 @@ string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 
     // Do the interpolation...
     for (size_t j=0; j < global_vars.size(); j++) {
-      global_vals[j] = proportion * global_vals[j] + (1.0 - proportion) * global_vals2[j];
+      global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
     }
   }
 

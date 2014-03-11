@@ -694,7 +694,6 @@ extern int Zoltan_Print_Obj_List( ZZ *zz, ZOLTAN_ID_PTR Gids, ZOLTAN_ID_PTR Lids
 extern int Zoltan_Get_Coordinates(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   int *, double **);
 
-extern void Zoltan_Print_Transformation(ZZ_Transform *tr);
 extern void Zoltan_Initialize_Transformation(ZZ_Transform *tr);
 
 #ifdef __cplusplus

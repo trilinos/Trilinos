@@ -45,7 +45,7 @@ void ML_Smoother_Clean_Self(void *Self_Handle)
 
   ML_Self_Destroy(Self_Handle);
   return;
-  
+
 } /* ML_Smoother_Clean_Self */
 
 #endif

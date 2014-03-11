@@ -71,11 +71,8 @@ namespace MueLu {
   @class AmalgamationInfo
   @brief minimal container class for storing amalgamation information
 
-
-  stores map of global node id on current processor to global DOFs ids on current processor
-  nodegid2dofgids_
-
-  that is used for unamalgamation
+  Helps create a mapping between global node id on current processor to global DOFs ids on
+  current processor.  That mapping is used for unamalgamation.
 */
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -86,11 +83,18 @@ namespace MueLu {
 
   public:
 
-    AmalgamationInfo(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids,
-                     RCP<std::vector<GlobalOrdinal> > nodegids) {
-      nodegid2dofgids_ = nodegid2dofgids;
-      gNodeIds_        = nodegids;
-    }
+    AmalgamationInfo(RCP<std::vector<GlobalOrdinal> > nodegids,
+                     RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap,
+                     LO fullblocksize, GO offset, LO blockid, LO nStridedOffset, LO stridedblocksize) :
+                     gNodeIds_(nodegids),
+                     columnMap_(columnMap),
+                     fullblocksize_(fullblocksize),
+                     offset_(offset),
+                     blockid_(blockid),
+                     nStridedOffset_(nStridedOffset),
+                     stridedblocksize_(stridedblocksize),
+                     indexBase_(columnMap->getIndexBase())
+    {}
 
     virtual ~AmalgamationInfo() {}
 
@@ -102,7 +106,6 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
-    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const   { return nodegid2dofgids_; }
     RCP<std::vector<GlobalOrdinal> >                          GetNodeGIDVector() const              { return gNodeIds_; }
     GlobalOrdinal                                             GetNumberOfNodes() const              { return gNodeIds_.is_null() ? 0 : gNodeIds_->size(); }
 
@@ -117,17 +120,29 @@ namespace MueLu {
      */
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
+    std::vector<GO> ComputeGlobalDOFs(GO const gNodeID) const;
+
   private:
 
     //! @name amalgamation information variables
     //@{
 
-    // map of global node id on current processor to global DOFs ids on current processor
-    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_; //< used for building overlapping ImportDofMap
-
     // contains global node ids on current proc (used by CoalesceDropFactory to build nodeMap)
     RCP<std::vector<GlobalOrdinal> > gNodeIds_;
 
+    //! @brief DOF map (really column map of A)
+    const Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &columnMap_;
+
+    //@}
+
+    //! @name Strided map information.
+    //@{
+    LO fullblocksize_;
+    GO offset_;
+    LO blockid_;
+    LO nStridedOffset_;
+    LO stridedblocksize_;
+    GO indexBase_;
     //@}
 
   };

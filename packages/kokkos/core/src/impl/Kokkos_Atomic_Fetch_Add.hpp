@@ -52,43 +52,58 @@ namespace Kokkos {
 
 // Support for int, unsigned int, unsigned long long int, and float
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 int atomic_fetch_add( volatile int * const dest , const int val )
 { return atomicAdd((int*)dest,val); }
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 unsigned int atomic_fetch_add( volatile unsigned int * const dest , const unsigned int val )
 { return atomicAdd((unsigned int*)dest,val); }
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 unsigned long long int atomic_fetch_add( volatile unsigned long long int * const dest ,
                                          const unsigned long long int val )
 { return atomicAdd((unsigned long long int*)dest,val); }
 
-KOKKOS_INLINE_FUNCTION
+__inline__ __device__
 float atomic_fetch_add( volatile float * const dest , const float val )
 { return atomicAdd((float*)dest,val); }
 
 template < typename T >
-KOKKOS_INLINE_FUNCTION
-typename Kokkos::Impl::UnionPair<T,int,unsigned long long int>::first_type
-atomic_fetch_add( volatile T * const dest , const T val )
+__inline__ __device__
+T atomic_fetch_add( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T >::type val )
 {
-  typedef Kokkos::Impl::UnionPair<T,int,unsigned long long int> union_type ;
-  typedef typename union_type::second_type type ;
+  union { int i ; T t ; } oldval , assume , newval ;
 
-  union_type assumed , old , newval ;
+  oldval.t = *dest ;
 
-  old.first = *dest ;
   do {
-    assumed.second = old.second ;
-    newval.first = assumed.first + val ;
-    old.second = atomicCAS( (type *) union_type::cast( dest ),
-                            assumed.second ,
-                            newval.second );
-  } while ( assumed.second != old.second );
+    assume.i = oldval.i ;
+    newval.t = assume.t + val ;
+    oldval.i = atomicCAS( (int*)dest , assume.i , newval.i );
+  } while ( assumed.i != oldval.i );
 
-  return old.first ;
+  return oldval.t ;
+}
+
+template < typename T >
+__inline__ __device__
+T atomic_fetch_add( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) == sizeof(unsigned long long int) , const T >::type val )
+{
+  union { unsigned long long int i ; T t ; } oldval , assume , newval ;
+
+  oldval.t = *dest ;
+
+  do {
+    assume.i = oldval.i ;
+    newval.t = assume.t + val ;
+    oldval.i = atomicCAS( (unsigned long long int*)dest , assume.i , newval.i );
+  } while ( assume.i != oldval.i );
+
+  return oldval.t ;
 }
 
 //----------------------------------------------------------------------------
@@ -117,23 +132,39 @@ unsigned long int atomic_fetch_add( volatile unsigned long int * const dest , co
 
 template < typename T >
 KOKKOS_INLINE_FUNCTION
-typename Kokkos::Impl::UnionPair<T,int,long>::first_type
-atomic_fetch_add( volatile T * const dest , const T val )
+T atomic_fetch_add( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T >::type val )
 {
-  typedef Kokkos::Impl::UnionPair<T,int,long> union_type ;
+  union { int i ; T t ; } assume , oldval , newval ;
 
-  union_type assumed , old , newval ;
+  oldval.t = *dest ;
 
-  old.first = *dest ;
   do {
-    assumed.second = old.second ;
-    newval.first = assumed.first + val ;
-    old.second = __sync_val_compare_and_swap( union_type::cast( dest ),
-                                              assumed.second ,
-                                              newval.second );
-  } while ( assumed.second != old.second );
+    assume.i = oldval.i ;
+    newval.t = assume.t + val ;
+    oldval.i = __sync_val_compare_and_swap( (int*) dest , assume.i , newval.i );
+  } while ( assume.i != oldval.i );
 
-  return old.first ;
+  return oldval.t ;
+}
+
+template < typename T >
+KOKKOS_INLINE_FUNCTION
+T atomic_fetch_add( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) == sizeof(long) , const T >::type val )
+{
+  union { long i ; T t ; } assume , oldval , newval ;
+
+  oldval.t = *dest ;
+
+  do {
+    assume.i = oldval.i ;
+    newval.t = assume.t + val ;
+    oldval.i = __sync_val_compare_and_swap( (long*) dest , assume.i , newval.i );
+  } while ( assume.i != oldval.i );
+
+  return oldval.t ;
 }
 
 //----------------------------------------------------------------------------

@@ -43,7 +43,8 @@
 #include <iostream>
 #include <cstdlib>
 
-#ifdef EPETRA_MPI
+#include "Epetra_config.h"
+#ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #else
 #  include "Epetra_SerialComm.h"

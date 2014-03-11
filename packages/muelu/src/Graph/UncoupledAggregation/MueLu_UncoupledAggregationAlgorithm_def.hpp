@@ -106,8 +106,7 @@ namespace MueLu {
 
     int              aggIndex = -1;
     size_t           aggSize  =  0;
-    const unsigned   magicConstAsDefaultSize = 100;
-    std::vector<int> aggList(magicConstAsDefaultSize);
+    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
 
     // Main loop over all local rows of graph(A)
     for (LO iNode2 = 0; iNode2 < nRows; iNode2++) {
@@ -141,12 +140,6 @@ namespace MueLu {
 
         ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode1);
 
-        // TODO: I would like to get rid of this, but that requires something like
-        // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
-        // computation in LWGraph
-        if (as<size_t>(neighOfINode.size()) > aggList.size())
-          aggList.resize(neighOfINode.size()*2);
-
         LO numAggregatedNeighbours = 0;
 
         // NOTE: if neighOfINode.size() < MinNodesPerAggregate, we could skip this loop,
@@ -163,9 +156,9 @@ namespace MueLu {
               //       to count all aggregated neighbour nodes for the aggregation criteria
               // NOTE: We check here for the maximum aggregation size. If we would do it below
               //       with all the other check too big aggregates would not be accepted at all.
-              if(aggSize < MaxNodesPerAggregate) {
+              if (aggSize < as<size_t>(MaxNodesPerAggregate))
                 aggList[aggSize++] = neigh;
-              }
+
             } else {
               numAggregatedNeighbours++;
             }

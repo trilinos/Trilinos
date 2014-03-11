@@ -41,6 +41,7 @@
 
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_StrUtils.hpp"
+#include <cstring>
 
 using namespace Teuchos;
 
@@ -83,6 +84,13 @@ void XMLObjectImplem::addChild(const XMLObject& child)
 void XMLObjectImplem::addContent(const std::string& contentLine)
 {
   content_.append(contentLine);
+}
+
+void XMLObjectImplem::removeContentLine(const size_t& i)
+{
+  Array<std::string>::iterator pos = content_.begin()+i;
+  // does bound checking within content_.erase if BoundaryChecks are enabled
+  content_.erase(pos);
 }
 
 const XMLObject& XMLObjectImplem::getChild(int i) const 
@@ -270,14 +278,17 @@ void XMLObjectImplem::printContent(std::ostream& os, int indent) const
     }
   }
   
-  if (!allBlankContent) 
+  if (!allBlankContent)
   {
-    os << space;
+
     for (int i=0; i<content_.length(); i++)
     {
-      os << content_[i];
+      // remove leading spaces, we will indent
+      std::string s(content_[i]);
+      s.erase(size_t(0), s.find_first_not_of(" \r\t"));
+      if((s.length()>0) && (!StrUtils::isWhite(s)))
+        os << space << s << '\n';
     }
-    os << '\n';
   }
 }
 

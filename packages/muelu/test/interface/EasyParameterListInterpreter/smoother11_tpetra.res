@@ -54,7 +54,7 @@ Level 1
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 100   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -128,7 +128,7 @@ Level 2
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 100   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
@@ -180,11 +180,11 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) pre  : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 3, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
- Smoother (level 0) post : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 0, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
+ Smoother (level 0) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 3, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+ Smoother (level 0) post : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 0, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) pre  : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 3, "relaxation: damping factor": 1, "Global number of rows": 3333, "Global number of columns": 3333 }
- Smoother (level 1) post : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 0, "relaxation: damping factor": 1, "Global number of rows": 3333, "Global number of columns": 3333 }
+ Smoother (level 1) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 3, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+ Smoother (level 1) post : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 0, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother

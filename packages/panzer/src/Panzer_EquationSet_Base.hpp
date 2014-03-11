@@ -137,8 +137,11 @@ namespace panzer {
     //! Returns the parameter list that will be passed off from the equaiton set to the closure model evaluator factory.  This allows users to pass parameters from a particular equaiton set to its associated closure models.
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
     
-    //! Return the Basis for the equation set, key is the DOF name
+    //! Return the Basis for the equation set, key is the DOF name (note coordinate DOFs are NOT included)
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const = 0;
+
+    //! Return a vector of vectors that correspond to DOFs set as coordinate fields
+    virtual const std::vector<std::vector<std::string> > & getCoordinateDOFs() const = 0;
 
     //! Return a map of unique integration rules for the equation set, key is the integration order
     virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const = 0;

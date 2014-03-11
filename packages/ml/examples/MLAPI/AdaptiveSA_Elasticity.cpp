@@ -1,10 +1,10 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-// usage: 
+// usage:
 // the exe takes the path to the example as input parameter, e.g.
 // AdaptiveSA_Elasticity.exe ../ExampleMatrices/sphere
 
@@ -38,14 +38,14 @@ int main(int argc, char *argv[])
 
   // Initialize the workspace and set the output level
   Init();
-  
+
   try {
   // create a Epetra_Map from file
   sprintf(filename,"%s/data_update%d.txt",argv[1],nproc);
   Epetra_Map* map = Epetra_ML_readupdatevector(filename,comm);
   if (!map) {
      cout << "**ERR**: could not read map, number of procs ok?\n"; throw -1; }
-     
+
   // read the Epetra_RowMatrix
   sprintf(filename,"%s/data_matrix.txt",argv[1]);
   Epetra_CrsMatrix* Afine = Epetra_ML_readaztecmatrix(filename,*map,comm);
@@ -53,14 +53,14 @@ int main(int argc, char *argv[])
   if (!Afine) {
      cout << "**ERR**: could not read matrix\n"; throw -1; }
 
-  
+
   // read the rhs
   Epetra_MultiVector* Rhs = new Epetra_MultiVector(*map,1,true);
   sprintf(filename,"%s/data_rhs.txt",argv[1]);
   bool ok = Epetra_ML_readaztecvector(filename,*Rhs,*map,comm,0);
   if (!ok) {
      cout << "**ERR**: could not read rhs\n"; throw -1; }
-     
+
 #if 0
   // read variable block information
   sprintf(filename,"%s/data_vblocks.txt",argv[1]);
@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
   ok = Epetra_ML_readvariableblocks(filename,*map,comm,&blocks,&block_pde);
   if (!ok) {
      cout << "**ERR**: could not read variable blocks\n"; throw -1; }
-#endif  
-       
+#endif
+
   Space FineSpace(map->NumGlobalElements());
   Operator A(FineSpace, FineSpace, Afine, true);
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	    for (int j = 0 ; j < NumPDEEqns ;++j)
 		    if (i % NumPDEEqns == j)
   			    NSfine(i,j) = 1.0;
-    } 
+    }
     else {
       Epetra_NSfine = new Epetra_MultiVector(*map,dimNS,true);
       for (int i=0; i<dimNS; i++)
@@ -119,11 +119,11 @@ int main(int argc, char *argv[])
           cout << "**ERR**: could not read nullspace\n"; throw -1; }
       }
       for (int i = 0 ; i < NSfine.GetMyLength() ; ++i)
-        for (int v = 0 ; v < dimNS ; ++v) 
-          NSfine(i, v) = (*Epetra_NSfine)[v][i]; 
+        for (int v = 0 ; v < dimNS ; ++v)
+          NSfine(i, v) = (*Epetra_NSfine)[v][i];
     }
-    
-    
+
+
     double t2 = GetClock();
     Prec.SetNullSpace(NSfine);
     Prec.Compute();
@@ -141,14 +141,14 @@ int main(int argc, char *argv[])
     }
     double t1 = GetClock();
     cout << "Setup time = " << ((t1-t0)+(t3-t2)) << " sec\n";
-    
+
 #if 1
     MultiVector NewNS    = Prec.GetNullSpace();
     int         newdimNS = NewNS.GetNumVectors();
     Epetra_MultiVector* EnewNS = new Epetra_MultiVector(*map,newdimNS,true);
     for (int v = 0 ; v < newdimNS ; ++v)
     for (int i = 0 ; i < NewNS.GetMyLength() ; ++i)
-       (*EnewNS)[v][i] = NewNS(i,v);   
+       (*EnewNS)[v][i] = NewNS(i,v);
 
     // create output of vector for visualization with gid
     sprintf(filename,"%s/data_grid.txt",argv[1]);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
        if (!ok) {
           cout << "**ERR**: could not create GID viz\n"; throw -1; }
     }
-#endif  
+#endif
 
     // test the solver
     MultiVector LHS(FineSpace);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     List.set("krylov: type", "cg");
     Krylov(A, LHS, RHS, Prec, List);
 
-    Finalize(); 
+    Finalize();
 
   }
   catch (const int e) {
@@ -179,9 +179,9 @@ int main(int argc, char *argv[])
   catch (...) {
     cerr << "Caught exception..." << endl;
   }
-     
+
 #ifdef HAVE_MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
 
   return(0);

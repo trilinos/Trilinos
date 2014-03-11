@@ -50,6 +50,7 @@
 #include "elb_err.h"              // for Gen_Error, error_lev, etc
 #include "elb_inp.h"              // for NONE
 #include "elb_util.h"             // for strip_string, token_compare, etc
+#include "elb_format.h"
 #include "getopt.h"                     // for getopt
 #include "md_getsubopt.h"               // for md_getsubopt
 
@@ -1923,7 +1924,7 @@ int check_inp_specs(std::string &exoII_inp_file,
       /* now loop through, and make sure that we don't have multiple values */
       for (cnt=1; cnt < (int)weight->elemblk.size(); cnt++)
         if (weight->elemblk[cnt] == weight->elemblk[cnt-1]) {
-          sprintf(ctemp, "warning: multiple weight specified for block %lu",
+          sprintf(ctemp, "warning: multiple weight specified for block "ST_ZU"",
                   (size_t)weight->elemblk[cnt]);
           Gen_Error(1, ctemp);
         }

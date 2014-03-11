@@ -752,38 +752,6 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ const *fromZZ)
 
   return ZOLTAN_OK;
 }
-void Zoltan_HSFC_Print_Structure(ZZ *zz)
-{
-HSFC_Data *data;
-int nparts, i;
-Partition *p;
-
-  data = (HSFC_Data *)zz->LB.Data_Structure;
-
-  nparts = zz->LB.Num_Global_Parts;
-
-  if (data->final_partition){
-    p = data->final_partition;
-    for (i=0; i< nparts; i++){
-      printf("interval %d: [%6.4f, %6.4f), owner %d\n",
-       i, p->l, p->r, p->index);
-      p++;
-    }
-  }
-  else{
-    printf("Final partition: NULL\n");
-  }
-
-  printf("bbox low: %6.4f %6.4f %6.4f, bbox hi: %6.4f %6.4f %6.4f\n",
-     data->bbox_lo[0], data->bbox_lo[1], data->bbox_lo[2],
-     data->bbox_hi[0], data->bbox_hi[1], data->bbox_hi[2]);
-
-  printf("extent: %6.4f %6.4f %6.4f, dim: %d\n",
-      data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
-      data->ndimension);
-
-  Zoltan_Print_Transformation(&(data->tran));
-}
 
 /* function to read HSFC parameters: */
 int Zoltan_HSFC_Set_Param (char *name, char *val)

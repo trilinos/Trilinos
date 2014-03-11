@@ -117,11 +117,23 @@ namespace MueLu {
       Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
 
       // Get hierarchy options
-      this->numDesiredLevel_ = 10; /* default should be provided by the Hierarchy class */;
-      if(hieraList.isParameter("numDesiredLevel")) { this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel"); hieraList.remove("numDesiredLevel"); }
+      this->numDesiredLevel_ = Hierarchy::GetDefaultMaxLevels(); /* default should be provided by the Hierarchy class */;
+      if (hieraList.isParameter("numDesiredLevel")) {
+        this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel");
+        hieraList.remove("numDesiredLevel");
+      }
 
-      this->maxCoarseSize_ = 50; /* default should be provided by the Hierarchy class */;
-      if(hieraList.isParameter("maxCoarseSize")) { this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize"); hieraList.remove("maxCoarseSize"); }
+      this->maxCoarseSize_ = Hierarchy::GetDefaultMaxCoarseSize();
+      if (hieraList.isParameter("maxCoarseSize")) {
+        this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize");
+        hieraList.remove("maxCoarseSize");
+      }
+
+      this->implicitPRrebalance_ = Hierarchy::GetDefaultPRrebalance();
+      if (hieraList.isParameter("rebalance P and R")) {
+        this->implicitPRrebalance_ = !hieraList.get<bool>("rebalance P and R");
+        hieraList.remove("rebalance P and R");
+      }
 
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
@@ -243,14 +255,14 @@ namespace MueLu {
 
 
       if (paramValue.isList()) {
-        Teuchos::ParameterList paramList = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
-        if(paramList.isParameter("factory")) { // default: just a factory definition
+        Teuchos::ParameterList paramList1 = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
+        if(paramList1.isParameter("factory")) { // default: just a factory definition
           factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn, factoryManagers);
-        } else if (paramList.isParameter("group")) { // definitiion of a factory group (for a factory manager)
-          std::string groupType = paramList.get<std::string>("group");
+        } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
+          std::string groupType = paramList1.get<std::string>("group");
           TEUCHOS_TEST_FOR_EXCEPTION(groupType!="FactoryManager", Exceptions::RuntimeError, "group must be of type \"FactoryManager\".");
 
-          Teuchos::ParameterList groupList = paramList; // copy because list temporally modified (remove 'id')
+          Teuchos::ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
           groupList.remove("group");
 
           FactoryMap groupFactoryMap;
@@ -264,7 +276,7 @@ namespace MueLu {
           factoryManagers[paramName] = m;
 
         } else {
-          this->GetOStream(Warnings0,  0) << "Warning: Could not interpret parameter list " << paramList << std::endl;
+          this->GetOStream(Warnings0) << "Warning: Could not interpret parameter list " << paramList1 << std::endl;
           TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
         }
       } else {
@@ -279,7 +291,7 @@ namespace MueLu {
     if(operatorList_.isParameter("PDE equations")) {
       int nPDE = operatorList_.get<int>("PDE equations");
       if (Op.GetFixedBlockSize() != nPDE)
-        this->GetOStream(Warnings0,  0) << "Warning: setting matrix block size to " << nPDE << " (value of \"PDE equations\" parameter in the list) "
+        this->GetOStream(Warnings0) << "Warning: setting matrix block size to " << nPDE << " (value of \"PDE equations\" parameter in the list) "
             << "instead of " << Op.GetFixedBlockSize() << " (provided matrix)." << std::endl;
       Op.SetFixedBlockSize(nPDE);
     }
@@ -343,7 +355,7 @@ namespace MueLu {
       //dim=3;
     }
 
-    //    GetOStream(Runtime1, 0) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
+    //    GetOStream(Runtime1) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
   }
 
 } // namespace MueLu

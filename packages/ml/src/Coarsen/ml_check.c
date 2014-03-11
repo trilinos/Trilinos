@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 
@@ -16,7 +16,7 @@
 /* check the correctness of the interpolation operator                  */
 /* -------------------------------------------------------------------- */
 
-void ML_interp_check(ML *ml, int coarse_level, int fine_level) 
+void ML_interp_check(ML *ml, int coarse_level, int fine_level)
 {
    int    ii, jj, ncoarse, nfine;
    double *c_data, *f_data, coords[3], dtemp, d2, dlargest;
@@ -24,7 +24,7 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
    void   *coarse_data, *fine_data;
    int    nfine_eqn, ncoarse_eqn, stride = 1;
 
-   /* check an interpolated linear function */             
+   /* check an interpolated linear function */
 
    coarse_data = ml->SingleLevel[coarse_level].Grid->Grid;
    fine_data   = ml->SingleLevel[  fine_level].Grid->Grid;
@@ -49,9 +49,9 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
    nfine       =   fine_funs->USR_grid_get_nvertices(  fine_data);
    nfine_eqn   = ml->SingleLevel[coarse_level].Pmat->outvec_leng;
    ncoarse_eqn = ml->SingleLevel[coarse_level].Pmat->invec_leng;
-                                                                    
-   c_data  = (double *) ML_allocate(ncoarse_eqn*sizeof(double));    
-   f_data  = (double *) ML_allocate(nfine_eqn*sizeof(double));    
+
+   c_data  = (double *) ML_allocate(ncoarse_eqn*sizeof(double));
+   f_data  = (double *) ML_allocate(nfine_eqn*sizeof(double));
    for (ii = 0; ii < ncoarse_eqn; ii++) c_data[ii] = 0.;
    for (ii = 0; ii < nfine_eqn; ii++) f_data[ii] = 0.;
 
@@ -60,30 +60,30 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
    /* consecutively !!!!!!!!!!!!!!                                      */
 
    stride = nfine_eqn/nfine;
-   for (ii = 0 ; ii < ncoarse ; ii++)  {                   
-      coarse_funs->USR_grid_get_vertex_coordinate(coarse_data,ii,coords); 
+   for (ii = 0 ; ii < ncoarse ; ii++)  {
+      coarse_funs->USR_grid_get_vertex_coordinate(coarse_data,ii,coords);
       for (jj = 0; jj < stride; jj++) {
-         c_data[ii*stride + jj] = coords[0] + 3.*coords[1] + .5;                
+         c_data[ii*stride + jj] = coords[0] + 3.*coords[1] + .5;
       }
-   }                                                       
+   }
 
    ML_Operator_Apply(ml->SingleLevel[coarse_level].Pmat,ncoarse_eqn,c_data,
 		     nfine_eqn,f_data);
 
-   dlargest = 0.0;                                         
-   for (ii = 0 ; ii < nfine; ii++)  {                      
+   dlargest = 0.0;
+   for (ii = 0 ; ii < nfine; ii++)  {
       fine_funs->USR_grid_get_vertex_coordinate(fine_data , ii, coords);
       dtemp = coords[0] + 3.*coords[1] + .5;
-      d2 = ML_dabs(dtemp - f_data[ii*stride])/(ML_dabs(dtemp)+1.e-9);    
+      d2 = ML_dabs(dtemp - f_data[ii*stride])/(ML_dabs(dtemp)+1.e-9);
       /* Ray debugging
-      if ( d2 > 1.e-8)                                      
+      if ( d2 > 1.e-8)
          printf("%d: f_data[%d] = %e  %e | %e %e\n",ml->comm->ML_mypid,
                 ii,f_data[ii*stride],dtemp,coords[0],coords[1]);
       */
-      if ( d2 > dlargest) {                                 
-            dlargest = d2;   
-      }                                                     
-   }                                                       
+      if ( d2 > dlargest) {
+            dlargest = d2;
+      }
+   }
    ML_free(f_data);
    ML_free(c_data);
 }
@@ -216,14 +216,14 @@ ML_Check( ML * ml )
       }
       if ( sum > 0 && myrank == 0 )
       {
-         if ( ml->comm->USR_sendbytes == NULL ) 
+         if ( ml->comm->USR_sendbytes == NULL )
               printf("\t\tSend function is absent.\n");
-         if ( ml->comm->USR_irecvbytes == NULL ) 
+         if ( ml->comm->USR_irecvbytes == NULL )
               printf("\t\tIrecv function is absent.\n");
-         if ( ml->comm->USR_waitbytes == NULL ) 
+         if ( ml->comm->USR_waitbytes == NULL )
               printf("\t\tIrecv function is absent.\n");
       }
-   } 
+   }
    scheme  = ml->ML_scheme;
    if ( myrank == 0 )
    {
@@ -247,7 +247,7 @@ ML_Check( ML * ml )
    {
       if ( myrank == 0 ) printf("Checking level %d \n", i );
       sl = ml->SingleLevel[i];
-      if ( sl->grid == NULL ) flag = 1 ; else flag = 0; 
+      if ( sl->grid == NULL ) flag = 1 ; else flag = 0;
       sum = ML_Comm_GsumInt(ml->comm,flag);
       if ( myrank == 0 )
       {
@@ -261,7 +261,7 @@ ML_Check( ML * ml )
          if (sum > 0) printf("\tSL grid function object is absent.\n");
          else         printf("\tSL grid function object is present.\n");
       }
-      if ( sum == 0 ) 
+      if ( sum == 0 )
       {
          status = ML_GridFcns_Check( sl->gridfcn );
          sum = ML_Comm_GsumInt(ml->comm,flag);
@@ -270,7 +270,7 @@ ML_Check( ML * ml )
             printf("\tSL grid functions incompletely defined.\n");
          }
       }
-      if (myrank==0) 
+      if (myrank==0)
          printf("\tExamining the Dirichlet list ... \n");
       if ( sl->Dirichlet_list != NULL )
       {
@@ -320,9 +320,9 @@ ML_Check( ML * ml )
          else          printf("\tMatvec is incomplete. \n");
          if ( sum > 0 )
          {
-            if ( sl->matvec == NULL ) 
+            if ( sl->matvec == NULL )
                printf("\t\tMatvec function is absent. \n");
-            if ( sl->matvec_struct == NULL ) 
+            if ( sl->matvec_struct == NULL )
                printf("\t\tMatvec obsent is absent. \n");
          }
       }
@@ -334,9 +334,9 @@ ML_Check( ML * ml )
       {
          if (sum == 0) printf("\tRestriction operator is complete.\n");
          else          printf("\tRestriction operator is incomplete.\n");
-         if ( sl->restrictor == NULL ) 
+         if ( sl->restrictor == NULL )
             printf("\t\tRestriction function is absent.\n");
-         if ( sl->Rmat == NULL ) 
+         if ( sl->Rmat == NULL )
             printf("\t\tRestriction matrix is absent.\n");
       }
 
@@ -347,9 +347,9 @@ ML_Check( ML * ml )
       {
          if (sum == 0) printf("\tprolongation operator is complete.\n");
          else          printf("\tprolongation operator is incomplete.\n");
-         if ( sl->prolongator == NULL ) 
+         if ( sl->prolongator == NULL )
             printf("\t\tProlongation function is absent.\n");
-         if ( sl->Pmat == NULL ) 
+         if ( sl->Pmat == NULL )
             printf("\t\tProlongation matrix is absent.\n");
       }
 
@@ -360,9 +360,9 @@ ML_Check( ML * ml )
       {
          if (sum == 0) printf("\tPre-smoother is complete.\n");
          else          printf("\tPre-smoother is incomplete.\n");
-         if ( sl->relax1 == NULL ) 
+         if ( sl->relax1 == NULL )
             printf("\t\tPre-smoothing function is absent.\n");
-         if ( sl->relax1_struct == NULL ) 
+         if ( sl->relax1_struct == NULL )
             printf("\t\tPre-smoothing context is absent.\n");
       }
 
@@ -373,12 +373,12 @@ ML_Check( ML * ml )
       {
          if (sum == 0) printf("\tPost-smoother is complete.\n");
          else          printf("\tPost-smoother is incomplete.\n");
-         if ( sl->relax2 == NULL ) 
+         if ( sl->relax2 == NULL )
             printf("\t\tPost-smoothing function is absent.\n");
-         if ( sl->relax2_struct == NULL ) 
+         if ( sl->relax2_struct == NULL )
             printf("\t\tPost-smoothing context is absent.\n");
       }
-         
+
       if ( i == 0 )
       {
          if ( sl->csolve_struct == NULL ) flag = 1; else flag = 0;
@@ -388,9 +388,9 @@ ML_Check( ML * ml )
          {
             if (sum == 0) printf("\tCoarse solver is complete.\n");
             else          printf("\tCoarse solver is incomplete.\n");
-            if ( sl->csolve == NULL ) 
+            if ( sl->csolve == NULL )
                printf("\t\tCoarse solver function is absent.\n");
-            if ( sl->csolve_struct == NULL ) 
+            if ( sl->csolve_struct == NULL )
                printf("\t\tCoarse solver context is absent.\n");
          }
       }

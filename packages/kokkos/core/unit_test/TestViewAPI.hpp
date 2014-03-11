@@ -922,11 +922,38 @@ public:
 
   static void run_test()
   {
+    // mfh 14 Feb 2014: This test doesn't actually create instances of
+    // these types.  In order to avoid "declared but unused typedef"
+    // warnings, we declare empty instances of these types, with the
+    // usual "(void)" marker to avoid compiler warnings for unused
+    // variables.
+
     typedef typename dView0::HostMirror  hView0 ;
     typedef typename dView1::HostMirror  hView1 ;
     typedef typename dView2::HostMirror  hView2 ;
     typedef typename dView3::HostMirror  hView3 ;
     typedef typename dView4::HostMirror  hView4 ;
+
+    {
+      hView0 thing;
+      (void) thing;
+    }
+    {
+      hView1 thing;
+      (void) thing;
+    }
+    {
+      hView2 thing;
+      (void) thing;
+    }
+    {
+      hView3 thing;
+      (void) thing;
+    }
+    {
+      hView4 thing;
+      (void) thing;
+    }
 
     dView4 dx , dy , dz ;
     hView4 hx , hy , hz ;
@@ -961,6 +988,17 @@ public:
                                                               dx.dimension_1(),
                                                               dx.dimension_2(),
                                                               dx.dimension_3());
+
+    {
+      // Destruction of this view should be harmless
+      const_dView4 unmanaged_from_ptr_const_dx( Kokkos::view_without_managing ,
+                                                dx.ptr_on_device() ,
+                                                dx.dimension_0() ,
+                                                dx.dimension_1() ,
+                                                dx.dimension_2() ,
+                                                dx.dimension_3() );
+    }
+
     const_dView4 const_dx = dx ;
 
 
