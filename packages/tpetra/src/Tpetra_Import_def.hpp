@@ -887,24 +887,45 @@ namespace Tpetra {
       typename Array<GO>::iterator permuteGIDs2_end = permuteGIDs2.end ();
       if (tgtMap1HadMaxSameGIDs) {
         // This operation allows the last (output) argument to alias the first.
-        permuteGIDs2_end =
-          std::set_intersection (permuteGIDs2_beg,
-                                 permuteGIDs2_end,
-                                 doubleCountedSameGIDs.begin (),
-                                 doubleCountedSameGIDs.end (),
-                                 permuteGIDs2_beg);
+	permuteGIDs2_end = 
+	  std::set_difference(permuteGIDs2_beg,
+			      permuteGIDs2_end,
+			      doubleCountedSameGIDs.begin (),
+			      doubleCountedSameGIDs.end (),
+			      permuteGIDs2_beg);
+	    
+
       } else {
         // This operation allows the last (output) argument to alias the first.
-        permuteGIDs1_end =
-          std::set_intersection (permuteGIDs1_beg,
-                                 permuteGIDs1_end,
-                                 doubleCountedSameGIDs.begin (),
-                                 doubleCountedSameGIDs.end (),
-                                 permuteGIDs1_beg);
+	permuteGIDs1_end = 
+	  std::set_difference(permuteGIDs1_beg,
+			      permuteGIDs1_end,
+			      doubleCountedSameGIDs.begin (),
+			      doubleCountedSameGIDs.end (),
+			      permuteGIDs1_beg);
+
       }
       std::set_union (permuteGIDs1_beg, permuteGIDs1_end,
                       permuteGIDs2_beg, permuteGIDs2_end,
                       std::back_inserter (unionTgtGIDs));
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+      {
+        std::ostringstream os;
+	if(tgtMap1HadMaxSameGIDs) os << myRank << ": tgtMap1HadMaxSameGIDs == true"<<endl;
+	else os << myRank << ": tgtMap1HadMaxSameGIDs == false"<<endl;
+
+        os << myRank << ": reduced permuteGIDs1: {";
+	for(typename Array<GO>::iterator k = permuteGIDs1_beg;  k != permuteGIDs1_end; k++)
+	  os<<*k<<", ";
+	os<<"}"<<endl;
+        os << myRank << ": reduced permuteGIDs2: {";
+	for(typename Array<GO>::iterator k = permuteGIDs2_beg;  k != permuteGIDs2_end; k++)
+	  os<<*k<<", ";
+	os<<"}"<<endl;
+        cerr << os.str ();
+      }
+#endif
       const size_type numPermuteIDsUnion =
         unionTgtGIDs.size () - numSameIDsUnion;
       ArrayView<const GO> permuteGIDsUnion =
@@ -956,6 +977,16 @@ namespace Tpetra {
       }
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     }// end permutes
+
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    {
+      std::ostringstream os;
+      os << myRank << ": unionTgtGIDs after permutes: "
+         << toString (unionTgtGIDs ()) << endl;
+      cerr << os.str ();
+    }
+#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
     // Thus far, we have computed the following in the union Import:
     //   - getNumSameIDs()
@@ -1314,9 +1345,9 @@ namespace Tpetra {
     GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     RCP<const map_type> targetMapNew = rcp(new map_type(GO_INVALID,GIDs,tgtMap->getIndexBase(),tgtMap->getComm(),tgtMap->getNode()));
 
-    // Exports are trivial (since the sourcemap doesn't change
+    // Exports are trivial (since the sourcemap doesn't change)
     Array<int> exportPIDsnew(getExportPIDs());
-    Array<GO> exportLIDsnew(getExportLIDs());
+    Array<LO> exportLIDsnew(getExportLIDs());
 
     // Copy the Distributor (due to how the Import constructor works)
     Distributor D(getDistributor());
