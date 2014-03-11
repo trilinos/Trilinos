@@ -49,6 +49,11 @@ FUNCTION(TRANSFORM_CPP_TO_CU SOURCES NEW_SOURCES ENABLE_TRANSFORM)
       ENDIF()
     ENDFOREACH()
 
+    # Add MPI include directory to NVCC flags if MPI enabled
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
+
     # CUDA compile the cuda sources
     CUDA_COMPILE(CUDA_COMPILED_SOURCES ${CUDA_SOURCES})
 
@@ -630,7 +635,12 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      TRANSFORM_CPP_TO_CU("${TPETRA_SOURCES}" TPETRA_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
+      IF(Kokkos_ENABLE_Cuda)
+        SET(DO_TRANSFORM TRUE)
+      ELSE()
+        SET(DO_TRANSFORM FALSE)
+      ENDIF()
+      TRANSFORM_CPP_TO_CU("${TPETRA_SOURCES}" TPETRA_CUDA_SOURCES ${DO_TRANSFORM})
       TRIBITS_ADD_LIBRARY(
         stokhos_tpetra
         HEADERS ${TPETRA_HEADERS}
@@ -649,7 +659,7 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/amesos2/Stokhos_Amesos2_MP_Vector.hpp
           )
 
-        TRANSFORM_CPP_TO_CU("${AMESOS2_SOURCES}" AMESOS2_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
+        TRANSFORM_CPP_TO_CU("${AMESOS2_SOURCES}" AMESOS2_CUDA_SOURCES ${DO_TRANSFORM})
         TRIBITS_ADD_LIBRARY(
           stokhos_amesos2
           HEADERS ${AMESOS2_HEADERS}
@@ -699,7 +709,7 @@ IF (Stokhos_ENABLE_Sacado)
           LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
         ENDIF()
 
-        TRANSFORM_CPP_TO_CU("${IFPACK2_SOURCES}" IFPACK2_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
+        TRANSFORM_CPP_TO_CU("${IFPACK2_SOURCES}" IFPACK2_CUDA_SOURCES ${DO_TRANSFORM})
         TRIBITS_ADD_LIBRARY(
           stokhos_ifpack2
           HEADERS ${IFPACK2_HEADERS}
@@ -720,7 +730,7 @@ IF (Stokhos_ENABLE_Sacado)
           APPEND_GLOB(MUELU_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
         ENDIF()
 
-        TRANSFORM_CPP_TO_CU("${MUELU_SOURCES}" MUELU_CUDA_SOURCES ${Kokkos_ENABLE_Cuda})
+        TRANSFORM_CPP_TO_CU("${MUELU_SOURCES}" MUELU_CUDA_SOURCES ${DO_TRANSFORM})
         TRIBITS_ADD_LIBRARY(
           stokhos_muelu
           HEADERS ${MUELU_HEADERS}
