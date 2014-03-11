@@ -293,13 +293,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-# Determine whether Kokkos refactor code is really supported
+# Make sure all requisite packages are enabled
 IF (Tpetra_ENABLE_Kokkos_Refactor AND
-    Tpetra_ENABLE_KokkosCore AND
-    Tpetra_ENABLE_KokkosCompat AND
-    Tpetra_ENABLE_KokkosLinAlg AND
-    Tpetra_ENABLE_KokkosContainers AND
-    Tpetra_ENABLE_KokkosMpiComm)
+    (NOT Tpetra_ENABLE_KokkosCore OR
+     NOT Tpetra_ENABLE_KokkosCompat OR
+     NOT Tpetra_ENABLE_KokkosLinAlg OR
+     NOT Tpetra_ENABLE_KokkosContainers OR
+     NOT Tpetra_ENABLE_KokkosMpiComm))
+  MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor is ON but not all required packages are enabled.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, and MpiComm.")
+ENDIF()
+
+IF (Tpetra_ENABLE_Kokkos_Refactor)
   SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
 ELSE()
   SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")

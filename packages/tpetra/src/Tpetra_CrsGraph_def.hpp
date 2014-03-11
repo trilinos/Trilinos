@@ -2793,10 +2793,10 @@ namespace Tpetra {
       const bool newDomSameAsSrc =
         newDomainMap->isSameAs (* (newImporter->getSourceMap ()));
       TEUCHOS_TEST_FOR_EXCEPTION(
-        colSameAsTgt && newDomSameAsSrc, std::invalid_argument, "If the new "
-        "Import is nonnull, then the current column Map must be the same as "
-        "the new Import's target Map, and the new domain Map must be the same "
-        "as the new Import's source Map.");
+        ! colSameAsTgt || ! newDomSameAsSrc, std::invalid_argument, "If the "
+        "new Import is nonnull, then the current column Map must be the same "
+        "as the new Import's target Map, and the new domain Map must be the "
+        "same as the new Import's source Map.");
     }
 #endif // HAVE_TPETRA_DEBUG
 

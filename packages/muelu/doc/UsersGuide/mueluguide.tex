@@ -213,6 +213,8 @@ Rather than implementing all possible algorithms, \muelu relies on other \trilin
 \cbb{repartition: keep proc 0}           {bool}      {true}          {Postprocessing for partitioning to keep processor 0 from dropping out. The goal
                                                                       is to keep processor 0 of the original fine level communication even when we use
                                                                       level subcommunicators.}
+\cbb{repartition: rebalance P and R}     {bool}      {true}          {Do rebalancing of R and P during the setup. This speeds up the solve, but slows
+                                                                      down the setup phases.}
 
 \cbb{sa: damping factor}                 {double}    {4/3}           {Damping factor for smoothed aggregation.}
 \cbb{sa: use filtered matrix}            {bool}      {true}          {Matrix to use for smoothing the tentative prolongator. The two options are: to

@@ -1109,9 +1109,24 @@ namespace Tpetra {
 
     // Create the union target Map.
     //
-    // FIXME (mfh 01 May 2013) It would be handy to have a Map
+    // mfh 01 May 2013, 28 Feb 2014: It might be handy to have a Map
     // constructor that takes the global min and max GIDs; that would
-    // obviate the need for Map to compute them (with an all-reduce).
+    // obviate the need for Map to compute them.  On the other hand,
+    // for signed GlobalOrdinal, this version of Map's constructor
+    // already computes as few all-reduces as possible (not including
+    // optimizations that might be possible if one were to fold in
+    // Directory construction).  The constructor must do two
+    // all-reduces:
+    //
+    //   1. Get the global number of GIDs (since the first argument is
+    //      INVALID, we're asking Map to compute this for us)
+    //
+    //   2. Figure out three things: global min and max GID, and
+    //      whether the Map is distributed or locally replicated.
+    //
+    // #2 above happens in one all-reduce (of three integers).
+    // #Figuring out whether the Map is distributed or locally
+    // #replicated requires knowing the global number of GIDs.
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     RCP<const map_type> unionTgtMap =
       rcp (new map_type (INVALID, unionTgtGIDs (), indexBaseUnion,

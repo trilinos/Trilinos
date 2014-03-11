@@ -68,6 +68,8 @@ private:
 
 public:
   typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::view_type view_type;
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -158,7 +160,7 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
   //! Computes dot product of this Vector against input Vector x.
-  Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+  dot_type dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
   //! Return 1-norm of this Vector.
@@ -166,7 +168,7 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
   //! Compute 2-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
+  mag_type norm2() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
   //! Compute Inf-norm of this Vector.

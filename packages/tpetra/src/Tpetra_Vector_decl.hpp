@@ -64,6 +64,8 @@ class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 
 public:
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+
   //! @name Constructor/Destructor Methods
   //@{
 

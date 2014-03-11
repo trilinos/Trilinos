@@ -125,11 +125,13 @@ namespace MueLu {
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 
-    RCP<ParameterList> params = rcp(new ParameterList());
-    params->set("printLoadBalancingInfo", true);
-    if (aggregates->AggregatesCrossProcessors())
-      params->set("printCommInfo",        true);
-    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    if (IsPrint(Statistics1)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      if (aggregates->AggregatesCrossProcessors())
+        params->set("printCommInfo",        true);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

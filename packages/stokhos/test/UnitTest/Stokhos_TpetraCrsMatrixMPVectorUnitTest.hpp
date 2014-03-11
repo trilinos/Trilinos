@@ -116,11 +116,14 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
+// Vector size used in tests
+const int VectorSize = 3;
+
 //
 // Test vector addition
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, VectorAdd, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, VectorAdd, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -128,9 +131,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -138,6 +140,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -174,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Add
   Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
-  for (size_t i=0; i<num_my_row; ++i) {
+  for (LocalOrdinal i=0; i<VectorSize; ++i) {
     alpha.fastAccessCoeff(i) = 1.0 + i;
     beta.fastAccessCoeff(i) = 2.0 * i;
   }
@@ -187,6 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Check
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
+  BaseScalar tol = 1.0e-14;
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
@@ -196,7 +202,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     }
     TEST_EQUALITY( y_view[i].size(), VectorSize );
     for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_EQUALITY( y_view[i].fastAccessCoeff(j), val.fastAccessCoeff(j) );
+      TEST_FLOATING_EQUALITY( y_view[i].fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
   }
 }
 
@@ -204,7 +210,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test vector dot product
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, VectorDot, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, VectorDot, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -212,16 +218,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
+  typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -257,38 +266,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Dot product
-  Scalar dot = x1->dot(*x2);
+  dot_type dot = x1->dot(*x2);
 
   // Check
 
   // Local contribution
-  Scalar local_val(VectorSize, BaseScalar(0.0));
+  dot_type local_val(0);
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
       BaseScalar v = generate_vector_coefficient<BaseScalar,size_t>(
         nrow, VectorSize, row, j);
-      local_val.fastAccessCoeff(j) += 0.12345 * v * v;
+      local_val += 0.12345 * v * v;
     }
   }
 
   // Global reduction
-  Scalar val(VectorSize, BaseScalar(0.0));
+  dot_type val(0);
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
                      Teuchos::outArg(val));
 
   out << "dot = " << dot << " expected = " << val << std::endl;
 
-  TEST_EQUALITY( dot.size(), VectorSize );
-  for (LocalOrdinal j=0; j<VectorSize; ++j)
-    TEST_EQUALITY( dot.fastAccessCoeff(j), val.fastAccessCoeff(j) );
+  BaseScalar tol = 1.0e-14;
+  TEST_FLOATING_EQUALITY( dot, val, tol );
 }
 
 //
 // Test multi-vector addition
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, MultiVectorAdd, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, MultiVectorAdd, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -296,9 +304,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -306,6 +313,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -348,7 +358,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Add
   Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
-  for (size_t i=0; i<num_my_row; ++i) {
+  for (LocalOrdinal i=0; i<VectorSize; ++i) {
     alpha.fastAccessCoeff(i) = 1.678 + i;
     beta.fastAccessCoeff(i)  = 2.234 * i;
   }
@@ -361,6 +371,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Check
   ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
+  BaseScalar tol = 1.0e-14;
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (size_t j=0; j<ncol; ++j) {
@@ -371,8 +382,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
       TEST_EQUALITY( y_view[j][i].size(), VectorSize );
       for (LocalOrdinal k=0; k<VectorSize; ++k)
-        TEST_EQUALITY( y_view[j][i].fastAccessCoeff(k),
-                       val.fastAccessCoeff(k) );
+        TEST_FLOATING_EQUALITY( y_view[j][i].fastAccessCoeff(k),
+                                val.fastAccessCoeff(k), tol );
     }
   }
 }
@@ -381,7 +392,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test multi-vector dot product
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, MultiVectorDot, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, MultiVectorDot, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -389,16 +400,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+  typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -440,35 +454,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Dot product
-  Array<Scalar> dots(ncol);
+  Array<dot_type> dots(ncol);
   x1->dot(*x2, dots());
 
   // Check
 
   // Local contribution
-  Array<Scalar> local_vals(ncol, Scalar(VectorSize, BaseScalar(0.0)));
+  Array<dot_type> local_vals(ncol, dot_type(0));
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (size_t j=0; j<ncol; ++j) {
       for (LocalOrdinal k=0; k<VectorSize; ++k) {
         BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
           nrow, ncol, VectorSize, row, j, k);
-        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+        local_vals[j] += 0.12345 * v * v;
       }
     }
   }
 
   // Global reduction
-  Array<Scalar> vals(ncol, Scalar(VectorSize, BaseScalar(0.0)));
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol), local_vals.getRawPtr(),
-                     vals.getRawPtr());
+  Array<dot_type> vals(ncol, dot_type(0));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol),
+                     local_vals.getRawPtr(), vals.getRawPtr());
 
+  BaseScalar tol = 1.0e-14;
   for (size_t j=0; j<ncol; ++j) {
     out << "dots(" << j << ") = " << dots[j]
         << " expected(" << j << ") = " << vals[j] << std::endl;
-    TEST_EQUALITY( dots[j].size(), VectorSize );
-    for (LocalOrdinal k=0; k<VectorSize; ++k)
-      TEST_EQUALITY( dots[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k) );
+    TEST_FLOATING_EQUALITY( dots[j], vals[j], tol );
   }
 }
 
@@ -476,7 +489,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test multi-vector dot product using subviews
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, MultiVectorDotSub, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, MultiVectorDotSub, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -484,16 +497,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
+  typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -542,36 +558,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_MultiVector> x2_sub = x2->subView(cols());
 
   // Dot product
-  Array<Scalar> dots(ncol_sub);
+  Array<dot_type> dots(ncol_sub);
   x1_sub->dot(*x2_sub, dots());
 
   // Check
 
   // Local contribution
-  Array<Scalar> local_vals(ncol_sub, Scalar(VectorSize, BaseScalar(0.0)));
+  Array<dot_type> local_vals(ncol_sub, dot_type(0));
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (size_t j=0; j<ncol_sub; ++j) {
       for (LocalOrdinal k=0; k<VectorSize; ++k) {
         BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
           nrow, ncol, VectorSize, row, cols[j], k);
-        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+        local_vals[j] += 0.12345 * v * v;
       }
     }
   }
 
   // Global reduction
-  Array<Scalar> vals(ncol_sub, Scalar(VectorSize, BaseScalar(0.0)));
+  Array<dot_type> vals(ncol_sub, dot_type(0));
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,
                      Teuchos::as<int>(ncol_sub), local_vals.getRawPtr(),
                      vals.getRawPtr());
 
+  BaseScalar tol = 1.0e-14;
   for (size_t j=0; j<ncol_sub; ++j) {
     out << "dots(" << j << ") = " << dots[j]
         << " expected(" << j << ") = " << vals[j] << std::endl;
-    TEST_EQUALITY( dots[j].size(), VectorSize );
-    for (LocalOrdinal k=0; k<VectorSize; ++k)
-      TEST_EQUALITY( dots[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k) );
+    TEST_FLOATING_EQUALITY( dots[j], vals[j], tol );
   }
 }
 
@@ -579,7 +594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test matrix-vector multiplication for a simple banded upper-triangular matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, MatrixVectorMultiply, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, MatrixVectorMultiply, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -587,9 +602,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -599,6 +613,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -679,6 +696,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Check
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
+  BaseScalar tol = 1.0e-14;
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
@@ -695,7 +713,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     }
     TEST_EQUALITY( y_view[i].size(), VectorSize );
     for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_EQUALITY( y_view[i].fastAccessCoeff(j), val.fastAccessCoeff(j) );
+      TEST_FLOATING_EQUALITY( y_view[i].fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
   }
 }
 
@@ -703,7 +721,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test matrix-multi-vector multiplication for a simple banded upper-triangular matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, MatrixMultiVectorMultiply, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, MatrixMultiVectorMultiply, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -711,9 +729,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -724,6 +741,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -810,6 +830,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Check
   ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
+  BaseScalar tol = 1.0e-14;
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
     for (size_t j=0; j<ncol; ++j) {
@@ -831,8 +852,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
       TEST_EQUALITY( y_view[j][i].size(), VectorSize );
       for (LocalOrdinal k=0; k<VectorSize; ++k)
-        TEST_EQUALITY( y_view[j][i].fastAccessCoeff(k),
-                       val.fastAccessCoeff(k) );
+        TEST_FLOATING_EQUALITY( y_view[j][i].fastAccessCoeff(k),
+                                val.fastAccessCoeff(k), tol );
     }
   }
 }
@@ -841,7 +862,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test flattening MP::Vector matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, Flatten, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, Flatten, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -849,9 +870,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -864,6 +884,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -937,7 +960,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph =
     Stokhos::create_flat_mp_graph(*graph, flat_x_map, flat_y_map, VectorSize);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
-    Stokhos::create_flat_matrix(*matrix, flat_graph);
+    Stokhos::create_flat_matrix(*matrix, flat_graph, VectorSize);
 
   // Multiply with flattened matix
   RCP<Tpetra_Vector> y2 = Tpetra::createVector<Scalar>(map);
@@ -951,14 +974,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //                  Teuchos::VERB_EXTREME);
 
   // Check
+  BaseScalar tol = 1.0e-14;
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
   ArrayRCP<Scalar> y2_view = y2->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
     TEST_EQUALITY( y_view[i].size(), VectorSize );
     TEST_EQUALITY( y2_view[i].size(), VectorSize );
     for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_EQUALITY( y_view[i].fastAccessCoeff(j),
-                     y2_view[i].fastAccessCoeff(j) );
+      TEST_FLOATING_EQUALITY( y_view[i].fastAccessCoeff(j),
+                              y2_view[i].fastAccessCoeff(j), tol );
   }
 }
 
@@ -966,7 +990,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test simple CG solve without preconditioning for a 1-D Laplacian matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, SimpleCG, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, SimpleCG, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -975,9 +999,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -987,6 +1010,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1064,10 +1090,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  typedef Teuchos::ScalarTraits<BaseScalar> BST;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typename BST::magnitudeType btol = 1e-9;
-  typename ST::magnitudeType tol = btol;
+  typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
+  typedef typename BST::mag_type base_mag_type;
+  typedef typename Tpetra_Vector::mag_type mag_type;
+  base_mag_type btol = 1e-9;
+  mag_type tol = btol;
   int max_its = 1000;
   bool solved = Stokhos::CG_Solve(*matrix, *x, *b, tol, max_its,
                                   out.getOStream().get());
@@ -1092,9 +1119,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     // Set small values to zero
     Scalar v = x_view[i];
     for (LocalOrdinal j=0; j<VectorSize; ++j) {
-      if (BST::magnitude(v.coeff(j)) < btol)
+      if (BST::abs(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (BST::magnitude(val.coeff(j)) < btol)
+      if (BST::abs(val.coeff(j)) < btol)
         val.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1110,7 +1137,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test simple CG solve with MueLu preconditioning for a 1-D Laplacian matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, SimplePCG_Muelu, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, SimplePCG_Muelu, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1120,9 +1147,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
   using Teuchos::getParametersFromXmlFile;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1132,6 +1158,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1216,10 +1245,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  typedef Teuchos::ScalarTraits<BaseScalar> BST;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typename BST::magnitudeType btol = 1e-9;
-  typename ST::magnitudeType tol = btol;
+  typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
+  typedef typename BST::mag_type base_mag_type;
+  typedef typename Tpetra_Vector::mag_type mag_type;
+  base_mag_type btol = 1e-9;
+  mag_type tol = btol;
   int max_its = 1000;
   bool solved = Stokhos::PCG_Solve(*matrix, *x, *b, *M, tol, max_its,
                                    out.getOStream().get());
@@ -1259,7 +1289,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, SimplePCG_Muelu, BaseScalar, LocalOrdinal, GlobalOrdinal, Node ) {}
+  Tpetra_CrsMatrix_MP, SimplePCG_Muelu, Storage, LocalOrdinal, GlobalOrdinal, Node ) {}
 
 #endif
 
@@ -1269,7 +1299,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test Belos GMRES solve for a simple banded upper-triangular matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, BelosGMRES, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, BelosGMRES, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1278,9 +1308,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1290,6 +1319,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1392,7 +1424,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
     }
     else
-      val = Scalar(0.0);
+      val = Scalar(VectorSize, BaseScalar(0.0));
     TEST_EQUALITY( x_view[i].size(), VectorSize );
 
     // Set small values to zero
@@ -1410,7 +1442,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, BelosGMRES, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, BelosGMRES, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {}
 
 #endif
@@ -1422,7 +1454,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // simple banded upper-triangular matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1431,9 +1463,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1443,6 +1474,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1554,7 +1588,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
     }
     else
-      val = Scalar(0.0);
+      val = Scalar(VectorSize, BaseScalar(0.0));
     TEST_EQUALITY( x_view[i].size(), VectorSize );
 
     // Set small values to zero
@@ -1572,7 +1606,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {}
 
 #endif
@@ -1583,7 +1617,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, BelosCG_Muelu, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, BelosCG_Muelu, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1593,9 +1627,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
   using Teuchos::getParametersFromXmlFile;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1605,6 +1638,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1755,7 +1791,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, BelosCG_Muelu, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, BelosCG_Muelu, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {}
 
 #endif
@@ -1766,7 +1802,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 // Test Amesos2 solve for a 1-D Laplacian matrix
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, Amesos2, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, Amesos2, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1775,9 +1811,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
 
-  const LocalOrdinal VectorSize = 3;
-  typedef typename Stokhos::DeviceForNode<Node>::type Device;
-  typedef Stokhos::StaticFixedStorage<LocalOrdinal,BaseScalar,VectorSize,Device> Storage;
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::device_type Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1788,6 +1823,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
+  typedef typename Device::host_mirror_device_type HostDevice;
+  if (!HostDevice::is_initialized())
+    HostDevice::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1923,7 +1961,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, Amesos2, BaseScalar, LocalOrdinal, GlobalOrdinal, Node )
+  Tpetra_CrsMatrix_MP, Amesos2, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {}
 
 #endif
@@ -1943,3 +1981,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosCG_Muelu, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2, S, LO, GO, N )
+
+#define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
+  typedef typename Stokhos::DeviceForNode<N>::type Device;              \
+  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> SFS; \
+  CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
+
+#define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \
+  CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                                    \
+  typedef Stokhos::DynamicStorage<int,double,Device> DS;                \
+  CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, int, int, N)

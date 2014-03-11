@@ -135,10 +135,10 @@ namespace MueLu {
       Cycle_ = cycleMap[cycleType];
     }
 
-    this->maxCoarseSize_    = paramList.get<int>("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
-    this->numDesiredLevel_  = paramList.get<int>("max levels",          Hierarchy::GetDefaultMaxLevels());
-    this->graphOutputLevel_ = paramList.get<int>("debug: graph level", -1);
-    this->blockSize_        = paramList.get<int>("number of equations", 1);
+    this->maxCoarseSize_       = paramList.get<int> ("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
+    this->numDesiredLevel_     = paramList.get<int> ("max levels",          Hierarchy::GetDefaultMaxLevels());
+    this->graphOutputLevel_    = paramList.get<int> ("debug: graph level", -1);
+    this->blockSize_           = paramList.get<int> ("number of equations", 1);
 
     // Save level data
     if (paramList.isSublist("print")) {
@@ -193,6 +193,10 @@ namespace MueLu {
         }
       }
     }
+
+    // Detect if we do implicit P and R rebalance
+    if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
+      this->implicitPRrebalance_ = !paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -539,7 +543,8 @@ namespace MueLu {
       // Rebalanced P
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
-      newPparams.set("type", "Interpolation");
+      newPparams.set("type",     "Interpolation");
+      newPparams.set("implicit", this->implicitPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -548,7 +553,8 @@ namespace MueLu {
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
-      newRparams.set("type", "Restriction");
+      newRparams.set("type",     "Restriction");
+      newRparams.set("implicit", this->implicitPRrebalance_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newR->  SetFactory("R",           manager.GetFactory("R"));

@@ -47,9 +47,11 @@
 
 #include "Kokkos_SerialNode.hpp"
 
-// Instantiate test for serial node
+// Instantiate tests for serial node
+// Only static storage as dynamic has no chance of working without
+// KokkosRefactor
 using KokkosClassic::SerialNode;
-CRSMATRIX_MP_VECTOR_TESTS_SLGN( double, int, int, SerialNode )
+CRSMATRIX_MP_VECTOR_TESTS_N_SFS( SerialNode )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

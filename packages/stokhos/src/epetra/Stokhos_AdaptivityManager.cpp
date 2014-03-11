@@ -198,7 +198,7 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3Tens
 
    // loop over deterministic rows 
    for(int localM=0;localM<J_k.NumMyRows();localM++) {
-      int m = J_k.GRID(localM);
+     // int m = J_k.GRID(localM); // unused
 
       // grab row basis
       Teuchos::RCP<const Stokhos::ProductBasis<int,double> > rowStochBasis 

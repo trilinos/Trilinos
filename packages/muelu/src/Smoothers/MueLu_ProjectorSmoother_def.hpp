@@ -147,7 +147,7 @@ namespace MueLu {
       for (int k = 0; k < m; k++) {                                     // orthogonalize
         RCP<const Tpetra::Vector<SC,LO,GO,NO> > Bk = Borth__->getVector(k);
 
-        Xi->dot(*Bk, dot);
+        Xi->dot(*Bk, dot());
         Xi->update(-dot[0], *Bk, Teuchos::ScalarTraits<Scalar>::one());
       }
     }

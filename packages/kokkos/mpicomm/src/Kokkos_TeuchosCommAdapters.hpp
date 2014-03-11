@@ -59,9 +59,9 @@
 namespace Teuchos {
 
 //! Variant of send() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
+template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
 void
-send (const Kokkos::View<T,L,D,M>& sendBuffer,
+send (const Kokkos::View<T,L,D,M,S>& sendBuffer,
       const Ordinal count,
       const int destRank,
       const int tag,
@@ -71,9 +71,9 @@ send (const Kokkos::View<T,L,D,M>& sendBuffer,
 }
 
 //! Variant of ssend() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
+template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
 void
-ssend (const Kokkos::View<T,L,D,M>& sendBuffer,
+ssend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
        const Ordinal count,
        const int destRank,
        const int tag,
@@ -83,9 +83,9 @@ ssend (const Kokkos::View<T,L,D,M>& sendBuffer,
 }
 
 //! Variant of readySend() that accepts a message tag.
-template<typename Ordinal, typename T, typename L, typename D, typename M>
+template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
 void
-readySend (const Kokkos::View<T,L,D,M>& sendBuffer,
+readySend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
            const Ordinal count,
            const int destRank,
            const int tag,
@@ -95,9 +95,9 @@ readySend (const Kokkos::View<T,L,D,M>& sendBuffer,
 }
 
 //! Variant of isend() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
+template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
 RCP<CommRequest<Ordinal> >
-isend (const Kokkos::View<T,L,D,M>& sendBuffer,
+isend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
        const int destRank,
        const int tag,
        const Comm<Ordinal>& comm)
@@ -107,9 +107,9 @@ isend (const Kokkos::View<T,L,D,M>& sendBuffer,
 }
 
 //! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
+template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
 RCP<CommRequest<Ordinal> >
-ireceive (const Kokkos::View<T,L,D,M>& recvBuffer,
+ireceive (const Kokkos::View<T,L,D,M,S>& recvBuffer,
           const int sourceRank,
           const int tag,
           const Comm<Ordinal>& comm)

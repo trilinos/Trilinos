@@ -42,6 +42,10 @@
 #include "Sacado_cmath.hpp"
 #include <ostream>      // for std::ostream
 
+#ifdef __CUDACC__
+#include <math_functions.h>
+#endif
+
 /*
 namespace Sacado {
   namespace MP {
@@ -724,8 +728,13 @@ namespace Sacado {                                                      \
 
 MP_BINARYOP_MACRO(atan2, Atan2Op, std::atan2)
 MP_BINARYOP_MACRO(pow, PowerOp, std::pow)
+#ifdef __CUDACC__
+MP_BINARYOP_MACRO(max, MaxOp, ::max)
+MP_BINARYOP_MACRO(min, MinOp, ::min)
+#else
 MP_BINARYOP_MACRO(max, MaxOp, std::max)
 MP_BINARYOP_MACRO(min, MinOp, std::min)
+#endif
 
 #undef MP_BINARYOP_MACRO
 
@@ -859,7 +868,6 @@ namespace Sacado {
   namespace MP {
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
     std::ostream& operator << (std::ostream& os,
                                const Expr<T>& x) {
       typedef typename T::storage_type storage_type;

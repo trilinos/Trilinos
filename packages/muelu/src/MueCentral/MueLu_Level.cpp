@@ -418,31 +418,7 @@ namespace MueLu {
         if (IsAvailable(ename, factory)) {
           std::string strType = it->second->GetData().getAny(true).typeName();
 
-          if (strType.find("Xpetra::Matrix") != std::string::npos) {
-            outputter.outputField("Matrix" );
-            outputter.outputField("available");
-          } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
-            outputter.outputField("Vector");
-            outputter.outputField("available");
-          } else if (strType.find("Xpetra::Map") != std::string::npos) {
-            outputter.outputField("Map");
-            outputter.outputField("available");
-          } else if (strType.find("MueLu::SmootherBase") != std::string::npos) {
-            outputter.outputField("SmootherBase");
-            outputter.outputField("available");
-          } else if (strType.find("MueLu::Aggregates") != std::string::npos) {
-            outputter.outputField("Aggregates");
-            outputter.outputField("available");
-          } else if (strType.find("MueLu::AmalgamationInfo") != std::string::npos) {
-            outputter.outputField("AmalgamationInfo");
-            outputter.outputField("available");
-          } else if (strType.find("MueLu::Graph") != std::string::npos) {
-            outputter.outputField("Graph");
-            outputter.outputField("available");
-          } else if (strType.find("MueLu::Constraint") != std::string::npos) {
-            outputter.outputField("Constraint");
-            outputter.outputField("available");
-          } else if (strType == "int") {
+          if        (strType == "int") {
             outputter.outputField(strType);
             outputter.outputField(Teuchos::getValue<int>(it->second->GetData()));
           } else if (strType == "double") {
@@ -452,9 +428,23 @@ namespace MueLu {
             outputter.outputField(strType);
             outputter.outputField(Teuchos::getValue<std::string>(it->second->GetData()));
           } else {
-            outputter.outputField(strType);
+            size_t npos = std::string::npos;
+
+            if      (strType.find("Xpetra::Matrix")          != npos) outputter.outputField("Matrix" );
+            else if (strType.find("Xpetra::MultiVector")     != npos) outputter.outputField("Vector");
+            else if (strType.find("Xpetra::Map")             != npos) outputter.outputField("Map");
+            else if (strType.find("Xpetra::Import")          != npos) outputter.outputField("Import");
+            else if (strType.find("Xpetra::Export")          != npos) outputter.outputField("Export");
+            else if (strType.find("MueLu::SmootherBase")     != npos) outputter.outputField("SmootherBase");
+            else if (strType.find("MueLu::Aggregates")       != npos) outputter.outputField("Aggregates");
+            else if (strType.find("MueLu::AmalgamationInfo") != npos) outputter.outputField("AmalgamationInfo");
+            else if (strType.find("MueLu::Graph")            != npos) outputter.outputField("Graph");
+            else if (strType.find("MueLu::Constraint")       != npos) outputter.outputField("Constraint");
+            else                                                      outputter.outputField(strType);
+
             outputter.outputField("available");
           }
+
         } else {
           outputter.outputField("unknown");
           outputter.outputField("not available");

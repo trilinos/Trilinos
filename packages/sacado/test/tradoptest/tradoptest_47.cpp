@@ -131,11 +131,7 @@ main(void)
 
 	C xC, yC;
 
-	double dx, dy, f, xd, yd;
-
-	long xL, yL;
-
-	int xi, yi;
+	double dx, f, xd;
 
 
 

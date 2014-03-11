@@ -158,7 +158,7 @@ public:
     return ArithTraits<T>::abs (x);
   }
   //! The "dot product" of two values x and y of type T.
-  static KOKKOS_DEVICE_FUNCTION mag_type dot (const T& x, const T& y) {
+  static KOKKOS_DEVICE_FUNCTION dot_type dot (const T& x, const T& y) {
     return x * y;
   }
 };
@@ -166,16 +166,16 @@ public:
 
 // CUDA does not support long double in device functions.
 template<>
-struct ScalarTraits<long double>
+struct InnerProductSpaceTraits<long double>
 {
   typedef long double val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
@@ -183,16 +183,16 @@ struct ScalarTraits<long double>
 
 // CUDA does not support std::complex<T> in device functions.
 template<class T>
-struct ScalarTraits<std::complex<T> >
+struct InnerProductSpaceTraits<std::complex<T> >
 {
   typedef std::complex<T> val_type;
-  typedef ArithTraits<val_type>::mag_type mag_type;
+  typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
@@ -214,31 +214,31 @@ struct ScalarTraits<std::complex<T> >
 // dd_real and qd_real are not marked as device functions.
 #ifdef HAVE_KOKKOS_QD
 template<>
-struct ScalarTraits<dd_real>
+struct InnerProductSpaceTraits<dd_real>
 {
   typedef dd_real val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
 
 template<>
-struct ScalarTraits<qd_real>
+struct InnerProductSpaceTraits<qd_real>
 {
   typedef qd_real val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };

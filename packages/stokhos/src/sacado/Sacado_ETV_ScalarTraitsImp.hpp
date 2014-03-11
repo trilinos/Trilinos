@@ -48,6 +48,7 @@
 #include "Teuchos_SerializationTraits.hpp"
 #include "Teuchos_SerializationTraitsHelpers.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {

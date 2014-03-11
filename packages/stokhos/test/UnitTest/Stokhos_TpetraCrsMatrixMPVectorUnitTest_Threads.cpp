@@ -45,17 +45,33 @@
 
 #include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
+#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Threads.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
-// Instantiate test for serial node
+// Instantiate tests for threads node
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> ThreadsWrapperNode;
-CRSMATRIX_MP_VECTOR_TESTS_SLGN( double, int, int, ThreadsWrapperNode )
+CRSMATRIX_MP_VECTOR_TESTS_N( ThreadsWrapperNode )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
+  Kokkos::global_sacado_mp_vector_size = VectorSize;
+
+  // Initialize threads
+  const size_t num_cores =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t num_hyper_threads =
+    Kokkos::hwloc::get_available_threads_per_core();
+  Kokkos::Threads::initialize(num_cores * num_hyper_threads);
+  Kokkos::Threads::print_configuration(std::cout);
+
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  // Finish up
+  Kokkos::Threads::finalize();
 
   return ret;
 }

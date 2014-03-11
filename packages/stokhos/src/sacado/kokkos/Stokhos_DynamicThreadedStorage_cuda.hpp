@@ -78,6 +78,12 @@ namespace Stokhos {
       allocate_coeff_array(coeff_, is_owned_, total_sz_, x);
     }
 
+    //! Constructor for creating a view
+    KOKKOS_INLINE_FUNCTION
+    DynamicThreadedStorage(const ordinal_type& sz, pointer v, bool owned) :
+      coeff_(v), sz_(sz), stride_(num_threads()), total_sz_(sz_*stride_),
+      is_owned_(owned) {}
+
     //! Constructor
     __device__
     DynamicThreadedStorage(const DynamicThreadedStorage& s) :
