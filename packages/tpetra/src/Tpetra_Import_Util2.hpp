@@ -422,6 +422,10 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
     last_len       = new_len;
   }
 
+  TEUCHOS_TEST_FOR_EXCEPTION(CSR_rowptr[N] != mynnz,
+			     std::invalid_argument, "unpackAndCombineIntoCrsArrays: CSR_rowptr[last] = " << CSR_rowptr[N]
+                             << "!= mynnz = " << mynnz << ".");  
+
   // Preseed TargetPids with -1 for local
   if(as<size_t>(TargetPids.size())!=mynnz) TargetPids.resize(mynnz);
   TargetPids.assign(mynnz,-1);
@@ -440,6 +444,9 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
     size_t ToRow   = CSR_rowptr[i];
     NewStartRow[i] += Source_rowptr[i+1]-Source_rowptr[i];
 
+    if(Source_rowptr[i+1]-Source_rowptr[i] !=SourceMatrix.getNumEntriesInLocalRow(i))
+      throw std::runtime_error("U&CWOPIDS : Same counts mismatch");
+
     for(j=Source_rowptr[i]; j<Source_rowptr[i+1]; j++) {
       CSR_vals[ToRow + j - FromRow]   = Source_vals[j];
       CSR_colind[ToRow + j - FromRow] = sourceColMap.getGlobalElement(Source_colind[j]);
@@ -454,6 +461,9 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
     size_t ToRow   = CSR_rowptr[permuteToLIDs[i]];
 
     NewStartRow[permuteToLIDs[i]] += Source_rowptr[FromLID+1]-Source_rowptr[FromLID];
+
+    if(Source_rowptr[FromLID+1]-Source_rowptr[FromLID] !=SourceMatrix.getNumEntriesInLocalRow(FromLID))
+      throw std::runtime_error("U&CWOPIDS : Pemute counts mismatch");
 
     for(j=Source_rowptr[FromLID]; j<Source_rowptr[FromLID+1]; j++) {
       CSR_vals[ToRow + j - FromRow]   = Source_vals[j];
