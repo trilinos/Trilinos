@@ -3849,7 +3849,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   struct  ML_CSR_MSRdata *csr_data;
   ML_Operator *Pmatrix;
   double *Pvals;
-  int    *Pptr, *Pcols, NVertLines;
+  int    *Pptr, *Pcols, NVertLines, Nglobal, Ncglobal;
 
   ML_Aggregate * ag = (ML_Aggregate *) data;
 
@@ -3882,6 +3882,16 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
 
   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]), &(ml->SingleLevel[clevel]),
                           &(ml->SingleLevel[level]));
+
+  Nglobal = Amat->invec_leng;
+  Ncglobal = Ncoarse;
+  Nglobal = ML_Comm_GsumInt( ml->comm, Nglobal);
+  Ncglobal= ML_Comm_GsumInt( ml->comm, Ncglobal);
+
+  if (ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) {
+       printf("SemiCoarsening: Coarsening from %d to %d\n",Nglobal,Ncglobal);
+  }
+
 
 #ifdef ML_TIMING
   ml->Pmat[clevel].build_time   =  GetClock() - t0;
