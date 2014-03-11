@@ -79,6 +79,9 @@ Usage::
 
   APPEND_GLOBAL_SET(<varName> <arg0> <arg1> ...)
 
+NOTE: The variable ``<varName>`` must exist before calling this function.
+To set it empty initially use `GLOBAL_NULL_SET()`_.
+
 APPEND_SET()
 ------------
 
@@ -278,6 +281,89 @@ This just calls::
 
   SET(<varName> [other args] CACHE INTERNAL "")
 
+JOIN()
+------
+
+Join a set of strings into a single string using a join string.
+
+Usage::
+
+  JOIN(<outputStrVar> <sepStr> <quoteElements> "<string0>" "<string1"> ...)
+
+Arguments:
+
+  ``<outputStrVar>``
+
+    The name of a variable that will hold the output string.
+
+  ``<sepStr>``
+
+    A string to use to join the list of strings.
+
+  ``<quoteElements>``
+
+    If TRUE, then each ``<stingi>`` is quoted using an escaped quote char
+     ``\"``.  If ``FALSE`` then no escaped quote is used.
+
+On output the variable ``<outputStrVar>`` is set to::
+
+  "<string0><sepStr><string1><sepStr>..."
+
+If ``<quoteElements>=TRUE``, then it is set to::
+
+  "\"<string0>\"<sepStr>\"<string1>\"<sepStr>..."
+
+For example, the latter can be used to set up a set of command-line
+arguments given a CMake array like::
+
+  JOIN(CMND_LINE_ARGS " " TRUE ${CMND_LINE_ARRAY})
+
+WARNING: Be careful to quote string arguments that have spaces because CMake
+interpet those ase array boundaries.
+
+MESSAGE_WRAPPER()
+-----------------
+
+Function that wraps the standard CMake/CTest ``MESSAGE()`` function call in
+order to allow unit testing to intercept the call.
+
+Usage::
+
+  MESSAGE_WRAPPER(<arg0> <arg1> ...)
+
+This function takes exactly the same argumnets as built-in ``MESSAGE()``.
+When the varible ``MESSAGE_WRAPPER_UNIT_TEST_MODE`` is set to ``TRUE``, then
+this function will not call ``MESSAGE(<arg0> <arg1> ...)`` but instead will
+prepend set to global varible ``MESSAGE_WRAPPER_INPUT`` that input
+argumnets.  To capture just this call's input, first call
+``GLOBAL_NULL_SET(MESSAGE_WRAPPER_INPUT(MESSAGE_WRAPPER_INPUT)`` before
+calling this function.
+
+This function allows one to unit test other user-defined CMake macros and
+functions that call this to catch error conditions wihtout stopping the
+CMake program.  Otherwise, this is used to capture print messages to verify
+that they say the right thing.
+
+MULTILINE_SET()
+---------------
+
+Function to set a single string by concatenating a list of separate strings
+
+Usage::
+
+  MULTILINE_SET(<outputStrVar>
+    "<string0>"
+    "<string1>"
+    ...
+    )
+
+On output, the local variables ``<outputStrVar>`` is set to::
+
+  "<string0><string1>..."
+
+The purpose of this is to make it easier to set longer strings without going
+to far to the right.
+
 PARSE_ARGUMENTS()
 -----------------
 
@@ -387,4 +473,289 @@ Usage::
 This function just prepends the command-line arguments in the string
 ``"<extraArgs>"`` but does not add an extra space if ``<var>`` is empty on
 input.
+
+PREPEND_GLOBAL_SET()
+--------------------
+
+Utility macro that prepends arguments to a global variable (reduces
+boiler-plate code and mistakes).
+
+Usage::
+
+  PREPEND_GLOBAL_SET(<varName> <arg0> <arg1> ...)
+
+NOTE: The variable ``<varName>`` must exist before calling this function.
+To set it empty initially use `GLOBAL_NULL_SET()`_.
+
+APPEND_SET()
+------------
+
+Utility function to append elements to a varible (reduces boiler-plate
+code).
+
+Usage::
+
+  APPEND_SET(<varName> <arg0> <arg1> ...)
+
+Just calls::
+
+  LIST(APPEND <varName> <arg0> <arg1> ...)
+
+PRINT_NONEMPTY_VAR()
+--------------------
+
+Print a defined variable giving its name then value only if it is not empty.
+
+Usage::
+
+   PRINT_NONEMPTY_VAR(<varName>)
+
+Calls ``PRINT_VAR(<varName>)`` if ``${<varName>}`` is not empty.
+
+PRINT_VAR()
+-----------
+
+Unconditionally print a variable giving its name then value.
+
+Usage::
+
+  PRINT_VAR(<varName>)
+
+This prints::
+
+  MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
+
+The variable ``<varName>`` can be defined or undefined or empty.  This uses
+an explicit "-- " line prefix so that it prints nice even on Windows CMake.
+
+REMOVE_GLOBAL_DUPLICATES()
+--------------------------
+
+Remove duplicate elements from a global list variable.
+
+Usage::
+
+  REMOVE_GLOBAL_DUPLICATES(<globalVarName>)
+
+This function is necessary in order to preserve the "global" nature of the
+variable.  If you just call LIST(REMOVE_DUPLICATES ...) it will actually
+create a local variable of the same name and shadow the global variable!
+That is a fun bug to track down!
+
+SET_AND_INC_DIRS()
+------------------
+
+Set a variable to an include dir and call ``INCLUDE_DIRECTORIES()`` (removes
+boiler plate).
+
+Usage:
+
+  SET_AND_INC_DIRS(<dirVarName> <includeDir>)
+
+On output, this justs ``<dirVarName>`` to ``<includeDir>`` in the local
+scope and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
+
+SET_CACHE_ON_OFF_EMPTY()
+------------------------
+
+Usage::
+
+  SET_CACHE_ON_OFF_EMPTY(<varName> <initialVal> "<docString>" [FORCE])
+
+Sets a special string cache variable with possible values "", "ON", or
+"OFF".  This results in a nice dropdown box in the CMake cache manipulation
+GUIs.
+
+SET_DEFAULT()
+-------------
+
+Give a local variable a default if a non-empty value is not already set.
+
+Usage::
+
+  SET_DEFAULT(<varName> <arg0> <arg1> ...)
+
+If on input ``"${<varName>}"==""``, then ``<varName>`` is set to the given
+default.  Otherwise, the existing non-empty value is preserved.
+
+SET_DEFAULT_AND_FROM_ENV()
+--------------------------
+
+Set a default value for a local variable and override from an env var of the
+same name if it is set.
+
+Usage::
+
+  SET_DEFAULT_AND_FROM_ENV(<varName> <defaultVal>)
+
+First calls ``SET_DEFAULT(<varName> <defaultVal>)`` and then looks for an
+environment variable named ``<varName>`` and if non-empty, then overrides
+the value of ``<varName>``.
+
+This macro is primarily used in CTest code to provide a way to pass in the
+value of CMake variables.  Older versions of ``ctest`` did not support the
+option ``-D <var>:<type>=<value>`` to allow varaibles to be set through the
+commandline like ``cmake`` always allowed.
+
+SPLIT()
+-------
+
+Split a string varible into a string array/list variable.
+
+Usage::
+
+  SPLIT("<inputStr>" "<sepStr>" <outputStrListVar>)
+
+The ``<sepStr>`` string is used with ``STRING(REGEX ...)`` to replace all
+occurrences of ``<sepStr>` in ``<inputStr>`` with ";" and writing into
+``<outputStrListVar>``.
+
+WARNING: ``<sepStr>`` is interpreted as a regular expression so keep that in
+mind when considering special regex chars like ``'*'``, ``'.'``, etc!
+
+TIMER_GET_RAW_SECONDS()
+-----------------------
+
+Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
+UTC.
+
+Usage::
+
+  TIMER_GET_RAW_SECONDS(<rawSecondsVar>)
+
+This function is used along with `TIMER_GET_REL_SECONDS()`_, and
+`TIMER_PRINT_REL_TIME()`_ to time big chunks of CMake code for timing and
+profiling purposes.  See `TIMER_PRINT_REL_TIME()`_ for more details and an
+example.
+
+NOTE: This function runs an external process to run the ``date`` command.
+Therefsore, it only works on Unix/Linux type systems that have a standard
+``date`` command.  Since this runs an external process, this function should
+only be used to time very course grained operations (i.e. that take longer
+than a second).
+
+TIMER_GET_REL_SECONDS()
+-----------------------
+
+Return the relative time between start and stop seconds.
+
+Usage::
+
+  TIMER_GET_REL_SECONDS(<startSeconds> <endSeconds> <relSecondsOutVar>)
+
+This simple function computes the relative number of seconds between
+``<startSeconds>`` and ``<endSeconds>`` (i.e. from
+`TIMER_GET_RAW_SECONDS()`_) and sets the result in the local variable
+``<relSecondsOutVar>``.
+
+TIMER_PRINT_REL_TIME()
+----------------------
+
+Print the relative time between start and stop timers in ``<min>m<sec>s``
+format.
+
+Usage:
+
+  TIMER_PRINT_REL_TIME(<startSeconds> <endSeconds> "<messageStr>")
+
+Differences the raw times ``<startSeconds>`` and ``<endSeconds>``
+(i.e. gotten from `TIMER_GET_RAW_SECONDS()`_) and prints the time in
+``<min>m<sec>s`` format.  This can only resolve times a second or greater
+apart.  If the start and end times are less than a second then ``0m0s`` will
+be printed.
+
+This is meant to be used with `TIMER_GET_RAW_SECONDS()`_ to time expensive
+blocks of CMake code like::
+
+  TIMER_GET_RAW_SECONDS(REAL_EXPENSIVE_START)
+
+  REAL_EXPENSIVE(...)
+
+  TIMER_GET_RAW_SECONDS(REAL_EXPENSIVE_END)
+
+  TIMER_PRINT_REL_TIME(${REAL_EXPENSIVE_START} ${REAL_EXPENSIVE_END}
+     "REAL_EXPENSIVE() time")
+
+This will print something like::
+
+  REAL_EXPENSIVE() time: 0m5s
+
+Again, don't try to time something that takes less than 1 second as it will
+be recored as ``0m0s``.
+  
+UNITTEST_COMPARE_CONST()
+------------------------
+
+Perform a single unit test equality check and update overall test statistics
+
+Usage::
+
+  UNITTEST_COMPARE_CONST(<varName> <expectedValue>)
+
+If ``${<varName>} == <expectedValue>``, then the check passes, otherwise it
+fails.  This prints the variable name and values and shows the test result.
+
+This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+by the unit test harness system to assess overall pass/fail.
+
+UNITTEST_STRING_REGEX()
+-----------------------
+
+Perform a series regexes of given strings and update overall test statistics.
+
+Usage::
+
+  UNITTEST_STRING_REGEX(
+    <inputString>
+    REGEX_STRINGS <str0> <str1> ...
+    )
+
+If the ``<inputString>`` matches all of the of the regexs ``<str0>``,
+''<str1>``, ..., then the test passes.  Otherwise it fails.
+
+This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+by the unit test harness system to assess overall pass/fail.
+
+UNITTEST_FILE_REGEX()
+---------------------
+
+Perform a series regexes of given strings and update overall test statistics.
+
+Usage::
+
+  UNITTEST_FILE_REGEX(
+    <inputFileName>
+    REGEX_STRINGS <str1> <str2> ...
+    )
+
+The contents of ``<inputFileName>`` are read into a string and then passed
+to `UNITTEST_STRING_REGEX()`_ to assess pass/fail.
+
+UNITTEST_FINAL_RESULT()
+-----------------------
+
+Print final statstics from all tests and assert final pass/fail
+
+Usage::
+
+  UNITTEST_FINAL_RESULT(<expectedNumPassed>)
+
+If ``${UNITTEST_OVERALL_PASS}==TRUE`` and ``${UNITTEST_OVERALL_NUMPASSED} ==
+<expectedNumPassed>``, then the overall test program is determined to have
+passed and string::
+
+ "Final UnitTests Result: PASSED"
+
+is printed.  Otherwise, the overall tets program is determined to have
+failed, the string::
+
+ "Final UnitTests Result: FAILED"
+
+is printed and ``MESSAGE(SEND_ERROR "FAIL")`` is called.
+
+The reason that we require passing in the expected number of passed tests is
+an an extra precaution to make sure that important unit tests are not left
+out.  CMake is a loosely typed language and it pays to be a little paranoid.
 

@@ -37,7 +37,20 @@
 # ************************************************************************
 # @HEADER
 
-MACRO(SET_AND_INC_DIRS DIR_VAR_NAME INCLUDE_DIR)
+#
+# @MACRO: SET_AND_INC_DIRS()
+#
+# Set a variable to an include dir and call ``INCLUDE_DIRECTORIES()`` (removes
+# boiler plate).
+#
+# Usage:
+#
+#   SET_AND_INC_DIRS(<dirVarName> <includeDir>)
+#
+# On output, this justs ``<dirVarName>`` to ``<includeDir>`` in the local
+# scope and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
+#
+MACRO(SET_AND_INC_DIRS  DIR_VAR_NAME  INCLUDE_DIR)
   SET(${DIR_VAR_NAME} ${INCLUDE_DIR})
   INCLUDE_DIRECTORIES(${${DIR_VAR_NAME}})
 ENDMACRO()

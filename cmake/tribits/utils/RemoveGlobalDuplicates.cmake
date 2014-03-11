@@ -40,6 +40,20 @@
 INCLUDE(AssertDefined)
 INCLUDE(GlobalSet)
 
+#
+# @FUNCTION: REMOVE_GLOBAL_DUPLICATES()
+#
+# Remove duplicate elements from a global list variable.
+#
+# Usage::
+#
+#   REMOVE_GLOBAL_DUPLICATES(<globalVarName>)
+#
+# This function is necessary in order to preserve the "global" nature of the
+# variable.  If you just call LIST(REMOVE_DUPLICATES ...) it will actually
+# create a local variable of the same name and shadow the global variable!
+# That is a fun bug to track down!
+#
 FUNCTION(REMOVE_GLOBAL_DUPLICATES VARNAME)
   ASSERT_DEFINED(${VARNAME})
   IF (${VARNAME})

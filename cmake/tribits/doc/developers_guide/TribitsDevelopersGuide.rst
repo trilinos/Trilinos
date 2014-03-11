@@ -81,10 +81,32 @@ some interesting gotchas.  In order to effectively use TriBITS (or just raw
 CMake) to construct and maintain a project's CMake files, one must know the
 basic rules of CMake.  
 
-The first thing to understand about the CMake language is that everthing is
-just a string (or an array of strings) and functions that operate on strings.
-An array argument is just a single with elements separated by semi-colons
-"<str0>;<str1>;...".
+The first thing to understand about the CMake language is that everthing line
+of CMake code is just a command taking a string (or an array of strings) and
+functions that operate on strings.  An array argument is just a single with
+elements separated by semi-colons ``"<str0>;<str1>;..."``.  CMake is a bit odd
+in how it deals with these arrays (which just represented as a string with
+elements separated with semi-colons ``';'``).  For example, all of the
+following are equivalent and pass in a CMake array with 3 elements [``A``],
+[``B``], and [``C``]::
+
+  SOME_FUNC(A B C)
+  SOME_FUNC("A" "B" "C")
+  SOME_FUNC("A;B;C")
+
+However, the above is *not* the same as::
+
+  SOME_FUNC("A B C")
+
+which just passes in a single element with value [``A B C``].  Raw quotes in
+CMake basically escapes the interpetation of space characters as array element
+boundaries.  Quotes around arguments with no spaces does nothing (as seen
+above).  In order to get a quote char [``"``] into string, you must escape it
+as::
+
+  SOME_FUNC(\"A\")
+
+which passes an array with the single argument [``\"A\"``].
 
 Varibles are set using a built-in CMke function that just takes string
 arguments like::
@@ -94,34 +116,49 @@ arguments like::
 In CMake, the above is idential, in every way, to::
 
   SET(SOME_VARIABLE some_value)
-
-or::
-
   SET("SOME_VARIABLE;"some_value")
+  SET("SOME_VARIABLE;some_value")
 
 The function ``SET()`` simply interprets the first argument to as the name of
 a varible to set in the local scope.  Many other built-in and user-defined
-CMake functions work the same way.
+CMake functions work the same way.  That is some of the string argumnets are
+interpreted as the names of variables.
+
+However, CMake appears to parse arguments differently for built-in CMake
+control structure functions like ``FOREACH()`` and ``IF()`` and does not just
+interpret them as a string array.  For example::
+
+  FOREACH (SOME_VAR "a;b;c")
+    MESSAGE("SOME_VAR='${SOME_VAR}'")
+  ENDFOREACH()
+
+prints ```SOME_VAR='a;b;c'`` instead of printing ``SOME_VAR='a'`` followed by
+``SOME_VAR='b'``, etc., as you would otherwise expect.  Therefore, this simple
+rule for the handling of function arguments as string arrays does not hold for
+CMake logic control commands.  Just follow the CMake documentation for these
+control structures..
 
 CMake offers a rich assortment of built-in functions for doing all sorts of
 things.  As part of these functions are the built-in ``MACRO()`` and the
 ``FUNCTION()`` functions which allow you to create user-defined macros and
-function.  All of these built-in and user-defined macros and functions work
-exactly the same way; they take in an array of string arguments.  Some
-functions take in positional arguments but most actually take a combination of
-positional and keyword arguments.
+functions (which is what TriBITS is built on).  All of these built-in and
+user-defined macros and functions work exactly the same way; they take in an
+array of string arguments.  Some functions take in positional arguments but
+most actually take a combination of positional and keyword arguments (see
+`PARSE_ARGUMENTS()`_).
 
 Varible names are translated into their stored values using
 ``${SOME_VARIABLE}``.  The value that is extracted depends on if the varible
 is set in the local or global (cache) scope.  The local scopes for CMake start
-in the base project directory in its ``CMakeLists.txt`` file.  Any varibles
-that are created by macros in that base local scope are seen across an entire
-project but are *not* persistent across ``cmake`` configure invocations.
+in the base project directory in its base ``CMakeLists.txt`` file.  Any
+varibles that are created by macros in that base local scope are seen across
+an entire project but are *not* persistent across ``cmake`` configure
+invocations.
 
 The handling of variables is one area where CMake is radically different from
 most other languages.  First, a varible that is not defined simply returns
 nothing.  What is surprising to most peoople about this is that it does not
-even return an empty string.  For example, the following set statement::
+even return an empty string!  For example, the following set statement::
 
    SET(SOME_VAR a ${SOME_UNDEFINED_VAR} c)
 
@@ -138,36 +175,36 @@ the argument as with::
    SET(EMPTY_VAR "")
    SET(SOME_VAR a "${EMPTY_VAR}" c)
 
-which produces ``SOME_VAR='a;;c'``, or three elements as one might assue.
+which produces ``SOME_VAR='a;;c'``, or three elements as one might assume.
 
-This is a common error the people make when they call functions (built-in or
-TriBITS-defined) involving varibles that might be undefined or set to the
-empty string.  For example, for the macro::
+This is a common error that people make when they call CMake functions
+(built-in or TriBITS-defined) involving varibles that might be undefined or
+empty.  For example, for the macro::
 
-   MACRO(SOME_MACRO A_ARG B_ARG C_ARG)
+   MACRO(SOME_MACRO  A_ARG  B_ARG  C_ARG)
       ...
    ENDMACRO()
 
-If someone trys to call it with::
+if someone trys to call it with::
 
   SOME_MACRO(a ${SOME_OHTER_VAR} c)
 
 and if ``SOME_OHTER_VAR=""`` or if it is undefined, then CMake will error out
 with the error message saying that the macro ``SOME_MACRO()`` takes 3
 arguments but only 2 were provided.  If a varible might be empty but that is
-still a valid argument to a function (or element in a general array variable,
-then it must be quoted as::
+still a valid argument to the command, then it must be quoted as::
 
   SOME_MACRO(a "${SOME_OHTER_VAR}" c)
 
 Related to this problem is that if you mispell the name of a variable in a
-CMake if statement like::
+CMake ``IF()`` statement like::
 
    IF (SOME_VARBLE)
      ...
    ENDIF()
 
-then it will always be false.  To avoid this problem, use the utility function
+then it will always be false and the code inside the if statement will never
+be executed!  To avoid this problem, use the utility function
 `ASSERT_DEFINED()`_ as::
 
    ASSERT_DEFINED(SOME_VARBLE)
@@ -177,14 +214,16 @@ then it will always be false.  To avoid this problem, use the utility function
 
 In this case, the mispelled variable would be caught.
 
-A quick note of some strange CMake langauge behavior is case sensitivity:
+CMake langauge behavior with respect to case sensitivity is also strange:
 
-* Calls of built-in and user-defined functions is *case insensitive*!  That is
-  ``set(...)``, ``SET(...)``, ``Set()``, and all other combinations of upper
-  and lower case characters for 'S', 'E', 'T' all call the bulit-in `SET()``
-  function.  The convention in TriBITS is to use all caps for functions and
-  macros.  The convention in CMake literature from Kitware seems to use
-  lower-case for functions and macros.
+* Calls of built-in and user-defined macros and functions is *case
+  insensitive*!  That is ``set(...)``, ``SET(...)``, ``Set()``, and all other
+  combinations of upper and lower case characters for 'S', 'E', 'T' all call
+  the bulit-in `SET()`` function.  The convention in TriBITS is to use all
+  caps for functions and macros (was adopted by following the conventions used
+  in the early versions of TriBITS, see `History of TriBITS`_).  The
+  convention in CMake literature from Kitware seems to use lower-case letters
+  for functions and macros.
 
 * The names of CMake varables (local or cache/global) are *case sensitive*!
   That is, ``SOME_VAR`` and ``some_var`` are *different* variables.  Built-in
@@ -196,25 +235,28 @@ A quick note of some strange CMake langauge behavior is case sensitivity:
   name (e.g. ``TribitsProj_TRIBITS_DIR``, ``TriBITS_SOURCE_DIR``,
   ``Boost_INCLUDE_DIRS``).
 
-I don't now of any other language that uses different case senstivity rules
-for varibles verses functions.  However, because we must parse macro and
-function arguments when writing user-defined macros and functions, it is a
-good thing that CMake varibles are not case insensitive.  Case insenstivity
-would make it much harder and more expensive to parse argument lists (see 
+I don't know of any other programming language that uses different case
+senstivity rules for varibles verses functions.  However, because we must
+parse macro and function arguments when writing user-defined macros and
+functions, it is a good thing that CMake varibles are case sensitive.  Case
+insenstivity would make it much harder and more expensive to parse argument
+lists that take keyword-based arguments (see `PARSE_ARGUMENTS()`_).
 
-The other mistakes that people make is not understanding how CMake scopes
+Other mistakes that people make result from not understanding how CMake scopes
 variables and other entities.  CMake defaults a global scope (i.e. "cache"
 varibles) and several nested local scopes that are created by
 ``ADD_SUBDIRECTORY()`` and entering FUNCTIONS.  See `DUAL_SCOPE_SET()`_ for a
-short discussion of these scoping rules.
+short discussion of these scoping rules.  It is not just varibles that can
+have local and global scoping rules.  Other entities, like defines set with
+the built-in command ``ADD_DEFINITIONS()`` only apply to the local scope and
+child scopes.  That means that if you call ``ADD_DEFINITIONS()`` to set a
+define that affects the meaning of a header-file in C or C++, for example,
+that definition will *not* carry over to a peer subdirectory and those
+definitions will not be set (see warning in `TRIBITS_ADD_LIBRARY()`_).
 
-
-
-
-
-
-
-???
+Now that some CMake basics and common gotchas have been reviewed, we now get
+into the meat of TriBITS starting with the overall structure of a TriBITS
+project.
 
 
 Structure of a TriBITS Project

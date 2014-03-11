@@ -42,8 +42,26 @@
 INCLUDE(SetDefault)
 INCLUDE(PrintVar)
 
-
-MACRO(SET_DEFAULT_AND_FROM_ENV VAR DEFAULT_VAL)
+#
+# @MACRO: SET_DEFAULT_AND_FROM_ENV()
+#
+# Set a default value for a local variable and override from an env var of the
+# same name if it is set.
+#
+# Usage::
+#
+#   SET_DEFAULT_AND_FROM_ENV(<varName> <defaultVal>)
+#
+# First calls ``SET_DEFAULT(<varName> <defaultVal>)`` and then looks for an
+# environment variable named ``<varName>`` and if non-empty, then overrides
+# the value of ``<varName>``.
+#
+# This macro is primarily used in CTest code to provide a way to pass in the
+# value of CMake variables.  Older versions of ``ctest`` did not support the
+# option ``-D <var>:<type>=<value>`` to allow varaibles to be set through the
+# commandline like ``cmake`` always allowed.
+#
+MACRO(SET_DEFAULT_AND_FROM_ENV  VAR  DEFAULT_VAL)
 
   SET_DEFAULT(${VAR} "${DEFAULT_VAL}")
   

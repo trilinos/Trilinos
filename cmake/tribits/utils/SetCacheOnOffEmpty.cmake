@@ -37,6 +37,18 @@
 # ************************************************************************
 # @HEADER
 
+
+#
+# @FUNCTION: SET_CACHE_ON_OFF_EMPTY()
+#
+# Usage::
+#
+#   SET_CACHE_ON_OFF_EMPTY(<varName> <initialVal> "<docString>" [FORCE])
+#
+# Sets a special string cache variable with possible values "", "ON", or
+# "OFF".  This results in a nice dropdown box in the CMake cache manipulation
+# GUIs.
+# 
 FUNCTION(SET_CACHE_ON_OFF_EMPTY VAR INITIAL_VALUE DOCSTR)
   SET(FORCE_ARG)
   FOREACH(ARG ${ARGN})

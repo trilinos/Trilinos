@@ -38,11 +38,23 @@
 # @HEADER
 
 INCLUDE(AssertDefined)
+INCLUDE(PrintVar)
 
 
+#
+# @FUNCTION: PRINT_NONEMPTY_VAR()
+#
+# Print a defined variable giving its name then value only if it is not empty.
+#
+# Usage::
+#
+#    PRINT_NONEMPTY_VAR(<varName>)
+#
+# Calls ``PRINT_VAR(<varName>)`` if ``${<varName>}`` is not empty.
+#
 FUNCTION(PRINT_NONEMPTY_VAR VARIBLE_NAME)
   ASSERT_DEFINED(VARIBLE_NAME)
   IF (NOT "${${VARIBLE_NAME}}" STREQUAL "")
-    MESSAGE(STATUS "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
+    PRINT_VAR(${VARIBLE_NAME})
   ENDIF()
 ENDFUNCTION()

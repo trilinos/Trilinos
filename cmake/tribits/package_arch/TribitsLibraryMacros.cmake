@@ -58,7 +58,6 @@ INCLUDE(SetAndIncDirs)
 #
 # Macro that configures the package's main config.h file
 #
-
 FUNCTION(TRIBITS_ADD_CONFIG_DEFINE DEFINE)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPackage ${PARENT_PACKAGE_NAME}: adding compiler"
@@ -175,6 +174,14 @@ ENDFUNCTION()
 #
 # NOTE: IF the library is added, a CMake library target ``<libName>`` gets
 # created through calling the build-in command ``ADD_LIBRARY(<libName> ...)``.
+#
+# **WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
+# ``-D<someDefine>`` to the compile command line that will affect a header
+# file!  These defines are only set locally in this directory and child
+# directories.  These defines will **NOT** be set when code in peer
+# directories (e.g. a downstream TriBIS pacakge) compiles code that may
+# include these header files.  To add defines, please use a configured header
+# file (see `TRIBITS_CONFIGURE_FILE()`_).
 #
 FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 

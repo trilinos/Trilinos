@@ -638,6 +638,14 @@ ToDo: Document other side-effects!
 NOTE: IF the library is added, a CMake library target ``<libName>`` gets
 created through calling the build-in command ``ADD_LIBRARY(<libName> ...)``.
 
+**WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
+``-D<someDefine>`` to the compile command line that will affect a header
+file!  These defines are only set locally in this directory and child
+directories.  These defines will **NOT** be set when code in peer
+directories (e.g. a downstream TriBIS pacakge) compiles code that may
+include these header files.  To add defines, please use a configured header
+file (see `TRIBITS_CONFIGURE_FILE()`_).
+
 TRIBITS_ADD_EXECUTABLE()
 ------------------------
 

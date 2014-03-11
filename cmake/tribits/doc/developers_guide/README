@@ -1,0 +1,12 @@
+###########################################################################
+                  TriBITS Developers Guide README
+###########################################################################
+
+This directory contains the source and output files for the RST-formatted
+TribitsDevelopersGuide.[rst,html,pdf] document.  The script:
+
+  ./generate-dev-guide.sh
+
+is used to generate the files TribitsMacroFunctionDoc.rst,
+UtilsMacroFunctionDoc.rst, and TribitsDevelopersGuide.[html,pdf] in one shot.
+See the documentation inside of for more details.

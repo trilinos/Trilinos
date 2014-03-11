@@ -41,6 +41,7 @@
 INCLUDE(SetCacheOnOffEmpty)
 INCLUDE(MultilineSet)
 INCLUDE(AdvancedOption)
+INCLUDE(AssertDefined)
 INCLUDE(TribitsSortListAccordingToMasterList)
 
 #
