@@ -1234,7 +1234,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
   {
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst.m_offset_map.assign( src );
+    dst.m_offset_map.assign( src.m_offset_map );
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
     dst.m_allocation    = src.m_allocation ;
@@ -1299,7 +1299,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
 
     const int length = part.end - part.begin ;
 
-    dst.m_offset_map.assign( src );
+    dst.m_offset_map.assign( src.m_offset_map );
 
     // Original Sacado::MP::Vector length
     dst.m_storage_size = src.m_storage_size ;

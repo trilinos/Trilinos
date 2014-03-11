@@ -5774,7 +5774,7 @@ namespace Tpetra {
         // will prevent later code from hanging in Proc 0 threw an
         // exception above.
         int globalWriteSuccess = localWriteSuccess;
-        broadcast (*comm, 0, outArg (globalWriteSuccess));
+        Teuchos::broadcast (*comm, 0, outArg (globalWriteSuccess));
         TEUCHOS_TEST_FOR_EXCEPTION(
           globalWriteSuccess == 0, std::runtime_error,
           "Failed to write data: " << exMsg.str ());
