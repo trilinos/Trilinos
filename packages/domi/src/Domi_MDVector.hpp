@@ -827,7 +827,7 @@ MDVector(const MDVector< Scalar, Node > & parent,
   if (_mdMap->onSubcommunicator())
   {
     // Convert the index from global to local.  We start by building a
-    // globalIndex, which is the global index of the origin on this
+    // globalID, which is the global index of the origin on this
     // processor with the value of the given axis replaced with the
     // given index.
     Teuchos::Array< dim_type > globalIndex(3);
@@ -839,17 +839,17 @@ MDVector(const MDVector< Scalar, Node > & parent,
           parentMdMap->getGlobalBounds(myAxis,false).start();
 
     // Now convert that global index to a global ID
-    size_type globalID = parentMdMap->getGlobalIndex(globalIndex);
+    size_type globalID = parentMdMap->getGlobalID(globalIndex);
 
     // Now convert that global ID to a local ID.  In general, this can
     // throw a Domi::RangeError, but we should be OK because we know
     // we are on the sub-communicator, and we chose our global index
     // values to ensure we are on-processor.
-    size_type localID  = parentMdMap->getLocalIndex(globalID);
+    size_type localID  = parentMdMap->getLocalID(globalID);
 
     // Convert the local ID to a local index.
     Teuchos::Array< dim_type > localIndex =
-      parentMdMap->getLocalAxisIndex(localID);
+      parentMdMap->getLocalIndex(localID);
 
     // Obtain the new MDArrayView using the local index
     MDArrayView< Scalar > newView(_mdArrayView, axis, localIndex[axis]);
@@ -918,17 +918,17 @@ MDVector(const MDVector< Scalar, Node > & parent,
     }
 
     // Now convert that global index to a global ID
-    size_type globalID = parentMdMap->getGlobalIndex(globalIndex);
+    size_type globalID = parentMdMap->getGlobalID(globalIndex);
 
     // Now convert that global ID to a local ID.  In general, this can
     // throw a Domi::RangeError, but we should be OK because we know
     // we are on the sub-communicator, and we chose our global index
     // values to ensure we are on-processor.
-    size_type localID  = parentMdMap->getLocalIndex(globalID);
+    size_type localID  = parentMdMap->getLocalID(globalID);
 
     // Convert the local ID to a local index and compute the start index
     Teuchos::Array< dim_type > localIndex =
-      parentMdMap->getLocalAxisIndex(localID);
+      parentMdMap->getLocalIndex(localID);
     dim_type start = std::max(0, localIndex[axis] - bndryPad);
 
     // Now get the stop index of the local slice

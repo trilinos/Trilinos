@@ -680,51 +680,51 @@ public:
 
   //@}
 
-  /** \name GLobal/local index conversion methods */
+  /** \name Global/local index and ID conversion methods */
   //@{
 
-  /** \brief Convert a global index to an array of global axis indexes
+  /** \brief Convert a global ID to a global index
    *
-   * \param globalIndex [in] a unique 1D global identifier
+   * \param globalID [in] a unique 1D global identifier
    */
   Teuchos::Array< dim_type >
-  getGlobalAxisIndex(size_type globalIndex) const;
+  getGlobalIndex(size_type globalID) const;
 
-  /** \brief Convert a local index to an array of local axis indexes
+  /** \brief Convert a local ID to a local index
    *
-   * \param localIndex [in] a unique 1D local identifier
+   * \param localID [in] a unique 1D local identifier
    */
   Teuchos::Array< dim_type >
-  getLocalAxisIndex(size_type localIndex) const;
+  getLocalIndex(size_type localID) const;
 
-  /** \brief Convert a local index to a global index
+  /** \brief Convert a local ID to a global ID
    *
-   * \param localIndex [in] a unique 1D local identifier
+   * \param localID [in] a unique 1D local identifier
    */
-  size_type getGlobalIndex(size_type localIndex) const;
+  size_type getGlobalID(size_type localID) const;
 
-  /** \brief convert an array of global axis indexes to a global index
+  /** \brief convert a global index to a global ID
    *
-   * \param globalAxisIndex [in] a multi-dimensional global axis index
+   * \param globalIndex [in] a global index
    */
   size_type
-  getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const;
+  getGlobalID(const Teuchos::ArrayView< dim_type > & globalIndex) const;
 
-  /** \brief Convert a global index to a local index
+  /** \brief Convert a global ID to a local ID
    *
-   * \param globalIndex [in] a unique 1D global identifier
+   * \param globalID [in] a unique 1D global identifier
    *
-   * This method can throw a Domi::RangeError if the global index is
+   * This method can throw a Domi::RangeError if the global ID is
    * not on the current processor.
    */
-  size_type getLocalIndex(size_type globalIndex) const;
+  size_type getLocalID(size_type globalID) const;
 
-  /** \brief Convert an array of local axis indexes to a local index
+  /** \brief Convert a local index to a local ID
    *
-   * \param localAxisIndex [in] a multi-dimensional local axis index
+   * \param localIndex [in] a local index
    */
   size_type
-  getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const;
+  getLocalID(const Teuchos::ArrayView< dim_type > & localIndex) const;
 
   //@}
 
@@ -2266,18 +2266,18 @@ getTpetraAxisMap(int axis,
 template< class Node >
 Teuchos::Array< dim_type >
 MDMap< Node >::
-getGlobalAxisIndex(size_type globalIndex) const
+getGlobalIndex(size_type globalID) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((globalIndex < _globalMin) || (globalIndex >= _globalMax)),
+    ((globalID < _globalMin) || (globalID >= _globalMax)),
     RangeError,
-    "invalid global index = " << globalIndex << " (should be between " <<
+    "invalid global index = " << globalID << " (should be between " <<
     _globalMin << " and " << _globalMax << ")");
 #endif
   int num_dims = numDims();
   Teuchos::Array< dim_type > result(num_dims);
-  size_type index = globalIndex;
+  size_type index = globalID;
   if (_layout == LAST_INDEX_FASTEST)
   {
     for (int axis = 0; axis < num_dims-1; ++axis)
@@ -2304,18 +2304,18 @@ getGlobalAxisIndex(size_type globalIndex) const
 template< class Node >
 Teuchos::Array< dim_type >
 MDMap< Node >::
-getLocalAxisIndex(size_type localIndex) const
+getLocalIndex(size_type localID) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((localIndex < _localMin) || (localIndex >= _localMax)),
+    ((localID < _localMin) || (localID >= _localMax)),
     RangeError,
-    "invalid local index = " << localIndex << " (should be between " <<
+    "invalid local index = " << localID << " (should be between " <<
     _localMin << " and " << _localMax << ")");
 #endif
   int num_dims = numDims();
   Teuchos::Array< dim_type > result(num_dims);
-  size_type index = localIndex;
+  size_type index = localID;
   if (_layout == LAST_INDEX_FASTEST)
   {
     for (int axis = 0; axis < num_dims-1; ++axis)
@@ -2342,22 +2342,22 @@ getLocalAxisIndex(size_type localIndex) const
 template< class Node >
 size_type
 MDMap< Node >::
-getGlobalIndex(size_type localIndex) const
+getGlobalID(size_type localID) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((localIndex < 0) || (localIndex >= _localMax)),
+    ((localID < 0) || (localID >= _localMax)),
     RangeError,
-    "invalid local index = " << localIndex << " (local size = " <<
+    "invalid local index = " << localID << " (local size = " <<
     _localMax << ")");
 #endif
-  Teuchos::Array< dim_type > localAxisIndex = getLocalAxisIndex(localIndex);
+  Teuchos::Array< dim_type > localIndex = getLocalIndex(localID);
   size_type result = 0;
   for (int axis = 0; axis < numDims(); ++axis)
   {
-    dim_type globalAxisIndex = localAxisIndex[axis] +
+    dim_type globalIndex = localIndex[axis] +
       _globalRankBounds[axis][getCommIndex(axis)].start() - _pad[axis][0];
-    result += globalAxisIndex * _globalStrides[axis];
+    result += globalIndex * _globalStrides[axis];
   }
   return result;
 }
@@ -2367,27 +2367,27 @@ getGlobalIndex(size_type localIndex) const
 template< class Node >
 size_type
 MDMap< Node >::
-getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const
+getGlobalID(const Teuchos::ArrayView< dim_type > & globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (globalAxisIndex.size() != numDims()),
+    (globalIndex.size() != numDims()),
     InvalidArgument,
-    "globalAxisIndex has " << globalAxisIndex.size() << " entries; expecting "
+    "globalIndex has " << globalIndex.size() << " entries; expecting "
     << numDims());
   for (int axis = 0; axis < numDims(); ++axis)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ((globalAxisIndex[axis] < 0) ||
-       (globalAxisIndex[axis] >= _globalDims[axis])),
+      ((globalIndex[axis] < 0) ||
+       (globalIndex[axis] >= _globalDims[axis])),
       RangeError,
-      "invalid globalAxisIndex[" << axis << "] = " << globalAxisIndex[axis] <<
+      "invalid globalIndex[" << axis << "] = " << globalIndex[axis] <<
       " (global dimension = " << _globalDims[axis] << ")");
   }
 #endif
   size_type result = 0;
   for (int axis = 0; axis < numDims(); ++axis)
-    result += globalAxisIndex[axis] * _globalStrides[axis];
+    result += globalIndex[axis] * _globalStrides[axis];
   return result;
 }
 
@@ -2396,27 +2396,27 @@ getGlobalIndex(const Teuchos::ArrayView< dim_type > & globalAxisIndex) const
 template< class Node >
 size_type
 MDMap< Node >::
-getLocalIndex(size_type globalIndex) const
+getLocalID(size_type globalID) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((globalIndex < _globalMin) || (globalIndex >= _globalMax)),
+    ((globalID < _globalMin) || (globalID >= _globalMax)),
     RangeError,
-    "invalid global index = " << globalIndex << " (should be between " <<
+    "invalid global index = " << globalID << " (should be between " <<
     _globalMin << " and " << _globalMax << ")");
 #endif
-  Teuchos::Array< dim_type > globalAxisIndex =
-    getGlobalAxisIndex(globalIndex);
+  Teuchos::Array< dim_type > globalIndex =
+    getGlobalIndex(globalID);
   size_type result = 0;
   for (int axis = 0; axis < numDims(); ++axis)
   {
-    dim_type localAxisIndex = globalAxisIndex[axis] -
+    dim_type localIndex = globalIndex[axis] -
       _globalRankBounds[axis][getCommIndex(axis)].start() + _pad[axis][0];
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
+      (localIndex < 0 || localIndex >= _localDims[axis]),
       RangeError,
       "global index not on local processor")
-    result += localAxisIndex * _localStrides[axis];
+    result += localIndex * _localStrides[axis];
   }
   return result;
 }
@@ -2426,27 +2426,27 @@ getLocalIndex(size_type globalIndex) const
 template< class Node >
 size_type
 MDMap< Node >::
-getLocalIndex(const Teuchos::ArrayView< dim_type > & localAxisIndex) const
+getLocalID(const Teuchos::ArrayView< dim_type > & localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (localAxisIndex.size() != numDims()),
+    (localIndex.size() != numDims()),
     InvalidArgument,
-    "localAxisIndex has " << localAxisIndex.size() << " entries; expecting "
+    "localIndex has " << localIndex.size() << " entries; expecting "
     << numDims());
   for (int axis = 0; axis < numDims(); ++axis)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ((localAxisIndex[axis] < 0) ||
-       (localAxisIndex[axis] >= _localDims[axis])),
+      ((localIndex[axis] < 0) ||
+       (localIndex[axis] >= _localDims[axis])),
       RangeError,
-      "invalid localAxisIndex[" << axis << "] = " << localAxisIndex[axis] <<
+      "invalid localIndex[" << axis << "] = " << localIndex[axis] <<
       " (local dimension = " << _localDims[axis] << ")");
   }
 #endif
   size_type result = 0;
   for (int axis = 0; axis < numDims(); ++axis)
-    result += localAxisIndex[axis] * _localStrides[axis];
+    result += localIndex[axis] * _localStrides[axis];
   return result;
 }
 

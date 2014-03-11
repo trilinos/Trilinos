@@ -1182,38 +1182,38 @@ TEUCHOS_UNIT_TEST( MDMap, indexes )
     }
   }
 
-  // Unit test globalAxisIndex <-> globalIndex
-  Array< dim_type > myGlobalAxisIndex(num_dims);
-  size_type myGlobalIndex = 0;
+  // Unit test globalIndex <-> globalID
+  Array< dim_type > myGlobalIndex(num_dims);
+  size_type myGlobalID = 0;
   for (int axis = 0; axis < num_dims; ++axis)
   {
-    myGlobalAxisIndex[axis] = bndryPad[axis] + dims[axis] / 2;
-    myGlobalIndex += myGlobalAxisIndex[axis] * globalStrides[axis];
+    myGlobalIndex[axis] = bndryPad[axis] + dims[axis] / 2;
+    myGlobalID += myGlobalIndex[axis] * globalStrides[axis];
   }
-  TEST_EQUALITY(mdMap.getGlobalAxisIndex(myGlobalIndex), myGlobalAxisIndex);
-  TEST_EQUALITY(mdMap.getGlobalIndex(myGlobalAxisIndex()), myGlobalIndex);
+  TEST_EQUALITY(mdMap.getGlobalIndex(myGlobalID)  , myGlobalIndex);
+  TEST_EQUALITY(mdMap.getGlobalID(myGlobalIndex()), myGlobalID   );
 
-  // Unit test localAxisIndex <-> localIndex
-  Array< dim_type > myLocalAxisIndex(num_dims);
-  size_type myLocalIndex = 0;
+  // Unit test localIndex <-> localID
+  Array< dim_type > myLocalIndex(num_dims);
+  size_type myLocalID = 0;
   for (int axis = 0; axis < num_dims; ++axis)
   {
-    myLocalAxisIndex[axis] = lowerCommPad[axis] + localDim / 2;
-    myLocalIndex += myLocalAxisIndex[axis] * localStrides[axis];
+    myLocalIndex[axis] = lowerCommPad[axis] + localDim / 2;
+    myLocalID += myLocalIndex[axis] * localStrides[axis];
   }
-  TEST_EQUALITY(mdMap.getLocalAxisIndex(myLocalIndex), myLocalAxisIndex);
-  TEST_EQUALITY(mdMap.getLocalIndex(myLocalAxisIndex()), myLocalIndex);
+  TEST_EQUALITY(mdMap.getLocalIndex(myLocalID)  , myLocalIndex);
+  TEST_EQUALITY(mdMap.getLocalID(myLocalIndex()), myLocalID   );
 
-  // Test localIndex <-> globalIndex
-  myGlobalIndex = 0;
+  // Test localID <-> globalID
+  myGlobalID = 0;
   for (int axis = 0; axis < num_dims; ++axis)
   {
-    myGlobalAxisIndex[axis] = myLocalAxisIndex[axis] - lowerCommPad[axis] +
+    myGlobalIndex[axis] = myLocalIndex[axis] - lowerCommPad[axis] +
       commIndex[axis] * localDim + bndryPad[axis];
-    myGlobalIndex += myGlobalAxisIndex[axis] * globalStrides[axis];
+    myGlobalID += myGlobalIndex[axis] * globalStrides[axis];
   }
-  TEST_EQUALITY(mdMap.getGlobalIndex(myLocalIndex), myGlobalIndex);
-  TEST_EQUALITY(mdMap.getLocalIndex(myGlobalIndex), myLocalIndex );
+  TEST_EQUALITY(mdMap.getGlobalID(myLocalIndex), myGlobalID);
+  TEST_EQUALITY(mdMap.getLocalID(myGlobalIndex), myLocalID );
 }
 
 TEUCHOS_UNIT_TEST( MDMap, exceptions )

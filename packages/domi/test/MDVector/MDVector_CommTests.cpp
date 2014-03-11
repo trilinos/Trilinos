@@ -172,8 +172,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     Domi::Slice iBounds = mdVector.getLocalBounds(0);
     for (int i = iBounds.start(); i < iBounds.stop(); ++i)
     {
-      int lid = mdMap->getLocalIndex(tuple(i));
-      mdArray(i) = (Sca) mdMap->getGlobalIndex(lid);
+      int lid = mdMap->getLocalID(tuple(i));
+      mdArray(i) = (Sca) mdMap->getGlobalID(lid);
     }
   }
   else if (numDims == 2)
@@ -184,8 +184,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       for (int i = iBounds.start(); i < iBounds.stop(); ++i)
       {
-        int lid = mdMap->getLocalIndex(tuple(i,j));
-        mdArray(i,j) = (Sca) mdMap->getGlobalIndex(lid);
+        int lid = mdMap->getLocalID(tuple(i,j));
+        mdArray(i,j) = (Sca) mdMap->getGlobalID(lid);
       }
     }
   }
@@ -200,8 +200,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = iBounds.start(); i < iBounds.stop(); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j,k));
-          mdArray(i,j,k) = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j,k));
+          mdArray(i,j,k) = (Sca) mdMap->getGlobalID(lid);
         }
       }
     }
@@ -222,8 +222,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     Domi::Slice iBounds = mdVector.getLocalBounds(0);
     for (int i = iBounds.start(); i < iBounds.stop(); ++i)
     {
-      int lid = mdMap->getLocalIndex(tuple(i));
-      Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+      int lid = mdMap->getLocalID(tuple(i));
+      Sca gid = (Sca) mdMap->getGlobalID(lid);
       if (verbose)
         cout << pid << ": mdVector(" << i << ") = "
              << mdArray(i) << " (should be " << gid << ")"
@@ -239,8 +239,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       for (int i = iBounds.start(); i < iBounds.stop(); ++i)
       {
-        int lid = mdMap->getLocalIndex(tuple(i,j));
-        Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+        int lid = mdMap->getLocalID(tuple(i,j));
+        Sca gid = (Sca) mdMap->getGlobalID(lid);
         if (verbose)
           cout << pid << ": mdVector(" << i << "," << j << ") = "
                << mdArray(i,j) << " (should be " << gid << ")"
@@ -260,8 +260,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = iBounds.start(); i < iBounds.stop(); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j,k));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j,k));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (verbose)
             cout << pid << ": mdVector(" << i << "," << j << "," << k
                  << ") = " << mdArray(i,j,k) << " (should be " << gid << ")"
@@ -280,8 +280,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   {
     for (int i = 0; i < view.dimension(0); ++i)
     {
-      int lid = mdMap->getLocalIndex(tuple(i));
-      Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+      int lid = mdMap->getLocalID(tuple(i));
+      Sca gid = (Sca) mdMap->getGlobalID(lid);
       if (mdMap->isBndryPad(tuple(i)))
         gid = -1;
       if (verbose)
@@ -297,8 +297,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       for (int i = 0; i < view.dimension(0); ++i)
       {
-        int lid = mdMap->getLocalIndex(tuple(i,j));
-        Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+        int lid = mdMap->getLocalID(tuple(i,j));
+        Sca gid = (Sca) mdMap->getGlobalID(lid);
         if (mdMap->isBndryPad(tuple(i,j)))
           gid = -1;
         if (verbose)
@@ -317,8 +317,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = 0; i < view.dimension(0); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j,k));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j,k));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (mdMap->isBndryPad(tuple(i,j,k)))
             gid = -1;
           if (verbose)
@@ -340,8 +340,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     int ioff = mdMap->getLocalBounds(0).stop();
     for (int i = 0; i < view.dimension(0); ++i)
     {
-      int lid = mdMap->getLocalIndex(tuple(i+ioff));
-      Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+      int lid = mdMap->getLocalID(tuple(i+ioff));
+      Sca gid = (Sca) mdMap->getGlobalID(lid);
       if (mdMap->isBndryPad(tuple(i+ioff)))
         gid = -1;
       if (verbose)
@@ -357,8 +357,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       for (int i = 0; i < view.dimension(0); ++i)
       {
-        int lid = mdMap->getLocalIndex(tuple(i+ioff,j));
-        Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+        int lid = mdMap->getLocalID(tuple(i+ioff,j));
+        Sca gid = (Sca) mdMap->getGlobalID(lid);
         if (mdMap->isBndryPad(tuple(i+ioff,j)))
           gid = -1;
         if (verbose)
@@ -377,8 +377,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = 0; i < view.dimension(0); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i+ioff,j,k));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i+ioff,j,k));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (mdMap->isBndryPad(tuple(i+ioff,j,k)))
             gid = -1;
           if (verbose)
@@ -404,8 +404,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       for (int i = 0; i < view.dimension(0); ++i)
       {
-        int lid = mdMap->getLocalIndex(tuple(i,j));
-        Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+        int lid = mdMap->getLocalID(tuple(i,j));
+        Sca gid = (Sca) mdMap->getGlobalID(lid);
         if (mdMap->isBndryPad(tuple(i,j)))
           gid = -1;
         if (verbose)
@@ -424,8 +424,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = 0; i < view.dimension(0); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j,k));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j,k));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (mdMap->isBndryPad(tuple(i,j,k)))
             gid = -1;
           if (verbose)
@@ -452,8 +452,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       for (int i = 0; i < view.dimension(0); ++i)
       {
-        int lid = mdMap->getLocalIndex(tuple(i,j+joff));
-        Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+        int lid = mdMap->getLocalID(tuple(i,j+joff));
+        Sca gid = (Sca) mdMap->getGlobalID(lid);
         if (mdMap->isBndryPad(tuple(i,j+joff)))
           gid = -1;
         if (verbose)
@@ -472,8 +472,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = 0; i < view.dimension(0); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j+joff,k));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j+joff,k));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (mdMap->isBndryPad(tuple(i,j+joff,k)))
             gid = -1;
           if (verbose)
@@ -498,8 +498,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = 0; i < view.dimension(0); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j,k));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j,k));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (mdMap->isBndryPad(tuple(i,j,k)))
             gid = -1;
           if (verbose)
@@ -525,8 +525,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         for (int i = 0; i < view.dimension(0); ++i)
         {
-          int lid = mdMap->getLocalIndex(tuple(i,j,k+koff));
-          Sca gid = (Sca) mdMap->getGlobalIndex(lid);
+          int lid = mdMap->getLocalID(tuple(i,j,k+koff));
+          Sca gid = (Sca) mdMap->getGlobalID(lid);
           if (mdMap->isBndryPad(tuple(i,j,k+koff)))
             gid = -1;
           if (verbose)
