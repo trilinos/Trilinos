@@ -727,7 +727,7 @@ private: // private member functions
       }
 
       if ( new_index == invalid_index ) {
-        if (*has_failed_inserts) {
+        if (!*has_failed_inserts) {
           *has_failed_inserts = true;
         }
         atomic_fetch_add(&m_failed_insert_scratch[hash_list],1u);

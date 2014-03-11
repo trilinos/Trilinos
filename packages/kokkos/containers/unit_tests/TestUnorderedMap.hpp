@@ -180,9 +180,9 @@ void test_insert_close(  uint32_t num_nodes
   Device::fence();
 
   const uint32_t map_size = map.size();
-  const bool failed_inserts = map.failed_inserts();
+  const uint32_t failed_inserts = map.failed_inserts();
 
-  EXPECT_FALSE( failed_inserts );
+  EXPECT_EQ( failed_inserts, 0u );
 
   if (!failed_inserts) {
     EXPECT_EQ(map_size, expected_inserts);
@@ -219,9 +219,9 @@ void test_insert_far(  uint32_t num_nodes
   Device::fence();
 
   const uint32_t map_size = map.size();
-  const bool failed_inserts = map.failed_inserts();
+  const uint32_t failed_inserts = map.failed_inserts();
 
-  EXPECT_FALSE( failed_inserts );
+  EXPECT_EQ( failed_inserts, 0u );
 
   if (!failed_inserts) {
     EXPECT_EQ(map_size, expected_inserts);
@@ -248,7 +248,7 @@ void test_failed_insert( uint32_t num_nodes)
   Impl::test_insert_far<map_type> test_insert_far(map, 2u*num_nodes, 1u);
   Device::fence();
 
-  //EXPECT_LT( 0u, map.failed_inserts() );
+  EXPECT_LT( 0u, map.failed_inserts() );
 }
 
 
