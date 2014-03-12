@@ -73,7 +73,7 @@ public:
 
       const std::pair< size_t , size_t > range = exec.work_range( work_count );
 
-      for ( size_t iwork = range.first ; iwork < range.second ; ++iwork ) {
+      for ( size_t iwork = range.first , work_end = range.second ; iwork < work_end ; ++iwork ) {
         functor( iwork );
       }
     }
@@ -117,7 +117,7 @@ public:
 
       functor.init( update );
 
-      for ( size_t iw = range.first ; iw < range.second ; ++iw ) {
+      for ( size_t iw = range.first, work_end = range.second ; iw < work_end ; ++iw ) {
         functor( iw , update );
       }
     }
@@ -178,7 +178,7 @@ public:
 
       functor.init( update );
 
-      for ( size_t iw = range.first ; iw < range.second ; ++iw ) {
+      for ( size_t iw = range.first , work_end = range.second ; iw < work_end ; ++iw ) {
         functor( iw , update , false );
       }
     }
@@ -215,7 +215,7 @@ public:
       typename Reduce::reference_type update =
         Reduce::reference( pointer_type( exec.reduce_base() ) );
 
-      for ( size_t iw = range.first ; iw < range.second ; ++iw ) {
+      for ( size_t iw = range.first , work_end = range.second ; iw < work_end ; ++iw ) {
         functor( iw , update , true );
       }
     }
@@ -272,7 +272,7 @@ public:
 
 #pragma simd vectorlength( vector_length::value )
 #pragma ivdep
-      for ( size_t iw = range.first ; iw < range.second ; ++iw ) {
+      for ( size_t iw = range.first , work_end = range.second ; iw < work_end ; ++iw ) {
         functor( iw , Reduce::reference( ptr + ( iw & vector_mask::value ) * Reduce::value_count( functor ) ) );
       }
 
