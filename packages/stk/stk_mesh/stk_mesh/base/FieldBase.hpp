@@ -152,13 +152,12 @@ class FieldBase
     return m_field_meta_data;
   }
 
-private:
-
   // This should only be accessed by the stk::mesh::BulkData class
   inline FieldMetaDataVector& get_meta_data_for_field() {
     return m_field_meta_data;
   }
 
+private:
 
   //  Associate this field with a bulk data.
   //    Note, a field can be assocaited with one and only one bulk data object

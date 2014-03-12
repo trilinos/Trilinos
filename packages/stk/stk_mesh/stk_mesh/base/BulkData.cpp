@@ -40,6 +40,7 @@
 #include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
+#include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
 #include "stk_mesh/base/Part.hpp"       // for Part, remove, etc
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
@@ -55,7 +56,6 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
-
 
 namespace stk {
 namespace mesh {
@@ -109,6 +109,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
                     , bool add_fmwk_data
 #endif
                     , ConnectivityMap const* arg_connectivity_map
+                    , FieldDataManager *field_data_manager
                     )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
     m_entity_repo(*this),
@@ -143,7 +144,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_fmwk_shared_attrs(),
     m_fmwk_connect_counts(),
 #endif
-    m_field_raw_data(mesh_meta_data.entity_rank_count()),
+    m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
+    m_field_data_manager(field_data_manager),
     m_selector_to_buckets_map(),
 #ifdef GATHER_GET_BUCKETS_METRICS
     m_selector_to_count_map(),
@@ -161,6 +163,11 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
                         )
 {
+  if (m_field_data_manager == NULL)
+  {
+      m_field_data_manager = &m_default_field_data_manager;
+  }
+
   initialize_arrays();
 
   create_ghosting( "shared" );
@@ -920,6 +927,7 @@ bool BulkData::destroy_entity( Entity entity )
   m_entities_index.register_removed_key( entity_key(entity) );
 
   bucket(entity).getPartition()->remove(entity);
+
   m_entity_repo.destroy_entity(entity_key(entity), entity );
   m_entity_states[entity.local_offset()] = Deleted;
   m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
@@ -1142,32 +1150,41 @@ void BulkData::allocate_field_data()
   //now loop over all buckets and call the 'new_bucket_callback' method which
   //will allocate field-data for that bucket.
 
-  for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
-    const BucketVector& buckets = this->buckets(rank);
-    for(size_t i=0; i<buckets.size(); ++i) {
-      new_bucket_callback(rank, buckets[i]->supersets(), buckets[i]->capacity(), NULL);
-    }
+  const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
+  if (m_num_fields == -1) {
+    // hasn't been set yet
+    m_num_fields = field_set.size();
   }
+
+  for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
+      const std::vector<Bucket*>& buckets = this->buckets(rank);
+      m_field_data_manager->allocate_field_data(rank, buckets, field_set);
+  }
+}
+
+void BulkData::new_bucket_caching(EntityRank rank, Bucket* new_bucket)
+{
+    // update selector map
+    if (new_bucket != NULL) {
+      for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+           itr != end; ++itr) {
+        Selector const& sel = itr->first.second;
+        const EntityRank map_rank = itr->first.first;
+        if (map_rank == rank && sel(*new_bucket)) {
+  #ifdef GATHER_GET_BUCKETS_METRICS
+          ++m_num_buckets_inserted_in_cache;
+  #endif
+          TrackedBucketVector& cached_buckets = itr->second;
+          TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
+          cached_buckets.insert(lb_itr, new_bucket);
+        }
+      }
+    }
 }
 
 void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket)
 {
-  // update selector map
-  if (new_bucket != NULL) {
-    for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
-         itr != end; ++itr) {
-      Selector const& sel = itr->first.second;
-      const EntityRank map_rank = itr->first.first;
-      if (map_rank == rank && sel(*new_bucket)) {
-#ifdef GATHER_GET_BUCKETS_METRICS
-        ++m_num_buckets_inserted_in_cache;
-#endif
-        TrackedBucketVector& cached_buckets = itr->second;
-        TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
-        cached_buckets.insert(lb_itr, new_bucket);
-      }
-    }
-  }
+  this->new_bucket_caching(rank, new_bucket);
 
   if (!m_keep_fields_updated) {
     return;
@@ -1180,71 +1197,7 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
     m_num_fields = field_set.size();
   }
 
-  // Sizing loop
-  size_t total_field_data_size = 0;
-  for (int i = 0; i < m_num_fields; ++i) {
-    FieldMetaData field_meta_data = {NULL, 0};
-
-    const FieldBase  & field = * field_set[i];
-    if (static_cast<unsigned>(field.entity_rank()) == rank)
-    {
-        unsigned num_bytes_per_entity = 0;
-
-        const FieldBase::Restriction & restriction =
-          find_and_check_restriction(field, rank, superset_parts);
-
-        if ( restriction.num_scalars_per_entity() > 0 ) { // Exists
-
-          const unsigned type_stride = field.data_traits().stride_of ;
-          const unsigned field_rank  = field.field_array_rank();
-
-          num_bytes_per_entity = type_stride *
-            ( field_rank ? restriction.num_scalars_per_entity() : 1 );
-
-          if (num_bytes_per_entity > 0) {
-            field_meta_data.m_bytes_per_entity   = num_bytes_per_entity;
-
-            total_field_data_size += num_bytes_per_entity * capacity;
-          }
-        }
-        field_set[i]->get_meta_data_for_field().push_back(field_meta_data);
-    }
-  }
-
-  // Allocate all field data for this bucket
-  if (total_field_data_size > 0) {
-    unsigned char* all_data = field_data_allocator().allocate(total_field_data_size);
-    m_field_raw_data[rank].push_back(all_data);
-
-    // Set data ptrs in field meta datas
-    size_t current_field_offset = 0;
-    for ( int i = 0; i < m_num_fields; ++i ) {
-      const FieldBase  & field = * field_set[i];
-      if (static_cast<unsigned>(field.entity_rank()) == rank)
-      {
-          FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field().back());
-
-          if (field_meta_data.m_bytes_per_entity > 0) {
-            field_meta_data.m_data = all_data + current_field_offset;
-            current_field_offset += field_meta_data.m_bytes_per_entity * capacity;
-
-            // initialize field data
-            const unsigned char* init_val = reinterpret_cast<const unsigned char*>(field.get_initial_value());
-            if (init_val != NULL) {
-              for (size_t j = 0; j < capacity; ++j) {
-                std::memcpy( field_meta_data.m_data + j * field_meta_data.m_bytes_per_entity, init_val, field_meta_data.m_bytes_per_entity );
-              }
-            }
-            else {
-              std::memset( field_meta_data.m_data, 0, capacity * field_meta_data.m_bytes_per_entity );
-            }
-          }
-      }
-    }
-  }
-  else {
-    m_field_raw_data[rank].push_back(NULL);
-  }
+  m_field_data_manager->allocate_bucket_field_data(rank, field_set, superset_parts, capacity);
 }
 
 //
@@ -1255,79 +1208,83 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
 void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                            unsigned src_bucket_id, Bucket::size_type src_bucket_ord, const std::vector<FieldBase*>* field_set)
 {
+    //
+    //  If field set is passed in copy only the defined fields.  Also assume the fields are valid for the bucket
+    //
+    if(field_set)
+    {
+        for(int i = 0, iend = field_set->size(); i < iend; ++i)
+        {
+            const int src_size = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
+            unsigned char * const src = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_data;
+            unsigned char * const dst = (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
 
-  //
-  //  If field set is passed in copy only the defined fields.  Also assume the fields are valid for the bucket
-  //
-  if(field_set) {
-    for (int i = 0, iend=field_set->size(); i < iend; ++i) {
-      const int src_size        = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
-      unsigned char * const src = (*field_set)[i]->get_meta_data_for_field()[src_bucket_id].m_data;
-      unsigned char * const dst = (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
+            ThrowAssert(src_size == (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity);
 
-      ThrowAssert(src_size == (*field_set)[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity);
-
-      std::memcpy( dst + src_size * dst_bucket_ord,
-		   src + src_size * src_bucket_ord,
-		   src_size );
+            std::memcpy(dst + src_size * dst_bucket_ord,
+                    src + src_size * src_bucket_ord,
+                    src_size);
+        }
     }
-  } else {
+    else
+    {
+        if(!m_keep_fields_updated)
+        {
+            return;
+        }
+
+        const std::vector<FieldBase *>& allFields = mesh_meta_data().get_fields((stk::topology::rank_t) dst_rank);
+        for(int i = 0, iend = allFields.size(); i < iend; ++i)
+        {
+            const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
+            if(src_size == 0)
+            {
+                continue;
+            }
+
+            unsigned char * const src = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_data;
+            const int dst_size = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity;
+
+            if(dst_size)
+            {
+                unsigned char * const dst = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
+                ThrowAssertMsg( dst_size == src_size,
+                        "Incompatible field sizes: " << dst_size << " != " << src_size);
+
+                std::memcpy(dst + dst_size * dst_bucket_ord,
+                        src + src_size * src_bucket_ord,
+                        dst_size);
+            }
+        }
+    }
+}
+
+void BulkData::add_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
+{
+    if(!m_keep_fields_updated)
+    {
+        return;
+    }
+    const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
+    m_field_data_manager->add_field_data_for_entity(fields, rank, bucket_id, bucket_ord);
+}
+
+void BulkData::remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
+{
     if (!m_keep_fields_updated) {
       return;
     }
-
-    const std::vector< FieldBase * >& allFields = mesh_meta_data().get_fields((stk::topology::rank_t)dst_rank);
-    for (int i = 0, iend=allFields.size(); i < iend; ++i) {
-      const int src_size        = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
-      if (src_size == 0) {
-	continue;
-      }
-
-
-      unsigned char * const src = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_data;
-      const int dst_size        = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_bytes_per_entity;
-
-      if ( dst_size ) {
-	unsigned char * const dst = allFields[i]->get_meta_data_for_field()[dst_bucket_id].m_data;
-	ThrowAssertMsg( dst_size == src_size,
-			"Incompatible field sizes: " << dst_size << " != " << src_size );
-
-	std::memcpy( dst + dst_size * dst_bucket_ord,
-		     src + src_size * src_bucket_ord,
-		     dst_size );
-      }
-    }
-  }
+    const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
+    m_field_data_manager->remove_field_data_for_entity(rank, bucket_id, bucket_ord, fields);
 }
-
 
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {
   if (!m_keep_fields_updated) {
     return;
   }
-
-
-  const std::vector< FieldBase * > & field_set = mesh_meta_data().get_fields();
-  for ( int i = 0; i < m_num_fields; ++i) {
-    const FieldBase  & field      = *field_set[i];
-    if (static_cast<unsigned>(field.entity_rank()) == rank)
-    {
-        FieldMetaData field_meta_data = field_set[i]->get_meta_data_for_field()[bucket_id];
-        const int num_bytes_per_entity = field_meta_data.m_bytes_per_entity;
-
-        if (num_bytes_per_entity > 0) {
-          // reset field data
-          const unsigned char* init_val = reinterpret_cast<const unsigned char*>(field.get_initial_value());
-          if (init_val != NULL) {
-            std::memcpy( field_meta_data.m_data + bucket_ord * num_bytes_per_entity, init_val, num_bytes_per_entity );
-          }
-          else {
-            std::memset( field_meta_data.m_data + bucket_ord * num_bytes_per_entity, 0, num_bytes_per_entity );
-          }
-        }
-    }
-  }
+  const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
+  m_field_data_manager->reinitialize_removed_entity_field_data(rank, bucket_id, bucket_ord, fields);
 }
 
 void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity)
@@ -1357,24 +1314,9 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
   if (!m_keep_fields_updated) {
     return;
   }
-  const std::vector<FieldBase*>  field_set = mesh_meta_data().get_fields();
 
-  if (field_set.empty()) return;
-
-  if (m_field_raw_data[rank][bucket_id] != NULL) {
-    size_t bytes_to_delete = 0;
-    for (unsigned int i = 0; i < field_set.size(); ++i) {
-      if(field_set[i] == NULL || static_cast<unsigned>(field_set[i]->entity_rank()) != rank) continue;
-      FieldMetaData& field_data = field_set[i]->get_meta_data_for_field()[bucket_id];
-      if (field_data.m_data != NULL) {
-        bytes_to_delete += field_data.m_bytes_per_entity * capacity;
-        field_data.m_bytes_per_entity = 0;
-        field_data.m_data = NULL;
-      }
-    }
-    field_data_allocator().deallocate(m_field_raw_data[rank][bucket_id], bytes_to_delete);
-    m_field_raw_data[rank][bucket_id] = NULL;
-  }
+  const std::vector<FieldBase*>  fields = mesh_meta_data().get_fields();
+  m_field_data_manager->deallocate_bucket_field_data(rank, bucket_id, capacity, fields);
 }
 
 void BulkData::update_field_data_states()
@@ -1401,10 +1343,16 @@ void BulkData::update_field_data_states()
           }
         }
       }
+
+      for ( int s = 1; s < num_state; ++s )
+      {
+          m_field_data_manager->swap_fields(outer_idx+s, outer_idx);
+      }
+
     }
 }
 
-void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map)
+void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& reorderedBucketIds)
 {
   for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
        itr != end; ++itr) {
@@ -1416,23 +1364,8 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
     return;
   }
 
-  std::vector<unsigned char*> field_raw_data(id_map.size());
-  for (unsigned m = 0, e = id_map.size(); m < e; ++m) {
-    field_raw_data[m] = m_field_raw_data[rank][id_map[m]];
-  }
-  m_field_raw_data[rank].swap(field_raw_data);
-
-  const std::vector<FieldBase*> & field_set = mesh_meta_data().get_fields();
-  for ( int i = 0 ; i < m_num_fields ; ++i ) {
-    if (static_cast<unsigned>(field_set[i]->entity_rank()) == rank)
-    {
-        FieldMetaDataVector new_fields(id_map.size());
-        for ( unsigned m = 0, e = id_map.size(); m < e; ++m ) {
-          new_fields[m] = field_set[i]->get_meta_data_for_field()[id_map[m]];
-        }
-        new_fields.swap(field_set[i]->get_meta_data_for_field());
-    }
-  }
+  const std::vector<FieldBase*>  fields = mesh_meta_data().get_fields();
+  m_field_data_manager->reorder_bucket_field_data(rank, fields, reorderedBucketIds);
 }
 
 void BulkData::dump_all_mesh_info(std::ostream& out) const
@@ -5521,10 +5454,10 @@ void BulkData::internal_change_entity_parts(
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "add_parts: " << add_parts);
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "remove_parts: " << remove_parts);
 
-  Bucket * const k_old = bucket_ptr( entity );
+  Bucket * const bucket_old = bucket_ptr( entity );
 
-  if ( k_old && k_old->member_all( add_parts ) &&
-              ! k_old->member_any( remove_parts ) ) {
+  if ( bucket_old && bucket_old->member_all( add_parts ) &&
+              ! bucket_old->member_any( remove_parts ) ) {
     // Is already a member of all add_parts,
     // is not a member of any remove_parts,
     // thus nothing to do.
@@ -5540,7 +5473,7 @@ void BulkData::internal_change_entity_parts(
       break;
     }
   }
-  add_to_locally_owned = add_to_locally_owned && (!k_old || !k_old->owned());
+  add_to_locally_owned = add_to_locally_owned && (!bucket_old || !bucket_old->owned());
 
 
   bool remove_from_locally_owned = false;
@@ -5550,15 +5483,15 @@ void BulkData::internal_change_entity_parts(
       break;
     }
   }
-  remove_from_locally_owned = remove_from_locally_owned && (!k_old || k_old->owned());
+  remove_from_locally_owned = remove_from_locally_owned && (!bucket_old || bucket_old->owned());
 
   if (add_to_locally_owned) {
 
     ++m_closure_count[entity.local_offset()];
 
     // update downward connectivity closure count
-    if (k_old) {
-      for (EntityRank rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
+    if (bucket_old) {
+      for (EntityRank rank = stk::topology::NODE_RANK, end_rank = bucket_old->entity_rank(); rank < end_rank; ++rank) {
         unsigned num = num_connectivity(entity,rank);
         Entity const * entities = begin(entity,rank);
         for (unsigned i =0; i<num; ++i) {
@@ -5573,8 +5506,8 @@ void BulkData::internal_change_entity_parts(
     --m_closure_count[entity.local_offset()];
 
     // update downward connectivity closure count
-    if (k_old) {
-      for (EntityRank rank = stk::topology::NODE_RANK, end_rank = k_old->entity_rank(); rank < end_rank; ++rank) {
+    if (bucket_old) {
+      for (EntityRank rank = stk::topology::NODE_RANK, end_rank = bucket_old->entity_rank(); rank < end_rank; ++rank) {
         unsigned num = num_connectivity(entity,rank);
         Entity const * entities = begin(entity,rank);
         for (unsigned i =0; i<num; ++i) {
@@ -5592,7 +5525,7 @@ void BulkData::internal_change_entity_parts(
 
 
 
-  if ( k_old ) {
+  if ( bucket_old ) {
     // Keep any of the existing bucket's parts
     // that are not a remove part.
     // This will include the 'intersection' parts.
@@ -5600,7 +5533,7 @@ void BulkData::internal_change_entity_parts(
     // These parts are properly ordered and unique.
 
     const std::pair<const unsigned *, const unsigned*>
-      bucket_parts = k_old->superset_part_ordinals();
+      bucket_parts = bucket_old->superset_part_ordinals();
 
     const unsigned * parts_begin = bucket_parts.first;
     const unsigned * parts_end   = bucket_parts.second;
@@ -5636,8 +5569,8 @@ void BulkData::internal_change_entity_parts(
   stk::mesh::impl::Partition *partition =
           m_bucket_repository.get_or_create_partition(e_rank, parts_total);
 
-  if (k_old) {
-    k_old->getPartition()->move_to(entity, *partition);
+  if (bucket_old) {
+    bucket_old->getPartition()->move_to(entity, *partition);
   }
   else {
     partition->add(entity);

@@ -27,7 +27,6 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
 #include <stk_util/parallel/DistributedIndex.hpp>  // for DistributedIndex
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/util/PageAlignedAllocator.hpp>
 #include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator, etc
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
@@ -38,6 +37,7 @@
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
@@ -140,8 +140,6 @@ public:
   inline static BulkData & get( const Ghosting & ghost);
   inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
-  typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
-
   typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...
@@ -174,6 +172,7 @@ public:
             , bool add_fmwk_data = false
 #endif
             , ConnectivityMap const* arg_connectivity_map = NULL
+            , FieldDataManager *field_dataManager = NULL
             );
 
   //------------------------------------
@@ -793,7 +792,7 @@ public:
   typedef int FmwkId; //must be a signed type -- fmwk uses negative values sometimes
   FmwkId global_id(Entity entity) const
   {
-    ThrowAssert(m_add_fmwk_data);
+    ThrowAssertMsg(m_add_fmwk_data, "BulkData::global_id() only works under Framework mode");
     entity_getter_debug_check(entity);
 
     return m_fmwk_global_ids[entity.local_offset()];
@@ -1199,7 +1198,10 @@ private:
 
   // Outer index is rank, inner is bucket-id. This contains *all* field
   // data for a bucket.
-  std::vector<std::vector<unsigned char*> > m_field_raw_data;
+
+//  ContiguousFieldDataManager m_default_field_data_manager;
+  DefaultFieldDataManager m_default_field_data_manager;
+  FieldDataManager *m_field_data_manager;
 
   // Memoize user bucket requests
   mutable SelectorBucketMap m_selector_to_buckets_map;
@@ -1227,6 +1229,7 @@ private:
   // Field callbacks
 
   void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket);
+  void new_bucket_caching(EntityRank rank, Bucket* new_bucket);
 
   //
   //  "fields" is an optional argument, if present copy only the listed fields.
@@ -1242,6 +1245,8 @@ private:
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);
 
   void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
+  void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
+  void add_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
 
   // Misc
 

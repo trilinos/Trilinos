@@ -618,6 +618,7 @@ void Bucket::add_entity(Entity entity)
     mesh().set_mesh_index(entity, this, m_size);
   }
 
+  this->mesh().add_entity_callback(entity_rank(), bucket_id(), m_size);
   ++m_size;
 
   AddEntityFunctor functor;
@@ -653,7 +654,9 @@ void Bucket::remove_entity()
 {
   ThrowAssert(m_size > 0);
 
+  mesh().remove_entity_field_data_callback(entity_rank(), bucket_id(), m_size-1);
   --m_size;
+
   initialize_slot(m_size, Entity());
 
   RemoveEntityFunctor functor;
@@ -671,6 +674,8 @@ void Bucket::copy_entity(Entity entity)
 
   Bucket* old_bucket = mesh().bucket_ptr(entity);
   const Bucket::size_type old_ordinal = mesh().bucket_ordinal(entity);
+
+  this->mesh().add_entity_callback(this->entity_rank(), this->bucket_id(), m_size);
   reset_entity_location(entity, m_size);
 
   ++m_size;
