@@ -208,7 +208,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 		     &num_nodes, &num_elem, &num_elem_blk,
 		     &num_node_sets, &num_side_sets);
 
-  Vcoords_ = (double *)malloc(num_nodes * dimension_ * sizeof(double));
+  Vcoords_ = new double [num_nodes * dimension_];
 
   error += im_ex_get_coord_l(exoid, Vcoords_, Vcoords_ + num_nodes,
 			   Vcoords_ + 2 * num_nodes);
@@ -266,7 +266,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 				  (long long*)&(num_attr[i]));
   }
 
-  Acoords_ = (double *)malloc(num_elem * dimension_ * sizeof(double));
+  Acoords_ = new double [num_elem * dimension_];
   long long a = 0;
 
   for(long long b = 0; b < num_elem_blk; b++) {
