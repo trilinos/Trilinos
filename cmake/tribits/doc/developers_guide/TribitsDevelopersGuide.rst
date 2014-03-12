@@ -38,12 +38,82 @@ understanding of CMake, one will have trouble resolving problems when they
 might occur.
 
 
-TriBITS Develoepr and User Roles
+TriBITS Developer and User Roles
 ================================
 
-ToDo: Discuss the three different primary roles for related to TriBITS (core
-TriBITS system development, TriBITS project architect, TriBITS project
-developer, TriBITS project user).
+There are approximately five different types roles with respect to TriBITS.
+These different roles require different levels of expertise and knowlege of
+CMake and knowledge of the TriBITS system.  The primary roles are 1) *TriBITS
+Project User*, 2) *TriBITS Project Developer*, 3) *TriBITS Project Architect*,
+4) *TriBITS System Developer*, and 5) *TriBITS System Architect*.  Each of
+these roles builds on the necessary knolwege of the lower-level roles.
+ 
+The first role is that of a **TriBITS Project User** who only needs to be able
+to configure, build, and test a project that uses TriBITS as its build system.
+A person acting in this role needs to know little about CMake other than
+basics about how to run the ``cmake`` and ``ctest`` exectuables, how to set
+CMake cache variables, and the basics of building software and running tests
+with ``ctest``.  The proper reference for a TriBITS Project User is the
+`Project-Specific Build Quick Reference`_.  Also, the `TriBITS
+Overview <../overview/TribitsOverview.pdf>`_ document may be of some help
+also.  A TriBITS project user does not need to know anything about the CMake
+langauge itself or any of the TriBITS macros or functions described in
+`TriBITS Macros and Functions`_ or really anything else described in this
+current document.
+
+A **TriBITS Project Developer** is someone who contributes to a software
+project that uses TriBITS.  They will add source files, libraries and
+exectuables, add test executables and define tests run with ``ctest``.  They
+have to configure and build the project code in order to be able to develop
+and run tests and therefore this role includes all of the necessary knowledge
+and functions of a TriBITS Project User.  A casual TriBITS Project Developer
+typically does not need to know a lot about CMake and really only need to know
+a subset of the `TriBITS Macros and Functions`_ defined in this document.  A
+slightly more sophsiticated TriBITS Project Developer will also add new
+packages, add new package dependencies, and define new TPLs.  This current
+TriBITS Developers Guide should supply everything such a developer needs to
+know and more.  Only a smaller part of this document needs to be understood
+and accessed by people assuming this role.
+
+The next level of roles is a **TriBITS Project Architect**.  This is someone
+(perhaps only one person on a project development team) that knows the usage
+and functioning of TriBITS in great detail.  They understand how to set up a
+TriBITS project from scrach, how to set up automated testing using the TriBITS
+system, and know how to use TriBITS to implement the overall software
+development process.  A person in this role is also likely to be the one who
+makes the initial technical decision for their project to adopt TriBITS as is
+native build and test system.  This document (along with detailed
+CMake/CTest/CDash documentation provided by Kitware and the larger community)
+should provide most of what a person in this role needs to know.  A person
+assuming this role is the primary audience for this document.
+
+The last two roles **TriBITS System Developer** and **TriBITS System
+Architect** are for those individuals that actually extend and modify the
+TriBITS system itself.  A TriBITS System Developer needs to know how to add
+new functionlity while maintaining backward compatibility, how to add new unit
+tests to the TriBITS system, and perform other related tasks.  Such a
+developer needs to be very knowledgeable of the basic functioning of CMake and
+know how TriBITS is implemented in the CMake language.  A TriBITS System
+Architect is someone who must be consusted on almost all non-trivial changes
+or additions to the TriBITS system.  A TriBITS System Architect in addition
+needs to know the entire TriBITS system, the design philosophy that provides
+the foundation for TriBIITS and be an expert in CMake, CTest, and CDash.
+Everything that needs to be known by a TriBITS System Developer and a TriBITS
+System Architect is not contained in this document.  Instead, the primary
+documentation will be in the TriBITS CMake source code and various unit tests
+itself.  At the time of this writing, there is currently there is only one
+TriBITS System Architect (who also happens to be the primary author of this
+document).
+
+An explicit goal of this document is to make new TriBITS Project System
+Archetects (i.e. those would make the decision to adopt TriBITS), and new
+TriBITS System Developers to help extend and maintain the system.  As TriBITS
+matures and its development stabilizes, the need for a TriBITS System
+Architect will be diminished.
+
+So depending on the particular role that a reader falls into, this documnet
+may or may not be necessary but instead the TriBITS Overview or the
+<Project>BuildQuickRef documents may be more appropriate.
 
 
 Brief CMake Language Tutorial
@@ -281,6 +351,21 @@ reasonble default is set by the TriBITS system automatically.
 ToDo: Document what parameters influence the entire TriBITS project, what
 parameters can have project-specific defaults, etc.
 
+Automated testing
+=================
+
+ToDo: Fill in!
+
+TriBITS Project Development Workflow
+======================================
+
+ToDo: Fill in!
+
+Project-Specific Build Quick Reference
+======================================
+
+ToDo: Describe <Project>BuildQuickRef document!
+
 
 TriBITS Macros and Functions
 ============================
@@ -321,7 +406,6 @@ References
 ==========
 
 .. [SCALE] http://scale.ornl.gov/
-
 
 Appendix
 ========
