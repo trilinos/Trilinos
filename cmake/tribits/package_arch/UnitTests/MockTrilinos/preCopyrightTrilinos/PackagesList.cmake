@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
+TRIBITS_DEFINE_REPOSITORY_PACKAGES(
   Teko         teko      ST
   Stalix       stalix    EX
   )

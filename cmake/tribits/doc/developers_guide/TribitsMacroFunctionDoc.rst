@@ -16,15 +16,15 @@ to a different Tribits implementation to test before snapshoting.
 
 ToDo: Give documentation!
 
-TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()
----------------------------------------------------------
+TRIBITS_DEFINE_REPOSITORY_PACKAGES()
+------------------------------------
 
 Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a PackagesList.cmake file for a given TriBITS repo.
 
 Usage::
 
-   TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
+   TRIBITS_DEFINE_REPOSITORY_PACKAGES(
       <pkg0>  <pkg0_dir>  <pkg0_classifications>
       <pkg1>  <pkg1_dir>  <pkg1_classifications>
       ...
@@ -76,8 +76,8 @@ varible include:
   ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
   misspell the name of the macro, it is an immediate error in CMake.
 
-TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()
----------------------------------------------------------
+TRIBITS_DEFINE_REPOSITORY_TPLS()
+--------------------------------
 
 Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
@@ -85,7 +85,7 @@ TPLsList.cmake fil for a given TriBITS repo.
 
 Usage::
 
-  TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
+  TRIBITS_DEFINE_REPOSITORY_TPLS(
     <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
     <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
     ...
@@ -252,7 +252,7 @@ varible must be set:
     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
     as for full packages (see
-    `TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()`_).
+    `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_).
 
   * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
     REQUIRED dependence on this subpackage.

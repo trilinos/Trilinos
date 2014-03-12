@@ -39,7 +39,7 @@
 
 
 # Only for unit testing
-TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
+TRIBITS_DEFINE_REPOSITORY_TPLS(
   ExtraTPL1    cmake/    ST
   ExtraTPL2    cmake/    PT
   )

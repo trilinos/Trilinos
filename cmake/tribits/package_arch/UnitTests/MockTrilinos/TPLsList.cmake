@@ -39,7 +39,7 @@
 
 
 # Just used for unit testing
-TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
+TRIBITS_DEFINE_REPOSITORY_TPLS(
   MPI            cmake/TPLs/    PT
   BLAS           cmake/TPLs/    PT
   LAPACK         cmake/TPLs/    PT

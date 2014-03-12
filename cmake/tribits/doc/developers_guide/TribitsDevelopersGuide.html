@@ -329,8 +329,8 @@ ul.auto-toc {
 <li><a class="reference internal" href="#project-specific-build-quick-reference" id="id13">9&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
 <li><a class="reference internal" href="#tribits-macros-and-functions" id="id14">10&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul class="auto-toc">
 <li><a class="reference internal" href="#tribits-project" id="id15">10.1&nbsp;&nbsp;&nbsp;TRIBITS_PROJECT()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-packages-dirs-classifications" id="id16">10.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-tpls-findmods-classifications" id="id17">10.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-packages" id="id16">10.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-tpls" id="id17">10.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS()</a></li>
 <li><a class="reference internal" href="#tribits-define-package-dependencies" id="id18">10.4&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
 <li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id19">10.5&nbsp;&nbsp;&nbsp;TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
 <li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id20">10.6&nbsp;&nbsp;&nbsp;TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
@@ -742,13 +742,13 @@ This allows someone to set <tt class="docutils literal">${PROJECT_NAME}_TRIBITS_
 to a different Tribits implementation to test before snapshoting.</p>
 <p>ToDo: Give documentation!</p>
 </div>
-<div class="section" id="tribits-define-repository-packages-dirs-classifications">
-<h2><a class="toc-backref" href="#id16">10.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a></h2>
+<div class="section" id="tribits-define-repository-packages">
+<h2><a class="toc-backref" href="#id16">10.2&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></h2>
 <p>Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a PackagesList.cmake file for a given TriBITS repo.</p>
 <p>Usage:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
+TRIBITS_DEFINE_REPOSITORY_PACKAGES(
    &lt;pkg0&gt;  &lt;pkg0_dir&gt;  &lt;pkg0_classifications&gt;
    &lt;pkg1&gt;  &lt;pkg1_dir&gt;  &lt;pkg1_classifications&gt;
    ...
@@ -797,14 +797,14 @@ subdirs).</li>
 misspell the name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
-<div class="section" id="tribits-define-repository-tpls-findmods-classifications">
-<h2><a class="toc-backref" href="#id17">10.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS()</a></h2>
+<div class="section" id="tribits-define-repository-tpls">
+<h2><a class="toc-backref" href="#id17">10.3&nbsp;&nbsp;&nbsp;TRIBITS_DEFINE_REPOSITORY_TPLS()</a></h2>
 <p>Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
 TPLsList.cmake fil for a given TriBITS repo.</p>
 <p>Usage:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_TPLS_FINDMODS_CLASSIFICATIONS(
+TRIBITS_DEFINE_REPOSITORY_TPLS(
   &lt;tpl0_name&gt;   &lt;tpl0_findmod&gt;  &lt;tpl0_classification&gt;
   &lt;tpl1_name&gt;   &lt;tpl1_findmod&gt;  &lt;tpl1_classification&gt;
   ...
@@ -952,7 +952,7 @@ tested.</li>
 EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
 spaces in between (e.g. &quot;PT,GPM&quot;).  These have exactly the name meaning
 as for full packages (see
-<a class="reference internal" href="#tribits-define-repository-packages-dirs-classifications">TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()</a>).</li>
+<a class="reference internal" href="#tribits-define-repository-packages">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a>).</li>
 <li><strong>OPTREQ:</strong> Determines if the outer parent package has an OPTIONAL or
 REQUIRED dependence on this subpackage.</li>
 </ul>

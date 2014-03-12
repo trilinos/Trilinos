@@ -41,7 +41,7 @@
 # CMake code.  The reason that we have a separate list is so that we
 # can keep very stable unit tests.
 
-TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
+TRIBITS_DEFINE_REPOSITORY_PACKAGES(
   TrilinosFramework   cmake                           PT
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT

@@ -401,7 +401,7 @@ ENDMACRO()
 #     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
 #     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
 #     as for full packages (see
-#     `TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()`_).
+#     `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_).
 #
 #   * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
 #     REQUIRED dependence on this subpackage.

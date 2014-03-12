@@ -52,14 +52,14 @@ INCLUDE(TribitsListHelpers)
 
 
 #
-# @MACRO: TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS()
+# @MACRO: TRIBITS_DEFINE_REPOSITORY_PACKAGES()
 #
 # Define the set of packages for a given TriBIT repo.  This macro is typically
 # called from inside of a PackagesList.cmake file for a given TriBITS repo.
 #
 # Usage::
 #
-#    TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS(
+#    TRIBITS_DEFINE_REPOSITORY_PACKAGES(
 #       <pkg0>  <pkg0_dir>  <pkg0_classifications>
 #       <pkg1>  <pkg1_dir>  <pkg1_classifications>
 #       ...
@@ -111,7 +111,7 @@ INCLUDE(TribitsListHelpers)
 #   ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
 #   misspell the name of the macro, it is an immediate error in CMake.
 #
-MACRO(TRIBITS_DEFINE_REPOSITORY_PACKAGES_DIRS_CLASSIFICATIONS)
+MACRO(TRIBITS_DEFINE_REPOSITORY_PACKAGES)
   ASSERT_DEFINED(REPOSITORY_NAME)
   SET(${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS ${ARGN})
 ENDMACRO()
