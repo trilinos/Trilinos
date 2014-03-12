@@ -48,7 +48,7 @@ struct UnorderedMapTest
     metrics_out << inserts/collisions << " , ";
     metrics_out << (100.0 * inserts/collisions) / capacity << " , ";
     metrics_out << inserts << " , ";
-    metrics_out << (map.has_failed_inserts() ? "true" : "false") << " , ";
+    metrics_out << map.failed_inserts() << " , ";
     metrics_out << collisions << " , ";
     metrics_out << 1e9*(seconds/inserts) << std::endl;
 
@@ -114,9 +114,21 @@ void run_performance_tests(std::string const & base_file_name)
   distance_out << "\b\b\b   " << std::endl;
   block_distance_out << "\b\b\b   " << std::endl;
 
-  for (uint32_t capacity = 1<<12; capacity <= 1<<24; capacity = capacity << 1) {
+  for (uint32_t capacity = 1<<12; capacity <= 1<<20; capacity = capacity << 1) {
     std::cout << "capacity(" << capacity << ")";
-    for (uint32_t inserts = capacity/8; inserts <= 2u*capacity; inserts += (capacity/8u)) {
+    for (uint32_t inserts = capacity/8; inserts <= (3u*capacity)/2u; inserts += (capacity/8u)) {
+      for (uint32_t collisions = 1;  collisions <= 16u; collisions *= 2) {
+        UnorderedMapTest<Device, Near> test(capacity, inserts*collisions, collisions);
+        test.print(metrics_out, length_out, distance_out, block_distance_out);
+        std::cout << ".";
+      }
+      std::cout << "*" << std::flush;
+    }
+    std::cout << std::endl;
+  }
+  for (uint32_t capacity = 1<<20; capacity <= 1<<24; capacity = capacity << 1) {
+    std::cout << "capacity(" << capacity << ")";
+    for (uint32_t inserts = capacity/8; inserts <= (7u*capacity)/8u; inserts += (capacity/8u)) {
       for (uint32_t collisions = 1;  collisions <= 16u; collisions *= 2) {
         UnorderedMapTest<Device, Near> test(capacity, inserts*collisions, collisions);
         test.print(metrics_out, length_out, distance_out, block_distance_out);
@@ -133,7 +145,6 @@ void run_performance_tests(std::string const & base_file_name)
   block_distance_out.close();
 #else
   (void)base_file_name;
-  std::cout << "skipping test" << std::endl;
 #endif
 }
 

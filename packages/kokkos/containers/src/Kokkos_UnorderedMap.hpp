@@ -67,8 +67,6 @@
 
 namespace Kokkos {
 
-class OpenMP;
-
 /// \brief First element of the return value of UnorderedMap::insert().
 ///
 /// Inserting an element into an UnorderedMap is not guaranteed to
@@ -138,6 +136,17 @@ struct UnorderedMapInsertResult
 ///      <i>did</i> exist in the table before.  The new value was
 ///      ignored and the old value was left in place. </li>
 /// </ol>
+///
+/// Users can access the number of failed insertions thus far by
+/// calling failed_inserts().  This requires computation, and thus is
+/// a computational kernel, <i>not</i> a device function.  Once users
+/// have the number of failed inserts, they may reserve() as much
+/// space as they need and add the remaining elements (in a second
+/// CUDA kernel launch, if applicable).  We reiterate: users may
+/// <i>not</i> call these methods in a parallel computational kernel.
+/// They must run their parallel operation to completion, then call
+/// failed_inserts(), reserve() if necessary, and run another parallel
+/// kernel to add any remaining elements.
 ///
 /// \tparam Key Type of keys of the lookup table.  If \c const, users
 ///   are not allowed to add or remove keys, though they are allowed
@@ -234,6 +243,7 @@ private:
                              >::type size_type_view;
 
   typedef View< Impl::UnorderedMapScalars, device_type> scalars_view;
+  typedef View< size_type *, device_type>               scratch_view;
 
   typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > raw_deep_copy;
 
@@ -251,6 +261,7 @@ public:
     , m_keys()
     , m_values()
     , m_scalars()
+    , m_failed_insert_scratch()
   {}
 
   /// \brief Constructor
@@ -269,6 +280,7 @@ public:
     , m_keys("UnorderedMap keys",m_capacity+1)
     , m_values("UnorderedMap values",(is_set? 1 : m_capacity+1))
     , m_scalars("UnorderedMap scalars")
+    , m_failed_insert_scratch("UnorderedMap scratch", m_hash_lists.size())
   {
     if (!is_insertable_map) {
       throw std::runtime_error("Cannot construct a non-insertable (i.e. const key_type) unordered_map");
@@ -288,23 +300,24 @@ public:
   void clear()
   {
     if (m_capacity == 0) return;
-
-    Kokkos::deep_copy(m_available_indexes,invalid_index);
-    Kokkos::deep_copy(m_hash_lists,invalid_index);
-    Kokkos::deep_copy(m_next_index,invalid_index);
-    {
-      const key_type tmp = key_type();
-      Kokkos::deep_copy(m_keys,tmp);
+    if (size() || failed_inserts()) {
+      Kokkos::deep_copy(m_available_indexes,invalid_index);
+      Kokkos::deep_copy(m_hash_lists,invalid_index);
+      Kokkos::deep_copy(m_next_index,invalid_index);
+      {
+        const key_type tmp = key_type();
+        Kokkos::deep_copy(m_keys,tmp);
+      }
+      if (is_set){
+        const impl_value_type tmp = impl_value_type();
+        Kokkos::deep_copy(m_values,tmp);
+      }
+      {
+        const Impl::UnorderedMapScalars tmp = Impl::UnorderedMapScalars();
+        Kokkos::deep_copy(m_scalars,tmp);
+      }
+      Kokkos::deep_copy(m_failed_insert_scratch,0u);
     }
-    if (is_set){
-      const impl_value_type tmp = impl_value_type();
-      Kokkos::deep_copy(m_values,tmp);
-    }
-    {
-      const Impl::UnorderedMapScalars tmp = Impl::UnorderedMapScalars();
-      Kokkos::deep_copy(m_scalars,tmp);
-    }
-
   }
 
   /// \brief Change the capacity of the the map
@@ -324,7 +337,7 @@ public:
     if ( new_capacity != m_capacity ) {
 
       const size_type curr_size = size();
-      const bool copy_data = (curr_size > 0u) && !has_failed_inserts();
+      const bool copy_data = (curr_size > 0u) && !failed_inserts();
       new_capacity = (copy_data && (new_capacity < curr_size)) ? curr_size : new_capacity;
 
       declared_map_type tmp(new_capacity, m_hasher);
@@ -335,7 +348,7 @@ public:
       }
       *this = tmp;
     }
-    else if ( has_failed_inserts() ) {
+    else if ( failed_inserts() ) {
       clear();
     }
 
@@ -363,11 +376,12 @@ public:
   /// This is <i>not</i> a device function; it may <i>not</i> be
   /// called in a parallel kernel.  The value is not stored as a
   /// variable; it must be computed.
-  bool has_failed_inserts() const
+  size_type failed_inserts() const
   {
-    if( m_capacity == 0u ) return false;
-    bool result;
-    raw_deep_copy(&result,&m_scalars.ptr_on_device()->has_failed_inserts, sizeof(size_type));
+    if( m_capacity == 0u ) return 0u;
+    sync_scalars();
+    size_type result;
+    raw_deep_copy(&result,&m_scalars.ptr_on_device()->failed_inserts, sizeof(size_type));
     return result;
   }
 
@@ -408,6 +422,15 @@ public:
     }
     return result;
   }
+
+  void print()
+  {
+    if( m_capacity == 0u ) return;
+    Impl::UnorderedMapPrint<const_map_type> f(*this);
+    f.apply();
+    device_type::fence();
+  }
+
 
   /// \brief The maximum number of entries that the table can hold.
   ///
@@ -620,6 +643,7 @@ public:
     , m_keys(src.m_keys)
     , m_values(src.m_values)
     , m_scalars(src.m_scalars)
+    , m_failed_insert_scratch(src.m_failed_insert_scratch)
   {}
 
 
@@ -636,6 +660,7 @@ public:
     m_keys = src.m_keys;
     m_values = src.m_values;
     m_scalars = src.m_scalars;
+    m_failed_insert_scratch = src.m_failed_insert_scratch;
     return *this;
   }
 
@@ -672,11 +697,11 @@ private: // private member functions
 
       const size_type num_blocks = m_available_indexes.size();
       const size_type starting_block = static_cast<size_type>( (hash_list * num_blocks) / m_hash_lists.size() );
-      bool & has_failed_inserts_ref = m_scalars().has_failed_inserts;
+      bool * const has_failed_inserts = & m_scalars().has_failed_inserts;
 
       // Search blocks for a free entry.
       // If a failed insert is encountered by any thread then abort the search.
-      for ( size_type i=0; new_index == invalid_index && i < num_blocks && !has_failed_inserts_ref ; ++i )
+      for ( size_type i=0; new_index == invalid_index && i < num_blocks && !*has_failed_inserts ; ++i )
       {
         const size_type curr_block = (starting_block + i) % num_blocks;
 
@@ -684,7 +709,7 @@ private: // private member functions
 
         size_type old_available = volatile_load(available_ptr);
 
-        while ( new_index == invalid_index && ( 0u < old_available ) && !has_failed_inserts_ref ) {
+        while ( new_index == invalid_index && ( 0u < old_available ) && !*has_failed_inserts ) {
           // Search current block for an available entry.
           const size_type available = old_available;
 
@@ -702,9 +727,10 @@ private: // private member functions
       }
 
       if ( new_index == invalid_index ) {
-        if (!has_failed_inserts_ref) {
-          has_failed_inserts_ref = true;
+        if (!*has_failed_inserts) {
+          *has_failed_inserts = true;
         }
+        atomic_fetch_add(&m_failed_insert_scratch[hash_list],1u);
       }
     }
 
@@ -747,8 +773,13 @@ private: // private member functions
         f.apply();
       }
 
+      {
+        Impl::UnorderedMapCountFailedInserts<const_map_type> f(*this);
+        f.apply();
+      }
       // make sure the results are stored before continuing
       device_type::fence();
+
     }
   }
 
@@ -762,6 +793,7 @@ private: // private members
   key_type_view   m_keys;
   value_type_view m_values;
   scalars_view    m_scalars;
+  scratch_view    m_failed_insert_scratch;
 
   template <typename KKey, typename VValue, typename DDevice, typename HHash, typename EEqualTo>
   friend class UnorderedMap;
@@ -770,7 +802,13 @@ private: // private members
   friend struct Impl::UnorderedMapSize;
 
   template <typename UMap>
+  friend struct Impl::UnorderedMapCountFailedInserts;
+
+  template <typename UMap>
   friend struct Impl::UnorderedMapErase;
+
+  template <typename UMap>
+  friend struct Impl::UnorderedMapPrint;
 
   template <typename UMap>
   friend struct Impl::UnorderedMapHistogram;
