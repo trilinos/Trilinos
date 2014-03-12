@@ -43,8 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP_
-#define MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP_
+#ifndef MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP
+#define MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP
+
+
 
 
 namespace MueLu {
@@ -57,4 +59,5 @@ namespace MueLu {
 #endif
 
 
-#endif /* MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP_ */
+
+#endif // MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP

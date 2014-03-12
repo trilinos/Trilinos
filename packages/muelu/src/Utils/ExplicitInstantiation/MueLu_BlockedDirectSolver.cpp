@@ -71,5 +71,3 @@ template class MueLu::BlockedDirectSolver<std::complex<double>, int, int, Kokkos
 #endif
 
 
-
-
