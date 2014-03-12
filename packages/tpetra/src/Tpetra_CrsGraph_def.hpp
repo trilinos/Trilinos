@@ -2192,6 +2192,8 @@ namespace Tpetra {
     lclInds1D_           = columnIndices;
     rowPtrs_             = rowPointers;
     nodeNumEntries_ = nodeNumAllocated_ = rowPtrs_[getNodeNumRows()];
+    numAllocForAllRows_  = 0;
+    numAllocPerRow_      = null;
     checkInternalState();
   }
 
