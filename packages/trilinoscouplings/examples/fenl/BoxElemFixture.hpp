@@ -179,6 +179,14 @@ public:
     { return m_node_grid(inode,iaxis); }
 
   KOKKOS_INLINE_FUNCTION
+  size_t node_global_index( unsigned local ) const
+    {
+      const unsigned node_grid[SpaceDim] =
+        { m_node_grid(local,0) , m_node_grid(local,1) , m_node_grid(local,2) };
+      return m_box_part.global_node_id( node_grid );
+    }
+
+  KOKKOS_INLINE_FUNCTION
   double node_coord( unsigned inode , unsigned iaxis ) const
     { return m_node_coord(inode,iaxis); }
 
