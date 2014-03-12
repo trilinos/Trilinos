@@ -4,8 +4,10 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 
 namespace Perf {
@@ -36,10 +38,12 @@ struct UnorderedMapTest
     wall_clock.reset();
 
     Kokkos::parallel_for(inserts, *this);
+    Device::fence();
 
     seconds = wall_clock.seconds();
 
     histogram.calculate();
+    Device::fence();
   }
 
   void print(std::ostream & metrics_out, std::ostream & length_out, std::ostream & distance_out, std::ostream & block_distance_out)
@@ -48,22 +52,22 @@ struct UnorderedMapTest
     metrics_out << inserts/collisions << " , ";
     metrics_out << (100.0 * inserts/collisions) / capacity << " , ";
     metrics_out << inserts << " , ";
-    metrics_out << map.failed_inserts() << " , ";
+    metrics_out << (map.has_failed_inserts() ? "true" : "false") << " , ";
     metrics_out << collisions << " , ";
     metrics_out << 1e9*(seconds/inserts) << std::endl;
 
     length_out << capacity << " , ";
-    length_out << inserts/collisions << " , ";
+    length_out << ((100.0 *inserts/collisions) / capacity) << " , ";
     length_out << collisions << " , ";
     histogram.print_length(length_out);
 
     distance_out << capacity << " , ";
-    distance_out << inserts/collisions << " , ";
+    distance_out << ((100.0 *inserts/collisions) / capacity) << " , ";
     distance_out << collisions << " , ";
     histogram.print_distance(distance_out);
 
     block_distance_out << capacity << " , ";
-    block_distance_out << inserts/collisions << " , ";
+    block_distance_out << ((100.0 *inserts/collisions) / capacity) << " , ";
     block_distance_out << collisions << " , ";
     histogram.print_block_distance(block_distance_out);
   }
@@ -88,63 +92,59 @@ template <typename Device, bool Near>
 void run_performance_tests(std::string const & base_file_name)
 {
 #if defined(KOKKOS_COLLECT_UNORDERED_MAP_METRICS)
-  std::string metrics_file_name = base_file_name + std::string("-metrics.csv");
-  std::string length_file_name = base_file_name + std::string("-length.csv");
-  std::string distance_file_name = base_file_name + std::string("-distance.csv");
-  std::string block_distance_file_name = base_file_name + std::string("-block_distance.csv");
+  Kokkos::Impl::Timer wall_clock ;
+  for (uint32_t collisions = 1;  collisions <= 16u; collisions *= 2) {
+    wall_clock.reset();
+    std::ostringstream c;
+    c << "-collisions_" << collisions;
 
-  std::ofstream metrics_out( metrics_file_name.c_str(), std::ofstream::out );
-  std::ofstream length_out( length_file_name.c_str(), std::ofstream::out );
-  std::ofstream distance_out( distance_file_name.c_str(), std::ofstream::out );
-  std::ofstream block_distance_out( block_distance_file_name.c_str(), std::ofstream::out );
+    std::string metrics_file_name = base_file_name + c.str()+ std::string("-metrics.csv");
+    std::string length_file_name = base_file_name + c.str() + std::string("-length.csv");
+    std::string distance_file_name = base_file_name +  c.str() +std::string("-distance.csv");
+    std::string block_distance_file_name = base_file_name +  c.str() +std::string("-block_distance.csv");
 
-  // set up file headers
-  metrics_out << "Capacity , Unique , Percent Full , Attempted Inserts , Failed Inserts , Collision Ratio , Nanoseconds/Inserts" << std::endl;
-  length_out << "Capacity , Percent Full , ";
-  distance_out << "Capacity , Percent Full , ";
-  block_distance_out << "Capacity , Percent Full , ";
+    std::ofstream metrics_out( metrics_file_name.c_str(), std::ofstream::out );
+    std::ofstream length_out( length_file_name.c_str(), std::ofstream::out );
+    std::ofstream distance_out( distance_file_name.c_str(), std::ofstream::out );
+    std::ofstream block_distance_out( block_distance_file_name.c_str(), std::ofstream::out );
 
-  for (int i=0; i<100; ++i) {
-    length_out << i << " , ";
-    distance_out << i << " , ";
-    block_distance_out << i << " , ";
-  }
+    // set up file headers
+    metrics_out << "Capacity , Unique , Percent Full , Attempted Inserts , Failed Inserts , Collision Ratio , Nanoseconds/Inserts" << std::endl;
+    length_out << "Capacity , Percent Full , ";
+    distance_out << "Capacity , Percent Full , ";
+    block_distance_out << "Capacity , Percent Full , ";
 
-  length_out << "\b\b\b   " << std::endl;
-  distance_out << "\b\b\b   " << std::endl;
-  block_distance_out << "\b\b\b   " << std::endl;
+    for (int i=0; i<100; ++i) {
+      length_out << i << " , ";
+      distance_out << i << " , ";
+      block_distance_out << i << " , ";
+    }
 
-  for (uint32_t capacity = 1<<12; capacity <= 1<<20; capacity = capacity << 1) {
-    std::cout << "capacity(" << capacity << ")";
-    for (uint32_t inserts = capacity/8; inserts <= (3u*capacity)/2u; inserts += (capacity/8u)) {
-      for (uint32_t collisions = 1;  collisions <= 16u; collisions *= 2) {
+    length_out << "\b\b\b   " << std::endl;
+    distance_out << "\b\b\b   " << std::endl;
+    block_distance_out << "\b\b\b   " << std::endl;
+
+    std::cout << "Collisions: " << collisions << std::endl;
+    for (uint32_t i = 1; i <= 12; ++i) {
+      std::cout << "  percent full (" << std::setprecision(3) << std::fixed << (100.0*i)/8 << ") ";
+      for (uint32_t capacity = 1<<12; capacity < 1<<21; capacity = capacity << 1) {
+        uint32_t inserts = i*(capacity/8u);
         UnorderedMapTest<Device, Near> test(capacity, inserts*collisions, collisions);
         test.print(metrics_out, length_out, distance_out, block_distance_out);
-        std::cout << ".";
+        std::cout << capacity << ".." << std::flush;
       }
-      std::cout << "*" << std::flush;
+      std::cout << std::endl;
     }
-    std::cout << std::endl;
-  }
-  for (uint32_t capacity = 1<<20; capacity <= 1<<24; capacity = capacity << 1) {
-    std::cout << "capacity(" << capacity << ")";
-    for (uint32_t inserts = capacity/8; inserts <= (7u*capacity)/8u; inserts += (capacity/8u)) {
-      for (uint32_t collisions = 1;  collisions <= 16u; collisions *= 2) {
-        UnorderedMapTest<Device, Near> test(capacity, inserts*collisions, collisions);
-        test.print(metrics_out, length_out, distance_out, block_distance_out);
-        std::cout << ".";
-      }
-      std::cout << "*" << std::flush;
-    }
-    std::cout << std::endl;
-  }
+    std::cout << "  " << wall_clock.seconds() << " secs" << std::endl;
 
-  metrics_out.close();
-  length_out.close();
-  distance_out.close();
-  block_distance_out.close();
+    metrics_out.close();
+    length_out.close();
+    distance_out.close();
+    block_distance_out.close();
+  }
 #else
   (void)base_file_name;
+  std::cout << "skipping test" << std::endl;
 #endif
 }
 
