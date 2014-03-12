@@ -688,15 +688,6 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const
   {
-    return setUnionImpl (rhs);
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-  Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setUnionImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const
-  {
     typedef Tpetra::global_size_t GST;
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -896,24 +887,45 @@ namespace Tpetra {
       typename Array<GO>::iterator permuteGIDs2_end = permuteGIDs2.end ();
       if (tgtMap1HadMaxSameGIDs) {
         // This operation allows the last (output) argument to alias the first.
-        permuteGIDs2_end =
-          std::set_intersection (permuteGIDs2_beg,
-                                 permuteGIDs2_end,
-                                 doubleCountedSameGIDs.begin (),
-                                 doubleCountedSameGIDs.end (),
-                                 permuteGIDs2_beg);
+	permuteGIDs2_end = 
+	  std::set_difference(permuteGIDs2_beg,
+			      permuteGIDs2_end,
+			      doubleCountedSameGIDs.begin (),
+			      doubleCountedSameGIDs.end (),
+			      permuteGIDs2_beg);
+	    
+
       } else {
         // This operation allows the last (output) argument to alias the first.
-        permuteGIDs1_end =
-          std::set_intersection (permuteGIDs1_beg,
-                                 permuteGIDs1_end,
-                                 doubleCountedSameGIDs.begin (),
-                                 doubleCountedSameGIDs.end (),
-                                 permuteGIDs1_beg);
+	permuteGIDs1_end = 
+	  std::set_difference(permuteGIDs1_beg,
+			      permuteGIDs1_end,
+			      doubleCountedSameGIDs.begin (),
+			      doubleCountedSameGIDs.end (),
+			      permuteGIDs1_beg);
+
       }
       std::set_union (permuteGIDs1_beg, permuteGIDs1_end,
                       permuteGIDs2_beg, permuteGIDs2_end,
                       std::back_inserter (unionTgtGIDs));
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+      {
+        std::ostringstream os;
+	if(tgtMap1HadMaxSameGIDs) os << myRank << ": tgtMap1HadMaxSameGIDs == true"<<endl;
+	else os << myRank << ": tgtMap1HadMaxSameGIDs == false"<<endl;
+
+        os << myRank << ": reduced permuteGIDs1: {";
+	for(typename Array<GO>::iterator k = permuteGIDs1_beg;  k != permuteGIDs1_end; k++)
+	  os<<*k<<", ";
+	os<<"}"<<endl;
+        os << myRank << ": reduced permuteGIDs2: {";
+	for(typename Array<GO>::iterator k = permuteGIDs2_beg;  k != permuteGIDs2_end; k++)
+	  os<<*k<<", ";
+	os<<"}"<<endl;
+        cerr << os.str ();
+      }
+#endif
       const size_type numPermuteIDsUnion =
         unionTgtGIDs.size () - numSameIDsUnion;
       ArrayView<const GO> permuteGIDsUnion =
@@ -965,6 +977,16 @@ namespace Tpetra {
       }
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     }// end permutes
+
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    {
+      std::ostringstream os;
+      os << myRank << ": unionTgtGIDs after permutes: "
+         << toString (unionTgtGIDs ()) << endl;
+      cerr << os.str ();
+    }
+#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
     // Thus far, we have computed the following in the union Import:
     //   - getNumSameIDs()
@@ -1109,9 +1131,24 @@ namespace Tpetra {
 
     // Create the union target Map.
     //
-    // FIXME (mfh 01 May 2013) It would be handy to have a Map
+    // mfh 01 May 2013, 28 Feb 2014: It might be handy to have a Map
     // constructor that takes the global min and max GIDs; that would
-    // obviate the need for Map to compute them (with an all-reduce).
+    // obviate the need for Map to compute them.  On the other hand,
+    // for signed GlobalOrdinal, this version of Map's constructor
+    // already computes as few all-reduces as possible (not including
+    // optimizations that might be possible if one were to fold in
+    // Directory construction).  The constructor must do two
+    // all-reduces:
+    //
+    //   1. Get the global number of GIDs (since the first argument is
+    //      INVALID, we're asking Map to compute this for us)
+    //
+    //   2. Figure out three things: global min and max GID, and
+    //      whether the Map is distributed or locally replicated.
+    //
+    // #2 above happens in one all-reduce (of three integers).
+    // #Figuring out whether the Map is distributed or locally
+    // #replicated requires knowing the global number of GIDs.
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     RCP<const map_type> unionTgtMap =
       rcp (new map_type (INVALID, unionTgtGIDs (), indexBaseUnion,
@@ -1249,6 +1286,80 @@ namespace Tpetra {
 
     return unionImport;
   }
+
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  setUnion () const
+  {
+    typedef Tpetra::global_size_t GST;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Import<LO, GO, Node> import_type;
+    typedef typename Array<GO>::size_type size_type;
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > unionImport;
+    RCP<const map_type> srcMap = this->getSourceMap ();
+    RCP<const map_type> tgtMap = this->getTargetMap ();
+    RCP<const Comm<int> > comm = srcMap->getComm ();
+
+#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    const int myRank = comm->getRank ();
+#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    
+    ArrayView<const GO> srcGIDs = srcMap->getNodeElementList ();
+    ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
+
+    // All elements in srcMap will be in the "new" target map, so...
+    size_t numSameIDsNew    = srcMap->getNodeNumElements();
+    size_t numRemoteIDsNew  = getNumRemoteIDs();
+    Array<LO> permuteToLIDsNew, permuteFromLIDsNew; // empty on purpose
+
+    // Grab some old data
+    ArrayView<const LO> remoteLIDsOld = getRemoteLIDs();
+    ArrayView<const LO> exportLIDsOld = getExportLIDs();
+
+    // Build up the new map (same part)
+    Array<GO> GIDs(numSameIDsNew + numRemoteIDsNew);
+    for(size_t i=0; i<numSameIDsNew; i++) 
+      GIDs[i] = srcGIDs[i];
+
+    // Build up the new map (remote part) and remotes list
+    Array<LO> remoteLIDsNew(numRemoteIDsNew);
+    for(size_t i=0; i<numRemoteIDsNew; i++) {
+      GIDs[numSameIDsNew + i] = tgtGIDs[remoteLIDsOld[i]];
+      remoteLIDsNew[i] = numSameIDsNew+i;
+    }
+
+    // Build the new target map
+    GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    RCP<const map_type> targetMapNew = rcp(new map_type(GO_INVALID,GIDs,tgtMap->getIndexBase(),tgtMap->getComm(),tgtMap->getNode()));
+
+    // Exports are trivial (since the sourcemap doesn't change)
+    Array<int> exportPIDsnew(getExportPIDs());
+    Array<LO> exportLIDsnew(getExportLIDs());
+
+    // Copy the Distributor (due to how the Import constructor works)
+    Distributor D(getDistributor());
+
+    // Build the importer
+    unionImport = rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(srcMap,targetMapNew,numSameIDsNew,permuteToLIDsNew,permuteFromLIDsNew,
+								    remoteLIDsNew,exportLIDsnew,exportPIDsnew,D));
+
+    return unionImport;
+  }
+
+
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

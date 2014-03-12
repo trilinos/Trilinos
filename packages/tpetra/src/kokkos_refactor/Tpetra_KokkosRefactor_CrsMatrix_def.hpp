@@ -3370,7 +3370,7 @@ namespace Tpetra {
         // to copy here because we won't be doing Import operations.
         X_colMap = getColumnMapMultiVector (X, true);
         X_domainMap = X_colMap; // Domain and column Maps are the same.
-        *X_domainMap = X; // Copy X into the domain Map view.
+        deep_copy(*X_domainMap, X); // Copy X into the domain Map view.
         copiedInput = true;
         TPETRA_EFFICIENCY_WARNING(
           ! X.isConstantStride (), std::runtime_error,
@@ -3474,7 +3474,7 @@ namespace Tpetra {
     }
 
     if (copiedInput) {
-      X = *X_domainMap; // Copy back from X_domainMap to X.
+      deep_copy(X, *X_domainMap); // Copy back from X_domainMap to X.
     }
   }
 

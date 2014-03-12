@@ -73,125 +73,20 @@ class task_scan ;
 namespace Kokkos {
 namespace Impl {
 
+template< class DeviceType , class ResultType = void >
+class Task ;
+
 struct TaskResultTypeIsVoid {};
 
 template< class PatternType
-        , class Op1Type = void 
-        , class Op2Type = void 
-        , class Op3Type = void 
+        , class Op1Type = void
+        , class Op2Type = void
+        , class Op3Type = void
         , class Op4Type = void
         >
 class FunctorTraits ;
 
-//----------------------------------------------------------------------------
-// Functor must have a pattern_type and must not be the pattern_type
-
-template< class FunctorType >
-class FunctorTraits< FunctorType , void , void , void , void > {
-public:
-  typedef FunctorType                         functor_type ;
-  typedef typename FunctorType::pattern_type  pattern_type ;
-  typedef typename pattern_type::device_type  device_type ;
-  typedef typename pattern_type::result_type  result_type ;
-  typedef typename pattern_type::future_type  future_type ;
-  typedef typename pattern_type::work_type    work_type ;
-};
-
-//----------------------------------------------------------------------------
-
-template< class DeviceType , class Op1Type >
-class FunctorTraits< task_serial< DeviceType , void > , Op1Type , void , void , void > {
-public:
-  typedef task_serial< DeviceType , void >    pattern_type ;
-  typedef typename pattern_type::device_type  device_type ;
-  typedef typename pattern_type::result_type  result_type ;
-  typedef typename pattern_type::future_type  future_type ;
-  typedef typename pattern_type::work_type    work_type ;
-
-  class functor_type : public pattern_type {
-  private:
-    Op1Type m_op1 ;
-  public:
-
-    KOKKOS_INLINE_FUNCTION
-    void apply() { m_op1(); }
-
-    KOKKOS_INLINE_FUNCTION
-    functor_type( const Op1Type & arg_op1 )
-      : task_serial< DeviceType , void >()
-      , m_op1( arg_op1 )
-      {}
-  };
-};
-
-template< class DeviceType , class ResultType , class Op1Type >
-class FunctorTraits< task_serial< DeviceType , ResultType > , Op1Type , void , void , void > {
-public:
-  typedef task_serial< DeviceType , ResultType >  pattern_type ;
-  typedef typename pattern_type::device_type      device_type ;
-  typedef typename pattern_type::result_type      result_type ;
-  typedef typename pattern_type::future_type      future_type ;
-  typedef typename pattern_type::work_type        work_type ;
-
-  class functor_type : public pattern_type {
-  private:
-    Op1Type m_op1 ;
-  public:
-
-    KOKKOS_INLINE_FUNCTION
-    void apply( ResultType & result ) { m_op1(result); }
-
-    KOKKOS_INLINE_FUNCTION
-    functor_type( const Op1Type & arg_op1 )
-      : task_serial< DeviceType , ResultType >()
-      , m_op1( arg_op1 )
-      {}
-  };
-};
-
-//----------------------------------------------------------------------------
-
-template< class DeviceType , class ResultType , class WorkType , class Op1Type >
-class FunctorTraits< task_reduce< DeviceType , ResultType , WorkType >
-                   , Op1Type , void , void , void >
-{
-  typedef task_reduce< DeviceType , ResultType , WorkType >  pattern_type ;
-  typedef typename pattern_type::device_type  device_type ;
-  typedef typename pattern_type::result_type  result_type ;
-  typedef typename pattern_type::future_type  future_type ;
-  typedef typename pattern_type::work_type    work_type ;
-
-  class functor_type : public pattern_type {
-  private:
-    Op1Type  m_op1 ;
-  public:
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const work_type & work , result_type & update ) const
-      { m_op1( work , update ); }
-
-    KOKKOS_INLINE_FUNCTION
-    functor_type( const WorkType & arg_work , const Op1Type & arg_op1 )
-      : pattern_type( arg_work )
-      , m_op1( arg_op1 )
-      {}
-  };
-};
-
-//----------------------------------------------------------------------------
-
-} /* namespace Imple */
-} /* namespace Kokkos */
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-template< class DeviceType , class ResultType = void >
-class Task ;
-
-} /* namespace Imple */
+} /* namespace Impl */
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------
@@ -439,6 +334,8 @@ task_dependence( FunctorType const * const functor , const int i )
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------
+
+#include <impl/Kokkos_FunctorTraits.hpp>
 
 #endif /* #define KOKKOS_TASK_HPP */
 

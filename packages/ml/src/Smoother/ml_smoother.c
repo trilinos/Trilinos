@@ -2205,6 +2205,7 @@ int ML_Smoother_VBlockJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
       x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
       for (i = 0; i < inlen; i++) x_ext[i] = x[i];
+      for (i = inlen; i < inlen+getrow_comm->total_rcv_length; i++) x_ext[i] = 0.;
    }
    else x_ext = x;
    if ( maxBlocksize > 0 )
@@ -2399,6 +2400,7 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
       x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
       for (i = 0; i < inlen; i++) x_ext[i] = x[i];
+      for (i = inlen; i < inlen+getrow_comm->total_rcv_length; i++) x_ext[i] = 0.;
    }
    else x_ext = x;
    if ( maxBlocksize > 0 )
@@ -2608,6 +2610,7 @@ int ML_Smoother_VBlockSGSSequential(ML_Smoother *sm, int inlen, double x[],
       x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
       for (i = 0; i < inlen; i++) x_ext[i] = x[i];
+      for (i = inlen; i < inlen+getrow_comm->total_rcv_length; i++) x_ext[i] = 0.;
    }
    else x_ext = x;
    if ( maxBlocksize > 0 )
@@ -8439,13 +8442,17 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
    char           N[2];
    double         **trid_dl,  **trid_d,  **trid_du,  **trid_du2;
    int            **trid_ipiv;
-   double         *Amat_CrsVal;
-   int            *Amat_CrsRowptr, *Amat_CrsBindx;
+   double         *Amat_CrsVal = NULL, *Amat_MsrVal = NULL;
+   int            *Amat_CrsRowptr = NULL, *Amat_CrsBindx = NULL;
+   int            *Amat_MsrBindx = NULL;
    int            Bsize;
+   struct ML_CSR_MSRdata *ptr;
+   ML_Operator    *Amat;
 
    smooth_ptr   = (ML_Smoother *) sm;
    omega        = smooth_ptr->omega;
-   Nrows        = smooth_ptr->my_level->Amat->getrow->Nrows;
+   Amat         = smooth_ptr->my_level->Amat;
+   Nrows        = Amat->getrow->Nrows;
    dataptr      = (ML_Sm_BGS_Data *)smooth_ptr->smoother->data;
    NBlks        = dataptr->Nblocks;
    block_indices= dataptr->blockmap;
@@ -8461,15 +8468,40 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
       pr_error("Error(ML_LineGS): Post communication not allowed.\n");
       ML_avoid_unused_param((void *) &outlen);
    }
-   if ( Epetra_ML_GetCrsDataptrs(smooth_ptr->my_level->Amat, &Amat_CrsVal,
+
+  if (Amat->getrow->func_ptr == MSR_getrows){
+    ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+    Amat_MsrVal   = ptr->values;
+    Amat_MsrBindx = ptr->columns;
+  }
+#ifdef AZTEC
+  else AZ_get_MSR_arrays(Amat, &Amat_MsrBindx, &Amat_MsrVal);
+#endif
+  if (Amat_MsrBindx == NULL) {
+    if (Amat->getrow->func_ptr == CSR_getrow) {
+      ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+      Amat_CrsVal   = ptr->values;
+      Amat_CrsBindx = ptr->columns;
+      Amat_CrsRowptr = ptr->rowptr;
+    }
+  }
+#ifdef ML_WITH_EPETRA
+  if ((Amat_MsrBindx == NULL) && (Amat_CrsBindx == NULL))
+  {
+    if ( Epetra_ML_GetCrsDataptrs(smooth_ptr->my_level->Amat, &Amat_CrsVal,
                                  &Amat_CrsBindx,&Amat_CrsRowptr) != 0)
       pr_error("Error(ML_LineGS):failed to get Epetra Crs pointers\n");
+  }
+#endif /*ifdef ML_WITH_EPETRA*/
 
-   if ((inlen%NBlks) != 0) {
+   if (inlen != 0) {
+    if ((inlen%NBlks) != 0) {
       pr_error("Error(ML_LineGS): inlen not evenly divisible by NBlks\n");
       ML_avoid_unused_param((void *) &outlen);
+    }
    }
-   Bsize = inlen/NBlks;
+   if (NBlks != 0) Bsize = inlen/NBlks;
+   else Bsize = 1;
 
    if (getrow_comm != NULL) {
       x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
@@ -8481,7 +8513,10 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
    if (RowsInBlk == NULL)
       pr_error("Error(ML_LineGS): Not enough space\n");
 
-   if (getrow_comm != NULL) for (i = 0; i < inlen; i++) x_ext[i] = x[i];
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x_ext[i] = x[i];
+      for (i = inlen; i < inlen+getrow_comm->total_rcv_length; i++) x_ext[i] = 0.;
+   }
    else x_ext = x;
 
    if (blkOffset == NULL) {
@@ -8499,7 +8534,8 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
          ML_exchange_bdry(x_ext,getrow_comm, inlen,smooth_ptr->my_level->comm,
                           ML_OVERWRITE,NULL);
 
-      for (i = 0; i < NBlks; i++) {
+      if (Amat_CrsBindx != NULL) {
+       for (i = 0; i < NBlks; i++) {
          for (k = 0; k < Bsize ; k++) {
             row = RowsInBlk[i*Bsize+k];
             res[k] = rhs[row];
@@ -8510,8 +8546,8 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                     trid_du2[i], trid_ipiv[i],res,&Bsize);
          for (k = 0; k < Bsize; k++)
             x_ext[RowsInBlk[i*Bsize+k]] +=(omega * res[k]);
-      }
-      for (i = NBlks-1; i >= 0; i--) {
+       }
+       for (i = NBlks-1; i >= 0; i--) {
          for (k = 0; k < Bsize; k++) {
             row = RowsInBlk[i*Bsize+k];
             res[k] = rhs[row];
@@ -8522,6 +8558,33 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                     trid_du2[i], trid_ipiv[i],res,&Bsize);
          for (k = 0; k < Bsize; k++)
                x_ext[RowsInBlk[i*Bsize+k]] += (omega * res[k]);
+       }
+      }
+      else {
+       for (i = 0; i < NBlks; i++) {
+         for (k = 0; k < Bsize ; k++) {
+            row = RowsInBlk[i*Bsize+k];
+            res[k] = rhs[row] - Amat_MsrVal[row]*x_ext[row];
+            for (j = Amat_MsrBindx[row]; j < Amat_MsrBindx[row+1]; j++)
+               res[k] -= (Amat_MsrVal[j]*x_ext[Amat_MsrBindx[j]]);
+         }
+         DGTTS2_F77(N,&Bsize, &one, trid_dl[i], trid_d[i], trid_du[i],
+                    trid_du2[i], trid_ipiv[i],res,&Bsize);
+         for (k = 0; k < Bsize; k++)
+            x_ext[RowsInBlk[i*Bsize+k]] +=(omega * res[k]);
+       }
+       for (i = NBlks-1; i >= 0; i--) {
+         for (k = 0; k < Bsize; k++) {
+            row = RowsInBlk[i*Bsize+k];
+            res[k] = rhs[row] - Amat_MsrVal[row]*x_ext[row];
+            for (j = Amat_MsrBindx[row]; j < Amat_MsrBindx[row+1]; j++)
+               res[k] -= (Amat_MsrVal[j]*x_ext[Amat_MsrBindx[j]]);
+         }
+         DGTTS2_F77(N,&Bsize, &one, trid_dl[i], trid_d[i], trid_du[i],
+                    trid_du2[i], trid_ipiv[i],res,&Bsize);
+         for (k = 0; k < Bsize; k++)
+               x_ext[RowsInBlk[i*Bsize+k]] += (omega * res[k]);
+       }
       }
    }
    if (getrow_comm != NULL) {

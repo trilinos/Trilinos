@@ -100,10 +100,10 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
-    shape_type ::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-    stride_type::assign_with_padding( dst.m_stride , dst.m_shape );
+    shape_type ::assign( dst.m_offset_map, n0, n1, n2, n3, n4, n5, n6, n7 );
+    stride_type::assign_with_padding( dst.m_stride , dst.m_offset_map );
 
-    const size_t cap = capacity( dst.m_shape , dst.m_stride );
+    const size_t cap = capacity( dst.m_offset_map , dst.m_stride );
 
     dst.m_ptr_on_device = (scalar_type *)
       memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , cap );
@@ -136,12 +136,12 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
       std::string label = src_memory_space::query_label( src.m_ptr_on_device );
       label.append("_mirror");
 
-      dst_shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                                           src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+      dst_shape_type::assign( dst.m_offset_map, src.m_offset_map.N0 , src.m_offset_map.N1 , src.m_offset_map.N2 , src.m_offset_map.N3 ,
+                                           src.m_offset_map.N4 , src.m_offset_map.N5 , src.m_offset_map.N6 , src.m_offset_map.N7 );
 
       dst_stride_type::assign( dst.m_stride , src.m_stride.value ); // Match the stride
 
-      const size_t cap = capacity( dst.m_shape , dst.m_stride );
+      const size_t cap = capacity( dst.m_offset_map , dst.m_stride );
 
       dst.m_ptr_on_device = (dst_scalar_type *)
         dst_memory_space::allocate( label , typeid(dst_scalar_type) , sizeof(dst_scalar_type) , cap );
@@ -149,7 +149,7 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
       ViewFill< View > init( dst , typename traits::value_type() );
     }
     else {
-      dst_shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+      dst_shape_type ::assign( dst.m_offset_map, 0, 0, 0, 0, 0, 0, 0, 0 );
       dst_stride_type::assign( dst.m_stride , 0 );
       dst.m_ptr_on_device = 0 ;
     }
@@ -180,9 +180,9 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
-    shape_type::assign( dst.m_shape,
-                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 );
+    shape_type::assign( dst.m_offset_map,
+                        src.m_offset_map.N0 , src.m_offset_map.N1 , src.m_offset_map.N2 , src.m_offset_map.N3 ,
+                        src.m_offset_map.N4 , src.m_offset_map.N5 , src.m_offset_map.N6 );
 
     stride_type::assign( dst.m_stride , src.m_stride.value );
 
@@ -217,17 +217,17 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
 
-    shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+    shape_type ::assign( dst.m_offset_map, 0, 0, 0, 0, 0, 0, 0, 0 );
     stride_type::assign( dst.m_stride , 0 );
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
-      assert_shape_bounds( src.m_shape , 8 , range.first ,      0,0,0,0,0,0,0);
-      assert_shape_bounds( src.m_shape , 8 , range.second - 1 , 0,0,0,0,0,0,0);
+      assert_shape_bounds( src.m_offset_map , 8 , range.first ,      0,0,0,0,0,0,0);
+      assert_shape_bounds( src.m_offset_map , 8 , range.second - 1 , 0,0,0,0,0,0,0);
 
-      shape_type::assign( dst.m_shape, range.second - range.first ,
-                          src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                          src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+      shape_type::assign( dst.m_offset_map, range.second - range.first ,
+                          src.m_offset_map.N1 , src.m_offset_map.N2 , src.m_offset_map.N3 ,
+                          src.m_offset_map.N4 , src.m_offset_map.N5 , src.m_offset_map.N6 , src.m_offset_map.N7 );
 
       stride_type::assign( dst.m_stride , src.m_stride.value );
 
@@ -263,13 +263,13 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
 
     if ( dst.m_ptr_on_device != src.m_ptr_on_device ) {
 
-      Impl::assert_shapes_are_equal( dst.m_shape , src.m_shape );
+      Impl::assert_shapes_are_equal( dst.m_offset_map , src.m_offset_map );
 
-      const size_t nbytes = dst.m_shape.scalar_size *
-        ( 1 == dst_traits::rank ? dst.m_shape.N0 : (
-          is_right  ? dst.m_shape.N0 * dst.m_stride.value : (
-                      dst.m_stride.value  * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
-                      dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 )));
+      const size_t nbytes = dst.m_offset_map.scalar_size *
+        ( 1 == dst_traits::rank ? dst.m_offset_map.N0 : (
+          is_right  ? dst.m_offset_map.N0 * dst.m_stride.value : (
+                      dst.m_stride.value  * dst.m_offset_map.N1 * dst.m_offset_map.N2 * dst.m_offset_map.N3 *
+                      dst.m_offset_map.N4 * dst.m_offset_map.N5 * dst.m_offset_map.N6 * dst.m_offset_map.N7 )));
 
       DeepCopy< typename dst_traits::memory_space ,
                 typename src_traits::memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device , nbytes );
@@ -300,8 +300,8 @@ private:
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray> alloc ;
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray,Impl::LayoutEmbedArray> assign ;
 
-  typedef Impl::LayoutStride< typename traits::shape_type ,
-                              typename traits::array_layout > stride_type ;
+  typedef Impl::ViewOffset< typename traits::shape_type ,
+                            typename traits::array_layout > offset_map_type ;
 
   typedef Array< typename traits::scalar_type ,
                  ArrayTypeCount< typename traits::value_type >::value ,
@@ -312,8 +312,7 @@ private:
                  ArrayProxyContiguous > ArrayProxyRightType ;
 
   typename traits::scalar_type * m_ptr_on_device ;
-  typename traits::shape_type    m_shape ;
-  stride_type                    m_stride ;
+  offset_map_type                m_offset_map ;
 
 public:
 
@@ -331,20 +330,20 @@ public:
 
   enum { Rank = traits::rank };
 
-  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_shape.N2 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_3() const { return m_shape.N3 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_4() const { return m_shape.N4 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_3() const { return m_offset_map.N3 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_4() const { return m_offset_map.N4 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_offset_map.N5 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_offset_map.N6 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type dimension( const iType & i ) const
-    { return Impl::dimension( m_shape , i ); }
+    { return Impl::dimension( m_offset_map , i ); }
 
   KOKKOS_INLINE_FUNCTION
   bool is_null() const { return 0 == m_ptr_on_device ; }
@@ -352,7 +351,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
     {
-      traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
+      traits::shape_type::assign(m_offset_map,0,0,0,0,0,0,0,0);
       stride_type::assign( m_stride , 0 );
     }
 
@@ -402,7 +401,7 @@ public:
                                       traits , LayoutRight , 1 , iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
@@ -415,7 +414,7 @@ public:
     at( const iType0 & i0 , const int , const int , const int ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
@@ -429,7 +428,7 @@ public:
                                       traits, LayoutRight, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i1 + i0 * m_stride.value ];
@@ -442,7 +441,7 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i1 + i0 * m_stride.value ];
@@ -456,10 +455,10 @@ public:
                                       traits, LayoutRight, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i2 + m_offset_map.N2 * (
                               i1 ) + i0 * m_stride.value ];
     }
 
@@ -470,10 +469,10 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i2 + m_offset_map.N2 * (
                               i1 ) + i0 * m_stride.value ];
     }
 
@@ -485,11 +484,11 @@ public:
                                       traits, LayoutRight, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 )) + i0 * m_stride.value ];
     }
 
@@ -500,11 +499,11 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 )) + i0 * m_stride.value ];
     }
 
@@ -518,12 +517,12 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 ))) + i0 * m_stride.value ];
     }
 
@@ -535,12 +534,12 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 ))) + i0 * m_stride.value ];
     }
 
@@ -554,13 +553,13 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i5 + m_offset_map.N5 * (
+                              i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 )))) + i0 * m_stride.value ];
     }
 
@@ -572,13 +571,13 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i5 + m_offset_map.N5 * (
+                              i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 )))) + i0 * m_stride.value ];
     }
 
@@ -592,14 +591,14 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i6 + m_offset_map.N6 * (
+                              i5 + m_offset_map.N5 * (
+                              i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 ))))) + i0 * m_stride.value ];
     }
 
@@ -611,14 +610,14 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i6 + m_offset_map.N6 * (
+                              i5 + m_offset_map.N5 * (
+                              i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 ))))) + i0 * m_stride.value ];
     }
 
@@ -632,15 +631,15 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i7 + m_shape.N7 * (
-                              i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i7 + m_offset_map.N7 * (
+                              i6 + m_offset_map.N6 * (
+                              i5 + m_offset_map.N5 * (
+                              i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 )))))) + i0 * m_stride.value ];
     }
 
@@ -652,15 +651,15 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i7 + m_shape.N7 * (
-                              i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
+      return m_ptr_on_device[ i7 + m_offset_map.N7 * (
+                              i6 + m_offset_map.N6 * (
+                              i5 + m_offset_map.N5 * (
+                              i4 + m_offset_map.N4 * (
+                              i3 + m_offset_map.N3 * (
+                              i2 + m_offset_map.N2 * (
                               i1 )))))) + i0 * m_stride.value ];
     }
 
@@ -673,7 +672,7 @@ public:
                                       traits, LayoutLeft, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
@@ -686,7 +685,7 @@ public:
     at( const iType0 & i0 , const int , const int , const int ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
@@ -700,7 +699,7 @@ public:
                                       traits, LayoutLeft, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * i1 ];
@@ -713,7 +712,7 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * i1 ];
@@ -727,11 +726,11 @@ public:
                                       traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * i2 ) ];
+                              i1 + m_offset_map.N1 * i2 ) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -741,11 +740,11 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
         const int , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * i2 ) ];
+                              i1 + m_offset_map.N1 * i2 ) ];
     }
 
   // LayoutLeft rank 4:
@@ -757,12 +756,12 @@ public:
     ::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * i3 )) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * i3 )) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -772,12 +771,12 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const int         , const int , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * i3 )) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * i3 )) ];
     }
 
   // LayoutLeft rank 5:
@@ -791,13 +790,13 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * i4 ))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * i4 ))) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -808,13 +807,13 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const int         , const int , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * i4 ))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * i4 ))) ];
     }
 
   // LayoutLeft rank 6:
@@ -828,14 +827,14 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * i5 )))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * (
+                              i4 + m_offset_map.N4 * i5 )))) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -846,14 +845,14 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const int         , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * i5 )))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * (
+                              i4 + m_offset_map.N4 * i5 )))) ];
     }
 
   // LayoutLeft rank 7:
@@ -867,15 +866,15 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * i6 ))))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * (
+                              i4 + m_offset_map.N4 * (
+                              i5 + m_offset_map.N5 * i6 ))))) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -886,15 +885,15 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * i6 ))))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * (
+                              i4 + m_offset_map.N4 * (
+                              i5 + m_offset_map.N5 * i6 ))))) ];
     }
 
   // LayoutLeft rank 8:
@@ -908,16 +907,16 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * (
-                              i6 + m_shape.N6 * i7 )))))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * (
+                              i4 + m_offset_map.N4 * (
+                              i5 + m_offset_map.N5 * (
+                              i6 + m_offset_map.N6 * i7 )))))) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -928,16 +927,16 @@ public:
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * (
-                              i6 + m_shape.N6 * i7 )))))) ];
+                              i1 + m_offset_map.N1 * (
+                              i2 + m_offset_map.N2 * (
+                              i3 + m_offset_map.N3 * (
+                              i4 + m_offset_map.N4 * (
+                              i5 + m_offset_map.N5 * (
+                              i6 + m_offset_map.N6 * i7 )))))) ];
     }
 
   //------------------------------------
@@ -959,7 +958,7 @@ public:
                                       traits, LayoutRight, 2, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device + m_stride.value * i0 );
@@ -972,10 +971,10 @@ public:
     operator ()
     ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return ArrayProxyRightType( m_ptr_on_device + m_shape.N2 * i1 + m_stride.value * i0 );
+      return ArrayProxyRightType( m_ptr_on_device + m_offset_map.N2 * i1 + m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -985,12 +984,12 @@ public:
     operator ()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
-                                  m_shape.N3 * ( i2 +
-                                  m_shape.N2 * ( i1 )) +
+                                  m_offset_map.N3 * ( i2 +
+                                  m_offset_map.N2 * ( i1 )) +
                                   m_stride.value * i0 );
     }
 
@@ -1001,13 +1000,13 @@ public:
     operator ()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
-                                  m_shape.N4 * ( i3 +
-                                  m_shape.N3 * ( i2 +
-                                  m_shape.N2 * ( i1 ))) +
+                                  m_offset_map.N4 * ( i3 +
+                                  m_offset_map.N3 * ( i2 +
+                                  m_offset_map.N2 * ( i1 ))) +
                                   m_stride.value * i0 );
     }
 
@@ -1020,14 +1019,14 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
-                                  m_shape.N5 * ( i4 +
-                                  m_shape.N4 * ( i3 +
-                                  m_shape.N3 * ( i2 +
-                                  m_shape.N2 * ( i1 )))) +
+                                  m_offset_map.N5 * ( i4 +
+                                  m_offset_map.N4 * ( i3 +
+                                  m_offset_map.N3 * ( i2 +
+                                  m_offset_map.N2 * ( i1 )))) +
                                   m_stride.value * i0 );
     }
 
@@ -1040,15 +1039,15 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
-                                  m_shape.N6 * ( i5 +
-                                  m_shape.N5 * ( i4 +
-                                  m_shape.N4 * ( i3 +
-                                  m_shape.N3 * ( i2 +
-                                  m_shape.N2 * ( i1 ))))) +
+                                  m_offset_map.N6 * ( i5 +
+                                  m_offset_map.N5 * ( i4 +
+                                  m_offset_map.N4 * ( i3 +
+                                  m_offset_map.N3 * ( i2 +
+                                  m_offset_map.N2 * ( i1 ))))) +
                                   m_stride.value * i0 );
     }
 
@@ -1061,16 +1060,16 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
-                                  m_shape.N7 * ( i6 +
-                                  m_shape.N6 * ( i5 +
-                                  m_shape.N5 * ( i4 +
-                                  m_shape.N4 * ( i3 +
-                                  m_shape.N3 * ( i2 +
-                                  m_shape.N2 * ( i1 )))))) +
+                                  m_offset_map.N7 * ( i6 +
+                                  m_offset_map.N6 * ( i5 +
+                                  m_offset_map.N5 * ( i4 +
+                                  m_offset_map.N4 * ( i3 +
+                                  m_offset_map.N3 * ( i2 +
+                                  m_offset_map.N2 * ( i1 )))))) +
                                   m_stride.value * i0 );
     }
 
@@ -1083,7 +1082,7 @@ public:
     operator()
     ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device + i0 , m_stride.value );
@@ -1096,12 +1095,12 @@ public:
     operator()
     ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
                                  i0 + m_stride.value * ( i1 ) ,
-                                 m_stride.value   * m_shape.N1 );
+                                 m_stride.value   * m_offset_map.N1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -1111,14 +1110,14 @@ public:
     operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
                                  i0 + m_stride.value * (
-                                 i1 + m_shape.N1 * ( i2 )) ,
-                                 m_stride.value   * m_shape.N1 *
-                                 m_shape.N2 );
+                                 i1 + m_offset_map.N1 * ( i2 )) ,
+                                 m_stride.value   * m_offset_map.N1 *
+                                 m_offset_map.N2 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -1128,15 +1127,15 @@ public:
     operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
                                  i0 + m_stride.value * (
-                                 i1 + m_shape.N1 * (
-                                 i2 + m_shape.N2 * ( i3 ))) ,
-                                 m_stride.value   * m_shape.N1 *
-                                 m_shape.N2 * m_shape.N3 );
+                                 i1 + m_offset_map.N1 * (
+                                 i2 + m_offset_map.N2 * ( i3 ))) ,
+                                 m_stride.value   * m_offset_map.N1 *
+                                 m_offset_map.N2 * m_offset_map.N3 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1148,17 +1147,17 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
                                  i0 + m_stride.value * (
-                                 i1 + m_shape.N1 * (
-                                 i2 + m_shape.N2 * (
-                                 i3 + m_shape.N3 * ( i4 )))) ,
-                                 m_stride.value   * m_shape.N1 *
-                                 m_shape.N2 * m_shape.N3 *
-                                 m_shape.N4 );
+                                 i1 + m_offset_map.N1 * (
+                                 i2 + m_offset_map.N2 * (
+                                 i3 + m_offset_map.N3 * ( i4 )))) ,
+                                 m_stride.value   * m_offset_map.N1 *
+                                 m_offset_map.N2 * m_offset_map.N3 *
+                                 m_offset_map.N4 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1170,18 +1169,18 @@ public:
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
                                  i0 + m_stride.value * (
-                                 i1 + m_shape.N1 * (
-                                 i2 + m_shape.N2 * (
-                                 i3 + m_shape.N3 * (
-                                 i4 + m_shape.N4 * ( i5 ))))) ,
-                                 m_stride.value   * m_shape.N1 *
-                                 m_shape.N2 * m_shape.N3 *
-                                 m_shape.N4 * m_shape.N5 );
+                                 i1 + m_offset_map.N1 * (
+                                 i2 + m_offset_map.N2 * (
+                                 i3 + m_offset_map.N3 * (
+                                 i4 + m_offset_map.N4 * ( i5 ))))) ,
+                                 m_stride.value   * m_offset_map.N1 *
+                                 m_offset_map.N2 * m_offset_map.N3 *
+                                 m_offset_map.N4 * m_offset_map.N5 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1192,19 +1191,19 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
                                  i0 + m_stride.value * (
-                                 i1 + m_shape.N1 * (
-                                 i2 + m_shape.N2 * (
-                                 i3 + m_shape.N3 * (
-                                 i4 + m_shape.N4 * (
-                                 i5 + m_shape.N5 * ( i6 )))))) ,
-                                 m_stride.value   * m_shape.N1 *
-                                 m_shape.N2 * m_shape.N3 *
-                                 m_shape.N4 * m_shape.N5 * m_shape.N6 );
+                                 i1 + m_offset_map.N1 * (
+                                 i2 + m_offset_map.N2 * (
+                                 i3 + m_offset_map.N3 * (
+                                 i4 + m_offset_map.N4 * (
+                                 i5 + m_offset_map.N5 * ( i6 )))))) ,
+                                 m_stride.value   * m_offset_map.N1 *
+                                 m_offset_map.N2 * m_offset_map.N3 *
+                                 m_offset_map.N4 * m_offset_map.N5 * m_offset_map.N6 );
     }
 
   //------------------------------------
@@ -1214,7 +1213,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type capacity() const
-  { return Impl::capacity( m_shape , m_stride ); }
+  { return Impl::capacity( m_offset_map , m_stride ); }
 };
 
 } // namespace Kokkos

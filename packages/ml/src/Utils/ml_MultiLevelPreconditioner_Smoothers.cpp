@@ -133,6 +133,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
   int SmootherLevels = NumLevels_;
 
+  int NumVerticalNodes = List_.get("smoother: line direction nodes",-1);
+  std::string MeshNumbering = List_.get("smoother: line orientation","not specified");
+
   int ParaSailsN = List_.get("smoother: ParaSails levels",0);
 
   // this can be:
@@ -493,10 +496,31 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                           << MyPreOrPostSmoother << ")" << std::endl;
 
        int nnn = ml_->Amat[currentLevel].outvec_leng;
-       int NumVerticalNodes = smList.get("smoother: line direction nodes",-1);
-       std::string MeshNumbering = smList.get("smoother: line orientation","not specified");
+       int MyNumVerticalNodes = smList.get("smoother: line direction nodes",NumVerticalNodes);
+       std::string MyMeshNumbering = smList.get("smoother: line orientation",MeshNumbering);
+       int MeshOrientation;
 
-       if  (NumVerticalNodes == -1) {
+       /* the number of nodes per line and even the orientation can change level */
+       /* by level, so if these are in the P (via the semicoarsening        */
+       /* option), then we should use these values. Basically, this code started  */
+       /* out as only a fine level smoother ... so I set up things like          */
+       /* smoother:line orientation. However, for multilevel work it seems better*/
+       /* to grab these from A, which should be properly set up if one sets the  */
+       /* proper semi coarsening options.                                        */
+       if (ml_->Amat[currentLevel].NumZDir != -1) {
+          MyNumVerticalNodes = ml_->Amat[currentLevel].NumZDir;
+          if     (ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
+          else if(ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else MyMeshNumbering = "not specified";
+       }
+       if (ml_->Pmat[currentLevel].NumZDir != -1) {
+          MyNumVerticalNodes = ml_->Pmat[currentLevel].NumZDir;
+          if     (ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
+          else if(ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else MyMeshNumbering = "not specified";
+       }
+
+       if  (MyNumVerticalNodes == -1) {
           std::cerr << ErrorMsg_ << "must supply 'line direction nodes' with " << MySmoother << "\n";
           exit(EXIT_FAILURE);
        }
@@ -504,7 +528,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        ML_Aggregate_Viz_Stats *grid_info = NULL;
 
 
-       if ((MeshNumbering != "horizontal") && (MeshNumbering != "vertical")) {
+       if ((MyMeshNumbering != "horizontal") && (MyMeshNumbering != "vertical")) {
 
           grid_info = (ML_Aggregate_Viz_Stats *) ml_->Grid[currentLevel].Grid;
           if (grid_info != NULL) xvals = grid_info->x;
@@ -512,25 +536,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (grid_info != NULL) zvals = grid_info->z;
 
           if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
-             std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << MeshNumbering << "\n";
+             std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << MyMeshNumbering << "\n";
              exit(EXIT_FAILURE);
           }
        }
 
-       if (   (nnn%(NumVerticalNodes) ) != 0) {
-          printf("mod(nnn = %d,NumVerticalNodes = %d) must be zero\n",
-                 nnn,NumVerticalNodes);
+       if (   (nnn%(MyNumVerticalNodes) ) != 0) {
+          printf("mod(nnn = %d,MyNumVerticalNodes = %d) must be zero\n",
+                 nnn,MyNumVerticalNodes);
           exit(1);
        }
-       int nBlocks = nnn/(NumVerticalNodes);
+       int nBlocks = nnn/(MyNumVerticalNodes);
        int *blockOffset  = NULL;
        int *blockIndices = (int *) ML_allocate(sizeof(int)*(nnn+1));
 
        for (int i = 0; i < nnn;  i++) blockIndices[i] = -1;
 
        // old vertical numbering
-       //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(NumVerticalNodes));
-       //for (int iii = 1; iii < nnn; iii+= 2) blockIndices[iii] = nBlocks/2 + (iii/(2*(NumVerticalNodes)));
+       //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(MyNumVerticalNodes));
+       //for (int iii = 1; iii < nnn; iii+= 2) blockIndices[iii] = nBlocks/2 + (iii/(2*(MyNumVerticalNodes)));
        if (NumPDEEqns_ != 2) {
              printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
              printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
@@ -544,19 +568,19 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
        int tempi;
 
-       if (MeshNumbering == "vertical") {
+       if (MyMeshNumbering == "vertical") {
           // This is for GIS with vertical numbering scheme
           for (int iii = 0; iii < nnn; iii+= 2) {
-             tempi = iii/(2*(NumVerticalNodes));
+             tempi = iii/(2*(MyNumVerticalNodes));
              blockIndices[iii] = 2*tempi;
           }
           for (int iii = 1; iii < nnn; iii+= 2) {
-             tempi = iii/(2*(NumVerticalNodes));
+             tempi = iii/(2*(MyNumVerticalNodes));
              blockIndices[iii] = 2*tempi + 1;
           }
        }
-       else if (MeshNumbering == "horizontal") {
-          tempi = nnn/(NumVerticalNodes);
+       else if (MyMeshNumbering == "horizontal") {
+          tempi = nnn/(MyNumVerticalNodes);
           for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi);
        }
        else {
@@ -621,8 +645,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
                     (ytemp[next] == yfirst))
                next++;
-            if (next-index != NumVerticalNodes) {
-               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumVerticalNodes);
+            if (next-index != MyNumVerticalNodes) {
+               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,MyNumVerticalNodes);
                exit(EXIT_FAILURE);
             }
             int count;
@@ -1601,7 +1625,6 @@ double ML_Smoother_ChebyshevAlpha(double alpha, ML* ml,int here, int next)
     coarsening_rate =  alpha;
   return coarsening_rate;
 } //ML_Smoother_ChebyshevAlpha()
-
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
 
