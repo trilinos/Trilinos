@@ -1307,7 +1307,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
       agg_->minimizing_energy = -1;
 
     // structured grid semicoarsening in z direction
-    if (agg_->semicoarsen_levels = List_.get("semicoarsen: number of levels", -1)) {
+    agg_->semicoarsen_levels = List_.get("semicoarsen: number of levels", -1);
+    if (agg_->semicoarsen_levels != -1) {
       agg_->coarsen_rate      =  List_.get("semicoarsen: coarsen rate", -1);
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
       ml_->Amat[LevelID_[0]].NumZDir= List_.get("semicoarsen: line direction nodes", -1);
