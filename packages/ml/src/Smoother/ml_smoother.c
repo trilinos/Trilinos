@@ -8494,11 +8494,14 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
   }
 #endif /*ifdef ML_WITH_EPETRA*/
 
-   if ((inlen%NBlks) != 0) {
+   if (inlen != 0) {
+    if ((inlen%NBlks) != 0) {
       pr_error("Error(ML_LineGS): inlen not evenly divisible by NBlks\n");
       ML_avoid_unused_param((void *) &outlen);
+    }
    }
-   Bsize = inlen/NBlks;
+   if (NBlks != 0) Bsize = inlen/NBlks;
+   else Bsize = 1;
 
    if (getrow_comm != NULL) {
       x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
