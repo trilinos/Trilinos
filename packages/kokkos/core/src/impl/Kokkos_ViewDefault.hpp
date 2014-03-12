@@ -68,7 +68,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef typename View<DT,DL,DD,DM,Specialize>::offset_map_type  offset_map_type ;
+    //typedef typename View<DT,DL,DD,DM,Specialize>::offset_map_type  offset_map_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -491,9 +491,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic > 0 )
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
-    typedef typename View<DT,DL,DD,DM,Specialize>::stride_type stride_type ;
+    //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
+    //typedef typename traits_type::shape_type shape_type ; // unused
+    //typedef typename View<DT,DL,DD,DM,Specialize>::stride_type stride_type ; // unused
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -512,7 +512,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       assert_shape_bounds( src.m_offset_map , 8 , range.second - 1 , 0,0,0,0,0,0,0);
 
       dst.m_offset_map.assign( range.second - range.first
-                             , src.m_offset_map.N1 , src.m_offset_map.N2 , src.m_offset_map.N3 
+                             , src.m_offset_map.N1 , src.m_offset_map.N2 , src.m_offset_map.N3
                              , src.m_offset_map.N4 , src.m_offset_map.N5 , src.m_offset_map.N6 , src.m_offset_map.N7 );
 
       dst.m_offset_map.SR = src.m_offset_map.SR ;

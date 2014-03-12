@@ -453,7 +453,7 @@ public:
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
+      //typedef typename traits::shape_type    shape_type ; // unused
       typedef typename traits::value_type::value_type   scalar_type ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
@@ -482,7 +482,7 @@ public:
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
+      //typedef typename traits::shape_type    shape_type ; // unused
       typedef typename traits::value_type::value_type   scalar_type ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
