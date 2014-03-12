@@ -1091,6 +1091,8 @@ void mult_A_B_newmatrix(
       }
     }
   }
+
+  Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   
   // For each row of A/C
   for(size_t i=0; i<m; i++){			       
@@ -1099,7 +1101,7 @@ void mult_A_B_newmatrix(
     for(size_t k=Arowptr[i]; k<Arowptr[i+1]; k++){
       LocalOrdinal Ak      = Acolind[k];
       Scalar       Aval    = Avals[k];
-      if(Aval==0) continue;
+      if(Aval==SC_ZERO) continue;
       
       if(targetMapToOrigRow[Ak] != LO_INVALID){
 	// Local matrix
