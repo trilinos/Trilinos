@@ -3351,9 +3351,6 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeImportExport()
   {
-    typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-    typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-
     TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
       "CrsGraph: It's not allowed to call makeImportExport() unless the graph "
       "has a column Map.");
@@ -3794,8 +3791,6 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
-    typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-    typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
 
     // We'll set all the state "transactionally," so that this method
     // satisfies the strong exception guarantee.  This object's state
