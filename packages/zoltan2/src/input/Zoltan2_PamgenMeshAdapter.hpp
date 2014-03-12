@@ -214,7 +214,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 			   Vcoords_ + 2 * num_nodes);
 
   if (3 == dimension_ && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
+    long long *element_num_map = new long long [num_elem];
     error += im_ex_get_elem_num_map_l(exoid, element_num_map);
 
     RnumIds_ = num_elem;
@@ -225,7 +225,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   }
 
   if (2 == dimension_ && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
+    long long *element_num_map = new long long [num_elem];
     error += im_ex_get_elem_num_map_l(exoid, element_num_map);
 
     FnumIds_ = num_elem;
@@ -239,7 +239,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   EidList_ = NULL;
 
   if (num_nodes) {
-    int * node_num_map = (int *)malloc(num_nodes * sizeof(int));
+    long long *node_num_map = new long long [num_nodes];
     error += im_ex_get_node_num_map_l(exoid, node_num_map);
 
     VnumIds_ = num_nodes;
@@ -250,13 +250,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   }
 
   long long *elem_blk_ids       = new long long [num_elem_blk];
+  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
+
   long long *num_nodes_per_elem = new long long [num_elem_blk];
   long long *num_attr           = new long long [num_elem_blk];
   long long *num_elem_this_blk  = new long long [num_elem_blk];
   char **elem_type              = new char * [num_elem_blk];
   long long **connect           = new long long * [num_elem_blk];
-
-  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
 
   for(long long i = 0; i < num_elem_blk; i++){
     elem_type[i] = new char [MAX_STR_LENGTH + 1];
@@ -267,14 +267,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   }
 
   Acoords_ = (double *)malloc(num_elem * dimension_ * sizeof(double));
-  int a = 0;
+  long long a = 0;
 
-  for(long long b = 0; b < num_elem_blk; b++){
-    connect[b] = new long long [num_nodes_per_elem[b] *
-				num_elem_this_blk[b]];
+  for(long long b = 0; b < num_elem_blk; b++) {
+    connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
     error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
 
-    for(int i = 0; i < num_elem_this_blk[b]; i++){
+    for(long long i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;
       Acoords_[num_nodes + a] = 0;
 
@@ -282,9 +281,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 	Acoords_[2 * num_nodes + a] = 0;
       }
 
-      for(int j = 0; j < num_nodes_per_elem[b]; j++){
+      for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	Acoords_[a] +=
-	  Vcoords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
+	  Vcoords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
 	Acoords_[num_nodes + a] +=
 	  Vcoords_[connect[b]
 		 [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
