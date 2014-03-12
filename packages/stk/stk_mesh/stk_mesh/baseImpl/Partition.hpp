@@ -163,9 +163,26 @@ private:
 #endif
   }
 
-  void internal_check_size_invariant() const;
+  void internal_check_size_invariant() const
+  {
+#ifndef NDEBUG
+    size_t sum = 0;
+    for (size_t i = 0, e = m_buckets.size(); i < e; ++i) {
+      sum += m_buckets[i]->size();
+      m_buckets[i]->check_size_invariant();
+    }
+    ThrowAssertMsg(sum == m_size, "Inconsistent sizes, bucket sum is " << sum << ", m_size is " << m_size);
+#endif
+  }
 
-  void internal_check_no_null_buckets_invariant() const;
+  void internal_check_no_null_buckets_invariant() const
+  {
+#ifndef NDEBUG
+    for (int i = 0, e = m_buckets.size(); i < e; ++i) {
+      ThrowAssert(m_buckets[i] != NULL);
+    }
+#endif
+  }
 
   void internal_swap_to_end(Entity entity);
 
@@ -202,29 +219,6 @@ inline
 std::vector<Partition*>::iterator
 lower_bound( std::vector<Partition*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , PartitionLess() ); }
-
-inline
-void Partition::internal_check_size_invariant() const
-{
-#ifndef NDEBUG
-  size_t sum = 0;
-  for (size_t i = 0, e = m_buckets.size(); i < e; ++i) {
-    sum += m_buckets[i]->size();
-    m_buckets[i]->check_size_invariant();
-  }
-  ThrowAssertMsg(sum == m_size, "Inconsistent sizes, bucket sum is " << sum << ", m_size is " << m_size);
-#endif
-}
-
-inline
-void Partition::internal_check_no_null_buckets_invariant() const
-{
-#ifndef NDEBUG
-  for (int i = 0, e = m_buckets.size(); i < e; ++i) {
-    ThrowAssert(m_buckets[i] != NULL);
-  }
-#endif
-}
 
 } // impl
 } // mesh
