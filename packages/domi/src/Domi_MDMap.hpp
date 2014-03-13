@@ -570,7 +570,7 @@ public:
    */
   Teuchos::RCP< const MDMap< Node > >
   getAugmentedMDMap(const dim_type leadingDim,
-                    const dim_type trailingDim=0);
+                    const dim_type trailingDim=0) const;
 
 #ifdef HAVE_EPETRA
 
@@ -1947,7 +1947,7 @@ MDMap< Node >::getLayout() const
 template< class Node >
 Teuchos::RCP< const MDMap< Node > >
 MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
-                                 const dim_type trailingDim)
+                                 const dim_type trailingDim) const
 {
   // Construct the new MDMap
   MDMap< Node > * newMdMap = new MDMap< Node >(*this);
