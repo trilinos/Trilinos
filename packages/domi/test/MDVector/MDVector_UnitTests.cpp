@@ -664,15 +664,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
 
   // Construct and test an MDVector with a leading dimension
   MDVector< Sca > mdv1(mdMap, 3);
-  TEST_EQUIVALENT(mdv1.numDims()      , numDims+1);
-  TEST_EQUIVALENT(mdv1.getCommDim(0)  , 1        );
-  TEST_EQUIVALENT(mdv1.getGlobalDim(0), 3        );
+  TEST_EQUALITY(mdv1.numDims()      , numDims+1);
+  TEST_EQUALITY(mdv1.getCommDim(0)  , 1        );
+  TEST_EQUALITY(mdv1.getGlobalDim(0), 3        );
 
   // Construct and test an MDVector with a trailing dimension
   MDVector< Sca > mdv2(mdMap, 0, 2);
-  TEST_EQUIVALENT(mdv2.numDims()            , numDims+1);
-  TEST_EQUIVALENT(mdv2.getCommDim(numDims)  , 1        );
-  TEST_EQUIVALENT(mdv2.getGlobalDim(numDims), 2        );
+  TEST_EQUALITY(mdv2.numDims()            , numDims+1);
+  TEST_EQUALITY(mdv2.getCommDim(numDims)  , 1        );
+  TEST_EQUALITY(mdv2.getGlobalDim(numDims), 2        );
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
@@ -681,9 +681,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
 
   // Construct and test an MDVector with a trailing dimension
     MDVector< Sca > mdv3(mdComm, plist);
-  TEST_EQUIVALENT(mdv3.numDims()            , numDims+1);
-  TEST_EQUIVALENT(mdv3.getCommDim(numDims)  , 1        );
-  TEST_EQUIVALENT(mdv3.getGlobalDim(numDims), 5        );
+  TEST_EQUALITY(mdv3.numDims()            , numDims+1);
+  TEST_EQUALITY(mdv3.getCommDim(numDims)  , 1        );
+  TEST_EQUALITY(mdv3.getGlobalDim(numDims), 5        );
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
@@ -747,6 +747,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, pListCommPadConstructor, Sca ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, pListBndryPadConstructor, Sca ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, pListPaddingConstructor, Sca ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, augmentedConstruction, Sca ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, randomize, Sca )
 
 UNIT_TEST_GROUP(double)
