@@ -2616,6 +2616,13 @@ namespace Tpetra {
     ptrs = null;
     inds = null;
     // finalize local graph
+    //
+    // TODO (mfh 13 Mar 2014) getNodeNumDiags(), isUpperTriangular(),
+    // and isLowerTriangular() depend on computeGlobalConstants(), in
+    // particular the part where it looks at the local matrix.  You
+    // have to use global indices to determine which entries are
+    // diagonal, or above or below the diagonal.  However, lower or
+    // upper triangularness is a local property.
     Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
     Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
     if      (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
