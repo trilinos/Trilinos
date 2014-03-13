@@ -787,6 +787,17 @@ public:
    */
   bool isSameAs(const MDMap< Node > & mdMap) const;
 
+  /** \brief True if there are no stride gaps on any processor
+   *
+   * An MDMap constructed from a communicator and dimensions will
+   * always be contiguous.  An MDMap that is a slice of a parent MDMap
+   * will generally be non-contiguous, with some exceptions.  There
+   * are cases where some local data is contiguous and some is not,
+   * but this method returns True only if all processes' local data is
+   * contiguous.
+   */
+  bool isContiguous() const;
+
   //@}
 
 private:
@@ -835,22 +846,22 @@ private:
   size_type _globalMax;
 
   // The size of the local dimensions along each axis.  This includes
-  // the values of the communication padding.
+  // the values of the padding.
   Teuchos::Array< dim_type > _localDims;
 
   // The local loop bounds along each axis, stored as an array of
-  // Slices.  These bounds DO include the communication padding.
+  // Slices.  These bounds DO include the padding.
   Teuchos::Array< Slice > _localBounds;
 
   // The local stride between adjacent elements in memory.
   Teuchos::Array< size_type > _localStrides;
 
   // The minimum 1D index of the local data structure, including
-  // communication padding.
+  // padding.
   size_type _localMin;
 
   // The maximum 1D index of the local data structure, including
-  // communnication padding.
+  // padding.
   size_type _localMax;
 
   // The communication padding that was specified at construction, one
@@ -2651,6 +2662,29 @@ MDMap< Node >::isSameAs(const MDMap< Node > & mdMap) const
 
   // Return the result
   return bool(globalResult);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+bool
+MDMap< Node >::isContiguous() const
+{
+  // Compute the local strides if they were contiguous
+  Teuchos::Array< size_type > contiguousStrides =
+    computeStrides< size_type, dim_type >(_localDims, _layout);
+
+  // Compute the local result: 0 = contiguous, 1 = non-contiguous
+  int localResult = int(_localStrides != contiguousStrides);
+
+  // Compute the global result
+  int globalResult = 0;
+  Teuchos::reduceAll(*(_mdComm->getTeuchosComm()),
+                     Teuchos::REDUCE_SUM,
+                     1,
+                     &localResult,
+                     &globalResult);
+  return (globalResult == 0);
 }
 
 ////////////////////////////////////////////////////////////////////////

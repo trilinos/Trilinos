@@ -458,6 +458,17 @@ public:
    */
   Layout getLayout() const;
 
+  /** \brief True if there are no stride gaps on any processor
+   *
+   * An MDVector constructed from a communicator and dimensions will
+   * always be contiguous.  An MDVector that is a slice of a parent
+   * MDMVector will generally be non-contiguous, with some exceptions.
+   * There are cases where some local data is contiguous and some is
+   * not, but this method returns True only if all processes' local
+   * data is contiguous.
+   */
+  bool isContiguous() const;
+
   //@}
 
   /** \name Data extraction methods */
@@ -1267,6 +1278,17 @@ MDVector< Scalar, Node >::
 getLayout() const
 {
   return _mdMap->getLayout();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+bool
+MDVector< Scalar, Node >::
+isContiguous() const
+{
+  return _mdMap->isContiguous();
 }
 
 ////////////////////////////////////////////////////////////////////////
