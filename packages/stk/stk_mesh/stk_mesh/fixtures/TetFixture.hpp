@@ -73,14 +73,6 @@ class TetFixture
   }
 
   /**
-   * Thinking in terms of a 3D grid of elements, get the 0-based id of the
-   * hex element in the (x, y, z) position.
-   */
-  int hex_id( size_t x , size_t y , size_t z ) const  {
-    return x + m_nx * ( y + m_ny * z );
-  }
-
-  /**
    * Thinking in terms of a 3D grid of nodes, get the node in the (x, y, z)
    * position. Return NULL if this process doesn't know about this node.
    */
