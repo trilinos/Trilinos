@@ -97,6 +97,32 @@ public:
   MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            bool zeroOut = true);
 
+  /** \brief Augmented constructor
+   *
+   * \param mdMap [in] MDMap that describes the domain decomposition
+   *        of this MDVector
+   *
+   * \param leadingDim [in] leading augmentation dimension, typically
+   *        used to provide additional degrees of freedom at each
+   *        index defined by the MDMap
+   *
+   * \param trailingDim [in] trailing augmentation dimension, typically
+   *        used to provide additional degrees of freedom at each
+   *        index defined by the MDMap
+   *
+   * \param zeroOut [in] flag to initialize all data to zero
+   *
+   * If leadingDim or trailingDim is less than 2, then the MDMap will
+   * not be augmented with a leading dimension or trailing dimension,
+   * respectively.  Note that this constructor takes the given MDMap
+   * and computes a new, augmented MDComm and a new MDMap for this
+   * MDVector.
+   */
+  MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
+           const dim_type leadingDim,
+           const dim_type trailingDim = 0,
+           bool zeroOut = true);
+
   /** \brief Constructor with initialization values (copy)
    *
    * \param mdMap [in] MDMap that describes the domain decomposition
@@ -687,6 +713,38 @@ template< class Scalar,
           class Node >
 MDVector< Scalar, Node >::
 MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
+         const dim_type leadingDim,
+         const dim_type trailingDim,
+         bool zeroOut) :
+  _teuchosComm(mdMap->getTeuchosComm()),
+  _mdMap(mdMap->getAugmentedMDMap(leadingDim, trailingDim)),
+  _mdArrayRcp(),
+  _mdArrayView(),
+  _nextAxis(0),
+  _sliceBndryPad(_mdMap->numDims()),
+  _sendMessages(),
+  _recvMessages(),
+  _requests()
+{
+  setObjectLabel("Domi::MDVector");
+
+  // Obtain the array of dimensions
+  int numDims = _mdMap->numDims();
+  Teuchos::Array< dim_type > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = _mdMap->getLocalDim(axis,true);
+
+  // Resize the MDArrayRCP and set the MDArrayView
+  _mdArrayRcp.resize(dims);
+  _mdArrayView = _mdArrayRcp();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
          const MDArrayView< Scalar > & source) :
   _mdMap(mdMap),
   _mdArrayRcp(source),
@@ -802,7 +860,7 @@ template< class Scalar,
 MDVector< Scalar, Node >::
 MDVector(const MDVector< Scalar, Node > & parent,
          int axis,
-         dim_type index) :
+         dim_type globalIndex) :
   _teuchosComm(parent._teuchosComm),
   _mdMap(),
   _mdArrayRcp(parent._mdArrayRcp),
@@ -821,38 +879,26 @@ MDVector(const MDVector< Scalar, Node > & parent,
   // Obtain the new, sliced MDMap
   _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
                                           axis,
-                                          index));
+                                          globalIndex));
 
   // Check that we are on the new sub-communicator
   if (_mdMap->onSubcommunicator())
   {
-    // Convert the index from global to local.  We start by building a
-    // globalID, which is the global index of the origin on this
-    // processor with the value of the given axis replaced with the
-    // given index.
-    Teuchos::Array< dim_type > globalIndex(3);
-    for (int myAxis = 0; myAxis < parentMdMap->numDims(); ++myAxis)
-      if (myAxis == axis)
-        globalIndex[myAxis] = index;
-      else
-        globalIndex[myAxis] =
-          parentMdMap->getGlobalBounds(myAxis,false).start();
+    // Convert the index from global to local.  We start by
+    // determining the starting global index on this processor along
+    // the given axis, ignoring the boundary padding.  We then
+    // subtract the lower padding, whether it is communication padding
+    // or boundary padding.
+    dim_type origin = parentMdMap->getGlobalRankBounds(axis,false).start() -
+                      parentMdMap->getLowerPadSize(axis);
 
-    // Now convert that global index to a global ID
-    size_type globalID = parentMdMap->getGlobalID(globalIndex);
-
-    // Now convert that global ID to a local ID.  In general, this can
-    // throw a Domi::RangeError, but we should be OK because we know
-    // we are on the sub-communicator, and we chose our global index
-    // values to ensure we are on-processor.
-    size_type localID  = parentMdMap->getLocalID(globalID);
-
-    // Convert the local ID to a local index.
-    Teuchos::Array< dim_type > localIndex =
-      parentMdMap->getLocalIndex(localID);
+    // The local index along the given axis is the global axis minus
+    // the starting index.  Since we are on the subcommunicator, this
+    // should be valid.
+    dim_type localIndex = globalIndex - origin;
 
     // Obtain the new MDArrayView using the local index
-    MDArrayView< Scalar > newView(_mdArrayView, axis, localIndex[axis]);
+    MDArrayView< Scalar > newView(_mdArrayView, axis, localIndex);
     _mdArrayView = newView;
 
     // Compute the new slice boundary padding
@@ -902,38 +948,27 @@ MDVector(const MDVector< Scalar, Node > & parent,
   // Check that we are on the new sub-communicator
   if (_mdMap->onSubcommunicator())
   {
-    // Convert the slice start index from global to local.  We start
-    // by building a globalIndex, which is the global index of the
-    // origin on this processor.  If the start index of the given
-    // slice is on this processor, then the value of the given axis is
-    // replaced with the given slice start index.
-    Teuchos::Array< dim_type > globalIndex(3);
-    for (int myAxis = 0; myAxis < parentMdMap->numDims(); ++myAxis)
-    {
-      globalIndex[myAxis] =
-        parentMdMap->getGlobalBounds(myAxis,false).start();
-      if (myAxis == axis)
-        if (globalIndex[myAxis] < slice.start())
-          globalIndex[myAxis] = slice.start();
-    }
+    // Convert the given Slice start index from global to local.  We
+    // start by determining the starting global index on this
+    // processor along the given axis, ignoring the boundary padding.
+    // We then subtract the lower padding, whether it is communication
+    // padding or boundary padding.
+    dim_type origin = parentMdMap->getGlobalRankBounds(axis,false).start() -
+                      parentMdMap->getLowerPadSize(axis);
 
-    // Now convert that global index to a global ID
-    size_type globalID = parentMdMap->getGlobalID(globalIndex);
+    // Determine the starting index of our local slice.  This will be
+    // the start of the given slice minus the starting global index on
+    // this processor minus the given boundary pad.  If this is less
+    // than zero, then the start is on a lower processor, so set the
+    // local start to zero.
+    dim_type start = std::max(0, slice.start() - origin - bndryPad);
 
-    // Now convert that global ID to a local ID.  In general, this can
-    // throw a Domi::RangeError, but we should be OK because we know
-    // we are on the sub-communicator, and we chose our global index
-    // values to ensure we are on-processor.
-    size_type localID  = parentMdMap->getLocalID(globalID);
-
-    // Convert the local ID to a local index and compute the start index
-    Teuchos::Array< dim_type > localIndex =
-      parentMdMap->getLocalIndex(localID);
-    dim_type start = std::max(0, localIndex[axis] - bndryPad);
-
-    // Now get the stop index of the local slice
-    dim_type length = slice.stop() - slice.start();
-    dim_type stop = std::min(localIndex[axis] + length + bndryPad,
+    // Now get the stop index of the local slice.  This will be the
+    // stop of the given slice minus the starting global index on this
+    // processor plus the given boundary pad.  If this is larger than
+    // the local dimension, then set the local stop to the local
+    // dimension.
+    dim_type stop = std::min(slice.stop() - origin + bndryPad,
                              parentMdMap->getLocalDim(axis,true));
 
     // Obtain the new MDArrayView using the local slice

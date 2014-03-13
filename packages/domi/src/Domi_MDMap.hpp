@@ -552,6 +552,26 @@ public:
   /** \name Conversions to other Maps */
   //@{
 
+  /** \brief Return an RCP to a new MDMap that is a simple
+   *         augmentation of this MDMap
+   *
+   * \param leadingDim [in] If this value is greater than 0, then add
+   *        a dimension to the new MDMap that comes before the
+   *        existing dimensions and has this many degrees of freedom.
+   *
+   * \param trailingDim [in] If this value is greater than 0, then
+   *        add a dimension to the new MDMap that comes after the
+   *        existing dimensions and has this many degrees of freedom.
+   *
+   * Note that the new dimension(s) will not be distributed; i.e. the
+   * commDim for the new leading dimension (if requested) will be 1
+   * and the commDim for the trailing dimension (if requested) will be
+   * 1.
+   */
+  Teuchos::RCP< const MDMap< Node > >
+  getAugmentedMDMap(const dim_type leadingDim,
+                    const dim_type trailingDim=0);
+
 #ifdef HAVE_EPETRA
 
   /** \brief Return an RCP to an Epetra_Map that is equivalent to this
@@ -806,11 +826,11 @@ private:
   // useful for index conversion algorithms.
   Teuchos::Array< size_type > _globalStrides;
 
-  // The minumum 1D index of the global data structure, including
+  // The minumum ID of the global data structure, including
   // boundary padding.  This will only be non-zero on a sub-map.
   size_type _globalMin;
 
-  // The maximum 1D index of the global data structure, including
+  // The maximum ID of the global data structure, including
   // boundary padding.
   size_type _globalMax;
 
@@ -873,13 +893,13 @@ private:
   mutable Teuchos::RCP< const Epetra_Map > _epetraOwnMap;
 
   // An ArrayRCP that stores Epetra_Maps that represent the
-  // distribution of axis IDs along each axis, including communication
+  // distribution of indexes along each axis, including communication
   // padding.  It is mutable because we do not construct it until it
   // asked for by a get method that is const.
   mutable Teuchos::Array< Teuchos::RCP< const Epetra_Map > > _epetraAxisMaps;
 
   // An ArrayRCP that stores Epetra_Maps that represent the
-  // distribution of axis IDs along each axis, excluding communication
+  // distribution of indexes along each axis, excluding communication
   // padding.  It is mutable because we do not construct it until it
   // asked for by a get method that is const.
   mutable Teuchos::Array< Teuchos::RCP< const Epetra_Map > > _epetraAxisOwnMaps;
@@ -1920,6 +1940,106 @@ Layout
 MDMap< Node >::getLayout() const
 {
   return _layout;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Teuchos::RCP< const MDMap< Node > >
+MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
+                                 const dim_type trailingDim)
+{
+  // Construct the new MDMap
+  MDMap< Node > * newMdMap = new MDMap< Node >(*this);
+
+  // Compute the number of new dimensions
+  int newNumDims = 0;
+  if (leadingDim  > 0) ++newNumDims;
+  if (trailingDim > 0) ++newNumDims;
+
+  // Trivial result
+  if (newNumDims == 0) return Teuchos::rcp(newMdMap);
+
+  // Compute the new MDComm
+  int oldNumDims = numDims();
+  Teuchos::Array< int > newCommDims(oldNumDims);
+  Teuchos::Array< int > newPeriodic(oldNumDims);
+  for (int axis = 0; axis < oldNumDims; ++axis)
+  {
+    newCommDims[axis] = getCommDim(axis);
+    newPeriodic[axis] = int(isPeriodic(axis));
+  }
+  if (leadingDim > 0)
+  {
+    newCommDims.insert(newCommDims.begin(),1);
+    newPeriodic.insert(newPeriodic.begin(),0);
+  }
+  if (trailingDim > 0)
+  {
+    newCommDims.push_back(1);
+    newPeriodic.push_back(0);
+  }
+  newMdMap->_mdComm = Teuchos::rcp(new MDComm(getTeuchosComm(),
+                                              newCommDims,
+                                              newPeriodic));
+
+  // Adjust new MDMap arrays for a new leading dimension
+  Slice slice = Slice(leadingDim);
+  padding pad(Teuchos::tuple(0,0));
+  if (leadingDim > 0)
+  {
+    newMdMap->_globalDims.insert(newMdMap->_globalDims.begin(), leadingDim);
+    newMdMap->_globalBounds.insert(newMdMap->_globalBounds.begin(), slice);
+    newMdMap->_globalRankBounds.insert(newMdMap->_globalRankBounds.begin(),
+                                      Teuchos::Array< Slice >(1,slice));
+    newMdMap->_localDims.insert(newMdMap->_localDims.begin(), leadingDim);
+    newMdMap->_localBounds.insert(newMdMap->_localBounds.begin(), slice);
+    newMdMap->_commPadSizes.insert(newMdMap->_commPadSizes.begin(),0);
+    newMdMap->_pad.insert(newMdMap->_pad.begin(), pad);
+    newMdMap->_bndryPadSizes.insert(newMdMap->_bndryPadSizes.begin(),0);
+    newMdMap->_bndryPad.insert(newMdMap->_bndryPad.begin(), pad);    
+  }
+
+  // Adjust new MDMap arrays for a new trailing dimension
+  slice = Slice(trailingDim);
+  if (trailingDim > 0)
+  {
+    newMdMap->_globalDims.push_back(trailingDim);
+    newMdMap->_globalBounds.push_back(slice);
+    newMdMap->_globalRankBounds.push_back(Teuchos::Array< Slice >(1,slice));
+    newMdMap->_localDims.push_back(trailingDim);
+    newMdMap->_localBounds.push_back(slice);
+    newMdMap->_commPadSizes.push_back(0);
+    newMdMap->_pad.push_back(pad);
+    newMdMap->_bndryPadSizes.push_back(0);
+    newMdMap->_bndryPad.push_back(pad);    
+  }
+
+  // Compute the new stride related data
+  newMdMap->_globalStrides =
+    computeStrides< size_type, dim_type >(newMdMap->_globalDims,
+                                          newMdMap->_layout);
+  newMdMap->_localStrides =
+    computeStrides< size_type, dim_type >(newMdMap->_localDims,
+                                          newMdMap->_layout);
+  newMdMap->_globalMin = 0;
+  newMdMap->_globalMax = 0;
+  newMdMap->_localMin  = 0;
+  newMdMap->_localMax  = 0;
+  for (int axis = 0; axis < oldNumDims + newNumDims; ++axis)
+  {
+    newMdMap->_globalMin += newMdMap->_globalBounds[axis].start() *
+                            newMdMap->_globalStrides[axis];
+    newMdMap->_globalMax += newMdMap->_globalBounds[axis].stop() *
+                            newMdMap->_globalStrides[axis];
+    newMdMap->_localMin  += newMdMap->_localBounds[axis].start() *
+                            newMdMap->_localStrides[axis];
+    newMdMap->_localMax  += newMdMap->_localBounds[axis].stop() *
+                            newMdMap->_localStrides[axis];    
+  }
+
+  // Return the result
+  return Teuchos::rcp(newMdMap);
 }
 
 ////////////////////////////////////////////////////////////////////////
