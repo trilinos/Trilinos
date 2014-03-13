@@ -112,7 +112,8 @@ struct ViewOffset< ShapeType , LayoutLeft
 
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3
-             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7 )
+             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7
+             , unsigned = 0 )
     { shape_type::assign( *this , n0, n1, n2, n3, n4, n5, n6, n7 ); }
 
   template< class ShapeRHS >
@@ -294,7 +295,8 @@ struct ViewOffset< ShapeType , LayoutLeft
 
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3
-             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7 )
+             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7
+             , unsigned = 0 )
     { shape_type::assign( *this , n0, n1, n2, n3, n4, n5, n6, n7 ); S0 = shape_type::N0 ; }
 
   template< class ShapeRHS >
@@ -484,7 +486,8 @@ struct ViewOffset< ShapeType , LayoutRight
 
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3
-             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7 )
+             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7
+             , unsigned = 0 )
     { shape_type::assign( *this , n0, n1, n2, n3, n4, n5, n6, n7 ); }
 
   template< class ShapeRHS >
@@ -662,7 +665,8 @@ struct ViewOffset< ShapeType , LayoutRight
 
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3
-             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7 )
+             , unsigned n4 , unsigned n5 , unsigned n6 , unsigned n7
+             , unsigned = 0 )
     {
       shape_type::assign( *this , n0, n1, n2, n3, n4, n5, n6, n7 );
       SR = shape_type::N1 * shape_type::N2 * shape_type::N3 * shape_type::N4 * shape_type::N5 * shape_type::N6 * shape_type::N7 ;
@@ -843,7 +847,7 @@ struct ViewOffset< ShapeType , LayoutStride
   typedef ShapeType     shape_type;
   typedef LayoutStride  array_layout ;
 
-  size_type S[ shape_type::rank ];
+  size_type S[ shape_type::rank + 1 ];
 
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
@@ -854,23 +858,66 @@ struct ViewOffset< ShapeType , LayoutStride
   KOKKOS_INLINE_FUNCTION
   void assign( const ViewOffset<ShapeRHS,Layout> & rhs
              , typename enable_if<( int(ShapeRHS::rank) == int(shape_type::rank) )>::type * = 0 )
-    { rhs.stride(S); }
+    {
+      rhs.stride(S);
+      S[ shape_type::rank ] = rhs.capacity();
+      shape_type::assign( *this, rhs.N0, rhs.N1, rhs.N2, rhs.N3, rhs.N4, rhs.N5, rhs.N6, rhs.N7 );
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void assign( size_t s0 , size_t s1 , size_t s2 , size_t s3
+             , size_t s4 , size_t s5 , size_t s6 , size_t s7
+             , size_t s8 )
+    {
+      const size_t str[9] = { s0, s1, s2, s3, s4, s5, s6, s7, s8 };
+
+      // Last argument is the total length.
+      // Total length must be non-zero.
+      // All strides must be non-zero and less than total length.
+      bool ok = 0 < str[ shape_type::rank ] ;
+
+      for ( int i = 0 ; ( i < shape_type::rank ) &&
+                        ( ok = 0 < str[i] && str[i] < str[ shape_type::rank ] ); ++i );
+
+      if ( ok ) {
+        size_t dim[8] = { 1,1,1,1,1,1,1,1 }; 
+        int iorder[9] = { 0,0,0,0,0,0,0,0,0 }; 
+
+        // Ordering of strides smallest to largest.
+        for ( int i = 1 ; i < shape_type::rank ; ++i ) {
+          int j = i ;
+          for ( ; 0 < j && str[i] < str[ iorder[j-1] ] ; --j ) {
+            iorder[j] = iorder[j-1] ;
+          }
+          iorder[j] = i ;
+        }
+
+        // Last argument is the total length.
+        iorder[ shape_type::rank ] = shape_type::rank ;
+
+        // Determine dimension associated with each stride.
+        // Guarantees non-overlap by truncating dimension
+        // if ( 0 != str[ iorder[i+1] ] % str[ iorder[i] ] )
+        for ( int i = 0 ; i < shape_type::rank ; ++i ) {
+          dim[ iorder[i] ] = str[ iorder[i+1] ] / str[ iorder[i] ] ;
+        }
+
+        // Assign dimensions and strides:
+        shape_type::assign( *this, dim[0], dim[1], dim[2], dim[3], dim[4], dim[5], dim[6], dim[7] );
+        for ( int i = 0 ; i <= shape_type::rank ; ++i ) { S[i] = str[i] ; }
+      }
+      else {
+        shape_type::assign(*this,0,0,0,0,0,0,0,0);
+        for ( int i = 0 ; i <= shape_type::rank ; ++i ) { S[i] = 0 ; }
+      }
+    }
 
   KOKKOS_INLINE_FUNCTION
   size_type cardinality() const
     { return shape_type::N0 * shape_type::N1 * shape_type::N2 * shape_type::N3 * shape_type::N4 * shape_type::N5 * shape_type::N6 * shape_type::N7 ; }
 
   KOKKOS_INLINE_FUNCTION
-  size_type capacity() const
-    {
-      // Maximum stride * corresponding dimension
-      int j = 0 ;
-      size_type m = 0 ;
-      for ( int i = 0 ; i < shape_type::rank ; ++i ) {
-        if ( m < S[i] ) { m = S[j=i]; }
-      }
-      return m * dimension( *this , j );
-    }
+  size_type capacity() const { return S[ shape_type::rank ]; }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION

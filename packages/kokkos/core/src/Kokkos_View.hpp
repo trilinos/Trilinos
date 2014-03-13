@@ -198,7 +198,7 @@ namespace Impl {
 
 class ViewDefault {};
 
-/** \brief  Default view specialization has LayoutLeft or LayoutRight.
+/** \brief  Default view specialization has LayoutLeft, LayoutRight, or LayoutStride.
  */
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize< ValueType , void , LayoutLeft , MemorySpace , MemoryTraits >
@@ -206,6 +206,10 @@ struct ViewSpecialize< ValueType , void , LayoutLeft , MemorySpace , MemoryTrait
 
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize< ValueType , void , LayoutRight , MemorySpace , MemoryTraits >
+{ typedef ViewDefault type ; };
+
+template< class ValueType , class MemorySpace , class MemoryTraits >
+struct ViewSpecialize< ValueType , void , LayoutStride , MemorySpace , MemoryTraits >
 { typedef ViewDefault type ; };
 
 } /* namespace Impl */
@@ -412,7 +416,9 @@ private:
   // Assignment of compatible subview requirement:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
-
+  // Dimensions, cardinality, capacity, and offset computation for
+  // multidimensional array view of contiguous memory.
+  // Inherits from Impl::Shape
   typedef Impl::ViewOffset< typename traits::shape_type
                           , typename traits::array_layout
                           > offset_map_type ;
@@ -457,18 +463,7 @@ public:
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_offset_map.N5 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_offset_map.N6 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type size() const
-  {
-    return   m_offset_map.N0
-           * m_offset_map.N1
-           * m_offset_map.N2
-           * m_offset_map.N3
-           * m_offset_map.N4
-           * m_offset_map.N5
-           * m_offset_map.N6
-           * m_offset_map.N7
-           ;
-  }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type size() const { return m_offset_map.cardinality(); }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -537,17 +532,18 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
+        const size_t n7 = 0 ,
         typename Impl::enable_if<(
           Impl::IsViewLabel< LabelType >::value &&
           ( ! Impl::is_const< typename traits::value_type >::value ) &&
           traits::is_managed ),
-        const size_t >::type n7 = 0 )
+        const size_t >::type n8 = 0 )
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space_ ;
       typedef typename traits::value_type    value_type_ ;
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
      
       m_ptr_on_device = (value_type_ *)
@@ -570,17 +566,18 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
+        const size_t n7 = 0 ,
         typename Impl::enable_if<(
           Impl::IsViewLabel< LabelType >::value &&
           ( ! Impl::is_const< typename traits::value_type >::value ) &&
           traits::is_managed ),
-        const size_t >::type n7 = 0 )
+        const size_t >::type n8 = 0 )
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space_ ;
       typedef typename traits::value_type    value_type_ ;
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
 
       m_ptr_on_device = (value_type_ *)
@@ -604,15 +601,16 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
+        const size_t n7 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
             Impl::is_same<T,typename traits::const_value_type>::value )
           &&
           ( ! traits::is_managed )
-        ), const size_t >::type n7 = 0 )
+        ), const size_t >::type n8 = 0 )
     : m_ptr_on_device(ptr)
     {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_tracking = false ;
     }
 
@@ -626,10 +624,11 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
-        const size_t n7 = 0 )
+        const size_t n7 = 0 ,
+        const size_t n8 = 0 )
     : m_ptr_on_device(ptr)
     {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_tracking = false ;
     }
 
