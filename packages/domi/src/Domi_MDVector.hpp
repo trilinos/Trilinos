@@ -816,7 +816,10 @@ MDVector(const TeuchosCommRCP teuchosComm,
   dim_type leadingDim  = plist.get("leading dimension" , 0);
   dim_type trailingDim = plist.get("trailing dimension", 0);
   if (leadingDim + trailingDim > 0)
+  {
     _mdMap = myMdMap->getAugmentedMDMap(leadingDim, trailingDim);
+    delete myMdMap;
+  }
   else
     _mdMap = Teuchos::rcp(myMdMap);
 
@@ -861,7 +864,10 @@ MDVector(const MDCommRCP mdComm,
   dim_type leadingDim  = plist.get("leading dimension" , 0);
   dim_type trailingDim = plist.get("trailing dimension", 0);
   if (leadingDim + trailingDim > 0)
+  {
     _mdMap = myMdMap->getAugmentedMDMap(leadingDim, trailingDim);
+    delete myMdMap;
+  }
   else
     _mdMap = Teuchos::rcp(myMdMap);
 
