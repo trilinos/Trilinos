@@ -520,13 +520,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           else MyMeshNumbering = "not specified";
        }
 
-       if  (MyNumVerticalNodes == -1) {
-          std::cerr << ErrorMsg_ << "must supply 'line direction nodes' with " << MySmoother << "\n";
-          exit(EXIT_FAILURE);
-       }
        double *xvals= NULL, *yvals = NULL, *zvals = NULL;
        ML_Aggregate_Viz_Stats *grid_info = NULL;
-
 
        if ((MyMeshNumbering != "horizontal") && (MyMeshNumbering != "vertical")) {
 
@@ -540,13 +535,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
              exit(EXIT_FAILURE);
           }
        }
-
-       if (   (nnn%(MyNumVerticalNodes) ) != 0) {
-          printf("mod(nnn = %d,MyNumVerticalNodes = %d) must be zero\n",
-                 nnn,MyNumVerticalNodes);
-          exit(1);
+       else {
+          if  (MyNumVerticalNodes == -1) {
+             std::cerr << ErrorMsg_ << "must supply 'line direction nodes' unless line orientation is not supplied and deduced from coordinates" << MySmoother << "\n";
+             exit(EXIT_FAILURE);
+          }
+          if (   (nnn%(MyNumVerticalNodes) ) != 0) {
+             printf("mod(nnn = %d,MyNumVerticalNodes = %d) must be zero\n",
+                    nnn,MyNumVerticalNodes);
+             exit(1);
+          }
        }
-       int nBlocks = nnn/(MyNumVerticalNodes);
        int *blockOffset  = NULL;
        int *blockIndices = (int *) ML_allocate(sizeof(int)*(nnn+1));
 
@@ -645,6 +644,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
             while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
                     (ytemp[next] == yfirst))
                next++;
+            if (NumBlocks == 0) MyNumVerticalNodes = next-index;
             if (next-index != MyNumVerticalNodes) {
                printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,MyNumVerticalNodes);
                exit(EXIT_FAILURE);
@@ -677,6 +677,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        }
 
 
+       int nBlocks = nnn/(MyNumVerticalNodes);
        if (MySmoother == "line Jacobi")
            ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
                    Mynum_smoother_steps, Myomega, nBlocks, blockIndices, blockOffset,
