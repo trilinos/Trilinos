@@ -105,55 +105,56 @@ ENDIF()
   PARENT_SCOPE )
 ENDFUNCTION()
 
-
 #
-# @BEGIN(FUNCTION) TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES
-#
-# TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
-#   PACKAGE_NAME <pakageName>
-#   [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
-#   [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
-#   [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
-#   [WRITE_INSTALL_CMAKE_CONFIG_FILE]
-#   [WRITE_INSTALL_EXPORT_MAKLEFILE]
-#   )
+# @FUNCTION: TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
 #
 # Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
 # Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
 # flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()
 #
+# Usage::
+#
+#   TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
+#     PACKAGE_NAME <pakageName>
+#     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
+#     [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
+#     [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
+#     [WRITE_INSTALL_CMAKE_CONFIG_FILE]
+#     [WRITE_INSTALL_EXPORT_MAKLEFILE]
+#     )
+#
 # The arguments are:
 #
-# PACKAGE_NAME <pakageName>
+# ``PACKAGE_NAME <pakageName>``
 #
 #   Gives the name of the TriBITS package for which the export files should be
 #   created for.
 #
-# EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>
+# ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
 #
 #   If specified, then all of the varibles in the generated export files will
 #   be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
 #   This is to provide flexibility.
 #
-# WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>
+# ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
 #
 #   If specified, then the package <packageName>'s cmake configure export file
 #   for extenral CMake client projects will be created in the file
 #   <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
 #
-# WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>
+# ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
 #
 #   If specified, then the package <packageName>'s cmake configure export file
 #   for external Makefile client projects will be created in the file
 #   <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
 #
-# WRITE_INSTALL_CMAKE_CONFIG_FILE
+# ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
 #
 #   If specified, then the package <packageName>'s install cmake configure
 #   export to be installed will be written.  The name and location of this
 #   file is hard-coded.
 #
-# WRITE_INSTALL_EXPORT_MAKLEFILE
+# ``WRITE_INSTALL_EXPORT_MAKLEFILE``
 #
 #   If specified, then the package <packageName>'s install export makefile to
 #   be installed will be written.  The name and location of this file is
@@ -172,9 +173,6 @@ ENDFUNCTION()
 # CMake will not allow those to even be present in scripting mode that is used
 # for unit testing this function.
 #
-# @END(FUNCTION) TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES
-#
-
 FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
 
   IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)

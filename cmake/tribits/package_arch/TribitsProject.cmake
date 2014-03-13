@@ -67,16 +67,25 @@ INCLUDE(TribitsProjectImpl)
 #
 # Defines and processes a TriBITS project.
 #
-# Requires that ``PROJECT_NAME`` be defined before calling this macro.
+# Usage::
 #
-# Note, this is just a shell of a macro that calls the real implementation.
-# This allows someone to set ``${PROJECT_NAME}_TRIBITS_DIR`` in the env and point
-# to a different Tribits implementation to test before snapshoting.
+#   TRIBITS_PROJECT()
+#
+# Requires that the project name variable ``PROJECT_NAME`` be defined before
+# calling this macro.  Also, all default values for project settings should be
+# set before calling this (see `TriBITS Global Project Settings`_).  Also, the
+# variable ``${PROJECT_NAME}_TRIBITS_DIR`` must be set as well.
+#
+# This macro then adds all of the necssary paths to ``CMAKE_MODULE_PATH`` and
+# then performs all processing of the TriBITS project files (see ???).
 #
 # ToDo: Give documentation!
 #
 MACRO(TRIBITS_PROJECT)
-
   TRIBITS_PROJECT_IMPL(${ARGN})
-
 ENDMACRO()
+
+# Note, this is just a shell of a macro that calls the real implementation
+# TRIBITS_PROJECT_IMPL().  This allows someone to set
+# ${PROJECT_NAME}_TRIBITS_DIR in the env and point to a different Tribits
+# implementation to test before snapshoting.

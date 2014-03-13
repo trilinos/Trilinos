@@ -85,7 +85,7 @@ INCLUDE(TribitsListHelpers)
 #   directories when deciding what packages are modified and need to be
 #   retested (along with downstream packages).
 #
-# * **CLASSIFICATION** (3nd column): Gives the testing group PT, ST, EX and
+# * **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
 #   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
 #   by a coma with no space in between such as "RS,PT" for a "Research
 #   Stable", "Primary Tested" package.  No spaces are allowed so that CMake

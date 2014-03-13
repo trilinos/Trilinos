@@ -5,6 +5,12 @@ TriBITS Developers Guide
 :Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
 
 .. sectnum::
+   :depth: 1
+
+.. Above, the depth of the TOC is set to just 1 because I don't want the
+.. TriBITS function/macro names to have section numbers appearing before them.
+.. Also, some of them are long and I don't want them to go off the page of the
+.. PDF document.
 
 .. contents::
 
@@ -36,6 +42,16 @@ statements).  One needs to understand how CMake defines and uses targets for
 various qualities like libraries, executables, etc.  Without this basic
 understanding of CMake, one will have trouble resolving problems when they
 might occur.
+
+The remainder of this documented is structured as follows.  First, there is a
+discussion of the various `TriBITS Developer and User Roles`_.  Then a brief
+discussion of `CMake Language Overivew and Gotchas`_ is provided.
+
+ToDo: Finish outline of the document.
+
+The final sections are detailed documentation of `TriBITS Global Project
+Settings`_, `TriBITS Macros and Functions`_, and `General Utility Macros and
+Functions`_.
 
 
 TriBITS Developer and User Roles
@@ -116,8 +132,8 @@ may or may not be necessary but instead the TriBITS Overview or the
 <Project>BuildQuickRef documents may be more appropriate.
 
 
-Brief CMake Language Tutorial
-==============================
+CMake Language Overivew and Gotchas
+====================================
 
 TriBITS removes a lot of the boiler plate code needed to write a CMake
 project.  As a result, many people can come into a project that uses TriBITS
@@ -132,12 +148,18 @@ However, we have observed that most mistakes that people make when using
 TriBITS, and most of the problems they have when using the sytem, are due to a
 basic lack of knowlege of the CMake language.  One can find basic tutorials
 and references on the CMake language in various locations online for free.
-One can also purchase the `offical CMake reference book`_.  Therefore, this
-document will not even attempt to provide a first reference to CMake (which is
-a large topic in itself).  However, what we try to provide below is a short
-overivew of the CMake langauge and a description of its unique features in
-order to help avoid some of these common mistakes and provide greater
-understanding of how TriBITS works.
+One can also purchase the `offical CMake reference book`_.  Also, documenation for any built-in CMake command is available locally by running::
+
+   $ cmake --help-command <CMAKE_COMMAND>
+
+Because tutorials and detailed documentation for the CMake language already
+exists, this document will not even attempt to provide a first reference to
+CMake (which is a large topic in itself).  However, what we try to provide
+below is a short overivew of the more quarky or supprising aspects of the
+CMake language that an programmer experienced in another language might get
+tripped up by or surprised by.  Some of the more unique features of the
+language are described in order to help avoid some of these common mistakes
+and provide greater understanding of how TriBITS works.
 
 .. _Offical CMake reference book: http://www.cmake.org/cmake/help/book.html
 
@@ -284,6 +306,22 @@ be executed!  To avoid this problem, use the utility function
 
 In this case, the mispelled variable would be caught.
 
+While on the subject of ``IF()`` statements, CMake has a strange convention.
+When you say::
+
+  IF (SOME_VAR)
+    DO_SOMETHING()
+  ENDIF()
+
+then ``SOME_VAR` is interpreted as a variable and will be considered true and
+``DO_SOMETHING()`` will be called if ``${SOME_VAR}`` does *not* evaluate to
+``0``, ``OFF``, ``NO``, ``FALSE``, ``N``, ``IGNORE``, ``""``, or ends in the
+suffix ``-NOTFOUND``.  How about that for a true/false rule!  To be safe, use
+``ON/OFF`` and ``TRUE/FASLE`` pairs for setting variables.  Look up native
+CMake documentation on ``IF()``.
+
+
+
 CMake langauge behavior with respect to case sensitivity is also strange:
 
 * Calls of built-in and user-defined macros and functions is *case
@@ -332,13 +370,51 @@ project.
 Structure of a TriBITS Project
 ==============================
 
-???
+ToDo: Fill in!
 
 
 Processing of TriBITS Files
 ===========================
 
-???
+ToDo: Fill in!
+
+Automated testing
+=================
+
+ToDo: Define test group PT, ST, and EX
+
+ToDo: Define test category BASIC, CONTINUOUS, NIGHTLY, WEEKLY, and PERFORMANCE
+
+ToDo: Discuss the propery usage of these test categories and why NIGHTLY
+testing should be the default.
+
+ToDo: Fill in!
+
+Multi-Repository Support
+========================
+
+ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.
+
+Project-Specific Build Quick Reference
+======================================
+
+ToDo: Describe <Project>BuildQuickRef document!
+
+Basic Development Workflow
+==========================
+
+ToDo: Fill in!
+
+Multi-Repository Development Workflow
+=====================================
+
+ToDo: Fill in!
+
+
+Creating Source Distributions
+=============================
+
+ToDo: Fill in!
 
 TriBITS Global Project Settings
 ===============================
@@ -346,25 +422,281 @@ TriBITS Global Project Settings
 TriBITS defines a number of global project-level settings that can be set by
 the user and can have their default determined by each individual TriBITS
 project.  If a given TriBITS project does not define its own default, a
-reasonble default is set by the TriBITS system automatically.
+reasonble default is set by the TriBITS system automatically.  These options
+are defined and are set, for the most part, in the internal TriBITS function
+``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()`` in the TriBITS
+CMake code file ``TribitsGlobalMacros.cmake`` which gets called inside of the
+``TRIBITS_PROJECT()`` macro.  That function and that file are the definitive
+source the options that a TriBITS project takes and what the default values
+are but we strive to document them here as well.  Many of these global options
+(i.e. cache variables) such as ``${PROJECT_NAME}_<SOME_OPTION>`` allow the
+project to define a default by setting a local varible
+``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` as::
 
-ToDo: Document what parameters influence the entire TriBITS project, what
-parameters can have project-specific defaults, etc.
+  SET(${PROJECT_NAME}_<SOME_OPTION>_DEFAULT <someDefault>)
 
-Automated testing
-=================
+either in its top-level ``CMakeLists.txt`` file or in its
+``ProjectName.cmake`` file.  If ``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` is
+not set by the project, then TriBITS provides a reasonable default value.  The
+TriBITS code for this looks like::
 
-ToDo: Fill in!
+  IF ("${${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_<SOME_OPTION>_DEFAULT <someDefault>)
+  ENDIF()
 
-TriBITS Project Development Workflow
-======================================
+  ADVANCED_SET( ${PROJECT_NAME}_<SOME_OPTION>
+    ${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}
+    CACHE BOOL "[documentation]."
+    )
 
-ToDo: Fill in!
+where ``<SOME_OPTION>`` is the option name like ``TEST_CATEGORIES`` and
+``<someDefault>`` is the default set by TriBITS if the project does not define
+a default.  In this way, if the project sets the variable
+``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` before this code exeutates, then
+``${${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}`` will be used as the default for
+the cache varible ``${PROJECT_NAME}_<SOME_OPTION>`` which, of course, can be
+overridden by the user when calling ``cmake`` in a number of ways.
 
-Project-Specific Build Quick Reference
-======================================
+Most of these global options that can be overridden externally by setting the
+cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
+file ???<Project>BuildQuickRef???).  Some of the more unusual options that
+might only be of interest to developers mentioned below may not be documented
+in ???<Project>BuildQuickRef???.
 
-ToDo: Describe <Project>BuildQuickRef document!
+The global project-level TriBITS options for which defaults can be provided by
+a given TriBITS project are:
+
+* `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
+* `${PROJECT_NAME}_ENABLE_Fortran`_
+* `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
+* `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
+* `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
+* `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
+* `${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_
+* `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
+* `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
+* `${PROJECT_NAME}_TEST_CATEGORIES`_
+* `MPI_EXEC_MAX_NUMPROCS`_
+
+These options are described below.
+
+.. _${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
+
+**${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES**
+
+  If ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`` is ``ON`` (the TriBITS
+  default value), then any explicitly enabled packages that have disabled
+  upstream required packages or TPLs will be disabled.  If ``OFF``, then an
+  configure error will occur (for more details see
+  ???${PROJECT_NAME}BuildQuickRef???).  A project define a different default value by
+  setting::
+  
+    SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
+  
+  .. _${PROJECT_NAME}_ENABLE_Fortran:
+  
+**${PROJECT_NAME}_ENABLE_Fortran**
+  
+  If ``${PROJECT_NAME}_ENABLE_Fortran`` is ``ON``, then Fortran support for the
+  project will be enabled and the Fortran compiler(s) must be found.  By
+  default, TriBITS sets this to ``ON`` for non-Windows systems (i.e. ``WIN32``
+  is not set by CMake) but is ``OFF`` for a Windows system.  A project always
+  requires Fortran, for example, it can set the default::
+  
+    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
+  
+  If a project does not have any native Fortran code a good default would be::
+  
+    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
+  
+  NOTE: It is usually not a good idea to always force off Fortran, or any
+  compiler, because extra repositories and packages might be added by someone
+  that might require the compiler and we don't want to unnecessarily limit the
+  generality of a given TriBITS build.  Setting the default for all platforms
+  should be sufficient.
+  
+.. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
+
+**${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS**
+
+  If ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`` is set to ``ON``, then
+  any defined libraries or header files that are listed in calls to
+  `TRIBITS_ADD_LIBRARY()`_ will be installed (unless options are passed into
+  `TRIBITS_ADD_LIBRARY()`_ that disable installs).  If set to ``OFF``, then
+  headers and librareis will be installed by default and only ``INSTALLABLE``
+  executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be installed.
+  However, as described in ???${PROJECT_NAME}BuildQuickRef>???, shared libraries will
+  still be always be installed if enabled since they are needed by the installed
+  executables.  The TriBITS default is to set this to ``ON``.
+  
+  For a TriBITS project that primarily is delivering libraries (e.g. Trilinos),
+  then it makes sense to leave the TriBITS default or explicitly set::
+  
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
+  
+  For a TriBITS project that is primarily delivering executablers (e.g. VERA),
+  then it makes sense to set the default to::
+  
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT OFF)
+  
+.. _${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES:
+
+**${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES**
+  
+  If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
+  ``Makefile.export.<PACKAGE_NAME>`` will get created at configure time in the
+  build tree and installed into the install tree.  See
+  ???<Proeject>BuildQuickRef??? for details.  The TriBITS default is ``ON`` but a
+  project can decide to turn this off by default by setting::
+  
+    SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
+  
+  A project might want to disable the generation of export makefiles by default
+  if its main purpose is to provide executables.  There is no reason to provide
+  an export makefile if libraies and headers are not actaully installed (see
+  `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_)
+
+.. _${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES:
+
+**${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES**
+
+  If ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` is set to ``ON``,
+  then ``<PACKAGE_NAME>Config.cmake`` files are created at configure time in
+  the build tree and installed into the install tree.  These files are used by
+  external CMkae projects to pull in the list of compilers, compiler options,
+  include directories and libraries.  The TriBITS default is ``ON``.  A
+  project can change the default by setting, for example::
+
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+
+  A project would want to turn off the creation and installation of
+  ``<PACKAGE_NAME>Config.cmake`` files if it was only installing and providing
+  executables. See ???<Project>BuildQuickRef??? for details.
+
+.. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
+
+**${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
+
+  If ``${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`` is ``ON``, then the
+  data-structures needed to generate ``Makefile.export.<PACKAGE_NAME>`` and
+  ``<PACKAGE_NAEM>Config.cmake`` are created.  These data structures are also
+  needed in order to generate export makefiles on demand using the function
+  `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.  The default in
+  TriBITS is to turn this ``ON`` automatically by default if
+  ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` or
+  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` are ``ON``.  Else, by
+  default, TriBITS sets this to ``OFF``.  The only reason for the project to
+  override the default is to set it to ``ON`` as with:
+
+    SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
+
+  is so that the necessary data-structures are generated in order to use the
+  function `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.
+
+.. _${PROJECT_NAME}_ELEVATE_ST_TO_PT:
+
+**${PROJECT_NAME}_ELEVATE_ST_TO_PT**
+
+  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST`` SE
+  packages will be elevated to ``PT`` packages.  The TriBITS default is
+  obviously ``OFF``.  The default can be changed by setting::
+
+    SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT ON)
+
+  There are projects, especially meta-projects, where the distiction between
+  ``PT`` and ``ST`` code is not helpful or the assignment of ``PT`` and ``ST``
+  packages in a repository is not appropriate.  An example project like this
+  CASL VERA.  Changing the default to ``ON`` allows any packages to be
+  considered in pre-push testing.
+
+.. _${PROJECT_NAME}_ENABLE_CPACK_PACKAGING:
+
+**${PROJECT_NAME}_ENABLE_CPACK_PACKAGING**
+
+  If ``${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`` is ``ON``, then CPack support
+  is enabled and some TriBITS code is avoided that is needed to set up
+  data-structures that are used by the built-in CMake target
+  ``package_source``.  The TriBITS default is ``OFF`` with the idea that the
+  average developer or user will not be wanting to create source distributions
+  with CPack.  However, this default can be changed by setting::
+
+    SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING ON)
+
+.. _${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION:
+
+**${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION**
+
+  If ``${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`` is
+  ``TRUE``, then the directories for subpackages that are not enabled are left
+  out of the source tarball.  This reduces the size of the tarball as much as
+  possible but does require that the TriBITS packages and subpackages be
+  properly set up to allow disabled subpackages from being excluded.  The
+  TriBITS default is ``TRUE`` but this can be changed by setting::
+
+    SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
+
+.. _${PROJECT_NAME}_CPACK_SOURCE_GENERATOR:
+
+**${PROJECT_NAME}_CPACK_SOURCE_GENERATOR**
+
+  The variable ``${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`` determines the CPack
+  source generation types that are created when the ``package_source`` target
+  is run.  The TriBITS default is set to ``TGZ``.  However, this default can
+  be overridded by setting, for example::
+
+    SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT "TGZ;TBZ2")
+
+  This variable should generally be set in the file::
+
+     <projectDir>/cmake/CallbackDefineProjectPackaging.cmake
+
+  instead of in the base-level ``CMakeLists.txt`` file so that it goes along
+  with rest of the project-specific CPack packaging options.
+
+.. _${PROJECT_NAME}_TEST_CATEGORIES:
+
+**${PROJECT_NAME}_TEST_CATEGORIES**
+
+  The cache varaible ``${PROJECT_NAME}_TEST_CATEGORIES`` detemines what tests
+  defined using `TRIBITS_ADD_TEST()`_ and `TRIBITS_ADD_ADVANCED_TEST()`_ will
+  be added for ``ctest`` to run (see `Automated testing`) for
+  discussion of test categories).  The TriBITS default is ``NIGHTLY`` for a
+  standard local build.  The ``checkin-test.py`` script sets this to
+  ``BASIC``.  A TriBITS project can override the default for a basic configure
+  using, for example::
+
+    SET(${PROJECT_NAME}_TEST_CATEGORIES BASIC)
+
+  The justification for having the default test category be ``NIGHTLY``
+  instead of ``BASIC`` is that when someone is enabling a package to develop
+  on it or install it, we want them by default to be seeing the full version
+  of the test suite (shy of the ``WEEKLY`` tests which can be very expensive)
+  for the packages they are explictly enabling.  Typically they will not be
+  enabling forward (downstream) dependent packages so the cost of running the
+  test suite should not be too prohibitive.  This all depends on how good of a
+  job the development teams do in making their test suites run fast and
+  keeping the cost of running the tests down.  See the section `Automated
+  testing`_ for a more detailed discussion.
+
+.. _MPI_EXEC_MAX_NUMPROCS:
+
+**MPI_EXEC_MAX_NUMPROCS**
+
+  The varaible ``MPI_EXEC_MAX_NUMPROCS`` gives the maximum number of processes
+  for an MPI test that will be allowed as defined by `TRIBITS_ADD_TEST()`_ and
+  `TRIBITS_ADD_ADVANCED_TEST()`_.  The TriBITS default is set to be ``4`` (for
+  no good reason really but it needs to stay that way for backward
+  compatibility).  This default can be changed by setting::
+
+    SET(MPI_EXEC_MAX_NUMPROCS_DEFAULT <newDefaultMax>)
+
+  While this default can be changed for the project as a whole on all
+  platforms, it is likely better to change this default on a
+  machine-by-machine basis to correspond to the loat that can be accomidated
+  by a given machine (or class of machines).  For example if a given machine
+  has 64 cores, a reasonble number for ``MPI_EXEC_MAX_NUMPROCS_DEFAULT`` is
+  64.
 
 
 TriBITS Macros and Functions
@@ -374,7 +706,12 @@ The following subsections give detailed documentation for the CMake macros and
 functions that make up the core TriBITS system.  These are what are used by
 TriBITS project developers in their ``CMakeLists.txt`` and other files.  These
 are listed in approximately the order they will be encounted in a project or
-packages ``CMakeLists.txt`` and other files.
+packages ``CMakeLists.txt`` and other files.  All of these functions and
+macros should be aviable when processing the project's and package's variables
+files if used properly.  Therefore, no explicit ``INCLUDE()`` statements
+should be needed other than the initial include of the
+``TribitsProject.cmake`` file in the top-level CMakeLists.txt file so the
+command `TRIBITS_PROJECT()`_ can be executed.
 
 .. include:: TribitsMacroFunctionDoc.rst
 

@@ -8,11 +8,17 @@ TRIBITS_PROJECT()
 
 Defines and processes a TriBITS project.
 
-Requires that ``PROJECT_NAME`` be defined before calling this macro.
+Usage::
 
-Note, this is just a shell of a macro that calls the real implementation.
-This allows someone to set ``${PROJECT_NAME}_TRIBITS_DIR`` in the env and point
-to a different Tribits implementation to test before snapshoting.
+  TRIBITS_PROJECT()
+
+Requires that the project name variable ``PROJECT_NAME`` be defined before
+calling this macro.  Also, all default values for project settings should be
+set before calling this (see `TriBITS Global Project Settings`_).  Also, the
+variable ``${PROJECT_NAME}_TRIBITS_DIR`` must be set as well.
+
+This macro then adds all of the necssary paths to ``CMAKE_MODULE_PATH`` and
+then performs all processing of the TriBITS project files (see ???).
 
 ToDo: Give documentation!
 
@@ -50,7 +56,7 @@ package which contains the three columns:
   directories when deciding what packages are modified and need to be
   retested (along with downstream packages).
 
-* **CLASSIFICATION** (3nd column): Gives the testing group PT, ST, EX and
+* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
   by a coma with no space in between such as "RS,PT" for a "Research
   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
@@ -564,6 +570,74 @@ This allows some sections of a TriBITS package to be considered ``ST`` for
 development mode reducing testing time which includes only ``PT`` code.,
 while still having important functionality available to users by default in
 a release.
+
+TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
+----------------------------------------------------
+
+Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
+Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
+flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()
+
+Usage::
+
+  TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
+    PACKAGE_NAME <pakageName>
+    [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
+    [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
+    [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
+    [WRITE_INSTALL_CMAKE_CONFIG_FILE]
+    [WRITE_INSTALL_EXPORT_MAKLEFILE]
+    )
+
+The arguments are:
+
+``PACKAGE_NAME <pakageName>``
+
+  Gives the name of the TriBITS package for which the export files should be
+  created for.
+
+``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
+
+  If specified, then all of the varibles in the generated export files will
+  be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
+  This is to provide flexibility.
+
+``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
+
+  If specified, then the package <packageName>'s cmake configure export file
+  for extenral CMake client projects will be created in the file
+  <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
+
+``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
+
+  If specified, then the package <packageName>'s cmake configure export file
+  for external Makefile client projects will be created in the file
+  <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
+
+``WRITE_INSTALL_CMAKE_CONFIG_FILE``
+
+  If specified, then the package <packageName>'s install cmake configure
+  export to be installed will be written.  The name and location of this
+  file is hard-coded.
+
+``WRITE_INSTALL_EXPORT_MAKLEFILE``
+
+  If specified, then the package <packageName>'s install export makefile to
+  be installed will be written.  The name and location of this file is
+  hard-coded.
+
+NOTE: The arguments to this function may look strange but the motivation is
+to support versy speicalized use cases such as when a TriBITS package needs
+to generate an export makefile for a given package but name the export
+makefile differently and use different variable name prefixes.  The
+particular driver use case is when wrapping an external autotools project
+that depends on Trilinos and needs to read in the Makefile.export.Trilinos
+file but this file needs to be generated for a subset of enabled packages on
+the fly during a one-pass configure.
+
+NOTE: This function does *not* contain the the INSTALL() commands because
+CMake will not allow those to even be present in scripting mode that is used
+for unit testing this function.
 
 TRIBITS_CONFIGURE_FILE()
 ------------------------
