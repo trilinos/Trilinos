@@ -646,6 +646,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: commDims from command line should be fully specified
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+
+  // Construct dimensions
+  dim_type localDim = 10;
+  Array< dim_type > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getCommDim(axis);
+
+  // Construct an MDMap
+  Teuchos::RCP< const MDMap<> > mdMap = Teuchos::rcp(new MDMap<>(mdComm, dims));
+
+  // Construct and test an MDVector with a leading dimension
+  MDVector< Sca > mdv1(mdMap, 3);
+  TEST_EQUIVALENT(mdv1.numDims()      , numDims+1);
+  TEST_EQUIVALENT(mdv1.getCommDim(0)  , 1        );
+  TEST_EQUIVALENT(mdv1.getGlobalDim(0), 3        );
+
+  // Construct and test an MDVector with a trailing dimension
+  MDVector< Sca > mdv2(mdMap, 0, 2);
+  TEST_EQUIVALENT(mdv2.numDims()            , numDims+1);
+  TEST_EQUIVALENT(mdv2.getCommDim(numDims)  , 1        );
+  TEST_EQUIVALENT(mdv2.getGlobalDim(numDims), 2        );
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("dimensions"        , dims);
+  plist.set("trailing dimension", 5   );
+
+  // Construct and test an MDVector with a trailing dimension
+    MDVector< Sca > mdv3(mdComm, plist);
+  TEST_EQUIVALENT(mdv3.numDims()            , numDims+1);
+  TEST_EQUIVALENT(mdv3.getCommDim(numDims)  , 1        );
+  TEST_EQUIVALENT(mdv3.getGlobalDim(numDims), 5        );
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
