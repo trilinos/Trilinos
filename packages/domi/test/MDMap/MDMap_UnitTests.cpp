@@ -2486,4 +2486,30 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedBoth )
   }
 }
 
+TEUCHOS_UNIT_TEST( MDMap, contiguous )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  
+  // Construct the MDMap
+  Array< dim_type > dimensions(num_dims);
+  Array< int >      commPad(num_dims,2);
+  Array< int >      bndryPad(num_dims,3);
+  for (int axis = 0; axis < num_dims; ++axis)
+    dimensions[axis] = 8 * commDims[axis];
+  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+
+  // Initial MDMap should be contiguous
+  TEST_ASSERT(mdMap.isContiguous());
+
+  // Take a slice of the MDMap
+  MDMap<> slicedMap(mdMap, 0, 4);
+
+  // New MDMap should not be contiguous, unless the original MDMap was 1D
+  TEST_EQUALITY(slicedMap.isContiguous(), (num_dims==1));
+}
+
 }  // namespace
