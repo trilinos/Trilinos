@@ -294,6 +294,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 		   [2*num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] -
 		   1];
 	}
+
+	connect[b][i*num_nodes_per_elem[b] + j]-1;
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
