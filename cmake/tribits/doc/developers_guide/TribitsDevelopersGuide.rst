@@ -1,8 +1,10 @@
-========================
-TriBITS Developers Guide
-========================
+=======================================
+TriBITS Developers Guide and Reference
+=======================================
 
 :Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
+
+:Abstract: This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is descrided including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions.  Many other topics of interest to a TriBITS project developer and archetect are also discussed.
 
 .. sectnum::
    :depth: 1
