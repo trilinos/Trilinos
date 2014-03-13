@@ -2333,4 +2333,157 @@ TEUCHOS_UNIT_TEST( MDMap, isPad )
   }
 }
 
+TEUCHOS_UNIT_TEST( MDMap, augmentedLeading )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  
+  // Construct the MDMap
+  Array< dim_type > dimensions(num_dims);
+  Array< int >      commPad(num_dims,1);
+  Array< int >      bndryPad(num_dims,2);
+  for (int axis = 0; axis < num_dims; ++axis)
+    dimensions[axis] = 10 * commDims[axis];
+  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+
+  // Compute the augmented MDMap with leading dimension
+  Teuchos::RCP< const MDMap<> > newMdMap = mdMap.getAugmentedMDMap(3);
+
+  // Check global MDMap attributes
+  TEST_ASSERT(newMdMap->onSubcommunicator());
+  TEST_EQUALITY(newMdMap->numDims(), num_dims+1);
+
+  // Check the MDMap attributes for axis 0
+  TEST_ASSERT(! newMdMap->isPeriodic(0));
+  TEST_EQUALITY_CONST(newMdMap->getCommDim(0)                 , 1);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalDim(0)               , 3);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(0).start()    , 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(0).stop()     , 3);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(0).start(), 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(0).stop() , 3);
+  TEST_EQUALITY_CONST(newMdMap->getLocalDim(0)                , 3);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(0).start()     , 0);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(0).stop()      , 3);
+  TEST_EQUALITY_CONST(newMdMap->getLowerPadSize(0)            , 0);
+  TEST_EQUALITY_CONST(newMdMap->getUpperPadSize(0)            , 0);
+
+  // Check the MDMap attributes for the remaining axes
+  for (int dof = 0; dof < 3; ++dof)
+  {
+    MDMap<> oldMdMap(*newMdMap, 0, dof);
+    TEST_ASSERT(mdMap.isSameAs(oldMdMap));
+  }
+}
+
+TEUCHOS_UNIT_TEST( MDMap, augmentedTrailing )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  
+  // Construct the MDMap
+  Array< dim_type > dimensions(num_dims);
+  Array< int >      commPad(num_dims,1);
+  Array< int >      bndryPad(num_dims,2);
+  for (int axis = 0; axis < num_dims; ++axis)
+    dimensions[axis] = 10 * commDims[axis];
+  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+
+  // Compute the augmented MDMap with trailing dimension
+  Teuchos::RCP< const MDMap<> > newMdMap = mdMap.getAugmentedMDMap(0,5);
+
+  // Check global MDMap attributes
+  TEST_ASSERT(newMdMap->onSubcommunicator());
+  TEST_EQUALITY(newMdMap->numDims(), num_dims+1);
+
+  // Check the MDMap attributes for axis num_dims
+  TEST_ASSERT(! newMdMap->isPeriodic(num_dims));
+  TEST_EQUALITY_CONST(newMdMap->getCommDim(num_dims)                 , 1);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalDim(num_dims)               , 5);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(num_dims).start()    , 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(num_dims).stop()     , 5);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(num_dims).start(), 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(num_dims).stop() , 5);
+  TEST_EQUALITY_CONST(newMdMap->getLocalDim(num_dims)                , 5);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(num_dims).start()     , 0);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(num_dims).stop()      , 5);
+  TEST_EQUALITY_CONST(newMdMap->getLowerPadSize(num_dims)            , 0);
+  TEST_EQUALITY_CONST(newMdMap->getUpperPadSize(num_dims)            , 0);
+
+  // Check the MDMap attributes for the remaining axes
+  for (int dof = 0; dof < 5; ++dof)
+  {
+    MDMap<> oldMdMap(*newMdMap, num_dims, dof);
+    TEST_ASSERT(mdMap.isSameAs(oldMdMap));
+  }
+}
+
+TEUCHOS_UNIT_TEST( MDMap, augmentedBoth )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  
+  // Construct the MDMap
+  Array< dim_type > dimensions(num_dims);
+  Array< int >      commPad(num_dims,1);
+  Array< int >      bndryPad(num_dims,2);
+  for (int axis = 0; axis < num_dims; ++axis)
+    dimensions[axis] = 10 * commDims[axis];
+  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+
+  // Compute the augmented MDMap with trailing dimension
+  Teuchos::RCP< const MDMap<> > newMdMap = mdMap.getAugmentedMDMap(2,3);
+
+  // Check global MDMap attributes
+  TEST_ASSERT(newMdMap->onSubcommunicator());
+  TEST_EQUALITY(newMdMap->numDims(), num_dims+2);
+
+  // Check the MDMap attributes for axis 0
+  TEST_ASSERT(! newMdMap->isPeriodic(0));
+  TEST_EQUALITY_CONST(newMdMap->getCommDim(0)                 , 1);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalDim(0)               , 2);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(0).start()    , 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(0).stop()     , 2);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(0).start(), 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(0).stop() , 2);
+  TEST_EQUALITY_CONST(newMdMap->getLocalDim(0)                , 2);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(0).start()     , 0);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(0).stop()      , 2);
+  TEST_EQUALITY_CONST(newMdMap->getLowerPadSize(0)            , 0);
+  TEST_EQUALITY_CONST(newMdMap->getUpperPadSize(0)            , 0);
+
+  // Check the MDMap attributes for axis num_dims+1
+  TEST_ASSERT(! newMdMap->isPeriodic(num_dims+1));
+  TEST_EQUALITY_CONST(newMdMap->getCommDim(num_dims+1)                 , 1);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalDim(num_dims+1)               , 3);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(num_dims+1).start()    , 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalBounds(num_dims+1).stop()     , 3);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(num_dims+1).start(), 0);
+  TEST_EQUALITY_CONST(newMdMap->getGlobalRankBounds(num_dims+1).stop() , 3);
+  TEST_EQUALITY_CONST(newMdMap->getLocalDim(num_dims+1)                , 3);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(num_dims+1).start()     , 0);
+  TEST_EQUALITY_CONST(newMdMap->getLocalBounds(num_dims+1).stop()      , 3);
+  TEST_EQUALITY_CONST(newMdMap->getLowerPadSize(num_dims+1)            , 0);
+  TEST_EQUALITY_CONST(newMdMap->getUpperPadSize(num_dims+1)            , 0);
+
+  // Check the MDMap attributes for the remaining axes
+  for (int ldof = 0; ldof < 2; ++ldof)
+  {
+    MDMap<> tempMdMap(*newMdMap, 0, ldof);
+    for (int tdof = 0; tdof < 3; ++tdof)
+    {
+      MDMap<> oldMdMap(tempMdMap, num_dims, tdof);
+      TEST_ASSERT(mdMap.isSameAs(oldMdMap));
+    }
+  }
+}
+
 }  // namespace
