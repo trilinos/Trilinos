@@ -2983,7 +2983,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    struct ML_Field_Of_Values * fov;
    int flag=0; /* For the return value */
    int RelativeLevel, NumZDir, Zorientation, *LayerId, *VertLineId;
-   int i, Nnodes;
+   int  Nnodes;
    struct SemiCoarsen_Struct   widget;
    void *old_field;
 
@@ -4033,19 +4033,43 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  double *Avals=NULL, *BandSol=NULL, *BandMat=NULL, TheSum;
  int    *IPIV=NULL, KL, KU, KLU, N, NRHS, LDAB,INFO;
  int    *Pcols, *Pptr;
- double *Pvals;
+ double *Pvals, *dtemp = NULL;
  int    MaxStencilSize, MaxNnzPerRow;
- int    *Acoldof=NULL, *LayDiff=NULL;
+ int    *LayDiff=NULL;
  int    CurRow, LastGuy = -1, NewPtr;
  int    allocated = 0, Ndofs; 
+ int    Nghost;
+ int    *Layerdofs = NULL, *Col2Dof = NULL;
+
 
   MaxNnzPerRow = MaxHorNeighborNodes*DofsPerNode*3;
-  Acoldof = (int *) malloc( (1+MaxNnzPerRow)*sizeof(int));
   LayDiff = (int *) malloc( (1+MaxNnzPerRow)*sizeof(int));
 
   *ParamPptr = NULL;
   *ParamPcols= NULL;
   *ParamPvals= NULL;
+
+   Nghost = 0;
+#ifdef HOOKED_TO_ML
+   Nghost = ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm);
+#endif
+   dtemp    = (double *) malloc(sizeof(double)*(Ntotal*DofsPerNode+Nghost+1));
+   Layerdofs= (int *) malloc(sizeof(int)*(Ntotal*DofsPerNode+Nghost+1));
+   Col2Dof  = (int *) malloc(sizeof(int)*(Ntotal*DofsPerNode+Nghost+1));
+   for (i = 0; i < Ntotal*DofsPerNode; i++)
+      dtemp[i]= (double)LayerId[i/DofsPerNode];
+#ifdef HOOKED_TO_ML
+   ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,Amat->outvec_leng,
+                    Amat->comm, ML_OVERWRITE,NULL);
+#endif
+   for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]=dtemp[i];
+   for (i = 0; i < Ntotal*DofsPerNode;        i++) dtemp[i]= i%DofsPerNode;
+#ifdef HOOKED_TO_ML
+   ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,Amat->outvec_leng,
+                    Amat->comm, ML_OVERWRITE,NULL);
+#endif
+   for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]=dtemp[i];
+   if (dtemp != NULL) free(dtemp);
 
   NLayers   = LayerId[0];
   NVertLines= VertLineId[0];
@@ -4135,8 +4159,9 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      if (BandSol      != NULL) free(BandSol);
      if (BandMat      != NULL) free(BandMat);
      if (IPIV         != NULL) free(IPIV);
-     if (Acoldof      != NULL) free(Acoldof);
      if (LayDiff      != NULL) free(LayDiff);
+     if (Layerdofs    != NULL) free(Layerdofs);
+     if (Col2Dof      != NULL) free(Col2Dof);
      return -1;
   }
   
@@ -4243,29 +4268,20 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                     if (BandSol      != NULL) free(BandSol);
                     if (BandMat      != NULL) free(BandMat);
                     if (IPIV         != NULL) free(IPIV);
-                    if (Acoldof      != NULL) free(Acoldof);
                     if (LayDiff      != NULL) free(LayDiff);
+                    if (Layerdofs    != NULL) free(Layerdofs);
+                    if (Col2Dof      != NULL) free(Col2Dof);
                     return -1;
                 }
 
                 for (i = 0; i < RowLeng; i++) {
-                   Acoldof[i] = (Acols[i]+1)%DofsPerNode-1;
-                   if (Acoldof[i] == -1) Acoldof[i] = DofsPerNode-1;
+                   LayDiff[i]  = Layerdofs[Acols[i]]-StartLayer-node_k+2;
+                                                                    
                    /* This is the main spot where there might be off- */
                    /* processor communication. That is, when we       */
                    /* average the stencil in the horizontal direction,*/
-                   /* we would need to know the layer id of some      */
-                   /* neighbors that might reside off-processor. Right*/
-                   /* now, I just skip the averaging for things that  */
-                   /* don't reside on processor.                      */
-                   /* Note: I can't remember if we can count on the   */
-                   /* ordering of off-processor stuff. I'm not even   */
-                   /* sure if dofs within a node are necessarily      */
-                   /* consecutive.                                    */
-                   if (Acols[i] < Ndofs)
-                      LayDiff[i]  = LayerId[(Acols[i]-Acoldof[i])/DofsPerNode]-
-                                     StartLayer-node_k+2;
-                   else LayDiff[i] = -666;  /* don't average */
+                   /* we need to know the layer id of some            */
+                   /* neighbors that might reside off-processor.      */
                 }
                 PtRow = (node_k-1)*DofsPerNode+dof_i+1;
                 for (dof_j=0; dof_j < DofsPerNode; dof_j++) {
@@ -4274,7 +4290,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                    /* see dgbsv() comments for matrix format.          */
                    TheSum = 0.0;
                    for (i = 0; i < RowLeng; i++) {
-                     if ((LayDiff[i] == 0)  && (Acoldof[i] == dof_j))
+                     if ((LayDiff[i] == 0)  && (Col2Dof[Acols[i]] == dof_j))
                           TheSum += Avals[i];
                    }
                    index = LDAB*(PtCol-1)+KLU+PtRow-PtCol;
@@ -4285,7 +4301,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                       /* see dgbsv() comments for matrix format.  */
                       TheSum = 0.0;
                       for (i = 0; i < RowLeng; i++) {
-                         if ((LayDiff[i] == 1)  && (Acoldof[i] == dof_j))
+                         if ((LayDiff[i] == 1) &&(Col2Dof[Acols[i]]== dof_j))
                              TheSum += Avals[i];
                       }
                       j = PtCol+DofsPerNode;
@@ -4298,7 +4314,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                       /* see dgbsv() comments for matrix format.  */
                       TheSum = 0.0;
                       for (i = 0; i < RowLeng; i++) {
-                         if ((LayDiff[i] == -1)  && (Acoldof[i] == dof_j))
+                         if ((LayDiff[i]== -1) &&(Col2Dof[Acols[i]]== dof_j))
                              TheSum += Avals[i];
                       }
                       j = PtCol-DofsPerNode;
@@ -4347,8 +4363,9 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   if (BandSol      != NULL) free(BandSol);
   if (BandMat      != NULL) free(BandMat);
   if (IPIV         != NULL) free(IPIV);
-  if (Acoldof      != NULL) free(Acoldof);
   if (LayDiff      != NULL) free(LayDiff);
+  if (Layerdofs    != NULL) free(Layerdofs);
+  if (Col2Dof      != NULL) free(Col2Dof);
 
  /*
   * Squeeze the -1's out of the columns. At the same time convert Pcols

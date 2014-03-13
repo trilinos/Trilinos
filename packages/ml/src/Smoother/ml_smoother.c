@@ -8362,11 +8362,14 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
    trid_du2     = dataptr->trid_du2;
    trid_ipiv    = dataptr->trid_ipiv;
 
-   if ((inlen%NBlks) != 0) {
+   if (inlen != 0) {
+    if ((inlen%NBlks) != 0) {
       pr_error("Error(ML_LineJacobi): inlen not evenly divisible by NBlks\n");
       ML_avoid_unused_param((void *) &outlen);
+    }
    }
-   Bsize = inlen/NBlks;
+   if (NBlks != 0) Bsize = inlen/NBlks;
+   else Bsize = 1;
 
    if (blkOffset == NULL) BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
    RowsInBlk = (int    *) ML_allocate((Nrows+1)*sizeof(int) );
