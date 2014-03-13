@@ -104,7 +104,7 @@ INCLUDE(PrintVar)
 # By default, each and every atomic test or command needs to pass (as defined below) in
 # order for the overall test to pass.
 #
-# **Sections:**
+# *Sections:*
 # 
 # * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -114,12 +114,14 @@ INCLUDE(PrintVar)
 # * `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
-# 
+#
 # .. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):**
+# **Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# Some overall arguments are:
+# Below are given some ome overall arguments are.  Remaining overall arguments
+# that control overall pass/fail are described in `Overall Pass/Fail
+# (TRIBITS_ADD_ADVANCED_TEST())`_..
 #
 #   ``<testName>``
 #
@@ -196,11 +198,9 @@ INCLUDE(PrintVar)
 #     calling the test.  This is set using the built-in test property
 #     ``ENVIRONMENT``.
 #
-# Overall arguments that control overall pass/fail are described in ???.
-#
 # .. _TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 # 
-# **TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):**
+# **TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # Each test command block ``TEST_<IDX>`` runs either a package-built test
 # executable or some general command executable and is defined as either
@@ -211,16 +211,17 @@ INCLUDE(PrintVar)
 #     If specified, then ``<exeRootName>`` gives the the name of an executable
 #     target that will be run as the command.  The full executable path is
 #     determined in exactly the same way it is in the `TRIBITS_ADD_TEST()`_
-#     function (see `Determining the Exectuable or Command to Run`_).
-#     If this is an MPI build, then the executable will be run with MPI using
-#     ``NUM_MPI_PROCS <numProcs>`` or ``OVERALL_NUM_MPI_PROCS
-#     <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not set for this test
-#     case).  If the number of maximum MPI processes allowed is less than this
-#     number of MPI processes, then the test will *not* be run.  Note that
-#     ``EXEC <exeRootName>`` is basically equivalent to ``CMND <cmndExec>``
-#     when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In this case,
-#     you can pass in ``<exeRootName>`` to any command you would like and it
-#     will get run with MPI in MPI mode just link any other command.
+#     function (see `Determining the Exectuable or Command to Run
+#     (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then the executable
+#     will be run with MPI using ``NUM_MPI_PROCS <numProcs>`` or
+#     ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not
+#     set for this test case).  If the number of maximum MPI processes allowed
+#     is less than this number of MPI processes, then the test will *not* be
+#     run.  Note that ``EXEC <exeRootName>`` is basically equivalent to ``CMND
+#     <cmndExec>`` when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In
+#     this case, you can pass in ``<exeRootName>`` to any command you would
+#     like and it will get run with MPI in MPI mode just link any other
+#     command.
 #
 #   ``CMND <cmndExec>``
 #
@@ -310,8 +311,8 @@ INCLUDE(PrintVar)
 #     expression "Final Result: PASSED" is found in the ouptut for the test.
 #
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
-#
-# **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):**
+# 
+# **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # By default, the overall test will be assumed to pass if it prints::
 #
@@ -330,8 +331,8 @@ INCLUDE(PrintVar)
 #     <regex>.  Otherwise, it will be assumed to fail.
 #
 # .. _Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):
-#
-# **Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):**
+# 
+# **Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # For the most part, the listed arguments can appear in any order except for
 # the following restrictions:
@@ -352,20 +353,20 @@ INCLUDE(PrintVar)
 #
 # .. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):**
+# **Implementation Details (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # ToDo: Describe the generation of the ``*.cmake`` file and what gets added
 # with ADD_TEST().
 #
 # .. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):**
+# **Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # ToDo: Fill in!
 #
 # .. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):**
+# **Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # The test can be disabled externally by setting the CMake cache variable
 # ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
@@ -374,7 +375,7 @@ INCLUDE(PrintVar)
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):**
+# **Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing
 # what info it prints out.

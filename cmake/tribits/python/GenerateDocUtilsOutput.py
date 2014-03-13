@@ -65,6 +65,11 @@ def addCmndLineOptions(clp):
     default=rst2latex )
     
   clp.add_option(
+    "--generate-latex-options", dest="generateLatexOptions", type="string",
+    help="Options to pass to the generate latex command",
+    default="" )
+    
+  clp.add_option(
     "--generate-pdf", dest="generatePDF", type="string",
     help="Generate the PDF output file from the latex file using provided" \
       " script (i.e. pdflatex) [Default 'pdflatex']",
@@ -91,7 +96,8 @@ def generateDocutilsOuputFiles(options):
   if options.generateLatex:
     print "Generating "+outputFileBaseName+".tex ..."
     outputLatexFile = outputFileBase+".tex"
-    runSysCmnd(options.generateLatex+" "+rstFile+" "+outputLatexFile)
+    runSysCmnd(options.generateLatex+" "+options.generateLatexOptions+ \
+       " "+rstFile+" "+outputLatexFile)
     if options.generatePDF:
       print "Generating "+outputFileBaseName+".pdf ..."
       outputPdfFile = outputFileBase+".pdf"

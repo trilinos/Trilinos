@@ -70,14 +70,27 @@ INCLUDE(TribitsAddTestHelpers)
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #     )
 #
-# **Formal Arguments:**
+# *Sections:*
+#
+# * `Formal Arguments (TRIBITS_ADD_TEST())`_
+# * `Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())`_
+# * `Determining the Full Test Name (TRIBITS_ADD_TEST())`_
+# * `Adding Multiple Tests  (TRIBITS_ADD_TEST())`_
+# * `Determining Pass/Fail (TRIBITS_ADD_TEST())`_
+# * `Setting additional test properties (TRIBITS_ADD_TEST())`_
+# * `Debugging and Examining Test Generation (TRIBITS_ADD_TEST())`_
+# * `Disabling Tests Externally (TRIBITS_ADD_TEST())`_
+#
+# .. _Formal Arguments (TRIBITS_ADD_TEST()):
+#
+# **Formal Arguments (TRIBITS_ADD_TEST())**
 #
 #   ``<exeRootName>``
 #
 #     The name of the exectuble or path to the exectuable to run for the test
-#     (see `Determining the Exectuable or Command to Run`_).  This name is
-#     also the default root name for the test (see `Determining the Full Test
-#     Name`_).
+#     (see `Determining the Exectuable or Command to Run
+#     (TRIBITS_ADD_TEST())`_).  This name is also the default root name for
+#     the test (see `Determining the Full Test Name (TRIBITS_ADD_TEST())`_).
 #
 #   ``NOEXEPREFIX``
 #
@@ -271,9 +284,9 @@ INCLUDE(TribitsAddTestHelpers)
 # In the following subsections, more details on how tests are defined and run
 # is given.
 #
-# .. _Determining the Exectuable or Command to Run:
+# .. _Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST()):
 #
-# **Determining the Exectuable or Command to Run:**
+# **Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())**
 #
 # This funtion is primarily designed to make it easy to run tests for
 # exectaubles built usign the function ``TRIBITS_ADD_EXECUTABLE()``.  To set
@@ -306,9 +319,9 @@ INCLUDE(TribitsAddTestHelpers)
 # not found, then when ``ctest`` goes to run the test, it will mark it as
 # ``NOT RUN``.
 #
-# .. _Determining the Full Test Name:
+# .. _Determining the Full Test Name (TRIBITS_ADD_TEST()):
 #
-# **Determining the Full Test Name:**
+# **Determining the Full Test Name (TRIBITS_ADD_TEST())**
 #
 # By default, the base test name is selected to be::
 #
@@ -338,20 +351,28 @@ INCLUDE(TribitsAddTestHelpers)
 # multiple tests).  No such prefix is added for the serial case
 # (i.e. ``TPL_ENABLE_MPI=OFF``).
 #
-# **Adding Multiple Tests:**
+# .. _Adding Multiple Tests  (TRIBITS_ADD_TEST()):
+#
+# **Adding Multiple Tests  (TRIBITS_ADD_TEST())**
 #
 # ToDo: Explain how multiple tests can be added with different sets of
 #  arguments in one of two ways.
 #
-# **Determining Pass/Fail:**
+# .. _Determining Pass/Fail (TRIBITS_ADD_TEST()):
+#
+# **Determining Pass/Fail (TRIBITS_ADD_TEST())**
 #
 # ToDo: Fill in!
 #
-# **Setting additional test properties:**
+# .. _Setting additional test properties (TRIBITS_ADD_TEST()):
+#
+# **Setting additional test properties (TRIBITS_ADD_TEST())**
 #
 # ToDo: Fill in!
 #
-# **Debugging and Examining Test Generation:**
+# .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
+#
+# **Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
 #
 # ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
 # info it prints out.
@@ -359,7 +380,9 @@ INCLUDE(TribitsAddTestHelpers)
 # ToDo: Describe how to examine the generated CTest files to see what test(s)
 # actually got added (or not added) and what the pass/fail criteria is.
 #
-# **Disabling Tests Externally:**
+# .. _Disabling Tests Externally (TRIBITS_ADD_TEST()):
+#
+# **Disabling Tests Externally (TRIBITS_ADD_TEST())**
 #
 # The test can be disabled externally by setting the CMake cache variable
 # ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a

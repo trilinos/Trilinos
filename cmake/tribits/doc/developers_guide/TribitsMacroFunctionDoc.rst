@@ -924,14 +924,27 @@ Usage::
     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
     )
 
-**Formal Arguments:**
+*Sections:*
+
+* `Formal Arguments (TRIBITS_ADD_TEST())`_
+* `Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())`_
+* `Determining the Full Test Name (TRIBITS_ADD_TEST())`_
+* `Adding Multiple Tests  (TRIBITS_ADD_TEST())`_
+* `Determining Pass/Fail (TRIBITS_ADD_TEST())`_
+* `Setting additional test properties (TRIBITS_ADD_TEST())`_
+* `Debugging and Examining Test Generation (TRIBITS_ADD_TEST())`_
+* `Disabling Tests Externally (TRIBITS_ADD_TEST())`_
+
+.. _Formal Arguments (TRIBITS_ADD_TEST()):
+
+**Formal Arguments (TRIBITS_ADD_TEST())**
 
   ``<exeRootName>``
 
     The name of the exectuble or path to the exectuable to run for the test
-    (see `Determining the Exectuable or Command to Run`_).  This name is
-    also the default root name for the test (see `Determining the Full Test
-    Name`_).
+    (see `Determining the Exectuable or Command to Run
+    (TRIBITS_ADD_TEST())`_).  This name is also the default root name for
+    the test (see `Determining the Full Test Name (TRIBITS_ADD_TEST())`_).
 
   ``NOEXEPREFIX``
 
@@ -1125,9 +1138,9 @@ function ``TRIBITS_ADD_ADVANCED_TEST()`` should be used instead.
 In the following subsections, more details on how tests are defined and run
 is given.
 
-.. _Determining the Exectuable or Command to Run:
+.. _Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST()):
 
-**Determining the Exectuable or Command to Run:**
+**Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())**
 
 This funtion is primarily designed to make it easy to run tests for
 exectaubles built usign the function ``TRIBITS_ADD_EXECUTABLE()``.  To set
@@ -1160,9 +1173,9 @@ Whatever executable path is specified using this logic, if the executable is
 not found, then when ``ctest`` goes to run the test, it will mark it as
 ``NOT RUN``.
 
-.. _Determining the Full Test Name:
+.. _Determining the Full Test Name (TRIBITS_ADD_TEST()):
 
-**Determining the Full Test Name:**
+**Determining the Full Test Name (TRIBITS_ADD_TEST())**
 
 By default, the base test name is selected to be::
 
@@ -1192,20 +1205,28 @@ Finally, for any test that gets defined, if MPI is enabled
 multiple tests).  No such prefix is added for the serial case
 (i.e. ``TPL_ENABLE_MPI=OFF``).
 
-**Adding Multiple Tests:**
+.. _Adding Multiple Tests  (TRIBITS_ADD_TEST()):
+
+**Adding Multiple Tests  (TRIBITS_ADD_TEST())**
 
 ToDo: Explain how multiple tests can be added with different sets of
  arguments in one of two ways.
 
-**Determining Pass/Fail:**
+.. _Determining Pass/Fail (TRIBITS_ADD_TEST()):
+
+**Determining Pass/Fail (TRIBITS_ADD_TEST())**
 
 ToDo: Fill in!
 
-**Setting additional test properties:**
+.. _Setting additional test properties (TRIBITS_ADD_TEST()):
+
+**Setting additional test properties (TRIBITS_ADD_TEST())**
 
 ToDo: Fill in!
 
-**Debugging and Examining Test Generation:**
+.. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
+
+**Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
 
 ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
 info it prints out.
@@ -1213,7 +1234,9 @@ info it prints out.
 ToDo: Describe how to examine the generated CTest files to see what test(s)
 actually got added (or not added) and what the pass/fail criteria is.
 
-**Disabling Tests Externally:**
+.. _Disabling Tests Externally (TRIBITS_ADD_TEST()):
+
+**Disabling Tests Externally (TRIBITS_ADD_TEST())**
 
 The test can be disabled externally by setting the CMake cache variable
 ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
@@ -1283,7 +1306,7 @@ command.  An atomic test command takes the form::
 By default, each and every atomic test or command needs to pass (as defined below) in
 order for the overall test to pass.
 
-**Sections:**
+*Sections:*
 
 * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 * `TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -1296,9 +1319,11 @@ order for the overall test to pass.
 
 .. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):**
+**Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 
-Some overall arguments are:
+Below are given some ome overall arguments are.  Remaining overall arguments
+that control overall pass/fail are described in `Overall Pass/Fail
+(TRIBITS_ADD_ADVANCED_TEST())`_..
 
   ``<testName>``
 
@@ -1375,11 +1400,9 @@ Some overall arguments are:
     calling the test.  This is set using the built-in test property
     ``ENVIRONMENT``.
 
-Overall arguments that control overall pass/fail are described in ???.
-
 .. _TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
-**TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):**
+**TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 
 Each test command block ``TEST_<IDX>`` runs either a package-built test
 executable or some general command executable and is defined as either
@@ -1390,16 +1413,17 @@ executable or some general command executable and is defined as either
     If specified, then ``<exeRootName>`` gives the the name of an executable
     target that will be run as the command.  The full executable path is
     determined in exactly the same way it is in the `TRIBITS_ADD_TEST()`_
-    function (see `Determining the Exectuable or Command to Run`_).
-    If this is an MPI build, then the executable will be run with MPI using
-    ``NUM_MPI_PROCS <numProcs>`` or ``OVERALL_NUM_MPI_PROCS
-    <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not set for this test
-    case).  If the number of maximum MPI processes allowed is less than this
-    number of MPI processes, then the test will *not* be run.  Note that
-    ``EXEC <exeRootName>`` is basically equivalent to ``CMND <cmndExec>``
-    when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In this case,
-    you can pass in ``<exeRootName>`` to any command you would like and it
-    will get run with MPI in MPI mode just link any other command.
+    function (see `Determining the Exectuable or Command to Run
+    (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then the executable
+    will be run with MPI using ``NUM_MPI_PROCS <numProcs>`` or
+    ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not
+    set for this test case).  If the number of maximum MPI processes allowed
+    is less than this number of MPI processes, then the test will *not* be
+    run.  Note that ``EXEC <exeRootName>`` is basically equivalent to ``CMND
+    <cmndExec>`` when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In
+    this case, you can pass in ``<exeRootName>`` to any command you would
+    like and it will get run with MPI in MPI mode just link any other
+    command.
 
   ``CMND <cmndExec>``
 
@@ -1490,7 +1514,7 @@ on:
 
 .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):**
+**Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
 
 By default, the overall test will be assumed to pass if it prints::
 
@@ -1510,7 +1534,7 @@ However, this can be changed by setting one of the following optional arguments:
 
 .. _Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):**
+**Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 
 For the most part, the listed arguments can appear in any order except for
 the following restrictions:
@@ -1531,20 +1555,20 @@ Other than that, the keyword argumnets and options can appear in any order.
 
 .. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):**
+**Implementation Details (TRIBITS_ADD_ADVANCED_TEST())**
 
 ToDo: Describe the generation of the ``*.cmake`` file and what gets added
 with ADD_TEST().
 
 .. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):**
+**Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())**
 
 ToDo: Fill in!
 
 .. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):**
+**Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
 
 The test can be disabled externally by setting the CMake cache variable
 ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
@@ -1553,7 +1577,7 @@ when running the test.
 
 .. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
 
-**Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):**
+**Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
 
 ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing
 what info it prints out.

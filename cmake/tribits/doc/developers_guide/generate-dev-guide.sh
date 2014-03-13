@@ -41,6 +41,8 @@
 
 ARGS=$@
 
+source source_set_env
+
 echo
 echo "Extracting TriBITS documentation from *.cmake files ..."
 echo
@@ -54,4 +56,5 @@ echo "Generating HTML and PDF files ..."
 echo
 ../../python/generate-docutils-output.py \
   --file-base=TribitsDevelopersGuide \
+  --generate-latex-options="--stylesheet-path=../environment/latex/rst2latex.tex" \
   $ARGS

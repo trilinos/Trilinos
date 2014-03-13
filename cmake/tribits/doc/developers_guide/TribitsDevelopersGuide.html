@@ -1853,14 +1853,25 @@ TRIBITS_ADD_TEST(
   [ENVIRONMENT &lt;var1&gt;=&lt;value1&gt; &lt;var2&gt;=&lt;value2&gt; ...]
   )
 </pre>
-<p><strong>Formal Arguments:</strong></p>
+<p><em>Sections:</em></p>
+<ul class="simple">
+<li><a class="reference internal" href="#formal-arguments-tribits-add-test">Formal Arguments (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#determining-the-exectuable-or-command-to-run-tribits-add-test">Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#determining-the-full-test-name-tribits-add-test">Determining the Full Test Name (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding Multiple Tests  (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#determining-pass-fail-tribits-add-test">Determining Pass/Fail (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#setting-additional-test-properties-tribits-add-test">Setting additional test properties (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#debugging-and-examining-test-generation-tribits-add-test">Debugging and Examining Test Generation (TRIBITS_ADD_TEST())</a></li>
+<li><a class="reference internal" href="#disabling-tests-externally-tribits-add-test">Disabling Tests Externally (TRIBITS_ADD_TEST())</a></li>
+</ul>
+<p id="formal-arguments-tribits-add-test"><strong>Formal Arguments (TRIBITS_ADD_TEST())</strong></p>
 <blockquote>
 <p><tt class="docutils literal">&lt;exeRootName&gt;</tt></p>
 <blockquote>
 The name of the exectuble or path to the exectuable to run for the test
-(see <a class="reference internal" href="#determining-the-exectuable-or-command-to-run">Determining the Exectuable or Command to Run</a>).  This name is
-also the default root name for the test (see <a class="reference internal" href="#determining-the-full-test-name">Determining the Full Test
-Name</a>).</blockquote>
+(see <a class="reference internal" href="#determining-the-exectuable-or-command-to-run-tribits-add-test">Determining the Exectuable or Command to Run
+(TRIBITS_ADD_TEST())</a>).  This name is also the default root name for
+the test (see <a class="reference internal" href="#determining-the-full-test-name-tribits-add-test">Determining the Full Test Name (TRIBITS_ADD_TEST())</a>).</blockquote>
 <p><tt class="docutils literal">NOEXEPREFIX</tt></p>
 <blockquote>
 If specified, then the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> is not assumed to be
@@ -2031,7 +2042,7 @@ defined, run, and named (to avoid test name clashes).</p>
 function <tt class="docutils literal">TRIBITS_ADD_ADVANCED_TEST()</tt> should be used instead.</p>
 <p>In the following subsections, more details on how tests are defined and run
 is given.</p>
-<p id="determining-the-exectuable-or-command-to-run"><strong>Determining the Exectuable or Command to Run:</strong></p>
+<p id="determining-the-exectuable-or-command-to-run-tribits-add-test"><strong>Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())</strong></p>
 <p>This funtion is primarily designed to make it easy to run tests for
 exectaubles built usign the function <tt class="docutils literal">TRIBITS_ADD_EXECUTABLE()</tt>.  To set
 up tests to run arbitrary executables, see below.</p>
@@ -2057,7 +2068,7 @@ is set as the executable to run.</p>
 <p>Whatever executable path is specified using this logic, if the executable is
 not found, then when <tt class="docutils literal">ctest</tt> goes to run the test, it will mark it as
 <tt class="docutils literal">NOT RUN</tt>.</p>
-<p id="determining-the-full-test-name"><strong>Determining the Full Test Name:</strong></p>
+<p id="determining-the-full-test-name-tribits-add-test"><strong>Determining the Full Test Name (TRIBITS_ADD_TEST())</strong></p>
 <p>By default, the base test name is selected to be:</p>
 <pre class="literal-block">
 ${PACKAGE_NAME}_&lt;exeRootName&gt;
@@ -2082,21 +2093,21 @@ tests. See below.</p>
 <cite>_MPI_${NUM_MPI_PROCS}</cite> will be added to the end of the test name (even for
 multiple tests).  No such prefix is added for the serial case
 (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>).</p>
-<p><strong>Adding Multiple Tests:</strong></p>
+<p id="adding-multiple-tests-tribits-add-test"><strong>Adding Multiple Tests  (TRIBITS_ADD_TEST())</strong></p>
 <dl class="docutils">
 <dt>ToDo: Explain how multiple tests can be added with different sets of</dt>
 <dd>arguments in one of two ways.</dd>
 </dl>
-<p><strong>Determining Pass/Fail:</strong></p>
+<p id="determining-pass-fail-tribits-add-test"><strong>Determining Pass/Fail (TRIBITS_ADD_TEST())</strong></p>
 <p>ToDo: Fill in!</p>
-<p><strong>Setting additional test properties:</strong></p>
+<p id="setting-additional-test-properties-tribits-add-test"><strong>Setting additional test properties (TRIBITS_ADD_TEST())</strong></p>
 <p>ToDo: Fill in!</p>
-<p><strong>Debugging and Examining Test Generation:</strong></p>
+<p id="debugging-and-examining-test-generation-tribits-add-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_TEST())</strong></p>
 <p>ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
 info it prints out.</p>
 <p>ToDo: Describe how to examine the generated CTest files to see what test(s)
 actually got added (or not added) and what the pass/fail criteria is.</p>
-<p><strong>Disabling Tests Externally:</strong></p>
+<p id="disabling-tests-externally-tribits-add-test"><strong>Disabling Tests Externally (TRIBITS_ADD_TEST())</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
 case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
@@ -2161,7 +2172,7 @@ TEST_&lt;i&gt;
 </pre>
 <p>By default, each and every atomic test or command needs to pass (as defined below) in
 order for the overall test to pass.</p>
-<p><strong>Sections:</strong></p>
+<p><em>Sections:</em></p>
 <ul class="simple">
 <li><a class="reference internal" href="#overall-arguments-tribits-add-advanced-test">Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())</a></li>
 <li><a class="reference internal" href="#test-idx-test-blocks-and-arguments-tribits-add-advanced-test">TEST_&lt;IDX&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())</a></li>
@@ -2172,8 +2183,10 @@ order for the overall test to pass.</p>
 <li><a class="reference internal" href="#disabling-tests-externally-tribits-add-advanced-test">Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())</a></li>
 <li><a class="reference internal" href="#debugging-and-examining-test-generation-tribits-add-advanced-test">Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())</a></li>
 </ul>
-<p id="overall-arguments-tribits-add-advanced-test"><strong>Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
-<p>Some overall arguments are:</p>
+<p id="overall-arguments-tribits-add-advanced-test"><strong>Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
+<p>Below are given some ome overall arguments are.  Remaining overall arguments
+that control overall pass/fail are described in <a class="reference internal" href="#overall-pass-fail-tribits-add-advanced-test">Overall Pass/Fail
+(TRIBITS_ADD_ADVANCED_TEST())</a>..</p>
 <blockquote>
 <p><tt class="docutils literal">&lt;testName&gt;</tt></p>
 <blockquote>
@@ -2239,8 +2252,7 @@ If passed in, the listed environment varaibles will be set before
 calling the test.  This is set using the built-in test property
 <tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
 </blockquote>
-<p>Overall arguments that control overall pass/fail are described in ???.</p>
-<p id="test-idx-test-blocks-and-arguments-tribits-add-advanced-test"><strong>TEST_&lt;IDX&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="test-idx-test-blocks-and-arguments-tribits-add-advanced-test"><strong>TEST_&lt;IDX&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>Each test command block <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> runs either a package-built test
 executable or some general command executable and is defined as either
 <tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> or <tt class="docutils literal">CMND &lt;cmndExec&gt;</tt>:</p>
@@ -2250,16 +2262,17 @@ executable or some general command executable and is defined as either
 If specified, then <tt class="docutils literal">&lt;exeRootName&gt;</tt> gives the the name of an executable
 target that will be run as the command.  The full executable path is
 determined in exactly the same way it is in the <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>
-function (see <a class="reference internal" href="#determining-the-exectuable-or-command-to-run">Determining the Exectuable or Command to Run</a>).
-If this is an MPI build, then the executable will be run with MPI using
-<tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> or <tt class="docutils literal">OVERALL_NUM_MPI_PROCS
-&lt;overallNumProcs&gt;</tt> (if <tt class="docutils literal">NUM_MPI_PROCS</tt> is not set for this test
-case).  If the number of maximum MPI processes allowed is less than this
-number of MPI processes, then the test will <em>not</em> be run.  Note that
-<tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> is basically equivalent to <tt class="docutils literal">CMND &lt;cmndExec&gt;</tt>
-when <tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> are specified.  In this case,
-you can pass in <tt class="docutils literal">&lt;exeRootName&gt;</tt> to any command you would like and it
-will get run with MPI in MPI mode just link any other command.</blockquote>
+function (see <a class="reference internal" href="#determining-the-exectuable-or-command-to-run-tribits-add-test">Determining the Exectuable or Command to Run
+(TRIBITS_ADD_TEST())</a>).  If this is an MPI build, then the executable
+will be run with MPI using <tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> or
+<tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt> (if <tt class="docutils literal">NUM_MPI_PROCS</tt> is not
+set for this test case).  If the number of maximum MPI processes allowed
+is less than this number of MPI processes, then the test will <em>not</em> be
+run.  Note that <tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> is basically equivalent to <tt class="docutils literal">CMND
+&lt;cmndExec&gt;</tt> when <tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> are specified.  In
+this case, you can pass in <tt class="docutils literal">&lt;exeRootName&gt;</tt> to any command you would
+like and it will get run with MPI in MPI mode just link any other
+command.</blockquote>
 <p><tt class="docutils literal">CMND &lt;cmndExec&gt;</tt></p>
 <blockquote>
 If specified, then <tt class="docutils literal">&lt;cmndExec&gt;</tt> gives the executable for a command to
@@ -2337,7 +2350,7 @@ the given regular expression.  Otherwise, it is assumed to pass.</blockquote>
 If specified, the test command 'i' will be assumed to pass if the string
 expression &quot;Final Result: PASSED&quot; is found in the ouptut for the test.</blockquote>
 </blockquote>
-<p id="overall-pass-fail-tribits-add-advanced-test"><strong>Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="overall-pass-fail-tribits-add-advanced-test"><strong>Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>By default, the overall test will be assumed to pass if it prints:</p>
 <pre class="literal-block">
 &quot;OVERALL FINAL RESULT: TEST PASSED&quot;
@@ -2353,7 +2366,7 @@ If specified, the test will be assumed to pass if the output matches
 If specified, the test will be assumed to fail if the output matches
 &lt;regex&gt;.  Otherwise, it will be assumed to fail.</blockquote>
 </blockquote>
-<p id="argument-ordering-tribits-add-advanced-test"><strong>Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="argument-ordering-tribits-add-advanced-test"><strong>Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>For the most part, the listed arguments can appear in any order except for
 the following restrictions:</p>
 <ul class="simple">
@@ -2370,17 +2383,17 @@ inside of a <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> block but otherwi
 after all of the <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> blocks.</li>
 </ul>
 <p>Other than that, the keyword argumnets and options can appear in any order.</p>
-<p id="implementation-details-tribits-add-advanced-test"><strong>Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="implementation-details-tribits-add-advanced-test"><strong>Implementation Details (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>ToDo: Describe the generation of the <tt class="docutils literal">*.cmake</tt> file and what gets added
 with ADD_TEST().</p>
-<p id="setting-additional-test-properties-tribits-add-advanced-test"><strong>Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="setting-additional-test-properties-tribits-add-advanced-test"><strong>Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>ToDo: Fill in!</p>
-<p id="disabling-tests-externally-tribits-add-advanced-test"><strong>Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="disabling-tests-externally-tribits-add-advanced-test"><strong>Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
 case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
 when running the test.</p>
-<p id="debugging-and-examining-test-generation-tribits-add-advanced-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):</strong></p>
+<p id="debugging-and-examining-test-generation-tribits-add-advanced-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>ToDo: Describe setting <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt> and seeing
 what info it prints out.</p>
 <p>ToDo: Describe how to examine the generated CTest files to see what test(s)
