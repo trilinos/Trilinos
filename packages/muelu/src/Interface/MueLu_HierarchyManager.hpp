@@ -79,7 +79,7 @@ namespace MueLu {
 
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() : numDesiredLevel_(Hierarchy::GetDefaultMaxCoarseSize()), maxCoarseSize_(Hierarchy::GetDefaultMaxLevels()),
+    HierarchyManager() : numDesiredLevel_(Hierarchy::GetDefaultMaxLevels()), maxCoarseSize_(Hierarchy::GetDefaultMaxCoarseSize()),
     verbosity_(Medium), doPRrebalance_(Hierarchy::GetDefaultPRrebalance()), graphOutputLevel_(-1) { }
 
     //!
