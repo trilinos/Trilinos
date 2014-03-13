@@ -150,12 +150,11 @@ private:
   /* LayoutRight has stride-one storage */
   enum { FadStaticStride = ( Impl::is_same< typename traits::array_layout , LayoutRight >::value ? 1 : 0 ) };
 
-  typedef Impl::LayoutStride< typename traits::shape_type ,
-                              typename traits::array_layout > stride_type ;
+  typedef Impl::ViewOffset< typename traits::shape_type ,
+                            typename traits::array_layout > offset_map_type ;
 
   fad_value_type                             * m_ptr_on_device ;
-  typename traits::shape_type                  m_shape ;
-  stride_type                                  m_stride ;
+  offset_map_type                              m_offset_map ;
   typename traits::device_type::size_type      m_storage_size ;
   Impl::ViewTracking< traits >                 m_tracking ;
 
@@ -191,32 +190,32 @@ public:
   // is one less than the rank of the array of intrinsic fad_value_type defined by the shape.
   enum { Rank = traits::rank - 1 };
 
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const { return m_shape.N2 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const { return m_shape.N3 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const { return m_shape.N4 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const { return m_offset_map.N3 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const { return m_offset_map.N4 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const { return m_offset_map.N5 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const { return m_offset_map.N6 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
   KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type size() const
   {
-    return   m_shape.N0
-           * m_shape.N1
-           * m_shape.N2
-           * m_shape.N3
-           * m_shape.N4
-           * m_shape.N5
-           * m_shape.N6
-           * m_shape.N7
+    return   m_offset_map.N0
+           * m_offset_map.N1
+           * m_offset_map.N2
+           * m_offset_map.N3
+           * m_offset_map.N4
+           * m_offset_map.N5
+           * m_offset_map.N6
+           * m_offset_map.N7
            ;
   }
 
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type dimension( const iType & i ) const
-    { return Impl::dimension( m_shape , i ); }
+    { return Impl::dimension( m_offset_map , i ); }
 
   //------------------------------------
 
@@ -251,10 +250,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
-    {
-      traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
-      stride_type::assign(m_stride,0);
-    }
+    { m_offset_map.assign(0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0)
@@ -317,19 +313,19 @@ public:
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
 
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      stride_type::assign_with_padding( m_stride , m_shape );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.set_padding();
 
       verify_dimension_storage_static_size();
 
-      m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
+      m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
+
       m_ptr_on_device = (fad_value_type *)
         memory_space::allocate( if_allocation_constructor::select( label ) ,
                                 typeid(fad_value_type) ,
                                 sizeof(fad_value_type) ,
-                                Impl::capacity( m_shape , m_stride ) );
+                                m_offset_map.capacity() );
 
       (void) Impl::ViewFill< array_type >( *this , typename array_type::value_type() );
     }
@@ -348,19 +344,19 @@ public:
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
 
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      stride_type::assign_with_padding( m_stride , m_shape );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.set_padding();
 
       verify_dimension_storage_static_size();
 
-      m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
+      m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
+
       m_ptr_on_device = (fad_value_type *)
         memory_space::allocate( if_allocation_constructor::select( label ) ,
                                 typeid(fad_value_type) ,
                                 sizeof(fad_value_type) ,
-                                Impl::capacity( m_shape , m_stride ) );
+                                m_offset_map.capacity() );
     }
 
   //------------------------------------
@@ -397,14 +393,11 @@ public:
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
-      typedef typename traits::shape_type  shape_type ;
-
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      stride_type::assign_no_padding( m_stride , m_shape );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
 
       verify_dimension_storage_static_size();
 
-      m_storage_size = Impl::dimension( m_shape , unsigned(Rank) );
+      m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
     }
 
   //------------------------------------
@@ -427,13 +420,10 @@ public:
         const unsigned n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::shape_type   shape_type ;
-
       enum { align = 8 };
       enum { mask  = align - 1 };
 
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      stride_type::assign_no_padding( m_stride , m_shape );
+      m_offset_map.assign(  n0, n1, n2, n3, n4, n5, n6, n7 );
 
       typedef Impl::if_c< ! traits::is_managed ,
                           fad_value_type * ,
@@ -442,7 +432,7 @@ public:
 
       verify_dimension_storage_static_size();
 
-      m_storage_size  = Impl::dimension( m_shape , unsigned(Rank) );
+      m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
 
       // Select the first argument:
       m_ptr_on_device = if_device_shmem_pointer::select(
@@ -462,15 +452,11 @@ public:
     enum { align = 8 };
     enum { mask  = align - 1 };
 
-    typedef typename traits::shape_type   shape_type ;
+    offset_map_type offset_map ;
 
-    shape_type  shape ;
-    stride_type stride ;
+    offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
 
-    traits::shape_type::assign( shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-    stride_type::assign_no_padding( stride , shape );
-
-    return unsigned( sizeof(fad_value_type) * Impl::capacity( shape , stride ) + unsigned(mask) ) & ~unsigned(mask) ;
+    return unsigned( sizeof(fad_value_type) * offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ;
   }
 
   //------------------------------------
@@ -506,13 +492,13 @@ public:
   typename Impl::ViewEnableArrayOper< fad_view_type , traits, LayoutLeft, 2, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      // Strided storage
-      return fad_view_type( m_ptr_on_device + i0 ,
+      // Strided storage with right-most index as fad dimension
+      return fad_view_type( m_ptr_on_device + m_offset_map(i0,0) ,
                             m_storage_size-1 ,
-                            m_stride.value );
+                            m_offset_map.stride_1() );
     }
 
   template< typename iType0 >
@@ -521,11 +507,11 @@ public:
                                       traits, LayoutRight, 2, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type( m_ptr_on_device + ( m_stride.value * i0 ) ,
+      return fad_view_type( m_ptr_on_device + m_offset_map(i0,0),
                             m_storage_size-1 , 1 );
     }
 
@@ -553,13 +539,13 @@ public:
                                       traits, LayoutLeft, 3, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0, i1, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type( m_ptr_on_device + ( i0 + m_stride.value * ( i1 )),
+      return fad_view_type( m_ptr_on_device + m_offset_map(i0,i1,0) ,
                             m_storage_size-1 ,
-                            m_stride.value * m_shape.N1 );
+                            m_offset_map.stride_2() );
     }
 
   template< typename iType0 , typename iType1 >
@@ -568,12 +554,12 @@ public:
                                       traits, LayoutRight, 3, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0);
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0, i1, 0);
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( m_storage_size * ( i1 ) + m_stride.value * i0 ) ,
+        m_ptr_on_device + m_offset_map(i0,i1,0) ,
         m_storage_size-1 , 1 );
     }
 
@@ -595,16 +581,14 @@ public:
                                       traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0, i1, i2, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 ))),
+        m_ptr_on_device + m_offset_map(i0,i1,i2,0) ,
         m_storage_size-1 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 );
+        m_offset_map.stride_3() );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -613,14 +597,12 @@ public:
                                       traits, LayoutRight, 4, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0, i1, i2, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( m_storage_size * ( i2 +
-                            m_shape.N2 * ( i1 )) +
-                            m_stride.value * i0 ) ,
+        m_ptr_on_device + m_offset_map(i0,i1,i2,0) ,
         m_storage_size-1 , 1 );
     }
 
@@ -642,17 +624,14 @@ public:
                                       traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0, i1, i2, i3, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 )))),
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,0) ,
         m_storage_size-1 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 );
+        m_offset_map.stride_4() );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -661,15 +640,12 @@ public:
                                       traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0, i1, i2, i3, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( m_storage_size * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 ))) +
-                            m_stride.value * i0 ) ,
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,0) ,
         m_storage_size-1 , 1 );
     }
 
@@ -691,18 +667,14 @@ public:
                                       traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0, i1, i2, i3, i4, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 ))))),
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,0) ,
         m_storage_size-1 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 );
+        m_offset_map.stride_5() );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -713,16 +685,12 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0, i1, i2, i3, i4, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( m_storage_size * ( i4 +
-                            m_shape.N4 * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 )))) +
-                            m_stride.value * i0 ) ,
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,0) ,
         m_storage_size-1 , 1 );
     }
 
@@ -747,19 +715,14 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
                  const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0, i1, i2, i3, i4, i5, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            i5 )))))),
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,0) ,
         m_storage_size-1 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 );
+        m_offset_map.stride_6() );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -770,17 +733,12 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0, i1, i2, i3, i4, i5, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( m_storage_size * ( i5 +
-                            m_shape.N5 * ( i4 +
-                            m_shape.N4 * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 ))))) +
-                            m_stride.value * i0 ) ,
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,0) ,
         m_storage_size-1 , 1 );
     }
 
@@ -807,19 +765,13 @@ public:
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0, i1, i2, i3, i4, i5, i6, 0 );
 
       // Strided storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            i5 + m_shape.N5 * (
-                            i6 ))))))),
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,i6,0) ,
         m_storage_size-1 ,
-        m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 * m_shape.N6 );
+        m_offset_map.stride_7() );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -830,18 +782,12 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0, i1, i2, i3, i4, i5, i6, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
       return fad_view_type(
-        m_ptr_on_device + ( m_storage_size * ( i6 +
-                            m_shape.N6 * ( i5 +
-                            m_shape.N5 * ( i4 +
-                            m_shape.N4 * ( i3 +
-                            m_shape.N3 * ( i2 +
-                            m_shape.N2 * ( i1 )))))) +
-                            m_stride.value * i0 ) ,
+        m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,i6,0) ,
         m_storage_size-1 , 1 );
     }
 
@@ -866,17 +812,17 @@ public:
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   void stride( iType * const s ) const
-  { Impl::stride( s , m_shape , m_stride ); }
+    { m_offset_map.stride( s ); }
 
   // Count of contiguously allocated data members including padding.
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type capacity() const
-  { return Impl::capacity( m_shape , m_stride ); }
+    { return m_offset_map.capacity(); }
 
   // Static storage size
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type storage_size() const
-  { return m_storage_size; }
+    { return m_storage_size; }
 };
 
 /**
@@ -947,18 +893,9 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
                     )>::type * = 0
                   )
   {
-    typedef ViewTraits<DT,DL,DD,DM>                         dst_traits ;
-    typedef View<DT,DL,DD,DM,ViewSpecializeSacadoFad>       dst_type ;
-    typedef typename dst_type::shape_type                   shape_type ;
-    typedef typename dst_type::stride_type                  stride_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    shape_type::assign( dst.m_shape,
-                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
-    stride_type::assign( dst.m_stride , src.m_stride.value );
+    dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
@@ -986,8 +923,6 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
   {
     typedef ViewTraits<DT,DL,DD,DM>                           dst_traits ;
     typedef View<DT,DL,DD,DM,ViewSpecializeSacadoFad>         dst_type ;
-    typedef typename dst_type::shape_type                     dst_shape_type ;
-    typedef typename dst_type::stride_type                    dst_stride_type ;
     typedef typename dst_traits::value_type                   dst_fad_type ;
 
     enum { DstRank         = dst_type::Rank };
@@ -1004,33 +939,23 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
 #endif
     }
 
-    dst_shape_type::assign( dst.m_shape ,
-                            ( DstRank == 0 ? length : src.m_shape.N0 ) ,
-                            ( DstRank == 1 ? length : src.m_shape.N1 ) ,
-                            ( DstRank == 2 ? length : src.m_shape.N2 ) ,
-                            ( DstRank == 3 ? length : src.m_shape.N3 ) ,
-                            ( DstRank == 4 ? length : src.m_shape.N4 ) ,
-                            ( DstRank == 5 ? length : src.m_shape.N5 ) ,
-                            ( DstRank == 6 ? length : src.m_shape.N6 ) ,
-                            ( DstRank == 7 ? length : src.m_shape.N7 ) );
+    // Copy the offset map:
+    dst.m_offset_map.assign( src.m_offset_map );
 
-    dst_stride_type::assign( dst.m_stride , src.m_stride.value );
+    // Override the last dimension of the offset map:
+    dst.m_offset_map.assign<DstRank>( length );
 
     dst.m_storage_size = src.m_storage_size ;
 
-    if ( Impl::is_same< typename dst_traits::array_layout , LayoutLeft >::value ) {
-      dst.m_ptr_on_device = src.m_ptr_on_device + part.begin *
-                      ( 0 == DstRank ? 1 : dst.m_stride.value * (
-                      ( 1 == DstRank ? 1 : dst.m_shape.N1 * (
-                      ( 2 == DstRank ? 1 : dst.m_shape.N2 * (
-                      ( 3 == DstRank ? 1 : dst.m_shape.N3 * (
-                      ( 4 == DstRank ? 1 : dst.m_shape.N4 * (
-                      ( 5 == DstRank ? 1 : dst.m_shape.N5 * (
-                      ( 6 == DstRank ? 1 : dst.m_shape.N6 )))))))))))));
-    }
-    else { // if ( Impl::is_same< typename traits::array_layout , LayoutRight >::value )
-      dst.m_ptr_on_device = src.m_ptr_on_device + part.begin ;
-    }
+    dst.m_ptr_on_device = src.m_ptr_on_device + part.begin * (
+      ( 0 == DstRank ? dst.m_offset_map.stride_0() :
+      ( 1 == DstRank ? dst.m_offset_map.stride_1() :
+      ( 2 == DstRank ? dst.m_offset_map.stride_2() :
+      ( 3 == DstRank ? dst.m_offset_map.stride_3() :
+      ( 4 == DstRank ? dst.m_offset_map.stride_4() :
+      ( 5 == DstRank ? dst.m_offset_map.stride_5() :
+      ( 6 == DstRank ? dst.m_offset_map.stride_6() :
+      ( 7 == DstRank ? dst.m_offset_map.stride_7() : 0 )))))))));
   }
 };
 
@@ -1046,19 +971,12 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
   ViewAssignment( typename View<ST,SL,SD,SM,ViewSpecializeSacadoFad>::array_type & dst
                 , const    View<ST,SL,SD,SM,ViewSpecializeSacadoFad> & src )
   {
-    typedef View<ST,SL,SD,SM,ViewSpecializeSacadoFad>    src_type ;
-
-    typedef typename src_type::array_type   dst_type ;
-    typedef typename dst_type::shape_type   dst_shape_type ;
-    typedef typename dst_type::stride_type  dst_stride_type ;
+    typedef View<ST,SL,SD,SM,ViewSpecializeSacadoFad>  src_type ;
+    typedef typename src_type::array_type  dst_type ;
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst_shape_type::assign( dst.m_shape,
-                            src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                            src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
-    dst_stride_type::assign( dst.m_stride , src.m_stride.value );
+    dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 

@@ -1,29 +1,20 @@
 repartition: enable = 1
-repartition: remap parts = 0
+repartition: rebalance P and R = 0
 verbosity = test
 coarse: max size = 2000   [default]
 max levels = 10   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
-repartition: rebalance P and R = 1   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
 repartition: partitioner = zoltan   [default]
 
 Level 0
- Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- relaxation: type = Symmetric Gauss-Seidel
- relaxation: sweeps = 1
- relaxation: damping factor = 1
- relaxation: zero starting solution = 1   [default]
- relaxation: backward mode = 0   [default]
- relaxation: use l1 = 0   [default]
- relaxation: l1 eta = 1.5   [default]
- relaxation: min diagonal value = 0   [default]
- relaxation: fix tiny diagonal entries = 0   [default]
- relaxation: check diagonal entries = 0   [default]
- relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
+ relaxation: sweeps = 1   [unused]
+ relaxation: damping factor = 1   [unused]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -81,19 +72,19 @@ Level 1
   startLevel = 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
-  remapPartitions = 0
+  remapPartitions = 1
   numRemapValues = 4   [unused]
   alwaysKeepProc0 = 1
   
  type = Interpolation
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -101,18 +92,10 @@ Level 1
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
  
- Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- relaxation: type = Symmetric Gauss-Seidel
- relaxation: sweeps = 1
- relaxation: damping factor = 1
- relaxation: zero starting solution = 1   [default]
- relaxation: backward mode = 0   [default]
- relaxation: use l1 = 0   [default]
- relaxation: l1 eta = 1.5   [default]
- relaxation: min diagonal value = 0   [default]
- relaxation: fix tiny diagonal entries = 0   [default]
- relaxation: check diagonal entries = 0   [default]
- relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: type = symmetric Gauss-Seidel   [unused]
+ relaxation: sweeps = 1   [unused]
+ relaxation: damping factor = 1   [unused]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -170,19 +153,19 @@ Level 2
   startLevel = 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
-  remapPartitions = 0
-  numRemapValues = 4   [unused]
+  remapPartitions = 1
+  numRemapValues = 4
   alwaysKeepProc0 = 1
   
  type = Interpolation
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -190,7 +173,7 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 
   [empty list]
  
@@ -208,10 +191,10 @@ Level 2
  A 1    3335  10015     3.00  4
  A 2    1112   3340     3.00  1
  
- Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
  
- Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+ Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
  
- Smoother (level 2) pre  : SuperLU solver interface
+ Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 2) post : no smoother
  

@@ -180,33 +180,33 @@ void test_view_impl()
   ASSERT_TRUE( shape_22 != shape_36 );
 
 
-  typedef Kokkos::Impl::LayoutStride< shape_01_type , Kokkos::LayoutLeft > shape_01_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_11_type , Kokkos::LayoutLeft > shape_11_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_03_type , Kokkos::LayoutLeft > shape_03_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_14_type , Kokkos::LayoutLeft > shape_14_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_22_type , Kokkos::LayoutLeft > shape_22_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_36_type , Kokkos::LayoutLeft > shape_36_left_stride ;
+  typedef Kokkos::Impl::ViewOffset< shape_01_type , Kokkos::LayoutLeft > shape_01_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_11_type , Kokkos::LayoutLeft > shape_11_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_03_type , Kokkos::LayoutLeft > shape_03_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_14_type , Kokkos::LayoutLeft > shape_14_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_22_type , Kokkos::LayoutLeft > shape_22_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_36_type , Kokkos::LayoutLeft > shape_36_left_offset ;
 
-  typedef Kokkos::Impl::LayoutStride< shape_01_type , Kokkos::LayoutRight > shape_01_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_11_type , Kokkos::LayoutRight > shape_11_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_03_type , Kokkos::LayoutRight > shape_03_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_14_type , Kokkos::LayoutRight > shape_14_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_22_type , Kokkos::LayoutRight > shape_22_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_36_type , Kokkos::LayoutRight > shape_36_right_stride ;
+  typedef Kokkos::Impl::ViewOffset< shape_01_type , Kokkos::LayoutRight > shape_01_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_11_type , Kokkos::LayoutRight > shape_11_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_03_type , Kokkos::LayoutRight > shape_03_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_14_type , Kokkos::LayoutRight > shape_14_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_22_type , Kokkos::LayoutRight > shape_22_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_36_type , Kokkos::LayoutRight > shape_36_right_offset ;
 
-  ASSERT_TRUE( ! shape_01_left_stride::dynamic );
-  ASSERT_TRUE( ! shape_11_left_stride::dynamic );
-  ASSERT_TRUE( ! shape_03_left_stride::dynamic );
-  ASSERT_TRUE(   shape_14_left_stride::dynamic );
-  ASSERT_TRUE(   shape_22_left_stride::dynamic );
-  ASSERT_TRUE(   shape_36_left_stride::dynamic );
+  ASSERT_TRUE( ! shape_01_left_offset::has_padding );
+  ASSERT_TRUE( ! shape_11_left_offset::has_padding );
+  ASSERT_TRUE( ! shape_03_left_offset::has_padding );
+  ASSERT_TRUE(   shape_14_left_offset::has_padding );
+  ASSERT_TRUE(   shape_22_left_offset::has_padding );
+  ASSERT_TRUE(   shape_36_left_offset::has_padding );
 
-  ASSERT_TRUE( ! shape_01_right_stride::dynamic );
-  ASSERT_TRUE( ! shape_11_right_stride::dynamic );
-  ASSERT_TRUE( ! shape_03_right_stride::dynamic );
-  ASSERT_TRUE( ! shape_14_right_stride::dynamic );
-  ASSERT_TRUE(   shape_22_right_stride::dynamic );
-  ASSERT_TRUE(   shape_36_right_stride::dynamic );
+  ASSERT_TRUE( ! shape_01_right_offset::has_padding );
+  ASSERT_TRUE( ! shape_11_right_offset::has_padding );
+  ASSERT_TRUE( ! shape_03_right_offset::has_padding );
+  ASSERT_TRUE( ! shape_14_right_offset::has_padding );
+  ASSERT_TRUE(   shape_22_right_offset::has_padding );
+  ASSERT_TRUE(   shape_36_right_offset::has_padding );
 
   //------------------------------------------------------------------------
 }

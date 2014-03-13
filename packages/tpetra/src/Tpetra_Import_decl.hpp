@@ -321,6 +321,26 @@ namespace Tpetra {
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
+    /// \brief Return the union of this Import this->getSourceMap()
+    ///
+    /// This special case of setUnion creates a new Import object 
+    /// such that the targetMap of the new object contains all local
+    /// unknowns in the sourceMap (plus whatever remotes were contained
+    /// in this->getSourceMap()).
+    ///
+    /// The Map that results from this operation does <i>not</i>
+    /// preserve the input order of global indices.  All local global
+    /// indices are ordered in the order of the sourceMap, all remotes
+    /// are ordered as implied by the Importer for *this.
+    ///
+    /// This primitive is useful for adding or multipyling two sparse matrices
+    /// (CrsMatrix), since its can skip over many of the steps of
+    /// creating the result matrix's column Map from scratch.
+    ///
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    setUnion () const;
+    
+
     /// \brief Returns an importer that contains only the remote entries of this
     ///
     /// Returns an importer that contains only the remote entries of this importer.
@@ -471,9 +491,7 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-    //! Optimized implementation of setUnion() (NOT IMPLEMENTED YET).
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-    setUnionImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+
   }; // class Import
 
   /** \brief Nonmember constructor for Import.

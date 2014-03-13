@@ -2263,11 +2263,46 @@ namespace Tpetra {
     return frobNorm;
   }
 
+
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsMatrix<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  replaceColMap (const Teuchos::RCP<const map_type>& newColMap)
+  {
+    const char tfecfFuncName[] = "replaceColMap";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      ": This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's column Map.");
+    myGraph_->replaceColMap (newColMap);
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsMatrix<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const Tpetra::Import<LocalOrdinal, GlobalOrdinal, node_type> >& newImporter)
   {

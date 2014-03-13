@@ -180,23 +180,23 @@ void test_insert_close(  uint32_t num_nodes
   Device::fence();
 
   const uint32_t map_size = map.size();
-  const bool failed_inserts = map.failed_inserts();
+  const uint32_t failed_inserts = map.failed_inserts();
 
-  ASSERT_FALSE( failed_inserts );
+  EXPECT_EQ( failed_inserts, 0u );
 
   if (!failed_inserts) {
-    ASSERT_EQ(map_size, expected_inserts);
+    EXPECT_EQ(map_size, expected_inserts);
 
     {
       uint32_t find_errors = 0;
       Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
-      ASSERT_EQ( find_errors, 0u);
+      EXPECT_EQ( find_errors, 0u);
     }
 
     map.begin_erase();
     Impl::test_erase_close<map_type> erase_close(map, num_inserts, num_duplicates);
     map.end_erase();
-    ASSERT_EQ(map.size(), 0u);
+    EXPECT_EQ(map.size(), 0u);
 
   }
 }
@@ -219,23 +219,23 @@ void test_insert_far(  uint32_t num_nodes
   Device::fence();
 
   const uint32_t map_size = map.size();
-  const bool failed_inserts = map.failed_inserts();
+  const uint32_t failed_inserts = map.failed_inserts();
 
-  ASSERT_FALSE( failed_inserts );
+  EXPECT_EQ( failed_inserts, 0u );
 
   if (!failed_inserts) {
-    ASSERT_EQ(map_size, expected_inserts);
+    EXPECT_EQ(map_size, expected_inserts);
 
     {
       uint32_t find_errors = 0;
       Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
-      ASSERT_EQ( find_errors, 0u);
+      EXPECT_EQ( find_errors, 0u);
     }
 
     map.begin_erase();
     Impl::test_erase_far<map_type> erase_far(map, num_inserts, num_duplicates);
     map.end_erase();
-    ASSERT_EQ(map.size(), 0u);
+    EXPECT_EQ(map.size(), 0u);
   }
 }
 
@@ -243,25 +243,12 @@ template <typename Device>
 void test_failed_insert( uint32_t num_nodes)
 {
   typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
-
-  // mfh 14 Feb 2014: This function doesn't actually create instances
-  // of const_map_type, but I'm guessing that ensuring that the
-  // typedef makes sense at compile time is important.  I preserve the
-  // typedef without the warning by declaring an empty instance of
-  // that type, and marking it with "(void)" to avoid a compiler
-  // warning for the unused variable.
-  {
-    const_map_type thing;
-    (void) thing;
-  }
 
   map_type map(num_nodes);
-  Device::fence();
-
   Impl::test_insert_far<map_type> test_insert_far(map, 2u*num_nodes, 1u);
   Device::fence();
-  //ASSERT_TRUE( map.failed_inserts() );
+
+  EXPECT_LT( 0u, map.failed_inserts() );
 }
 
 
@@ -300,7 +287,7 @@ void test_deep_copy( uint32_t num_nodes )
   {
     Impl::test_insert_far<map_type> test_insert_far(map, num_nodes, 1);
     Device::fence();
-    ASSERT_EQ( map.size(), num_nodes);
+    EXPECT_EQ( map.size(), num_nodes);
   }
 
   host_map_type hmap;
@@ -311,11 +298,11 @@ void test_deep_copy( uint32_t num_nodes )
 
   const_map_type cmap = mmap;
 
-  ASSERT_EQ( cmap.size(), num_nodes);
+  EXPECT_EQ( cmap.size(), num_nodes);
 
   uint32_t find_errors = 0;
   Impl::test_find<const_map_type> test_find(cmap, num_nodes/2u, 1, find_errors);
-  ASSERT_EQ( find_errors, 0u);
+  EXPECT_EQ( find_errors, 0u);
 
 }
 

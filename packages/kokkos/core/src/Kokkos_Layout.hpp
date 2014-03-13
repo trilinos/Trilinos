@@ -84,6 +84,12 @@ struct LayoutLeft { typedef LayoutLeft array_layout ; };
 /// two-dimensional array, "layout right" is also called "row major."
 struct LayoutRight { typedef LayoutRight array_layout ; };
 
+
+/// \struct LayoutStride
+/// \brief  Memory layout tag indicated arbitrarily strided
+///         multi-index mapping into contiguous memory.
+struct LayoutStride { typedef LayoutStride array_layout ; };
+
 /// \struct LayoutTileLeft
 /// \brief Memory layout tag indicating left-to-right (Fortran scheme)
 ///   striding of multi-indices by tiles.

@@ -232,6 +232,17 @@ template<class Scalar,
          class GlobalOrdinal,
          class Node,
          class SpMatOps>
+void mult_A_B_newmatrix(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
+
+
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node,
+         class SpMatOps>
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,

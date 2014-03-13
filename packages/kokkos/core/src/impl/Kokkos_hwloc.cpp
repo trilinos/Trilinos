@@ -601,6 +601,17 @@ namespace Kokkos {
 namespace hwloc {
 namespace {
 
+inline
+void print_bitmap( std::ostream & s , const hwloc_const_bitmap_t bitmap )
+{
+  s << "{" ;
+  for ( int i = hwloc_bitmap_first( bitmap ) ;
+        -1 != i ; i = hwloc_bitmap_next( bitmap , i ) ) {
+    s << " " << i ;
+  }
+  s << " }" ;
+}
+
 enum { MAX_CORE = 1024 };
 
 std::pair<unsigned,unsigned> s_core_topology(0,0);
@@ -712,6 +723,16 @@ Sentinel::Sentinel()
                                                root->allowed_cpuset ,
                                                HWLOC_OBJ_CORE , j );
 
+#if defined(__MIC__)
+        // reserve core '0' for the OS on a MIC card
+        if (j==0) {
+          // std::cout << "Omitting MIC core ";
+          // print_bitmap(std::cout, core->allowed_cpuset);
+          // std::cout << std::endl;
+          continue;
+        }
+#endif
+
         // If process' cpuset intersects core's cpuset then process can access this core.
         // Must use intersection instead of inclusion because the Intel-Phi
         // MPI may bind the process to only one of the core's hyperthreads.
@@ -778,6 +799,15 @@ Sentinel::Sentinel()
           hwloc_get_obj_inside_cpuset_by_type( s_hwloc_topology ,
                                                root->allowed_cpuset ,
                                                HWLOC_OBJ_CORE , j );
+#if defined(__MIC__)
+        // reserve core '0' for the OS on a MIC card
+        if (j==0) {
+          // std::cout << "Omitting MIC core ";
+          // print_bitmap(std::cout, core->allowed_cpuset);
+          // std::cout << std::endl;
+          continue;
+        }
+#endif
 
         if ( hwloc_bitmap_intersects( s_process_binding , core->allowed_cpuset ) ) {
 
@@ -797,17 +827,6 @@ Sentinel::Sentinel()
   }
 }
 
-
-inline
-void print_bitmap( std::ostream & s , const hwloc_const_bitmap_t bitmap )
-{
-  s << "{" ;
-  for ( int i = hwloc_bitmap_first( bitmap ) ;
-        -1 != i ; i = hwloc_bitmap_next( bitmap , i ) ) {
-    s << " " << i ;
-  }
-  s << " }" ;
-}
 
 } // namespace
 

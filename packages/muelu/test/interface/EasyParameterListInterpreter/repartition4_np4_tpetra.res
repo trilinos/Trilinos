@@ -1,11 +1,10 @@
 repartition: enable = 1
-repartition: remap parts = 0
+repartition: rebalance P and R = 0
 verbosity = test
 coarse: max size = 2000   [default]
 max levels = 10   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
-repartition: rebalance P and R = 1   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
@@ -81,19 +80,19 @@ Level 1
   startLevel = 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
-  remapPartitions = 0
+  remapPartitions = 1
   numRemapValues = 4   [unused]
   alwaysKeepProc0 = 1
   
  type = Interpolation
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -170,19 +169,19 @@ Level 2
   startLevel = 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
-  remapPartitions = 0
-  numRemapValues = 4   [unused]
+  remapPartitions = 1
+  numRemapValues = 4
   alwaysKeepProc0 = 1
   
  type = Interpolation
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]

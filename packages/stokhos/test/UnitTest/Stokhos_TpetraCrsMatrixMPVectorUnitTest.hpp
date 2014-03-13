@@ -1983,7 +1983,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2, S, LO, GO, N )
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
-  typedef typename Stokhos::DeviceForNode<N>::type Device;              \
+  typedef Stokhos::DeviceForNode<N>::type Device;              \
   typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> SFS; \
   CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
 

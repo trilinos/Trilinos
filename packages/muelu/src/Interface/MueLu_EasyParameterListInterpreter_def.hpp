@@ -196,7 +196,7 @@ namespace MueLu {
 
     // Detect if we do implicit P and R rebalance
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      this->implicitPRrebalance_ = !paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
+      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -544,7 +544,7 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type",     "Interpolation");
-      newPparams.set("implicit", this->implicitPRrebalance_);
+      newPparams.set("implicit", !this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -554,7 +554,7 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type",     "Restriction");
-      newRparams.set("implicit", this->implicitPRrebalance_);
+      newRparams.set("implicit", !this->doPRrebalance_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newR->  SetFactory("R",           manager.GetFactory("R"));

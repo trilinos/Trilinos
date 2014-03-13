@@ -1,11 +1,10 @@
 repartition: enable = 1
-repartition: remap parts = 0
+repartition: rebalance P and R = 0
 verbosity = test
 coarse: max size = 2000   [default]
 max levels = 10   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
-repartition: rebalance P and R = 1   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
@@ -81,19 +80,19 @@ Level 1
   startLevel = 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
-  remapPartitions = 0
+  remapPartitions = 1
   numRemapValues = 4   [unused]
   alwaysKeepProc0 = 1
   
  type = Interpolation
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -170,19 +169,19 @@ Level 2
   startLevel = 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
-  remapPartitions = 0
+  remapPartitions = 1
   numRemapValues = 4   [unused]
   alwaysKeepProc0 = 1
   
  type = Interpolation
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
- implicit = 0
+ implicit = 1
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -199,18 +198,18 @@ Level 2
  ---                            Multigrid Summary                             ---
  --------------------------------------------------------------------------------
  Number of levels    = 3
- Operator complexity = 1.45
+ Operator complexity = 1.44
  Max Coarse Size     = 2000
  Implicit Transpose  = false
  
  matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  4
- A 1    3335  10015     3.00  4
- A 2    1112   3340     3.00  1
+ A 0    9999  29995     3.00  1
+ A 1    3333   9997     3.00  1
+ A 2    1111   3331     3.00  1
  
  Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother
