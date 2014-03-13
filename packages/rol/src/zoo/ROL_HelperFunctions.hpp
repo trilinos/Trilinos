@@ -83,6 +83,27 @@ namespace ROL {
   }
 
   template<class Real>
+  Teuchos::SerialDenseMatrix<int, Real> computeDotMatrix(const Vector<Real> &x) {
+
+    int dim = x.dimension();
+    Teuchos::SerialDenseMatrix<int, Real> M(dim, dim);
+
+    Teuchos::RCP<Vector<Real> > ei = x.clone();
+    Teuchos::RCP<Vector<Real> > ej = x.clone();
+
+    for (int i=0; i<dim; i++) {
+      ei = x.basis(i);
+      for (int j=0; j<dim; j++) {
+        ej = x.basis(j);
+        M(j,i) = ej->dot(*ei);
+      }
+    }
+
+    return M;
+
+  }
+
+  template<class Real>
   std::vector<std::vector<Real> > computeEigenvalues(Teuchos::SerialDenseMatrix<int, Real> & mat) {
 
     Teuchos::LAPACK<int, Real> lapack;
@@ -117,6 +138,44 @@ namespace ROL {
 
   }
 
+  template<class Real>
+  std::vector<std::vector<Real> > computeGenEigenvalues(Teuchos::SerialDenseMatrix<int, Real> &A,
+                                                        Teuchos::SerialDenseMatrix<int, Real> &B) {
+
+    Teuchos::LAPACK<int, Real> lapack;
+
+    char jobvl = 'N';
+    char jobvr = 'N';
+
+    int n = A.numRows();
+
+    std::vector<Real> real(n, 0);
+    std::vector<Real> imag(n, 0);
+    std::vector<Real> beta(n, 0);
+    std::vector<std::vector<Real> > eigenvals;
+
+    Real* vl = 0;
+    Real* vr = 0;
+
+    int ldvl = 1;
+    int ldvr = 1;
+
+    int lwork = 10*n;
+
+    std::vector<Real> work(lwork, 0);
+
+    int info = 0;
+
+    lapack.GGEV(jobvl, jobvr, n, &A(0,0), n, &B(0,0), n, &real[0], &imag[0], &beta[0], 
+                vl, ldvl, vr, ldvr, &work[0], lwork, &info);
+
+    eigenvals.push_back(real);
+    eigenvals.push_back(imag);
+    eigenvals.push_back(beta);
+
+    return eigenvals;
+
+  }
 
   template<class Real> 
   class ProjectedObjective : public Objective<Real> {
