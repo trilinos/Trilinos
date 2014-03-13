@@ -92,7 +92,6 @@ namespace Tpetra {
     node_ (node)
   {
     typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO;
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
 
     const GO globalNumInds = (globalNumIndices == GSTI) ?
