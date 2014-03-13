@@ -107,6 +107,13 @@ public:
                                                         const Vector<Real> &v,
                                                         const bool printToScreen = true,
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+
+  /** \brief Hessian symmetry check.
+  */
+  virtual std::vector<Real> checkHessSym( const Vector<Real> &x,
+                                          const Vector<Real> &v,
+                                          const Vector<Real> &w,
+                                          const bool printToScreen = true ) ;
   
   // struct StepState (scalars, vectors) map?
 

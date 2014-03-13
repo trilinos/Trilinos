@@ -234,6 +234,51 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
 } // checkHessVec
 
 
+template<class Real>
+std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
+                                                 const Vector<Real> &v,
+                                                 const Vector<Real> &w,
+                                                 const bool printToScreen ) {
+
+  Real tol = std::sqrt(ROL_EPSILON);
+  
+  // Compute (Hessian at x) times (vector v).
+  Teuchos::RCP<Vector<Real> > h = x.clone();
+  this->hessVec(*h, v, x, tol);
+  Real wHv = w.dot(*h);
+
+  this->hessVec(*h, w, x, tol);
+  Real vHw = v.dot(*h);
+
+  std::vector<Real> hsymCheck(3, 0);
+
+  hsymCheck[0] = wHv;
+  hsymCheck[1] = vHw;
+  hsymCheck[2] = std::abs(vHw-wHv);
+
+  std::ios::fmtflags f( std::cout.flags() );
+
+  if (printToScreen) {
+    std::cout << std::right
+              << std::setw(20) << "<w, H(x)v>"
+              << std::setw(20) << "<v, H(x)w>"
+              << std::setw(20) << "abs error"
+              << "\n";
+    std::cout << std::scientific << std::setprecision(8) << std::right
+              << std::setw(20) << hsymCheck[0]
+              << std::setw(20) << hsymCheck[1]
+              << std::setw(20) << hsymCheck[2]
+              << "\n";
+  }
+
+  std::cout.flags( f );
+
+  return hsymCheck;
+
+} // checkHessSym
+
+
+
 } // namespace ROL
 
 #endif

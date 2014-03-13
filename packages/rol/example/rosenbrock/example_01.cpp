@@ -81,9 +81,9 @@ int main(int argc, char *argv[]) {
 
     Teuchos::ParameterList parlist;
     // Enumerations
-    parlist.set("Descent Type",                           ROL::DESCENT_NEWTONKRYLOV);
-    parlist.set("Linesearch Type",                        ROL::LINESEARCH_CUBICINTERP);
-    parlist.set("Linesearch Curvature Condition",         ROL::CURVATURECONDITION_WOLFE);
+    parlist.set("Descent Type",                           "Newton Krylov");
+    parlist.set("Linesearch Type",                        "Cubic Interpolation");
+    parlist.set("Linesearch Curvature Condition",         "Wolfe");
     // Linesearch Parameters
     parlist.set("Maximum Number of Function Evaluations", 20);
     parlist.set("Sufficient Decrease Parameter",          1.e-4);
@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
     ROL::LineSearchStep<RealT> step(parlist);
 
     // Define Status Test
-    RealT gtol  = 1e-14;  // norm of gradient tolerance
-    RealT stol  = 1e-12;  // norm of step tolerance
+    RealT gtol  = 1e-12;  // norm of gradient tolerance
+    RealT stol  = 1e-14;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
 

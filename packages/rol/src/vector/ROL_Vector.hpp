@@ -115,7 +115,7 @@ public:
 
   /** \brief Return dimension of the vector space.
   */
-  virtual int dimension() {return 0;}
+  virtual int dimension() const {return 0;}
 
   /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
   */

@@ -45,8 +45,11 @@
     \brief Test derivative checks.
 */
 
+//#define USE_HESSVEC 0
+
 #include "ROL_StdVector.hpp"
 #include "ROL_TestObjectives.hpp"
+#include "ROL_HelperFunctions.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -80,16 +83,19 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 512;
+    int dim = 128;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     ROL::StdVector<RealT> x(x_rcp);
     ROL::StdVector<RealT> y(y_rcp);
+    ROL::StdVector<RealT> z(z_rcp);
 
     // set x,y
     for (int i=0; i<dim; i++) {
       (*x_rcp)[i] = 10.0* (1.0 + (RealT)rand() / (RealT)RAND_MAX);
       (*y_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*z_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
     //ROL::Objective_Rosenbrock<RealT> obj;
@@ -136,6 +142,39 @@ int main(int argc, char *argv[]) {
                  << "\n";
     }
 
+    *outStream << "\n";
+    std::vector<RealT> hsymCheck = obj.checkHessSym(x, y, z);
+
+    *outStream << std::right
+               << std::setw(20) << "<w, H(x)v>"
+               << std::setw(20) << "<v, H(x)w>"
+               << std::setw(20) << "abs error"
+               << "\n";
+    *outStream << std::scientific << std::setprecision(8) << std::right
+               << std::setw(20) << hsymCheck[0]
+               << std::setw(20) << hsymCheck[1]
+               << std::setw(20) << hsymCheck[2]
+               << "\n";
+
+    Teuchos::SerialDenseMatrix<int, RealT> H(x.dimension(), x.dimension());
+    H = ROL::computeDenseHessian(obj, x);
+    //H.print(*outStream);
+
+    std::vector<std::vector<RealT> > eigenvals = ROL::computeEigenvalues(H);
+
+    *outStream << "\n";
+    for (unsigned i=0; i<(eigenvals[0]).size(); i++) {
+      if (i==0) {
+        *outStream << std::right
+                   << std::setw(20) << "Real"
+                   << std::setw(20) << "Imag"
+                   << "\n";
+      }
+      *outStream << std::scientific << std::setprecision(8) << std::right
+                 << std::setw(20) << (eigenvals[0])[i]
+                 << std::setw(20) << (eigenvals[1])[i]
+                 << "\n";
+    }
   
   }
   catch (std::logic_error err) {

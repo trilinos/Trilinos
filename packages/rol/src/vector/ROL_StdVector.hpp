@@ -112,7 +112,7 @@ public:
     return e;
   }
 
-  int dimension() {return this->std_vec_->size();}
+  int dimension() const {return this->std_vec_->size();}
 
 }; // class StdVector
 

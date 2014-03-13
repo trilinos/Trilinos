@@ -53,105 +53,73 @@
 #include "ROL_Objective.hpp"
 #include "ROL_Constraints.hpp"
 #include "ROL_Secant.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 namespace ROL {
 
   template<class Real>
-  void applyHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, 
-                     Objective<Real> &obj, Real tol = 0.0,
-                     Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, bool useSecant = false ) {
-    if ( secant != Teuchos::null && useSecant ) {
-      secant->applyB( Hv, v, x );
+  Teuchos::SerialDenseMatrix<int, Real> computeDenseHessian(Objective<Real> &obj, const Vector<Real> &x) {
+
+    Real tol = std::sqrt(ROL_EPSILON);
+
+    int dim = x.dimension();
+    Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
+
+    Teuchos::RCP<Vector<Real> > e = x.clone();
+    Teuchos::RCP<Vector<Real> > h = x.clone();
+
+    for (int i=0; i<dim; i++) {
+      e = x.basis(i);
+      obj.hessVec(*h, *e, x, tol);
+      for (int j=0; j<dim; j++) {
+        e = x.basis(j);
+        H(j,i) = e->dot(*h);
+      }
     }
-    else {
-      obj.hessVec( Hv, v, x, tol );
-    }
+
+    return H;
+
   }
 
   template<class Real>
-  void applyReducedHessVec( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x,
-                            Constraints<Real> &con, Objective<Real> &obj, Real tol = 0.0, 
-                            Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, bool useSecant = false ) {
-    if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > pnew = x.clone();
-      pnew->set(p);
-      con.pruneActive(*pnew,g,x);
-      applyHessVec(Hp,*pnew,x,obj,tol,secant,useSecant);
-      con.pruneActive(Hp,g,x);
-      pnew->set(p);
-      con.pruneInactive(*pnew,g,x);
-      Hp.plus(*pnew);
-    }
-    else {
-      applyHessVec(Hp,p,x,obj,tol,secant,useSecant);
-    }
-  }
+  std::vector<std::vector<Real> > computeEigenvalues(Teuchos::SerialDenseMatrix<int, Real> & mat) {
 
-  template<class Real>
-  void applyInvHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, 
-                        Objective<Real> &obj, Real tol = 0.0, 
-                        Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, bool useSecant = false ) {
-    if ( secant != Teuchos::null && useSecant ) {
-      secant->applyH(Hv,v,x);
-    }
-    else {
-      obj.invHessVec(Hv,v,x,tol);
-    }
-  }
+    Teuchos::LAPACK<int, Real> lapack;
 
-  template<class Real>
-  void applyReducedInvHessVec( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x,
-                               Constraints<Real> &con, Objective<Real> &obj, Real tol = 0.0, 
-                               Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, bool useSecant = false ) {
-    if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > pnew = x.clone();
-      pnew->set(p);
-      con.pruneActive(*pnew,g,x);
-      applyInvHessVec(Hp,*pnew,x,obj,tol,secant,useSecant);
-      con.pruneActive(Hp,g,x);
-      pnew->set(p);
-      con.pruneInactive(*pnew,g,x);
-      Hp.plus(*pnew);
-    }
-    else {
-      applyInvHessVec(Hp,p,x,obj,tol,secant,useSecant);
-    }
-  }
+    char jobvl = 'N';
+    char jobvr = 'N';
 
-  template<class Real>
-  void applyPrecond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, 
-                     Objective<Real> &obj, Real tol = 0.0, 
-                     Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, bool useSecant = false ) {
-    if ( secant != Teuchos::null && useSecant ) {
-      secant->applyH( Mv, v, x );
-    }
-    else {
-      obj.precond( Mv, v, x );
-    }
-  }
+    int n = mat.numRows();
 
-  template<class Real>
-  void applyReducedPrecond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x,
-                            Constraints<Real> &con, Objective<Real> &obj, Real tol = 0.0, 
-                            Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, bool useSecant = false ) {
-    if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vnew = x.clone();
-      vnew->set(v);
-      con.pruneActive(*vnew,g,x);
-      applyPrecond(Mv,*vnew,x,obj,tol,secant,useSecant);
-      con.pruneActive(Mv,g,x);
-      vnew->set(v);
-      con.pruneInactive(*vnew,g,x);
-      Mv.plus(*vnew);
-    }
-    else {
-      applyPrecond(Mv,v,x,obj,tol,secant,useSecant);
-    }
+    std::vector<Real> real(n, 0);
+    std::vector<Real> imag(n, 0);
+    std::vector<std::vector<Real> > eigenvals;
+
+    Real* vl = 0;
+    Real* vr = 0;
+
+    int ldvl = 1;
+    int ldvr = 1;
+
+    int lwork = 4*n;
+
+    std::vector<Real> work(lwork, 0);
+
+    int info = 0;
+
+    lapack.GEEV(jobvl, jobvr, n, &mat(0,0), n, &real[0], &imag[0], vl, ldvl, vr, ldvr, &work[0], lwork, &info);
+
+    eigenvals.push_back(real);
+    eigenvals.push_back(imag);
+
+    return eigenvals;
+
   }
 
 
   template<class Real> 
-  class ProjectedObjective {
+  class ProjectedObjective : public Objective<Real> {
   private:
     Teuchos::RCP<Objective<Real> >   obj_;
     Teuchos::RCP<Constraints<Real> > con_;
@@ -195,6 +163,24 @@ namespace ROL {
       }
       else {
         this->obj_->hessVec( Hv, v, x, tol );
+      }
+    }
+
+    void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) { 
+      if ( this->useSecantHessVec_ ) {
+        this->secant_->applyH(Hv,v,x);
+      }
+      else {
+        this->obj_->invHessVec(Hv,v,x,tol);
+      }
+    }
+
+    void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+      if ( this->useSecantPrecond_ ) {
+        this->secant_->applyH( Mv, v, x );
+      }
+      else {
+        this->obj_->precond( Mv, v, x );
       }
     }
 
@@ -267,15 +253,6 @@ namespace ROL {
       }
     }
 
-    void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) { 
-      if ( this->useSecantHessVec_ ) {
-        this->secant_->applyH(Hv,v,x);
-      }
-      else {
-        this->obj_->invHessVec(Hv,v,x,tol);
-      }
-    }
-
     /** \brief Apply the reduced inverse Hessian to a vector, v.  
                The reduced inverse Hessian first removes elements 
                of v corresponding to the feasible indices from 
@@ -342,14 +319,6 @@ namespace ROL {
       }
       else {
         this->invHessVec(Hv,v,x,tol);
-      }
-    }
-    void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      if ( this->useSecantPrecond_ ) {
-        this->secant_->applyH( Mv, v, x );
-      }
-      else {
-        this->obj_->precond( Mv, v, x );
       }
     }
 
