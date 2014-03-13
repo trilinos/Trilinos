@@ -75,7 +75,7 @@ RCP< const ParameterList > getValidParameters()
     ParameterList* plist = new ParameterList;
 
     ////////////////////////////////////////////////////////////////
-    // "comm dimensions" parameter applies to MDComm
+    // "comm dimensions" parameter applies to MDComm, MDMap and MDVector
     ////////////////////////////////////////////////////////////////
     RCP< EnhancedNumberValidator< int > > axisCommNumber =
       rcp(new EnhancedNumberValidator< int >());
@@ -254,6 +254,28 @@ RCP< const ParameterList > getValidParameters()
                "A string indicating how the data is laid out in memory. "
                "Default is currently set to Fortran order.",
                layoutValidator);
+
+    ////////////////////////////////////////////////////////////////
+    // "leading dimension" parameter applies to MDVector
+    ////////////////////////////////////////////////////////////////
+    plist->set("leading dimension",
+               pad,
+               "Use the 'leading dimension' parameter to specify multiple "
+               "degrees of freedom at each MDMap index.  This increases the "
+               "dimension of the MDVector by one, and the new degrees of "
+               "freedom are accessed with the first index.",
+               padNumberValidator);
+
+    ////////////////////////////////////////////////////////////////
+    // "trailing dimension" parameter applies to MDVector
+    ////////////////////////////////////////////////////////////////
+    plist->set("trailing dimension",
+               pad,
+               "Use the 'trailing dimension' parameter to specify multiple "
+               "degrees of freedom at each MDMap index.  This increases the "
+               "dimension of the MDVector by one, and the new degrees of "
+               "freedom are accessed with the last index.",
+               padNumberValidator);
 
     // ParameterList construction is done, so wrap it with an RCP<
     // const ParameterList >

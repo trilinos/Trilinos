@@ -616,7 +616,7 @@ private:
 
   // The MDMap that describes the domain decomposition of this
   // MDVector
-  const Teuchos::RCP< const MDMap< Node > > _mdMap;
+  Teuchos::RCP< const MDMap< Node > > _mdMap;
 
   // The MDArrayRCP that stores the data of this MDVector
   MDArrayRCP< Scalar > _mdArrayRcp;
@@ -800,16 +800,25 @@ MDVector(const TeuchosCommRCP teuchosComm,
          Teuchos::ParameterList & plist,
          const Teuchos::RCP< Node > & node) :
   _teuchosComm(teuchosComm),
-  _mdMap(Teuchos::rcp(new MDMap< Node >(teuchosComm, plist, node))),
+  _mdMap(),
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->numDims()),
+  _sliceBndryPad(),
   _sendMessages(),
   _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
+  
+  // Compute the MDComm and MDMap
+  MDMap< Node > * myMdMap = new MDMap< Node >(teuchosComm, plist, node);
+  dim_type leadingDim  = plist.get("leading dimension" , 0);
+  dim_type trailingDim = plist.get("trailing dimension", 0);
+  if (leadingDim + trailingDim > 0)
+    _mdMap = myMdMap->getAugmentedMDMap(leadingDim, trailingDim);
+  else
+    _mdMap = Teuchos::rcp(myMdMap);
 
   // Obtain the array of dimensions
   int numDims = _mdMap->numDims();
@@ -820,6 +829,11 @@ MDVector(const TeuchosCommRCP teuchosComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
+
+  //  Set the slice boundary padding
+  _sliceBndryPad.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    _sliceBndryPad[axis] = _mdMap->getBndryPadSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -835,12 +849,21 @@ MDVector(const MDCommRCP mdComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->numDims()),
+  _sliceBndryPad(),
   _sendMessages(),
   _recvMessages(),
   _requests()
 {
   setObjectLabel("Domi::MDVector");
+  
+  // Compute the MDMap
+  MDMap< Node > * myMdMap = new MDMap< Node >(mdComm, plist, node);
+  dim_type leadingDim  = plist.get("leading dimension" , 0);
+  dim_type trailingDim = plist.get("trailing dimension", 0);
+  if (leadingDim + trailingDim > 0)
+    _mdMap = myMdMap->getAugmentedMDMap(leadingDim, trailingDim);
+  else
+    _mdMap = Teuchos::rcp(myMdMap);
 
   // Obtain the array of dimensions
   int numDims = _mdMap->numDims();
@@ -851,6 +874,11 @@ MDVector(const MDCommRCP mdComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
+
+  //  Set the slice boundary padding
+  _sliceBndryPad.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    _sliceBndryPad[axis] = _mdMap->getBndryPadSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
