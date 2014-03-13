@@ -24,10 +24,6 @@
 # for generating those libraries given the list of header and source files in
 # the external project.
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddExecutableAndTest)
-#INCLUDE(TribitsWriteClientExportFiles)
-
 TRIBITS_PACKAGE(WrapExternal)
 
 # A) Write the export makefile that will be used by the external project

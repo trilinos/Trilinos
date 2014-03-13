@@ -1,6 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsSubPackageMacros)
-
 #
 # A) Define the subpackage
 #

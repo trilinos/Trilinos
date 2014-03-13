@@ -1,5 +1,3 @@
-INCLUDE(TribitsPackageMacros)
-
 #
 # A) Define the package
 #

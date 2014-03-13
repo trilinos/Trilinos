@@ -1,5 +1,3 @@
-INCLUDE(TribitsPackageMacros)
-
 #
 # A) Forward declare the package so that certain options are also defined for
 # subpackages
