@@ -642,9 +642,56 @@ for unit testing this function.
 TRIBITS_CONFIGURE_FILE()
 ------------------------
 
-Macro that configures the package's main config.h file
+Macro that configures the package's main configured header file (typically
+called ``${PACKAGE_NAME}_config.h`` but any name can be used).
 
-ToDo: Document everything this macro does!
+Usage::
+
+  TRIBITS_CONFIGURE_FILE(<packageConfigFile>)
+
+This function requires the file::
+
+   ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
+
+exists and it creates the file::
+
+  ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
+
+by calling the built-in ``CONFIGURE_FILE()`` command::
+
+  CONFIGURE_FILE(
+    ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
+    ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
+    )
+
+which does basic sustitution of CMake variables (see documentation for
+built-in ``CONFIGURE_FILE()`` command for rules on how it performs
+substitutions).
+
+In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
+creating configured header files adding macros for deprecating code.
+
+**Deprecated Code Macros**
+
+If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE``, then the
+local CMake varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS``
+adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
+``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
+add the compiler-specific deprecated warning for an entity.  To use this,
+just add the line::
+
+  @<PARENT_PACKAGE_NAME_UC>_DEPRECATED_DECLARATIONS@
+
+to the <packageConfigFile>.in file and it will be expended.
+
+Then C/C++ code can use this macro to deprecate functions, variables,
+classes, etc., for example, using::
+
+  <PARENT_PACKAGE_NAME_UC>_DEPRECATED class SomeDepreatedClass { ... }.
+
+If the particular compiler does not support deprecated warnings, then this
+macro is defined to be empty.  See `Regulated Backward Compatibility and
+Deprecated Code`_ for more details.
 
 TRIBITS_INCLUDE_DIRECTORIES()
 -----------------------------
@@ -681,36 +728,146 @@ Usage::
 
   TRIBITS_ADD_LIBRARY(
     <libName>
-    [HEADERS <h1> <h> ...]
-    [NOINSTALLHEADERS <nih1> <hih2> ...]
-    [SOURCES <src1> <src2> ...]
-    [DEPLIBS <deplib1> <deplib2> ...]
-    [IMPORTEDLIBS <ideplib1> <ideplib2> ...]
-    [DEFINES -D<define1> -D<define2> ...]
+    [HEADERS <h0> <h1> ...]
+    [NOINSTALLHEADERS <nih0> <hih1> ...]
+    [SOURCES <src0> <src1> ...]
+    [DEPLIBS <deplib0> <deplib1> ...]
+    [IMPORTEDLIBS <ideplib0> <ideplib1> ...]
     [TESTONLY]
     [NO_INSTALL_LIB_OR_HEADERS]
     [CUDALIBRARY]
     )
 
-ToDo: Document each argument!
+*Sections:*
 
-This function has a number of side-effects after it finishes running:
+* `Formal Arguments (TRIBITS_ADD_LIBRARY())`_
+* `Include Directories (TRIBITS_ADD_LIBRARY())`_
+* `Install Targets (TRIBITS_ADD_LIBRARY())`_
+* `Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())`_
+* `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_
 
-* An install target for the library is created by default using
-  ``INSTALL(TARGETS <libName> ...)``.  However, this install target will not
-  get created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
-  ``BUILD_SHARD_LIBS=OFF``.  However, when ``BUILD_SHARD_LIBS=ON``, the
-  install target will get created.  Also, this install target will *not* get
-  created if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
+.. _Formal Arguments (TRIBITS_ADD_LIBRARY()):
 
-* An install target for the headers listed in ``HEADERS`` will get created
-  using ``INSTALL(FILES <h1> <h2> ...)``.  NOTE: An install target will
-  *not* get created for the headers listed in ``NOINSTALLHEADERS``.
+**Formal Arguments (TRIBITS_ADD_LIBRARY())**
 
-ToDo: Document other side-effects!
+  ``<libName>``
 
-NOTE: IF the library is added, a CMake library target ``<libName>`` gets
-created through calling the build-in command ``ADD_LIBRARY(<libName> ...)``.
+    Required name of the library.  This is the name passed to
+     ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
+     packae name.  CMake will of course add any standard prefix or post-fix
+     to the library file name appropriate for the platform and if this is a
+     static or shared library build.
+
+  ``HEADERS <h0> <h1> ...``
+
+    List of public header files for using this library.  By default, these
+    header files are assumed to be in the current source directory.  They
+    can also contain the relative path or absolute path to the files if they
+    are not in the current source directory.  List list of headers is passed
+    into ``ADD_LIBRARY(...)`` as well (which is not strictly needed but is
+    helpful for some build tools, like MS Visual Stuido).  By default, these
+    headers will be installed as well (see `Include Directories
+    (TRIBITS_ADD_LIBRARY())`_).
+
+  ``NOINSTALLHEADERS <nih0> <hih1> ...``
+
+    List of private header files which are used by this library. These
+    headers are not installed and do not needed to be passed in for any
+    purpose other than to pass them into ``ADD_LIBRARY()`` as some build
+    tools like to have these listed (e.g. MS Visual Studio).
+
+  ``SOURCES <src0> <src1> ...``
+
+    List of source files passed into ``ADD_LIBRARY()`` that are compiled
+    into header files and included in the library.  The compiler used to
+    compile the files is determined automatically based on the file
+    extension (see CMake documentation).
+
+  ``DEPLIBS <deplib0> <deplib1> ...``
+
+    List of dependent libraries that are built in the current SE package
+    that this library is dependent on.  These libraries are passed into
+    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
+    dependency.  You should **not** list libraries in other upstream SE
+    packages or libraries built externally from this TriBITS CMake project.
+    The TriBITS system automatically handles linking to libraries in uptream
+    TriBITS packages and external libraries need to be listed in
+    ``IMPORTEDLIBS`` instead.
+
+  ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
+
+    List of dependent libraries built exteranlly from this TriBITS CMake
+    project.  These libraries are passed into
+    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
+    dependency.  These libraries are added the ``${PACKAGE_NAME}_LIBRARIES``
+    so that downstream SE packages will also have these libraries and the
+    link line also and these libraries will show up in the generated
+    ``Makefile.export.${PACKAGE_NAME}`` and ``${PACKAGE_NAME}Config.cmake``
+    files if they are generated.
+
+  ``TESTONLY``
+
+    If passed in, then ``<libName>`` will **not** be added to
+    ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
+    not be added.  In this case, the current include directories will be set
+    in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
+    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in.
+
+  ``NO_INSTALL_LIB_OR_HEADERS``
+
+    If specified, then no install targets will be added for the library
+    ``<libName>`` or the header files listed in ``HEADERS``.
+
+  ``CUDALIBRARY``
+
+    If specified then ``CUDA_ADD_LIBRARY()`` is used instead of
+    ``ADD_LIBRARY()`` where ``CUDA_ADD_LIBRARY()`` is assumed to be defined
+    by the standard FindCUDA.cmake module as processed using the standard
+    TriBITS FindTPLCUDA.cmake file.  For this option to work, this SE
+    package must have an enabled direct or indirect dependency on the
+    TriBITS CUDA TPL or a configure-time error will occur about not finding
+    ``CUDA_ALL_LIBRARY()``.
+
+.. _Include Directories (TRIBITS_ADD_LIBRARY()):
+
+**Include Directories (TRIBITS_ADD_LIBRARY())**
+
+Any base directories for these header files listed in ``HEADERS`` or
+``NOINSTALLHEADERS`` should be passed into ``INCLUDE_DIRECTORIES()`` *before*
+calling this function.  These include directories will then be added to
+current packages list of include directories
+``${PACKAGE_NAME}_INCLUDE_DIRS``.
+
+.. _Install Targets (TRIBITS_ADD_LIBRARY()):
+
+**Install Targets (TRIBITS_ADD_LIBRARY())**
+
+An install target for the library is created by default using
+``INSTALL(TARGETS <libName> ...)``.  However, this install target will not
+get created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
+target will get created.  Also, this install target will *not* get created
+if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
+
+An install target for the headers listed in ``HEADERS`` will get created
+using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
+``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  Note that an
+install target will *not* get created for the headers listed in
+``NOINSTALLHEADERS``.
+
+.. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
+
+**Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
+
+Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
+and change properties on the ``<libName>`` library target using
+``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
+listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
+any CMake project.
+
+.. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
+
+**Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
 
 **WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
 ``-D<someDefine>`` to the compile command line that will affect a header

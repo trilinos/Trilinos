@@ -150,7 +150,8 @@ However, we have observed that most mistakes that people make when using
 TriBITS, and most of the problems they have when using the sytem, are due to a
 basic lack of knowlege of the CMake language.  One can find basic tutorials
 and references on the CMake language in various locations online for free.
-One can also purchase the `offical CMake reference book`_.  Also, documenation for any built-in CMake command is available locally by running::
+One can also purchase the `offical CMake reference book`_.  Also, documenation
+for any built-in CMake command is available locally by running::
 
    $ cmake --help-command <CMAKE_COMMAND>
 
@@ -397,10 +398,6 @@ Multi-Repository Support
 
 ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.
 
-Project-Specific Build Quick Reference
-======================================
-
-ToDo: Describe <Project>BuildQuickRef document!
 
 Basic Development Workflow
 ==========================
@@ -412,11 +409,59 @@ Multi-Repository Development Workflow
 
 ToDo: Fill in!
 
+Project-Specific Build Quick Reference
+======================================
+
+TriBITS provides a mechanisms to quickly create a project-specific build quick
+reference document in restructured text (RST) format and with HTML and
+LaTeX/PDF outputs.  These document are generally created in the base project
+source tree and given then name ``<Project>BuildQuickRef.[rst,html,pdf]``.
+This document consists of two parts.  One part is a generic template document
+``TribitsBuildQuickRefBody.rst`` that uses the place-holder ``<Project>`` that
+is substituted for the for the real project name (read from the project's
+``ProjectName.cmake`` file by default).  In order to produce this document, a
+project must have the template file::
+
+  <projectBaseDir>/cmake/<Project>BuildQuickRefTemplate.rst
+
+defined which provides the outer RST doucment (with title, authors, abstract,
+introduction, other introductory sections).  From this, the script::
+
+  tribits/doc/build_quick_ref/create-project-build-quickref.py
+
+is used to generate the read-only files::
+
+  <projectBaseDir>/
+    <Project>BuildQuickRef.rst
+    <Project>BuildQuickRef.html
+    <Project>BuildQuickRef.pdf
+
+To see a simple example of this, see::
+
+  tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
+
+A project-indepenent version of this file is provided in the
+`TribitsBuildQuickRef.[rsts,html,pdf]
+<../build_quick_ref/TribitsBuildQuickRef.html>`_
+
 
 Creating Source Distributions
 =============================
 
 ToDo: Fill in!
+
+
+Multi-Repository Almost Continuous Integration
+==============================================
+
+ToDo: Fill in!
+
+
+Regulated Backward Compatibility and Deprecated Code
+====================================================
+
+ToDo: Fill in!
+
 
 TriBITS Global Project Settings
 ===============================
@@ -461,9 +506,11 @@ overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the
 cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
-file ???<Project>BuildQuickRef???).  Some of the more unusual options that
-might only be of interest to developers mentioned below may not be documented
-in ???<Project>BuildQuickRef???.
+`Project-Specific Build Quick Reference`_ document.  A generic version of this
+document is found in `TribitsBuildQuickRef.[rsts,html,pdf]
+<../build_quick_ref/TribitsBuildQuickRef.html>`_.  Some of the more unusual
+options that might only be of interest to developers mentioned below may not
+be documented in ``<Project>BuildQuickRef.[rst,html,pdf]``.
 
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
@@ -487,12 +534,12 @@ These options are described below.
 
 **${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES**
 
-  If ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`` is ``ON`` (the TriBITS
-  default value), then any explicitly enabled packages that have disabled
-  upstream required packages or TPLs will be disabled.  If ``OFF``, then an
-  configure error will occur (for more details see
-  ???${PROJECT_NAME}BuildQuickRef???).  A project define a different default value by
-  setting::
+  If ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`` is ``ON`` (the
+  TriBITS default value), then any explicitly enabled packages that have
+  disabled upstream required packages or TPLs will be disabled.  If ``OFF``,
+  then an configure error will occur (for more details see
+  `TribitsBuildQuickRef.* <../build_quick_ref/TribitsBuildQuickRef.html>`_).
+  A project define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
   
@@ -528,9 +575,10 @@ These options are described below.
   `TRIBITS_ADD_LIBRARY()`_ that disable installs).  If set to ``OFF``, then
   headers and librareis will be installed by default and only ``INSTALLABLE``
   executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be installed.
-  However, as described in ???${PROJECT_NAME}BuildQuickRef>???, shared libraries will
-  still be always be installed if enabled since they are needed by the installed
-  executables.  The TriBITS default is to set this to ``ON``.
+  However, as described in `TribitsBuildQuickRef.*
+  <../build_quick_ref/TribitsBuildQuickRef.html>`_, shared libraries will
+  still be always be installed if enabled since they are needed by the
+  installed executables.  The TriBITS default is to set this to ``ON``.
   
   For a TriBITS project that primarily is delivering libraries (e.g. Trilinos),
   then it makes sense to leave the TriBITS default or explicitly set::
@@ -548,9 +596,10 @@ These options are described below.
   
   If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
   ``Makefile.export.<PACKAGE_NAME>`` will get created at configure time in the
-  build tree and installed into the install tree.  See
-  ???<Proeject>BuildQuickRef??? for details.  The TriBITS default is ``ON`` but a
-  project can decide to turn this off by default by setting::
+  build tree and installed into the install tree.  See `TribitsBuildQuickRef.*
+  <../build_quick_ref/TribitsBuildQuickRef.html>`_ for details.  The TriBITS
+  default is ``ON`` but a project can decide to turn this off by default by
+  setting::
   
     SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
   
@@ -574,7 +623,8 @@ These options are described below.
 
   A project would want to turn off the creation and installation of
   ``<PACKAGE_NAME>Config.cmake`` files if it was only installing and providing
-  executables. See ???<Project>BuildQuickRef??? for details.
+  executables. See `TribitsBuildQuickRef.*
+  <../build_quick_ref/TribitsBuildQuickRef.html>`_ for details.
 
 .. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
 
@@ -772,25 +822,25 @@ initial implementation of a scale-able package-based architecture
 CMake PackageArch system evolved over the next few years with development in
 the system slowing into 2010.  This Trilinos CMake build system was then
 adopted as the build infrastructure for the CASL VERA effort in 2011 where
-CASL VERA packages were treated as add-on Trilinos packages (see Section ???).
-Over the next year, there was significant development of the system to support
-larger multi-repo projects in support of CASL VERA.  That lead to the decision
-to formally generalize the Trilinos CMake PackageArch build system outside of
-Trilinos and the name TriBITS was formally adopted in November 2011.  Work to
-refactor the Trilinos CMake system into a general reusable stand-alone
-CMake-based build system started in October 2011 and an initial implementation
-was complete in December 2011 when it was used for the CASL VERA build system.
-In early 2012, the ORNL CASL-related projects Denovo and SCALE ([SCALE]_)
-adopted TriBITS as their native development build systems.  Shortly after
-TriBITS was adopted the native build system for the the CASL-related
-University of Michigan code MPACT.  In addition to being used in CASL, all of
-these codes also had a significant life outside of CASL.  Because they used
-the same TriBITS build system, it proved relatively easy to keep these various
-codes integrated together in the CASL VERA code meta-build.  At the same time,
-TriBITS well served the independent development teams and non-CASL projects
-independent from CASL VERA.  Since the initial extraction of TriBITS from
-Trilinos, the TriBITS system was further extended and refined, driven by CASL
-VERA development and expansion.  Independently, an early version of TriBITS
-from 2012 was adopted by the LiveV
-project\footnote{https://github.com/lifev/cmake} which was forked and extended
-independently.
+CASL VERA packages were treated as add-on Trilinos packages (see Section
+`Multi-Repository Support`_).  Over the next year, there was significant
+development of the system to support larger multi-repo projects in support of
+CASL VERA.  That lead to the decision to formally generalize the Trilinos
+CMake PackageArch build system outside of Trilinos and the name TriBITS was
+formally adopted in November 2011.  Work to refactor the Trilinos CMake system
+into a general reusable stand-alone CMake-based build system started in
+October 2011 and an initial implementation was complete in December 2011 when
+it was used for the CASL VERA build system.  In early 2012, the ORNL
+CASL-related projects Denovo and SCALE ([SCALE]_) adopted TriBITS as their
+native development build systems.  Shortly after TriBITS was adopted the
+native build system for the the CASL-related University of Michigan code
+MPACT.  In addition to being used in CASL, all of these codes also had a
+significant life outside of CASL.  Because they used the same TriBITS build
+system, it proved relatively easy to keep these various codes integrated
+together in the CASL VERA code meta-build.  At the same time, TriBITS well
+served the independent development teams and non-CASL projects independent
+from CASL VERA.  Since the initial extraction of TriBITS from Trilinos, the
+TriBITS system was further extended and refined, driven by CASL VERA
+development and expansion.  Independently, an early version of TriBITS from
+2012 was adopted by the LiveV project\footnote{https://github.com/lifev/cmake}
+which was forked and extended independently.
