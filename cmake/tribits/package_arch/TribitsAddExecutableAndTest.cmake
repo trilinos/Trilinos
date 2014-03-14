@@ -79,57 +79,64 @@ FUNCTION(TRIBITS_ADD_TEST_WRAPPER)
 ENDFUNCTION()
 
 #
-# Add an executable and a test at the same time.
+# @FUNCTION: TRIBITS_ADD_EXECUTABLE_AND_TEST()
 #
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   <execName>
-#   SOURCES <src1> <src2> ...
-#   [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
-#   [CATEGORIES <category1>  <category2> ...]
-#   [HOST <host1> <host2> ...]
-#   [XHOST <host1> <host2> ...]
-#   [HOSTTYPE <hosttype1> <hosttype2> ...]
-#   [XHOSTTYPE <hosttype1> <hosttype2> ...]
-#   [NOEXEPREFIX ]
-#   [NOEXESUFFIX ]
-#   [DIRECTORY <dir> ]
-#   [DEPLIBS <lib1> <lib2> ... ]
-#   [COMM [serial] [mpi] ]
-#   [NUM_MPI_PROCS <numProcs>]
-#   [LINKER_LANGUAGE [C|CXX|Fortran] ]
-#   [ADD_DIR_TO_NAME ]
-#   [DEFINES <-DSOMEDEFINE>]
-#   [KEYWORDS <keyword1> <keyword2> ...]
-#   [STANDARD_PASS_OUTPUT
-#     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-#   [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-#   [WILL_FAIL]
-#   [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
-#   [INSTALLABLE]
-#   )
+# Add an executable and a test (or several tests) all in one shot.
+#
+# Usage::
+#
+#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]  [ADD_DIR_TO_NAME]
+#     SOURCES <src0> <src1> ...
+#     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
+#     [CATEGORIES <category0>  <category1> ...]
+#     [HOST <host0> <host1> ...]
+#     [XHOST <xhost0> <xhost1> ...]
+#     [XHOST_TEST <xhost0> <xhost1> ...]
+#     [HOSTTYPE <hosttype0> <hosttype1> ...]
+#     [XHOSTTYPE <xhosttype0> <xhosttype1> ...]
+#     [XHOSTTYPE_TEST <xhosttype0> <xhosttype1> ...]
+#     [DIRECTORY <dir>]
+#     [DEFINES -DS<someDefine>]
+#     [DEPLIBS <lib0> <lib1> ... ]
+#     [COMM [serial] [mpi]]
+#     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
+#     [NUM_MPI_PROCS <numProcs>]
+#     [LINKER_LANGUAGE (C|CXX|Fortran)]
+#     [STANDARD_PASS_OUTPUT
+#       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+#     [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+#     [WILL_FAIL]
+#     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
+#     [INSTALLABLE]
+#     [TIMEOUT <maxSeconds>]
+#     )
 #
 # This function takes a fairly common set of arguments to
-# TRIBITS_ADD_EXECUTABLE(...) and PACAKGE_ADD_TEST(...) but not the full set
-# passed to PACAKGE_ADD_TEST(...).  See the documentation for
-# TRIBITS_ADD_EXECUTABLE(...) and TRIBITS_ADD_TEST(...) to see which arguments
+# `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ but not the full set
+# passed to ``TRIBITS_ADD_TEST()``.  See the documentation for
+# `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ to see which arguments
 # are accpeted by which functions.
 #
-
 # Arguments that are specific to this function and not contained in
-# TRIBITS_ADD_EXECUTABLE(...) or PACAKGE_ADD_TEST(...):
+# ``TRIBITS_ADD_EXECUTABLE()`` or ``TRIBITS_ADD_TEST()`` include:
 #
-#   XHOST_TEST <host1> <host2> ...
+#   ``XHOST_TEST <xhost0> <xhost1> ...``
 #
 #     When specified, this disables just running the tests for the named hosts
-#     <host1>, <host2> etc. but still builds the executables for the test.
+#     ``<xhost0>``, ``<xhost0>`` etc. but still builds the executable for the
+#     test.
 #
-#   XHOSTTYPE_TEST <hosttype1> <hosttype2> ...
+#   ``XHOSTTYPE_TEST <xhosttype0> <hosttype1> ...``
 #
 #     When specified, this disables just running the tests for the named host
-#     types <hosttype1>, <hosttype2> etc. but still builds the executables for
-#     the test.
+#     types ``<hosttype0>``, ``<hosttype0>``, ..., but still builds the
+#     executable for the test.
 #
-
+# This is the function to use for simple test executbles that you want to run
+# that either takes no arguments or just a simple set of arguments passed in
+# through ``ARGS``.
+#
 FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
    
   #

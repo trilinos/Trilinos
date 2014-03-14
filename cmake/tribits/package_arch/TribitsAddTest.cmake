@@ -53,21 +53,22 @@ INCLUDE(TribitsAddTestHelpers)
 #     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
 #     [DIRECTORY <directory>]
 #     [ADD_DIR_TO_NAME]
-#     [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
-#       | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
+#     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...
+#       | POSTFIX_AND_ARGS_0 <postfix> <arg0> <arg1> ...
 #         POSTFIX_AND_ARGS_1 ... ]
 #     [COMM [serial] [mpi]]
 #     [NUM_MPI_PROCS <numProcs>]
-#     [CATEGORIES <category1>  <category2> ...]
-#     [HOST <host1> <host2> ...]
-#     [XHOST <host1> <host2> ...]
-#     [HOSTTYPE <hosttype1> <hosttype2> ...]
-#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
+#     [CATEGORIES <category0>  <category1> ...]
+#     [HOST <host0> <host1> ...]
+#     [XHOST <host0> <host1> ...]
+#     [HOSTTYPE <hosttype0> <hosttype1> ...]
+#     [XHOSTTYPE <hosttype0> <hosttype1> ...]
 #     [STANDARD_PASS_OUTPUT
-#       | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-#     [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+#       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+#     [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
 #     [WILL_FAIL]
-#     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+#     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
+#     [TIMEOUT <maxSeconds>]
 #     )
 #
 # *Sections:*
@@ -143,7 +144,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     property ``RUN_SERIAL`` using the built-in CMake function
 #     ``SET_TESTS_PROPERTIES()``.
 #  
-#   ``ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...``
+#   ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 #
 #     If specified, then a set of arguments can be passed in quotes.  If
 #     multiple groups of arguments are passed in different quoted clusters of
@@ -153,18 +154,18 @@ INCLUDE(TribitsAddTestHelpers)
 #     named ``${TEST_NAME}_xy`` where ``xy`` = ``00``, ``01``, ``02``, and so
 #     on.
 #  
-#   ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg1> <arg2> ...``
+#   ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg0> <arg1> ...``
 #
 #     If specified, gives a sequence of sets of test postfix names and arguments
 #     lists for different tests.  For example, a set of three different tests
 #     with argument lists can be specified as::
 #       
-#       POSTIFX_AND_ARGS_0 postfix1 --arg1 --arg2="dummy"
-#       POSTIFX_AND_ARGS_1 postfix2  --arg2="fly"
-#       POSTIFX_AND_ARGS_3 postfix3  --arg2="bags"
+#       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
+#       POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
+#       POSTIFX_AND_ARGS_2 postfix2  --arg2="bags"
 #  
 #     This will create three different test cases with the postfix names
-#     ``postfix1``, ``postfix2``, and ``postfix3``.  The indexes must be
+#     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
 #     consecutive starting a ``0`` and going up to (currently) ``19``.  The main
 #     advantages of using these arguments instead of just 'ARGS' are that you
 #     can give meaningful name to each test case and you can specify multiple
@@ -186,7 +187,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
 #     ignored.
 #  
-#   ``HOST <host1> <host2> ...``
+#   ``HOST <host0> <host1> ...``
 #
 #     If specified, gives a list of hostnames where the test will be included.
 #     The current hostname is determined by the built-in CMake command
@@ -197,14 +198,14 @@ INCLUDE(TribitsAddTestHelpers)
 #     ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
 #     output under the section ``Probing the environment``.
 #  
-#   ``XHOST <host1> <host2> ...``
+#   ``XHOST <host0> <host1> ...``
 #
 #     If specified, gives a list of hostnames (see ``HOST`` argument) where
 #     the test will *not* be added.  This check is performed after the check
 #     for the hostnames in the ``HOST`` list if it should exist.  Therefore,
 #     this list exclusion list overrides the 'HOST' inclusion list.
 #
-#   ``CATEGORIES <category1> <category2> ...``
+#   ``CATEGORIES <category0> <category1> ...``
 #
 #     If specified, gives the specific categories of the test.  Valid test
 #     categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
@@ -220,7 +221,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     ``PERFORMANCE`` it will match
 #     ``${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE`` only.
 #
-#   ``HOSTTYPE <hosttype1> <hosttype2> ...``
+#   ``HOSTTYPE <hosttype0> <hosttype1> ...``
 #
 #     If specified, gives the names of the host system type (given by
 #     ``CMAKE_HOST_SYSTEM_NAME`` which is printed in the TriBITS cmake
@@ -228,7 +229,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     the test.  Typical host system type names include ``Linux``, ``Darwain``
 #     etc.
 #
-#   ``XHOSTTYPE <hosttype1> <hosttype2> ...``
+#   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 #
 #     If specified, gives the names of the host system type to *not* include
 #     the test.  This check is performed after the check for the host system
@@ -242,18 +243,18 @@ INCLUDE(TribitsAddTestHelpers)
 #     some platforms since the return value is unreliable.  This is set using
 #     the built-in ctest property ``PASS_REGULAR_EXPRESSION``.
 #
-#   ``PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."``
+#   ``PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 #
 #     If specified, then a test will be assumed to pass only if one of the
-#     regular expressions ``<regex1>``, ``<regex2>`` etc. match the output.
+#     regular expressions ``<regex0>``, ``<regex1>`` etc. match the output.
 #     Otherwise, the test will fail.  This is set using the built-in test
 #     property ``PASS_REGULAR_EXPRESSION``.  Consult standard CMake
 #     documentation.
 #
-#   ``FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."``
+#   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 #
 #     If specified, then a test will be assumed to fail if one of the regular
-#     expressions ``<regex1>``, ``<regex2>`` etc. match the output.
+#     expressions ``<regex0>``, ``<regex1>`` etc. match the output.
 #     Otherwise, the test will pass.  This is set using the built-in test
 #     property ``FAIL_REGULAR_EXPRESSION``.
 #
@@ -262,21 +263,32 @@ INCLUDE(TribitsAddTestHelpers)
 #     If passed in, then the pass/fail criteria will be inverted.  This is set
 #     using the built-in test property ``WILL_FAIL``.
 #
-#   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ...``
+#   ``ENVIRONMENT <var0>=<value0> <var1>=<value1> ...``
 #
 #     If passed in, the listed environment varaibles will be set before
 #     calling the test.  This is set using the built-in test property
 #     ``ENVIRONMENT``.
 #
+#   ``TIMEOUT <maxSeconds>``
+#
+#     If passed in, gives maximum number of seconds the test will be allowed
+#     to run beforebeing timed-out.  This sets the test property ``TIMEOUT``.
+#     **WARNING:** Rather than just increasing the timeout for an expensive
+#     test, please try to either make the test run faster or relegate the test
+#     to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
+#     ``WEEKLY`` for extremently expensive tests).  Expensive tests are one of
+#     the worse forms of technical debt that a project can have!
+#
 # In the end, this function just calls the built-in CMake commands
 # ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
-# ...)`` to set up a executable process for ``ctest`` to run and determine
-# pass/fail.  Therefore, this wrapper funtion does not provide any
-# fundamentally new features that is avaiable in the basic usage if
-# CMake/CTes.  However, this wrapper function takes care of many of the
-# details and boiler-plate CMake code that it takes to add such as test (or
-# tests) and enforces consistency across a large project for how tests are
-# defined, run, and named (to avoid test name clashes).
+# ...)`` to set up a executable process for ``ctest`` to run, determine
+# pass/fail criteria, and set some other test properties.  Therefore, this
+# wrapper funtion does not provide any fundamentally new features that are
+# already avaiable in the basic usage if CMake/CTest.  However, this wrapper
+# function takes care of many of the details and boiler-plate CMake code that
+# it takes to add such a test (or tests) and enforces consistency across a
+# large project for how tests are defined, run, and named (to avoid test name
+# clashes).
 #
 # If more flexibility or control is needed when defining tests, then the
 # function ``TRIBITS_ADD_ADVANCED_TEST()`` should be used instead.
@@ -289,21 +301,19 @@ INCLUDE(TribitsAddTestHelpers)
 # **Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())**
 #
 # This funtion is primarily designed to make it easy to run tests for
-# exectaubles built usign the function ``TRIBITS_ADD_EXECUTABLE()``.  To set
-# up tests to run arbitrary executables, see below.
+# exectaubles built using the function `TRIBITS_ADD_EXECUTABLE()`_.  To set up
+# tests to run arbitrary executables, see below.
 #
 # By default, the command to run for the executable is determined by first
-# getting the exectuable name which by default is assumed to be::
+# getting the exectuable name which by default is assumed to be
+# ``<fullExeName``> =::
 #
 #   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 #
 # which is (by no coincidence) idential to how it is selected in
-# ``TRIBITS_ADD_EXECUTABLE()`` (see `Executable and Target Name`_).
-#
-# If ``NONEXEPREFIX`` is passed in, the prefix ``${PACKAGE_NAME}_`` is not
-# prepended to the assumed name.  If ``NOEXESUFFIX`` is passed in, then
-# ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be appended
-# to the name.
+# `TRIBITS_ADD_EXECUTABLE()`_.  This name can be alterned by passing in
+# ``NOEXEPREFIX``, ``NOEXESUFFIX``, and ``ADD_DIR_TO_NAME`` as described in
+# `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_.
 #
 # By default, this executable is assumed to be in the current CMake binary
 # directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
@@ -423,8 +433,6 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;RUN_SERIAL"
      ${ARGN}
      )
-  # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
-  # advertise it!
 
   IF (PARSE_ARGS)
     LIST(LENGTH PARSE_ARGS NUM_PARSE_ARGS)

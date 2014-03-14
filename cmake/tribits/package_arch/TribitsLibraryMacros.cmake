@@ -305,18 +305,22 @@ ENDFUNCTION()
 #
 # **Install Targets (TRIBITS_ADD_LIBRARY())**
 #
-# An install target for the library is created by default using
-# ``INSTALL(TARGETS <libName> ...)``.  However, this install target will not
-# get created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+# By default, an install target for the library is created using
+# ``INSTALL(TARGETS <libName> ...)`` to install into the directory
+# ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
+# ``${PROJECT}_INSTALL_LIB_DIR``).  However, this install target will not get
+# created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
 # ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 # target will get created.  Also, this install target will *not* get created
 # if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
 #
-# An install target for the headers listed in ``HEADERS`` will get created
-# using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
-# ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  Note that an
-# install target will *not* get created for the headers listed in
-# ``NOINSTALLHEADERS``.
+# By default, an install target for the headers listed in ``HEADERS`` will get
+# created using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
+# ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
+# installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
+# actual install directory is given by
+# ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``).  Note that an install target will
+# *not* get created for the headers listed in ``NOINSTALLHEADERS``.
 #
 # .. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
 #

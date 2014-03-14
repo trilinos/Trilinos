@@ -693,6 +693,124 @@ If the particular compiler does not support deprecated warnings, then this
 macro is defined to be empty.  See `Regulated Backward Compatibility and
 Deprecated Code`_ for more details.
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR()
+----------------------------------
+
+Function that copies a list of files from a soruce directory to a
+destination directory at configure time, typically so that it can be used in
+one or more tests.  This sets up all of the custom CMake commands and
+targets to ensure that the files in the destiation directory are always up
+to date just by building the ``ALL`` target.
+
+Usage::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    [SOURCE_FILES <file1> <file2> ...]
+    [SOURCE_DIR <sourceDir>]
+    [DEST_FILES <dfile1> <dfile2> ...]
+    [DEST_DIR <destDir>]
+    [TARGETDEPS <targDep1> <targDep2> ...]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+This function has a few valid calling modes:
+
+**1) Source files and destination files have the same name**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    SOURCE_FILES <file1> <file2> ...
+    [SOURCE_DIR <sourceDir>]
+    [DEST_DIR <destDir>]
+    [TARGETDEPS <targDep1> <targDep2> ...]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the names of the source files and the destination files
+are the same but just live in different directories.
+
+**2) Source files have a prefix different from the destination files**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    DEST_FILES <file1> <file2> ...
+    SOURCE_PREFIX <srcPrefix>
+    [SOURCE_DIR <sourceDir>]
+    [DEST_DIR <destDir>]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the source files have the same basic name as the
+destination files except they have the prefix 'srcPrefix' appended
+to the name.
+
+**3) Source files and destination files have completely different names**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    SOURCE_FILES <sfile1> <sfile2> ...
+    [SOURCE_DIR <sourceDir>]
+    DEST_FILES <dfile1> <dfile2> ...
+    [DEST_DIR <destDir>]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the source files and destination files have completely
+different prefixes.
+
+The individual arguments are:
+
+  ``SOURCE_FILES <file1> <file2> ...``
+
+    Listing of the source files relative to the source directory given by
+    the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
+    the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
+    <srcPrefix>`` appended.
+
+  ``SOURCE_DIR <sourceDir>``
+
+    Optional argument that gives (absolute) the base directory for all of the
+    source files.  If omited, this takes the default value of 
+    ``${CMAKE_CURRENT_SOURCE_DIR}``.
+
+  ``DEST_FILES <file1> <file2> ...``
+
+    Listing of the destination files relative to the destination directory
+    given by the argument ``DEST_DIR <destDir>`` If omited, this list will
+    be the same as given by the ``SOURCE_FILES`` list.
+
+  ``DEST_DIR <destDir>``
+
+    Optional argument that gives the (absolute) base directory for all of the
+    destination files.  If omited, this takes the default value of 
+    ``${CMAKE_CURRENT_BINARY_DIR}``
+
+  ``TARGETDEPS <targDep1> <targDep2> ...``
+
+    Listing of general CMake targets that these files will be added as
+    dependencies to.
+
+  ``EXEDEPS <exeDep1> <exeDep2> ...``
+
+    Listing of executable targets that these files will be added as
+    dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
+    appended to the names of the targets.  This ensures that if the
+    executable target is built that these files will also be copied as well.
+
+  ``NOEXEPREFIX``
+
+    Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
+    appended to the arguments in the ``EXEDEPS`` list.
+
 TRIBITS_INCLUDE_DIRECTORIES()
 -----------------------------
 
@@ -722,7 +840,7 @@ directory does need to be set for instaltion testing.
 TRIBITS_ADD_LIBRARY()
 ---------------------
 
-Function used to add a CMake library target using ``ADD_LIBRARY()``.
+Function used to add a CMake library and target using ``ADD_LIBRARY()``.
 
 Usage::
 
@@ -842,18 +960,22 @@ current packages list of include directories
 
 **Install Targets (TRIBITS_ADD_LIBRARY())**
 
-An install target for the library is created by default using
-``INSTALL(TARGETS <libName> ...)``.  However, this install target will not
-get created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+By default, an install target for the library is created using
+``INSTALL(TARGETS <libName> ...)`` to install into the directory
+``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
+``${PROJECT}_INSTALL_LIB_DIR``).  However, this install target will not get
+created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
 ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 target will get created.  Also, this install target will *not* get created
 if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
 
-An install target for the headers listed in ``HEADERS`` will get created
-using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
-``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  Note that an
-install target will *not* get created for the headers listed in
-``NOINSTALLHEADERS``.
+By default, an install target for the headers listed in ``HEADERS`` will get
+created using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
+``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
+installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
+actual install directory is given by
+``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``).  Note that an install target will
+*not* get created for the headers listed in ``NOINSTALLHEADERS``.
 
 .. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
 
@@ -881,176 +1003,265 @@ TRIBITS_ADD_EXECUTABLE()
 ------------------------
 
 Function used to create an executable (typically for a test or example),
-using the built-in CMake comamnd ``ADD_EXECUTABLE()``.
+using the built-in CMake command ``ADD_EXECUTABLE()``.
 
 Usage::
 
   TRIBITS_ADD_EXECUTABLE(
-    <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
-    SOURCES <src1> <src2> ...
-    [CATEGORIES <category1>  <category2> ...]
-    [HOST <host1> <host2> ...]
-    [XHOST <host1> <host2> ...]
-    [HOSTTYPE <hosttype1> <hosttype2> ...]
-    [XHOSTTYPE <hosttype1> <hosttype2> ...]
-    [DIRECTORY <dir> ]
-    [DEPLIBS <lib1> <lib2> ... ]
-    [COMM [serial] [mpi] ]
-    [LINKER_LANGUAGE [C|CXX|Fortran] ]
-    [ADD_DIR_TO_NAME]
-    [DEFINES -DS<someDefine>]
+    <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]  [ADD_DIR_TO_NAME]
+    SOURCES <src0> <src1> ...
+    [CATEGORIES <category0>  <category1> ...]
+    [HOST <host0> <host1> ...]
+    [XHOST <host0> <host1> ...]
+    [HOSTTYPE <hosttype0> <hosttype1> ...]
+    [XHOSTTYPE <hosttype0> <hosttype1> ...]
+    [DIRECTORY <dir>]
+    [DEPLIBS <lib0> <lib1> ...]
+    [COMM [serial] [mpi]]
+    [LINKER_LANGUAGE (C|CXX|Fortran)]
+    [DEFINES -D<define0> -D<define1> ...]
     [INSTALLABLE]
     )
 
-**Formal Arguments:**
+*Sections:*
+
+* `Formal Arguments (TRIBITS_ADD_EXECUTABLE())`_
+* `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_
+* `Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())`_
+* `Install Target (TRIBITS_ADD_EXECUTABLE())`_
+
+.. _Formal Arguments (TRIBITS_ADD_EXECUTABLE()):
+
+**Formal Arguments (TRIBITS_ADD_EXECUTABLE())**
 
   ``<exeRootName>``
 
-    The base name of the exectuable and CMake target.
-
-ToDo: Document other arguments!
-
-.. _Executable and Target Name:
-
-**Executable and Target Name:**
-
-By default, the actual name of the executable and target will be::
-
-  ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
-
-If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
-is removed.  If the option ``NOEXESUFFIX`` is passed in, the suffix
-``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.
-
-The reason that a default prefix is appended to the executable name is
-because the primary reason to create an executable is typically to create a
-test or an example that is private to the package.  This prefix helps to
-namespace the exexutable and its target so as to avoid name clashes with
-targets in other packages.  Also, if ``INSTALLABLE`` is set and this
-executable gets installed into the ``<install>/bin/`` directory, then this
-prefix helps to avoid clashing with executables installed by other packages.
-
-**Postcondition:**
-
-ToDo: Document post conditions!
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR()
-----------------------------------
-
-Function that copies a list of files from a soruce directory to a
-destination directory at configure time, typically so that it can be used in
-one or more tests.  This sets up all of the custom CMake commands and
-targets to ensure that the files in the destiation directory are always up
-to date just by building the ``ALL`` target.
-
-Usage::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    [SOURCE_FILES <file1> <file2> ...]
-    [SOURCE_DIR <sourceDir>]
-    [DEST_FILES <dfile1> <dfile2> ...]
-    [DEST_DIR <destDir>]
-    [TARGETDEPS <targDep1> <targDep2> ...]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-This function has a few valid calling modes:
-
-**1) Source files and destination files have the same name**::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    SOURCE_FILES <file1> <file2> ...
-    [SOURCE_DIR <sourceDir>]
-    [DEST_DIR <destDir>]
-    [TARGETDEPS <targDep1> <targDep2> ...]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-In this case, the names of the source files and the destination files
-are the same but just live in different directories.
-
-**2) Source files have a prefix different from the destination files**::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    DEST_FILES <file1> <file2> ...
-    SOURCE_PREFIX <srcPrefix>
-    [SOURCE_DIR <sourceDir>]
-    [DEST_DIR <destDir>]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-In this case, the source files have the same basic name as the
-destination files except they have the prefix 'srcPrefix' appended
-to the name.
-
-**3) Source files and destination files have completely different names**::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    SOURCE_FILES <sfile1> <sfile2> ...
-    [SOURCE_DIR <sourceDir>]
-    DEST_FILES <dfile1> <dfile2> ...
-    [DEST_DIR <destDir>]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-In this case, the source files and destination files have completely
-different prefixes.
-
-The individual arguments are:
-
-  ``SOURCE_FILES <file1> <file2> ...``
-
-    Listing of the source files relative to the source directory given by
-    the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
-    the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
-    <srcPrefix>`` appended.
-
-  ``SOURCE_DIR <sourceDir>``
-
-    Optional argument that gives (absolute) the base directory for all of the
-    source files.  If omited, this takes the default value of 
-    ``${CMAKE_CURRENT_SOURCE_DIR}``.
-
-  ``DEST_FILES <file1> <file2> ...``
-
-    Listing of the destination files relative to the destination directory
-    given by the argument ``DEST_DIR <destDir>`` If omited, this list will
-    be the same as given by the ``SOURCE_FILES`` list.
-
-  ``DEST_DIR <destDir>``
-
-    Optional argument that gives the (absolute) base directory for all of the
-    destination files.  If omited, this takes the default value of 
-    ``${CMAKE_CURRENT_BINARY_DIR}``
-
-  ``TARGETDEPS <targDep1> <targDep2> ...``
-
-    Listing of general CMake targets that these files will be added as
-    dependencies to.
-
-  ``EXEDEPS <exeDep1> <exeDep2> ...``
-
-    Listing of executable targets that these files will be added as
-    dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
-    appended to the names of the targets.  This ensures that if the
-    executable target is built that these files will also be copied as well.
+    The root name of the exectuable (and CMake target) (see `Executable and
+    Target Name (TRIBITS_ADD_EXECUTABLE())`_).
 
   ``NOEXEPREFIX``
 
-    Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
-    appended to the arguments in the ``EXEDEPS`` list.
+    If passed in, then ``${PACKAGE_NAME}_`` is not added the beginning of
+    the executable name (see `Executable and Target Name
+    (TRIBITS_ADD_EXECUTABLE())`_).
+
+  ``NOEXESUFFIX``
+
+    If passed in, then ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` and
+    not added to the end of the executable name (see `Executable and
+    Target Name (TRIBITS_ADD_EXECUTABLE())`_).
+
+  ``ADD_DIR_TO_NAME``
+
+    If passed in, the directory path relative to the package base directory
+    (with "/" replaced by "_") is added to the executable name (see
+    `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This
+    provides a simple way to create unique test exectuable names inside of a
+    given TriBITS package.  Only test executables in the same directory
+    would need to have unique ``<execRootName>`` passed in.
+
+  ``SOURCES <src0> <src1> ...``
+
+    Gives the source files that will be compiled into the built executable.
+    By default, these sources are assumed to be in the current working
+    directory or gives the relative path to the current working directory.
+    If ``<srci>`` is an absolute path, then that full file path is used.
+    This list of sources (with adjusted directory path) are passed into
+    ``ADD_EXECUTABLE(<fullExeName> ... )``.  After calling this function,
+    the properties of the source files can be altered using
+    ``SET_SOURCE_FILE_PROPERTIES()``.
+
+  ``DIRECTORY <dir>``
+
+    If specified, then the soruces for the exectuable listed in ``SOURCES
+    <src0> <src1> ...`` are assumed to be in the relative or absolute
+    directory ``<dir>`` instead of the current source directory.  This
+    directrory path is prepended to each source file name ``<srci>`` unless
+    ``<srci>`` is an absolute path.
+
+  ``CATEGORIES <category0> <category1> ...``
+
+    Gives the test categories for which this test will be added.  See
+    `TRIBITS_ADD_TEST()`_ for more details.
+
+  ``HOST <host0> <host1> ...``
+
+    The list of hosts for which to enable the test (see `TRIBITS_ADD_TEST()`_).
+
+  ``XHOST <host0> <host1> ...``
+
+    The list of hosts for which **not** to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
+
+  ``HOSTTYPE <hosttype0> <hosttype1> ...``
+
+    The list of host types for which to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
+
+  ``XHOSTTYPE <hosttype0> <hosttype1> ...``
+
+    The list of host types for which **not** to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
+
+  ``DEPLIBS <lib0> <lib1> ...``
+
+    Specifies extra libraries that will be linked to the executable using
+    ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
+    ''TESTONLY'') defined in the current SE package or any upstream SE
+    packages do **NOT** need to be listed!  TriBITS automatically links
+    these libraries to the executable!  The only libraries that should be
+    listed in this argument are either ``TESTONLY`` libraries, or other
+    libraries that are built external from this CMake project and are not
+    provided through a proper TriBITS TPL.  The latter usage is not
+    recommended.  External TPLs should be handled as a declared TriBITS TPL.
+    For a ``TESTONLY`` library, the include directories will automatically
+    be added using::
+
+      INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
+
+    where ``<libi>_INCLUDE_DIRS`` was set by::
+
+      TRIBITS_ADD_LIBRARY(<libi> ... TESTONLY ...)
+
+    Therefore, to link to a defined ``TESTONLY`` library in any upstream
+    enabled package, one just needs to pass in the library name through
+    ``DEPLIBS ... <libi> ...`` and that is it!
+
+  ``COMM [serial] [mpi]``
+
+    If specified, selects if the test will be added in serial and/or MPI
+    mode.  See the ``COMM`` argument in the script
+    `TRIBITS_ADD_TEST()`_ for more details.
+
+  ``LINKER_LANGUAGE (C|CXX|Fortran)``
+
+    If specified, overrides the linker language used by setting the target
+    property ``LINKER_LANGUAGE``.  By default, CMake choses the compiler to
+    be used as the linker based on file extensions.  The most typical use
+    case is when Fortran-only or C-only sources are passed in through
+    ``SOURCES`` but a C++ linker is needed because there are upstream C++
+    libraries.
+
+  ``DEFINES -D<define0> -D<define1> ...``
+
+    Add the listed defines using ``ADD_DEFINITIONS()``.  These should only
+    affect the listed sources for the built executable and not other
+    compiles in this directory due to the FUNCTION scoping.
+
+  ``INSTALLABLE``
+
+    If passed in, then an install target will be added to install the built
+    exectuable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (see
+    `Install Target (TRIBITS_ADD_EXECUTABLE())`_).
+
+.. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
+
+**Executable and Target Name (TRIBITS_ADD_EXECUTABLE())**
+
+By default, the full name of the executable and target name
+``<fullExecName>`` = ::
+
+  ${PACKAGE_NAME}_<exeRootName>
+
+If ``ADD_DIR_TO_NAME`` is set, then the directory path relative to the
+package base directory (with "/" replaced with "_"), or ``<relDirName>``, is
+added to the executable name to form ``<fullExecName>`` = ::
+
+  ${PACKAGE_NAME}_<relDirName>_<exeRootName>
+
+If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
+is removed.
+
+CMake will add the executable suffix
+``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` the actual executable file if
+the option ``NOEXESUFFIX`` is not passed in but this suffix is never added
+to the target name.
+
+The reason that a default prefix is prepended to the executable and target
+name is because the primary reason to create an executable is typically to
+create a test or an example that is private to the package.  This prefix
+helps to namespace the exexutable and its target so as to avoid name clashes
+with targets in other packages.  It also helps to avoid clashes if the
+executable gets installed into the install directory (if ``INSTALLABLE`` is
+specified).
+
+.. _Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE()):
+
+**Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())**
+
+Once ``ADD_EXECUTABLE(<fullExeName> ... )`` is called, one can set and
+change properties on the ``<fullExeName>`` executable target using
+``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
+listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
+any CMake project.
+
+.. _Install Target (TRIBITS_ADD_EXECUTABLE()):
+
+**Install Target (TRIBITS_ADD_EXECUTABLE())**
+
+If ``INSTALLABLE`` is passed in, then an install target ``INSTALL(TARGETS
+<fullExeName> ...)`` is added to install the built executable into the
+``${CMAKE_INSTALL_PREFIX}/bin/`` directory (actual install directory path is
+determined by ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``) .
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST()
+---------------------------------
+
+Add an executable and a test (or several tests) all in one shot.
+
+Usage::
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]  [ADD_DIR_TO_NAME]
+    SOURCES <src0> <src1> ...
+    [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
+    [CATEGORIES <category0>  <category1> ...]
+    [HOST <host0> <host1> ...]
+    [XHOST <xhost0> <xhost1> ...]
+    [XHOST_TEST <xhost0> <xhost1> ...]
+    [HOSTTYPE <hosttype0> <hosttype1> ...]
+    [XHOSTTYPE <xhosttype0> <xhosttype1> ...]
+    [XHOSTTYPE_TEST <xhosttype0> <xhosttype1> ...]
+    [DIRECTORY <dir>]
+    [DEFINES -DS<someDefine>]
+    [DEPLIBS <lib0> <lib1> ... ]
+    [COMM [serial] [mpi]]
+    [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
+    [NUM_MPI_PROCS <numProcs>]
+    [LINKER_LANGUAGE (C|CXX|Fortran)]
+    [STANDARD_PASS_OUTPUT
+      | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+    [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+    [WILL_FAIL]
+    [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
+    [INSTALLABLE]
+    [TIMEOUT <maxSeconds>]
+    )
+
+This function takes a fairly common set of arguments to
+`TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ but not the full set
+passed to ``TRIBITS_ADD_TEST()``.  See the documentation for
+`TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ to see which arguments
+are accpeted by which functions.
+
+Arguments that are specific to this function and not contained in
+``TRIBITS_ADD_EXECUTABLE()`` or ``TRIBITS_ADD_TEST()`` include:
+
+  ``XHOST_TEST <xhost0> <xhost1> ...``
+
+    When specified, this disables just running the tests for the named hosts
+    ``<xhost0>``, ``<xhost0>`` etc. but still builds the executable for the
+    test.
+
+  ``XHOSTTYPE_TEST <xhosttype0> <hosttype1> ...``
+
+    When specified, this disables just running the tests for the named host
+    types ``<hosttype0>``, ``<hosttype0>``, ..., but still builds the
+    executable for the test.
+
+This is the function to use for simple test executbles that you want to run
+that either takes no arguments or just a simple set of arguments passed in
+through ``ARGS``.
 
 TRIBITS_ADD_TEST()
 ------------------
@@ -1064,21 +1275,22 @@ Usage::
     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
     [DIRECTORY <directory>]
     [ADD_DIR_TO_NAME]
-    [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
-      | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
+    [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...
+      | POSTFIX_AND_ARGS_0 <postfix> <arg0> <arg1> ...
         POSTFIX_AND_ARGS_1 ... ]
     [COMM [serial] [mpi]]
     [NUM_MPI_PROCS <numProcs>]
-    [CATEGORIES <category1>  <category2> ...]
-    [HOST <host1> <host2> ...]
-    [XHOST <host1> <host2> ...]
-    [HOSTTYPE <hosttype1> <hosttype2> ...]
-    [XHOSTTYPE <hosttype1> <hosttype2> ...]
+    [CATEGORIES <category0>  <category1> ...]
+    [HOST <host0> <host1> ...]
+    [XHOST <host0> <host1> ...]
+    [HOSTTYPE <hosttype0> <hosttype1> ...]
+    [XHOSTTYPE <hosttype0> <hosttype1> ...]
     [STANDARD_PASS_OUTPUT
-      | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-    [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+      | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+    [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
     [WILL_FAIL]
-    [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+    [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
+    [TIMEOUT <maxSeconds>]
     )
 
 *Sections:*
@@ -1154,7 +1366,7 @@ Usage::
     property ``RUN_SERIAL`` using the built-in CMake function
     ``SET_TESTS_PROPERTIES()``.
  
-  ``ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...``
+  ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 
     If specified, then a set of arguments can be passed in quotes.  If
     multiple groups of arguments are passed in different quoted clusters of
@@ -1164,18 +1376,18 @@ Usage::
     named ``${TEST_NAME}_xy`` where ``xy`` = ``00``, ``01``, ``02``, and so
     on.
  
-  ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg1> <arg2> ...``
+  ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg0> <arg1> ...``
 
     If specified, gives a sequence of sets of test postfix names and arguments
     lists for different tests.  For example, a set of three different tests
     with argument lists can be specified as::
       
-      POSTIFX_AND_ARGS_0 postfix1 --arg1 --arg2="dummy"
-      POSTIFX_AND_ARGS_1 postfix2  --arg2="fly"
-      POSTIFX_AND_ARGS_3 postfix3  --arg2="bags"
+      POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
+      POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
+      POSTIFX_AND_ARGS_2 postfix2  --arg2="bags"
  
     This will create three different test cases with the postfix names
-    ``postfix1``, ``postfix2``, and ``postfix3``.  The indexes must be
+    ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
     consecutive starting a ``0`` and going up to (currently) ``19``.  The main
     advantages of using these arguments instead of just 'ARGS' are that you
     can give meaningful name to each test case and you can specify multiple
@@ -1197,7 +1409,7 @@ Usage::
     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
     ignored.
  
-  ``HOST <host1> <host2> ...``
+  ``HOST <host0> <host1> ...``
 
     If specified, gives a list of hostnames where the test will be included.
     The current hostname is determined by the built-in CMake command
@@ -1208,14 +1420,14 @@ Usage::
     ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
     output under the section ``Probing the environment``.
  
-  ``XHOST <host1> <host2> ...``
+  ``XHOST <host0> <host1> ...``
 
     If specified, gives a list of hostnames (see ``HOST`` argument) where
     the test will *not* be added.  This check is performed after the check
     for the hostnames in the ``HOST`` list if it should exist.  Therefore,
     this list exclusion list overrides the 'HOST' inclusion list.
 
-  ``CATEGORIES <category1> <category2> ...``
+  ``CATEGORIES <category0> <category1> ...``
 
     If specified, gives the specific categories of the test.  Valid test
     categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
@@ -1231,7 +1443,7 @@ Usage::
     ``PERFORMANCE`` it will match
     ``${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE`` only.
 
-  ``HOSTTYPE <hosttype1> <hosttype2> ...``
+  ``HOSTTYPE <hosttype0> <hosttype1> ...``
 
     If specified, gives the names of the host system type (given by
     ``CMAKE_HOST_SYSTEM_NAME`` which is printed in the TriBITS cmake
@@ -1239,7 +1451,7 @@ Usage::
     the test.  Typical host system type names include ``Linux``, ``Darwain``
     etc.
 
-  ``XHOSTTYPE <hosttype1> <hosttype2> ...``
+  ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 
     If specified, gives the names of the host system type to *not* include
     the test.  This check is performed after the check for the host system
@@ -1253,18 +1465,18 @@ Usage::
     some platforms since the return value is unreliable.  This is set using
     the built-in ctest property ``PASS_REGULAR_EXPRESSION``.
 
-  ``PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."``
+  ``PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 
     If specified, then a test will be assumed to pass only if one of the
-    regular expressions ``<regex1>``, ``<regex2>`` etc. match the output.
+    regular expressions ``<regex0>``, ``<regex1>`` etc. match the output.
     Otherwise, the test will fail.  This is set using the built-in test
     property ``PASS_REGULAR_EXPRESSION``.  Consult standard CMake
     documentation.
 
-  ``FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."``
+  ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 
     If specified, then a test will be assumed to fail if one of the regular
-    expressions ``<regex1>``, ``<regex2>`` etc. match the output.
+    expressions ``<regex0>``, ``<regex1>`` etc. match the output.
     Otherwise, the test will pass.  This is set using the built-in test
     property ``FAIL_REGULAR_EXPRESSION``.
 
@@ -1273,21 +1485,32 @@ Usage::
     If passed in, then the pass/fail criteria will be inverted.  This is set
     using the built-in test property ``WILL_FAIL``.
 
-  ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ...``
+  ``ENVIRONMENT <var0>=<value0> <var1>=<value1> ...``
 
     If passed in, the listed environment varaibles will be set before
     calling the test.  This is set using the built-in test property
     ``ENVIRONMENT``.
 
+  ``TIMEOUT <maxSeconds>``
+
+    If passed in, gives maximum number of seconds the test will be allowed
+    to run beforebeing timed-out.  This sets the test property ``TIMEOUT``.
+    **WARNING:** Rather than just increasing the timeout for an expensive
+    test, please try to either make the test run faster or relegate the test
+    to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
+    ``WEEKLY`` for extremently expensive tests).  Expensive tests are one of
+    the worse forms of technical debt that a project can have!
+
 In the end, this function just calls the built-in CMake commands
 ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
-...)`` to set up a executable process for ``ctest`` to run and determine
-pass/fail.  Therefore, this wrapper funtion does not provide any
-fundamentally new features that is avaiable in the basic usage if
-CMake/CTes.  However, this wrapper function takes care of many of the
-details and boiler-plate CMake code that it takes to add such as test (or
-tests) and enforces consistency across a large project for how tests are
-defined, run, and named (to avoid test name clashes).
+...)`` to set up a executable process for ``ctest`` to run, determine
+pass/fail criteria, and set some other test properties.  Therefore, this
+wrapper funtion does not provide any fundamentally new features that are
+already avaiable in the basic usage if CMake/CTest.  However, this wrapper
+function takes care of many of the details and boiler-plate CMake code that
+it takes to add such a test (or tests) and enforces consistency across a
+large project for how tests are defined, run, and named (to avoid test name
+clashes).
 
 If more flexibility or control is needed when defining tests, then the
 function ``TRIBITS_ADD_ADVANCED_TEST()`` should be used instead.
@@ -1300,21 +1523,19 @@ is given.
 **Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())**
 
 This funtion is primarily designed to make it easy to run tests for
-exectaubles built usign the function ``TRIBITS_ADD_EXECUTABLE()``.  To set
-up tests to run arbitrary executables, see below.
+exectaubles built using the function `TRIBITS_ADD_EXECUTABLE()`_.  To set up
+tests to run arbitrary executables, see below.
 
 By default, the command to run for the executable is determined by first
-getting the exectuable name which by default is assumed to be::
+getting the exectuable name which by default is assumed to be
+``<fullExeName``> =::
 
   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 
 which is (by no coincidence) idential to how it is selected in
-``TRIBITS_ADD_EXECUTABLE()`` (see `Executable and Target Name`_).
-
-If ``NONEXEPREFIX`` is passed in, the prefix ``${PACKAGE_NAME}_`` is not
-prepended to the assumed name.  If ``NOEXESUFFIX`` is passed in, then
-``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be appended
-to the name.
+`TRIBITS_ADD_EXECUTABLE()`_.  This name can be alterned by passing in
+``NOEXEPREFIX``, ``NOEXESUFFIX``, and ``ADD_DIR_TO_NAME`` as described in
+`Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_.
 
 By default, this executable is assumed to be in the current CMake binary
 directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
@@ -1431,11 +1652,11 @@ Usage::
     [KEYWORDS <keyword1> <keyword2> ...]
     [COMM [serial] [mpi]]
     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
-    [CATEGORIES <category1> <category2> ...]
-    [HOST <host1> <host2> ...]
-    [XHOST <host1> <host2> ...]
-    [HOSTTYPE <hosttype1> <hosttype2> ...]
-    [XHOSTTYPE <hosttype1> <hosttype2> ...]
+    [CATEGORIES <category0> <category1> ...]
+    [HOST <host0> <host1> ...]
+    [XHOST <host0> <host1> ...]
+    [HOSTTYPE <hosttype0> <hosttype1> ...]
+    [XHOSTTYPE <hosttype0> <hosttype1> ...]
     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
     )
@@ -1499,7 +1720,9 @@ that control overall pass/fail are described in `Overall Pass/Fail
     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
     and created again.  Therefore, if you want to preserve the contents of
     this directory between test runs you need to copy the files it somewhere
-    else.
+    else.  This is a good option to use if the commands create intermediate
+    files and you want to make sure they get deleted before a set of test
+    cases runs again.
 
   ``FAIL_FAST``
 
@@ -1529,26 +1752,28 @@ that control overall pass/fail are described in `Overall Pass/Fail
     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
     ignored.
 
-  ``CATEGORIES <category1> <category2> ...``
+  ``CATEGORIES <category0> <category1> ...``
 
-    Gives the test categories this test will be added.  See
+    Gives the test categories for which this test will be added.  See
     `TRIBITS_ADD_TEST()`_ for more details.
 
-  ``HOST <host1> <host2> ...``
+  ``HOST <host0> <host1> ...``
 
-    The list of hosts to enable the test for (see `TRIBITS_ADD_TEST()`_).
+    The list of hosts for which to enable the test (see `TRIBITS_ADD_TEST()`_).
 
-  ``XHOST <host1> <host2> ...``
+  ``XHOST <host0> <host1> ...``
 
-    The list of hosts *not* to enable the test for (see `TRIBITS_ADD_TEST()`_).
+    The list of hosts for which **not** to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
 
-  ``HOSTTYPE <hosttype1> <hosttype2> ...``
+  ``HOSTTYPE <hosttype0> <hosttype1> ...``
 
-    The list of host types to enable the test for (see `TRIBITS_ADD_TEST()`_).
+    The list of host types for which to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
 
-  ``XHOSTTYPE <hosttype1> <hosttype2> ...``
+  ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 
-    The list of host types *not* to enable the test for (see
+    The list of host types for which **not** to enable the test (see
     `TRIBITS_ADD_TEST()`_).
 
   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.

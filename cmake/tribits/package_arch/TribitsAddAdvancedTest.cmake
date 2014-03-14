@@ -72,11 +72,11 @@ INCLUDE(PrintVar)
 #     [KEYWORDS <keyword1> <keyword2> ...]
 #     [COMM [serial] [mpi]]
 #     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
-#     [CATEGORIES <category1> <category2> ...]
-#     [HOST <host1> <host2> ...]
-#     [XHOST <host1> <host2> ...]
-#     [HOSTTYPE <hosttype1> <hosttype2> ...]
-#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
+#     [CATEGORIES <category0> <category1> ...]
+#     [HOST <host0> <host1> ...]
+#     [XHOST <host0> <host1> ...]
+#     [HOSTTYPE <hosttype0> <hosttype1> ...]
+#     [XHOSTTYPE <hosttype0> <hosttype1> ...]
 #     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #     )
@@ -140,7 +140,9 @@ INCLUDE(PrintVar)
 #     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
 #     and created again.  Therefore, if you want to preserve the contents of
 #     this directory between test runs you need to copy the files it somewhere
-#     else.
+#     else.  This is a good option to use if the commands create intermediate
+#     files and you want to make sure they get deleted before a set of test
+#     cases runs again.
 #
 #   ``FAIL_FAST``
 #
@@ -170,26 +172,28 @@ INCLUDE(PrintVar)
 #     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
 #     ignored.
 #
-#   ``CATEGORIES <category1> <category2> ...``
+#   ``CATEGORIES <category0> <category1> ...``
 #
-#     Gives the test categories this test will be added.  See
+#     Gives the test categories for which this test will be added.  See
 #     `TRIBITS_ADD_TEST()`_ for more details.
 #
-#   ``HOST <host1> <host2> ...``
+#   ``HOST <host0> <host1> ...``
 #
-#     The list of hosts to enable the test for (see `TRIBITS_ADD_TEST()`_).
+#     The list of hosts for which to enable the test (see `TRIBITS_ADD_TEST()`_).
 #
-#   ``XHOST <host1> <host2> ...``
+#   ``XHOST <host0> <host1> ...``
 #
-#     The list of hosts *not* to enable the test for (see `TRIBITS_ADD_TEST()`_).
+#     The list of hosts for which **not** to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
 #
-#   ``HOSTTYPE <hosttype1> <hosttype2> ...``
+#   ``HOSTTYPE <hosttype0> <hosttype1> ...``
 #
-#     The list of host types to enable the test for (see `TRIBITS_ADD_TEST()`_).
+#     The list of host types for which to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
 #
-#   ``XHOSTTYPE <hosttype1> <hosttype2> ...``
+#   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 #
-#     The list of host types *not* to enable the test for (see
+#     The list of host types for which **not** to enable the test (see
 #     `TRIBITS_ADD_TEST()`_).
 #
 #   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.

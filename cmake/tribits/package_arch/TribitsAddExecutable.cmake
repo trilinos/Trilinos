@@ -56,58 +56,206 @@ INCLUDE(ParseVariableArguments)
 # @FUNCTION: TRIBITS_ADD_EXECUTABLE()
 #
 # Function used to create an executable (typically for a test or example),
-# using the built-in CMake comamnd ``ADD_EXECUTABLE()``.
+# using the built-in CMake command ``ADD_EXECUTABLE()``.
 #
 # Usage::
 #
 #   TRIBITS_ADD_EXECUTABLE(
-#     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]
-#     SOURCES <src1> <src2> ...
-#     [CATEGORIES <category1>  <category2> ...]
-#     [HOST <host1> <host2> ...]
-#     [XHOST <host1> <host2> ...]
-#     [HOSTTYPE <hosttype1> <hosttype2> ...]
-#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
-#     [DIRECTORY <dir> ]
-#     [DEPLIBS <lib1> <lib2> ... ]
-#     [COMM [serial] [mpi] ]
-#     [LINKER_LANGUAGE [C|CXX|Fortran] ]
-#     [ADD_DIR_TO_NAME]
-#     [DEFINES -DS<someDefine>]
+#     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]  [ADD_DIR_TO_NAME]
+#     SOURCES <src0> <src1> ...
+#     [CATEGORIES <category0>  <category1> ...]
+#     [HOST <host0> <host1> ...]
+#     [XHOST <host0> <host1> ...]
+#     [HOSTTYPE <hosttype0> <hosttype1> ...]
+#     [XHOSTTYPE <hosttype0> <hosttype1> ...]
+#     [DIRECTORY <dir>]
+#     [DEPLIBS <lib0> <lib1> ...]
+#     [COMM [serial] [mpi]]
+#     [LINKER_LANGUAGE (C|CXX|Fortran)]
+#     [DEFINES -D<define0> -D<define1> ...]
 #     [INSTALLABLE]
 #     )
 #
-# **Formal Arguments:**
+# *Sections:*
+#
+# * `Formal Arguments (TRIBITS_ADD_EXECUTABLE())`_
+# * `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_
+# * `Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())`_
+# * `Install Target (TRIBITS_ADD_EXECUTABLE())`_
+#
+# .. _Formal Arguments (TRIBITS_ADD_EXECUTABLE()):
+#
+# **Formal Arguments (TRIBITS_ADD_EXECUTABLE())**
 #
 #   ``<exeRootName>``
 #
-#     The base name of the exectuable and CMake target.
+#     The root name of the exectuable (and CMake target) (see `Executable and
+#     Target Name (TRIBITS_ADD_EXECUTABLE())`_).
 #
-# ToDo: Document other arguments!
+#   ``NOEXEPREFIX``
 #
-# .. _Executable and Target Name:
+#     If passed in, then ``${PACKAGE_NAME}_`` is not added the beginning of
+#     the executable name (see `Executable and Target Name
+#     (TRIBITS_ADD_EXECUTABLE())`_).
 #
-# **Executable and Target Name:**
+#   ``NOEXESUFFIX``
 #
-# By default, the actual name of the executable and target will be::
+#     If passed in, then ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` and
+#     not added to the end of the executable name (see `Executable and
+#     Target Name (TRIBITS_ADD_EXECUTABLE())`_).
 #
-#   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+#   ``ADD_DIR_TO_NAME``
+#
+#     If passed in, the directory path relative to the package base directory
+#     (with "/" replaced by "_") is added to the executable name (see
+#     `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This
+#     provides a simple way to create unique test exectuable names inside of a
+#     given TriBITS package.  Only test executables in the same directory
+#     would need to have unique ``<execRootName>`` passed in.
+#
+#   ``SOURCES <src0> <src1> ...``
+#
+#     Gives the source files that will be compiled into the built executable.
+#     By default, these sources are assumed to be in the current working
+#     directory or gives the relative path to the current working directory.
+#     If ``<srci>`` is an absolute path, then that full file path is used.
+#     This list of sources (with adjusted directory path) are passed into
+#     ``ADD_EXECUTABLE(<fullExeName> ... )``.  After calling this function,
+#     the properties of the source files can be altered using
+#     ``SET_SOURCE_FILE_PROPERTIES()``.
+#
+#   ``DIRECTORY <dir>``
+#
+#     If specified, then the soruces for the exectuable listed in ``SOURCES
+#     <src0> <src1> ...`` are assumed to be in the relative or absolute
+#     directory ``<dir>`` instead of the current source directory.  This
+#     directrory path is prepended to each source file name ``<srci>`` unless
+#     ``<srci>`` is an absolute path.
+#
+#   ``CATEGORIES <category0> <category1> ...``
+#
+#     Gives the test categories for which this test will be added.  See
+#     `TRIBITS_ADD_TEST()`_ for more details.
+#
+#   ``HOST <host0> <host1> ...``
+#
+#     The list of hosts for which to enable the test (see `TRIBITS_ADD_TEST()`_).
+#
+#   ``XHOST <host0> <host1> ...``
+#
+#     The list of hosts for which **not** to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
+#
+#   ``HOSTTYPE <hosttype0> <hosttype1> ...``
+#
+#     The list of host types for which to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
+#
+#   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
+#
+#     The list of host types for which **not** to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
+#
+#   ``DEPLIBS <lib0> <lib1> ...``
+#
+#     Specifies extra libraries that will be linked to the executable using
+#     ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
+#     ''TESTONLY'') defined in the current SE package or any upstream SE
+#     packages do **NOT** need to be listed!  TriBITS automatically links
+#     these libraries to the executable!  The only libraries that should be
+#     listed in this argument are either ``TESTONLY`` libraries, or other
+#     libraries that are built external from this CMake project and are not
+#     provided through a proper TriBITS TPL.  The latter usage is not
+#     recommended.  External TPLs should be handled as a declared TriBITS TPL.
+#     For a ``TESTONLY`` library, the include directories will automatically
+#     be added using::
+#
+#       INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
+#
+#     where ``<libi>_INCLUDE_DIRS`` was set by::
+#
+#       TRIBITS_ADD_LIBRARY(<libi> ... TESTONLY ...)
+#
+#     Therefore, to link to a defined ``TESTONLY`` library in any upstream
+#     enabled package, one just needs to pass in the library name through
+#     ``DEPLIBS ... <libi> ...`` and that is it!
+#
+#   ``COMM [serial] [mpi]``
+#
+#     If specified, selects if the test will be added in serial and/or MPI
+#     mode.  See the ``COMM`` argument in the script
+#     `TRIBITS_ADD_TEST()`_ for more details.
+#
+#   ``LINKER_LANGUAGE (C|CXX|Fortran)``
+#
+#     If specified, overrides the linker language used by setting the target
+#     property ``LINKER_LANGUAGE``.  By default, CMake choses the compiler to
+#     be used as the linker based on file extensions.  The most typical use
+#     case is when Fortran-only or C-only sources are passed in through
+#     ``SOURCES`` but a C++ linker is needed because there are upstream C++
+#     libraries.
+#
+#   ``DEFINES -D<define0> -D<define1> ...``
+#
+#     Add the listed defines using ``ADD_DEFINITIONS()``.  These should only
+#     affect the listed sources for the built executable and not other
+#     compiles in this directory due to the FUNCTION scoping.
+#
+#   ``INSTALLABLE``
+#
+#     If passed in, then an install target will be added to install the built
+#     exectuable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (see
+#     `Install Target (TRIBITS_ADD_EXECUTABLE())`_).
+#
+# .. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
+#
+# **Executable and Target Name (TRIBITS_ADD_EXECUTABLE())**
+#
+# By default, the full name of the executable and target name
+# ``<fullExecName>`` = ::
+#
+#   ${PACKAGE_NAME}_<exeRootName>
+#
+# If ``ADD_DIR_TO_NAME`` is set, then the directory path relative to the
+# package base directory (with "/" replaced with "_"), or ``<relDirName>``, is
+# added to the executable name to form ``<fullExecName>`` = ::
+#
+#   ${PACKAGE_NAME}_<relDirName>_<exeRootName>
 #
 # If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
-# is removed.  If the option ``NOEXESUFFIX`` is passed in, the suffix
-# ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is removed.
+# is removed.
 #
-# The reason that a default prefix is appended to the executable name is
-# because the primary reason to create an executable is typically to create a
-# test or an example that is private to the package.  This prefix helps to
-# namespace the exexutable and its target so as to avoid name clashes with
-# targets in other packages.  Also, if ``INSTALLABLE`` is set and this
-# executable gets installed into the ``<install>/bin/`` directory, then this
-# prefix helps to avoid clashing with executables installed by other packages.
+# CMake will add the executable suffix
+# ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` the actual executable file if
+# the option ``NOEXESUFFIX`` is not passed in but this suffix is never added
+# to the target name.
 #
-# **Postcondition:**
-# 
-# ToDo: Document post conditions!
+# The reason that a default prefix is prepended to the executable and target
+# name is because the primary reason to create an executable is typically to
+# create a test or an example that is private to the package.  This prefix
+# helps to namespace the exexutable and its target so as to avoid name clashes
+# with targets in other packages.  It also helps to avoid clashes if the
+# executable gets installed into the install directory (if ``INSTALLABLE`` is
+# specified).
+#
+# .. _Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE()):
+#
+# **Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())**
+#
+# Once ``ADD_EXECUTABLE(<fullExeName> ... )`` is called, one can set and
+# change properties on the ``<fullExeName>`` executable target using
+# ``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
+# listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
+# any CMake project.
+#
+# .. _Install Target (TRIBITS_ADD_EXECUTABLE()):
+#
+# **Install Target (TRIBITS_ADD_EXECUTABLE())**
+#
+# If ``INSTALLABLE`` is passed in, then an install target ``INSTALL(TARGETS
+# <fullExeName> ...)`` is added to install the built executable into the
+# ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (actual install directory path is
+# determined by ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``) .
 # 
 FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
