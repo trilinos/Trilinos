@@ -51,7 +51,7 @@
 namespace ROL {
 
 std::string Intrepid_Version() {
-  return("Rapid Optimization Library Version 1.0 / Trilinos 11 - 03/13/2014");
+  return("Rapid Optimization Library Version 1.0 / Trilinos 11 - 03/14/2014");
 }
 
 } // namespace ROL
