@@ -381,15 +381,15 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
         stk::mesh::Part &part1 = *meshMetaData.get_part("part1");
         stk::mesh::Part &part2 = *meshMetaData.get_part("part2");
 
-        stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[0], part1);
-        stk::mesh::Entity node2 = bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[1], part1);
-        stk::mesh::Entity node3 = bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[2], part1);
-        stk::mesh::Entity node4 = bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[3], part1);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[0], part1);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[1], part1);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[2], part1);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[3], part1);
 
-        stk::mesh::Entity node5 = bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[0], part2);
-        stk::mesh::Entity node6 = bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[1], part2);
-        stk::mesh::Entity node7 = bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[2], part2);
-        stk::mesh::Entity node8 = bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[3], part2);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[0], part2);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[1], part2);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[2], part2);
+        bulkData.declare_entity(stk::topology::NODE_RANK, part2Nodes[3], part2);
 
         bulkData.modification_end();
 
