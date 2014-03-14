@@ -722,14 +722,8 @@ private: // private member functions
     const size_type increment = static_cast<size_type>(1) << offset;
 
     size_type * available_ptr = &m_available_indexes[block];
-    size_type old_available = volatile_load(available_ptr);
-    size_type available;
 
-    do {
-      available = old_available;
-      const size_type new_available = available | increment;
-      old_available = atomic_compare_exchange(available_ptr, available, new_available);
-    } while (old_available != available);
+    atomic_or(available_ptr, increment);
 
     return true;
   }
