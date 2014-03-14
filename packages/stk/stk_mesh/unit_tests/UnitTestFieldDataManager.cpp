@@ -487,7 +487,7 @@ TEST(ContiguousFieldDataManagerTest, allocate_bucket_field_data)
 }
 
 
-void allocateAndTestBucketFieldData(const std::vector<stk::mesh::PartVector> &partsTable,
+size_t allocateAndTestNodeBucketFieldData(const std::vector<stk::mesh::PartVector> &partsTable,
         const std::vector<std::vector<int> > &bytesPerEntityForField,
         stk::mesh::FieldDataManager *fieldDataManager,
         const stk::mesh::FieldVector &fields)
@@ -497,14 +497,14 @@ void allocateAndTestBucketFieldData(const std::vector<stk::mesh::PartVector> &pa
     const stk::mesh::FieldMetaDataVector &part1FieldMetaDataVector = fieldOnPart1.get_meta_data_for_field();
     const stk::mesh::FieldMetaDataVector &part2FieldMetaDataVector = fieldOnPart2.get_meta_data_for_field();
 
+    const size_t bucketCapacity = 123;
     for(size_t i=0; i<partsTable.size(); i++)
     {
-        size_t unusedCapacity = 123;
-        fieldDataManager->allocate_bucket_field_data(stk::topology::NODE_RANK, fields, partsTable[i], unusedCapacity);
+        fieldDataManager->allocate_bucket_field_data(stk::topology::NODE_RANK, fields, partsTable[i], bucketCapacity);
 
         size_t expectedNumBucketsInField = i+1;
-        ASSERT_EQ(expectedNumBucketsInField, part1FieldMetaDataVector.size());
-        ASSERT_EQ(expectedNumBucketsInField, part2FieldMetaDataVector.size());
+        EXPECT_EQ(expectedNumBucketsInField, part1FieldMetaDataVector.size());
+        EXPECT_EQ(expectedNumBucketsInField, part2FieldMetaDataVector.size());
         for(size_t j=0; j<expectedNumBucketsInField; j++)
         {
             int expectedNumBytesPerEntity = bytesPerEntityForField[0][j];
@@ -512,6 +512,18 @@ void allocateAndTestBucketFieldData(const std::vector<stk::mesh::PartVector> &pa
             expectedNumBytesPerEntity = bytesPerEntityForField[1][j];
             EXPECT_EQ(expectedNumBytesPerEntity, part2FieldMetaDataVector[j].m_bytes_per_entity);
         }
+    }
+    return bucketCapacity;
+}
+
+
+void deallocateNodeBucketFieldData(const stk::mesh::FieldVector & fields,
+                               stk::mesh::FieldDataManager * fieldDataManager,
+                               size_t numberOfBuckets,
+                               size_t bucketCapacity)
+{
+    for (size_t bucket_id=0 ; bucket_id<numberOfBuckets ; ++bucket_id) {
+        fieldDataManager->deallocate_bucket_field_data(stk::topology::NODE_RANK,bucket_id,bucketCapacity,fields);
     }
 }
 
@@ -560,7 +572,9 @@ void allocate_bucket_field_data_tableBased(stk::mesh::FieldDataManager *fieldDat
             bytesPerEntityForField[1].push_back(bytesPerEntityForField2);
         }
 
-        allocateAndTestBucketFieldData(partsTable,bytesPerEntityForField,fieldDataManager,fields);
+//        allocateAndTestBucketFieldData(partsTable,bytesPerEntityForField,fieldDataManager,fields);
+        size_t bucketCapacity = allocateAndTestNodeBucketFieldData(partsTable,bytesPerEntityForField,fieldDataManager,fields);
+        deallocateNodeBucketFieldData(fields,fieldDataManager,partsTable.size(),bucketCapacity);
     }
 }
 
