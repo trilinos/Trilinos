@@ -157,7 +157,7 @@ public:
    *   Imbalance was only computed if user requested
    *   metrics with a parameter.
    */
-  const scalar_t getImbalance(int dim=0) const {
+  const scalar_t getWeightImbalance(int dim=0) const {
     scalar_t imb = 0;
     if (!metrics_.is_null())
       metrics_->getWeightImbalance(imb, dim);
@@ -538,8 +538,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
         this->graphModel_, solution_);
     }
     else if (algorithm_ == string("block")){
-      AlgBlock<Adapter>(this->envConst_, problemComm_,
+      AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
         this->identifierModel_, solution_);
+      algblock.solve();
     }
     else if (algorithm_ == string("rcb")){
       AlgRCB<Adapter>(this->envConst_, problemComm_,
