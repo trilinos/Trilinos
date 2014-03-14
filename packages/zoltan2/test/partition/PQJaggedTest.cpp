@@ -723,7 +723,7 @@ void getArgVals(
         }
 
     }
-    if(!( ((isCset || isPset || isPFset) && isFset)){
+    if(!( (isCset || isPset || isPFset) && isFset)){
         throw "(C || P || PF) && F are mandatory arguments.";
     }
 
