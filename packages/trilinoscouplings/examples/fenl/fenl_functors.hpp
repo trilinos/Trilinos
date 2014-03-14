@@ -137,13 +137,11 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*134ull)/100ull;
+      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
 
 
       // Increase capacity until the (node,node) map is successfully filled.
-      do {
-        set_capacity += node_node_set.failed_inserts();
-
+      {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
@@ -153,8 +151,7 @@ public:
         set_capacity = node_node_set.capacity();
 
         Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
-
-      } while ( node_node_set.failed_inserts() );
+      }
 
       device_type::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();

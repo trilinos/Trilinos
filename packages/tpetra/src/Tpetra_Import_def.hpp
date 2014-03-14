@@ -887,22 +887,22 @@ namespace Tpetra {
       typename Array<GO>::iterator permuteGIDs2_end = permuteGIDs2.end ();
       if (tgtMap1HadMaxSameGIDs) {
         // This operation allows the last (output) argument to alias the first.
-	permuteGIDs2_end = 
-	  std::set_difference(permuteGIDs2_beg,
-			      permuteGIDs2_end,
-			      doubleCountedSameGIDs.begin (),
-			      doubleCountedSameGIDs.end (),
-			      permuteGIDs2_beg);
-	    
+        permuteGIDs2_end =
+          std::set_difference(permuteGIDs2_beg,
+                              permuteGIDs2_end,
+                              doubleCountedSameGIDs.begin (),
+                              doubleCountedSameGIDs.end (),
+                              permuteGIDs2_beg);
+
 
       } else {
         // This operation allows the last (output) argument to alias the first.
-	permuteGIDs1_end = 
-	  std::set_difference(permuteGIDs1_beg,
-			      permuteGIDs1_end,
-			      doubleCountedSameGIDs.begin (),
-			      doubleCountedSameGIDs.end (),
-			      permuteGIDs1_beg);
+        permuteGIDs1_end =
+          std::set_difference(permuteGIDs1_beg,
+                              permuteGIDs1_end,
+                              doubleCountedSameGIDs.begin (),
+                              doubleCountedSameGIDs.end (),
+                              permuteGIDs1_beg);
 
       }
       std::set_union (permuteGIDs1_beg, permuteGIDs1_end,
@@ -912,17 +912,17 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
       {
         std::ostringstream os;
-	if(tgtMap1HadMaxSameGIDs) os << myRank << ": tgtMap1HadMaxSameGIDs == true"<<endl;
-	else os << myRank << ": tgtMap1HadMaxSameGIDs == false"<<endl;
+        if(tgtMap1HadMaxSameGIDs) os << myRank << ": tgtMap1HadMaxSameGIDs == true"<<endl;
+        else os << myRank << ": tgtMap1HadMaxSameGIDs == false"<<endl;
 
         os << myRank << ": reduced permuteGIDs1: {";
-	for(typename Array<GO>::iterator k = permuteGIDs1_beg;  k != permuteGIDs1_end; k++)
-	  os<<*k<<", ";
-	os<<"}"<<endl;
+        for(typename Array<GO>::iterator k = permuteGIDs1_beg;  k != permuteGIDs1_end; k++)
+          os<<*k<<", ";
+        os<<"}"<<endl;
         os << myRank << ": reduced permuteGIDs2: {";
-	for(typename Array<GO>::iterator k = permuteGIDs2_beg;  k != permuteGIDs2_end; k++)
-	  os<<*k<<", ";
-	os<<"}"<<endl;
+        for(typename Array<GO>::iterator k = permuteGIDs2_beg;  k != permuteGIDs2_end; k++)
+          os<<*k<<", ";
+        os<<"}"<<endl;
         cerr << os.str ();
       }
 #endif
@@ -1294,7 +1294,6 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setUnion () const
   {
-    typedef Tpetra::global_size_t GST;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::as;
@@ -1306,8 +1305,6 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef Import<LO, GO, Node> import_type;
-    typedef typename Array<GO>::size_type size_type;
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > unionImport;
     RCP<const map_type> srcMap = this->getSourceMap ();
     RCP<const map_type> tgtMap = this->getTargetMap ();
@@ -1316,7 +1313,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
     const int myRank = comm->getRank ();
 #endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    
+
     ArrayView<const GO> srcGIDs = srcMap->getNodeElementList ();
     ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
 
@@ -1331,7 +1328,7 @@ namespace Tpetra {
 
     // Build up the new map (same part)
     Array<GO> GIDs(numSameIDsNew + numRemoteIDsNew);
-    for(size_t i=0; i<numSameIDsNew; i++) 
+    for(size_t i=0; i<numSameIDsNew; i++)
       GIDs[i] = srcGIDs[i];
 
     // Build up the new map (remote part) and remotes list
@@ -1354,7 +1351,7 @@ namespace Tpetra {
 
     // Build the importer
     unionImport = rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(srcMap,targetMapNew,numSameIDsNew,permuteToLIDsNew,permuteFromLIDsNew,
-								    remoteLIDsNew,exportLIDsnew,exportPIDsnew,D));
+                                                                    remoteLIDsNew,exportLIDsnew,exportPIDsnew,D));
 
     return unionImport;
   }

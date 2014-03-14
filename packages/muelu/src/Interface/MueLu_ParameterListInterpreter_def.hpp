@@ -117,21 +117,18 @@ namespace MueLu {
       Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
 
       // Get hierarchy options
-      this->numDesiredLevel_ = Hierarchy::GetDefaultMaxLevels(); /* default should be provided by the Hierarchy class */;
       if (hieraList.isParameter("numDesiredLevel")) {
         this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel");
         hieraList.remove("numDesiredLevel");
       }
 
-      this->maxCoarseSize_ = Hierarchy::GetDefaultMaxCoarseSize();
       if (hieraList.isParameter("maxCoarseSize")) {
         this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize");
         hieraList.remove("maxCoarseSize");
       }
 
-      this->implicitPRrebalance_ = Hierarchy::GetDefaultPRrebalance();
       if (hieraList.isParameter("rebalance P and R")) {
-        this->implicitPRrebalance_ = !hieraList.get<bool>("rebalance P and R");
+        this->doPRrebalance_ = hieraList.get<bool>("rebalance P and R");
         hieraList.remove("rebalance P and R");
       }
 

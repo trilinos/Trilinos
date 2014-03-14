@@ -67,8 +67,6 @@
 
 namespace Kokkos {
 
-class OpenMP;
-
 /// \brief First element of the return value of UnorderedMap::insert().
 ///
 /// Inserting an element into an UnorderedMap is not guaranteed to
@@ -447,7 +445,9 @@ public:
   {
     insert_result result(invalid_index, insert_result::FAILED);
 
-    if ( is_insertable_map && 0u < m_capacity && ! m_scalars().erasable ) {
+    bool volatile & has_failed_inserts_ref = m_scalars().has_failed_inserts;
+
+    if ( is_insertable_map && 0u < m_capacity && ! m_scalars().erasable && !has_failed_inserts_ref ) {
 
       const size_type hash_value = m_hasher(k);
       const size_type hash_list = hash_value % m_hash_lists.size();
@@ -511,7 +511,7 @@ public:
 
         // Arrive here when list-append failed due to another thread
         // winning the list-append race condition, loop to try again.
-      } while(true);
+      } while(!has_failed_inserts_ref);
 
       if ( new_index != invalid_index ) {
         // Failed an attempt to insert this key due to another thread inserting first.
@@ -672,7 +672,7 @@ private: // private member functions
 
       const size_type num_blocks = m_available_indexes.size();
       const size_type starting_block = static_cast<size_type>( (hash_list * num_blocks) / m_hash_lists.size() );
-      bool & has_failed_inserts_ref = m_scalars().has_failed_inserts;
+      bool volatile & has_failed_inserts_ref = m_scalars().has_failed_inserts;
 
       // Search blocks for a free entry.
       // If a failed insert is encountered by any thread then abort the search.
@@ -704,6 +704,7 @@ private: // private member functions
       if ( new_index == invalid_index ) {
         if (!has_failed_inserts_ref) {
           has_failed_inserts_ref = true;
+          memory_fence();
         }
       }
     }

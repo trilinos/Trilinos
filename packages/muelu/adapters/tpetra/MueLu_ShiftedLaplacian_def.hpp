@@ -113,14 +113,20 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
+  if(BelosLinearProblem_!=Teuchos::null)
+    BelosLinearProblem_ -> setOperator ( TpetraA_ );
+  
 }
-
+  
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA) {
 
   TpetraA_=TpetraA;
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
+
+  if(BelosLinearProblem_!=Teuchos::null)
+    BelosLinearProblem_ -> setOperator ( TpetraA_ );
 
 }
 

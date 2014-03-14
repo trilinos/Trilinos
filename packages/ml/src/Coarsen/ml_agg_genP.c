@@ -2982,8 +2982,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Aggregate *ag = (ML_Aggregate *) data;
    struct ML_Field_Of_Values * fov;
    int flag=0; /* For the return value */
-   int RelativeLevel, NumZDir, Zorientation, *LayerId, *VertLineId;
-   int i, Nnodes;
+   int RelativeLevel, NumZDir, Zorientation, *LayerId = NULL, *VertLineId = NULL;
+   int  Nnodes;
    struct SemiCoarsen_Struct   widget;
    void *old_field;
 
@@ -3201,15 +3201,16 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
   if ( (ml->Pmat[level]).NumZDir      != -1) NumZDir     = (ml->Pmat[level]).NumZDir;
   if ( (ml->Pmat[level]).Zorientation != -1) Zorientation= (ml->Pmat[level]).Zorientation;
 
-  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir != 1) ) { 
 
      Nnodes = Amat->invec_leng/Amat->num_PDEs;
      LayerId    = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
      VertLineId = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
 
-     ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng, Amat->num_PDEs,
-                          Zorientation, NumZDir, ml->Grid[level].Grid);
-
+     NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng, Amat->num_PDEs,
+                                    Zorientation, NumZDir, ml->Grid[level].Grid);
+  }
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
      widget.nz = NumZDir;
      widget.CoarsenRate = ag->coarsen_rate;
      widget.LayerId = LayerId;
@@ -3218,8 +3219,6 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      old_field = ag->field_of_values;
      ag->field_of_values = (void *) &widget;
      flag=ML_AGG_SemiCoarseP(ml,level, clevel, data);
-     ML_free(VertLineId); 
-     ML_free(LayerId); 
      ag->field_of_values = old_field;
    }
    else {
@@ -3257,6 +3256,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      exit(EXIT_FAILURE);
    }
    }
+   if (VertLineId != NULL)  ML_free(VertLineId); 
+   if (LayerId    != NULL)  ML_free(LayerId); 
 
    return flag;
 }
@@ -4033,19 +4034,43 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  double *Avals=NULL, *BandSol=NULL, *BandMat=NULL, TheSum;
  int    *IPIV=NULL, KL, KU, KLU, N, NRHS, LDAB,INFO;
  int    *Pcols, *Pptr;
- double *Pvals;
+ double *Pvals, *dtemp = NULL;
  int    MaxStencilSize, MaxNnzPerRow;
- int    *Acoldof=NULL, *LayDiff=NULL;
+ int    *LayDiff=NULL;
  int    CurRow, LastGuy = -1, NewPtr;
  int    allocated = 0, Ndofs; 
+ int    Nghost;
+ int    *Layerdofs = NULL, *Col2Dof = NULL;
+
 
   MaxNnzPerRow = MaxHorNeighborNodes*DofsPerNode*3;
-  Acoldof = (int *) malloc( (1+MaxNnzPerRow)*sizeof(int));
   LayDiff = (int *) malloc( (1+MaxNnzPerRow)*sizeof(int));
 
   *ParamPptr = NULL;
   *ParamPcols= NULL;
   *ParamPvals= NULL;
+
+   Nghost = 0;
+#ifdef HOOKED_TO_ML
+   Nghost = ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm);
+#endif
+   dtemp    = (double *) malloc(sizeof(double)*(Ntotal*DofsPerNode+Nghost+1));
+   Layerdofs= (int *) malloc(sizeof(int)*(Ntotal*DofsPerNode+Nghost+1));
+   Col2Dof  = (int *) malloc(sizeof(int)*(Ntotal*DofsPerNode+Nghost+1));
+   for (i = 0; i < Ntotal*DofsPerNode; i++)
+      dtemp[i]= (double)LayerId[i/DofsPerNode];
+#ifdef HOOKED_TO_ML
+   ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,Amat->outvec_leng,
+                    Amat->comm, ML_OVERWRITE,NULL);
+#endif
+   for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]=dtemp[i];
+   for (i = 0; i < Ntotal*DofsPerNode;        i++) dtemp[i]= i%DofsPerNode;
+#ifdef HOOKED_TO_ML
+   ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,Amat->outvec_leng,
+                    Amat->comm, ML_OVERWRITE,NULL);
+#endif
+   for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]=dtemp[i];
+   if (dtemp != NULL) free(dtemp);
 
   NLayers   = LayerId[0];
   NVertLines= VertLineId[0];
@@ -4135,8 +4160,9 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      if (BandSol      != NULL) free(BandSol);
      if (BandMat      != NULL) free(BandMat);
      if (IPIV         != NULL) free(IPIV);
-     if (Acoldof      != NULL) free(Acoldof);
      if (LayDiff      != NULL) free(LayDiff);
+     if (Layerdofs    != NULL) free(Layerdofs);
+     if (Col2Dof      != NULL) free(Col2Dof);
      return -1;
   }
   
@@ -4243,29 +4269,20 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                     if (BandSol      != NULL) free(BandSol);
                     if (BandMat      != NULL) free(BandMat);
                     if (IPIV         != NULL) free(IPIV);
-                    if (Acoldof      != NULL) free(Acoldof);
                     if (LayDiff      != NULL) free(LayDiff);
+                    if (Layerdofs    != NULL) free(Layerdofs);
+                    if (Col2Dof      != NULL) free(Col2Dof);
                     return -1;
                 }
 
                 for (i = 0; i < RowLeng; i++) {
-                   Acoldof[i] = (Acols[i]+1)%DofsPerNode-1;
-                   if (Acoldof[i] == -1) Acoldof[i] = DofsPerNode-1;
+                   LayDiff[i]  = Layerdofs[Acols[i]]-StartLayer-node_k+2;
+                                                                    
                    /* This is the main spot where there might be off- */
                    /* processor communication. That is, when we       */
                    /* average the stencil in the horizontal direction,*/
-                   /* we would need to know the layer id of some      */
-                   /* neighbors that might reside off-processor. Right*/
-                   /* now, I just skip the averaging for things that  */
-                   /* don't reside on processor.                      */
-                   /* Note: I can't remember if we can count on the   */
-                   /* ordering of off-processor stuff. I'm not even   */
-                   /* sure if dofs within a node are necessarily      */
-                   /* consecutive.                                    */
-                   if (Acols[i] < Ndofs)
-                      LayDiff[i]  = LayerId[(Acols[i]-Acoldof[i])/DofsPerNode]-
-                                     StartLayer-node_k+2;
-                   else LayDiff[i] = -666;  /* don't average */
+                   /* we need to know the layer id of some            */
+                   /* neighbors that might reside off-processor.      */
                 }
                 PtRow = (node_k-1)*DofsPerNode+dof_i+1;
                 for (dof_j=0; dof_j < DofsPerNode; dof_j++) {
@@ -4274,7 +4291,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                    /* see dgbsv() comments for matrix format.          */
                    TheSum = 0.0;
                    for (i = 0; i < RowLeng; i++) {
-                     if ((LayDiff[i] == 0)  && (Acoldof[i] == dof_j))
+                     if ((LayDiff[i] == 0)  && (Col2Dof[Acols[i]] == dof_j))
                           TheSum += Avals[i];
                    }
                    index = LDAB*(PtCol-1)+KLU+PtRow-PtCol;
@@ -4285,7 +4302,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                       /* see dgbsv() comments for matrix format.  */
                       TheSum = 0.0;
                       for (i = 0; i < RowLeng; i++) {
-                         if ((LayDiff[i] == 1)  && (Acoldof[i] == dof_j))
+                         if ((LayDiff[i] == 1) &&(Col2Dof[Acols[i]]== dof_j))
                              TheSum += Avals[i];
                       }
                       j = PtCol+DofsPerNode;
@@ -4298,7 +4315,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                       /* see dgbsv() comments for matrix format.  */
                       TheSum = 0.0;
                       for (i = 0; i < RowLeng; i++) {
-                         if ((LayDiff[i] == -1)  && (Acoldof[i] == dof_j))
+                         if ((LayDiff[i]== -1) &&(Col2Dof[Acols[i]]== dof_j))
                              TheSum += Avals[i];
                       }
                       j = PtCol-DofsPerNode;
@@ -4347,8 +4364,9 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   if (BandSol      != NULL) free(BandSol);
   if (BandMat      != NULL) free(BandMat);
   if (IPIV         != NULL) free(IPIV);
-  if (Acoldof      != NULL) free(Acoldof);
   if (LayDiff      != NULL) free(LayDiff);
+  if (Layerdofs    != NULL) free(Layerdofs);
+  if (Col2Dof      != NULL) free(Col2Dof);
 
  /*
   * Squeeze the -1's out of the columns. At the same time convert Pcols
@@ -4416,16 +4434,17 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
 
       if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) return -1;
    }
-
+   else {
+      if  (NumNodesPerVertLine == -1) return -4;
+      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) return -3;
+   }
    if ( (Ndof%DofsPerNode) != 0) return -2;
-   if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) return -3;
 
    Nnodes = Ndof/DofsPerNode;
 
    for (MyNode = 0; MyNode < Nnodes;  MyNode++) VertLineId[MyNode]= -1;
    for (MyNode = 0; MyNode < Nnodes;  MyNode++) LayerId[MyNode]   = -1;
 
-   NVertLines = Nnodes/NumNodesPerVertLine;
 
    if (MeshNumbering == 1) {
       for (MyNode = 0; MyNode < Nnodes; MyNode++) {
@@ -4434,6 +4453,7 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
       }
    }
    else if (MeshNumbering == 2) {
+      NVertLines = Nnodes/NumNodesPerVertLine;
       for (MyNode = 0; MyNode < Nnodes; MyNode++) {
          VertLineId[MyNode]   = MyNode%NVertLines;
          LayerId[MyNode]   = (MyNode- VertLineId[MyNode])/NVertLines;
@@ -4493,6 +4513,7 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
             while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
                     (ytemp[next] == yfirst))
                next++;
+            if (NumBlocks == 0) NumNodesPerVertLine = next-index;
             if (next-index != NumNodesPerVertLine) {
                printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumNodesPerVertLine);
                exit(EXIT_FAILURE);
@@ -4521,6 +4542,5 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
              printf("Warning: did not assign %d to a Layer?????\n",i);
           }
        }
-       return 0;
+       return NumNodesPerVertLine;
 }
-

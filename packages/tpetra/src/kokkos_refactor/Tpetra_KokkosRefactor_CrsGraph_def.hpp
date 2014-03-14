@@ -2616,6 +2616,13 @@ namespace Tpetra {
     ptrs = null;
     inds = null;
     // finalize local graph
+    //
+    // TODO (mfh 13 Mar 2014) getNodeNumDiags(), isUpperTriangular(),
+    // and isLowerTriangular() depend on computeGlobalConstants(), in
+    // particular the part where it looks at the local matrix.  You
+    // have to use global indices to determine which entries are
+    // diagonal, or above or below the diagonal.  However, lower or
+    // upper triangularness is a local property.
     Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
     Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
     if      (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
@@ -2627,10 +2634,19 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::replaceColMap(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap)
+  void
+  CrsGraph<
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  replaceColMap (const Teuchos::RCP<const map_type>& newColMap)
   {
     // NOTE: This safety check matches the code, but not the documentation of Crsgraph
-    const char tfecfFuncName[] = "replaceColMap()";
+    const char tfecfFuncName[] = "replaceColMap";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() || isGloballyIndexed(),  std::runtime_error, " requires matching maps and non-static graph.");
     colMap_ = newColMap;
   }
@@ -2639,7 +2655,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >  & newImporter)
+  void
+  CrsGraph<
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
+                               const Teuchos::RCP<const import_type>& newImporter)
   {
     const char prefix[] = "Tpetra::CrsGraph::replaceDomainMapAndImporter: ";
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2666,10 +2692,10 @@ namespace Tpetra {
       const bool newDomSameAsSrc =
         newDomainMap->isSameAs (* (newImporter->getSourceMap ()));
       TEUCHOS_TEST_FOR_EXCEPTION(
-        colSameAsTgt && newDomSameAsSrc, std::invalid_argument, "If the new "
-        "Import is nonnull, then the current column Map must be the same as "
-        "the new Import's target Map, and the new domain Map must be the same "
-        "as the new Import's source Map.");
+        ! colSameAsTgt || ! newDomSameAsSrc, std::invalid_argument, "If the "
+        "new Import is nonnull, then the current column Map must be the same "
+        "as the new Import's target Map, and the new domain Map must be the "
+        "same as the new Import's source Map.");
     }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -3817,8 +3843,6 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
-    typedef Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > import_type;
-    typedef Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > export_type;
 
     // We'll set all the state "transactionally," so that this method
     // satisfies the strong exception guarantee.  This object's state

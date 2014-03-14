@@ -89,14 +89,30 @@ namespace Tpetra {
     struct MapData {
       GO minMyGID; //!< My process' minimum GID
       GO maxMyGID; //!< My process' maximum GID
-      //! Whether insertion into GID->LID table failed
-      bool failed;
-      //! Whether insertion into GID->LID table encountered a duplicate GID
-      bool duplicate;
+      /// \brief Count of failed inserts into GID->LID table.
+      ///
+      /// This should always be zero.  If not, there is a bug in the
+      /// code that called fillGlobalToLocalTable().
+      LO failedCount;
+      /// \brief Count of duplicate inserts into GID->LID table.
+      ///
+      /// This should only ever be nonzero if the GID list on the
+      /// calling process contains duplicates.  Map never supported
+      /// that case well, in either Epetra or Tpetra.  For example, it
+      /// would give those duplicate GIDs different LIDs.  If we ever
+      /// want to fix this, for example by detecting and filtering out
+      /// duplicate GIDs, we could use duplicateCount to detect that
+      /// case.  If detected, we could then reassign LIDs to GIDs by
+      /// merging duplicate GIDs, and rebuild the GID->LID table.  We
+      /// would have to do this _before_ any MPI_Allreduce or
+      /// MPI_*scan for computing the total GID count or offsets,
+      /// since it would change the number of GIDs on the affected
+      /// process(es).
+      LO duplicateCount;
 
       //! Default constructor (to make this a proper value type).
       MapData () :
-        minMyGID (0), maxMyGID (0), failed (false), duplicate (false)
+        minMyGID (0), maxMyGID (0), failedCount (0), duplicateCount (0)
       {}
     };
 
@@ -146,8 +162,8 @@ namespace Tpetra {
       {
         dst.minMyGID = firstContiguousGID_;
         dst.maxMyGID = lastContiguousGID_;
-        dst.failed = false;
-        dst.duplicate = false;
+        dst.failedCount = 0;
+        dst.duplicateCount = 0;
       }
 
       /// \brief Combine two intermediate reduction results.
@@ -163,12 +179,8 @@ namespace Tpetra {
         if (src.minMyGID < dst.minMyGID) {
           dst.minMyGID = src.minMyGID;
         }
-        if (src.failed || dst.failed) {
-          dst.failed = true;
-        }
-        if (src.duplicate || dst.duplicate) {
-          dst.duplicate = true;
-        }
+        dst.failedCount += src.failedCount;
+        dst.duplicateCount += src.duplicateCount;
       }
 
       /// \brief Do this for every element of entries.
@@ -193,32 +205,33 @@ namespace Tpetra {
         }
         // The table should not run out of space, but if it does, the
         // caller will try again.
-        const Kokkos::UnorderedMapOpStatus status =
-          glMap_.insert (gid, lid).first;
+        const Kokkos::UnorderedMapInsertResult result = glMap_.insert (gid, lid);
 
-        if (status == Kokkos::INSERT_SUCCESS) {
-          dst.failed = false;
-          dst.duplicate = false;
+        if (result.failed ()) {
+          dst.failedCount++;
         }
-        else if (status == Kokkos::INSERT_FAILED) {
-          dst.failed = true;
-          dst.duplicate = false;
-        }
-        else if (status == Kokkos::INSERT_EXISTING) {
-          dst.failed = false;
-          dst.duplicate = true;
+        else if (result.existing ()) {
+          dst.duplicateCount++;
         }
       }
 
     private:
+      //! The GID->LID table to fill.
       Kokkos::UnorderedMap<GO, LO, DeviceType> glMap_;
+      //! The input list of GIDs (not including initial contiguous GIDs).
       Kokkos::View<const GO*, DeviceType> entries_;
+      //! First contiguous GID in initial contiguous GIDs.
       const GO firstContiguousGID_;
+      //! Last contiguous GID (inclusive) in initial contiguous GIDs.
       const GO lastContiguousGID_;
     };
 
     /// \brief Fill the GID->LID lookup table, and compute the local
     ///   min and max GID.  Return them through the returned struct.
+    ///
+    /// The "noncontiguous" (GID list) constructor of
+    /// Tpetra::Details::Map calls this function.  It is an
+    /// implementation detail of Tpetra and not meant for users.
     ///
     /// \param glMap [out] GID->LID table to fill; must already be
     ///   preallocated with sufficient space.
@@ -229,12 +242,14 @@ namespace Tpetra {
     /// \param firstContiguousGID [in] The first contiguous GID.
     /// \param lastContiguousGID [in] The last contiguous GID.
     ///
-    /// \return Pair, whose first element is a struct containing the
-    ///   min and max GID on the calling process, and whose second
-    ///   element is the number of failed inserts into the GID->LID
-    ///   table (should be zero).
+    /// \return Struct containing the min and max GID on the calling
+    ///   process, and the counts of failed and duplicate inserts into
+    ///   the GID->LID table.  The count of failed inserts should
+    ///   always be zero.  The count of duplicate inserts may be
+    ///   nonzero, if the GID list on the calling process contains
+    ///   duplicates.  This is generally a bad idea, however.
     template<class LO, class GO, class DeviceType>
-    std::pair<MapData<LO, GO, DeviceType>, typename DeviceType::size_type>
+    MapData<LO, GO, DeviceType>
     fillGlobalToLocalTable (Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
                             const Kokkos::View<const GO*, DeviceType>& entries,
                             const GO firstContiguousGID,
@@ -259,9 +274,7 @@ namespace Tpetra {
 
       MapData<LO, GO, DeviceType> result;
       Kokkos::parallel_reduce (numEnt, filler, result);
-      const size_type numFailed = glMap.failed_inserts ();
-
-      return std::make_pair (result, numFailed);
+      return result;
     }
 
     /// \class Map
@@ -353,24 +366,24 @@ namespace Tpetra {
              std::invalid_argument,
              "Tpetra::Map constructor: All processes must provide the same number "
              "of global indices.  Process 0 set globalNumIndidces = "
-             << proc0GlobalNumIndices << ".  The calling process "
+             << proc0NumGlobalIndices << ".  The calling process "
              << comm.getRank () << " set globalNumIndices = " << globalNumIndices
              << ".  The min and max values over all processes are "
              << minGlobalNumIndices << " resp. " << maxGlobalNumIndices << ".");
 
           GO proc0IndexBase = indexBase;
-          broadcast<int, GO> (*comm, 0, outArg (proc0IndexBase));
+          broadcast<int, GO> (comm, 0, outArg (proc0IndexBase));
           GO minIndexBase = indexBase;
           GO maxIndexBase = indexBase;
-          reduceAll<int, GO> (*comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
-          reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
+          reduceAll<int, GO> (comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
+          reduceAll<int, GO> (comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
           TEUCHOS_TEST_FOR_EXCEPTION(
             minIndexBase != maxIndexBase || indexBase != minIndexBase,
           std::invalid_argument,
           "Tpetra::Map constructor: "
           "All processes must provide the same indexBase argument.  "
           "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-          "process " << comm->getRank () << " set indexBase = " << indexBase
+          "process " << comm.getRank () << " set indexBase = " << indexBase
           << ".  The min and max values over all processes are "
           << minIndexBase << " resp. " << maxIndexBase << ".");
         }
@@ -514,7 +527,7 @@ namespace Tpetra {
             "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
             "compute the global number of elements.  Process 0 set globalNumIndices"
             " = " << proc0GlobalNumIndices << ".  The calling process "
-            << comm->getRank () << " set globalNumIndices = " << globalNumIndices
+            << comm.getRank () << " set globalNumIndices = " << globalNumIndices
             << ".  The min and max values over all processes are "
             << minGlobalNumIndices << " resp. " << maxGlobalNumIndices << ".");
 
@@ -530,7 +543,7 @@ namespace Tpetra {
             "Tpetra::Map constructor: "
             "All processes must provide the same indexBase argument.  "
             "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-            "process " << comm->getRank () << " set indexBase = " << indexBase
+            "process " << comm.getRank () << " set indexBase = " << indexBase
             << ".  The min and max values over all processes are "
             << minIndexBase << " resp. " << maxIndexBase << ".");
 
@@ -709,8 +722,7 @@ namespace Tpetra {
           const size_type tableSize =
             static_cast<size_type> (1.25 * static_cast<double> (numNonContig));
           Kokkos::UnorderedMap<GO, LO, DeviceType> glMap (tableSize);
-          std::pair<MapData<LO, GO, DeviceType>,
-                    typename DeviceType::size_type> result =
+          MapData<LO, GO, DeviceType> result =
             fillGlobalToLocalTable (glMap, nonContigEntries,
                                     firstContiguousGID_,
                                     lastContiguousGID_);
@@ -718,16 +730,12 @@ namespace Tpetra {
           // There should be no failed inserts, since we made the
           // UnorderedMap more than big enough to hold all the GIDs.
           TEUCHOS_TEST_FOR_EXCEPTION(
-            result.second != 0, std::runtime_error, "Tpetra::Details::Map: "
-            "Inserting entries into GID->LID table failed.  Number of failed "
-            "inserts: " << result.second << " out of " << numNonContig << ".");
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            result.first.failed, std::runtime_error, "Tpetra::Details::Map: "
-            "Inserting entries into GID->LID table failed "
-            "(reported via MapData struct, not via numFailed).");
+            result.failedCount != 0, std::logic_error, "Tpetra::Details::Map: "
+            << result.failedCount << " insert(s) into GID->LID table failed "
+            "out of " << numNonContig << " total GIDs to insert.");
 
-          minMyGID_ = result.first.minMyGID;
-          maxMyGID_ = result.first.maxMyGID;
+          minMyGID_ = result.minMyGID;
+          maxMyGID_ = result.maxMyGID;
 
           // This is a shallow copy, that casts to const.  After
           // creating the UnorderedMap, we don't need to modify it, so
