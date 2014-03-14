@@ -188,6 +188,9 @@ private:
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 
   long long dimension_, *elemToNode_, *elemOffsets_;
+  long long *rToF_, *rToE_, *rToV_, *fToE_, *fToV_, *eToV_;
+  long long *rFoffsets_, *rEoffsets_, *rVoffsets_;
+  long long *fEoffsets_, *fVoffsets_, *eVoffsets_;
   double *Rcoords_, *Fcoords_, *Ecoords_, *Vcoords_, *Acoords_;
 };
 
@@ -337,6 +340,25 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
     }
   }
+
+  if (3 == dimension_) {
+    rToV_ = elemToNode_;
+    rVoffsets_ = elemOffsets_;
+  } else {
+    rToV_ = NULL;
+    rVoffsets_ = NULL;
+  }
+
+  if (2 == dimension_) {
+    fToV_ = elemToNode_;
+    fVoffsets_ = elemOffsets_;
+  } else {
+    fToV_ = NULL;
+    fVoffsets_ = NULL;
+  }
+
+  rToF_ = rToE_ = fToE_ = eToV_ = NULL;
+  rFoffsets_ = rEoffsets_ = fEoffsets_ = eVoffsets_ = NULL;
 }
 
   
