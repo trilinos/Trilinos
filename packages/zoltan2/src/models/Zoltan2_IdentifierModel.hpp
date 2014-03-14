@@ -194,12 +194,20 @@ template <typename Adapter>
     gids_ = arcp(gids, 0, nLocalIds, false);
 
     if (userWeightDim_ > 0){
-      for (int i=0; i < userWeightDim_; i++){
-        if (wgts[i] != NULL){
-          ArrayRCP<const scalar_t> wgtArray(
-            wgts[i], 0, nLocalIds*wgtStrides[i], false);
-          weights_[i] = input_t(wgtArray, wgtStrides[i]);
-          weightArrayLengths[i] = nLocalIds;
+      for (int idx=0; idx < userWeightDim_; idx++){
+        if (wgts[idx] != NULL){
+          ArrayRCP<const scalar_t> wgtArray(wgts[idx], 0,
+                                            nLocalIds*wgtStrides[idx], false);
+          weights_[idx] = input_t(wgtArray, wgtStrides[idx]);
+          weightArrayLengths[idx] = nLocalIds;
+        }
+        else {
+          // User did not provide weights for this idx; create uniform weights.
+          scalar_t *uniwgts = new scalar_t[nLocalIds];
+          for (size_t i = 0; i < nLocalIds; i++) uniwgts[i] = scalar_t(1);
+          ArrayRCP<const scalar_t> wgtArray(uniwgts, 0, nLocalIds, true);
+          weights_[idx] = input_t(wgtArray, 1);
+          weightArrayLengths[idx] = nLocalIds;
         }
       }
     }

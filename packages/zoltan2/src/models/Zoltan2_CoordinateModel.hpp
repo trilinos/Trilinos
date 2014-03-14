@@ -315,6 +315,14 @@ void CoordinateModel<Adapter>::sharedConstructor(
         weightArray[idx] = input_t(wArray, stride);
         arrayLengths[idx] = nLocalIds;
       }
+      else {
+        // User did not provide weights for this idx; create uniform weights.
+        scalar_t *uniwgts = new scalar_t[nLocalIds];
+        for (size_t i = 0; i < nLocalIds; i++) uniwgts[i] = scalar_t(1);
+        ArrayRCP<const scalar_t> wArray(uniwgts, 0, nLocalIds, true);
+        weightArray[idx] = input_t(wArray, 1);
+        arrayLengths[idx] = nLocalIds;
+      }
     }
   }
 
