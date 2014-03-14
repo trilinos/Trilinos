@@ -2539,14 +2539,15 @@ pass fail.  Raw CMake/CTest cant' do this.  In this case, one should use
 <p>After this function returns, any tests that get added using <tt class="docutils literal">ADD_TEST()</tt>
 can have additional properties set and changed using
 <tt class="docutils literal">SET_TEST_PROPERTIES()</tt>.  Therefore, any tests properties that are not
-directly supported by this function and passed through can be set in the
-outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
-<p>ToDo: Describe how to use ADDED_TESTS_OUT to get the list of tests actually
-added (if they are added) in order to make it easy to set additional test
-properties.</p>
+directly supported by this function and passed through this wrapper function
+can be set in the outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to
+<tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
+<p>ToDo: Describe how to use new variable ADDED_TESTS_OUT to get the list of
+tests actually added (if they are added) in order to make it easy to set
+additional test properties.</p>
 <p id="debugging-and-examining-test-generation-tribits-add-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_TEST())</strong></p>
 <p>In order to see what tests are getting added and to debug some issues in
-test creation, one can see the cache variable
+test creation, one can set the cache variable
 <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt>.  This will result in the printout
 of some information about the test getting added or not.</p>
 <p>Also, CMake writes a file <tt class="docutils literal">CTestTestfile.cmake</tt> in the current binary
@@ -2836,20 +2837,37 @@ after all of the <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> blocks.</li>
 </ul>
 <p>Other than that, the keyword argumnets and options can appear in any order.</p>
 <p id="implementation-details-tribits-add-advanced-test"><strong>Implementation Details (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
-<p>ToDo: Describe the generation of the <tt class="docutils literal">*.cmake</tt> file and what gets added
-with ADD_TEST().</p>
+<p>Since raw CTest does not support the features provided by this function, the
+way an advanced test is implemented is that a CMake script with the name
+<tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_&lt;testName&gt;.cmake</span></tt> gets created in the current bindary
+directory that then gets added to CTest using:</p>
+<pre class="literal-block">
+ADD_TEST(cmake -P ${PACKAGE_NAME}_&lt;testName&gt;.cmake)
+</pre>
+<p>This CMake script then runs the various test cases and checks the pass/fail
+for each case to determine overall pass/fail and implement other
+functionality.</p>
 <p id="setting-additional-test-properties-tribits-add-advanced-test"><strong>Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
-<p>ToDo: Fill in!</p>
+<p>After this function returns, if the test gets added using <tt class="docutils literal">ADD_TEST()</tt>
+then additional properties can be set and changed using
+<tt class="docutils literal"><span class="pre">SET_TEST_PROPERTIES(${PACKAGE_NAME}_&lt;testName&gt;</span> <span class="pre">...)</span></tt>.  Therefore, any
+tests properties that are not directly supported by this function and passed
+through the argument list to this wrapper function can be set in the outer
+<tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_ADVANCED_TEST()</tt>.</p>
 <p id="disabling-tests-externally-tribits-add-advanced-test"><strong>Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
 case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
 when running the test.</p>
 <p id="debugging-and-examining-test-generation-tribits-add-advanced-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
-<p>ToDo: Describe setting <tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt> and seeing
-what info it prints out.</p>
-<p>ToDo: Describe how to examine the generated CTest files to see what test(s)
-actually got added (or not added) and what the pass/fail criteria is.</p>
+<p>In order to see if the test gets added and to debug some issues in test
+creation, one can set the cache variable
+<tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt>.  This will result in the printout
+of some information about the test getting added or not.</p>
+<p>Likely the best way to debugging test generation using this function is to
+examine the generated file <tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_&lt;testName&gt;.cmake</span></tt> in the
+current binary directory (see <a class="reference internal" href="#implementation-details-tribits-add-advanced-test">Implementation Details
+(TRIBITS_ADD_ADVANCED_TEST())</a>).</p>
 </div>
 <div class="section" id="tribits-package-postprocess">
 <h2><a class="toc-backref" href="#id46">TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
@@ -2878,8 +2896,9 @@ really not a large risk to defining and using these non-namespaces utility
 functions and macros.  It turns out that CMake allows you to redefine any
 macro or function, even built-in ones, inside of your project so even if CMake
 did add new comamnds that clashed with these names, there would be no
-conflicit.  When overridding a built-in command <tt class="docutils literal">some_bultin_command()</tt>, you
-can always access the original built-in command as <tt class="docutils literal">_some_bultin_command()</tt>.</p>
+conflicit.  When overridding a built-in command <tt class="docutils literal">some_builtin_command()</tt>,
+you can always access the original built-in command as
+<tt class="docutils literal">_some_builtin_command()</tt>.</p>
 <!-- WARNING: The file UtilsMacroFunctionDoc.rst is autogenerated from -->
 <!-- the file UtilsMacroFunctionDocTemplate.rst in the script -->
 <!-- generate-dev-guide.sh.  Only the file UtilsMacroFunctionDoc.rst -->

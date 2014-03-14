@@ -784,8 +784,9 @@ really not a large risk to defining and using these non-namespaces utility
 functions and macros.  It turns out that CMake allows you to redefine any
 macro or function, even built-in ones, inside of your project so even if CMake
 did add new comamnds that clashed with these names, there would be no
-conflicit.  When overridding a built-in command ``some_bultin_command()``, you
-can always access the original built-in command as ``_some_bultin_command()``.
+conflicit.  When overridding a built-in command ``some_builtin_command()``,
+you can always access the original built-in command as
+``_some_builtin_command()``.
 
 
 .. include:: UtilsMacroFunctionDoc.rst

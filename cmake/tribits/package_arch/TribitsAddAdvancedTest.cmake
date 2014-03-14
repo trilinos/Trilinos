@@ -359,14 +359,27 @@ INCLUDE(PrintVar)
 #
 # **Implementation Details (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# ToDo: Describe the generation of the ``*.cmake`` file and what gets added
-# with ADD_TEST().
+# Since raw CTest does not support the features provided by this function, the
+# way an advanced test is implemented is that a CMake script with the name
+# ``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current bindary
+# directory that then gets added to CTest using::
+#
+#   ADD_TEST(cmake -P ${PACKAGE_NAME}_<testName>.cmake)
+#
+# This CMake script then runs the various test cases and checks the pass/fail
+# for each case to determine overall pass/fail and implement other
+# functionality. 
 #
 # .. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
 #
 # **Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# ToDo: Fill in!
+# After this function returns, if the test gets added using ``ADD_TEST()``
+# then additional properties can be set and changed using
+# ``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
+# tests properties that are not directly supported by this function and passed
+# through the argument list to this wrapper function can be set in the outer
+# ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
 #
 # .. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -381,11 +394,15 @@ INCLUDE(PrintVar)
 #
 # **Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# ToDo: Describe setting ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON`` and seeing
-# what info it prints out.
+# In order to see if the test gets added and to debug some issues in test
+# creation, one can set the cache variable
+# ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
+# of some information about the test getting added or not.
 #
-# ToDo: Describe how to examine the generated CTest files to see what test(s)
-# actually got added (or not added) and what the pass/fail criteria is.
+# Likely the best way to debugging test generation using this function is to
+# examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
+# current binary directory (see `Implementation Details
+# (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 

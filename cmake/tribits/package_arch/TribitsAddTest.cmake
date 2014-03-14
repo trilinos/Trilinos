@@ -444,8 +444,9 @@ INCLUDE(TribitsAddTestHelpers)
 # After this function returns, any tests that get added using ``ADD_TEST()``
 # can have additional properties set and changed using
 # ``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
-# directly supported by this function and passed through can be set in the
-# outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
+# directly supported by this function and passed through this wrapper function
+# can be set in the outer ``CMakeLists.txt`` file after the call to
+# ``TRIBITS_ADD_TEST()``.
 #
 # ToDo: Describe how to use new variable ADDED_TESTS_OUT to get the list of
 # tests actually added (if they are added) in order to make it easy to set
@@ -456,7 +457,7 @@ INCLUDE(TribitsAddTestHelpers)
 # **Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
 #
 # In order to see what tests are getting added and to debug some issues in
-# test creation, one can see the cache variable
+# test creation, one can set the cache variable
 # ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
 # of some information about the test getting added or not.
 #
