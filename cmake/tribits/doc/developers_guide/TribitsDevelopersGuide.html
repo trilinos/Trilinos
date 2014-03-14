@@ -2202,7 +2202,7 @@ TRIBITS_ADD_TEST(
   [DIRECTORY &lt;directory&gt;]
   [ADD_DIR_TO_NAME]
   [ARGS &quot;&lt;arg0&gt; &lt;arg1&gt; ...&quot; &quot;&lt;arg2&gt; &lt;arg3&gt; ...&quot; ...
-    | POSTFIX_AND_ARGS_0 &lt;postfix&gt; &lt;arg0&gt; &lt;arg1&gt; ...
+    | POSTFIX_AND_ARGS_0 &lt;postfix0&gt; &lt;arg0&gt; &lt;arg1&gt; ...
       POSTFIX_AND_ARGS_1 ... ]
   [COMM [serial] [mpi]]
   [NUM_MPI_PROCS &lt;numProcs&gt;]
@@ -2290,12 +2290,17 @@ arguments then a different test will be added for each set of arguments.
 In this way, many different tests can be added for a single executable
 in a single call to this function.  Each of these separate tests will be
 named <tt class="docutils literal">${TEST_NAME}_xy</tt> where <tt class="docutils literal">xy</tt> = <tt class="docutils literal">00</tt>, <tt class="docutils literal">01</tt>, <tt class="docutils literal">02</tt>, and so
-on.</blockquote>
+on.  <strong>WARNING:</strong> When defining multiple tests it is prefered to use the
+<tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> form instead.  <strong>WARNING:</strong> Multiple
+arguments passed to a single test invocation must be quoted or multiple
+tests taking single arguments will be created instead!  See <a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding
+Multiple Tests (TRIBITS_ADD_TEST())</a> for more details and exmaples.</blockquote>
 <p><tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt; &lt;postfix&gt; &lt;arg0&gt; &lt;arg1&gt; ...</tt></p>
 <blockquote>
-<p>If specified, gives a sequence of sets of test postfix names and arguments
-lists for different tests.  For example, a set of three different tests
-with argument lists can be specified as:</p>
+<p>If specified, gives a sequence of sets of test postfix names and
+arguments lists for different tests (up to <tt class="docutils literal">POSTFIX_AND_ARGS_19</tt>).
+For example, a set of three different tests with argument lists can be
+specified as:</p>
 <pre class="literal-block">
 POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2=&quot;dummy&quot;
 POSTIFX_AND_ARGS_1 postfix1  --arg2=&quot;fly&quot;
@@ -2303,11 +2308,12 @@ POSTIFX_AND_ARGS_2 postfix2  --arg2=&quot;bags&quot;
 </pre>
 <p>This will create three different test cases with the postfix names
 <tt class="docutils literal">postfix0</tt>, <tt class="docutils literal">postfix1</tt>, and <tt class="docutils literal">postfix2</tt>.  The indexes must be
-consecutive starting a <tt class="docutils literal">0</tt> and going up to (currently) <tt class="docutils literal">19</tt>.  The main
-advantages of using these arguments instead of just 'ARGS' are that you
-can give meaningful name to each test case and you can specify multiple
-arguments without having to quote them and you can allow long argument
-lists to span multiple lines.</p>
+consecutive starting a <tt class="docutils literal">0</tt> and going up to (currently) <tt class="docutils literal">19</tt>.  The
+main advantages of using these arguments instead of just 'ARGS' are that
+you can give meaningful name to each test case and you can specify
+multiple arguments without having to quote them and you can allow long
+argument lists to span multiple lines.  See <a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding Multiple Tests
+(TRIBITS_ADD_TEST())</a> for more details and exmaples.</p>
 </blockquote>
 <p><tt class="docutils literal">COMM [serial] [mpi]</tt></p>
 <blockquote>
@@ -2444,14 +2450,14 @@ is set as the executable to run.</p>
 not found, then when <tt class="docutils literal">ctest</tt> goes to run the test, it will mark it as
 <tt class="docutils literal">NOT RUN</tt>.</p>
 <p id="determining-the-full-test-name-tribits-add-test"><strong>Determining the Full Test Name (TRIBITS_ADD_TEST())</strong></p>
-<p>By default, the base test name is selected to be:</p>
+<p>By default, the base test name is selected to be <tt class="docutils literal">&lt;fullTestName&gt;</tt> =</p>
 <pre class="literal-block">
 ${PACKAGE_NAME}_&lt;exeRootName&gt;
 </pre>
 <p>If <tt class="docutils literal">NAME &lt;testRootName&gt;</tt> is passed in, then <tt class="docutils literal">&lt;testRootName&gt;</tt> is used
 instead of <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</p>
 <p>If <tt class="docutils literal">NAME_POSTFIX &lt;testNamePostfix&gt;</tt> is passed in, then the base test name
-is selected to be:</p>
+is selected to be <tt class="docutils literal">&lt;fullTestName</tt> =</p>
 <pre class="literal-block">
 ${PACKAGE_NAME}_&lt;exeRootName&gt;_&lt;testNamePostfix&gt;
 </pre>
@@ -2469,19 +2475,86 @@ tests. See below.</p>
 multiple tests).  No such prefix is added for the serial case
 (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>).</p>
 <p id="adding-multiple-tests-tribits-add-test"><strong>Adding Multiple Tests  (TRIBITS_ADD_TEST())</strong></p>
-<dl class="docutils">
-<dt>ToDo: Explain how multiple tests can be added with different sets of</dt>
-<dd>arguments in one of two ways.</dd>
-</dl>
+<p>Using this function, one can add exectuable arguments and can even add
+multiple tests in one of two ways.  One can either pass in 1 or more
+<strong>quoted</strong> clusters of arguments using:</p>
+<pre class="literal-block">
+ARGS &quot;&lt;arg0&gt; &lt;arg1&gt; ...&quot; &quot;&lt;arg2&gt; &lt;arg3&gt; ...&quot; ...
+</pre>
+<p>or can pass in an explicit test name postfix and arguments with:</p>
+<pre class="literal-block">
+POSTFIX_AND_ARGS_0 &lt;postfix0&gt; &lt;arg0&gt; &lt;arg1&gt; ...
+POSTFIX_AND_ARGS_1 &lt;postfix1&gt; &lt;arg2&gt; ...
+...
+</pre>
+<p>If only one short set of arguments needs to be passed in, then passing:</p>
+<pre class="literal-block">
+ARGS &quot;&lt;arg0&gt; &lt;arg1&gt;&quot;
+</pre>
+<p>may be preferable since it will not add any postfix name to the test.  To
+add more than one test case using <tt class="docutils literal">ARGS</tt>, you use more than one quoted set
+of arugments such as with:</p>
+<pre class="literal-block">
+ARGS &quot;&lt;arg0&gt; &lt;arg1&gt;&quot; &quot;&lt;arg2&gt; &lt;arg2&gt;&quot;
+</pre>
+<p>which creates 2 tests with the names <tt class="docutils literal">&lt;fullTestName&gt;_00</tt> passing
+arguments <tt class="docutils literal">&quot;&lt;arg0&gt; &lt;arg1&gt;&quot;</tt> and <tt class="docutils literal">&lt;fullTestName&gt;_01</tt> passing arguments
+<tt class="docutils literal">&quot;&lt;arg2&gt; &lt;arg3&gt;&quot;</tt>.  However, when passing multiple sets of arguments it is
+preferable to <strong>not</strong> use <tt class="docutils literal">ARGS</tt> but instead use:</p>
+<pre class="literal-block">
+POSTFIX_AND_ARGS_0 test_a &lt;arg0&gt; &lt;arg1&gt;
+POSTFIX_AND_ARGS_1 test_b &lt;arg2&gt; &lt;arg2&gt;
+</pre>
+<p>which also creates the same 2 tests but now with the improved names
+<tt class="docutils literal">&lt;fullTestName&gt;_test_a</tt> passing arguments <tt class="docutils literal">&quot;&lt;arg0&gt; &lt;arg1&gt;&quot;</tt> and
+<tt class="docutils literal">&lt;fullTestName&gt;_test_b</tt> passing arguments <tt class="docutils literal">&quot;&lt;arg2&gt; &lt;arg3&gt;&quot;</tt>.  In this way,
+the individual tests can be given more understandable names.</p>
+<p>The other advantage of the <tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> form is that the
+arugments <tt class="docutils literal">&lt;arg0&gt;</tt>, <tt class="docutils literal">&lt;arg1&gt;</tt>, ... do not need to be quoted and can
+therefore be extended over multiple lines like:</p>
+<pre class="literal-block">
+POSTFOX_AND_ARGS_0 long_args --this-is-the-first-long-arg=very
+  --this-is-the-second-long-arg=verylong
+</pre>
+<p>If you don't use quotes when using <tt class="docutils literal">ARGS</tt> you actually get more than one
+test.  For example, if you pass in:</p>
+<pre class="literal-block">
+ARGS --this-is-the-first-long-arg=very
+  --this-is-the-second-long-arg=verylong
+</pre>
+<p>you actually get two tests, not one test.  This is a common mistake that
+people make when using the <tt class="docutils literal">ARGS</tt> form of passing arguments.  This can't
+be fixed or it will break backward compatibility.  If this could be designed
+fresh, the <tt class="docutils literal">ARGS</tt> argument would only create a single test and the
+arguments would not be quoted.</p>
 <p id="determining-pass-fail-tribits-add-test"><strong>Determining Pass/Fail (TRIBITS_ADD_TEST())</strong></p>
-<p>ToDo: Fill in!</p>
+<p>The only means to determine pass/fail is to use the built-in test properties
+<tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt> and <tt class="docutils literal">FAIL_REGULAR_EXPRESSION</tt> which can only
+grep STDOUT/STDERR or to check for a 0 return value (or invert these using
+<tt class="docutils literal">WILL_FAIL</tt>).  For simple tests, that is enough.  However, for more
+complex executables, one may need to examine the output files to determine
+pass fail.  Raw CMake/CTest cant' do this.  In this case, one should use
+<a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a>.</p>
 <p id="setting-additional-test-properties-tribits-add-test"><strong>Setting additional test properties (TRIBITS_ADD_TEST())</strong></p>
-<p>ToDo: Fill in!</p>
+<p>After this function returns, any tests that get added using <tt class="docutils literal">ADD_TEST()</tt>
+can have additional properties set and changed using
+<tt class="docutils literal">SET_TEST_PROPERTIES()</tt>.  Therefore, any tests properties that are not
+directly supported by this function and passed through can be set in the
+outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
+<p>ToDo: Describe how to use ADDED_TESTS_OUT to get the list of tests actually
+added (if they are added) in order to make it easy to set additional test
+properties.</p>
 <p id="debugging-and-examining-test-generation-tribits-add-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_TEST())</strong></p>
-<p>ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
-info it prints out.</p>
-<p>ToDo: Describe how to examine the generated CTest files to see what test(s)
-actually got added (or not added) and what the pass/fail criteria is.</p>
+<p>In order to see what tests are getting added and to debug some issues in
+test creation, one can see the cache variable
+<tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt>.  This will result in the printout
+of some information about the test getting added or not.</p>
+<p>Also, CMake writes a file <tt class="docutils literal">CTestTestfile.cmake</tt> in the current binary
+directory which contains all of the added tests and test properties that are
+set.  This is the file that is read by <tt class="docutils literal">ctest</tt> when it runs to determine
+what tests to run.  In that file, one can see the exact <tt class="docutils literal">ADD_TEST()</tt> and
+<tt class="docutils literal">SET_TEST_PROPERTIES()</tt> commands.  The is the ultimate way to debug
+exactly what tests are getting added by this function.</p>
 <p id="disabling-tests-externally-tribits-add-test"><strong>Disabling Tests Externally (TRIBITS_ADD_TEST())</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a

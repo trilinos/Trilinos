@@ -54,7 +54,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     [DIRECTORY <directory>]
 #     [ADD_DIR_TO_NAME]
 #     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...
-#       | POSTFIX_AND_ARGS_0 <postfix> <arg0> <arg1> ...
+#       | POSTFIX_AND_ARGS_0 <postfix0> <arg0> <arg1> ...
 #         POSTFIX_AND_ARGS_1 ... ]
 #     [COMM [serial] [mpi]]
 #     [NUM_MPI_PROCS <numProcs>]
@@ -152,13 +152,18 @@ INCLUDE(TribitsAddTestHelpers)
 #     In this way, many different tests can be added for a single executable
 #     in a single call to this function.  Each of these separate tests will be
 #     named ``${TEST_NAME}_xy`` where ``xy`` = ``00``, ``01``, ``02``, and so
-#     on.
+#     on.  **WARNING:** When defining multiple tests it is prefered to use the
+#     ``POSTFIX_AND_ARGS_<IDX>`` form instead.  **WARNING:** Multiple
+#     arguments passed to a single test invocation must be quoted or multiple
+#     tests taking single arguments will be created instead!  See `Adding
+#     Multiple Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
 #  
 #   ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg0> <arg1> ...``
 #
-#     If specified, gives a sequence of sets of test postfix names and arguments
-#     lists for different tests.  For example, a set of three different tests
-#     with argument lists can be specified as::
+#     If specified, gives a sequence of sets of test postfix names and
+#     arguments lists for different tests (up to ``POSTFIX_AND_ARGS_19``).
+#     For example, a set of three different tests with argument lists can be
+#     specified as::
 #       
 #       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
 #       POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
@@ -166,11 +171,12 @@ INCLUDE(TribitsAddTestHelpers)
 #  
 #     This will create three different test cases with the postfix names
 #     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
-#     consecutive starting a ``0`` and going up to (currently) ``19``.  The main
-#     advantages of using these arguments instead of just 'ARGS' are that you
-#     can give meaningful name to each test case and you can specify multiple
-#     arguments without having to quote them and you can allow long argument
-#     lists to span multiple lines.
+#     consecutive starting a ``0`` and going up to (currently) ``19``.  The
+#     main advantages of using these arguments instead of just 'ARGS' are that
+#     you can give meaningful name to each test case and you can specify
+#     multiple arguments without having to quote them and you can allow long
+#     argument lists to span multiple lines.  See `Adding Multiple Tests
+#     (TRIBITS_ADD_TEST())`_ for more details and exmaples.
 #  
 #   ``COMM [serial] [mpi]``
 #
@@ -333,7 +339,7 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Determining the Full Test Name (TRIBITS_ADD_TEST())**
 #
-# By default, the base test name is selected to be::
+# By default, the base test name is selected to be ``<fullTestName>`` = ::
 #
 #   ${PACKAGE_NAME}_<exeRootName>
 #
@@ -341,7 +347,7 @@ INCLUDE(TribitsAddTestHelpers)
 # instead of ``<exeRootName>``.
 #
 # If ``NAME_POSTFIX <testNamePostfix>`` is passed in, then the base test name
-# is selected to be::
+# is selected to be ``<fullTestName`` = ::
 #
 #   ${PACKAGE_NAME}_<exeRootName>_<testNamePostfix>
 #
@@ -365,30 +371,101 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Adding Multiple Tests  (TRIBITS_ADD_TEST())**
 #
-# ToDo: Explain how multiple tests can be added with different sets of
-#  arguments in one of two ways.
+# Using this function, one can add exectuable arguments and can even add
+# multiple tests in one of two ways.  One can either pass in 1 or more
+# **quoted** clusters of arguments using::
+#
+#   ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...
+#
+# or can pass in an explicit test name postfix and arguments with::
+#
+#   POSTFIX_AND_ARGS_0 <postfix0> <arg0> <arg1> ...
+#   POSTFIX_AND_ARGS_1 <postfix1> <arg2> ...
+#   ...
+#
+# If only one short set of arguments needs to be passed in, then passing::
+#
+#   ARGS "<arg0> <arg1>"
+#
+# may be preferable since it will not add any postfix name to the test.  To
+# add more than one test case using ``ARGS``, you use more than one quoted set
+# of arugments such as with::
+#
+#   ARGS "<arg0> <arg1>" "<arg2> <arg2>"
+#
+# which creates 2 tests with the names ``<fullTestName>_00`` passing
+# arguments ``"<arg0> <arg1>"`` and ``<fullTestName>_01`` passing arguments
+# ``"<arg2> <arg3>"``.  However, when passing multiple sets of arguments it is
+# preferable to **not** use ``ARGS`` but instead use::
+#
+#   POSTFIX_AND_ARGS_0 test_a <arg0> <arg1>
+#   POSTFIX_AND_ARGS_1 test_b <arg2> <arg2>
+#
+# which also creates the same 2 tests but now with the improved names
+# ``<fullTestName>_test_a`` passing arguments ``"<arg0> <arg1>"`` and
+# ``<fullTestName>_test_b`` passing arguments ``"<arg2> <arg3>"``.  In this way,
+# the individual tests can be given more understandable names.
+#
+# The other advantage of the ``POSTFIX_AND_ARGS_<IDX>`` form is that the
+# arugments ``<arg0>``, ``<arg1>``, ... do not need to be quoted and can
+# therefore be extended over multiple lines like::
+#
+#   POSTFOX_AND_ARGS_0 long_args --this-is-the-first-long-arg=very
+#     --this-is-the-second-long-arg=verylong
+#
+# If you don't use quotes when using ``ARGS`` you actually get more than one
+# test.  For example, if you pass in::
+#
+#   ARGS --this-is-the-first-long-arg=very
+#     --this-is-the-second-long-arg=verylong
+#
+# you actually get two tests, not one test.  This is a common mistake that
+# people make when using the ``ARGS`` form of passing arguments.  This can't
+# be fixed or it will break backward compatibility.  If this could be designed
+# fresh, the ``ARGS`` argument would only create a single test and the
+# arguments would not be quoted.
 #
 # .. _Determining Pass/Fail (TRIBITS_ADD_TEST()):
 #
 # **Determining Pass/Fail (TRIBITS_ADD_TEST())**
 #
-# ToDo: Fill in!
+# The only means to determine pass/fail is to use the built-in test properties
+# ``PASS_REGULAR_EXPRESSION`` and ``FAIL_REGULAR_EXPRESSION`` which can only
+# grep STDOUT/STDERR or to check for a 0 return value (or invert these using
+# ``WILL_FAIL``).  For simple tests, that is enough.  However, for more
+# complex executables, one may need to examine the output files to determine
+# pass fail.  Raw CMake/CTest cant' do this.  In this case, one should use
+# `TRIBITS_ADD_ADVANCED_TEST()`_.
 #
 # .. _Setting additional test properties (TRIBITS_ADD_TEST()):
 #
 # **Setting additional test properties (TRIBITS_ADD_TEST())**
 #
-# ToDo: Fill in!
+# After this function returns, any tests that get added using ``ADD_TEST()``
+# can have additional properties set and changed using
+# ``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
+# directly supported by this function and passed through can be set in the
+# outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
+#
+# ToDo: Describe how to use new variable ADDED_TESTS_OUT to get the list of
+# tests actually added (if they are added) in order to make it easy to set
+# additional test properties.
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 #
 # **Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
 #
-# ToDo: Describe setting ${PROJECT_NAME}_VERBOSE_CONFIGURE=ON and seeing what
-# info it prints out.
+# In order to see what tests are getting added and to debug some issues in
+# test creation, one can see the cache variable
+# ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
+# of some information about the test getting added or not.
 #
-# ToDo: Describe how to examine the generated CTest files to see what test(s)
-# actually got added (or not added) and what the pass/fail criteria is.
+# Also, CMake writes a file ``CTestTestfile.cmake`` in the current binary
+# directory which contains all of the added tests and test properties that are
+# set.  This is the file that is read by ``ctest`` when it runs to determine
+# what tests to run.  In that file, one can see the exact ``ADD_TEST()`` and
+# ``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
+# exactly what tests are getting added by this function.
 #
 # .. _Disabling Tests Externally (TRIBITS_ADD_TEST()):
 #
