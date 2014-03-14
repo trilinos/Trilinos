@@ -103,6 +103,7 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<std::string>("pre","post","both"),PL);
   setStringToIntegralParameter<int>("smoother: line orientation","not specified","indicates grid points are numbered either horizontally or veritcally for extruded meshes", tuple<std::string>("horizontal","vertical","not specified"),PL);
+
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
   RCP<std::vector<double> > params = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
@@ -338,6 +339,12 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("energy minimization: type",2,"Norm to use for energy minimization",PL,intParam);
   setDoubleParameter("energy minimization: droptol",0.0,"Drop tolerance for energy minimization",PL,dblParam);
   PL->set("energy minimization: cheap",false);
+  setIntParameter("semicoarsen: number of levels",-1,"number of levels to apply semi-coarsening",PL,intParam);
+  setIntParameter("semicoarsen: coarsen rate",-1,"Coarsening rate for structured semi-coarsening",PL,intParam);
+  setIntParameter("semicoarsen: line direction nodes", -1,"Number of mesh points in z direction", PL, intParam);
+  setIntParameter("semicoarsen: line orientation", -1,"equations ordered columnwise or not", PL, intParam);
+            /* -1: not specified */ /*  1: vertical      */ /*  2: horizontal    */
+
 
   /* Smoothing Options (Section 6.4.4) */
   SetValidSmooParams(PL,smoothers);

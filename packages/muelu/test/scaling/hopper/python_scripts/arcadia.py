@@ -385,8 +385,7 @@ def main():
                         "#PBS -o screen.out.\\$PBS_JOBID\\n"
                         "#PBS -V\\n"
                         "#PBS -A m1327\\n\\n"
-                        "## #PBS -m e\\n"
-                        "## #PBS -M aprokop@sandia.gov\\n\\n"
+                        "#PBS -m ae\\n"                         # abort/termination
                         "cd \\$PBS_O_WORKDIR\\n")
 
     elif PLATFORM == "shannon":

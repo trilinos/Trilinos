@@ -836,19 +836,24 @@ void build_test_prolongator(const RCP<const CrsMatrixType> & A, RCP< CrsMatrixTy
   P = rcp(new CrsMatrixType(RowMap,0));
 
   // Make DomainMap
-  size_t num_my_domains=0;
-  for(size_t i=0; i<RowMap->getNodeNumElements(); i+=3) num_my_domains++;
-  DomainMap = rcp(new map_type(INVALID,num_my_domains,0,RowMap->getComm()));
+  Array<GO> gids;
+  for(size_t i=0; i<RowMap->getNodeNumElements(); i++) {
+    if(RowMap->getGlobalElement(i) %3 == 0) gids.push_back((GO)(RowMap->getGlobalElement(i)/3.0));
+  }
 
+  DomainMap = rcp(new map_type(INVALID,gids(),0,RowMap->getComm()));
 
   Teuchos::Array<Scalar> Values(1);
   Teuchos::Array<GO> Indices(1);
+  Values[0]=1;
+  GO minP = DomainMap->getMinGlobalIndex();
   for(size_t i=0; i<RowMap->getNodeNumElements(); i++) {
-    GO GID = RowMap->getGlobalElement(i);
-    Indices[0] = GID % 3;
+    GO GID     = RowMap->getGlobalElement(i);
+    Indices[0] = ((GO)(GID / 3.0) ) < minP ? minP : ((GO)(GID / 3.0) );
     P->insertGlobalValues(GID,Indices(),Values());
   }
   P->fillComplete(DomainMap,RowMap);
+
 }
 
 // ===============================================================================
@@ -1694,6 +1699,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
     // Build R
     Tpetra::RowMatrixTransposer<double, Ordinal, Ordinal, Node> transposer(P);
     R = transposer.createTranspose();
+
+    ArrayRCP< const size_t > rowptr;
+    ArrayRCP< const Ordinal > colind;
+    ArrayRCP< const double > vals;
+    R->getAllValues(rowptr,colind,vals);
 
     // Form AP
     AP = rcp (new CrsMatrixType(A->getRowMap(),0));

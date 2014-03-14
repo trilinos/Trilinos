@@ -18,10 +18,6 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalM
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
-#ifdef MUELU_SCHWARZSMOOTHER_SHORT
-typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchwarzSmoother;
-#endif
-
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AlgebraicPermutationStrategy;
 #endif
@@ -174,6 +170,10 @@ typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 typedef MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PatternFactory;
 #endif
 
+#ifdef MUELU_PERFUTILS_SHORT
+typedef MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PerfUtils;
+#endif
+
 #ifdef MUELU_PERMUTATIONFACTORY_SHORT
 typedef MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutationFactory;
 #endif
@@ -242,6 +242,10 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Sa
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchurComplementFactory;
 #endif
 
+#ifdef MUELU_SCHWARZSMOOTHER_SHORT
+typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchwarzSmoother;
+#endif
+
 #ifdef MUELU_SHIFTEDLAPLACIAN_SHORT
 typedef MueLu::ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ShiftedLaplacian;
 #endif
@@ -307,10 +311,6 @@ typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> 
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT
-typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Utils;
+typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
-#endif
-
-#ifdef MUELU_PERFUTILS_SHORT
-typedef MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PerfUtils;
 #endif

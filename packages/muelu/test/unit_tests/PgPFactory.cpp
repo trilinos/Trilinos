@@ -258,6 +258,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 } //EpetraVsTpetra
 
 
+#if 0
 TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -433,6 +434,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
 
 }
+#endif
 
 TEUCHOS_UNIT_TEST(PgPFactory, MinimizationModes)
 {

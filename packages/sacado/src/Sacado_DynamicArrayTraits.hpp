@@ -46,11 +46,14 @@ namespace Sacado {
     //! Get memory for new array of length \c sz and fill with zeros
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
-      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-      T* p = m;
-      for (int i=0; i<sz; ++i)
-        new (p++) T(0.0);
-      return m;
+      if (sz > 0) {
+        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* p = m;
+        for (int i=0; i<sz; ++i)
+          new (p++) T(0.0);
+        return m;
+      }
+      return NULL;
     }
 
     /*!
@@ -59,11 +62,14 @@ namespace Sacado {
      */
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
-      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-      T* p = m;
-      for (int i=0; i<sz; ++i)
-        new (p++) T(*(src++));
-      return m;
+      if (sz > 0) {
+        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* p = m;
+        for (int i=0; i<sz; ++i)
+          new (p++) T(*(src++));
+        return m;
+      }
+      return NULL;
     }
 
     /*!
@@ -72,13 +78,16 @@ namespace Sacado {
      */
     KOKKOS_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
-      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-      T* p = m;
-      for (int i=0; i<sz; ++i) {
-        new (p++) T(*(src));
-        src += stride;
+      if (sz > 0) {
+        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* p = m;
+        for (int i=0; i<sz; ++i) {
+          new (p++) T(*(src));
+          src += stride;
+        }
+        return m;
       }
-      return m;
+      return NULL;
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -140,8 +149,7 @@ namespace Sacado {
         std::memset(m,0,sz*sizeof(T));
         return m;
       }
-      else
-        return NULL;
+      return NULL;
     }
 
     /*!
@@ -150,10 +158,13 @@ namespace Sacado {
      */
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
-      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-      for (int i=0; i<sz; ++i)
-        m[i] = src[i];
-      return m;
+      if (sz > 0) {
+        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        for (int i=0; i<sz; ++i)
+          m[i] = src[i];
+        return m;
+      }
+      return NULL;
     }
 
     /*!
@@ -162,10 +173,13 @@ namespace Sacado {
      */
     KOKKOS_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
-      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-      for (int i=0; i<sz; ++i)
-        m[i] = src[i*stride];
-      return m;
+      if (sz > 0) {
+        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        for (int i=0; i<sz; ++i)
+          m[i] = src[i*stride];
+        return m;
+      }
+      return NULL;
     }
 
     //! Copy array from \c src to \c dest of length \c sz

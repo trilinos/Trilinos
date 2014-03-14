@@ -10,62 +10,55 @@ namespace Test {
 
 namespace Impl {
 
-  template <typename MapType>
-  struct test_insert_close
+  template <typename MapType, bool Near>
+  struct TestInsert
   {
-    typedef test_insert_close<MapType> self_type;
+    typedef TestInsert<MapType,Near> self_type;
 
     typedef MapType map_type;
     typedef typename MapType::device_type device_type;
+    typedef uint32_t value_type;
 
     map_type m_map;
     uint32_t m_num_insert;
     uint32_t m_num_duplicates;
 
-    test_insert_close(map_type map, uint32_t num_inserts, uint32_t num_duplicates)
+    TestInsert(map_type map, uint32_t num_inserts, uint32_t num_duplicates)
       : m_map(map)
       , m_num_insert(num_inserts)
       , m_num_duplicates(num_duplicates)
+    {}
+
+    value_type apply()
     {
-      Kokkos::parallel_for(num_inserts, *this);
+      value_type num_failures = 0;
+      Kokkos::parallel_reduce(m_num_insert, *this, num_failures);
+      return num_failures;
     }
 
+
     KOKKOS_INLINE_FUNCTION
-    void operator()(typename device_type::size_type i) const
+    void init(value_type & value) const { value = 0; }
+
+    KOKKOS_INLINE_FUNCTION
+    void join(value_type volatile & dst, value_type const volatile & src) const { dst += src; }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(typename device_type::size_type i, value_type & num_failures) const
     {
-      m_map.insert(i/m_num_duplicates, uint32_t(i));
+      if (Near) {
+        if ( m_map.insert(i/m_num_duplicates, uint32_t(i)).failed() ) ++num_failures;
+      }
+      else {
+        if ( m_map.insert(i%(m_num_insert/m_num_duplicates), uint32_t(i)).failed() ) ++num_failures;
+      }
     }
   };
 
-  template <typename MapType>
-  struct test_insert_far
+  template <typename MapType, bool Near>
+  struct TestErase
   {
-    typedef MapType map_type;
-    typedef typename MapType::device_type device_type;
-
-    map_type m_map;
-    uint32_t m_num_insert;
-    uint32_t m_num_duplicates;
-
-    test_insert_far(map_type map, uint32_t num_inserts, uint32_t num_duplicates)
-      : m_map(map)
-      , m_num_insert(num_inserts)
-      , m_num_duplicates(num_duplicates)
-    {
-      Kokkos::parallel_for(num_inserts, *this);
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(typename device_type::size_type i) const
-    {
-      m_map.insert(i%(m_num_insert/m_num_duplicates), uint32_t(i));
-    }
-  };
-
-  template <typename MapType>
-  struct test_erase_close
-  {
-    typedef test_erase_close<MapType> self_type;
+    typedef TestErase<MapType, Near> self_type;
 
     typedef MapType map_type;
     typedef typename MapType::device_type device_type;
@@ -74,7 +67,7 @@ namespace Impl {
     uint32_t m_num_erase;
     uint32_t m_num_duplicates;
 
-    test_erase_close(map_type map, uint32_t num_erases, uint32_t num_duplicates)
+    TestErase(map_type map, uint32_t num_erases, uint32_t num_duplicates)
       : m_map(map)
       , m_num_erase(num_erases)
       , m_num_duplicates(num_duplicates)
@@ -85,37 +78,18 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION
     void operator()(typename device_type::size_type i) const
     {
-      m_map.erase(i/m_num_duplicates);
+      if (Near) {
+        m_map.erase(i/m_num_duplicates);
+      }
+      else {
+        m_map.erase(i%(m_num_erase/m_num_duplicates));
+      }
+
     }
   };
 
   template <typename MapType>
-  struct test_erase_far
-  {
-    typedef MapType map_type;
-    typedef typename MapType::device_type device_type;
-
-    map_type m_map;
-    uint32_t m_num_erase;
-    uint32_t m_num_duplicates;
-
-    test_erase_far(map_type map, uint32_t num_erases, uint32_t num_duplicates)
-      : m_map(map)
-      , m_num_erase(num_erases)
-      , m_num_duplicates(num_duplicates)
-    {
-      Kokkos::parallel_for(num_erases, *this);
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(typename device_type::size_type i) const
-    {
-      m_map.erase(i%(m_num_erase/m_num_duplicates));
-    }
-  };
-
-  template <typename MapType>
-  struct test_find
+  struct TestFind
   {
     typedef MapType map_type;
     typedef typename MapType::device_type device_type;
@@ -125,7 +99,7 @@ namespace Impl {
     uint32_t m_num_insert;
     uint32_t m_num_duplicates;
 
-    test_find(map_type map, uint32_t num_inserts, uint32_t num_duplicates, value_type & errors)
+    TestFind(map_type map, uint32_t num_inserts, uint32_t num_duplicates, value_type & errors)
       : m_map(map)
       , m_num_insert(num_inserts)
       , m_num_duplicates(num_duplicates)
@@ -176,28 +150,25 @@ void test_insert_close(  uint32_t num_nodes
   map_type map(num_nodes);
   Device::fence();
 
-  Impl::test_insert_close<map_type> test_insert_close(map, num_inserts, num_duplicates);
+  Impl::TestInsert<map_type,true> test_insert_close(map, num_inserts, num_duplicates);
+  test_insert_close.apply();
   Device::fence();
 
   const uint32_t map_size = map.size();
-  const bool failed_inserts = map.failed_inserts();
 
-  ASSERT_FALSE( failed_inserts );
-
-  if (!failed_inserts) {
-    ASSERT_EQ(map_size, expected_inserts);
-
+  ASSERT_FALSE( map.has_failed_inserts() );
+  {
+    EXPECT_EQ(map_size, expected_inserts);
     {
       uint32_t find_errors = 0;
-      Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
-      ASSERT_EQ( find_errors, 0u);
+      Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
+      EXPECT_EQ( find_errors, 0u);
     }
 
     map.begin_erase();
-    Impl::test_erase_close<map_type> erase_close(map, num_inserts, num_duplicates);
+    Impl::TestErase<map_type,true> erase_close(map, num_inserts, num_duplicates);
     map.end_erase();
-    ASSERT_EQ(map.size(), 0u);
-
+    EXPECT_EQ(map.size(), 0u);
   }
 }
 
@@ -215,27 +186,26 @@ void test_insert_far(  uint32_t num_nodes
   map_type map(num_nodes);
   Device::fence();
 
-  Impl::test_insert_far<map_type> test_insert_far(map, num_inserts, num_duplicates);
+  Impl::TestInsert<map_type,false> test_insert_far(map, num_inserts, num_duplicates);
+  test_insert_far.apply();
   Device::fence();
 
   const uint32_t map_size = map.size();
-  const bool failed_inserts = map.failed_inserts();
 
-  ASSERT_FALSE( failed_inserts );
-
-  if (!failed_inserts) {
-    ASSERT_EQ(map_size, expected_inserts);
+  ASSERT_FALSE( map.has_failed_inserts());
+  {
+    EXPECT_EQ(map_size, expected_inserts);
 
     {
       uint32_t find_errors = 0;
-      Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
-      ASSERT_EQ( find_errors, 0u);
+      Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
+      EXPECT_EQ( find_errors, 0u);
     }
 
     map.begin_erase();
-    Impl::test_erase_far<map_type> erase_far(map, num_inserts, num_duplicates);
+    Impl::TestErase<map_type,false> erase_far(map, num_inserts, num_duplicates);
     map.end_erase();
-    ASSERT_EQ(map.size(), 0u);
+    EXPECT_EQ(map.size(), 0u);
   }
 }
 
@@ -243,25 +213,13 @@ template <typename Device>
 void test_failed_insert( uint32_t num_nodes)
 {
   typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
-
-  // mfh 14 Feb 2014: This function doesn't actually create instances
-  // of const_map_type, but I'm guessing that ensuring that the
-  // typedef makes sense at compile time is important.  I preserve the
-  // typedef without the warning by declaring an empty instance of
-  // that type, and marking it with "(void)" to avoid a compiler
-  // warning for the unused variable.
-  {
-    const_map_type thing;
-    (void) thing;
-  }
 
   map_type map(num_nodes);
+  Impl::TestInsert<map_type,false> test_insert_far(map, 2u*num_nodes, 1u);
+  test_insert_far.apply();
   Device::fence();
 
-  Impl::test_insert_far<map_type> test_insert_far(map, 2u*num_nodes, 1u);
-  Device::fence();
-  //ASSERT_TRUE( map.failed_inserts() );
+  EXPECT_TRUE( map.has_failed_inserts() );
 }
 
 
@@ -298,9 +256,10 @@ void test_deep_copy( uint32_t num_nodes )
   Device::fence();
 
   {
-    Impl::test_insert_far<map_type> test_insert_far(map, num_nodes, 1);
+    Impl::TestInsert<map_type,false> test_insert_far(map, num_nodes, 1);
+    test_insert_far.apply();
     Device::fence();
-    ASSERT_EQ( map.size(), num_nodes);
+    EXPECT_EQ( map.size(), num_nodes);
   }
 
   host_map_type hmap;
@@ -311,11 +270,11 @@ void test_deep_copy( uint32_t num_nodes )
 
   const_map_type cmap = mmap;
 
-  ASSERT_EQ( cmap.size(), num_nodes);
+  EXPECT_EQ( cmap.size(), num_nodes);
 
   uint32_t find_errors = 0;
-  Impl::test_find<const_map_type> test_find(cmap, num_nodes/2u, 1, find_errors);
-  ASSERT_EQ( find_errors, 0u);
+  Impl::TestFind<const_map_type> test_find(cmap, num_nodes/2u, 1, find_errors);
+  EXPECT_EQ( find_errors, 0u);
 
 }
 

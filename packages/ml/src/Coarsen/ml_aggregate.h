@@ -107,6 +107,10 @@ typedef struct ML_Aggregate_Struct
   int minimizing_energy, cheap_minimizing_energy;
   double minimizing_energy_droptol;
   double   *old_RowOmegas;
+  int    coarsen_rate;               /* used only for semicoarsening */
+  int    semicoarsen_levels;         /* number of levels where semicoarsening */
+                                     /* will be applied                       */
+
 
 } ML_Aggregate;
 

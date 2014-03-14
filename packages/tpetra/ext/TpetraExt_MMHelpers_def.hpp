@@ -74,6 +74,7 @@ void CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::delet
   remote.clear();
   numRemote = 0;
   importMatrix.reset();
+  origMatrix = Teuchos::null;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>

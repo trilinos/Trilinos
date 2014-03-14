@@ -16,6 +16,7 @@
 #include "ml_common.h"
 #include "ml_operator.h"
 #include "ml_aggregate.h"
+#include "ml_viz_stats.h"
 
 /* ************************************************************************* */
 /* data structure to hold getrow function                                    */
@@ -47,6 +48,12 @@ struct ML_Field_Of_Values
   int compute_field_of_values_non_scaled;
 };
 
+struct SemiCoarsen_Struct {
+   int nz;
+   int CoarsenRate;
+   int *LayerId;
+   int *VertLineId;
+};
 
 
 /* ************************************************************************* */
@@ -126,6 +133,14 @@ extern void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                             ML_Operator* Cmat);
 extern void ML_AGG_Calculate_Smoothing_Factors(int numSweeps, double *factors);
 
+extern int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
+                     int VertLineId[], int DofsPerNode, ML_Operator *Amat,
+                     int **ParamPptr, int **ParamPcols, double **ParamPvals);
+extern int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data);
+extern int ML_compute_line_info(int LayerId[], int VertLineId[],
+                                    int Ndof, int DofsPerNode,
+                                    int MeshNumbering, int NumNodesPerVertLine,
+                                    ML_Aggregate_Viz_Stats *grid_info);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

@@ -787,18 +787,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    using Teuchos::arcp_const_cast;
-    using Teuchos::Array;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    using Teuchos::ScalarTraits;
-    typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    typedef ScalarTraits<MT> STM;
-
     typedef Kokkos::Details::ArithTraits<mag_type> ATM;
+    typedef typename Teuchos::ArrayView<mag_type>::size_type size_type;
 
     // FIXME (mfh 15 Sep 2013) When migrating to use Kokkos::View, we
     // should have the post-reduce kernel do the square root(s) on the
@@ -809,45 +801,38 @@ namespace Tpetra {
     // output View type; users should use a View type compatible with
     // the MultiVector's native device.
 
-    const size_t numVecs = this->getNumVectors();
+    const size_type numVecs = static_cast<size_type> (this->getNumVectors ());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      as<size_t> (norms.size ()) != numVecs,
-      std::runtime_error,
+      norms.size () != numVecs, std::runtime_error,
       "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the "
       "number of vectors in *this.  norms.size() = " << norms.size () << ", but "
       "*this.getNumVectors() = " << numVecs << ".");
-    /*if (isConstantStride ()) {
-      MVT::Norm2Squared (lclMV_,norms);
+
+    if (isConstantStride ()) {
+      Kokkos::MV_Dot (&norms[0], view_.d_view, view_.d_view, getLocalLength ());
     }
     else {
-      KMV v (MVT::getNode (lclMV_));
-      ArrayRCP<Scalar> vi;
-      for (size_t i=0; i < numVecs; ++i) {
-        vi = arcp_const_cast<Scalar> (MVT::getValues (lclMV_, whichVectors_[i]));
-        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vi, MVT::getStride (lclMV_));
-        norms[i] = MVT::Norm2Squared (v);
-      }
-    }*/
-
-    if (isConstantStride()) {
-      Kokkos::MV_Dot(&norms[0],view_.d_view,view_.d_view,getLocalLength());
-    } else {
-      for (size_t k = 0; k < numVecs; ++k) {
-        Kokkos::View<Scalar*,DeviceType> vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
-        norms[k] = Kokkos::V_Dot (vector_k,vector_k);
+      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
+      // have to write the explicit for loop over columns any more.
+      for (size_type k = 0; k < numVecs; ++k) {
+        Kokkos::View<Scalar*,DeviceType> vector_k =
+          Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view,
+                                                              Kokkos::ALL (),
+                                                              whichVectors_[k]);
+        norms[k] = Kokkos::V_Dot (vector_k, vector_k);
       }
     }
 
     if (this->isDistributed ()) {
-      Array<mag_type> lnorms (norms);
-      // FIXME (mfh 25 Apr 2012) Somebody explain to me why we're
-      // calling Teuchos::reduceAll when MultiVector has a perfectly
-      // good reduce() function.
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs),
-                 lnorms.getRawPtr (), norms.getRawPtr ());
+      Teuchos::Array<mag_type> localNorms (norms);
+      reduceAll<int, mag_type> (*this->getMap ()->getComm (), REDUCE_SUM,
+                                static_cast<int> (numVecs),
+                                localNorms.getRawPtr (),
+                                norms.getRawPtr ());
     }
-    for (typename ArrayView<mag_type>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
-      (*n) = ATM::sqrt (*n);
+
+    for (size_type k = 0; k < norms.size (); ++k) {
+      norms[k] = ATM::sqrt (norms[k]);
     }
   }
 

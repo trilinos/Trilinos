@@ -2882,6 +2882,8 @@ fflush(stdout);
 	  storage_type);
 #endif/*MB_MODIF_QR*/
 
+   if  (ml->Amat[child_level].num_PDEs < ml->Amat[parent_level].num_PDEs)
+      ml->Amat[child_level].num_PDEs = ml->Amat[parent_level].num_PDEs;
 #ifdef ML_TIMING
    ml->Amat[child_level].build_time = GetClock() - t0;
    ml->timing->total_build_time   += ml->Amat[child_level].build_time;
