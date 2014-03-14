@@ -167,7 +167,7 @@ void getObjList(void *data, int numGid, int numLid,
   }
 }
 
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, gid_t * gids, gid_t * lids,
   int dim, double *coords, int *ierr)
 {
@@ -671,7 +671,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, NULL);
   Zoltan_Set_Obj_List_Fn(zz, getObjList,NULL);
   Zoltan_Set_Num_Geom_Fn(zz, getDim, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates,NULL);
+  Zoltan_Set_Geom_Multi_Fn(zz, getCoords, NULL);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   gid_t * importGlobalGids, * importLocalGids;

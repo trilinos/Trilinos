@@ -136,7 +136,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   RCP<tMatrix_t> matrix;
   try{
-    matrix = uinput->getTpetraCrsMatrix();
+    matrix = uinput->getUITpetraCrsMatrix();
   }
   catch(...){
     if (rank == 0)
@@ -148,7 +148,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   RCP<tMVector_t> coords;
   try{
-   coords = uinput->getCoordinates();
+   coords = uinput->getUICoordinates();
   }
   catch(...){
     if (rank == 0)
@@ -160,7 +160,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   RCP<tMVector_t> weights;
   try{
-   weights = uinput->getWeights();
+   weights = uinput->getUIWeights();
   }
   catch(...){
     if (rank == 0)

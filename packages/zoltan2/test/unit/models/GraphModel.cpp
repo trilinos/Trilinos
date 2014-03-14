@@ -586,14 +586,14 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
 
   // Input generator
-  UserInputForTests *input;
+  UserInputForTests *uinput;
 
   if (fname.size() > 0)
-    input = new UserInputForTests(testDataFilePath, fname, comm, true);
+    uinput = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    input = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true);
+    uinput = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true);
 
-  RCP<tcrsMatrix_t> M = input->getTpetraCrsMatrix();
+  RCP<tcrsMatrix_t> M = uinput->getUITpetraCrsMatrix();
 
   // Row Ids of test input are already consecutive
 
@@ -659,7 +659,7 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
                                                       consecutiveIdsRequested,
                                                       removeSelfEdges);
 
-  delete input;
+  delete uinput;
 }
 
 /////////////////////////////////////////////////////////////////////////////

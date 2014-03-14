@@ -348,7 +348,7 @@ int testFromDataFile(
 
     UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
-    RCP<tMVector_t> coords = uinput.getCoordinates();
+    RCP<tMVector_t> coords = uinput.getUICoordinates();
 
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;

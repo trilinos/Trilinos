@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     RCP<tmatrix_t> M;
   
     try{
-      M = uinput->getTpetraCrsMatrix();
+      M = uinput->getUITpetraCrsMatrix();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
     RCP<tgraph_t> G;
   
     try{
-      G = uinput->getTpetraCrsGraph();
+      G = uinput->getUITpetraCrsGraph();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     RCP<tvector_t> V;
   
     try{
-      V = uinput->getTpetraVector();
+      V = uinput->getUITpetraVector();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
     RCP<tmvector_t> MV;
   
     try{
-      MV = uinput->getTpetraMultiVector(3);
+      MV = uinput->getUITpetraMultiVector(3);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
     RCP<xmatrix_t> M;
   
     try{
-      M = uinput->getXpetraCrsMatrix();
+      M = uinput->getUIXpetraCrsMatrix();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
     RCP<xgraph_t> G;
   
     try{
-      G = uinput->getXpetraCrsGraph();
+      G = uinput->getUIXpetraCrsGraph();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
     RCP<xvector_t> V;
   
     try{
-      V = uinput->getXpetraVector();
+      V = uinput->getUIXpetraVector();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
     RCP<xmvector_t> MV;
   
     try{
-      MV = uinput->getXpetraMultiVector(3);
+      MV = uinput->getUIXpetraMultiVector(3);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
     RCP<ematrix_t> M;
   
     try{
-      M = euinput->getEpetraCrsMatrix();
+      M = euinput->getUIEpetraCrsMatrix();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
     RCP<egraph_t> G;
   
     try{
-      G = euinput->getEpetraCrsGraph();
+      G = euinput->getUIEpetraCrsGraph();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -581,7 +581,7 @@ int main(int argc, char *argv[])
     RCP<evector_t> V;
   
     try{
-      V = euinput->getEpetraVector();
+      V = euinput->getUIEpetraVector();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
     RCP<emvector_t> MV;
   
     try{
-      MV = euinput->getEpetraMultiVector(3);
+      MV = euinput->getUIEpetraMultiVector(3);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 

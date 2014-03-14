@@ -245,7 +245,7 @@ void getObjList(void *data, int numGid, int numLid,
 }
 
 //////////////////////////
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords, int *ierr)
 {
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
   else {
 
       UserInputForTests uinput(testDataFilePath, inputFile, comm, true);
-      RCP<tMVector_t> coords = uinput.getCoordinates();
+      RCP<tMVector_t> coords = uinput.getUICoordinates();
       tMVector_t *newMulti = new tMVector_t(*coords);
       dots.coordinates = newMulti;
       numLocalCoords = coords->getLocalLength();
@@ -689,7 +689,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, &dots);
   Zoltan_Set_Obj_List_Fn(zz, getObjList, &dots);
   Zoltan_Set_Num_Geom_Fn(zz, getDim, &dots);
-  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates, &dots);
+  Zoltan_Set_Geom_Multi_Fn(zz, getCoords, &dots);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids;

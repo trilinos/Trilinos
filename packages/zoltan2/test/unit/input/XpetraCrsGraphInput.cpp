@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
   RCP<tgraph_t> tG;     // original graph (for checking)
   RCP<tgraph_t> newG;   // migrated graph
 
-  tG = uinput->getTpetraCrsGraph();
+  tG = uinput->getUITpetraCrsGraph();
   size_t nvtx = tG->getNodeNumRows();
   ArrayView<const gno_t> rowGids = tG->getRowMap()->getNodeElementList();
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::CrsGraph
   if (!gfail){
-    RCP<xgraph_t> xG = uinput->getXpetraCrsGraph();
+    RCP<xgraph_t> xG = uinput->getUIXpetraCrsGraph();
     RCP<const xgraph_t> cxG = rcp_const_cast<const xgraph_t>(xG);
     RCP<Zoltan2::XpetraCrsGraphAdapter<xgraph_t> > xGInput;
 
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsGraph
   if (!gfail){
-    RCP<egraph_t> eG = uinput->getEpetraCrsGraph();
+    RCP<egraph_t> eG = uinput->getUIEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
     RCP<Zoltan2::XpetraCrsGraphAdapter<egraph_t> > eGInput;
 

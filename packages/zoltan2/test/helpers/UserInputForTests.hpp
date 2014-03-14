@@ -174,39 +174,39 @@ public:
 
   /*! \brief Generate lists of random scalars.
    */
-  static void getRandomData(unsigned int seed, lno_t length,
+  static void getUIRandomData(unsigned int seed, lno_t length,
     scalar_t min, scalar_t max, ArrayView<ArrayRCP<scalar_t > > data);
 
-  RCP<tMVector_t> getCoordinates();
+  RCP<tMVector_t> getUICoordinates();
 
-  RCP<tMVector_t> getWeights();
+  RCP<tMVector_t> getUIWeights();
 
-  RCP<tMVector_t> getEdgeWeights();
+  RCP<tMVector_t> getUIEdgeWeights();
 
-  RCP<tcrsMatrix_t> getTpetraCrsMatrix();
+  RCP<tcrsMatrix_t> getUITpetraCrsMatrix();
 
-  RCP<tcrsGraph_t> getTpetraCrsGraph();
+  RCP<tcrsGraph_t> getUITpetraCrsGraph();
 
-  RCP<tVector_t> getTpetraVector();
+  RCP<tVector_t> getUITpetraVector();
 
-  RCP<tMVector_t> getTpetraMultiVector(int nvec);
+  RCP<tMVector_t> getUITpetraMultiVector(int nvec);
 
-  RCP<xcrsMatrix_t> getXpetraCrsMatrix();
+  RCP<xcrsMatrix_t> getUIXpetraCrsMatrix();
 
-  RCP<xcrsGraph_t> getXpetraCrsGraph();
+  RCP<xcrsGraph_t> getUIXpetraCrsGraph();
 
-  RCP<xVector_t> getXpetraVector();
+  RCP<xVector_t> getUIXpetraVector();
 
-  RCP<xMVector_t> getXpetraMultiVector(int nvec);
+  RCP<xMVector_t> getUIXpetraMultiVector(int nvec);
 
 #ifdef HAVE_EPETRA_DATA_TYPES
-  RCP<Epetra_CrsGraph> getEpetraCrsGraph();
+  RCP<Epetra_CrsGraph> getUIEpetraCrsGraph();
 
-  RCP<Epetra_CrsMatrix> getEpetraCrsMatrix();
+  RCP<Epetra_CrsMatrix> getUIEpetraCrsMatrix();
 
-  RCP<Epetra_Vector> getEpetraVector();
+  RCP<Epetra_Vector> getUIEpetraVector();
 
-  RCP<Epetra_MultiVector> getEpetraMultiVector(int nvec);
+  RCP<Epetra_MultiVector> getUIEpetraMultiVector(int nvec);
 #endif
 
 private:
@@ -249,10 +249,10 @@ private:
                           bool distributeInput);
 
   // Read Zoltan data that is in a .graph file.
-  void getChacoGraph(FILE *fptr, string name, bool distributeInput);
+  void getUIChacoGraph(FILE *fptr, string name, bool distributeInput);
 
   // Read Zoltan data that is in a .coords file.
-  void getChacoCoords(FILE *fptr, string name);
+  void getUIChacoCoords(FILE *fptr, string name);
 };
 
 UserInputForTests::UserInputForTests(string path, string testData, 
@@ -311,38 +311,38 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
 #endif
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getCoordinates()
+RCP<UserInputForTests::tMVector_t> UserInputForTests::getUICoordinates()
 { 
   if (xyz_.is_null())
     throw std::runtime_error("could not read coord file");
   return xyz_;
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getWeights()
+RCP<UserInputForTests::tMVector_t> UserInputForTests::getUIWeights()
 { 
   return vtxWeights_;
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getEdgeWeights()
+RCP<UserInputForTests::tMVector_t> UserInputForTests::getUIEdgeWeights()
 { 
   return edgWeights_;
 }
 
-RCP<UserInputForTests::tcrsMatrix_t> UserInputForTests::getTpetraCrsMatrix() 
+RCP<UserInputForTests::tcrsMatrix_t> UserInputForTests::getUITpetraCrsMatrix() 
 { 
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return M_;
 }
 
-RCP<UserInputForTests::tcrsGraph_t> UserInputForTests::getTpetraCrsGraph() 
+RCP<UserInputForTests::tcrsGraph_t> UserInputForTests::getUITpetraCrsGraph() 
 { 
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
 }
 
-RCP<UserInputForTests::tVector_t> UserInputForTests::getTpetraVector() 
+RCP<UserInputForTests::tVector_t> UserInputForTests::getUITpetraVector() 
 { 
   RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
   V->randomize();
@@ -350,7 +350,7 @@ RCP<UserInputForTests::tVector_t> UserInputForTests::getTpetraVector()
   return V;
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getTpetraMultiVector(int nvec) 
+RCP<UserInputForTests::tMVector_t> UserInputForTests::getUITpetraMultiVector(int nvec) 
 { 
   RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
   mV->randomize();
@@ -358,38 +358,38 @@ RCP<UserInputForTests::tMVector_t> UserInputForTests::getTpetraMultiVector(int n
   return mV;
 }
 
-RCP<UserInputForTests::xcrsMatrix_t> UserInputForTests::getXpetraCrsMatrix() 
+RCP<UserInputForTests::xcrsMatrix_t> UserInputForTests::getUIXpetraCrsMatrix() 
 { 
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return xM_;
 }
 
-RCP<UserInputForTests::xcrsGraph_t> UserInputForTests::getXpetraCrsGraph() 
+RCP<UserInputForTests::xcrsGraph_t> UserInputForTests::getUIXpetraCrsGraph() 
 { 
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
 }
 
-RCP<UserInputForTests::xVector_t> UserInputForTests::getXpetraVector() 
+RCP<UserInputForTests::xVector_t> UserInputForTests::getUIXpetraVector() 
 { 
-  RCP<const tVector_t> tV = getTpetraVector();
+  RCP<const tVector_t> tV = getUITpetraVector();
   RCP<const xVector_t> xV =
     Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
   return rcp_const_cast<xVector_t>(xV);
 }
 
-RCP<UserInputForTests::xMVector_t> UserInputForTests::getXpetraMultiVector(int nvec) 
+RCP<UserInputForTests::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int nvec) 
 { 
-  RCP<const tMVector_t> tMV = getTpetraMultiVector(nvec);
+  RCP<const tMVector_t> tMV = getUITpetraMultiVector(nvec);
   RCP<const xMVector_t> xMV =
     Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
   return rcp_const_cast<xMVector_t>(xMV);
 }
 
 #ifdef HAVE_EPETRA_DATA_TYPES
-RCP<Epetra_CrsGraph> UserInputForTests::getEpetraCrsGraph()
+RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
 {
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
@@ -427,11 +427,11 @@ RCP<Epetra_CrsGraph> UserInputForTests::getEpetraCrsGraph()
   return eG_;
 }
 
-RCP<Epetra_CrsMatrix> UserInputForTests::getEpetraCrsMatrix()
+RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
 {
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
-  RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
+  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
   eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
 
   size_t maxRow = M_->getNodeMaxNumRowEntries();
@@ -457,17 +457,17 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getEpetraCrsMatrix()
   return eM_;
 }
 
-RCP<Epetra_Vector> UserInputForTests::getEpetraVector() 
+RCP<Epetra_Vector> UserInputForTests::getUIEpetraVector() 
 { 
-  RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
+  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
   RCP<Epetra_Vector> V = rcp(new Epetra_Vector(egraph->RowMap()));
   V->Random();
   return V;
 }
 
-RCP<Epetra_MultiVector> UserInputForTests::getEpetraMultiVector(int nvec) 
+RCP<Epetra_MultiVector> UserInputForTests::getUIEpetraMultiVector(int nvec) 
 { 
-  RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
+  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
   RCP<Epetra_MultiVector> mV = 
     rcp(new Epetra_MultiVector(egraph->RowMap(), nvec));
   mV->Random();
@@ -475,7 +475,7 @@ RCP<Epetra_MultiVector> UserInputForTests::getEpetraMultiVector(int nvec)
 }
 #endif
 
-void UserInputForTests::getRandomData(unsigned int seed, lno_t length, 
+void UserInputForTests::getUIRandomData(unsigned int seed, lno_t length, 
     scalar_t min, scalar_t max,
     ArrayView<ArrayRCP<scalar_t > > data)
 {
@@ -830,14 +830,14 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   if (haveGraph){
     // Writes M_, vtxWeights_, and edgWeights_ and closes file.
     try{
-      getChacoGraph(graphFile, testData, distributeInput);
+      getUIChacoGraph(graphFile, testData, distributeInput);
     }
     Z2_FORWARD_EXCEPTIONS
 
     if (haveCoords){
       // Writes xyz_ and closes the file.
       try{
-        getChacoCoords(coordFile, testData);
+        getUIChacoCoords(coordFile, testData);
       }
       Z2_FORWARD_EXCEPTIONS
     }
@@ -848,7 +848,7 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
 }
 
-void UserInputForTests::getChacoGraph(FILE *fptr, string fname,
+void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
                                       bool distributeInput)
 {
   int rank = tcomm_->getRank();
@@ -1124,7 +1124,7 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname,
   }
 }
 
-void UserInputForTests::getChacoCoords(FILE *fptr, string fname)
+void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
 {
   int rank = tcomm_->getRank();
   int ndim=0;

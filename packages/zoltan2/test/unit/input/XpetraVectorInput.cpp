@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   RCP<tvector_t> tV;     // original vector (for checking)
   RCP<tvector_t> newV;   // migrated vector
 
-  tV = uinput->getTpetraVector();
+  tV = uinput->getUITpetraVector();
   size_t vlen = tV->getLocalLength();
   Teuchos::ArrayView<const gno_t> rowGids = tV->getMap()->getNodeElementList();
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::Vector
   if (!gfail){ 
-    RCP<xvector_t> xV = uinput->getXpetraVector();
+    RCP<xvector_t> xV = uinput->getUIXpetraVector();
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_Vector
   if (!gfail){ 
-    RCP<evector_t> eV = uinput->getEpetraVector();
+    RCP<evector_t> eV = uinput->getUIEpetraVector();
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   

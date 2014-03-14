@@ -85,7 +85,7 @@ void testFromDataFile(
   std::string fname(filename);
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
-  RCP<tMVector_t> coords = uinput.getCoordinates();
+  RCP<tMVector_t> coords = uinput.getUICoordinates();
   if (me == 0)
     cout << "Multivector length = " << coords->getGlobalLength()
          << " Num vectors = " << coords->getNumVectors() << endl;
@@ -146,7 +146,7 @@ void serialTest(int numParts, bool doRemap)
   ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 
   Array<ArrayRCP<scalar_t> > randomCoords(3);
-  UserInputForTests::getRandomData(555, numCoords, 0, 10,
+  UserInputForTests::getUIRandomData(555, numCoords, 0, 10,
     randomCoords.view(0,3));
 
   typedef Zoltan2::BasicVectorAdapter<myTypes_t> inputAdapter_t;
@@ -182,7 +182,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   int zdim = 20;
   UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true);
 
-  RCP<tMVector_t> coords = uinput.getCoordinates();
+  RCP<tMVector_t> coords = uinput.getUICoordinates();
 
   size_t localCount = coords->getLocalLength();
 

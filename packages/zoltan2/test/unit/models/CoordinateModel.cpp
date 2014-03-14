@@ -102,7 +102,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   RCP<mv_t> coords;
 
   try{
-    coords = uinput->getCoordinates();
+    coords = uinput->getUICoordinates();
   }
   catch(std::exception &e){
     fail=2;

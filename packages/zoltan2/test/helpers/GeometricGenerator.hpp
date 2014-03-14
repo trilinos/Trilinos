@@ -115,7 +115,7 @@ int getNumObj(void *data, int *ierr)
 }
 //////////////////////////
 template <typename tMVector_t>
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords_, int *ierr)
 {
@@ -2616,7 +2616,7 @@ public:
 	  Zoltan_Set_Num_Obj_Fn(zz, getNumObj<tMVector_t>, &dots_);
 	  Zoltan_Set_Obj_List_Fn(zz, getObjList<tMVector_t>, &dots_);
 	  Zoltan_Set_Num_Geom_Fn(zz,  getDim<tMVector_t>, &dots_);
-	  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates<tMVector_t>, &dots_);
+	  Zoltan_Set_Geom_Multi_Fn(zz, getCoords<tMVector_t>, &dots_);
 
 	  int changes, numGidEntries, numLidEntries, numImport, numExport;
 	  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
