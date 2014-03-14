@@ -42,7 +42,8 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to minimize Rosenbrock's function using Newton-Krylov.
+    \brief Shows how to solve the inverse Poisson problem using trust-region
+           methods with dense Hessian diagnostics.
 */
 
 #define USE_HESSVEC 1
@@ -76,50 +77,51 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 256; // Set problem dimension. Must be even.
+    int dim = 258; // Set problem dimension.
     ROL::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
 
     Teuchos::ParameterList parlist;
-    // Enumerations
+    // Basic algorithm.
     parlist.set("Trust-Region Subproblem Solver Type",    "Truncated CG");
-    // Krylov Parameters
+    // Krylov parameters.
     parlist.set("Absolute Krylov Tolerance",              1.e-4);
     parlist.set("Relative Krylov Tolerance",              1.e-2);
     parlist.set("Maximum Number of Krylov Iterations",    50);
-    // Define Step
+    // Define step.
     ROL::TrustRegionStep<RealT> step(parlist);
 
-    // Define Status Test
+    // Define status test.
     RealT gtol  = 1e-12;  // norm of gradient tolerance
     RealT stol  = 1e-14;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
 
-    // Define Algorithm
+    // Define algorithm.
     ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
-    // Iteration Vector
+    // Iteration vector.
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    // Set Initial Guess
-    for (int i=0; i<dim/2; i++) {
-      (*x_rcp)[2*i]   = -1.2;
-      (*x_rcp)[2*i+1] =  1.0;
+    // Set initial guess.
+    for (int i=0; i<dim; i++) {
+      (*x_rcp)[i] = 0.1;
     }
     ROL::StdVector<RealT> x(x_rcp);
 
-    // Run Algorithm
+    // Run algorithm.
     std::vector<std::string> output = algo.run(x, obj, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
       std::cout << output[i];
     }
 
+    // Compute dense Hessian matrix. 
     Teuchos::SerialDenseMatrix<int, RealT> H(x.dimension(), x.dimension());
     H = ROL::computeDenseHessian(obj, x);
     //H.print(*outStream);
 
+    // Compute and print eigenvalues.
     std::vector<std::vector<RealT> > eigenvals = ROL::computeEigenvalues(H);
 
-    *outStream << "\n";
+    *outStream << "\nEigenvalues:\n";
     for (unsigned i=0; i<(eigenvals[0]).size(); i++) {
       if (i==0) {
         *outStream << std::right
@@ -133,6 +135,24 @@ int main(int argc, char *argv[]) {
                  << "\n";
     }
 
+    // Compute and print generalized eigenvalues.
+    Teuchos::SerialDenseMatrix<int, RealT> M = computeDotMatrix(x);
+    //M.print(*outStream);
+    std::vector<std::vector<RealT> > genEigenvals = ROL::computeGenEigenvalues(H, M);
+
+    *outStream << "\nGeneralized eigenvalues:\n";
+    for (unsigned i=0; i<(genEigenvals[0]).size(); i++) {
+      if (i==0) {
+        *outStream << std::right
+                   << std::setw(20) << "Real"
+                   << std::setw(20) << "Imag"
+                   << "\n";
+      }
+      *outStream << std::scientific << std::setprecision(8) << std::right
+                 << std::setw(20) << (genEigenvals[0])[i]
+                 << std::setw(20) << (genEigenvals[1])[i]
+                 << "\n";
+    }
 
   }
   catch (std::logic_error err) {

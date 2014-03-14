@@ -104,9 +104,11 @@ namespace ROL {
   }
 
   template<class Real>
-  std::vector<std::vector<Real> > computeEigenvalues(Teuchos::SerialDenseMatrix<int, Real> & mat) {
+  std::vector<std::vector<Real> > computeEigenvalues(const Teuchos::SerialDenseMatrix<int, Real> & mat) {
 
     Teuchos::LAPACK<int, Real> lapack;
+
+    Teuchos::SerialDenseMatrix<int, Real> mymat(mat);
 
     char jobvl = 'N';
     char jobvr = 'N';
@@ -129,7 +131,7 @@ namespace ROL {
 
     int info = 0;
 
-    lapack.GEEV(jobvl, jobvr, n, &mat(0,0), n, &real[0], &imag[0], vl, ldvl, vr, ldvr, &work[0], lwork, &info);
+    lapack.GEEV(jobvl, jobvr, n, &mymat(0,0), n, &real[0], &imag[0], vl, ldvl, vr, ldvr, &work[0], lwork, &info);
 
     eigenvals.push_back(real);
     eigenvals.push_back(imag);
@@ -139,10 +141,13 @@ namespace ROL {
   }
 
   template<class Real>
-  std::vector<std::vector<Real> > computeGenEigenvalues(Teuchos::SerialDenseMatrix<int, Real> &A,
-                                                        Teuchos::SerialDenseMatrix<int, Real> &B) {
+  std::vector<std::vector<Real> > computeGenEigenvalues(const Teuchos::SerialDenseMatrix<int, Real> & A,
+                                                        const Teuchos::SerialDenseMatrix<int, Real> & B) {
 
     Teuchos::LAPACK<int, Real> lapack;
+
+    Teuchos::SerialDenseMatrix<int, Real> myA(A);
+    Teuchos::SerialDenseMatrix<int, Real> myB(B);
 
     char jobvl = 'N';
     char jobvr = 'N';
@@ -166,12 +171,16 @@ namespace ROL {
 
     int info = 0;
 
-    lapack.GGEV(jobvl, jobvr, n, &A(0,0), n, &B(0,0), n, &real[0], &imag[0], &beta[0], 
+    lapack.GGEV(jobvl, jobvr, n, &myA(0,0), n, &myB(0,0), n, &real[0], &imag[0], &beta[0], 
                 vl, ldvl, vr, ldvr, &work[0], lwork, &info);
+
+    for (int i=0; i<n; i++) {
+      real[i] /= beta[i];
+      imag[i] /= beta[i];
+    }
 
     eigenvals.push_back(real);
     eigenvals.push_back(imag);
-    eigenvals.push_back(beta);
 
     return eigenvals;
 
