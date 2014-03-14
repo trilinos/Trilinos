@@ -289,6 +289,27 @@ namespace Tpetra {
                const ArrayRCP<Scalar>& values,
                const RCP<ParameterList>& params = null);
 
+    /// \brief Constructor specifying column Map and a local Kokkos CrsMatrix
+    ///
+    /// In contrast to most other constructors calling this one will
+    /// generate a fillComplete Matrix.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param lclMatrix [in] A local CrsMatrix containing all local matrix values
+    ///    as well as a local Graph
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const RCP<const map_type>& rowMap,
+               const RCP<const map_type>& colMap,
+               const Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type, void, size_t>& lclMatrix,
+               const RCP<Teuchos::ParameterList>& params = null);
+
+
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2, class LMO2>
     friend class CrsMatrix;
@@ -2105,7 +2126,9 @@ namespace Tpetra {
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
     typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
     typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
-    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type> k_local_matrix_type;
+  public:
+    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type,void,size_t> k_local_matrix_type;
+  protected:
 
     typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;

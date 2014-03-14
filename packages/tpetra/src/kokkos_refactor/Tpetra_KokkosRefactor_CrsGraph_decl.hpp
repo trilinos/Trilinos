@@ -350,6 +350,23 @@ namespace Tpetra {
               const ArrayRCP<LocalOrdinal> & columnIndices,
               const RCP<ParameterList>& params = null);
 
+    /// \brief Constructor specifying column Map and a local (sorted) Graph.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param lclGraph [in] A Kokkos_StaticCrsGraph compatible with
+    ///   the specified rowMap and colMap.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
+              const LocalStaticCrsGraphType& lclGraph,
+              const RCP<ParameterList>& params);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///

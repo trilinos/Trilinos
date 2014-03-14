@@ -282,6 +282,109 @@ namespace Tpetra {
     checkInternalState();
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
+            const LocalStaticCrsGraphType& k_local_graph_,
+            const RCP<ParameterList>& params)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
+  , rowMap_(rowMap)
+  , colMap_(colMap)
+  , nodeNumEntries_(0)
+  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
+  , pftype_(StaticProfile)
+  , numAllocForAllRows_(0)
+  , indicesAreAllocated_(true)
+  , indicesAreLocal_(true)
+  , indicesAreGlobal_(false)
+  , fillComplete_(false)
+  , indicesAreSorted_(true)
+  , noRedundancies_(true)
+  , haveLocalConstants_ (false)
+  , haveGlobalConstants_ (false)
+  , k_lclGraph_(k_local_graph_)
+  , haveRowInfo_(true)
+  {
+    const char tfecfFuncName[] = "CrsGraph(Map,Map,Kokkos::LocalStaticCrsGraph)";
+    staticAssertions();
+    globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( k_local_graph_.numRows() != getNodeNumRows(), std::runtime_error, ": rowMap and localGraph need to represent same number of Rows.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( lclInds1D_ != Teuchos::null || gblInds1D_ != Teuchos::null, std::runtime_error, ": cannot have 1D data structures allocated.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( lclInds2D_ != Teuchos::null || gblInds2D_ != Teuchos::null, std::runtime_error, ": cannot have 2D data structures allocated.");
+
+    indicesAreAllocated_ = true;
+    indicesAreLocal_     = true;
+    nodeNumEntries_ = nodeNumAllocated_ = k_local_graph_.row_map(getNodeNumRows());
+    setDomainRangeMaps(rowMap_,rowMap_);
+    makeImportExport();
+
+    RCP<ParameterList> lclparams;
+    if (params == null) lclparams = parameterList();
+    else                lclparams = sublist(params,"Local Graph");
+    lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getColMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
+    ArrayRCP<const size_t> ptrs = Teuchos::arcp(k_lclGraph_.row_map.ptr_on_device(), 0, k_lclGraph_.row_map.dimension_0(),
+                         Kokkos::Compat::deallocator(k_lclGraph_.row_map), false);
+    ArrayRCP<const LocalOrdinal> inds = Teuchos::arcp(k_lclGraph_.entries.ptr_on_device(), 0, k_lclGraph_.entries.dimension_0(),
+        Kokkos::Compat::deallocator(k_lclGraph_.entries), false);
+
+    lclGraph_->setStructure(ptrs,inds);
+    ptrs = null;
+    inds = null;
+
+    typename LocalStaticCrsGraphType::row_map_type d_ptrs = k_lclGraph_.row_map;
+    typename LocalStaticCrsGraphType::entries_type d_inds = k_lclGraph_.entries;
+
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+
+    // Reset local properties
+    upperTriangular_ = true;
+    lowerTriangular_ = true;
+    nodeMaxNumRowEntries_ = 0;
+    nodeNumDiags_         = 0;
+
+    // Compute triangular properties
+    const size_t numLocalRows = getNodeNumRows ();
+    for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
+      const GO globalRow = rowMap_->getGlobalElement (localRow);
+      const LO rlcid = colMap_->getLocalElement (globalRow);
+
+      if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( rlcid >=   Teuchos::as<LO>(d_ptrs.dimension_0()), std::runtime_error, ": rowMap and/or colMap are not compatible with provided local graph.");
+        if(d_ptrs(rlcid)!=d_ptrs(rlcid+1)) {
+          const size_t smallestCol = Teuchos::as<size_t>( d_inds(d_ptrs(rlcid)));
+          const size_t largestCol = Teuchos::as<size_t>( d_inds(d_ptrs(rlcid+1)));
+
+          if (smallestCol < localRow) {
+            upperTriangular_ = false;
+          }
+          if (localRow < largestCol) {
+            lowerTriangular_ = false;
+          }
+
+          for(size_t i = d_ptrs(rlcid); i<d_ptrs(rlcid+1);i++)
+            if(d_inds(i)==rlcid) ++nodeNumDiags_;
+        }
+
+        nodeMaxNumRowEntries_ = std::max(d_ptrs(rlcid+1)-d_ptrs(rlcid),nodeMaxNumRowEntries_);
+      }
+    }
+
+    haveLocalConstants_ = true;
+    computeGlobalConstants();
+
+    // finalize local graph
+    Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
+    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
+    if      (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
+    else if (isLowerTriangular()) uplo = Teuchos::LOWER_TRI;
+    LocalMatOps::finalizeGraph(uplo,diag,*lclGraph_,params);
+    fillComplete_ = true;
+
+    checkInternalState();
+  }
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
