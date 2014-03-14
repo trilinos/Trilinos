@@ -43,9 +43,6 @@
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics
-
-#define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
 
 #include <Kokkos_OpenMP.hpp>
@@ -73,15 +70,18 @@ protected:
     unsigned num_threads = 4;
 
     if (Kokkos::hwloc::available()) {
-      num_threads = Kokkos::hwloc::get_available_numa_count() *
-                    Kokkos::hwloc::get_available_cores_per_numa() *
-                    Kokkos::hwloc::get_available_threads_per_core();
+      num_threads = Kokkos::hwloc::get_available_numa_count()
+                    * Kokkos::hwloc::get_available_cores_per_numa()
+                    * Kokkos::hwloc::get_available_threads_per_core()
+                    ;
 
     }
 
     std::cout << "OpenMP: " << num_threads << std::endl;
 
     Kokkos::OpenMP::initialize( num_threads );
+
+    std::cout << "available threads: " << omp_get_max_threads() << std::endl;
   }
 
   static void TearDownTestCase()
