@@ -23,6 +23,9 @@ directory which just runs::
 
 to generate this document.  In a project-specific version, ``<Project>`` is replaced with the actual project name (e.g. ``Trilinos``, or ``TriBITSProj``, etc.).  This version of the generated document is referred to by the general TribitsDeveloperGuide.[rst,html,pdf] document.
 
+Below are given genetic versions of the sections that show up in every
+project-specific build of this document.
+
 
 
 Getting set up to use CMake
@@ -1001,6 +1004,31 @@ where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 ``-E`` argument.
 
 
+Setting test timeouts at configure time
+---------------------------------------
+
+A maximum time limit for any single test can be set at configure time by
+setting::
+
+  -D DART_TESTING_TIMEOUT:STRING=<maxSeconds>
+
+where ``<maxSeconds>`` is the number of wall-clock seconds.  By default there
+is no timeout limit so it is a good idea to set some limit just so tests don't
+hang and run forever.  When an MPI code has a defect, it can easily hang
+forever until it is manually killed.  If killed, CTest will kill all of this
+child processes correctly.
+
+NOTES:
+
+* Be careful not set the timeout too low since if a machine becomes loaded
+  tests can take longer to run and may result in timeouts that would not
+  otherwise occur.
+* Individual tests can have there timeout limit increased on a test-by-test
+  basis internally in the project's CMakeLists.txt files.
+* To set or override the test timeout limit at runtime, see `Overridding test
+  timeouts`_.
+
+
 Enabling support for coverage testing
 -------------------------------------
 
@@ -1329,18 +1357,26 @@ Running all tests
 To run all of the defined tests (i.e. created using ``TRIBITS_ADD_TEST()`` or
 ``TRIBITS_ADD_ADVANCED_TEST()``) use::
 
-  $ ctest -j4
+  $ ctest -j<N>
 
-A summary of what tests are run and their pass/fail status will be printed to
-the screen.  Detailed output about each of the tests is archived in the
-generate file::
+(where ``<N>`` is an integer for the number of processes to try to run tests
+in parallel).  A summary of what tests are run and their pass/fail status will
+be printed to the screen.  Detailed output about each of the tests is archived
+in the generate file::
 
   Testing/Temporary/LastTest.log
 
+where CTest creates the ``Testing`` directory in the local directory where you
+run it from.
+
 NOTE: The ``-j<N>`` argument allows CTest to use more processes to run tests.
 This will intelligently load ballance the defined tests with multiple
-processes (i.e. MPI tests) and will not exceed the number of processes
-``<N>``.
+processes (i.e. MPI tests) and will try not exceed the number of processes
+``<N>``.  However, if tests are defined that use more that ``<N>`` processes,
+then CTest will still run the test but will not run any other tests while the
+limit of ``<N>`` processes is exceeded.  To exclude tests that require more
+than ``<N>`` processes, set the cache variable ``MPI_EXEC_MAX_NUMPROCS`` (see
+`Configuring with MPI support`_).
 
 
 Only running tests for a single package
@@ -1381,6 +1417,20 @@ test command manually to allow passing in more options.  To see what the actual 
 This will only print out the test command that ``ctest`` runs and show the
 working directory.  To run the test exactly as ``ctest`` would, cd into the
 shown working directory and run the shown command.
+
+
+Overridding test timeouts
+-------------------------
+
+The configured test timeout described in ``Setting test timeouts at configure
+time`` can be overridden on the CTest command-line as::
+
+  $ ctest --timeout <maxSeconds>
+
+This will override the configured cache variable ``DART_TESTING_TIMEOUT``.
+
+**WARNING:** Do not try to use ``--timeout=<maxSeconds>`` or CTest will just
+ignore the argument!
 
 
 Running memory checking
