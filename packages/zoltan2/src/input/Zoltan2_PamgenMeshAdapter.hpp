@@ -187,8 +187,8 @@ private:
   lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
   const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 
-  long long dimension_;
-  double * Rcoords_, Fcoords_, Ecoords_, Vcoords_, Acoords_;
+  long long dimension_, *elemToNode_, *elemOffsets_;
+  double *Rcoords_, *Fcoords_, *Ecoords_, *Vcoords_, *Acoords_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -294,8 +294,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 		   [2*num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] -
 		   1];
 	}
-
-	connect[b][i*num_nodes_per_elem[b] + j]-1;
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
@@ -323,6 +321,22 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   Ecoords_ = NULL;
 
+  elemToNode_     = new long long [num_elem * num_nodes_per_elem[0]];
+  long long tnoct = 0;
+  elemOffsets_    = new long long [num_elem];
+  long long telct = 0;
+
+  for (long long b = 0; b < num_elem_blk; b++) {
+    for (long long i = 0; i < num_elem_this_blk[b]; i++) {
+      elemOffsets_[telct] = tnoct;
+      ++telct;
+
+      for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
+	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	++tnolct;
+      }
+    }
+  }
 }
 
   
