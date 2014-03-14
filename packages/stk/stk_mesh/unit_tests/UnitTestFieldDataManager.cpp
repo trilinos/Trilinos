@@ -745,7 +745,7 @@ void setUpData(std::vector<double>&field, std::vector<size_t>& itemsToErase, std
     }
 
     size_t numItemsToErase=10000;
-    itemsToErase.resize(numItemsToErase,-1);
+    itemsToErase.resize(numItemsToErase);
     valuesErased.resize(numItemsToErase,0.0);
     for (size_t i=0;i<itemsToErase.size();i++)
     {
