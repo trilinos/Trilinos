@@ -609,8 +609,9 @@ void testAddingSingleEntity(stk::mesh::MetaData &meshMetaData, stk::mesh::Contig
     const std::vector<unsigned char*> &fieldRawData = fieldDataManager.get_field_raw_data();
     ASSERT_EQ(fields.size(), fieldRawData.size());
     EXPECT_EQ(part1FieldMetaDataVector[firstBucketIndex].m_data, fieldRawData[field1Ordinal]);
-    EXPECT_EQ(NULL, part2FieldMetaDataVector[firstBucketIndex].m_data);
-    EXPECT_EQ(NULL, fieldRawData[field2Ordinal]);
+    unsigned char *nullPointer = NULL;
+    EXPECT_EQ(nullPointer, part2FieldMetaDataVector[firstBucketIndex].m_data);
+    EXPECT_EQ(nullPointer, fieldRawData[field2Ordinal]);
 
 }
 
@@ -657,13 +658,14 @@ TEST(ContiguousFieldDataManagerTest, add_field_data_for_entity)
         ASSERT_EQ(fields.size(), fieldRawData.size());
         const unsigned firstBucketIndex = 0;
         EXPECT_EQ(part1FieldMetaDataVector[firstBucketIndex].m_data, fieldRawData[field1Ordinal]);
-        EXPECT_EQ(NULL, fieldRawData[field2Ordinal]);
+        unsigned char *nullPointer = NULL;
+        EXPECT_EQ(nullPointer, fieldRawData[field2Ordinal]);
 
         size_t unusedCapacity = 0;
         fieldDataManager.deallocate_bucket_field_data(stk::topology::NODE_RANK, destinationBucketId, unusedCapacity, fields);
 
-        EXPECT_EQ(NULL, part1FieldMetaDataVector[firstBucketIndex].m_data);
-        EXPECT_EQ(NULL, part2FieldMetaDataVector[firstBucketIndex].m_data);
+        EXPECT_EQ(nullPointer, part1FieldMetaDataVector[firstBucketIndex].m_data);
+        EXPECT_EQ(nullPointer, part2FieldMetaDataVector[firstBucketIndex].m_data);
         EXPECT_EQ(0, part1FieldMetaDataVector[firstBucketIndex].m_bytes_per_entity);
         EXPECT_EQ(0, part2FieldMetaDataVector[firstBucketIndex].m_bytes_per_entity);
 
@@ -678,7 +680,6 @@ TEST(ContiguousFieldDataManagerTest, add_field_data_for_entity)
         ASSERT_EQ(expectedNumBuckets, part1FieldMetaDataVector.size());
         ASSERT_EQ(expectedNumBuckets, part2FieldMetaDataVector.size());
         ASSERT_EQ(fields.size(), fieldRawData.size());
-        unsigned char *nullPointer = NULL;
         EXPECT_NE(nullPointer, fieldRawData[field1Ordinal]);
         EXPECT_NE(nullPointer, fieldRawData[field2Ordinal]);
     }
@@ -708,8 +709,9 @@ TEST(ContiguousFieldDataManagerTest, deallocate_nonempty_bucket)
         const unsigned firstBucketIndex = 0;
         const stk::mesh::FieldMetaDataVector &part1FieldMetaDataVector = fields[field1Ordinal]->get_meta_data_for_field();
         const stk::mesh::FieldMetaDataVector &part2FieldMetaDataVector = fields[field2Ordinal]->get_meta_data_for_field();
-        EXPECT_EQ(NULL, part1FieldMetaDataVector[firstBucketIndex].m_data);
-        EXPECT_EQ(NULL, part2FieldMetaDataVector[firstBucketIndex].m_data);
+        unsigned char *nullPointer = NULL;
+        EXPECT_EQ(nullPointer, part1FieldMetaDataVector[firstBucketIndex].m_data);
+        EXPECT_EQ(nullPointer, part2FieldMetaDataVector[firstBucketIndex].m_data);
         EXPECT_EQ(0, part1FieldMetaDataVector[firstBucketIndex].m_bytes_per_entity);
         EXPECT_EQ(0, part2FieldMetaDataVector[firstBucketIndex].m_bytes_per_entity);
 
@@ -721,7 +723,6 @@ TEST(ContiguousFieldDataManagerTest, deallocate_nonempty_bucket)
         ASSERT_EQ(expectedNumBuckets, part2FieldMetaDataVector.size());
         const std::vector<unsigned char*> &fieldRawData = fieldDataManager.get_field_raw_data();
         ASSERT_EQ(fields.size(), fieldRawData.size());
-        unsigned char *nullPointer = NULL;
         EXPECT_NE(nullPointer, fieldRawData[field1Ordinal]);
         EXPECT_NE(nullPointer, fieldRawData[field2Ordinal]);
     }
