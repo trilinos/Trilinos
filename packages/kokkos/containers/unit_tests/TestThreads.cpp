@@ -120,8 +120,8 @@ protected:
       test_dualview_combinations<int,Kokkos::Threads>(size);                     \
   }
 
-THREADS_INSERT_TEST(close,100000, 90000, 100, 500)
-THREADS_INSERT_TEST(far,100000, 90000, 100, 500)
+THREADS_INSERT_TEST(close, 100000, 90000, 100, 500)
+THREADS_INSERT_TEST(far, 100000, 90000, 100, 500)
 THREADS_FAILED_INSERT_TEST( 10000, 1000 )
 THREADS_DEEP_COPY( 10000, 1 )
 

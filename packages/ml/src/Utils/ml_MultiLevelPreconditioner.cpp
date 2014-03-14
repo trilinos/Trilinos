@@ -1319,9 +1319,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
            std::cerr << ErrorMsg_ << "Must specify 'semicoarsen: coarsen rate' when using semicoarsening" << std::endl;
          ML_EXIT(-1);
       }                           
-      if (ml_->Amat[LevelID_[0]].NumZDir == -1) {
+      if ((ml_->Amat[LevelID_[0]].NumZDir == -1) && (ml_->Amat[LevelID_[0]].Zorientation != -1)) {
          if (Comm().MyPID() == 0)
-           std::cerr << ErrorMsg_ << "Must specify 'semicoarsen: line direction nodes' when using semicoarsening" << std::endl;
+           std::cerr << ErrorMsg_ << "Must specify 'semicoarsen: line direction nodes' when using semicoarsening and orientation is given (i.e., not deduced from coordinates)" << std::endl;
          ML_EXIT(-1);
       }
     }
