@@ -795,7 +795,7 @@ TEST(ContiguousFieldDataManagerTest, fasterEraseOneEntry)
     for (size_t i=0;i<numItemsToErase;i++)
     {
          double* destination = field_array+itemsToErase[i];
-         std::memmove(destination, destination+1, (field_array_length-itemsToErase[i])*sizeof(double));
+         std::memmove(destination, destination+1, (field_array_length-itemsToErase[i]-1)*sizeof(double));
          --field_array_length;
     }
 
@@ -824,7 +824,7 @@ TEST(ContiguousFieldDataManagerTest, slowestEraseOneEntry)
     {
          double* destination = field_array+itemsToErase[i];
          double* source = destination+1;
-         int numItemsToSlide = field_array_length-itemsToErase[i];
+         int numItemsToSlide = field_array_length-itemsToErase[i]-1;
          for(int item=0; item<numItemsToSlide; ++item)
          {
              *destination++ = *source++;
@@ -857,7 +857,7 @@ TEST(ContiguousFieldDataManagerTest, memcpyishEraseOneEntry)
     double startTime = stk::cpu_time();
     for (size_t i=0;i<numItemsToErase;i++)
     {
-        size_t numBytesToCopy = (field_array_length-itemsToErase[i])*sizeof(double);
+        size_t numBytesToCopy = (field_array_length-itemsToErase[i]-1)*sizeof(double);
         double* destination = field_array+itemsToErase[i];
         std::memcpy(scratchData, destination+1, numBytesToCopy);
         std::memcpy(destination, scratchData, numBytesToCopy);
