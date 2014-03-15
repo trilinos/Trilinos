@@ -190,6 +190,15 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
+  bool availAdjs(MeshEntityType source, MeshEntityType target) {
+    if ((MESH_REGION == source && 3 == dimension ||
+	 MESH_FACE == source && 2 == dimension) && MESH_VERTEX == target) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
 private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
   long long *node_num_map_, *elemToNode_, *elemOffsets_;
