@@ -73,12 +73,22 @@ namespace MueLu {
     GO numAggregates = aggregates.GetNumAggregates();
 
     std::vector<LO> sizes(numAggregates);
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = nodeGlobalElts[lnode];
-        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
-        sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
+    if (stridedblocksize_ == 1) {
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+        if (procWinner[lnode] == myPid)
+          sizes[myAgg] += 1;
+      }
+
+    } else {
+
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+        if (procWinner[lnode] == myPid) {
+          GO gnodeid = nodeGlobalElts[lnode];
+          std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
+          sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
+        }
       }
     }
     aggStart = ArrayRCP<LO>(numAggregates+1,0);
@@ -91,16 +101,31 @@ namespace MueLu {
     // count, how many dofs have been recorded for each aggregate so far
     Array<LO> numDofs(numAggregates, 0); // empty array with number of Dofs for each aggregate
 
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
+    if (stridedblocksize_ == 1) {
 
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = nodeGlobalElts[lnode];
-        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
-        LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
-        for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
-          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+
+        if (procWinner[lnode] == myPid) {
+          GO gDofIds = offset_ + (nodeGlobalElts[lnode]-indexBase_)*fullblocksize_ + nStridedOffset_ + indexBase_;
+          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds;
           ++(numDofs[myAgg]);
+        }
+      }
+
+    } else {
+
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+
+        if (procWinner[lnode] == myPid) {
+          GO gnodeid = nodeGlobalElts[lnode];
+          std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
+          LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
+          for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
+            aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
+            ++(numDofs[myAgg]);
+          }
         }
       }
     }
@@ -115,13 +140,27 @@ namespace MueLu {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap();
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
+    Teuchos::ArrayView<const GO> gEltList = nodeMap->getNodeElementList();
     LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
-    for(LO n = 0; n<nodeElements; n++) {
-      GO gnodeid = (GO) nodeMap->getGlobalElement(n);
-      std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
-      for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
-        myDofGids->push_back(*gDofIdsIt);
+    if (stridedblocksize_ == 1) {
+
+      for(LO n = 0; n<nodeElements; n++) {
+        //GO gnodeid = (GO) nodeMap->getGlobalElement(n);
+        GlobalOrdinal gDofIndex = offset_ + (gEltList[n]-indexBase_)*fullblocksize_ + nStridedOffset_ + indexBase_;
+        myDofGids->push_back(gDofIndex);
       }
+
+    } else {
+
+      for(LO n = 0; n<nodeElements; n++) {
+        //GO gnodeid = (GO) nodeMap->getGlobalElement(n);
+        GO gnodeid = gEltList[n];
+        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
+        for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
+          myDofGids->push_back(*gDofIdsIt);
+        }
+      }
+
     }
 
     Teuchos::ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
