@@ -55,6 +55,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 typedef double RealT;
 
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 258; // Set problem dimension.
+    int dim = 256; // Set problem dimension.
     ROL::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
 
     Teuchos::ParameterList parlist;
@@ -115,43 +116,74 @@ int main(int argc, char *argv[]) {
 
     // Compute dense Hessian matrix. 
     Teuchos::SerialDenseMatrix<int, RealT> H(x.dimension(), x.dimension());
-    H = ROL::computeDenseHessian(obj, x);
+    H = ROL::computeDenseHessian<RealT>(obj, x);
     //H.print(*outStream);
 
     // Compute and print eigenvalues.
-    std::vector<std::vector<RealT> > eigenvals = ROL::computeEigenvalues(H);
+    std::vector<std::vector<RealT> > eigenvals = ROL::computeEigenvalues<RealT>(H);
 
     *outStream << "\nEigenvalues:\n";
     for (unsigned i=0; i<(eigenvals[0]).size(); i++) {
       if (i==0) {
         *outStream << std::right
-                   << std::setw(20) << "Real"
-                   << std::setw(20) << "Imag"
+                   << std::setw(28) << "Real"
+                   << std::setw(28) << "Imag"
                    << "\n";
       }
-      *outStream << std::scientific << std::setprecision(8) << std::right
-                 << std::setw(20) << (eigenvals[0])[i]
-                 << std::setw(20) << (eigenvals[1])[i]
+      *outStream << std::scientific << std::setprecision(16) << std::right
+                 << std::setw(28) << (eigenvals[0])[i]
+                 << std::setw(28) << (eigenvals[1])[i]
                  << "\n";
     }
 
     // Compute and print generalized eigenvalues.
     Teuchos::SerialDenseMatrix<int, RealT> M = computeDotMatrix(x);
     //M.print(*outStream);
-    std::vector<std::vector<RealT> > genEigenvals = ROL::computeGenEigenvalues(H, M);
+    std::vector<std::vector<RealT> > genEigenvals = ROL::computeGenEigenvalues<RealT>(H, M);
 
     *outStream << "\nGeneralized eigenvalues:\n";
     for (unsigned i=0; i<(genEigenvals[0]).size(); i++) {
       if (i==0) {
         *outStream << std::right
-                   << std::setw(20) << "Real"
-                   << std::setw(20) << "Imag"
+                   << std::setw(28) << "Real"
+                   << std::setw(28) << "Imag"
                    << "\n";
       }
-      *outStream << std::scientific << std::setprecision(8) << std::right
-                 << std::setw(20) << (genEigenvals[0])[i]
-                 << std::setw(20) << (genEigenvals[1])[i]
+      *outStream << std::scientific << std::setprecision(16) << std::right
+                 << std::setw(28) << (genEigenvals[0])[i]
+                 << std::setw(28) << (genEigenvals[1])[i]
                  << "\n";
+    }
+
+    // Sort and compare eigenvalues and generalized eigenvalues - should be close.
+    std::sort((eigenvals[0]).begin(), (eigenvals[0]).end());
+    std::sort((eigenvals[1]).begin(), (eigenvals[1]).end());
+    std::sort((genEigenvals[0]).begin(), (genEigenvals[0]).end());
+    std::sort((genEigenvals[1]).begin(), (genEigenvals[1]).end());
+
+    RealT errtol = std::sqrt(ROL::ROL_EPSILON);
+    for (unsigned i=0; i<(eigenvals[0]).size(); i++) {
+      if ( std::abs( (genEigenvals[0])[i] - (eigenvals[0])[i] ) > errtol*((eigenvals[0])[i]+ROL::ROL_THRESHOLD) ) {
+        errorFlag++;
+        *outStream << std::scientific << std::setprecision(20) << "Real genEigenvals - eigenvals (" << i << ") = " << std::abs( (genEigenvals[0])[i] - (eigenvals[0])[i] ) << " > " << errtol*((eigenvals[0])[i]+1e4*ROL::ROL_THRESHOLD) << "\n";
+      }
+      if ( std::abs( (genEigenvals[1])[i] - (eigenvals[1])[i] ) > errtol*((eigenvals[1])[i]+ROL::ROL_THRESHOLD) ) {
+        errorFlag++;
+        *outStream << std::scientific << std::setprecision(20) << "Imag genEigenvals - eigenvals (" << i << ") = " << std::abs( (genEigenvals[1])[i] - (eigenvals[1])[i] ) << " > " << errtol*((eigenvals[1])[i]+ROL::ROL_THRESHOLD) << "\n";
+      }
+    }
+
+    // Compute inverse of Hessian.
+    Teuchos::SerialDenseMatrix<int, RealT> invH = ROL::computeInverse<RealT>(H);
+    Teuchos::SerialDenseMatrix<int, RealT> HinvH(H);
+
+    // Multiply with Hessian and verify that it gives the identity (l2 dot matrix M from above).
+    HinvH.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, H, invH, 0.0);
+    //*outStream << std::scientific << std::setprecision(6); HinvH.print(*outStream);
+    HinvH -= M;
+    if (HinvH.normOne() > errtol) {
+        errorFlag++;
+        *outStream << std::scientific << std::setprecision(20) << "1-norm of H*inv(H) - I = " << HinvH.normOne() << " > " << errtol << "\n";      
     }
 
   }

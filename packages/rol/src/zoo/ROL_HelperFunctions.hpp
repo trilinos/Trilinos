@@ -82,6 +82,7 @@ namespace ROL {
 
   }
 
+
   template<class Real>
   Teuchos::SerialDenseMatrix<int, Real> computeDotMatrix(const Vector<Real> &x) {
 
@@ -140,6 +141,7 @@ namespace ROL {
 
   }
 
+
   template<class Real>
   std::vector<std::vector<Real> > computeGenEigenvalues(const Teuchos::SerialDenseMatrix<int, Real> & A,
                                                         const Teuchos::SerialDenseMatrix<int, Real> & B) {
@@ -185,6 +187,33 @@ namespace ROL {
     return eigenvals;
 
   }
+
+
+  template<class Real>
+  Teuchos::SerialDenseMatrix<int, Real> computeInverse(const Teuchos::SerialDenseMatrix<int, Real> & mat) {
+
+    Teuchos::LAPACK<int, Real> lapack;
+
+    Teuchos::SerialDenseMatrix<int, Real> mymat(mat);
+
+    int n = mat.numRows();
+
+    std::vector<int> ipiv(n, 0);
+
+    int lwork = 5*n;
+
+    std::vector<Real> work(lwork, 0);
+
+    int info = 0;
+
+    lapack.GETRF(n, n, &mymat(0,0), n, &ipiv[0], &info);
+    lapack.GETRI(n, &mymat(0,0), n, &ipiv[0], &work[0], lwork, &info);
+
+    return mymat;
+
+  }
+
+
 
   template<class Real> 
   class ProjectedObjective : public Objective<Real> {
