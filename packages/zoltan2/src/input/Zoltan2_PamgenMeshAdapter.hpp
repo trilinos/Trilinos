@@ -111,12 +111,8 @@ public:
 
   size_t getLocalNumOf(MeshEntityType etype) const
   {
-    if (MESH_REGION == etype) {
-      if (3 == dimension_) {
-	return num_elem_;
-      } else {
-	return 0;
-      }
+    if (MESH_REGION == etype && 3 == dimension_) {
+      return num_elem_;
     }
 
     if (MESH_FACE == etype && 2 == dimension_) {
@@ -127,19 +123,14 @@ public:
       return num_nodes_:
     }
 
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    return 0;
   }
    
   size_t getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
-    if (MESH_REGION == etype) {
-      if (3 == dimension_) {
-	Ids = element_num_map_;
-	return num_elem_;
-      } else {
-	Ids = NULL;
-	return 0;
-      }
+    if (MESH_REGION == etype && 3 == dimension_) {
+      Ids = element_num_map_;
+      return num_elem_;
     }
 
     if (MESH_FACE == etype && 2 == dimension_) {
@@ -153,7 +144,7 @@ public:
     }
 
     Ids = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    return 0;
   }
 
   int getDimensionOf(MeshEntityType etype) const { return dimension_; }
@@ -187,21 +178,35 @@ public:
       stride = 1;
     }
 
+    coords = NULL;
+    stride = 0;
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   bool availAdjs(MeshEntityType source, MeshEntityType target) {
-    if ((MESH_REGION == source && 3 == dimension ||
-	 MESH_FACE == source && 2 == dimension) && MESH_VERTEX == target) {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension) {
+      return TRUE;
+    }
+
+    if (MESH_FACE == source && 2 == dimension && MESH_VERTEX == target) {
       return TRUE;
     }
 
     return FALSE;
   }
 
+  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
+  {
+    if (availAdjs(source, target)) {
+      return telct_;
+    }
+
+    return 0;
+  }
+
 private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
-  long long *node_num_map_, *elemToNode_, *elemOffsets_;
+  long long *node_num_map_, *elemToNode_, telct_, *elemOffsets_;
   double *coords_, *Acoords_;
 };
 
@@ -294,12 +299,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   elemToNode_     = new long long [num_elem_ * num_nodes_per_elem[0]];
   long long tnoct = 0;
   elemOffsets_    = new long long [num_elem_];
-  long long telct = 0;
+  telct_ = 0;
 
   for (long long b = 0; b < num_elem_blk; b++) {
     for (long long i = 0; i < num_elem_this_blk[b]; i++) {
-      elemOffsets_[telct] = tnoct;
-      ++telct;
+      elemOffsets_[telct_] = tnoct;
+      ++telct_;
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
