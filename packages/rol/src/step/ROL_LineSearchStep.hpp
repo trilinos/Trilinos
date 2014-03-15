@@ -270,6 +270,7 @@ public:
     this->lineSearch_->run(alpha,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
     algo_state.nfval += this->ls_nfval_;
     algo_state.ngrad += this->ls_ngrad_;
+    algo_state.alpha = alpha;
 
     // Compute get scaled descent direction
     s.scale(alpha);

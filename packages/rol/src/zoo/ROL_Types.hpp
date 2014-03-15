@@ -77,7 +77,11 @@ namespace ROL {
     Real value;              
     Real gnorm;
     Real snorm;
+    Real alpha;
     Teuchos::RCP<Vector<Real> > iterateVec;
+    /// Constructor initializes all data
+    AlgorithmState() : 
+      iter(0), nfval(0), ngrad(0), value(0), gnorm(0), snorm(0), alpha(0) {}
   };  
   
   /** \brief  State for step class.  Will be used for restarts.
