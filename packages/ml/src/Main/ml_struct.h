@@ -111,7 +111,8 @@ struct ML_Struct {
    double         *dble_options; /**< optional double parameters      */
    void           *void_options; /**< optional other parameters       */
    int            (*func)(void); /**< optional function               */
-
+   double         Cheby_eig_boost; /* used to bump largest eigenvalue */
+                                   /* estimate for Cheby. smoothing.  */
 };
 struct ML_Timing {
    double precond_apply_time;
@@ -298,7 +299,7 @@ extern int ML_Gen_Smoother_VBlockSymGaussSeidel(ML*,int nl,int pre_post,
                      int ntimes, double omega, int Nblocks, int *blockList);
 extern int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
        int ntimes, double omega, int nBlocks, int *blockIndices, int *blockOffset,
-       int  (*fun)(ML_Smoother *, int, double *, int, double *));
+       int  (*fun)(ML_Smoother *, int, double *, int, double *),  ML_GS_SWEEP_TYPE GS_type);
 extern int ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ML*,int nl, int,
                      int ntimes,double omega,int Nblocks,int *blockList);
 extern int ML_Gen_Smoother_VBlockKrylovJacobi(ML*,int nl,int pre_post, int ntimes,

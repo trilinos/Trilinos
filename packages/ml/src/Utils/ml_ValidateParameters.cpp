@@ -101,8 +101,12 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
   setIntParameter("smoother: line direction nodes", -1, "Number of mesh points in z direction", PL, intParam);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
+  setDoubleParameter("smoother: Chebyshev eig boost", 1.1, "factor to scale eig_max when using Cheby smoothing", PL,dblParam);
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<std::string>("pre","post","both"),PL);
-  setStringToIntegralParameter<int>("smoother: line orientation","not specified","indicates grid points are numbered either horizontally or veritcally for extruded meshes", tuple<std::string>("horizontal","vertical","not specified"),PL);
+  setStringToIntegralParameter<int>("smoother: line orientation","use coordinates","indicates grid points are numbered either horizontally or veritcally for extruded meshes", tuple<std::string>("horizontal","vertical","use coordinates"),PL);
+  setStringToIntegralParameter<int>("smoother: line GS Type","symmetric","use symmetric GS, forward GS, or pre-forward and post-backward GS",tuple<std::string>("symmetric","standard","efficient symmetric"),PL);
+  setStringToIntegralParameter<int>("smoother: line group dofs","separate","group or separate dofs per node", tuple<std::string>("group","separate"),PL);
+
 
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
@@ -342,8 +346,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("semicoarsen: number of levels",-1,"number of levels to apply semi-coarsening",PL,intParam);
   setIntParameter("semicoarsen: coarsen rate",-1,"Coarsening rate for structured semi-coarsening",PL,intParam);
   setIntParameter("semicoarsen: line direction nodes", -1,"Number of mesh points in z direction", PL, intParam);
-  setIntParameter("semicoarsen: line orientation", -1,"equations ordered columnwise or not", PL, intParam);
-            /* -1: not specified */ /*  1: vertical      */ /*  2: horizontal    */
+  setStringToIntegralParameter<int>("semicoarsen: line orientation","use coordinates","indicates grid points are numbered either horizontally or veritcally for extruded meshes", tuple<std::string>("horizontal","vertical","use coordinates"),PL);
 
 
   /* Smoothing Options (Section 6.4.4) */
