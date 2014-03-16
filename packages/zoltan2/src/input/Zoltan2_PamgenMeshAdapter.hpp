@@ -183,6 +183,13 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
+  void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
+			int &stride, int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+  }
+
   bool availAdjs(MeshEntityType source, MeshEntityType target) {
     if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension) {
       return TRUE;
