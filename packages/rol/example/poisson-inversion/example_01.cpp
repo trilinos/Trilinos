@@ -49,8 +49,10 @@
 #define USE_HESSVEC 1
 
 #include "ROL_PoissonInversion.hpp"
+#include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -78,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 256; // Set problem dimension.
+    int dim = 128; // Set problem dimension.
     ROL::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
 
     Teuchos::ParameterList parlist;
@@ -184,6 +186,31 @@ int main(int argc, char *argv[]) {
     if (HinvH.normOne() > errtol) {
         errorFlag++;
         *outStream << std::scientific << std::setprecision(20) << "1-norm of H*inv(H) - I = " << HinvH.normOne() << " > " << errtol << "\n";      
+    }
+
+    // Use Newton algorithm.
+    parlist.set("Descent Type", "Newton's Method");
+    // Define step.
+    ROL::LineSearchStep<RealT> newton_step(parlist);
+    // Define algorithm.
+    ROL::DefaultAlgorithm<RealT> newton_algo(newton_step,status,false);
+
+    // Reset initial guess.
+    for (int i=0; i<dim; i++) {
+      (*x_rcp)[i] = 0.1;
+    }
+
+    // Run Newton algorithm.
+    output = newton_algo.run(x, obj, false);
+    for ( unsigned i = 0; i < output.size(); i++ ) {
+      std::cout << output[i];
+    }
+
+    Teuchos::RCP<const ROL::AlgorithmState<RealT> > new_state = newton_algo.getState();
+    Teuchos::RCP<const ROL::AlgorithmState<RealT> > old_state = algo.getState();
+    if ( std::abs(new_state->value - old_state->value) > errtol ) {
+        errorFlag++;
+        *outStream << std::scientific << std::setprecision(20) << "\nabs(new_optimal_value - old_optimal_value) = " << std::abs(new_state->value - old_state->value) << " > " << errtol << "\n";      
     }
 
   }

@@ -54,6 +54,7 @@
 #include "ROL_Constraints.hpp"
 #include "ROL_Secant.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 namespace ROL {

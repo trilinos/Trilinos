@@ -129,6 +129,11 @@ public:
     return this->step_->print(*this->state_,withHeader);
   }
 
+  Teuchos::RCP<const AlgorithmState<Real> > getState(void) const {
+    return state_;
+  }
+  
+
 }; // class DefaultAlgorithm
 
 } // namespace ROL
