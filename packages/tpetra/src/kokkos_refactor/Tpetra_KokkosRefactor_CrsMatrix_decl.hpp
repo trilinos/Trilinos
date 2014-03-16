@@ -289,17 +289,22 @@ namespace Tpetra {
                const ArrayRCP<Scalar>& values,
                const RCP<ParameterList>& params = null);
 
-    /// \brief Constructor specifying column Map and a local Kokkos CrsMatrix
+    /// \brief Constructor specifying column Map and a local matrix,
+    ///   which the resulting CrsMatrix views.
     ///
-    /// In contrast to most other constructors calling this one will
-    /// generate a fillComplete Matrix.
+    /// Unlike most other CrsMatrix constructors, successful
+    /// completion of this constructor will result in a fill-complete
+    /// matrix.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
     ///
-    /// \param lclMatrix [in] A local CrsMatrix containing all local matrix values
-    ///    as well as a local Graph
+    /// \param lclMatrix [in] A local CrsMatrix containing all local
+    ///    matrix values as well as a local graph.  The graph's local
+    ///    row indices must come from the specified row Map, and its
+    ///    local column indices must come from the specified column
+    ///    Map.
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
