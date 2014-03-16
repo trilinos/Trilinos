@@ -147,7 +147,7 @@ public:
     return 0;
   }
 
-  int getDimensionOf(MeshEntityType etype) const { return dimension_; }
+  int getDimensionOf() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim} const {
