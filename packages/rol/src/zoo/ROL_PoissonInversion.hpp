@@ -478,9 +478,21 @@ namespace ROL {
 
       // Perform 'inertia' correction.
       Real inertia = (eigenvals[0])[0];
-      if (inertia < 0) {
+      Real correction = 0.0;
+      if ( inertia <= 0.0 ) {
+        correction = 2.0*std::abs(inertia);
+        if ( inertia == 0.0 ) {
+          int cnt = 0;
+          while ( eigenvals[0][cnt] == 0.0 ) {
+            cnt++;
+          }
+          correction = 0.5*eigenvals[0][cnt];
+          if ( cnt == dim-1 ) {
+            correction = 1.0;
+          }
+        }
         for (int i=0; i<dim; i++) {
-          H(i,i) += 2.0*std::abs(inertia);
+          H(i,i) += correction;
         }
       }
 
