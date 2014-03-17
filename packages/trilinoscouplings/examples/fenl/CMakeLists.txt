@@ -1,33 +1,36 @@
-INCLUDE(TribitsAddExecutableAndTest)   
+INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+IF (Trilinos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
 
-SET(SOURCES "")
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-FILE(GLOB SOURCES *.cpp)
+  SET(SOURCES "")
 
-IF( Kokkos_ENABLE_Cuda )
+  FILE(GLOB SOURCES *.cpp)
 
-  # add MPI include dir to nvcc
-  IF( TPL_ENABLE_MPI )
-    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
+  IF (Kokkos_ENABLE_Cuda) 
 
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosContainers_INCLUDE_DIRS} )
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
+    # add MPI include dir to nvcc
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
 
-  CUDA_COMPILE( OBJECTS_CUDA fenl.cpp.cu )
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosContainers_INCLUDE_DIRS} )
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
 
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+    CUDA_COMPILE( OBJECTS_CUDA fenl.cpp.cu )
 
-ENDIF()
+    LIST( APPEND SOURCES ${OBJECTS_CUDA} )
 
-TRIBITS_ADD_EXECUTABLE(
-  fenl
-  SOURCES ${SOURCES}
-  COMM serial mpi
-  DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
-  )
+  ENDIF () # Kokkos_ENABLE_Cuda
+
+  TRIBITS_ADD_EXECUTABLE(
+    fenl
+    SOURCES ${SOURCES}
+    COMM serial mpi
+    DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
+    )
+ENDIF ()
 
