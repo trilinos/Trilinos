@@ -798,6 +798,12 @@ namespace Tpetra {
     /// getRemoteIndexList() to create the Directory on demand.
     void setupDirectory () const;
 
+    /// \brief Is the given Map locally the same as the input Map?
+    ///
+    /// "Locally the same" means that on the calling process, the two
+    /// Maps' global indices are the same and occur in the same order.
+    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
+
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
