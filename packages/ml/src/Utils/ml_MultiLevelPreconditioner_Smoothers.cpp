@@ -523,22 +523,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                                   /*    node, we create n tridiagonal solves  */
                                   /*    for each line.                        */
        ML_GS_SWEEP_TYPE GS_type;
-       if        (GSType == "standard") {
-          GS_type = ML_GS_standard;
-          if ((MyGroupDofsInLine == 1) && (MySmoother == "line Gauss-Seidel")) {
-             std::cerr << ErrorMsg_ << "standard not implemented for grouped dofs" << "\n";
-             exit(EXIT_FAILURE);
-          }
-
-       } else if (GSType == "symmetric") {
-          GS_type = ML_GS_symmetric;
-       } else if (GSType == "efficient symmetric") {
-          GS_type = ML_GS_efficient_symmetric;
-          if ((MyGroupDofsInLine == 1) && (MySmoother == "line Gauss-Seidel")) {
-             std::cerr << ErrorMsg_ << "efficient symmetric not implemented for grouped dofs" << "\n";
-             exit(EXIT_FAILURE);
-          }
-       }
+       if      (GSType == "standard") GS_type = ML_GS_standard;
+       else if (GSType == "symmetric")  GS_type = ML_GS_symmetric;
+       else if (GSType == "efficient symmetric") GS_type = ML_GS_efficient_symmetric;
        else {
              std::cerr << ErrorMsg_ << "smoother: line GS Type not recognized ==>" << MyGSType<< "\n";
              exit(EXIT_FAILURE);
@@ -741,9 +728,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
              ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
                              Mynum_smoother_steps,Myomega,nBlocks,blockIndices,
                              blockOffset, ML_Smoother_LineGS, GS_type);
-           else
+           else {
              ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,currentLevel,pre_or_post,
                              Mynum_smoother_steps,Myomega,nBlocks,blockIndices);
+             // real hack
+             ml_->pre_smoother[currentLevel].gs_sweep_type=GS_type;
+             ml_->post_smoother[currentLevel].gs_sweep_type=GS_type;
+           }
+
        }
 
        ML_free(blockIndices);
