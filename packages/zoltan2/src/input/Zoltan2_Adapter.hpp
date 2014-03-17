@@ -119,7 +119,7 @@ public:
   virtual int getNumWeightsPerID() const = 0;
 
   /*! \brief Provide pointer to a weight array with stride.
-   *    \param wgt on return a pointer to the weights for this dimension
+   *    \param wgt on return a pointer to the weights for this idx
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
    *    \param idx  the weight index, zero or greater

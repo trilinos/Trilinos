@@ -208,7 +208,7 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
     GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
 
     int coord_dim = gg->getCoordinateDimension();
-    int weight_dim = gg->getWeightDimension();
+    int numWeightsPerCoord = gg->getNumWeights();
     lno_t numLocalPoints = gg->getNumLocalCoords(); gno_t numGlobalPoints = gg->getNumGlobalCoords();
     scalar_t **coords = new scalar_t * [coord_dim];
     for(int i = 0; i < coord_dim; ++i){
@@ -216,9 +216,9 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
     }
     gg->getLocalCoordinatesCopy(coords);
     scalar_t **weight = NULL;
-    if(weight_dim){
-        weight= new scalar_t * [weight_dim];
-        for(int i = 0; i < weight_dim; ++i){
+    if(numWeightsPerCoord){
+        weight= new scalar_t * [numWeightsPerCoord];
+        for(int i = 0; i < numWeightsPerCoord; ++i){
             weight[i] = new scalar_t[numLocalPoints];
         }
         gg->getLocalWeightsCopy(weight);
@@ -246,8 +246,8 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 
     RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
     vector<const scalar_t *> weights;
-    if(weight_dim){
-        for (int i = 0; i < weight_dim;++i){
+    if(numWeightsPerCoord){
+        for (int i = 0; i < numWeightsPerCoord;++i){
             weights.push_back(weight[i]);
         }
     }
@@ -314,8 +314,8 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
         problem->printMetrics(cout);
     }
     problem->printTimers();
-    if(weight_dim){
-        for(int i = 0; i < weight_dim; ++i)
+    if(numWeightsPerCoord){
+        for(int i = 0; i < numWeightsPerCoord; ++i)
             delete [] weight[i];
         delete [] weight;
     }

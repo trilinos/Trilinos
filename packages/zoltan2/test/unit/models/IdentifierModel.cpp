@@ -141,14 +141,6 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     fail = 3;
   }
 
-  // For now, MatrixAdapter does not implement weights
-  if (!fail && model->getIdentifierWeightDim() !=  0) {
-    std::cerr << rank << ") getIdentifierWeightDim "
-              << model->getIdentifierWeightDim() << " "
-              << 0 << " " << ia->getNumWeightsPerID() << std::endl;
-    fail = 4;
-  }
-
   gfail = globalFail(comm, fail);
 
   if (gfail)

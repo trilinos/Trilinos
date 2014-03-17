@@ -353,7 +353,7 @@ private:
     double imbalance_tolerance; //input imbalance tolerance.
     partId_t *part_no_array; //input part array specifying num part to divide along each dim.
     int recursion_depth; //the number of steps that partitioning will be solved in.
-    int coord_dim, weight_dim; //coordinate and weight dimensions.
+    int coord_dim, num_weights_per_coord; //coordinate dim and # of weights per coord
 
     size_t initial_num_loc_coords; //initial num local coords.
     global_size_t initial_num_glob_coords; //initial num global coords.
@@ -1046,9 +1046,9 @@ public:
      *  \param initial_mj_gnos: the list of initial global id's
      *  \param mj_coordinates: the two dimensional coordinate array.
      *
-     *  \param weight_dim: weight dimension
-     *  \param mj_uniform_weights: if weight dimension [i] has uniform weight or not.
-     *  \param mj_weights: the two dimensional array for weights in every weight dimension
+     *  \param num_weights_per_coord: number of weights per coordinate
+     *  \param mj_uniform_weights: if weight index [i] has uniform weight or not.
+     *  \param mj_weights: the two dimensional array for weights
      *  \param mj_uniform_parts: if the target partitioning aims uniform parts
      *  \param mj_part_sizes: if the target partitioning does not aim uniform parts, then weight of each part.
      *
@@ -1073,7 +1073,7 @@ public:
         	const pq_gno_t *initial_mj_gnos,
         	pq_scalar_t **mj_coordinates,
 
-        	int weight_dim,
+        	int num_weights_per_coord,
         	bool *mj_uniform_weights,
         	pq_scalar_t **mj_weights,
         	bool *mj_uniform_parts,
@@ -1216,7 +1216,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::sequential_task_partitioning(
     this->initial_mj_gnos = allocMemory<pq_gno_t>(this->num_local_coords);
 
 
-    this->weight_dim = 0;
+    this->num_weights_per_coord = 0;
     bool *tmp_mj_uniform_weights = new bool[1];
     this->mj_uniform_weights = tmp_mj_uniform_weights ;
     this->mj_uniform_weights[0] = true;
@@ -1652,7 +1652,7 @@ template <typename pq_scalar_t, typename pq_lno_t, typename pq_gno_t>
 AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::AlgMJ():
 	mj_env(), mj_problemComm(), imbalance_tolerance(0),
 	part_no_array(NULL), recursion_depth(0), coord_dim(0),
-	weight_dim(0), initial_num_loc_coords(0), initial_num_glob_coords(0),
+	num_weights_per_coord(0), initial_num_loc_coords(0), initial_num_glob_coords(0),
 	num_local_coords(0), num_global_coords(0), mj_coordinates(NULL),
 	mj_weights(NULL), mj_uniform_parts(NULL), mj_part_sizes(NULL),
 	mj_uniform_weights(NULL), mj_gnos(), num_global_parts(1),
@@ -2080,13 +2080,13 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::allocate_set_work_memory(){
     this->mj_coordinates = coord;
 
 
-    int criteria_dim = (this->weight_dim ? this->weight_dim : 1);
+    int criteria_dim = (this->num_weights_per_coord ? this->num_weights_per_coord : 1);
     pq_scalar_t **weights = allocMemory<pq_scalar_t *>(criteria_dim);
 
     for (int i=0; i < criteria_dim; i++){
     	weights[i] = NULL;
     }
-    for (int i=0; i < this->weight_dim; i++){
+    for (int i=0; i < this->num_weights_per_coord; i++){
     	weights[i] = allocMemory<pq_scalar_t>(this->num_local_coords);
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
@@ -4527,7 +4527,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_migrate_coords(
 	}
 
 	//migrate weights.
-	for (int i = 0; i < this->weight_dim; ++i){
+	for (int i = 0; i < this->num_weights_per_coord; ++i){
 		message_tag++;
 		pq_scalar_t *weight = this->mj_weights[i];
 
@@ -4613,7 +4613,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_migrate_coords(
 	}
 
 	//migrate weights.
-	for (int i = 0; i < this->weight_dim; ++i){
+	for (int i = 0; i < this->num_weights_per_coord; ++i){
 
 		ArrayView<pq_scalar_t> sent_weight(this->mj_weights[i], this->num_local_coords);
 		ArrayRCP<pq_scalar_t> recieved_weight(num_incoming_gnos);
@@ -5362,7 +5362,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::free_work_memory(){
 	}
 	freeArray<pq_scalar_t *>(this->mj_coordinates);
 
-	for (int i=0; i < this->weight_dim; i++){
+	for (int i=0; i < this->num_weights_per_coord; i++){
 		freeArray<pq_scalar_t>(this->mj_weights[i]);
 	}
 	freeArray<pq_scalar_t *>(this->mj_weights);
@@ -5474,9 +5474,9 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_partitioning_parameters(
  *  \param initial_mj_gnos: the list of initial global id's
  *  \param mj_coordinates: the two dimensional coordinate array.
  *
- *  \param weight_dim: weight dimension
- *  \param mj_uniform_weights: if weight dimension [i] has uniform weight or not.
- *  \param mj_weights: the two dimensional array for weights in every weight dimension
+ *  \param num_weights_per_coord: number of weights per coordinate
+ *  \param mj_uniform_weights: if weight index [i] has uniform weight or not.
+ *  \param mj_weights: the two dimensional array for weights
  *  \param mj_uniform_parts: if the target partitioning aims uniform parts
  *  \param mj_part_sizes: if the target partitioning does not aim uniform parts, then weight of each part.
  *
@@ -5503,7 +5503,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
     	const pq_gno_t *initial_mj_gnos_,
     	pq_scalar_t **mj_coordinates_,
 
-    	int weight_dim_,
+    	int num_weights_per_coord_,
     	bool *mj_uniform_weights_,
     	pq_scalar_t **mj_weights_,
     	bool *mj_uniform_parts_,
@@ -5554,7 +5554,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
     	this->initial_mj_gnos = (pq_gno_t *) initial_mj_gnos_; //will copy the memory to this->current_mj_gnos[j].
 
 
-    	this->weight_dim = weight_dim_;
+    	this->num_weights_per_coord = num_weights_per_coord_;
     	this->mj_uniform_weights = mj_uniform_weights_;
     	this->mj_weights = mj_weights_; //will copy the memory to this->mj_weights
     	this->mj_uniform_parts = mj_uniform_parts_;
@@ -6057,9 +6057,9 @@ private:
     const pq_gno_t *initial_mj_gnos; //initial global ids of the coordinates.
     pq_scalar_t **mj_coordinates; //two dimension coordinate array
 
-    int weight_dim; //weight dimension.
+    int num_weights_per_coord; // number of weights per coordinate
     bool *mj_uniform_weights; //if the coordinates have uniform weights.
-    pq_scalar_t **mj_weights; //two dimension weight array
+    pq_scalar_t **mj_weights; //two dimensional weight array
     bool *mj_uniform_parts; //if the target parts are uniform
     pq_scalar_t **mj_part_sizes; //target part weight sizes.
 
@@ -6081,7 +6081,7 @@ public:
 			mj_coords(), mj_solution(), imbalance_tolerance(0),
 			num_global_parts(1), part_no_array(NULL), recursion_depth(0),
 			coord_dim(0),num_local_coords(0), num_global_coords(0),
-			initial_mj_gnos(NULL), mj_coordinates(NULL), weight_dim(0),
+			initial_mj_gnos(NULL), mj_coordinates(NULL), num_weights_per_coord(0),
 			mj_uniform_weights(NULL), mj_weights(NULL), mj_uniform_parts(NULL),
 			mj_part_sizes(NULL), distribute_points_on_cut_lines(true),
 			max_concurrent_part_calculation(1), check_migrate_avoid_migration_option(0),
@@ -6151,7 +6151,7 @@ void Zoltan2_AlgMJ<Adapter>::multi_jagged_part(
     		this->initial_mj_gnos,
     		this->mj_coordinates,
 
-    		this->weight_dim,
+    		this->num_weights_per_coord,
     		this->mj_uniform_weights,
     		this->mj_weights,
     		this->mj_uniform_parts,
@@ -6189,10 +6189,10 @@ template <typename Adapter>
 void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &pl){
 
 	this->coord_dim = this->mj_coords->getCoordinateDim();
-	this->weight_dim = this->mj_coords->getCoordinateWeightDim();
+	this->num_weights_per_coord = this->mj_coords->getNumWeightsPerCoordinate();
 	this->num_local_coords = this->mj_coords->getLocalNumCoordinates();
 	this->num_global_coords = this->mj_coords->getGlobalNumCoordinates();
-	int criteria_dim = (this->weight_dim ? this->weight_dim : 1);
+	int criteria_dim = (this->num_weights_per_coord ? this->num_weights_per_coord : 1);
 
 	// From the Solution we get part information.
 	// If the part sizes for a given criteria are not uniform,
@@ -6231,20 +6231,20 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 	}
 
 	//if no weights are provided set uniform weight.
-	if (this->weight_dim == 0){
+	if (this->num_weights_per_coord == 0){
 		this->mj_uniform_weights[0] = true;
 		this->mj_weights[0] = NULL;
 	}
 	else{
-		//if weights are provided get weights for all weight dimensions.
-		for (int wdim = 0; wdim < this->weight_dim; wdim++){
+		//if weights are provided get weights for all weight indices
+		for (int wdim = 0; wdim < this->num_weights_per_coord; wdim++){
 			if (wgts[wdim].size() == 0){
-				//if the weight dimension has uniform weights.
+				//if the weight index has uniform weights.
 				this->mj_uniform_weights[wdim] = true;
 				this->mj_weights[wdim] = NULL;
 			}
 			else{
-				//if the weight dimension doesn't have uniform weights, set weights of the objects.
+				//if the weight index doesn't have uniform weights, set weights of the objects.
 				ArrayRCP<const pq_scalar_t> ar;
 				wgts[wdim].getInputArray(ar);
 				this->mj_uniform_weights[wdim] = false;

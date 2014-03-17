@@ -280,9 +280,9 @@ template <typename scalar_t>
  * \param parts the part Id for each object, which may range 
  *         from 0 to one less than \c numberOfParts
  * \param vwgts \c vwgts[w] is the StridedData object 
- *    representing weight dimension
+ *    representing weight index
  *    \c w.  vwgts[w][i] is the \c w'th weight for object \c i.
- * \param mcNorm the multiCriteria norm, to be used if weight dimension 
+ * \param mcNorm the multiCriteria norm, to be used if the number of weights
  *           is greater than one.
  * \param weights on return, \c weights[p] is the total weight for part 
       \c p. \c weights is allocated by the caller
@@ -345,7 +345,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
               weights[parts[i]] += vwgts[wdim][i];
             }
           }
-        }  // next weight dimension
+        }  // next weight index
         break;
        
       case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
@@ -413,11 +413,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *   \param comm   communicator
  *   \param part   \c part[i] is the part ID for local object \c i
  *   \param vwgts  \c vwgts[w] is the StridedData object 
- *       representing weight dimension \c w. The weight dimension
- *       (which must be at least one) is taken to be \c vwgts.size().  
- *       If <tt>vwgts[wdim].size() == 0</tt>,
- *       we assume uniform weights for weight dimension \c wdim.
- *   \param mcNorm the multiCriteria norm, to be used if weight dimension is
+ *       representing weight index \c w. The number of weights
+ *       (which must be at least one  TODO  WHY?) is taken to be \c vwgts.size().  
+ *   \param mcNorm the multiCriteria norm, to be used if the number of weights is
  *             greater than one.
  *   \param numParts  on return this is the global number of parts.
  *   \param numNonemptyParts  on return this is the number of those
@@ -427,13 +425,13 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *     the item being measured. The list may contain "object count",
  *     "normed weight", "weight 1", "weight 2" and so on in that order.
  *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
+ *     If one set of non-uniform weights were given, then
  *     "object count" and "weight 1" appear.  Finally, if multiple
  *     weights were given, we have "object count", then "normed weight",
  *     then the individual weights "weight 1", "weight 2", and so on.
  *   \param globalSums If weights are uniform, the globalSums is the
  *      \c numParts totals of global number of objects in each part.
- *     Suppose the weight dimension is \c W.  If
+ *     Suppose the number of weights is \c W.  If
  *     W is 1, then on return this is an array of length \c 2*numParts .
  *     The first \c numParts entries are the count of objects in each part,  
  *     and the second is the total weight in each part.
@@ -443,7 +441,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *     The next \c numParts entries are the sum of the normed weights in 
  *     each part.  
  *     The final entries are the sum of the individual weights in each part,
- *     by weight dimension by part number.  The array is allocated here.
+ *     by weight index by part number.  The array is allocated here.
  *
  * globalSumsByPart() must be called by all processes in \c comm.
  * The imbalance metrics are not yet set in the MetricValues objects, 
@@ -485,7 +483,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
-  // Verify vertex weight dim is the same everywhere.
+  // Verify number of vertex weights is the same everywhere.
 
   lno_t localNumObj = part.size();
   partId_t localNum[2], globalNum[2];
@@ -501,7 +499,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
-  env->globalBugAssertion(__FILE__, __LINE__, "inconsistent vertex dimension",
+  env->globalBugAssertion(__FILE__,__LINE__, "inconsistent number of vertex weights",
     globalNum[0] > 0 && globalNum[0] == localNum[0], 
     DEBUG_MODE_ASSERTION, comm);
 
@@ -765,10 +763,10 @@ template <typename scalar_t>
  *             length of the \c psizes array if it is defined.
  *  \param numSizes the number of part size arrays
  *  \param psizes  is an array of \c numSizes pointers to part size arrays.
- *         If the part sizes for dimension \c w are uniform, then
+ *         If the part sizes for index \c w are uniform, then
  *         <tt>psizes[w]</tt> should be NULL.  Otherwise it should
  *         point to \c targetNumParts sizes, and the sizes for each
- *         dimension should sum to one.
+ *         index should sum to one.
  *  \param sumVals is the sum of the values in the \c vals list.
  *  \param vals  <tt> vals[p] </tt> is the amount in part \c p, for \c p
  *          ranging from zero to one less than \c numParts.
@@ -902,7 +900,7 @@ template <typename scalar_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param mcNorm  is the multicriteria norm to use if the weight dimension
+ *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
  *   \param numParts on return is the global number of parts in the solution
@@ -914,7 +912,7 @@ template <typename scalar_t>
  *     the item being measured. The list may contain "object count",
  *     "normed weight", "weight 1", "weight 2" and so on in that order.
  *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
+ *     If one set of non-uniform weights were given, then
  *     "object count" and "weight 1" appear.  Finally, if multiple
  *     weights were given, we have "object count", then "normed weight",
  *     then the individual weights "weight 1", "weight 2", and so on.
@@ -955,17 +953,17 @@ template <typename Adapter>
 
   // Weights, if any, for each object.
 
-  int weightDim = ia->getNumWeightsPerID();
-  int numCriteria = (weightDim > 0 ? weightDim : 1);
+  int nWeights = ia->getNumWeightsPerID();
+  int numCriteria = (nWeights > 0 ? nWeights : 1);
   Array<sdata_t> weights(numCriteria);
 
-  if (weightDim == 0){
-    // One dimension of uniform weights is implied.
+  if (nWeights == 0){
+    // One set of uniform weights is implied.
     // StridedData default constructor creates length 0 strided array.
     weights[0] = sdata_t();
   }
   else{
-    for (int i=0; i < weightDim; i++){
+    for (int i=0; i < nWeights; i++){
       int stride;
       const scalar_t *wgt;
       ia->getWeightsView(wgt, stride, i); 
@@ -1006,7 +1004,7 @@ template <typename Adapter>
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the object count.  
-  // (Use first dimension of part sizes.) 
+  // (Use first index of part sizes.) 
 
   scalar_t *objCount  = globalSums.getRawPtr();
   scalar_t min, max, avg;
@@ -1042,7 +1040,7 @@ template <typename Adapter>
     if (metrics.size() > 2){
 
     ///////////////////////////////////////////////////////////////////////////
-    // Compute imbalances for each individual weight dimension.
+    // Compute imbalances for each individual weight.
 
       int next = 2;
   

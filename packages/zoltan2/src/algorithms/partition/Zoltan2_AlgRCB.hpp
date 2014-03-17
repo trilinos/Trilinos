@@ -198,7 +198,7 @@ void AlgRCB(
   typedef StridedData<lno_t, scalar_t> input_t;
 
   int coordDim = coords->getCoordinateDim();
-  int weightDim = coords->getCoordinateWeightDim();
+  int nWgtsPerCoord = coords->getNumWeightsPerCoordinate();
   size_t numLocalCoords = coords->getLocalNumCoordinates();
   global_size_t numGlobalCoords = coords->getGlobalNumCoordinates();
 
@@ -216,7 +216,7 @@ void AlgRCB(
   }
 
   env->debug(DETAILED_STATUS, "Storing weights");
-  int criteriaDim = (weightDim ? weightDim : 1);
+  int criteriaDim = (nWgtsPerCoord ? nWgtsPerCoord : 1);
   bool ignoreWeights = params.test(rcb_balanceCount);
 
   if (criteriaDim > 1 && ignoreWeights)
@@ -225,18 +225,18 @@ void AlgRCB(
   ArrayRCP<bool> uniformWeights(new bool [criteriaDim], 0, criteriaDim, true);
   Array<ArrayRCP<const scalar_t> > weights(criteriaDim);
 
-  if (weightDim == 0 || ignoreWeights)
+  if (nWgtsPerCoord == 0 || ignoreWeights)
     uniformWeights[0] = true;
   else{
-    for (int wdim = 0; wdim < weightDim; wdim++){
-      if (wgts[wdim].size() == 0){
-        uniformWeights[wdim] = true;
+    for (int widx = 0; widx < nWgtsPerCoord; widx++){
+      if (wgts[widx].size() == 0){
+        uniformWeights[widx] = true;
       }
       else{
-        uniformWeights[wdim] = false;
+        uniformWeights[widx] = false;
         ArrayRCP<const scalar_t> ar;
-        wgts[wdim].getInputArray(ar);
-        weights[wdim] = ar;
+        wgts[widx].getInputArray(ar);
+        weights[widx] = ar;
       }
     }
   }
@@ -265,32 +265,32 @@ void AlgRCB(
   Array<bool> uniformParts(criteriaDim);
   Array<ArrayRCP<scalar_t> > partSizes(criteriaDim);
 
-  for (int wdim = 0; wdim < criteriaDim; wdim++){
-    if (solution->criteriaHasUniformPartSizes(wdim)){
-      uniformParts[wdim] = true;
+  for (int widx = 0; widx < criteriaDim; widx++){
+    if (solution->criteriaHasUniformPartSizes(widx)){
+      uniformParts[widx] = true;
     }
     else{
       scalar_t *tmp = new scalar_t [numGlobalParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
     
       for (size_t i=0; i < numGlobalParts; i++){
-        tmp[i] = solution->getCriteriaPartSize(wdim, i);
+        tmp[i] = solution->getCriteriaPartSize(widx, i);
       }
 
-      partSizes[wdim] = arcp(tmp, 0, numGlobalParts);
+      partSizes[widx] = arcp(tmp, 0, numGlobalParts);
     }
   }
 
   // It may not be possible to solve the partitioning problem
-  // if we have multiple weight dimensions with part size
+  // if we have multiple weights with part size
   // arrays that differ. So let's be aware of this possibility.
 
   bool multiplePartSizeSpecs = false;
 
   if (criteriaDim > 1){
-    for (int wdim1 = 0; wdim1 < criteriaDim; wdim1++)
-      for (int wdim2 = wdim1+1; wdim2 < criteriaDim; wdim2++)
-        if (!solution->criteriaHaveSamePartSizes(wdim1, wdim2)){
+    for (int widx1 = 0; widx1 < criteriaDim; widx1++)
+      for (int widx2 = widx1+1; widx2 < criteriaDim; widx2++)
+        if (!solution->criteriaHaveSamePartSizes(widx1, widx2)){
           multiplePartSizeSpecs = true;
           break;
         }
@@ -303,7 +303,7 @@ void AlgRCB(
   // Create the distributed data for the algorithm.
   //
   // It is a multivector containing one vector for each coordinate
-  // dimension, plus a vector for each weight dimension that is not
+  // dimension, plus a vector for each weight that is not
   // uniform.
 
   env->debug(DETAILED_STATUS, "Creating multivec");
@@ -311,8 +311,8 @@ void AlgRCB(
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
 
   int multiVectorDim = coordDim;
-  for (int wdim = 0; wdim < criteriaDim; wdim++)
-    if (!uniformWeights[wdim]) multiVectorDim++;
+  for (int widx = 0; widx < criteriaDim; widx++)
+    if (!uniformWeights[widx]) multiVectorDim++;
 
   gno_t gnoMin, gnoMax;
   coords->getIdentifierMap()->getGnoRange(gnoMin, gnoMax);
@@ -330,9 +330,9 @@ void AlgRCB(
   for (int dim=0; dim < coordDim; dim++)
     avList[dim] = values[dim].view(0, numLocalCoords);
 
-  for (int wdim=0, idx=coordDim; wdim < criteriaDim; wdim++)
-    if (!uniformWeights[wdim])
-      avList[idx++] = weights[wdim].view(0, numLocalCoords);
+  for (int widx=0, idx=coordDim; widx < criteriaDim; widx++)
+    if (!uniformWeights[widx])
+      avList[idx++] = weights[widx].view(0, numLocalCoords);
 
   ArrayRCP<const ArrayView<const scalar_t> > vectors =
     arcp(avList, 0, multiVectorDim);

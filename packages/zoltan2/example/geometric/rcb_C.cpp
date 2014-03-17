@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
    
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
-  // Try a problem with weights (1 dimension)
+  // Try a problem with weights 
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
 
@@ -282,9 +282,9 @@ int main(int argc, char *argv[])
   srand(rank);
 
   for (size_t i=0; i < localCount*3; i+=3){
-    weights[i] = 1.0 + rank / nprocs;      // weight dimension 1
-    weights[i+1] = rank<nprocs/2 ? 1 : 2;  // weight dimension 2
-    weights[i+2] = rand()/RAND_MAX +.5;    // weight dimension 3
+    weights[i] = 1.0 + rank / nprocs;      // weight idx 1
+    weights[i+1] = rank<nprocs/2 ? 1 : 2;  // weight idx 2
+    weights[i+2] = rand()/RAND_MAX +.5;    // weight idx 3
   }
 
   // Create a Zoltan2 input adapter with these weights.

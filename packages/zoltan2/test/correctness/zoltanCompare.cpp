@@ -168,14 +168,14 @@ int runRCB(const RCP<const Comm<int> > &comm,
     return 1;
   }
 
-  int weightDim = (weights.is_null() ? 0 : weights->getNumVectors());
+  int nWeights = (weights.is_null() ? 0 : weights->getNumVectors());
 
   // Create input adapters for the matrix and its coordinates
 
   matrixAdapter_t *ia;
 
   try{
-    ia = new matrixAdapter_t(matrixConst, weightDim);
+    ia = new matrixAdapter_t(matrixConst, nWeights);
   }
   catch(...){
     if (rank == 0)
@@ -183,7 +183,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
     return 1;
   }
 
-  for (int dim=0; dim < weightDim; dim++)
+  for (int dim=0; dim < nWeights; dim++)
     ia->setRowWeights(weights->getData(dim).getRawPtr(), 1, dim);
 
   vectorAdapter_t *ca = NULL;
@@ -234,8 +234,8 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   if (rank == 0){
     std::cout << "coordinate dimension: " << coordDim << std::endl;
-    std::cout << "weight dimension: " << weightDim << std::endl;
-    if (weightDim > 1)
+    std::cout << "number of weights per ID: " << nWeights << std::endl;
+    if (nWeights > 1)
       std::cout << 
         "objective: multicriteria_balance_total_maximum (2-norm)" << std::endl;
   }

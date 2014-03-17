@@ -854,7 +854,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
   int rank = tcomm_->getRank();
   int graphCounts[5];
   int nvtxs=0, nedges=0;
-  int vwgt_dim=0, ewgt_dim=0;
+  int nVwgts=0, nEwgts=0;
   int *start = NULL, *adj = NULL;
   float *ewgts = NULL, *vwgts = NULL;
   size_t *nzPerRow = NULL;
@@ -875,7 +875,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     strcpy(nonConstName, fname.c_str());
 
     fail = Zoltan2::chaco_input_graph(fptr, nonConstName,
-      &start, &adj, &nvtxs, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts);
+      &start, &adj, &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
     delete [] nonConstName;
 
     // There are Zoltan2 test graphs that have no edges.
@@ -889,8 +889,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
         std::cout << start[nvtxs] << " edges,";
       else
         std::cout << "no edges,";
-      std::cout << vwgt_dim << " vertex weights, ";
-      std::cout << ewgt_dim << " edge weights" << std::endl;
+      std::cout << nVwgts << " vertex weights, ";
+      std::cout << nEwgts << " edge weights" << std::endl;
     }
 
     if (nvtxs==0)
@@ -941,8 +941,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
 
     graphCounts[0] = nvtxs;
     graphCounts[1] = nedges;
-    graphCounts[2] = vwgt_dim;
-    graphCounts[3] = ewgt_dim;
+    graphCounts[2] = nVwgts;
+    graphCounts[3] = nEwgts;
     graphCounts[4] = maxRowLen;  // size_t maxRowLen will fit; it is <= (int-int)
   }
   
@@ -995,8 +995,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
   else{
     nvtxs = graphCounts[0];
     nedges = graphCounts[1];
-    vwgt_dim = graphCounts[2];
-    ewgt_dim  = graphCounts[3];
+    nVwgts = graphCounts[2];
+    nEwgts  = graphCounts[3];
     maxRowLen = graphCounts[4];
 
     // Create a Tpetra::CrsMatrix where rank 0 has entire matrix.
@@ -1035,21 +1035,21 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
 
   typedef ArrayRCP<const ArrayView<const scalar_t> > arrayArray_t;
 
-  if (vwgt_dim > 0){
+  if (nVwgts > 0){
 
     ArrayRCP<scalar_t> weightBuf;
-    ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [vwgt_dim];
+    ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [nVwgts];
 
     if (rank == 0){
-      size_t len = vwgt_dim * nvtxs;
+      size_t len = nVwgts * nvtxs;
       scalar_t *buf = new scalar_t [len];
       if (!buf) throw std::bad_alloc();
       weightBuf = arcp(buf, 0, len, true);
 
-      for (int wdim=0; wdim < vwgt_dim; wdim++){
-        wgts[wdim] = ArrayView<const scalar_t>(buf, nvtxs);
-        float *vw = vwgts + wdim;
-        for (int i=0; i < nvtxs; i++, vw += vwgt_dim)
+      for (int widx=0; widx < nVwgts; widx++){
+        wgts[widx] = ArrayView<const scalar_t>(buf, nvtxs);
+        float *vw = vwgts + widx;
+        for (int i=0; i < nvtxs; i++, vw += nVwgts)
           buf[i] = *vw;
         buf += nvtxs;
       }
@@ -1058,14 +1058,14 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
       vwgts = NULL;
     }
 
-    arrayArray_t vweights = arcp(wgts, 0, vwgt_dim, true);
+    arrayArray_t vweights = arcp(wgts, 0, nVwgts, true);
 
     RCP<tMVector_t> fromVertexWeights = 
-      rcp(new tMVector_t(fromMap, vweights.view(0, vwgt_dim), vwgt_dim));
+      rcp(new tMVector_t(fromMap, vweights.view(0, nVwgts), nVwgts));
 
     RCP<tMVector_t> toVertexWeights;
     if (distributeInput) {
-      toVertexWeights = rcp(new tMVector_t(toMap, vwgt_dim));
+      toVertexWeights = rcp(new tMVector_t(toMap, nVwgts));
       toVertexWeights->doImport(*fromVertexWeights, *importer, Tpetra::INSERT);
     }
     else
@@ -1076,23 +1076,23 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
 
   // Edge weights, if any
 
-  if (haveEdges && ewgt_dim > 0){
+  if (haveEdges && nEwgts > 0){
 
     ArrayRCP<scalar_t> weightBuf;
-    ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [ewgt_dim];
+    ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [nEwgts];
 
     toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
 
     if (rank == 0){
-      size_t len = ewgt_dim * nedges;
+      size_t len = nEwgts * nedges;
       scalar_t *buf = new scalar_t [len];
       if (!buf) throw std::bad_alloc();
       weightBuf = arcp(buf, 0, len, true);
 
-      for (int wdim=0; wdim < ewgt_dim; wdim++){
-        wgts[wdim] = ArrayView<const scalar_t>(buf, nedges);
-        float *ew = ewgts + wdim;
-        for (int i=0; i < nedges; i++, ew += ewgt_dim)
+      for (int widx=0; widx < nEwgts; widx++){
+        wgts[widx] = ArrayView<const scalar_t>(buf, nedges);
+        float *ew = ewgts + widx;
+        for (int i=0; i < nedges; i++, ew += nEwgts)
           buf[i] = *ew;
         buf += nedges;
       }
@@ -1105,15 +1105,15 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
       fromMap = rcp(new map_t(nedges, 0, base, tcomm_));
     }
 
-    arrayArray_t eweights = arcp(wgts, 0, ewgt_dim, true);
+    arrayArray_t eweights = arcp(wgts, 0, nEwgts, true);
 
     RCP<tMVector_t> fromEdgeWeights;
     RCP<tMVector_t> toEdgeWeights;
     RCP<import_t> edgeImporter;
     if (distributeInput) {
       fromEdgeWeights = 
-        rcp(new tMVector_t(fromMap, eweights.view(0, ewgt_dim), ewgt_dim));
-      toEdgeWeights = rcp(new tMVector_t(toMap, ewgt_dim));
+        rcp(new tMVector_t(fromMap, eweights.view(0, nEwgts), nEwgts));
+      toEdgeWeights = rcp(new tMVector_t(toMap, nEwgts));
       edgeImporter = rcp(new import_t(fromMap, toMap));
       toEdgeWeights->doImport(*fromEdgeWeights, *edgeImporter, Tpetra::INSERT);
     }

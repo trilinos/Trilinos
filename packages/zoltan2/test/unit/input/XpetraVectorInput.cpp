@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
-  int weightDim = 1;
+  int nWeights = 1;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
   memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 
   typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> adapter_t;
   Zoltan2::PartitioningSolution<adapter_t> solution(
-    env, comm, idMap, weightDim);
+    env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, true);
 
   /////////////////////////////////////////////////////////////
