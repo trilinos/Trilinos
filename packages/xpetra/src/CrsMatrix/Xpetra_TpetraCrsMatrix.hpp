@@ -341,7 +341,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,

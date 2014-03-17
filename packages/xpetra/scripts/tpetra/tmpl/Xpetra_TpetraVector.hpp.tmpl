@@ -21,23 +21,32 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> > toTpetra(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
-  //
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >       toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
 
   $TMPL_TEMPLATE_PARAM
   class $TMPL_CLASS
   $TMPL_INHERITANCE
   {
+    typedef void LocalMatOps;
+#undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
   public:
 
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;          // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;        // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm2;        // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normInf;      // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normWeighted; // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::meanValue;    // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceGlobalValue;    // overloading, not hiding
-    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoGlobalValue;    // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;                  // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;                // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm2;                // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normInf;              // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normWeighted;         // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::meanValue;            // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceGlobalValue;   // overloading, not hiding
+    using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoGlobalValue;   // overloading, not hiding
     using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue;    // overloading, not hiding
     using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;    // overloading, not hiding
 
@@ -45,11 +54,11 @@ namespace Xpetra {
     //@{
 
     //! Sets all vector entries to zero.
-    TpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
+    TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true)
       : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,1,zeroOut) { }
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    TpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView< const Scalar > &A)
+    TpetraVector(const Teuchos::RCP< const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
       : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,A,map->getNodeNumElements(),1) { }
 
     //! Destructor.
@@ -60,17 +69,17 @@ namespace Xpetra {
 $TMPL_PUBLIC_FUNCTIONS
 
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const { XPETRA_MONITOR("TpetraVector::dot"); return getTpetra_Vector()->dot(*toTpetra(a)); }
+    Scalar dot(const Vector &a) const { XPETRA_MONITOR("TpetraVector::dot"); return getTpetra_Vector()->dot(*toTpetra(a)); }
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights) const { XPETRA_MONITOR("TpetraVector::normWeighted"); return getTpetra_Vector()->normWeighted(*toTpetra(weights)); }
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { XPETRA_MONITOR("TpetraVector::normWeighted"); return getTpetra_Vector()->normWeighted(*toTpetra(weights)); }
 
 
     //! @name Xpetra specific
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec) { } // TODO: removed const of Tpetra::Vector
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >(vec) { }
 
     //! Get the underlying Tpetra multivector
     RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
@@ -93,7 +102,20 @@ $TMPL_PUBLIC_FUNCTIONS
     XPETRA_DYNAMIC_CAST(const TpetraVectorClass, x, tX, "toTpetra");
     return tX.getTpetra_Vector();
   }
-  //
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
+    if (!vec.is_null())
+      return rcp(new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+    return Teuchos::null;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
+    // We cast away the const to wrap the Tpetra vector into an Xpetra object. But it's OK because the Xpetra vector is returned as const.
+    return toXpetra(Teuchos::rcp_const_cast<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > (vec));
+  }
 
 } // Xpetra namespace
 

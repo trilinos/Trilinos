@@ -607,10 +607,10 @@ namespace Xpetra {
     bool isSameAs(const Map& map) const { return map_->isSameAs(map); }
 
     //! Get the Comm object for this Map.
-    const Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return map_->getComm(); }
+    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return map_->getComm(); }
 
     //! Get the Node object for this Map.
-    const Teuchos::RCP<Node>  getNode() const { return map_->getNode(); }
+    Teuchos::RCP<Node>  getNode() const { return map_->getNode(); }
 
     RCP<const Map> removeEmptyProcesses  () const { return map_->removeEmptyProcesses(); }
     RCP<const Map> replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return map_->replaceCommWithSubset(newComm); }
