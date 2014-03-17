@@ -17,6 +17,10 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
+  MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
+ENDIF()
+
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   SET(${PACKAGE_NAME}_ENABLE_Ifpack2 OFF)
