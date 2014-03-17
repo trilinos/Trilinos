@@ -200,7 +200,7 @@ namespace MueLu {
           ArrayRCP<LO> columns(A->getNodeNumEntries());
 
           RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO,LMO>::GetMatrixOverlappedDiagonal(*A);
-          const ArrayView<const SC> ghostedDiagVals = ghostedDiag->getData(0)();
+          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
           const ArrayRCP<bool>     boundaryNodes(A->getNodeNumRows(), false);
 
           LO realnnz = 0;

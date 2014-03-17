@@ -702,7 +702,12 @@ namespace MueLu {
     }
 
     RCP<Vector> diagonal = VectorFactory::Build(colMap);
-    diagonal->doImport(*localDiag, *(A.getCrsGraph()->getImporter()), Xpetra::INSERT);
+    RCP< const Import> importer;
+    importer = A.getCrsGraph()->getImporter();
+    if (importer == Teuchos::null) {
+      importer = ImportFactory::Build(rowMap, colMap);
+    }
+    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
 
     return diagonal;
   } //GetMatrixOverlappedDiagonal
