@@ -892,7 +892,7 @@ C
          CALL STRLNG (CIN(ICOM), LEN)
          IF (((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'X')) .OR.
      &      ((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'x'))) THEN
-            CALL HELP(5)
+            CALL HELP_FQ(5)
          ELSE
             CALL FEXIT (WROTE, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN,
      &         TIME1, BATCH, VERSN)
@@ -903,7 +903,7 @@ C  WRITE OUT THE HELP MESSAGE
 C
       ELSE
          ICOM = ICOM + 1
-         CALL HELP (5)
+         CALL HELP_FQ (5)
       ENDIF
       GOTO 100
 C
