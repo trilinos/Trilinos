@@ -6238,18 +6238,10 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 	else{
 		//if weights are provided get weights for all weight indices
 		for (int wdim = 0; wdim < this->num_weights_per_coord; wdim++){
-			if (wgts[wdim].size() == 0){
-				//if the weight index has uniform weights.
-				this->mj_uniform_weights[wdim] = true;
-				this->mj_weights[wdim] = NULL;
-			}
-			else{
-				//if the weight index doesn't have uniform weights, set weights of the objects.
-				ArrayRCP<const pq_scalar_t> ar;
-				wgts[wdim].getInputArray(ar);
-				this->mj_uniform_weights[wdim] = false;
-				this->mj_weights[wdim] = (pq_scalar_t *) ar.getRawPtr();
-			}
+			ArrayRCP<const pq_scalar_t> ar;
+			wgts[wdim].getInputArray(ar);
+			this->mj_uniform_weights[wdim] = false;
+			this->mj_weights[wdim] = (pq_scalar_t *) ar.getRawPtr();
 		}
 	}
 
