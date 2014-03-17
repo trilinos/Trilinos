@@ -1162,7 +1162,7 @@ In development mode working with local git repos for the project sources, on
 can generate a <Project>RepoVersion.txt file which lists all of the repos and
 their current versions using::
 
-   -D <PROJECT>_GENERATE_REPO_VERSION_FILE:BOOL=ON
+   -D <Project>_GENERATE_REPO_VERSION_FILE:BOOL=ON
 
 This will cause a <Project>RepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
