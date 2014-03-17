@@ -263,17 +263,15 @@ public:
     s.scale(-1.0);
 
     // Perform line search
-    Real alpha = 0.0;
     Real fnew  = algo_state.value;
     this->ls_nfval_ = 0;
     this->ls_ngrad_ = 0;
-    this->lineSearch_->run(alpha,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
+    this->lineSearch_->run(Step<Real>::state_->searchSize,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
     algo_state.nfval += this->ls_nfval_;
     algo_state.ngrad += this->ls_ngrad_;
-    algo_state.alpha = alpha;
 
     // Compute get scaled descent direction
-    s.scale(alpha);
+    s.scale(Step<Real>::state_->searchSize);
     if ( con.isActivated() ) {
       s.plus(x);
       con.project(s);

@@ -78,8 +78,9 @@ public:
                            AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
     // Initialize state descent direction and gradient storage
-    state_->descentVec  = x.clone();
-    state_->gradientVec = x.clone();
+    state_->descentVec   = x.clone();
+    state_->gradientVec  = x.clone();
+    state_->searchSize = 0.0;
     // Project x onto constraint set
     if ( con.isActivated() ) {
       con.project(x);

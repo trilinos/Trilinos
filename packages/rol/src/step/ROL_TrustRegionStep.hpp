@@ -74,7 +74,6 @@ private:
 
   bool useProjectedGrad_;
 
-  Real              del_;        // Trust-Region Radius
   std::vector<bool> useInexact_; // Inexactness Information
   int               TRflag_  ;   // Trust-Region Exit Flag
   int               TR_nfval_;   // Trust-Region Function Evaluation Number
@@ -117,7 +116,7 @@ public:
     useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
-    del_   = parlist.get("Initial Trust-Region Radius",          -1.0);
+    Step<Real>::state_->searchSize   = parlist.get("Initial Trust-Region Radius",          -1.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -148,7 +147,7 @@ public:
     useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
-    del_   = parlist.get("Initial Trust-Region Radius",          -1.0);
+    Step<Real>::state_->searchSize   = parlist.get("Initial Trust-Region Radius",          -1.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -183,10 +182,10 @@ public:
 
     obj.update(x,true,algo_state.iter);    
     if ( this->useInexact_[1] ) {
-      Real gtol = 2.0*this->del_;
-      algo_state.gnorm = this->del_;
-      while ( gtol > std::min(algo_state.gnorm,this->del_) ) {
-        gtol = std::min(algo_state.gnorm,this->del_);
+      Real gtol = 2.0*Step<Real>::state_->searchSize;
+      algo_state.gnorm = Step<Real>::state_->searchSize;
+      while ( gtol > std::min(algo_state.gnorm,Step<Real>::state_->searchSize) ) {
+        gtol = std::min(algo_state.gnorm,Step<Real>::state_->searchSize);
         obj.gradient(*(state->gradientVec),x,gtol);
         algo_state.ngrad++;
         algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
@@ -203,7 +202,7 @@ public:
     algo_state.nfval++;
 
     // Evaluate Objective Function at Cauchy Point
-    if ( this->del_ <= 0.0 ) {
+    if ( Step<Real>::state_->searchSize <= 0.0 ) {
       Teuchos::RCP<Vector<Real> > Bg = x.clone();
       if ( this->useSecantHessVec_ ) {
         this->secant_->applyB(*Bg,*(state->gradientVec),x);
@@ -224,7 +223,7 @@ public:
       algo_state.nfval++;
       // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
       Real gs    = (state->gradientVec)->dot(*cp);
-      this->del_ = -gs/(fnew - algo_state.value - gs)*alpha*algo_state.gnorm;
+      Step<Real>::state_->searchSize = -gs/(fnew - algo_state.value - gs)*alpha*algo_state.gnorm;
     }
   }
 
@@ -240,7 +239,7 @@ public:
     //ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
     this->CGflag_ = 0;
     this->CGiter_ = 0;
-    this->trustRegion_->run(s,algo_state.snorm,this->del_,this->CGflag_,this->CGiter_,
+    this->trustRegion_->run(s,algo_state.snorm,Step<Real>::state_->searchSize,this->CGflag_,this->CGiter_,
                             x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,pObj);
   }
 
@@ -268,7 +267,7 @@ public:
     this->TR_ngrad_ = 0;
     Real fold = algo_state.value;
     Real fnew = 0.0;
-    this->trustRegion_->update(x,fnew,this->del_,this->TR_nfval_,this->TR_ngrad_,this->TRflag_,
+    this->trustRegion_->update(x,fnew,Step<Real>::state_->searchSize,this->TR_nfval_,this->TR_ngrad_,this->TRflag_,
                               s,algo_state.snorm,fold,*(Step<Real>::state_->gradientVec),pObj);
     algo_state.value = fnew;
     algo_state.nfval += this->TR_nfval_;
@@ -417,7 +416,7 @@ public:
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << " "; 
-      hist << std::setw(15) << std::left << this->del_; 
+      hist << std::setw(15) << std::left << Step<Real>::state_->searchSize; 
       hist << "\n";
     }
     else {
@@ -426,7 +425,7 @@ public:
       hist << std::setw(15) << std::left << algo_state.value; 
       hist << std::setw(15) << std::left << algo_state.gnorm; 
       hist << std::setw(15) << std::left << algo_state.snorm; 
-      hist << std::setw(15) << std::left << this->del_; 
+      hist << std::setw(15) << std::left << Step<Real>::state_->searchSize; 
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
       hist << std::setw(10) << std::left << this->TRflag_;              
