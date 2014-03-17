@@ -370,11 +370,389 @@ into the meat of TriBITS starting with the overall structure of a TriBITS
 project.
 
 
-Structure of a TriBITS Project
-==============================
+TriBITS Project Structure
+=========================
 
-ToDo: Fill in!
+TriBITS is a framework, implemented in CMake to create CMake projects.  As a
+framework, it defines the the overall structure of a CMake build system for a
+project and processes project, repository, and package specific files in a
+specified order.  All of this processing takes place in the
+`TRIBITS_PROJECT()`_ macro.
 
+TriBITS Structural Units
+------------------------
+
+A TriBITS project is composed of a single *TriBITS Project*, one or more *TriBITS Repositories* and one or more *TriBITS Packages*.  In addition, a TriBITS Pakage can be broken up into *TriBITS Subpackages*.  Together, the collection of TriBITS Packages and TriBITS Subpackages are called *TriBITS Software Engineering Packages*, or *TriBITS SE Packages* for short.
+
+These TriBITS entities are:
+
+* `TriBITS Package`_: A collection of related software that typically includes
+  one or more source files built into one or more libraries and has assoicated
+  tests to help define and protect the functionality in the package.  A
+  package also typically defines a unit of documentation and automated
+  testing.  A TriBITS package may or may not be broken down into multiple
+  subpackages. Examples of TriBITS packages in the ``TribitsExampleProject``
+  include ``SimpleCXX`, ``MixedLanguage`` and ``PackageWithSubpackages``.
+* *TriBITS Subpackage*: A part of a parent subpackage that also typically has
+  source files built into libraries and tests but is documented and tested
+  along with the other subpackages in a parent package.  The primary purpose
+  is to provide finer-grained of control software dependencies.  In
+  ``TribitsExampleProject``, the package ``PackageWithSubpackages`` is an
+  example of a package with subpackages which has the subpackages
+  ``SubpackaeA``, ``SubpackaeB``, and ``SubpackageC``.  The full subpackage
+  name is the parent package name prefixed
+  (e.g. ``PackageWithSubpackagesSubpackageA``).
+* *TriBITS SE Package*: The combined set of TriBITS packages and
+   subpackages. SE packages are the basis for setting dependencies in the
+   TriBITS system.
+* `TriBITS TPL`_: The specification for a particular external dependency that
+  is required or can be used in one or more TriBITS SE Packages.  A TPL (a
+  Third Party Library) typically provides a list of libraries or a list
+  include directories for header files but can also be manifisted in order
+  ways as well.  Examples of basic TPLs include ``BLAS``, ``LAPACK``, and
+  ``Boost``.
+* `TriBITS Repository`_: A collection of one or more TriBITS packages
+   specified in a ``PackagesList.cmake`` file.
+* `TriBITS Project`_: A collection of TriBITS Repositories and Packages that
+  defines a CMake ``PROJECT`` and can be configured, built, and tested.
+
+.. _TriBITS Project:
+
+**TriBITS Project**
+
+* This defines a complete CMake project build by calling ``PROJECT(${PROJECT_NAME} ...)``
+* Consists of one or more `TriBITS Repositories`_
+* Defines ``PROJECT_NAME`` CMake variable (defined in ``ProjectName.cmake``)
+* Defines a set of native Repositories (see below) that define
+  packages and TPLs.  This set of native Repositories defines the
+  official packages list and dependencies data-structure.  The list
+  of native Repositories can be empty!
+* Allows for extra Repositories to be added on before and after the
+  set of native Repositories (given in ``ExtraRepositoriesList.cmake``
+  or by CMake variables)
+* Defines a default CDash server and default project name on the server
+  (the project name on the CDash server must be the same as
+  ${PROJECT_NAME})
+
+Core files making up a TriBITS Project::
+
+  ${${PROJECT_SOURCE_DIR}}/
+     CMakeLists.txt
+     CTestConfig.cmake
+     ProjectName.cmake    # Defines PACAKGE_NAME
+     Version.cmake        # [Optional] Dev mode, Project version, VC branch
+     cmake/
+       NativeRepositoriesList.cmake    # [Optional] Used for some meta-projects
+       ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs 
+       ProjectDependenicesSetup.cmake  # [Optional] Project deps overrides
+       CallbackDefineProjectPackaging.cmake  # [Optional] CPack settings
+       tribits/    # [Optional] Or provide ${PROJECT_NAME}_TRIBITS_DIR
+       ctest/
+         CTestCustom.ctest.in  # [Optional] Custom ctest settings
+
+ToDo: Provide detailed documentation for these files?
+
+.. _TriBITS Repositories:
+
+.. _TriBITS Repository:
+
+**TriBITS Repository**
+
+* A collection of related TriBITS Packages and TPLs
+* Defines an association between one or more packages
+* Defines a CMake variable specific to the collection referred to the
+  in the variable ``REPOSITORY_NAME``.
+* Defines the base source and binary directories for the Repository
+  ``${REPOSITORY_NAME}_SORUCE_DIR`` and ``${REPOSITORY_NAME}_BINARY_DIR``.
+* [Optional] Defines a list of add-on packages and TPLs (in ``PackagesList.cmake``
+  and ``TPLsList.cmake``)
+* [Optional] Defines a common set of initializations and other hooks for a
+  collection of projects.
+
+Core files making up a TriBITS Repository::
+
+  ${${REPOSITORY_NAME}_SOURCE_DIR}/
+    PackagesList.cmake
+    TPLsList.cmake
+    Copyright.txt  # [Optional] Only needed if creating version header file
+    Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
+    cmake/
+       RepositoryDependenciesSetup.cmake # [Optional]
+       CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
+       CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
+
+ToDo: Document these files in more detaile somewhere else?
+
+.. _TriBITS Package:
+
+**TriBITS Package**
+
+* Typically defines a set of libraries and/or headers and/or executables
+  and/or tests with cmake build targets for building these and publishes the
+  list of include directories and libraries that are created (along with CMake
+  dependencies).
+* Defines dependencies on upstream TPLs and/or other SE packages by just
+  naming the dependencies using their SE package names.
+* Publishes a list of header file include paths and/or libraries for other
+  packages to use.
+* Typically installs an XXXConfig.cmake file that provides the list of this info
+
+Core files making up a TriBITS Package::
+
+  ${${PACKAGE_NAME}_SOURCE_DIR}/
+    CMakeLists.txt  # Only processed if the package is enabled
+    cmake/
+      Dependencies.cmake  # Always processed if the package is listed in the
+                           # enclosing Repository
+
+.. _TriBITS TPL:
+
+**TriBITS TPL**
+
+* Defines a set of pre-built libraries and/or executables
+* Publishes the include directories and/or libraries and/or executables
+  provided by the TPL
+
+NOTES:
+
+* A Project and a Repository can be one in the same.  That is, a Project can
+  provide a set of packages and initializations.  This linkage is made in
+  the base-level Project ``CMakeLists.txt file``.
+
+  - Also, in this case, the Project's and the Repository's ``Version.cmake`` and
+    ``Copyright.txt`` files are one and the same which works just fine.
+
+  - When the Project and Repositories base directories are the same and there
+    is just one list of packages, then the file NativeRepositoriesList.cmake is
+    unnecessary.
+
+* If a given TPL <TPLNAME> is declared in more than one Repository's
+  TPLsList.cmake file (i.e. a duplicate TPL definition), then the
+  FindTPL<TPLNAME>.cmake file used for the TPL <TPLNAME> will be the one for
+  the last Repository processed.  This allows downstream Repositories to
+  redefine and modify the definition of TPLs to add augmented functionality
+  (subject to backward compatibility of the upstream Repository's
+  FindTPL<TPLNAME>.cmake module).
+
+
+TriBITS CMake Varaibles
+------------------------
+
+CMake Varaibles defined by TriBITS fall into one of two types:
+
+* *Fixed Variables* are used temporarily in the processing of a TriBITS unit.
+  These include variables such as ``PROJECT_NAME``, ``REPOSITORY_NAME``,
+  ``PACKAGE_NAME``, and ``PARENT_PACKAGE_NAME`` These are distinguished by
+  having a fixed/constant name.  They are typically part of TriBITS reflection
+  system, allowing subordinate units to determine the encapsulating unit in
+  which they are participating.
+* *Namespaced Variables* are used to refer to properties of a named TriBITS
+  unit.  These include variables such as ``${REPOSTORY_NAME}_SOURCE_DIR``
+  (e.g. ``TribitsExProj_SOURCE_DIR``) and ``${PACKAGE_NAME}_BINARY_DIR``
+  (e.g. ``SimpleCXX_BINARY_DIR``).  They are available after processing the
+  unit, for use by downstream or subordinate units.  They are part of the
+  TriBITS dependency system, allowing downstream units to access properties of
+  their known upstream dependencies.
+
+The TriBITS CMake varaibles are broken down into:
+
+* `TriBITS Project Variables`_
+* `TriBITS Repository Variables`_
+* `TriBITS Package Variables`_
+* `TriBITS TPL Variables`_
+
+.. _TriBITS Project Variables:
+
+**TriBITS Project Variables**
+
+These are top-level (non-cache) CMake variables that are available once a
+Project is defined:
+
+  ``PROJECT_NAME``
+
+    The name of the TriBTS Project.  This exists to support, among other
+    things, the ability for subordinate units (Repositories and Packages) to
+    determine the Project in which is participating.  This is typically read
+    from a ``SET()`` statement in the project's ``ProjectName.cmake`` file.
+
+  ``PROJECT_SOURCE_DIR``
+
+    The absolute path to the base Project source directory.  This is set
+    automatically by TriBITS given the directory passed into ``cmake`` at
+    configure time at the beginning of the `TRIBITS_PROJECT()`_ macro.
+
+  ``PROJECT_BINARY_DIR``
+
+    The absolute path to the base Project binary/build directory.  This is set
+    automatically by TriBITS and is the directory where ``cmake`` is run from
+    and is set at the beginning of the `TRIBITS_PROJECT()`_ macro
+
+  ``${PROJECT_NAME}_SOURCE_DIR``
+
+    Set to ``${PROJECT_SOURCE_DIR}`` automatically by TriBITS at the beginning
+    of the `TRIBITS_PROJECT()`_ macro.
+
+  ``${PROJECT_NAME}_BINARY_DIR``
+
+    Set to ``${PROJECT_BINARY_DIR}`` automatically by TriBITS at the beginning
+    of the `TRIBITS_PROJECT()`_ macro.
+
+  ``${PACKAGE_NAME}_ENABLE_TESTS``
+
+    CMake cache varaibles that if set to ``ON``, then tests for all explicitly
+    enabled packages will be turned on.
+
+  ``${PACKAGE_NAME}_ENABLE_EXAMPLES``
+
+    CMake cache varaibles that if set to ``ON``, then examples for all
+    explicitly enabled packages will be turned on.
+
+.. _TriBITS Repository Variables:
+
+**TriBITS Repository Variables**
+
+These are the variables that are available once each Repository is defined:
+
+  ``REPOSITORY_NAME``
+
+    The name of the current repository.  This is set automatically by TriBITS
+    before any of a TriBITS repo's files are processed
+    (e.g. ``PackagesList.cmake``, ``TPLsList.cmake``, etc.).
+
+  ``REPOSITORY_DIR``
+
+    Path of the current Repository relative to the Project directory.  This is
+    typically just the repository name but can be an arbitrary directory if
+    specified through a ``ExtraRepositoriesList.cmake`` file.
+
+  ``${REPOSITORY_NAME}_SOURCE_DIR``
+
+    The absolute path to the base of a given Repository source directory.
+    CMake code, for example in a packages's ``CMakeLists.txt`` file, typically
+    refers to this by the raw name like ``RepoX_SOURCE_DIR``.  This makes such
+    CMake code independent of where the various TriBITS repos are in relation
+    to each other or the Project.
+
+  ``${REPOSITORY_NAME}_BINARY_DIR``
+
+    The absolute path to the base of a given Repository binary directory.
+    CMake code, for example in packages, refer to this by the raw name like
+    ``RepoX_SOURCE_DIR``.  This makes such CMake code independent of where the
+    various TriBITS repos are in relation to each other or the Project.
+
+  ``${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE``
+
+    If set to ``ON``, then the packages in Repository ``${REPOSITORY_NAME}``
+    will not be implicitly enabled in any of the package adjustment logic.
+
+  ``${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE_EXCEPT``
+
+    List of packages in the Repository ``${REPOSITORY_NAME}`` that will be
+    allowed to be implicitly enabled.  Only checked if
+    ``${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE`` is true.
+
+There are also lists of repositories:
+
+  ``${PROJECT_NAME}_NATIVE_REPOSITORIES``
+
+     The list of Native Repositories (i.e. Repositories that are always present
+     when configuring the Project).
+
+  ``${PROJECT_NAME}_EXTRA_REPOSITORIES``
+
+     The list of Extra Repositories that the project is being configured with.
+     The packages in these repositories are *not* listed in the main project
+     dependency files but are listed in the dependenicy files in other contexts
+     (for example by the checkin-test.py script and the TribitCTestCoreDriver.cmake
+     script).
+
+  ``${PROJECT_NAME}_ALL_REPOSITORIES``
+
+    Concatenation of all the repos listed in
+    ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` and
+    ``${PROJECT_NAME}_EXTRA_REPOSITORIES`` in the order that the project is
+    being configured with.
+
+Repositories is and important concept at the Project level because the project
+needs to know what packages and TPLs to define and needs to know where to find
+call-backs that might be specific to the repository.
+
+.. _TriBITS Package Variables:
+
+**TriBITS Package Variables**
+
+These are top-level (non-cache) CMake variables that are available once a
+Package is processed.
+
+  ``PACKAGE_NAME``
+
+    The name of the current TriBITS package.  This is set automatically by
+    TriBITS before the packages's ``CMakeLists.txt`` file is processed.
+
+  ``PACKAGE_SOURCE_DIR``
+
+    The absolute path to the base package's base source directory.  This is
+    set automatically by TriBITS in the macro `TRIBITS_PACKAGE()`_.
+
+  ``PACKAGE_BINARY_DIR``
+
+    The absolute path to the base package's base binary/build directory.  This
+    is set automatically by TriBITS in the macro `TRIBITS_PACKAGE()`_.
+
+  ``${PACKAGE_NAME}_SOURCE_DIR``
+
+    The absolute path to the base of a given package's source directory.
+    CMake code, for example in other packages, refer to this by the raw name
+    like ``PackageX_SOURCE_DIR``.  This makes such CMake code independent of
+    where the package is in relation to other packages.  This variable is
+    defined for all processed packages, independent of whether they are
+    enabled.
+
+  ``${PACKAGE_NAME}_BINARY_DIR``
+
+    The absolute path to the base of a given package's binary directory.
+    CMake code, for example in other packages, refer to this by the raw name
+    like ``PackageX_BINARY_DIR``.  This makes such CMake code independent of
+    where the package is in relation to other packages.  This variable is only
+    defined if the package is enabled.
+
+  ``PARENT_PACKAGE_SOURCE_DIR``
+
+    The absolute path to the parent package's source directory.
+    This is useful for access by subpackages.
+
+  ``PARENT_PACKAGE_BINARY_DIR``
+
+    The absolute path to the parent package's binary directory.
+    This is useful for access by subpackages.
+
+  ``${PACKAGE_NAME}_PARENT_REPOSITORY``
+
+    The name of the packages parent repository.  This can be used by a package to
+    access information about its parent repository.
+
+  ``${PACKAGE_NAME}_ENABLE_TESTS``
+
+    Set to ``ON`` if the package's tests are to be enabled.
+
+  ``${PACKAGE_NAME}_ENABLE_EXAMPLES``
+
+    Set to ``ON`` if the package's examples are to be enabled.
+
+Currently, a Package can refer to its containing Repository and refer to its
+source and binary directories.  This is so that it can refer to
+repository-level resources (e.g. like the ``Trilinos_version.h`` file for
+Trilinos packages).  This may be undesirable because it will make it very hard
+to pull a package out of one Repository and place it in another repository for
+a different use.  However, a package can indirectly refer to its own
+repository without concern for what it is call by reading the variable
+``${PACKAGE_NAME}_PARENT_REPOSITORY``.
+
+.. _TriBITS TPL Variables:
+
+**TriBITS TPL Variables**
+
+ToDo: Document a TPLs Variables.
 
 Processing of TriBITS Files
 ===========================
@@ -394,6 +772,129 @@ ToDo: Discuss the propery usage of these test categories and why NIGHTLY
 testing should be the default.
 
 ToDo: Fill in!
+
+TriBITS CDash Dashboard 
+========================
+
+CDash regression email addresses:
+---------------------------------
+
+Every TriBITS Package has a regression email address associated with it that
+gets uploaded to a CDash project on a CDash server that is used to determine
+what email address to use when a package has configure, build, or test
+failures.  Because of the complex organizational nature of different projects
+and different integration models, a single static email address for a given
+package in every project build is not practical.
+
+The TriBITS system allows for a Package's regression email to be specified in
+the following order.:
+
+1) REGRESSION_EMAIL_LIST (defined in Dependneices.cmake): Package-specific
+email address overrides specified in the Dependencies.cmake file (the local
+variable REGRESSION_EMAIL_LIST).  This package-specific email address will be
+overridden if ${REPOSITORY_NAME}_REPOSITORY_OVERRIDE_PACKAGE_EMAIL_LIST using
+the single Project or Repository master regression emails lists described
+above.
+
+2) ${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE: A base email address
+specified at the Repository level creating package-specific email addresses
+(e.g. <lower-case-package-name>-regression@some.repo.gov, where
+${PROJECT_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE=some.repo.gov).  This
+variable is set in the Repositories cmake/DependenciesSetup.cmake file to
+provide a default for the repository but can be overridden (i.e. by the
+project).
+
+3) ${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS: A Single email address
+for all packages specified at the Repository level
+(e.g. my-repo-regression@some.repo.gov).  This variable is set in the
+Repositories cmake/DependenciesSetup.cmake file to provide a default for the
+repository but can be overridden (i.e. by the project).
+
+4) ${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE: A base email address
+specified at the Project level creating package-specific email addresses
+(e.g. <lower-case-package-name>-regression@some.project.gov, where
+${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE=some.project.gov).  If not
+already set, this variable will be set to
+${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE for the first repostory
+processed that has this set.
+
+5) ${PROJECT_NAME}_PROJECT_MASTER_EMAIL_ADDRESSS: A Single email address for
+all packages specified at the Project level
+(e.g. my-project-regression@some.project.gov).  If not already set, this
+variable will be set to ${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS
+for the first repostory processed that has this set.
+
+If any of the email lists or URL string variables listed above are set to
+"OFF" or "FALSE" (or some other value that CMake interprests as false) then
+the varaibles are treated as empty and not set.
+
+If a TriBITS project does not use CDash, then no email address needed to be
+assigned to packages at all (which will be the case if none of the above
+variables are set).
+
+As a general rule, repository-level settings override project-level settings
+and package-level settings override both.  Also, a project can redefine a
+reposiotry's regression email list settings.
+
+All of the email dependency managment logic must be accessable by just running
+the macro:
+
+    TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+
+The above email address configuration variables are read from the Repository
+and Project files RepositoryDependenciesSetup.cmake and
+ProjectDependenciesSetup.cmake respectively.  The
+RepositoryDependenciesSetup.cmake are read first in the specified order
+followed up reading the ProjectDependenciesSetup.cmake file.  In this way, the
+project can override any of the repository settings.
+
+Here is the precedence order for how regression email addresses are selected
+for a given package:
+
+1) Package-specific email list is selected if defined (unless an override is
+in place).
+
+2) Repository-level option is selected over a project-level option.
+
+3) Default email form with repository or project address base is selected over
+single repository or project email address.
+
+4) If none of the above are selected, then no email address is assigned.
+
+What the above setup does is it results in the TriBITS system
+creating a file called CDashSubprojectDependencies.xml that gets sent to
+CDash. CDash then takes this file and creates, or updates, a set of CDash
+users and sets up a mapping of Labels (which are used for TriBITS packages) to
+CDash user emails addresses. CDash is automatically set up to process this XML
+file and create and updates CDash users. It is not, however, set up to remove
+labels from existing users.  Therefore, if you change a TriBITS package's
+CDash regression email list (using one of the methods described above), then
+you need to manually remove the associated labels from the old email address.
+CDash will not remove them for you.
+
+Therefore, to change the mapping of CDash regression email addresses to
+TriBITS packages, you must perform the actions:
+
+1) Change the TriBITS CMake files as described above that result in the
+desired CDashSubprojectDependeinces.xml file. You can debug this by running
+the checkin-test.py script and seeing what gets written in the
+${PROJECT_NAME}Dependencies.xml file in the CHECKIN directory.
+
+2) Log onto the CDash server using an administrator account and then remove
+the auto-generated account for the CDash user email address for which labels
+are being removed (i.e. no longer associated with a TriBITS package).  This is
+needed since CDash seems to be unable to remove labels from an existing CDash
+user (however this might be fixed in a current version of CDash).
+
+3) The next time a CDash submit is performed by the
+TribitsCTestDriverCore.cmake script, the CDash user associated with the mail
+list with labels being removed will get automatically recreated with the right
+list of labels (according to the current CDashSubprojectDependencies.xml
+file).  Also, any new CDash users for new email addresses will be created.
+
+Hopefully that should be enough clues to manage the mapping of CDash
+regression email lists to TriBITS packages.
+
 
 Multi-Repository Support
 ========================

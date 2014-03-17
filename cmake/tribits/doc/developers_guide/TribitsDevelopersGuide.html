@@ -326,99 +326,107 @@ ul.auto-toc {
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="auto-toc simple">
-<li><a class="reference internal" href="#introduction" id="id9">1&nbsp;&nbsp;&nbsp;Introduction</a></li>
-<li><a class="reference internal" href="#tribits-developer-and-user-roles" id="id10">2&nbsp;&nbsp;&nbsp;TriBITS Developer and User Roles</a></li>
-<li><a class="reference internal" href="#cmake-language-overivew-and-gotchas" id="id11">3&nbsp;&nbsp;&nbsp;CMake Language Overivew and Gotchas</a></li>
-<li><a class="reference internal" href="#structure-of-a-tribits-project" id="id12">4&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></li>
-<li><a class="reference internal" href="#processing-of-tribits-files" id="id13">5&nbsp;&nbsp;&nbsp;Processing of TriBITS Files</a></li>
-<li><a class="reference internal" href="#automated-testing" id="id14">6&nbsp;&nbsp;&nbsp;Automated testing</a></li>
-<li><a class="reference internal" href="#multi-repository-support" id="id15">7&nbsp;&nbsp;&nbsp;Multi-Repository Support</a></li>
-<li><a class="reference internal" href="#basic-development-workflow" id="id16">8&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></li>
-<li><a class="reference internal" href="#multi-repository-development-workflow" id="id17">9&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></li>
-<li><a class="reference internal" href="#project-specific-build-quick-reference" id="id18">10&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
-<li><a class="reference internal" href="#creating-source-distributions" id="id19">11&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></li>
-<li><a class="reference internal" href="#multi-repository-almost-continuous-integration" id="id20">12&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></li>
-<li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id21">13&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
-<li><a class="reference internal" href="#tribits-global-project-settings" id="id22">14&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></li>
-<li><a class="reference internal" href="#tribits-macros-and-functions" id="id23">15&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul>
-<li><a class="reference internal" href="#tribits-project" id="id24">TRIBITS_PROJECT()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-packages" id="id25">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-tpls" id="id26">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></li>
-<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id27">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
-<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id28">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id29">TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
-<li><a class="reference internal" href="#tribits-package" id="id30">TRIBITS_PACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-package-decl" id="id31">TRIBITS_PACKAGE_DECL()</a></li>
-<li><a class="reference internal" href="#tribits-package-def" id="id32">TRIBITS_PACKAGE_DEF()</a></li>
-<li><a class="reference internal" href="#tribits-process-subpackages" id="id33">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-add-test-directories" id="id34">TRIBITS_ADD_TEST_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-add-example-directories" id="id35">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id36">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
-<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files" id="id37">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></li>
-<li><a class="reference internal" href="#tribits-add-option-and-define" id="id38">TRIBITS_ADD_OPTION_AND_DEFINE()</a></li>
-<li><a class="reference internal" href="#tribits-configure-file" id="id39">TRIBITS_CONFIGURE_FILE()</a></li>
-<li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id40">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
-<li><a class="reference internal" href="#tribits-include-directories" id="id41">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-add-library" id="id42">TRIBITS_ADD_LIBRARY()</a></li>
-<li><a class="reference internal" href="#tribits-add-executable" id="id43">TRIBITS_ADD_EXECUTABLE()</a></li>
-<li><a class="reference internal" href="#tribits-add-executable-and-test" id="id44">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-add-test" id="id45">TRIBITS_ADD_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-add-advanced-test" id="id46">TRIBITS_ADD_ADVANCED_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-package-postprocess" id="id47">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#introduction" id="id11">1&nbsp;&nbsp;&nbsp;Introduction</a></li>
+<li><a class="reference internal" href="#tribits-developer-and-user-roles" id="id12">2&nbsp;&nbsp;&nbsp;TriBITS Developer and User Roles</a></li>
+<li><a class="reference internal" href="#cmake-language-overivew-and-gotchas" id="id13">3&nbsp;&nbsp;&nbsp;CMake Language Overivew and Gotchas</a></li>
+<li><a class="reference internal" href="#tribits-project-structure" id="id14">4&nbsp;&nbsp;&nbsp;TriBITS Project Structure</a><ul>
+<li><a class="reference internal" href="#tribits-structural-units" id="id15">TriBITS Structural Units</a></li>
+<li><a class="reference internal" href="#tribits-cmake-varaibles" id="id16">TriBITS CMake Varaibles</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#general-utility-macros-and-functions" id="id48">16&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a><ul>
-<li><a class="reference internal" href="#add-subdirectories" id="id49">ADD_SUBDIRECTORIES()</a></li>
-<li><a class="reference internal" href="#advanced-option" id="id50">ADVANCED_OPTION()</a></li>
-<li><a class="reference internal" href="#advanced-set" id="id51">ADVANCED_SET()</a></li>
-<li><a class="reference internal" href="#append-cmndline-args" id="id52">APPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#append-glob" id="id53">APPEND_GLOB()</a></li>
-<li><a class="reference internal" href="#append-global-set" id="id54">APPEND_GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#append-set" id="id55">APPEND_SET()</a></li>
-<li><a class="reference internal" href="#append-string-var" id="id56">APPEND_STRING_VAR()</a></li>
-<li><a class="reference internal" href="#append-string-var-ext" id="id57">APPEND_STRING_VAR_EXT()</a></li>
-<li><a class="reference internal" href="#append-string-var-with-sep" id="id58">APPEND_STRING_VAR_WITH_SEP()</a></li>
-<li><a class="reference internal" href="#assert-defined" id="id59">ASSERT_DEFINED()</a></li>
-<li><a class="reference internal" href="#combined-option" id="id60">COMBINED_OPTION()</a></li>
-<li><a class="reference internal" href="#concat-strings" id="id61">CONCAT_STRINGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-append-cmndline-args" id="id62">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-prepend-cmndline-args" id="id63">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-set" id="id64">DUAL_SCOPE_SET()</a></li>
-<li><a class="reference internal" href="#global-null-set" id="id65">GLOBAL_NULL_SET()</a></li>
-<li><a class="reference internal" href="#global-set" id="id66">GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#join" id="id67">JOIN()</a></li>
-<li><a class="reference internal" href="#message-wrapper" id="id68">MESSAGE_WRAPPER()</a></li>
-<li><a class="reference internal" href="#multiline-set" id="id69">MULTILINE_SET()</a></li>
-<li><a class="reference internal" href="#parse-arguments" id="id70">PARSE_ARGUMENTS()</a></li>
-<li><a class="reference internal" href="#prepend-cmndline-args" id="id71">PREPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#prepend-global-set" id="id72">PREPEND_GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#id6" id="id73">APPEND_SET()</a></li>
-<li><a class="reference internal" href="#print-nonempty-var" id="id74">PRINT_NONEMPTY_VAR()</a></li>
-<li><a class="reference internal" href="#print-var" id="id75">PRINT_VAR()</a></li>
-<li><a class="reference internal" href="#remove-global-duplicates" id="id76">REMOVE_GLOBAL_DUPLICATES()</a></li>
-<li><a class="reference internal" href="#set-and-inc-dirs" id="id77">SET_AND_INC_DIRS()</a></li>
-<li><a class="reference internal" href="#set-cache-on-off-empty" id="id78">SET_CACHE_ON_OFF_EMPTY()</a></li>
-<li><a class="reference internal" href="#set-default" id="id79">SET_DEFAULT()</a></li>
-<li><a class="reference internal" href="#set-default-and-from-env" id="id80">SET_DEFAULT_AND_FROM_ENV()</a></li>
-<li><a class="reference internal" href="#split" id="id81">SPLIT()</a></li>
-<li><a class="reference internal" href="#timer-get-raw-seconds" id="id82">TIMER_GET_RAW_SECONDS()</a></li>
-<li><a class="reference internal" href="#timer-get-rel-seconds" id="id83">TIMER_GET_REL_SECONDS()</a></li>
-<li><a class="reference internal" href="#timer-print-rel-time" id="id84">TIMER_PRINT_REL_TIME()</a></li>
-<li><a class="reference internal" href="#unittest-compare-const" id="id85">UNITTEST_COMPARE_CONST()</a></li>
-<li><a class="reference internal" href="#unittest-string-regex" id="id86">UNITTEST_STRING_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-file-regex" id="id87">UNITTEST_FILE_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-final-result" id="id88">UNITTEST_FINAL_RESULT()</a></li>
+<li><a class="reference internal" href="#processing-of-tribits-files" id="id17">5&nbsp;&nbsp;&nbsp;Processing of TriBITS Files</a></li>
+<li><a class="reference internal" href="#automated-testing" id="id18">6&nbsp;&nbsp;&nbsp;Automated testing</a></li>
+<li><a class="reference internal" href="#tribits-cdash-dashboard" id="id19">7&nbsp;&nbsp;&nbsp;TriBITS CDash Dashboard</a><ul>
+<li><a class="reference internal" href="#cdash-regression-email-addresses" id="id20">CDash regression email addresses:</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#references" id="id89">17&nbsp;&nbsp;&nbsp;References</a></li>
-<li><a class="reference internal" href="#appendix" id="id90">18&nbsp;&nbsp;&nbsp;Appendix</a><ul>
-<li><a class="reference internal" href="#history-of-tribits" id="id91">History of TriBITS</a></li>
+<li><a class="reference internal" href="#multi-repository-support" id="id21">8&nbsp;&nbsp;&nbsp;Multi-Repository Support</a></li>
+<li><a class="reference internal" href="#basic-development-workflow" id="id22">9&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></li>
+<li><a class="reference internal" href="#multi-repository-development-workflow" id="id23">10&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></li>
+<li><a class="reference internal" href="#project-specific-build-quick-reference" id="id24">11&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
+<li><a class="reference internal" href="#creating-source-distributions" id="id25">12&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></li>
+<li><a class="reference internal" href="#multi-repository-almost-continuous-integration" id="id26">13&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></li>
+<li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id27">14&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
+<li><a class="reference internal" href="#tribits-global-project-settings" id="id28">15&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></li>
+<li><a class="reference internal" href="#tribits-macros-and-functions" id="id29">16&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul>
+<li><a class="reference internal" href="#id6" id="id30">TRIBITS_PROJECT()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-packages" id="id31">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-tpls" id="id32">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></li>
+<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id33">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
+<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id34">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id35">TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
+<li><a class="reference internal" href="#id7" id="id36">TRIBITS_PACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-package-decl" id="id37">TRIBITS_PACKAGE_DECL()</a></li>
+<li><a class="reference internal" href="#tribits-package-def" id="id38">TRIBITS_PACKAGE_DEF()</a></li>
+<li><a class="reference internal" href="#tribits-process-subpackages" id="id39">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-add-test-directories" id="id40">TRIBITS_ADD_TEST_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-add-example-directories" id="id41">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id42">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
+<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files" id="id43">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></li>
+<li><a class="reference internal" href="#tribits-add-option-and-define" id="id44">TRIBITS_ADD_OPTION_AND_DEFINE()</a></li>
+<li><a class="reference internal" href="#tribits-configure-file" id="id45">TRIBITS_CONFIGURE_FILE()</a></li>
+<li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id46">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
+<li><a class="reference internal" href="#tribits-include-directories" id="id47">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-add-library" id="id48">TRIBITS_ADD_LIBRARY()</a></li>
+<li><a class="reference internal" href="#tribits-add-executable" id="id49">TRIBITS_ADD_EXECUTABLE()</a></li>
+<li><a class="reference internal" href="#tribits-add-executable-and-test" id="id50">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-add-test" id="id51">TRIBITS_ADD_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-add-advanced-test" id="id52">TRIBITS_ADD_ADVANCED_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-package-postprocess" id="id53">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#general-utility-macros-and-functions" id="id54">17&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a><ul>
+<li><a class="reference internal" href="#add-subdirectories" id="id55">ADD_SUBDIRECTORIES()</a></li>
+<li><a class="reference internal" href="#advanced-option" id="id56">ADVANCED_OPTION()</a></li>
+<li><a class="reference internal" href="#advanced-set" id="id57">ADVANCED_SET()</a></li>
+<li><a class="reference internal" href="#append-cmndline-args" id="id58">APPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#append-glob" id="id59">APPEND_GLOB()</a></li>
+<li><a class="reference internal" href="#append-global-set" id="id60">APPEND_GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#append-set" id="id61">APPEND_SET()</a></li>
+<li><a class="reference internal" href="#append-string-var" id="id62">APPEND_STRING_VAR()</a></li>
+<li><a class="reference internal" href="#append-string-var-ext" id="id63">APPEND_STRING_VAR_EXT()</a></li>
+<li><a class="reference internal" href="#append-string-var-with-sep" id="id64">APPEND_STRING_VAR_WITH_SEP()</a></li>
+<li><a class="reference internal" href="#assert-defined" id="id65">ASSERT_DEFINED()</a></li>
+<li><a class="reference internal" href="#combined-option" id="id66">COMBINED_OPTION()</a></li>
+<li><a class="reference internal" href="#concat-strings" id="id67">CONCAT_STRINGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-append-cmndline-args" id="id68">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-prepend-cmndline-args" id="id69">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-set" id="id70">DUAL_SCOPE_SET()</a></li>
+<li><a class="reference internal" href="#global-null-set" id="id71">GLOBAL_NULL_SET()</a></li>
+<li><a class="reference internal" href="#global-set" id="id72">GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#join" id="id73">JOIN()</a></li>
+<li><a class="reference internal" href="#message-wrapper" id="id74">MESSAGE_WRAPPER()</a></li>
+<li><a class="reference internal" href="#multiline-set" id="id75">MULTILINE_SET()</a></li>
+<li><a class="reference internal" href="#parse-arguments" id="id76">PARSE_ARGUMENTS()</a></li>
+<li><a class="reference internal" href="#prepend-cmndline-args" id="id77">PREPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#prepend-global-set" id="id78">PREPEND_GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#id8" id="id79">APPEND_SET()</a></li>
+<li><a class="reference internal" href="#print-nonempty-var" id="id80">PRINT_NONEMPTY_VAR()</a></li>
+<li><a class="reference internal" href="#print-var" id="id81">PRINT_VAR()</a></li>
+<li><a class="reference internal" href="#remove-global-duplicates" id="id82">REMOVE_GLOBAL_DUPLICATES()</a></li>
+<li><a class="reference internal" href="#set-and-inc-dirs" id="id83">SET_AND_INC_DIRS()</a></li>
+<li><a class="reference internal" href="#set-cache-on-off-empty" id="id84">SET_CACHE_ON_OFF_EMPTY()</a></li>
+<li><a class="reference internal" href="#set-default" id="id85">SET_DEFAULT()</a></li>
+<li><a class="reference internal" href="#set-default-and-from-env" id="id86">SET_DEFAULT_AND_FROM_ENV()</a></li>
+<li><a class="reference internal" href="#split" id="id87">SPLIT()</a></li>
+<li><a class="reference internal" href="#timer-get-raw-seconds" id="id88">TIMER_GET_RAW_SECONDS()</a></li>
+<li><a class="reference internal" href="#timer-get-rel-seconds" id="id89">TIMER_GET_REL_SECONDS()</a></li>
+<li><a class="reference internal" href="#timer-print-rel-time" id="id90">TIMER_PRINT_REL_TIME()</a></li>
+<li><a class="reference internal" href="#unittest-compare-const" id="id91">UNITTEST_COMPARE_CONST()</a></li>
+<li><a class="reference internal" href="#unittest-string-regex" id="id92">UNITTEST_STRING_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-file-regex" id="id93">UNITTEST_FILE_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-final-result" id="id94">UNITTEST_FINAL_RESULT()</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#references" id="id95">18&nbsp;&nbsp;&nbsp;References</a></li>
+<li><a class="reference internal" href="#appendix" id="id96">19&nbsp;&nbsp;&nbsp;Appendix</a><ul>
+<li><a class="reference internal" href="#history-of-tribits" id="id97">History of TriBITS</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<h1><a class="toc-backref" href="#id9">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
+<h1><a class="toc-backref" href="#id11">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
 <p>This document describes the usage of the TriBITS (Tribal Build, Integration,
 Test System) to develop software projects.  An initial overview of TriBITS is
 provided in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document
@@ -451,7 +459,7 @@ Settings</a>, <a class="reference internal" href="#tribits-macros-and-functions"
 Functions</a>.</p>
 </div>
 <div class="section" id="tribits-developer-and-user-roles">
-<h1><a class="toc-backref" href="#id10">2&nbsp;&nbsp;&nbsp;TriBITS Developer and User Roles</a></h1>
+<h1><a class="toc-backref" href="#id12">2&nbsp;&nbsp;&nbsp;TriBITS Developer and User Roles</a></h1>
 <p>There are approximately five different types roles with respect to TriBITS.
 These different roles require different levels of expertise and knowlege of
 CMake and knowledge of the TriBITS system.  The primary roles are 1) <em>TriBITS
@@ -521,7 +529,7 @@ may or may not be necessary but instead the TriBITS Overview or the
 &lt;Project&gt;BuildQuickRef documents may be more appropriate.</p>
 </div>
 <div class="section" id="cmake-language-overivew-and-gotchas">
-<h1><a class="toc-backref" href="#id11">3&nbsp;&nbsp;&nbsp;CMake Language Overivew and Gotchas</a></h1>
+<h1><a class="toc-backref" href="#id13">3&nbsp;&nbsp;&nbsp;CMake Language Overivew and Gotchas</a></h1>
 <p>TriBITS removes a lot of the boiler plate code needed to write a CMake
 project.  As a result, many people can come into a project that uses TriBITS
 and quickly start to contribute by adding new source files, adding new
@@ -736,36 +744,479 @@ definitions will not be set (see warning in <a class="reference internal" href="
 into the meat of TriBITS starting with the overall structure of a TriBITS
 project.</p>
 </div>
-<div class="section" id="structure-of-a-tribits-project">
-<h1><a class="toc-backref" href="#id12">4&nbsp;&nbsp;&nbsp;Structure of a TriBITS Project</a></h1>
-<p>ToDo: Fill in!</p>
+<div class="section" id="tribits-project-structure">
+<h1><a class="toc-backref" href="#id14">4&nbsp;&nbsp;&nbsp;TriBITS Project Structure</a></h1>
+<p>TriBITS is a framework, implemented in CMake to create CMake projects.  As a
+framework, it defines the the overall structure of a CMake build system for a
+project and processes project, repository, and package specific files in a
+specified order.  All of this processing takes place in the
+<a class="reference internal" href="#id6">TRIBITS_PROJECT()</a> macro.</p>
+<div class="section" id="tribits-structural-units">
+<h2><a class="toc-backref" href="#id15">TriBITS Structural Units</a></h2>
+<p>A TriBITS project is composed of a single <em>TriBITS Project</em>, one or more <em>TriBITS Repositories</em> and one or more <em>TriBITS Packages</em>.  In addition, a TriBITS Pakage can be broken up into <em>TriBITS Subpackages</em>.  Together, the collection of TriBITS Packages and TriBITS Subpackages are called <em>TriBITS Software Engineering Packages</em>, or <em>TriBITS SE Packages</em> for short.</p>
+<p>These TriBITS entities are:</p>
+<ul>
+<li><p class="first"><a class="reference internal" href="#tribits-package">TriBITS Package</a>: A collection of related software that typically includes
+one or more source files built into one or more libraries and has assoicated
+tests to help define and protect the functionality in the package.  A
+package also typically defines a unit of documentation and automated
+testing.  A TriBITS package may or may not be broken down into multiple
+subpackages. Examples of TriBITS packages in the <tt class="docutils literal">TribitsExampleProject</tt>
+include <tt class="docutils literal">SimpleCXX`, ``MixedLanguage</tt> and <tt class="docutils literal">PackageWithSubpackages</tt>.</p>
+</li>
+<li><p class="first"><em>TriBITS Subpackage</em>: A part of a parent subpackage that also typically has
+source files built into libraries and tests but is documented and tested
+along with the other subpackages in a parent package.  The primary purpose
+is to provide finer-grained of control software dependencies.  In
+<tt class="docutils literal">TribitsExampleProject</tt>, the package <tt class="docutils literal">PackageWithSubpackages</tt> is an
+example of a package with subpackages which has the subpackages
+<tt class="docutils literal">SubpackaeA</tt>, <tt class="docutils literal">SubpackaeB</tt>, and <tt class="docutils literal">SubpackageC</tt>.  The full subpackage
+name is the parent package name prefixed
+(e.g. <tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>).</p>
+</li>
+<li><dl class="first docutils">
+<dt><em>TriBITS SE Package</em>: The combined set of TriBITS packages and</dt>
+<dd><p class="first last">subpackages. SE packages are the basis for setting dependencies in the
+TriBITS system.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>: The specification for a particular external dependency that
+is required or can be used in one or more TriBITS SE Packages.  A TPL (a
+Third Party Library) typically provides a list of libraries or a list
+include directories for header files but can also be manifisted in order
+ways as well.  Examples of basic TPLs include <tt class="docutils literal">BLAS</tt>, <tt class="docutils literal">LAPACK</tt>, and
+<tt class="docutils literal">Boost</tt>.</p>
+</li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#tribits-repository">TriBITS Repository</a>: A collection of one or more TriBITS packages</dt>
+<dd><p class="first last">specified in a <tt class="docutils literal">PackagesList.cmake</tt> file.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><a class="reference internal" href="#tribits-project">TriBITS Project</a>: A collection of TriBITS Repositories and Packages that
+defines a CMake <tt class="docutils literal">PROJECT</tt> and can be configured, built, and tested.</p>
+</li>
+</ul>
+<p id="tribits-project"><strong>TriBITS Project</strong></p>
+<ul class="simple">
+<li>This defines a complete CMake project build by calling <tt class="docutils literal"><span class="pre">PROJECT(${PROJECT_NAME}</span> <span class="pre">...)</span></tt></li>
+<li>Consists of one or more <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a></li>
+<li>Defines <tt class="docutils literal">PROJECT_NAME</tt> CMake variable (defined in <tt class="docutils literal">ProjectName.cmake</tt>)</li>
+<li>Defines a set of native Repositories (see below) that define
+packages and TPLs.  This set of native Repositories defines the
+official packages list and dependencies data-structure.  The list
+of native Repositories can be empty!</li>
+<li>Allows for extra Repositories to be added on before and after the
+set of native Repositories (given in <tt class="docutils literal">ExtraRepositoriesList.cmake</tt>
+or by CMake variables)</li>
+<li>Defines a default CDash server and default project name on the server
+(the project name on the CDash server must be the same as
+${PROJECT_NAME})</li>
+</ul>
+<p>Core files making up a TriBITS Project:</p>
+<pre class="literal-block">
+${${PROJECT_SOURCE_DIR}}/
+   CMakeLists.txt
+   CTestConfig.cmake
+   ProjectName.cmake    # Defines PACAKGE_NAME
+   Version.cmake        # [Optional] Dev mode, Project version, VC branch
+   cmake/
+     NativeRepositoriesList.cmake    # [Optional] Used for some meta-projects
+     ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs
+     ProjectDependenicesSetup.cmake  # [Optional] Project deps overrides
+     CallbackDefineProjectPackaging.cmake  # [Optional] CPack settings
+     tribits/    # [Optional] Or provide ${PROJECT_NAME}_TRIBITS_DIR
+     ctest/
+       CTestCustom.ctest.in  # [Optional] Custom ctest settings
+</pre>
+<p>ToDo: Provide detailed documentation for these files?</p>
+<p id="tribits-repository"><span id="tribits-repositories"></span><strong>TriBITS Repository</strong></p>
+<ul class="simple">
+<li>A collection of related TriBITS Packages and TPLs</li>
+<li>Defines an association between one or more packages</li>
+<li>Defines a CMake variable specific to the collection referred to the
+in the variable <tt class="docutils literal">REPOSITORY_NAME</tt>.</li>
+<li>Defines the base source and binary directories for the Repository
+<tt class="docutils literal">${REPOSITORY_NAME}_SORUCE_DIR</tt> and <tt class="docutils literal">${REPOSITORY_NAME}_BINARY_DIR</tt>.</li>
+<li>[Optional] Defines a list of add-on packages and TPLs (in <tt class="docutils literal">PackagesList.cmake</tt>
+and <tt class="docutils literal">TPLsList.cmake</tt>)</li>
+<li>[Optional] Defines a common set of initializations and other hooks for a
+collection of projects.</li>
+</ul>
+<p>Core files making up a TriBITS Repository:</p>
+<pre class="literal-block">
+${${REPOSITORY_NAME}_SOURCE_DIR}/
+  PackagesList.cmake
+  TPLsList.cmake
+  Copyright.txt  # [Optional] Only needed if creating version header file
+  Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
+  cmake/
+     RepositoryDependenciesSetup.cmake # [Optional]
+     CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
+     CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
+</pre>
+<p>ToDo: Document these files in more detaile somewhere else?</p>
+<p id="tribits-package"><strong>TriBITS Package</strong></p>
+<ul class="simple">
+<li>Typically defines a set of libraries and/or headers and/or executables
+and/or tests with cmake build targets for building these and publishes the
+list of include directories and libraries that are created (along with CMake
+dependencies).</li>
+<li>Defines dependencies on upstream TPLs and/or other SE packages by just
+naming the dependencies using their SE package names.</li>
+<li>Publishes a list of header file include paths and/or libraries for other
+packages to use.</li>
+<li>Typically installs an XXXConfig.cmake file that provides the list of this info</li>
+</ul>
+<p>Core files making up a TriBITS Package:</p>
+<pre class="literal-block">
+${${PACKAGE_NAME}_SOURCE_DIR}/
+  CMakeLists.txt  # Only processed if the package is enabled
+  cmake/
+    Dependencies.cmake  # Always processed if the package is listed in the
+                         # enclosing Repository
+</pre>
+<p id="tribits-tpl"><strong>TriBITS TPL</strong></p>
+<ul class="simple">
+<li>Defines a set of pre-built libraries and/or executables</li>
+<li>Publishes the include directories and/or libraries and/or executables
+provided by the TPL</li>
+</ul>
+<p>NOTES:</p>
+<ul class="simple">
+<li>A Project and a Repository can be one in the same.  That is, a Project can
+provide a set of packages and initializations.  This linkage is made in
+the base-level Project <tt class="docutils literal">CMakeLists.txt file</tt>.<ul>
+<li>Also, in this case, the Project's and the Repository's <tt class="docutils literal">Version.cmake</tt> and
+<tt class="docutils literal">Copyright.txt</tt> files are one and the same which works just fine.</li>
+<li>When the Project and Repositories base directories are the same and there
+is just one list of packages, then the file NativeRepositoriesList.cmake is
+unnecessary.</li>
+</ul>
+</li>
+<li>If a given TPL &lt;TPLNAME&gt; is declared in more than one Repository's
+TPLsList.cmake file (i.e. a duplicate TPL definition), then the
+FindTPL&lt;TPLNAME&gt;.cmake file used for the TPL &lt;TPLNAME&gt; will be the one for
+the last Repository processed.  This allows downstream Repositories to
+redefine and modify the definition of TPLs to add augmented functionality
+(subject to backward compatibility of the upstream Repository's
+FindTPL&lt;TPLNAME&gt;.cmake module).</li>
+</ul>
+</div>
+<div class="section" id="tribits-cmake-varaibles">
+<h2><a class="toc-backref" href="#id16">TriBITS CMake Varaibles</a></h2>
+<p>CMake Varaibles defined by TriBITS fall into one of two types:</p>
+<ul class="simple">
+<li><em>Fixed Variables</em> are used temporarily in the processing of a TriBITS unit.
+These include variables such as <tt class="docutils literal">PROJECT_NAME</tt>, <tt class="docutils literal">REPOSITORY_NAME</tt>,
+<tt class="docutils literal">PACKAGE_NAME</tt>, and <tt class="docutils literal">PARENT_PACKAGE_NAME</tt> These are distinguished by
+having a fixed/constant name.  They are typically part of TriBITS reflection
+system, allowing subordinate units to determine the encapsulating unit in
+which they are participating.</li>
+<li><em>Namespaced Variables</em> are used to refer to properties of a named TriBITS
+unit.  These include variables such as <tt class="docutils literal">${REPOSTORY_NAME}_SOURCE_DIR</tt>
+(e.g. <tt class="docutils literal">TribitsExProj_SOURCE_DIR</tt>) and <tt class="docutils literal">${PACKAGE_NAME}_BINARY_DIR</tt>
+(e.g. <tt class="docutils literal">SimpleCXX_BINARY_DIR</tt>).  They are available after processing the
+unit, for use by downstream or subordinate units.  They are part of the
+TriBITS dependency system, allowing downstream units to access properties of
+their known upstream dependencies.</li>
+</ul>
+<p>The TriBITS CMake varaibles are broken down into:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#tribits-project-variables">TriBITS Project Variables</a></li>
+<li><a class="reference internal" href="#tribits-repository-variables">TriBITS Repository Variables</a></li>
+<li><a class="reference internal" href="#tribits-package-variables">TriBITS Package Variables</a></li>
+<li><a class="reference internal" href="#tribits-tpl-variables">TriBITS TPL Variables</a></li>
+</ul>
+<p id="tribits-project-variables"><strong>TriBITS Project Variables</strong></p>
+<p>These are top-level (non-cache) CMake variables that are available once a
+Project is defined:</p>
+<blockquote>
+<p><tt class="docutils literal">PROJECT_NAME</tt></p>
+<blockquote>
+The name of the TriBTS Project.  This exists to support, among other
+things, the ability for subordinate units (Repositories and Packages) to
+determine the Project in which is participating.  This is typically read
+from a <tt class="docutils literal">SET()</tt> statement in the project's <tt class="docutils literal">ProjectName.cmake</tt> file.</blockquote>
+<p><tt class="docutils literal">PROJECT_SOURCE_DIR</tt></p>
+<blockquote>
+The absolute path to the base Project source directory.  This is set
+automatically by TriBITS given the directory passed into <tt class="docutils literal">cmake</tt> at
+configure time at the beginning of the <a class="reference internal" href="#id6">TRIBITS_PROJECT()</a> macro.</blockquote>
+<p><tt class="docutils literal">PROJECT_BINARY_DIR</tt></p>
+<blockquote>
+The absolute path to the base Project binary/build directory.  This is set
+automatically by TriBITS and is the directory where <tt class="docutils literal">cmake</tt> is run from
+and is set at the beginning of the <a class="reference internal" href="#id6">TRIBITS_PROJECT()</a> macro</blockquote>
+<p><tt class="docutils literal">${PROJECT_NAME}_SOURCE_DIR</tt></p>
+<blockquote>
+Set to <tt class="docutils literal">${PROJECT_SOURCE_DIR}</tt> automatically by TriBITS at the beginning
+of the <a class="reference internal" href="#id6">TRIBITS_PROJECT()</a> macro.</blockquote>
+<p><tt class="docutils literal">${PROJECT_NAME}_BINARY_DIR</tt></p>
+<blockquote>
+Set to <tt class="docutils literal">${PROJECT_BINARY_DIR}</tt> automatically by TriBITS at the beginning
+of the <a class="reference internal" href="#id6">TRIBITS_PROJECT()</a> macro.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_ENABLE_TESTS</tt></p>
+<blockquote>
+CMake cache varaibles that if set to <tt class="docutils literal">ON</tt>, then tests for all explicitly
+enabled packages will be turned on.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_ENABLE_EXAMPLES</tt></p>
+<blockquote>
+CMake cache varaibles that if set to <tt class="docutils literal">ON</tt>, then examples for all
+explicitly enabled packages will be turned on.</blockquote>
+</blockquote>
+<p id="tribits-repository-variables"><strong>TriBITS Repository Variables</strong></p>
+<p>These are the variables that are available once each Repository is defined:</p>
+<blockquote>
+<p><tt class="docutils literal">REPOSITORY_NAME</tt></p>
+<blockquote>
+The name of the current repository.  This is set automatically by TriBITS
+before any of a TriBITS repo's files are processed
+(e.g. <tt class="docutils literal">PackagesList.cmake</tt>, <tt class="docutils literal">TPLsList.cmake</tt>, etc.).</blockquote>
+<p><tt class="docutils literal">REPOSITORY_DIR</tt></p>
+<blockquote>
+Path of the current Repository relative to the Project directory.  This is
+typically just the repository name but can be an arbitrary directory if
+specified through a <tt class="docutils literal">ExtraRepositoriesList.cmake</tt> file.</blockquote>
+<p><tt class="docutils literal">${REPOSITORY_NAME}_SOURCE_DIR</tt></p>
+<blockquote>
+The absolute path to the base of a given Repository source directory.
+CMake code, for example in a packages's <tt class="docutils literal">CMakeLists.txt</tt> file, typically
+refers to this by the raw name like <tt class="docutils literal">RepoX_SOURCE_DIR</tt>.  This makes such
+CMake code independent of where the various TriBITS repos are in relation
+to each other or the Project.</blockquote>
+<p><tt class="docutils literal">${REPOSITORY_NAME}_BINARY_DIR</tt></p>
+<blockquote>
+The absolute path to the base of a given Repository binary directory.
+CMake code, for example in packages, refer to this by the raw name like
+<tt class="docutils literal">RepoX_SOURCE_DIR</tt>.  This makes such CMake code independent of where the
+various TriBITS repos are in relation to each other or the Project.</blockquote>
+<p><tt class="docutils literal">${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE</tt></p>
+<blockquote>
+If set to <tt class="docutils literal">ON</tt>, then the packages in Repository <tt class="docutils literal">${REPOSITORY_NAME}</tt>
+will not be implicitly enabled in any of the package adjustment logic.</blockquote>
+<p><tt class="docutils literal">${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE_EXCEPT</tt></p>
+<blockquote>
+List of packages in the Repository <tt class="docutils literal">${REPOSITORY_NAME}</tt> that will be
+allowed to be implicitly enabled.  Only checked if
+<tt class="docutils literal">${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE</tt> is true.</blockquote>
+</blockquote>
+<p>There are also lists of repositories:</p>
+<blockquote>
+<p><tt class="docutils literal">${PROJECT_NAME}_NATIVE_REPOSITORIES</tt></p>
+<blockquote>
+The list of Native Repositories (i.e. Repositories that are always present
+when configuring the Project).</blockquote>
+<p><tt class="docutils literal">${PROJECT_NAME}_EXTRA_REPOSITORIES</tt></p>
+<blockquote>
+The list of Extra Repositories that the project is being configured with.
+The packages in these repositories are <em>not</em> listed in the main project
+dependency files but are listed in the dependenicy files in other contexts
+(for example by the checkin-test.py script and the TribitCTestCoreDriver.cmake
+script).</blockquote>
+<p><tt class="docutils literal">${PROJECT_NAME}_ALL_REPOSITORIES</tt></p>
+<blockquote>
+Concatenation of all the repos listed in
+<tt class="docutils literal">${PROJECT_NAME}_NATIVE_REPOSITORIES</tt> and
+<tt class="docutils literal">${PROJECT_NAME}_EXTRA_REPOSITORIES</tt> in the order that the project is
+being configured with.</blockquote>
+</blockquote>
+<p>Repositories is and important concept at the Project level because the project
+needs to know what packages and TPLs to define and needs to know where to find
+call-backs that might be specific to the repository.</p>
+<p id="tribits-package-variables"><strong>TriBITS Package Variables</strong></p>
+<p>These are top-level (non-cache) CMake variables that are available once a
+Package is processed.</p>
+<blockquote>
+<p><tt class="docutils literal">PACKAGE_NAME</tt></p>
+<blockquote>
+The name of the current TriBITS package.  This is set automatically by
+TriBITS before the packages's <tt class="docutils literal">CMakeLists.txt</tt> file is processed.</blockquote>
+<p><tt class="docutils literal">PACKAGE_SOURCE_DIR</tt></p>
+<blockquote>
+The absolute path to the base package's base source directory.  This is
+set automatically by TriBITS in the macro <a class="reference internal" href="#id7">TRIBITS_PACKAGE()</a>.</blockquote>
+<p><tt class="docutils literal">PACKAGE_BINARY_DIR</tt></p>
+<blockquote>
+The absolute path to the base package's base binary/build directory.  This
+is set automatically by TriBITS in the macro <a class="reference internal" href="#id7">TRIBITS_PACKAGE()</a>.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_SOURCE_DIR</tt></p>
+<blockquote>
+The absolute path to the base of a given package's source directory.
+CMake code, for example in other packages, refer to this by the raw name
+like <tt class="docutils literal">PackageX_SOURCE_DIR</tt>.  This makes such CMake code independent of
+where the package is in relation to other packages.  This variable is
+defined for all processed packages, independent of whether they are
+enabled.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_BINARY_DIR</tt></p>
+<blockquote>
+The absolute path to the base of a given package's binary directory.
+CMake code, for example in other packages, refer to this by the raw name
+like <tt class="docutils literal">PackageX_BINARY_DIR</tt>.  This makes such CMake code independent of
+where the package is in relation to other packages.  This variable is only
+defined if the package is enabled.</blockquote>
+<p><tt class="docutils literal">PARENT_PACKAGE_SOURCE_DIR</tt></p>
+<blockquote>
+The absolute path to the parent package's source directory.
+This is useful for access by subpackages.</blockquote>
+<p><tt class="docutils literal">PARENT_PACKAGE_BINARY_DIR</tt></p>
+<blockquote>
+The absolute path to the parent package's binary directory.
+This is useful for access by subpackages.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_PARENT_REPOSITORY</tt></p>
+<blockquote>
+The name of the packages parent repository.  This can be used by a package to
+access information about its parent repository.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_ENABLE_TESTS</tt></p>
+<blockquote>
+Set to <tt class="docutils literal">ON</tt> if the package's tests are to be enabled.</blockquote>
+<p><tt class="docutils literal">${PACKAGE_NAME}_ENABLE_EXAMPLES</tt></p>
+<blockquote>
+Set to <tt class="docutils literal">ON</tt> if the package's examples are to be enabled.</blockquote>
+</blockquote>
+<p>Currently, a Package can refer to its containing Repository and refer to its
+source and binary directories.  This is so that it can refer to
+repository-level resources (e.g. like the <tt class="docutils literal">Trilinos_version.h</tt> file for
+Trilinos packages).  This may be undesirable because it will make it very hard
+to pull a package out of one Repository and place it in another repository for
+a different use.  However, a package can indirectly refer to its own
+repository without concern for what it is call by reading the variable
+<tt class="docutils literal">${PACKAGE_NAME}_PARENT_REPOSITORY</tt>.</p>
+<p id="tribits-tpl-variables"><strong>TriBITS TPL Variables</strong></p>
+<p>ToDo: Document a TPLs Variables.</p>
+</div>
 </div>
 <div class="section" id="processing-of-tribits-files">
-<h1><a class="toc-backref" href="#id13">5&nbsp;&nbsp;&nbsp;Processing of TriBITS Files</a></h1>
+<h1><a class="toc-backref" href="#id17">5&nbsp;&nbsp;&nbsp;Processing of TriBITS Files</a></h1>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="automated-testing">
-<h1><a class="toc-backref" href="#id14">6&nbsp;&nbsp;&nbsp;Automated testing</a></h1>
+<h1><a class="toc-backref" href="#id18">6&nbsp;&nbsp;&nbsp;Automated testing</a></h1>
 <p>ToDo: Define test group PT, ST, and EX</p>
 <p>ToDo: Define test category BASIC, CONTINUOUS, NIGHTLY, WEEKLY, and PERFORMANCE</p>
+<p>ToDo: Define repo category Continuous, Nightly, and Experimental which also map to CDash tracks</p>
 <p>ToDo: Discuss the propery usage of these test categories and why NIGHTLY
 testing should be the default.</p>
 <p>ToDo: Fill in!</p>
 </div>
+<div class="section" id="tribits-cdash-dashboard">
+<h1><a class="toc-backref" href="#id19">7&nbsp;&nbsp;&nbsp;TriBITS CDash Dashboard</a></h1>
+<div class="section" id="cdash-regression-email-addresses">
+<h2><a class="toc-backref" href="#id20">CDash regression email addresses:</a></h2>
+<p>Every TriBITS Package has a regression email address associated with it that
+gets uploaded to a CDash project on a CDash server that is used to determine
+what email address to use when a package has configure, build, or test
+failures.  Because of the complex organizational nature of different projects
+and different integration models, a single static email address for a given
+package in every project build is not practical.</p>
+<p>The TriBITS system allows for a Package's regression email to be specified in
+the following order.:</p>
+<p>1) REGRESSION_EMAIL_LIST (defined in Dependneices.cmake): Package-specific
+email address overrides specified in the Dependencies.cmake file (the local
+variable REGRESSION_EMAIL_LIST).  This package-specific email address will be
+overridden if ${REPOSITORY_NAME}_REPOSITORY_OVERRIDE_PACKAGE_EMAIL_LIST using
+the single Project or Repository master regression emails lists described
+above.</p>
+<p>2) ${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE: A base email address
+specified at the Repository level creating package-specific email addresses
+(e.g. &lt;lower-case-package-name&gt;-<a class="reference external" href="mailto:regression&#64;some.repo.gov">regression&#64;some.repo.gov</a>, where
+${PROJECT_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE=some.repo.gov).  This
+variable is set in the Repositories cmake/DependenciesSetup.cmake file to
+provide a default for the repository but can be overridden (i.e. by the
+project).</p>
+<p>3) ${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS: A Single email address
+for all packages specified at the Repository level
+(e.g. <a class="reference external" href="mailto:my-repo-regression&#64;some.repo.gov">my-repo-regression&#64;some.repo.gov</a>).  This variable is set in the
+Repositories cmake/DependenciesSetup.cmake file to provide a default for the
+repository but can be overridden (i.e. by the project).</p>
+<p>4) ${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE: A base email address
+specified at the Project level creating package-specific email addresses
+(e.g. &lt;lower-case-package-name&gt;-<a class="reference external" href="mailto:regression&#64;some.project.gov">regression&#64;some.project.gov</a>, where
+${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE=some.project.gov).  If not
+already set, this variable will be set to
+${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE for the first repostory
+processed that has this set.</p>
+<p>5) ${PROJECT_NAME}_PROJECT_MASTER_EMAIL_ADDRESSS: A Single email address for
+all packages specified at the Project level
+(e.g. <a class="reference external" href="mailto:my-project-regression&#64;some.project.gov">my-project-regression&#64;some.project.gov</a>).  If not already set, this
+variable will be set to ${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS
+for the first repostory processed that has this set.</p>
+<p>If any of the email lists or URL string variables listed above are set to
+&quot;OFF&quot; or &quot;FALSE&quot; (or some other value that CMake interprests as false) then
+the varaibles are treated as empty and not set.</p>
+<p>If a TriBITS project does not use CDash, then no email address needed to be
+assigned to packages at all (which will be the case if none of the above
+variables are set).</p>
+<p>As a general rule, repository-level settings override project-level settings
+and package-level settings override both.  Also, a project can redefine a
+reposiotry's regression email list settings.</p>
+<p>All of the email dependency managment logic must be accessable by just running
+the macro:</p>
+<blockquote>
+TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()</blockquote>
+<p>The above email address configuration variables are read from the Repository
+and Project files RepositoryDependenciesSetup.cmake and
+ProjectDependenciesSetup.cmake respectively.  The
+RepositoryDependenciesSetup.cmake are read first in the specified order
+followed up reading the ProjectDependenciesSetup.cmake file.  In this way, the
+project can override any of the repository settings.</p>
+<p>Here is the precedence order for how regression email addresses are selected
+for a given package:</p>
+<p>1) Package-specific email list is selected if defined (unless an override is
+in place).</p>
+<ol class="arabic simple" start="2">
+<li>Repository-level option is selected over a project-level option.</li>
+</ol>
+<p>3) Default email form with repository or project address base is selected over
+single repository or project email address.</p>
+<ol class="arabic simple" start="4">
+<li>If none of the above are selected, then no email address is assigned.</li>
+</ol>
+<p>What the above setup does is it results in the TriBITS system
+creating a file called CDashSubprojectDependencies.xml that gets sent to
+CDash. CDash then takes this file and creates, or updates, a set of CDash
+users and sets up a mapping of Labels (which are used for TriBITS packages) to
+CDash user emails addresses. CDash is automatically set up to process this XML
+file and create and updates CDash users. It is not, however, set up to remove
+labels from existing users.  Therefore, if you change a TriBITS package's
+CDash regression email list (using one of the methods described above), then
+you need to manually remove the associated labels from the old email address.
+CDash will not remove them for you.</p>
+<p>Therefore, to change the mapping of CDash regression email addresses to
+TriBITS packages, you must perform the actions:</p>
+<p>1) Change the TriBITS CMake files as described above that result in the
+desired CDashSubprojectDependeinces.xml file. You can debug this by running
+the checkin-test.py script and seeing what gets written in the
+${PROJECT_NAME}Dependencies.xml file in the CHECKIN directory.</p>
+<p>2) Log onto the CDash server using an administrator account and then remove
+the auto-generated account for the CDash user email address for which labels
+are being removed (i.e. no longer associated with a TriBITS package).  This is
+needed since CDash seems to be unable to remove labels from an existing CDash
+user (however this might be fixed in a current version of CDash).</p>
+<p>3) The next time a CDash submit is performed by the
+TribitsCTestDriverCore.cmake script, the CDash user associated with the mail
+list with labels being removed will get automatically recreated with the right
+list of labels (according to the current CDashSubprojectDependencies.xml
+file).  Also, any new CDash users for new email addresses will be created.</p>
+<p>Hopefully that should be enough clues to manage the mapping of CDash
+regression email lists to TriBITS packages.</p>
+</div>
+</div>
 <div class="section" id="multi-repository-support">
-<h1><a class="toc-backref" href="#id15">7&nbsp;&nbsp;&nbsp;Multi-Repository Support</a></h1>
+<h1><a class="toc-backref" href="#id21">8&nbsp;&nbsp;&nbsp;Multi-Repository Support</a></h1>
 <p>ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.</p>
 </div>
 <div class="section" id="basic-development-workflow">
-<h1><a class="toc-backref" href="#id16">8&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></h1>
+<h1><a class="toc-backref" href="#id22">9&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></h1>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="multi-repository-development-workflow">
-<h1><a class="toc-backref" href="#id17">9&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></h1>
+<h1><a class="toc-backref" href="#id23">10&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></h1>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="project-specific-build-quick-reference">
-<h1><a class="toc-backref" href="#id18">10&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h1>
+<h1><a class="toc-backref" href="#id24">11&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h1>
 <p>TriBITS provides a mechanisms to quickly create a project-specific build quick
 reference document in restructured text (RST) format and with HTML and
 LaTeX/PDF outputs.  These document are generally created in the base project
@@ -798,19 +1249,19 @@ tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.[rsts,html,pdf]</a></p>
 </div>
 <div class="section" id="creating-source-distributions">
-<h1><a class="toc-backref" href="#id19">11&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h1>
+<h1><a class="toc-backref" href="#id25">12&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h1>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="multi-repository-almost-continuous-integration">
-<h1><a class="toc-backref" href="#id20">12&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></h1>
+<h1><a class="toc-backref" href="#id26">13&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></h1>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="regulated-backward-compatibility-and-deprecated-code">
-<h1><a class="toc-backref" href="#id21">13&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></h1>
+<h1><a class="toc-backref" href="#id27">14&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></h1>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="tribits-global-project-settings">
-<h1><a class="toc-backref" href="#id22">14&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></h1>
+<h1><a class="toc-backref" href="#id28">15&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></h1>
 <p>TriBITS defines a number of global project-level settings that can be set by
 the user and can have their default determined by each individual TriBITS
 project.  If a given TriBITS project does not define its own default, a
@@ -1068,7 +1519,7 @@ has 64 cores, a reasonble number for <tt class="docutils literal">MPI_EXEC_MAX_N
 </blockquote>
 </div>
 <div class="section" id="tribits-macros-and-functions">
-<h1><a class="toc-backref" href="#id23">15&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h1>
+<h1><a class="toc-backref" href="#id29">16&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h1>
 <p>The following subsections give detailed documentation for the CMake macros and
 functions that make up the core TriBITS system.  These are what are used by
 TriBITS project developers in their <tt class="docutils literal">CMakeLists.txt</tt> and other files.  These
@@ -1078,13 +1529,13 @@ macros should be aviable when processing the project's and package's variables
 files if used properly.  Therefore, no explicit <tt class="docutils literal">INCLUDE()</tt> statements
 should be needed other than the initial include of the
 <tt class="docutils literal">TribitsProject.cmake</tt> file in the top-level CMakeLists.txt file so the
-command <a class="reference internal" href="#tribits-project">TRIBITS_PROJECT()</a> can be executed.</p>
+command <a class="reference internal" href="#id6">TRIBITS_PROJECT()</a> can be executed.</p>
 <!-- WARNING: The file TribitsDetailedMacroFunctionDoc.rst is autogenerated from -->
 <!-- the file TribitsDetailedMacroFunctionDocTemplate.rst in the script -->
 <!-- generate-dev-guide.sh.  Only the file TribitsDetailedMacroFunctionDoc.rst -->
 <!-- should be directly modified! -->
-<div class="section" id="tribits-project">
-<h2><a class="toc-backref" href="#id24">TRIBITS_PROJECT()</a></h2>
+<div class="section" id="id6">
+<h2><a class="toc-backref" href="#id30">TRIBITS_PROJECT()</a></h2>
 <p>Defines and processes a TriBITS project.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -1099,7 +1550,7 @@ then performs all processing of the TriBITS project files (see ???).</p>
 <p>ToDo: Give documentation!</p>
 </div>
 <div class="section" id="tribits-define-repository-packages">
-<h2><a class="toc-backref" href="#id25">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></h2>
+<h2><a class="toc-backref" href="#id31">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></h2>
 <p>Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a PackagesList.cmake file for a given TriBITS repo.</p>
 <p>Usage:</p>
@@ -1154,7 +1605,7 @@ misspell the name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-define-repository-tpls">
-<h2><a class="toc-backref" href="#id26">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></h2>
+<h2><a class="toc-backref" href="#id32">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></h2>
 <p>Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
 TPLsList.cmake fil for a given TriBITS repo.</p>
@@ -1212,7 +1663,7 @@ name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-define-package-dependencies">
-<h2><a class="toc-backref" href="#id27">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h2>
+<h2><a class="toc-backref" href="#id33">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h2>
 <p>Define the dependenices for a given TriBITS SE package (i.e. a top-level
 package or a subpackage).</p>
 <p>Usage:</p>
@@ -1341,7 +1792,7 @@ are empty.  This is a error checking property of the TriBITS system to avoid
 misspelling the names of these variables.</p>
 </div>
 <div class="section" id="tribits-allow-missing-external-packages">
-<h2><a class="toc-backref" href="#id28">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h2>
+<h2><a class="toc-backref" href="#id34">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h2>
 <p>Macro used in Dependencies.cmake files to allow some upstream dependent packages
 to be missing.</p>
 <p>Usage:</p>
@@ -1362,7 +1813,7 @@ misspelled package names so it is important to only use it when it
 absolutely is needed.</p>
 </div>
 <div class="section" id="tribits-tpl-declare-libraries">
-<h2><a class="toc-backref" href="#id29">TRIBITS_TPL_DECLARE_LIBRARIES()</a></h2>
+<h2><a class="toc-backref" href="#id35">TRIBITS_TPL_DECLARE_LIBRARIES()</a></h2>
 <p>Function that sets up cache variables for users to specify where to find a
 TPL's headers and libraries.  This function is typically called inside of a
 file <tt class="docutils literal"><span class="pre">FindTPL&lt;tpl_name&gt;.cmake</span></tt> file.</p>
@@ -1430,8 +1881,8 @@ libraries are searched for and this varaible will be assumed to have the
 correct list of libraries to link to.</li>
 </ul>
 </div>
-<div class="section" id="tribits-package">
-<h2><a class="toc-backref" href="#id30">TRIBITS_PACKAGE()</a></h2>
+<div class="section" id="id7">
+<h2><a class="toc-backref" href="#id36">TRIBITS_PACKAGE()</a></h2>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file.</p>
 <p>Usage:</p>
@@ -1445,14 +1896,14 @@ TRIBITS_PACKAGE(
   )
 </pre>
 <p>See <a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> for the documentation for the arguments and
-<a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> and <a class="reference internal" href="#tribits-package">TRIBITS_PACKAGE()</a> for a description the
+<a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> and <a class="reference internal" href="#id7">TRIBITS_PACKAGE()</a> for a description the
 side-effects (and varibles set) after calling this macro.</p>
 </div>
 <div class="section" id="tribits-package-decl">
-<h2><a class="toc-backref" href="#id31">TRIBITS_PACKAGE_DECL()</a></h2>
+<h2><a class="toc-backref" href="#id37">TRIBITS_PACKAGE_DECL()</a></h2>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file when a packages has subpackages.</p>
-<p>If the package does not have subpackages, just call <a class="reference internal" href="#tribits-package">TRIBITS_PACKAGE()</a>
+<p>If the package does not have subpackages, just call <a class="reference internal" href="#id7">TRIBITS_PACKAGE()</a>
 which calls this macro.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -1511,14 +1962,14 @@ the <tt class="docutils literal">*.cmake</tt> extension.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package-def">
-<h2><a class="toc-backref" href="#id32">TRIBITS_PACKAGE_DEF()</a></h2>
+<h2><a class="toc-backref" href="#id38">TRIBITS_PACKAGE_DEF()</a></h2>
 <p>Macro called after subpackages are processed in order to
 handle the libraries, tests, and examples of the final package.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DEF()
 </pre>
-<p>If the package does not have subpackages, just call <a class="reference internal" href="#tribits-package">TRIBITS_PACKAGE()</a>
+<p>If the package does not have subpackages, just call <a class="reference internal" href="#id7">TRIBITS_PACKAGE()</a>
 which calls this macro.</p>
 <p>This macro has several side effects:</p>
 <ul class="simple">
@@ -1529,7 +1980,7 @@ list of libraries, etc.) are initialized to emtpy.</li>
 </ul>
 </div>
 <div class="section" id="tribits-process-subpackages">
-<h2><a class="toc-backref" href="#id33">TRIBITS_PROCESS_SUBPACKAGES()</a></h2>
+<h2><a class="toc-backref" href="#id39">TRIBITS_PROCESS_SUBPACKAGES()</a></h2>
 <p>Macro that processes subpackages for packages that have them.  This is
 called in the parent packages top-level CMakeLists.txt file.</p>
 <p>Usage:</p>
@@ -1540,7 +1991,7 @@ TRIBITS_PROCESS_SUBPACKAGES()
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>.</p>
 </div>
 <div class="section" id="tribits-add-test-directories">
-<h2><a class="toc-backref" href="#id34">TRIBITS_ADD_TEST_DIRECTORIES()</a></h2>
+<h2><a class="toc-backref" href="#id40">TRIBITS_ADD_TEST_DIRECTORIES()</a></h2>
 <p>Macro called to add a set of test directories for an SE package.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -1557,7 +2008,7 @@ extended in the futgure in order to modify behavior related to adding tests
 and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-add-example-directories">
-<h2><a class="toc-backref" href="#id35">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h2>
+<h2><a class="toc-backref" href="#id41">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h2>
 <p>Macro called to conditionally add a set of example directories for an SE
 package.</p>
 <p>Usage:</p>
@@ -1575,7 +2026,7 @@ be extended in the futgure in order to modify behavior related to adding
 tests and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-set-st-for-dev-mode">
-<h2><a class="toc-backref" href="#id36">TRIBITS_SET_ST_FOR_DEV_MODE()</a></h2>
+<h2><a class="toc-backref" href="#id42">TRIBITS_SET_ST_FOR_DEV_MODE()</a></h2>
 <p>Function that allows packages to easily make a feature <tt class="docutils literal">ST</tt> for
 development builds and <tt class="docutils literal">PT</tt> for release builds by default.</p>
 <p>Usage:</p>
@@ -1591,7 +2042,7 @@ while still having important functionality available to users by default in
 a release.</p>
 </div>
 <div class="section" id="tribits-write-flexible-package-client-export-files">
-<h2><a class="toc-backref" href="#id37">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></h2>
+<h2><a class="toc-backref" href="#id43">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></h2>
 <p>Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
 Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
 flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()</p>
@@ -1649,7 +2100,7 @@ CMake will not allow those to even be present in scripting mode that is used
 for unit testing this function.</p>
 </div>
 <div class="section" id="tribits-add-option-and-define">
-<h2><a class="toc-backref" href="#id38">TRIBITS_ADD_OPTION_AND_DEFINE()</a></h2>
+<h2><a class="toc-backref" href="#id44">TRIBITS_ADD_OPTION_AND_DEFINE()</a></h2>
 <p>Add an option and a define variable in one shot.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -1667,7 +2118,7 @@ package's configure file (see <a class="reference internal" href="#tribits-confi
 </pre>
 </div>
 <div class="section" id="tribits-configure-file">
-<h2><a class="toc-backref" href="#id39">TRIBITS_CONFIGURE_FILE()</a></h2>
+<h2><a class="toc-backref" href="#id45">TRIBITS_CONFIGURE_FILE()</a></h2>
 <p>Macro that configures the package's main configured header file (typically
 called <tt class="docutils literal">${PACKAGE_NAME}_config.h</tt> but any name can be used).</p>
 <p>Usage:</p>
@@ -1715,7 +2166,7 @@ macro is defined to be empty.  See <a class="reference internal" href="#regulate
 Deprecated Code</a> for more details.</p>
 </div>
 <div class="section" id="tribits-copy-files-to-binary-dir">
-<h2><a class="toc-backref" href="#id40">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></h2>
+<h2><a class="toc-backref" href="#id46">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></h2>
 <p>Function that copies a list of files from a soruce directory to a
 destination directory at configure time, typically so that it can be used in
 one or more tests.  This sets up all of the custom CMake commands and
@@ -1822,7 +2273,7 @@ appended to the arguments in the <tt class="docutils literal">EXEDEPS</tt> list.
 </blockquote>
 </div>
 <div class="section" id="tribits-include-directories">
-<h2><a class="toc-backref" href="#id41">TRIBITS_INCLUDE_DIRECTORIES()</a></h2>
+<h2><a class="toc-backref" href="#id47">TRIBITS_INCLUDE_DIRECTORIES()</a></h2>
 <p>This function is to override the standard behavior of include_directories
 for a TriBITS package.</p>
 <p>Usage:</p>
@@ -1845,7 +2296,7 @@ are test only headers that are needed.  For that case we allow people to set
 directory does need to be set for instaltion testing.</p>
 </div>
 <div class="section" id="tribits-add-library">
-<h2><a class="toc-backref" href="#id42">TRIBITS_ADD_LIBRARY()</a></h2>
+<h2><a class="toc-backref" href="#id48">TRIBITS_ADD_LIBRARY()</a></h2>
 <p>Function used to add a CMake library and target using <tt class="docutils literal">ADD_LIBRARY()</tt>.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -1982,7 +2433,7 @@ include these header files.  To add defines, please use a configured header
 file (see <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>).</p>
 </div>
 <div class="section" id="tribits-add-executable">
-<h2><a class="toc-backref" href="#id43">TRIBITS_ADD_EXECUTABLE()</a></h2>
+<h2><a class="toc-backref" href="#id49">TRIBITS_ADD_EXECUTABLE()</a></h2>
 <p>Function used to create an executable (typically for a test or example),
 using the built-in CMake command <tt class="docutils literal">ADD_EXECUTABLE()</tt>.</p>
 <p>Usage:</p>
@@ -2156,7 +2607,7 @@ any CMake project.</p>
 determined by <tt class="docutils literal">${PROJECT_NAME}_INSTALL_RUNTIME_DIR</tt>) .</p>
 </div>
 <div class="section" id="tribits-add-executable-and-test">
-<h2><a class="toc-backref" href="#id44">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></h2>
+<h2><a class="toc-backref" href="#id50">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></h2>
 <p>Add an executable and a test (or several tests) all in one shot.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -2211,7 +2662,7 @@ that either takes no arguments or just a simple set of arguments passed in
 through <tt class="docutils literal">ARGS</tt>.</p>
 </div>
 <div class="section" id="tribits-add-test">
-<h2><a class="toc-backref" href="#id45">TRIBITS_ADD_TEST()</a></h2>
+<h2><a class="toc-backref" href="#id51">TRIBITS_ADD_TEST()</a></h2>
 <p>Add a test or a set of tests for a single executable or command.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -2585,7 +3036,7 @@ multiple argument sets to <tt class="docutils literal">ARGS</tt> or through mult
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt> must be set for each test individually.</p>
 </div>
 <div class="section" id="tribits-add-advanced-test">
-<h2><a class="toc-backref" href="#id46">TRIBITS_ADD_ADVANCED_TEST()</a></h2>
+<h2><a class="toc-backref" href="#id52">TRIBITS_ADD_ADVANCED_TEST()</a></h2>
 <p>Function that creates an advanced test defined by stringing together one or
 more executables and/or commands that is run as a separate CMake -P script
 with very flixible pass/fail criteria.</p>
@@ -2889,7 +3340,7 @@ current binary directory (see <a class="reference internal" href="#implementatio
 (TRIBITS_ADD_ADVANCED_TEST())</a>).</p>
 </div>
 <div class="section" id="tribits-package-postprocess">
-<h2><a class="toc-backref" href="#id47">TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
+<h2><a class="toc-backref" href="#id53">TRIBITS_PACKAGE_POSTPROCESS()</a></h2>
 <p>Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
 downstream packages are processed.</p>
@@ -2902,7 +3353,7 @@ macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 </div>
 <div class="section" id="general-utility-macros-and-functions">
-<h1><a class="toc-backref" href="#id48">16&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a></h1>
+<h1><a class="toc-backref" href="#id54">17&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a></h1>
 <p>The following subsections give detailed documentation for some CMake macros
 and functions which are <em>not</em> a core part of the TriBITS system but are
 included in the TriBITS system that are used inside of the TriBITS system and
@@ -2923,7 +3374,7 @@ you can always access the original built-in command as
 <!-- generate-dev-guide.sh.  Only the file UtilsMacroFunctionDoc.rst -->
 <!-- should be directly modified! -->
 <div class="section" id="add-subdirectories">
-<h2><a class="toc-backref" href="#id49">ADD_SUBDIRECTORIES()</a></h2>
+<h2><a class="toc-backref" href="#id55">ADD_SUBDIRECTORIES()</a></h2>
 <p>Macro that adds a list of subdirectories all at once (removed boiler-place
 code).</p>
 <p>Usage:</p>
@@ -2932,7 +3383,7 @@ ADD_SUBDIRECTORIES(&lt;dir1&gt; &lt;dir2&gt; ...)
 </pre>
 </div>
 <div class="section" id="advanced-option">
-<h2><a class="toc-backref" href="#id50">ADVANCED_OPTION()</a></h2>
+<h2><a class="toc-backref" href="#id56">ADVANCED_OPTION()</a></h2>
 <p>Macro that sets an option and marks it as advanced (removes boiler-plate and
 duplication).</p>
 <p>Usage:</p>
@@ -2946,7 +3397,7 @@ MARK_AS_ADVANCED(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="advanced-set">
-<h2><a class="toc-backref" href="#id51">ADVANCED_SET()</a></h2>
+<h2><a class="toc-backref" href="#id57">ADVANCED_SET()</a></h2>
 <p>Macro that sets a variable and marks it as advanced (removes boiler-plate
 and duplication).</p>
 <p>Usage:</p>
@@ -2960,7 +3411,7 @@ MARK_AS_ADVANCED(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="append-cmndline-args">
-<h2><a class="toc-backref" href="#id52">APPEND_CMNDLINE_ARGS()</a></h2>
+<h2><a class="toc-backref" href="#id58">APPEND_CMNDLINE_ARGS()</a></h2>
 <p>Utility function that appends command-line arguments to a variable of
 command-line options.</p>
 <p>Usage:</p>
@@ -2972,7 +3423,7 @@ APPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 input.</p>
 </div>
 <div class="section" id="append-glob">
-<h2><a class="toc-backref" href="#id53">APPEND_GLOB()</a></h2>
+<h2><a class="toc-backref" href="#id59">APPEND_GLOB()</a></h2>
 <p>Utility macro that does a <tt class="docutils literal">FILE(GLOB <span class="pre">...)</span></tt> and appends to an existing list
 (removes boiler-plate code).</p>
 <p>Usage:</p>
@@ -2982,7 +3433,7 @@ APPEND_GLOB(&lt;fileListVar&gt; &lt;glob0&gt; &lt;glob1&gt; ...)
 <p>On output, <tt class="docutils literal">&lt;fileListVar&gt;</tt> will have the list of glob files appended.</p>
 </div>
 <div class="section" id="append-global-set">
-<h2><a class="toc-backref" href="#id54">APPEND_GLOBAL_SET()</a></h2>
+<h2><a class="toc-backref" href="#id60">APPEND_GLOBAL_SET()</a></h2>
 <p>Utility macro that appends arguments to a global variable (reduces
 boiler-plate code and mistakes).</p>
 <p>Usage:</p>
@@ -2993,7 +3444,7 @@ APPEND_GLOBAL_SET(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 To set it empty initially use <a class="reference internal" href="#global-null-set">GLOBAL_NULL_SET()</a>.</p>
 </div>
 <div class="section" id="append-set">
-<h2><a class="toc-backref" href="#id55">APPEND_SET()</a></h2>
+<h2><a class="toc-backref" href="#id61">APPEND_SET()</a></h2>
 <p>Utility function to append elements to a varible (reduces boiler-plate
 code).</p>
 <p>Usage:</p>
@@ -3006,7 +3457,7 @@ LIST(APPEND &lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 </pre>
 </div>
 <div class="section" id="append-string-var">
-<h2><a class="toc-backref" href="#id56">APPEND_STRING_VAR()</a></h2>
+<h2><a class="toc-backref" href="#id62">APPEND_STRING_VAR()</a></h2>
 <p>Append strings to an existing string variable (reduces boiler-place code and
 reduces mistakes).</p>
 <p>Usage:</p>
@@ -3019,7 +3470,7 @@ taken by CMake to bypass the meaning of ';' to separate string characters.</p>
 just adding one string at a time use <a class="reference internal" href="#append-string-var-ext">APPEND_STRING_VAR_EXT()</a>.</p>
 </div>
 <div class="section" id="append-string-var-ext">
-<h2><a class="toc-backref" href="#id57">APPEND_STRING_VAR_EXT()</a></h2>
+<h2><a class="toc-backref" href="#id63">APPEND_STRING_VAR_EXT()</a></h2>
 <p>Append a single string to an existing string variable, ignoring ';' (reduces
 boiler-place code and reduces mistakes).</p>
 <p>Usage:</p>
@@ -3029,7 +3480,7 @@ APPEND_STIRNG_VAR_EXT(&lt;stringVar&gt; &quot;&lt;string&gt;&quot;)
 <p>Simply sets <tt class="docutils literal">&lt;stringVar&gt; = <span class="pre">&quot;${&lt;stringVar&gt;}&lt;string&gt;&quot;</span></tt>.</p>
 </div>
 <div class="section" id="append-string-var-with-sep">
-<h2><a class="toc-backref" href="#id58">APPEND_STRING_VAR_WITH_SEP()</a></h2>
+<h2><a class="toc-backref" href="#id64">APPEND_STRING_VAR_WITH_SEP()</a></h2>
 <p>Append strings to a given string varible, joining them using a seperator.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3039,7 +3490,7 @@ APPEND_STRING_VAR_WITH_SEP(&lt;stringVar&gt; &quot;&lt;sepStr&gt;&quot; &quot;&l
 separation string <tt class="docutils literal">&lt;sepStr&gt;</tt>.</p>
 </div>
 <div class="section" id="assert-defined">
-<h2><a class="toc-backref" href="#id59">ASSERT_DEFINED()</a></h2>
+<h2><a class="toc-backref" href="#id65">ASSERT_DEFINED()</a></h2>
 <p>Assert that a varaible is defined and if not call <tt class="docutils literal">MESSAGE(SEND_ERROR <span class="pre">...)</span></tt>.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3072,7 +3523,7 @@ between the two statements so they are always the same.  This is the best we
 can do in CMake unfortunately.</p>
 </div>
 <div class="section" id="combined-option">
-<h2><a class="toc-backref" href="#id60">COMBINED_OPTION()</a></h2>
+<h2><a class="toc-backref" href="#id66">COMBINED_OPTION()</a></h2>
 <p>Set up a bool cache variable (i.e. an option) based on a set of dependent
 options.</p>
 <p>Usage:</p>
@@ -3093,7 +3544,7 @@ feature that requires a set of other features to also be turned on but
 allows a user to disable the feature if desired.</p>
 </div>
 <div class="section" id="concat-strings">
-<h2><a class="toc-backref" href="#id61">CONCAT_STRINGS()</a></h2>
+<h2><a class="toc-backref" href="#id67">CONCAT_STRINGS()</a></h2>
 <p>Concatenate a set of string argumnets.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3102,7 +3553,7 @@ CONCAT_STRINGS(&lt;outputVar&gt; &quot;&lt;str0&gt;&quot; &quot;&lt;str1&gt;&quo
 <p>On output, <tt class="docutils literal">&lt;outputVar&gt;</tt> is set to <tt class="docutils literal"><span class="pre">&quot;&lt;str0&gt;&lt;str1&gt;...&quot;</span></tt>.</p>
 </div>
 <div class="section" id="dual-scope-append-cmndline-args">
-<h2><a class="toc-backref" href="#id62">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></h2>
+<h2><a class="toc-backref" href="#id68">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></h2>
 <p>Utility function that appends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.</p>
 <p>Usage:</p>
@@ -3112,7 +3563,7 @@ DUAL_SCOPE_APPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 <p>Just calls <a class="reference internal" href="#append-cmndline-args">APPEND_CMNDLINE_ARGS()</a> and then <tt class="docutils literal"><span class="pre">SET(&lt;var&gt;</span> <span class="pre">${&lt;var&gt;}</span> PARENT_SCOPE)</tt>.</p>
 </div>
 <div class="section" id="dual-scope-prepend-cmndline-args">
-<h2><a class="toc-backref" href="#id63">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></h2>
+<h2><a class="toc-backref" href="#id69">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></h2>
 <p>Utility function that prepends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.</p>
 <p>Usage:</p>
@@ -3122,7 +3573,7 @@ DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 <p>Just calls <a class="reference internal" href="#prepend-cmndline-args">PREPEND_CMNDLINE_ARGS()</a> and then <tt class="docutils literal"><span class="pre">SET(&lt;var&gt;</span> <span class="pre">${&lt;var&gt;}</span> PARENT_SCOPE)</tt>.</p>
 </div>
 <div class="section" id="dual-scope-set">
-<h2><a class="toc-backref" href="#id64">DUAL_SCOPE_SET()</a></h2>
+<h2><a class="toc-backref" href="#id70">DUAL_SCOPE_SET()</a></h2>
 <p>Macro that sets a variable name both in the current scope and the
 parent scope.</p>
 <p>Usage:</p>
@@ -3145,7 +3596,7 @@ CACHE INTERNAL &quot;&quot;), then the value will get changed in the current
 subordinate scope and in all parent scopes all in one shot!</p>
 </div>
 <div class="section" id="global-null-set">
-<h2><a class="toc-backref" href="#id65">GLOBAL_NULL_SET()</a></h2>
+<h2><a class="toc-backref" href="#id71">GLOBAL_NULL_SET()</a></h2>
 <p>Set a variable as a null internal global (cache) variable (removes boiler
 plate).</p>
 <p>Usage:</p>
@@ -3158,7 +3609,7 @@ SET(&lt;varName&gt; &quot;&quot; CACHE INTERNAL &quot;&quot;)
 </pre>
 </div>
 <div class="section" id="global-set">
-<h2><a class="toc-backref" href="#id66">GLOBAL_SET()</a></h2>
+<h2><a class="toc-backref" href="#id72">GLOBAL_SET()</a></h2>
 <p>Set a variable as an internal global (cache) variable (removes boiler
 plate).</p>
 <p>Usage:</p>
@@ -3171,7 +3622,7 @@ SET(&lt;varName&gt; [other args] CACHE INTERNAL &quot;&quot;)
 </pre>
 </div>
 <div class="section" id="join">
-<h2><a class="toc-backref" href="#id67">JOIN()</a></h2>
+<h2><a class="toc-backref" href="#id73">JOIN()</a></h2>
 <p>Join a set of strings into a single string using a join string.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3210,7 +3661,7 @@ JOIN(CMND_LINE_ARGS &quot; &quot; TRUE ${CMND_LINE_ARRAY})
 interpet those ase array boundaries.</p>
 </div>
 <div class="section" id="message-wrapper">
-<h2><a class="toc-backref" href="#id68">MESSAGE_WRAPPER()</a></h2>
+<h2><a class="toc-backref" href="#id74">MESSAGE_WRAPPER()</a></h2>
 <p>Function that wraps the standard CMake/CTest <tt class="docutils literal">MESSAGE()</tt> function call in
 order to allow unit testing to intercept the call.</p>
 <p>Usage:</p>
@@ -3230,7 +3681,7 @@ CMake program.  Otherwise, this is used to capture print messages to verify
 that they say the right thing.</p>
 </div>
 <div class="section" id="multiline-set">
-<h2><a class="toc-backref" href="#id69">MULTILINE_SET()</a></h2>
+<h2><a class="toc-backref" href="#id75">MULTILINE_SET()</a></h2>
 <p>Function to set a single string by concatenating a list of separate strings</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3248,7 +3699,7 @@ MULTILINE_SET(&lt;outputStrVar&gt;
 to far to the right.</p>
 </div>
 <div class="section" id="parse-arguments">
-<h2><a class="toc-backref" href="#id70">PARSE_ARGUMENTS()</a></h2>
+<h2><a class="toc-backref" href="#id76">PARSE_ARGUMENTS()</a></h2>
 <p>Parse a set of macro/functon input arguments into different lists.  This
 allows the easy implementation of keyword-based user-defined macros and
 functions.</p>
@@ -3335,7 +3786,7 @@ O( (len(&lt;argNamesList&gt;) * len(&lt;optionNamesList&gt;)) * len(&lt;inputArg
 option names and input argument lists.</p>
 </div>
 <div class="section" id="prepend-cmndline-args">
-<h2><a class="toc-backref" href="#id71">PREPEND_CMNDLINE_ARGS()</a></h2>
+<h2><a class="toc-backref" href="#id77">PREPEND_CMNDLINE_ARGS()</a></h2>
 <p>Utility function that prepends command-line arguments to a variable of
 command-line options.</p>
 <p>Usage:</p>
@@ -3347,7 +3798,7 @@ PREPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 input.</p>
 </div>
 <div class="section" id="prepend-global-set">
-<h2><a class="toc-backref" href="#id72">PREPEND_GLOBAL_SET()</a></h2>
+<h2><a class="toc-backref" href="#id78">PREPEND_GLOBAL_SET()</a></h2>
 <p>Utility macro that prepends arguments to a global variable (reduces
 boiler-plate code and mistakes).</p>
 <p>Usage:</p>
@@ -3357,8 +3808,8 @@ PREPEND_GLOBAL_SET(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 <p>NOTE: The variable <tt class="docutils literal">&lt;varName&gt;</tt> must exist before calling this function.
 To set it empty initially use <a class="reference internal" href="#global-null-set">GLOBAL_NULL_SET()</a>.</p>
 </div>
-<div class="section" id="id6">
-<h2><a class="toc-backref" href="#id73">APPEND_SET()</a></h2>
+<div class="section" id="id8">
+<h2><a class="toc-backref" href="#id79">APPEND_SET()</a></h2>
 <p>Utility function to append elements to a varible (reduces boiler-plate
 code).</p>
 <p>Usage:</p>
@@ -3371,7 +3822,7 @@ LIST(APPEND &lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 </pre>
 </div>
 <div class="section" id="print-nonempty-var">
-<h2><a class="toc-backref" href="#id74">PRINT_NONEMPTY_VAR()</a></h2>
+<h2><a class="toc-backref" href="#id80">PRINT_NONEMPTY_VAR()</a></h2>
 <p>Print a defined variable giving its name then value only if it is not empty.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3380,7 +3831,7 @@ PRINT_NONEMPTY_VAR(&lt;varName&gt;)
 <p>Calls <tt class="docutils literal"><span class="pre">PRINT_VAR(&lt;varName&gt;)</span></tt> if <tt class="docutils literal"><span class="pre">${&lt;varName&gt;}</span></tt> is not empty.</p>
 </div>
 <div class="section" id="print-var">
-<h2><a class="toc-backref" href="#id75">PRINT_VAR()</a></h2>
+<h2><a class="toc-backref" href="#id81">PRINT_VAR()</a></h2>
 <p>Unconditionally print a variable giving its name then value.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3394,7 +3845,7 @@ MESSAGE(&quot;-- &quot; &quot;${VARIBLE_NAME}='${${VARIBLE_NAME}}'&quot;)
 an explicit &quot;-- &quot; line prefix so that it prints nice even on Windows CMake.</p>
 </div>
 <div class="section" id="remove-global-duplicates">
-<h2><a class="toc-backref" href="#id76">REMOVE_GLOBAL_DUPLICATES()</a></h2>
+<h2><a class="toc-backref" href="#id82">REMOVE_GLOBAL_DUPLICATES()</a></h2>
 <p>Remove duplicate elements from a global list variable.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3406,7 +3857,7 @@ create a local variable of the same name and shadow the global variable!
 That is a fun bug to track down!</p>
 </div>
 <div class="section" id="set-and-inc-dirs">
-<h2><a class="toc-backref" href="#id77">SET_AND_INC_DIRS()</a></h2>
+<h2><a class="toc-backref" href="#id83">SET_AND_INC_DIRS()</a></h2>
 <p>Set a variable to an include dir and call <tt class="docutils literal">INCLUDE_DIRECTORIES()</tt> (removes
 boiler plate).</p>
 <p>Usage:</p>
@@ -3416,7 +3867,7 @@ SET_AND_INC_DIRS(&lt;dirVarName&gt; &lt;includeDir&gt;)</blockquote>
 scope and calls <tt class="docutils literal"><span class="pre">INCLUDE_DIRECTORIES(&lt;includeDir&gt;)</span></tt>.</p>
 </div>
 <div class="section" id="set-cache-on-off-empty">
-<h2><a class="toc-backref" href="#id78">SET_CACHE_ON_OFF_EMPTY()</a></h2>
+<h2><a class="toc-backref" href="#id84">SET_CACHE_ON_OFF_EMPTY()</a></h2>
 <p>Usage:</p>
 <pre class="literal-block">
 SET_CACHE_ON_OFF_EMPTY(&lt;varName&gt; &lt;initialVal&gt; &quot;&lt;docString&gt;&quot; [FORCE])
@@ -3426,7 +3877,7 @@ SET_CACHE_ON_OFF_EMPTY(&lt;varName&gt; &lt;initialVal&gt; &quot;&lt;docString&gt
 GUIs.</p>
 </div>
 <div class="section" id="set-default">
-<h2><a class="toc-backref" href="#id79">SET_DEFAULT()</a></h2>
+<h2><a class="toc-backref" href="#id85">SET_DEFAULT()</a></h2>
 <p>Give a local variable a default if a non-empty value is not already set.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3436,7 +3887,7 @@ SET_DEFAULT(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 default.  Otherwise, the existing non-empty value is preserved.</p>
 </div>
 <div class="section" id="set-default-and-from-env">
-<h2><a class="toc-backref" href="#id80">SET_DEFAULT_AND_FROM_ENV()</a></h2>
+<h2><a class="toc-backref" href="#id86">SET_DEFAULT_AND_FROM_ENV()</a></h2>
 <p>Set a default value for a local variable and override from an env var of the
 same name if it is set.</p>
 <p>Usage:</p>
@@ -3452,7 +3903,7 @@ option <tt class="docutils literal"><span class="pre">-D</span> <span class="pre
 commandline like <tt class="docutils literal">cmake</tt> always allowed.</p>
 </div>
 <div class="section" id="split">
-<h2><a class="toc-backref" href="#id81">SPLIT()</a></h2>
+<h2><a class="toc-backref" href="#id87">SPLIT()</a></h2>
 <p>Split a string varible into a string array/list variable.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3465,7 +3916,7 @@ occurrences of <tt class="docutils literal">&lt;sepStr&gt;` in <span class="pre"
 mind when considering special regex chars like <tt class="docutils literal">'*'</tt>, <tt class="docutils literal">'.'</tt>, etc!</p>
 </div>
 <div class="section" id="timer-get-raw-seconds">
-<h2><a class="toc-backref" href="#id82">TIMER_GET_RAW_SECONDS()</a></h2>
+<h2><a class="toc-backref" href="#id88">TIMER_GET_RAW_SECONDS()</a></h2>
 <p>Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
 UTC.</p>
 <p>Usage:</p>
@@ -3483,7 +3934,7 @@ only be used to time very course grained operations (i.e. that take longer
 than a second).</p>
 </div>
 <div class="section" id="timer-get-rel-seconds">
-<h2><a class="toc-backref" href="#id83">TIMER_GET_REL_SECONDS()</a></h2>
+<h2><a class="toc-backref" href="#id89">TIMER_GET_REL_SECONDS()</a></h2>
 <p>Return the relative time between start and stop seconds.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3495,7 +3946,7 @@ TIMER_GET_REL_SECONDS(&lt;startSeconds&gt; &lt;endSeconds&gt; &lt;relSecondsOutV
 <tt class="docutils literal">&lt;relSecondsOutVar&gt;</tt>.</p>
 </div>
 <div class="section" id="timer-print-rel-time">
-<h2><a class="toc-backref" href="#id84">TIMER_PRINT_REL_TIME()</a></h2>
+<h2><a class="toc-backref" href="#id90">TIMER_PRINT_REL_TIME()</a></h2>
 <p>Print the relative time between start and stop timers in <tt class="docutils literal">&lt;min&gt;m&lt;sec&gt;s</tt>
 format.</p>
 <p>Usage:</p>
@@ -3526,7 +3977,7 @@ REAL_EXPENSIVE() time: 0m5s
 be recored as <tt class="docutils literal">0m0s</tt>.</p>
 </div>
 <div class="section" id="unittest-compare-const">
-<h2><a class="toc-backref" href="#id85">UNITTEST_COMPARE_CONST()</a></h2>
+<h2><a class="toc-backref" href="#id91">UNITTEST_COMPARE_CONST()</a></h2>
 <p>Perform a single unit test equality check and update overall test statistics</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3539,7 +3990,7 @@ fails.  This prints the variable name and values and shows the test result.</p>
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-string-regex">
-<h2><a class="toc-backref" href="#id86">UNITTEST_STRING_REGEX()</a></h2>
+<h2><a class="toc-backref" href="#id92">UNITTEST_STRING_REGEX()</a></h2>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3555,7 +4006,7 @@ UNITTEST_STRING_REGEX(
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-file-regex">
-<h2><a class="toc-backref" href="#id87">UNITTEST_FILE_REGEX()</a></h2>
+<h2><a class="toc-backref" href="#id93">UNITTEST_FILE_REGEX()</a></h2>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3568,7 +4019,7 @@ UNITTEST_FILE_REGEX(
 to <a class="reference internal" href="#unittest-string-regex">UNITTEST_STRING_REGEX()</a> to assess pass/fail.</p>
 </div>
 <div class="section" id="unittest-final-result">
-<h2><a class="toc-backref" href="#id88">UNITTEST_FINAL_RESULT()</a></h2>
+<h2><a class="toc-backref" href="#id94">UNITTEST_FINAL_RESULT()</a></h2>
 <p>Print final statstics from all tests and assert final pass/fail</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3592,18 +4043,18 @@ out.  CMake is a loosely typed language and it pays to be a little paranoid.</p>
 </div>
 </div>
 <div class="section" id="references">
-<h1><a class="toc-backref" href="#id89">17&nbsp;&nbsp;&nbsp;References</a></h1>
+<h1><a class="toc-backref" href="#id95">18&nbsp;&nbsp;&nbsp;References</a></h1>
 <table class="docutils citation" frame="void" id="scale" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id8">[SCALE]</a></td><td><a class="reference external" href="http://scale.ornl.gov/">http://scale.ornl.gov/</a></td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id10">[SCALE]</a></td><td><a class="reference external" href="http://scale.ornl.gov/">http://scale.ornl.gov/</a></td></tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id90">18&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id96">19&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id91">History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id97">History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)
@@ -3632,7 +4083,7 @@ formally adopted in November 2011.  Work to refactor the Trilinos CMake system
 into a general reusable stand-alone CMake-based build system started in
 October 2011 and an initial implementation was complete in December 2011 when
 it was used for the CASL VERA build system.  In early 2012, the ORNL
-CASL-related projects Denovo and SCALE (<a class="citation-reference" href="#scale" id="id8">[SCALE]</a>) adopted TriBITS as their
+CASL-related projects Denovo and SCALE (<a class="citation-reference" href="#scale" id="id10">[SCALE]</a>) adopted TriBITS as their
 native development build systems.  Shortly after TriBITS was adopted the
 native build system for the the CASL-related University of Michigan code
 MPACT.  In addition to being used in CASL, all of these codes also had a
