@@ -2982,7 +2982,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Aggregate *ag = (ML_Aggregate *) data;
    struct ML_Field_Of_Values * fov;
    int flag=0; /* For the return value */
-   int RelativeLevel, NumZDir, Zorientation, *LayerId, *VertLineId;
+   int RelativeLevel, NumZDir, Zorientation, *LayerId = NULL, *VertLineId = NULL;
    int  Nnodes;
    struct SemiCoarsen_Struct   widget;
    void *old_field;
@@ -3201,15 +3201,16 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
   if ( (ml->Pmat[level]).NumZDir      != -1) NumZDir     = (ml->Pmat[level]).NumZDir;
   if ( (ml->Pmat[level]).Zorientation != -1) Zorientation= (ml->Pmat[level]).Zorientation;
 
-  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir != 1) ) { 
 
      Nnodes = Amat->invec_leng/Amat->num_PDEs;
      LayerId    = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
      VertLineId = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
 
-     ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng, Amat->num_PDEs,
-                          Zorientation, NumZDir, ml->Grid[level].Grid);
-
+     NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng, Amat->num_PDEs,
+                                    Zorientation, NumZDir, ml->Grid[level].Grid);
+  }
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
      widget.nz = NumZDir;
      widget.CoarsenRate = ag->coarsen_rate;
      widget.LayerId = LayerId;
@@ -3218,8 +3219,6 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      old_field = ag->field_of_values;
      ag->field_of_values = (void *) &widget;
      flag=ML_AGG_SemiCoarseP(ml,level, clevel, data);
-     ML_free(VertLineId); 
-     ML_free(LayerId); 
      ag->field_of_values = old_field;
    }
    else {
@@ -3257,6 +3256,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      exit(EXIT_FAILURE);
    }
    }
+   if (VertLineId != NULL)  ML_free(VertLineId); 
+   if (LayerId    != NULL)  ML_free(LayerId); 
 
    return flag;
 }
@@ -4433,16 +4434,17 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
 
       if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) return -1;
    }
-
+   else {
+      if  (NumNodesPerVertLine == -1) return -4;
+      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) return -3;
+   }
    if ( (Ndof%DofsPerNode) != 0) return -2;
-   if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) return -3;
 
    Nnodes = Ndof/DofsPerNode;
 
    for (MyNode = 0; MyNode < Nnodes;  MyNode++) VertLineId[MyNode]= -1;
    for (MyNode = 0; MyNode < Nnodes;  MyNode++) LayerId[MyNode]   = -1;
 
-   NVertLines = Nnodes/NumNodesPerVertLine;
 
    if (MeshNumbering == 1) {
       for (MyNode = 0; MyNode < Nnodes; MyNode++) {
@@ -4451,6 +4453,7 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
       }
    }
    else if (MeshNumbering == 2) {
+      NVertLines = Nnodes/NumNodesPerVertLine;
       for (MyNode = 0; MyNode < Nnodes; MyNode++) {
          VertLineId[MyNode]   = MyNode%NVertLines;
          LayerId[MyNode]   = (MyNode- VertLineId[MyNode])/NVertLines;
@@ -4510,6 +4513,7 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
             while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
                     (ytemp[next] == yfirst))
                next++;
+            if (NumBlocks == 0) NumNodesPerVertLine = next-index;
             if (next-index != NumNodesPerVertLine) {
                printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumNodesPerVertLine);
                exit(EXIT_FAILURE);
@@ -4538,6 +4542,5 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
              printf("Warning: did not assign %d to a Layer?????\n",i);
           }
        }
-       return 0;
+       return NumNodesPerVertLine;
 }
-

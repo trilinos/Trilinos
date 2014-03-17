@@ -63,7 +63,9 @@
 
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
-
+#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -152,38 +154,46 @@ namespace FENL {
 
 template < class Device , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const ::Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
   const int use_nodes[] )
 {
+  typedef typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
+  typedef typename ::Tpetra::CrsMatrix<double,int,int,NodeType> GlobalMatrixType;
+  typedef typename ::Tpetra::Vector<double,int,int,NodeType> GlobalVectorType;
+  typedef typename ::Tpetra::Map<int, int, NodeType> MapType;
+  typedef typename ::Teuchos::RCP<const MapType> pMapType;
+
   typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder > FixtureType ;
 
-  typedef Kokkos::CrsMatrix< double , unsigned , Device , void , unsigned >
-    SparseMatrixType ;
+  //typedef Kokkos::CrsMatrix< double , unsigned , Device >
+  typedef typename GlobalMatrixType::k_local_matrix_type
+    LocalMatrixType ;
 
-  typedef typename SparseMatrixType::StaticCrsGraphType
-    SparseGraphType ;
+  typedef typename LocalMatrixType::StaticCrsGraphType
+    LocalGraphType ;
 
-  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , SparseGraphType , FixtureType::ElemNode >
+  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , LocalGraphType , FixtureType::ElemNode >
      NodeNodeGraphType ;
 
-  typedef Kokkos::Example::FENL::ElementComputation< FixtureType , SparseMatrixType >
+  typedef Kokkos::Example::FENL::ElementComputation< FixtureType , LocalMatrixType >
     ElementComputationType ;
 
-  typedef Kokkos::Example::FENL::DirichletComputation< FixtureType , SparseMatrixType >
+  typedef Kokkos::Example::FENL::DirichletComputation< FixtureType , LocalMatrixType >
     DirichletComputationType ;
 
   typedef NodeElemGatherFill< ElementComputationType >
     NodeElemGatherFillType ;
 
-  typedef typename ElementComputationType::vector_type VectorType ;
-
+  typedef typename ElementComputationType::vector_type LocalVectorType ;
+  typedef Kokkos::DualView< double** , Kokkos::LayoutLeft, Device > LocalDualVectorType;
   typedef Kokkos::Example::VectorImport<
      typename FixtureType::comm_list_type ,
      typename FixtureType::send_nodeid_type ,
-     VectorType > ImportType ;
+     LocalVectorType > ImportType ;
+
 
   //------------------------------------
 
@@ -265,7 +275,7 @@ Perf fenl(
     perf.global_node_count = fixture.node_count_global();
 
     //----------------------------------
-    // Create the sparse matrix graph and element-to-graph map
+    // Create the local sparse matrix graph and element-to-graph map
     // from the element->to->node identifier array.
     // The graph only has rows for the owned nodes.
 
@@ -283,9 +293,9 @@ Perf fenl(
     perf.fill_element_graph = maximum(comm, graph_times.fill_element_graph);
 
     wall_clock.reset();
-    // Create the sparse matrix from the graph:
+    // Create the local sparse matrix from the graph:
 
-    SparseMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
+    LocalMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
 
     Device::fence();
 
@@ -326,9 +336,13 @@ Perf fenl(
     //----------------------------------
 
     // Allocate solution vector for each node in the mesh and residual vector for each owned node
-    const VectorType nodal_solution( "nodal_solution" , fixture.node_count() );
-    const VectorType nodal_residual( "nodal_residual" , fixture.node_count_owned() );
-    const VectorType nodal_delta(    "nodal_delta" ,    fixture.node_count_owned() );
+    // We need dual vectors for Tpetra!!
+    const LocalDualVectorType k_nodal_solution( "nodal_solution" , fixture.node_count(),1 );
+    const LocalDualVectorType k_nodal_residual( "nodal_residual" , fixture.node_count_owned(),1 );
+    const LocalDualVectorType k_nodal_delta(    "nodal_delta" ,    fixture.node_count_owned(),1 );
+    const LocalVectorType nodal_solution = Kokkos::subview<LocalVectorType>(k_nodal_solution.d_view,Kokkos::ALL(),0);
+    const LocalVectorType nodal_residual = Kokkos::subview<LocalVectorType>(k_nodal_residual.d_view,Kokkos::ALL(),0);
+    const LocalVectorType nodal_delta = Kokkos::subview<LocalVectorType>(k_nodal_delta.d_view,Kokkos::ALL(),0);
 
     // Create element computation functor
     const ElementComputationType elemcomp(
@@ -351,6 +365,41 @@ Perf fenl(
       2 /* apply at 'z' ends */ ,
       manufactured_solution.T_zmin ,
       manufactured_solution.T_zmax );
+
+
+    const ::Teuchos::ParameterList params();
+
+    // Create Distributed Objects
+
+    // Create Node
+    RCP<NodeType> node = rcp (new NodeType());
+
+    // Create Maps
+    ::Kokkos::View<int*,Device> lid_to_gid_row("lig_to_gid",jacobian.numRows());
+    for(int i=0;i<jacobian.numRows();i++) lid_to_gid_row(i) = fixture.node_global_index(i);
+
+    pMapType RowMap = ::Teuchos::rcp (new MapType (fixture.node_count_global(),
+        ::Teuchos::arrayView(lid_to_gid_row.ptr_on_device(),lid_to_gid_row.dimension_0()),
+        0, comm, node));
+
+    ::Kokkos::View<int*,Device> lid_to_gid("lig_to_gid",jacobian.numCols());
+    for(int i=0;i<jacobian.numCols();i++) lid_to_gid(i) = fixture.node_global_index(i);
+
+    pMapType ColMap = ::Teuchos::rcp (new MapType ( (fixture.node_count_global()),
+        ::Teuchos::arrayView(lid_to_gid.ptr_on_device(),lid_to_gid.dimension_0()),
+         0,comm, node) );
+
+    // Create Teptra Matrix: this uses the already allocated matrix data
+    GlobalMatrixType g_jacobian(RowMap,ColMap,jacobian);
+
+    // Create Teptra Vectors: this uses the already allocated vector data
+    GlobalVectorType g_nodal_solution(ColMap,k_nodal_solution);
+    GlobalVectorType g_nodal_residual(RowMap,k_nodal_residual);
+    GlobalVectorType g_nodal_delta(RowMap,k_nodal_delta);
+
+    // Create a subview of just the owned data of the solution vector
+    GlobalVectorType g_nodal_solution_no_overlap(RowMap,Kokkos::subview<LocalDualVectorType>(k_nodal_solution,std::pair<unsigned,unsigned>(0,k_nodal_delta.dimension_0()),Kokkos::ALL()));
+
 
     //----------------------------------
     // Nonlinear Newton iteration:
@@ -396,9 +445,7 @@ Perf fenl(
       // Evaluate convergence
 
       const double residual_norm =
-        std::sqrt(
-          Kokkos::Example::all_reduce(
-            Kokkos::V_Dot( nodal_residual, nodal_residual ) , comm ) );
+          g_nodal_residual.norm2();
 
       perf.newton_residual = residual_norm ;
 
@@ -409,14 +456,15 @@ Perf fenl(
       //--------------------------------
       // Solve for nonlinear update
 
-      CGSolve< ImportType , SparseMatrixType , VectorType >
-        cgsolve( comm_nodal_import , jacobian, nodal_residual, nodal_delta ,
-                 cg_iteration_limit , cg_iteration_tolerance );
+      result_struct cgsolve = cg_solve(
+          Teuchos::rcpFromRef(g_jacobian),
+          Teuchos::rcpFromRef(g_nodal_residual),
+          Teuchos::rcpFromRef(g_nodal_delta),
+          cg_iteration_limit , cg_iteration_tolerance);
 
       // Update solution vector
 
-      Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
-
+      g_nodal_solution_no_overlap.update(-1.0,g_nodal_delta,1.0);
       perf.cg_iter_count += cgsolve.iteration ;
       perf.cg_time       += cgsolve.iter_time ;
 
@@ -424,9 +472,7 @@ Perf fenl(
 
       if ( print_flag ) {
         const double delta_norm =
-          std::sqrt(
-            Kokkos::Example::all_reduce(
-              Kokkos::V_Dot( nodal_delta, nodal_delta ) , comm ) );
+            g_nodal_delta.norm2();
 
         std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
                   << " residual[" << perf.newton_residual << "]"
@@ -480,7 +526,7 @@ Perf fenl(
       const typename FixtureType::node_coord_type::HostMirror
         h_node_coord = Kokkos::create_mirror_view( fixture.node_coord() );
 
-      const typename VectorType::HostMirror
+      const typename LocalVectorType::HostMirror
         h_nodal_solution = Kokkos::create_mirror_view( nodal_solution );
 
       Kokkos::deep_copy( h_node_coord , fixture.node_coord() );

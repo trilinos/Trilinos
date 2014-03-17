@@ -66,10 +66,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
                                     ViewTraits<ST,SL,SD,SM> >::value
+                    ||
+                    ( ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                      ViewTraits<ST,SL,SD,SM> >::assignable_value
+                      &&
+                      ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
+                                       typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
+                      &&
+                      is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout,LayoutStride>::value )
                   )>::type * = 0 )
   {
-    //typedef typename View<DT,DL,DD,DM,Specialize>::offset_map_type  offset_map_type ; // unused
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );

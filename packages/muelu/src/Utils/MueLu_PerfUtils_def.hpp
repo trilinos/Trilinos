@@ -155,8 +155,11 @@ namespace MueLu {
       size_t numExportSend = (!exporter.is_null() ? exporter->getNumExportIDs() : 0);
       size_t numImportSend = (!importer.is_null() ? importer->getNumExportIDs() : 0);
       size_t numMsgs       = neighMap.size();
-      size_t minMsg        = std::min_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>)->second;
-      size_t maxMsg        = std::max_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>)->second;
+
+      map_type::const_iterator it = std::min_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
+      size_t minMsg        = (it != neighMap.end() ? it->second : 0);
+      it = std::max_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
+      size_t maxMsg        = (it != neighMap.end() ? it->second : 0);
 
       ss << msgTag << " Communication info"     << std::endl;
       ss << msgTag << "   # num export send : " << stringStats<global_size_t>(comm, numExportSend)                      << std::endl;

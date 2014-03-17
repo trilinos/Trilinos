@@ -22,6 +22,7 @@ struct MLSthing {
   double  mlsCf[MLS_MAX_DEG];
   double *pAux, *res, *y;  /* workarrays allocated in .... to be reused */
   double eig_ratio;
+  double eig_boost;
   double beta_real, beta_img;
 
   ML_Sm_BGS_Data *block_scaling;/* these last arguments are used to */

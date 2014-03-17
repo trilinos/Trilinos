@@ -67,8 +67,12 @@ size_t run_serial(unsigned num_ids, unsigned num_find_iterations)
 
 size_t run_threads(unsigned num_ids, unsigned num_find_iterations)
 {
+#ifdef KOKKOS_HAVE_PTHREAD
   std::cout << "Threads" << std::endl;
   return run_test<Kokkos::Threads>(num_ids,num_find_iterations);
+#else
+  return 0;
+#endif
 }
 
 size_t run_openmp(unsigned num_ids, unsigned num_find_iterations)
@@ -117,7 +121,9 @@ int main(int argc, char *argv[])
 
   if (Kokkos::hwloc::available()) {
     threads_count = Kokkos::hwloc::get_available_numa_count() *
-                    Kokkos::hwloc::get_available_cores_per_numa();
+                    Kokkos::hwloc::get_available_cores_per_numa() *
+                    Kokkos::hwloc::get_available_threads_per_core();
+
   }
 
   std::cout << "Threads: " << threads_count << std::endl;
@@ -127,6 +133,14 @@ int main(int argc, char *argv[])
   size_t num_errors = 0;
 
   num_errors += G2L::run_serial(num_ids,num_find_iterations);
+
+#ifdef KOKKOS_HAVE_CUDA
+  Kokkos::Cuda::host_mirror_device_type::initialize(threads_count);
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+  num_errors += G2L::run_cuda(num_ids,num_find_iterations);
+  Kokkos::Cuda::finalize();
+  Kokkos::Cuda::host_mirror_device_type::finalize();
+#endif
 
 #ifdef KOKKOS_HAVE_PTHREAD
   Kokkos::Threads::initialize( threads_count );
@@ -140,12 +154,6 @@ int main(int argc, char *argv[])
   Kokkos::OpenMP::finalize();
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
-  Kokkos::Cuda::host_mirror_device_type::initialize(1);
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-  num_errors += G2L::run_cuda(num_ids,num_find_iterations);
-  Kokkos::Cuda::finalize();
-#endif
 
   return num_errors;
 }

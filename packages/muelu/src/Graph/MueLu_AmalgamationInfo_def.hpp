@@ -73,12 +73,23 @@ namespace MueLu {
     GO numAggregates = aggregates.GetNumAggregates();
 
     std::vector<LO> sizes(numAggregates);
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = nodeGlobalElts[lnode];
-        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
-        sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
+    if (stridedblocksize_ == 1) {
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+        if (procWinner[lnode] == myPid)
+          sizes[myAgg] += 1;
+      }
+    } else {
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+        if (procWinner[lnode] == myPid) {
+          GO gnodeid = nodeGlobalElts[lnode];
+          for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
+            GlobalOrdinal gDofIndex = ComputeGlobalDOF(gnodeid,k);
+            if (columnMap_->isNodeGlobalElement(gDofIndex))
+              sizes[myAgg] += 1;
+          }
+        }
       }
     }
     aggStart = ArrayRCP<LO>(numAggregates+1,0);
@@ -91,16 +102,27 @@ namespace MueLu {
     // count, how many dofs have been recorded for each aggregate so far
     Array<LO> numDofs(numAggregates, 0); // empty array with number of Dofs for each aggregate
 
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = nodeGlobalElts[lnode];
-        std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
-        LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
-        for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
-          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
+    if (stridedblocksize_ == 1) {
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+        if (procWinner[lnode] == myPid) {
+          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = ComputeGlobalDOF(nodeGlobalElts[lnode]);
           ++(numDofs[myAgg]);
+        }
+      }
+    } else {
+      for (LO lnode = 0; lnode < size; ++lnode) {
+        LO myAgg = vertex2AggId[lnode];
+
+        if (procWinner[lnode] == myPid) {
+          GO gnodeid = nodeGlobalElts[lnode];
+          for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
+            GlobalOrdinal gDofIndex = ComputeGlobalDOF(gnodeid,k);
+            if (columnMap_->isNodeGlobalElement(gDofIndex)) {
+              aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIndex;
+              ++(numDofs[myAgg]);
+            }
+          }
         }
       }
     }
@@ -115,12 +137,20 @@ namespace MueLu {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap();
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
+    Teuchos::ArrayView<const GO> gEltList = nodeMap->getNodeElementList();
     LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
-    for(LO n = 0; n<nodeElements; n++) {
-      GO gnodeid = (GO) nodeMap->getGlobalElement(n);
-      std::vector<GO> gDofIds = ComputeGlobalDOFs(gnodeid);
-      for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
-        myDofGids->push_back(*gDofIdsIt);
+    if (stridedblocksize_ == 1) {
+      for (LO n = 0; n<nodeElements; n++) {
+        GlobalOrdinal gDofIndex = ComputeGlobalDOF(gEltList[n]);
+        myDofGids->push_back(gDofIndex);
+      }
+    } else {
+      for (LO n = 0; n<nodeElements; n++) {
+        for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
+          GlobalOrdinal gDofIndex = ComputeGlobalDOF(gEltList[n],k);
+          if (columnMap_->isNodeGlobalElement(gDofIndex))
+            myDofGids->push_back(gDofIndex);
+        }
       }
     }
 
@@ -132,19 +162,11 @@ namespace MueLu {
   /////////////////////////////////////////////////////////////////////////////
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::vector<GlobalOrdinal> AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeGlobalDOFs(GlobalOrdinal const gNodeID) const {
-    //optimization:  preallocate DOFs and reuse it
-    std::vector<GlobalOrdinal> DOFs;
-
-    DOFs.reserve(stridedblocksize_);
-    for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
+  GlobalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
     // here, the assumption is, that the node map has the same indexBase as the dof map
     //                            this is the node map index base                    this is the dof map index base
-      GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;
-      if (columnMap_->isNodeGlobalElement(gDofIndex))
-        DOFs.push_back(gDofIndex);
-    }
-    return DOFs;
+    GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;
+    return gDofIndex;
   }
 
 } //namespace

@@ -232,12 +232,78 @@ namespace Tpetra {
     }
     staticGraph_ = myGraph_;
     k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
-    values1D_    = values;
+    values1D_    = Kokkos::Compat::persistingView(k_values1D_);
     resumeFill(params);
     checkInternalState();
   }
 
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal, class DeviceType>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsMatrix (const RCP<const map_type>& rowMap,
+             const RCP<const map_type>& colMap,
+             const k_local_matrix_type& lclMatrix,
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
+    k_lclMatrix_(lclMatrix)
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params)";
+#endif // HAVE_TPETRA_DEBUG
 
+    try {
+      myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph,params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
+    }
+    staticGraph_ = myGraph_;
+    computeGlobalConstants();
+
+    lclMatrix_ = null;
+    lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
+    lclMatrix_->setValues (Teuchos::arcp(k_lclMatrix_.values.ptr_on_device(), 0, k_lclMatrix_.values.dimension_0(),
+        Kokkos::Compat::deallocator(k_lclMatrix_.values), false));
+
+    //
+    // Set up the local sparse kernels.
+    //
+    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
+    // This is where we take the local graph and matrix, and turn them
+    // into (possibly optimized) sparse kernels.
+    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+
+    // Once we've initialized the sparse kernels, we're done with the
+    // local objects.  We may now release them and their memory, since
+    // they will persist in the local sparse ops if necessary.  We
+    // keep the local graph if the parameters tell us to do so.
+    lclMatrix_ = null;
+    if (myGraph_ != null) {
+      bool preserveLocalGraph = false;
+      if (params != null) {
+        preserveLocalGraph = params->get ("Preserve Local Graph", false);
+      }
+      if (! preserveLocalGraph) {
+        myGraph_->lclGraph_ = null;
+      }
+    }
+    // Now we're fill complete!
+    fillComplete_ = true;
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState();
+  }
 
   template<class Scalar,
            class LocalOrdinal,

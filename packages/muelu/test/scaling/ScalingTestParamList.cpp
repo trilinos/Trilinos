@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp(false);
 
   GO nx = 100, ny = 100, nz = 100;
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
   std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,      "read parameters from a file [default = 'scalingTest.xml']");
@@ -126,6 +126,10 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
+  // Retrieve matrix parameters (they may have been changed on the command line)
+  // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
+  ParameterList galeriList = galeriParameters.GetParameterList();
+
   // =========================================================================
   // Problem construction
   // =========================================================================
@@ -137,9 +141,8 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> coordinates;
   RCP<MultiVector> nullspace;
   if (matrixFile.empty()) {
-    fancyout << "========================================================\n" << xpetraParameters << matrixParameters;
+    fancyout << "========================================================\n" << xpetraParameters << galeriParameters;
 
-    // Retrieve matrix parameters (they may have been changed on the command line), and pass them to Galeri.
     // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
     //                                 d1  d2  d3
     //                                 d4  d5  d6
@@ -149,68 +152,56 @@ int main(int argc, char *argv[]) {
     // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
     // size. For example, np=14 will give a 7-by-2 distribution.
     // If you don't want Galeri to do this, specify mx or my on the galeriList.
-    Teuchos::ParameterList pl = matrixParameters.GetParameterList();
-    Teuchos::ParameterList galeriList;
-    galeriList.set("nx", pl.get("nx",nx));
-    galeriList.set("ny", pl.get("ny",ny));
-    galeriList.set("nz", pl.get("nz",nz));
-    // galeriList.set("mx", comm->getSize());
-    // galeriList.set("my", 1);
+
+    std::string matrixType = galeriParameters.GetMatrixType();
 
     // Create map and coordinates
     // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
     RCP<const Map> map;
-    if (matrixParameters.GetMatrixType() == "Laplace1D") {
+    if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
-    }
-    else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D" || matrixParameters.GetMatrixType() == "Elasticity2D") {
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
+               matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
-    }
-    else if (matrixParameters.GetMatrixType() == "Laplace3D" || matrixParameters.GetMatrixType() == "Elasticity3D") {
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
     }
+
     // Expand map to do multiple DOF per node for block problems
-    if (matrixParameters.GetMatrixType() == "Elasticity2D")
+    if (matrixType == "Elasticity2D")
       map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
-    if (matrixParameters.GetMatrixType() == "Elasticity3D")
+    if (matrixType == "Elasticity3D")
       map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
 
-    if (comm->getRank() == 0) {
-      GO mx = galeriList.get("mx", -1);
-      GO my = galeriList.get("my", -1);
-      GO mz = galeriList.get("mz", -1);
-      fancyout << "Processor subdomains in x direction: " << mx << std::endl
-          << "Processor subdomains in y direction: " << my << std::endl
-          << "Processor subdomains in z direction: " << mz << std::endl
-          << "========================================================" << std::endl;
-    }
+    fancyout << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
+             << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
+             << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
+             << "========================================================" << std::endl;
 
-    Teuchos::ParameterList matrixParams = matrixParameters.GetParameterList();
-    matrixParams.set("mx", galeriList.get("mx", -1));
-    matrixParams.set("my", galeriList.get("my", -1));
-    matrixParams.set("mz", galeriList.get("mz", -1));
-    if (matrixParameters.GetMatrixType() == "Elasticity2D" || matrixParameters.GetMatrixType() == "Elasticity3D") {
+    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
       // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
-      matrixParams.set("right boundary" , "Neumann");
-      matrixParams.set("bottom boundary", "Neumann");
-      matrixParams.set("top boundary"   , "Neumann");
-      matrixParams.set("front boundary" , "Neumann");
-      matrixParams.set("back boundary"  , "Neumann");
+      galeriList.set("right boundary" , "Neumann");
+      galeriList.set("bottom boundary", "Neumann");
+      galeriList.set("top boundary"   , "Neumann");
+      galeriList.set("front boundary" , "Neumann");
+      galeriList.set("back boundary"  , "Neumann");
     }
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
 
     nullspace = MultiVectorFactory::Build(map, 1);
-    if (matrixParameters.GetMatrixType() == "Elasticity2D" ||
-        matrixParameters.GetMatrixType() == "Elasticity3D") {
+    if (matrixType == "Elasticity2D" ||
+        matrixType == "Elasticity3D") {
       nullspace = Pr->BuildNullspace();
-      A->SetFixedBlockSize((matrixParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
+      A->SetFixedBlockSize((galeriParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
 
     } else {
       nullspace->putScalar(one);

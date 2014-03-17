@@ -137,13 +137,11 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*134ull)/100ull;
+      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
 
 
       // Increase capacity until the (node,node) map is successfully filled.
-      do {
-        set_capacity += node_node_set.failed_inserts();
-
+      {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
@@ -153,8 +151,7 @@ public:
         set_capacity = node_node_set.capacity();
 
         Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
-
-      } while ( node_node_set.failed_inserts() );
+      }
 
       device_type::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
@@ -270,11 +267,12 @@ public:
   KOKKOS_INLINE_FUNCTION
   void sort_graph_entries( const unsigned irow ) const
   {
-    const unsigned row_beg = graph.row_map( irow );
-    const unsigned row_end = graph.row_map( irow + 1 );
-    for ( unsigned i = row_beg + 1 ; i < row_end ; ++i ) {
-      const unsigned col = graph.entries(i);
-      unsigned j = i ;
+    typedef typename CrsGraphType::size_type size_type;
+    const size_type row_beg = graph.row_map( irow );
+    const size_type row_end = graph.row_map( irow + 1 );
+    for ( size_type i = row_beg + 1 ; i < row_end ; ++i ) {
+      const typename CrsGraphType::data_type col = graph.entries(i);
+      size_type j = i ;
       for ( ; row_beg < j && col < graph.entries(j-1) ; --j ) {
         graph.entries(j) = graph.entries(j-1);
       }
@@ -285,6 +283,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
+    typedef typename CrsGraphType::size_type size_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
@@ -293,11 +292,11 @@ public:
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-        unsigned entry = ~0u ;
+        size_type entry = 0 ;
 
         if ( row_node + 1 < graph.row_map.dimension_0() ) {
 
-          const unsigned entry_end = graph.row_map( row_node + 1 );
+          const size_type entry_end = graph.row_map( row_node + 1 );
 
           entry = graph.row_map( row_node );
 
@@ -689,7 +688,7 @@ public:
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
-  typedef Kokkos::View< scalar_type* ,                               device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft,          device_type > vector_type ;
 
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
 

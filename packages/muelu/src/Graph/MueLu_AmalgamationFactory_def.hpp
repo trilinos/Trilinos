@@ -118,16 +118,16 @@ namespace MueLu {
     //    setup unamalgamation information
 
     RCP<const Map> const &rowMap = A->getRowMap();
-    Teuchos::ArrayView<const GlobalOrdinal> globalElts = A->getColMap()->getNodeElementList();
-    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalElts.size());
+    Teuchos::ArrayView<const GlobalOrdinal> globalColDofs = A->getColMap()->getNodeElementList();
+    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalColDofs.size());
     RCP<std::vector<GlobalOrdinal> > gNodeIds; // contains global node ids on current proc
     gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
     gNodeIds->empty();
     for (LocalOrdinal i = 0; i < nColEle; i++) {
-      GlobalOrdinal gDofId = globalElts[i];
+      GlobalOrdinal gDofId = globalColDofs[i];
       GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
       if (rowMap->isNodeGlobalElement(gDofId))
-          gNodeIds->push_back(gNodeId);
+        gNodeIds->push_back(gNodeId);
     }
     //make the gNodeIds unique
     std::sort( gNodeIds->begin(), gNodeIds->end() );

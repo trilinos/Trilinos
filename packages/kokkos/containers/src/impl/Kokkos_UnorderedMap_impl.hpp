@@ -58,22 +58,43 @@ uint32_t find_hash_size( uint32_t size );
 
 // find the first set bit of the integer
 KOKKOS_FORCEINLINE_FUNCTION
-int find_first_set(uint32_t i)
+int bit_scan_forward(uint32_t i)
 {
 #if defined( __CUDA_ARCH__ )
-  return __ffs(i);
+  return __ffs(i) - 1;
 #elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
-  return i ? _bit_scan_forward(i) + 1 : 0;
+  return _bit_scan_forward(i);
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
-  return __builtin_ffs(i);
+  return __builtin_ffs(i) - 1;
 #else
-  if(!i)
-    return 0;
+
   uint32_t t = 1;
-  int r = 1;
-  while (i & t == 0)
+  int r = 0;
+  while (i && (i & t == 0))
   {
-    t <<= 1;
+    t = t << 1;
+    ++r;
+  }
+  return r;
+#endif
+}
+
+// find the first set bit of the integer
+KOKKOS_FORCEINLINE_FUNCTION
+int bit_scan_reverse(uint32_t i)
+{
+#if defined( __CUDA_ARCH__ )
+  return 31 - __clz(i);
+#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
+  return _bit_scan_reverse(i);
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return 31 - __builtin_clz(i);
+#else
+  uint32_t t = 1 << 31;
+  int r = 0;
+  while (i && (i & t == 0))
+  {
+    t = t >> 1;
     ++r;
   }
   return r;
@@ -176,81 +197,6 @@ struct UnorderedMapSize
 };
 
 template <typename UMap>
-struct UnorderedMapPrint
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-
-  map_type m_map;
-
-  UnorderedMapPrint( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_for(m_map.m_hash_lists.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(size_type i) const
-  {
-    const size_type invalid_index = map_type::invalid_index;
-    size_type curr = m_map.m_hash_lists(i);
-    while (curr != invalid_index) {
-      printf("%d %d\n", m_map.m_keys[curr], i);
-      curr = m_map.m_next_index[curr];
-    }
-  }
-};
-
-template <typename UMap>
-struct UnorderedMapCountFailedInserts
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-  typedef uint32_t value_type;
-
-  map_type m_map;
-
-  UnorderedMapCountFailedInserts( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_reduce(m_map.m_failed_insert_scratch.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void init( value_type & failed_inserts)
-  {
-    failed_inserts = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & failed_inserts, const volatile size_type & incr )
-  {
-    failed_inserts += incr;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & failed_inserts) const
-  {
-    failed_inserts += m_map.m_failed_insert_scratch[i];
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( value_type & failed_inserts ) const
-  {
-    m_map.m_scalars().failed_inserts = failed_inserts;
-    m_map.m_scalars().modified = false;
-  }
-};
-
-template <typename UMap>
 struct UnorderedMapErase
 {
   typedef UMap map_type;
@@ -258,7 +204,6 @@ struct UnorderedMapErase
   typedef typename map_type::size_type size_type;
   typedef typename map_type::key_type key_type;
   typedef typename map_type::impl_value_type value_type;
-
 
   map_type m_map;
 
