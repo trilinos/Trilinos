@@ -60,10 +60,12 @@ __inline__ __device__
 unsigned int atomic_fetch_or( volatile unsigned int * const dest , const unsigned int val )
 { return atomicOr((unsigned int*)dest,val); }
 
+#if defined( __CUDA_ARCH__ ) && ( 350 <= __CUDA_ARCH__ )
 __inline__ __device__
 unsigned long long int atomic_fetch_or( volatile unsigned long long int * const dest ,
                                          const unsigned long long int val )
 { return atomicOr((unsigned long long int*)dest,val); }
+#endif
 
 //----------------------------------------------------------------------------
 

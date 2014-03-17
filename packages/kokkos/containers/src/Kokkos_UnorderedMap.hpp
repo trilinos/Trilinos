@@ -72,8 +72,8 @@
 
 #else
 
-#define KOKKOS_NONTEMPORAL_PREFETCH_LOAD(addr) ((void)addr)
-#define KOKKOS_NONTEMPORAL_PREFETCH_STORE(addr) ((void)addr)
+#define KOKKOS_NONTEMPORAL_PREFETCH_LOAD(addr) ((void)0)
+#define KOKKOS_NONTEMPORAL_PREFETCH_STORE(addr) ((void)0)
 
 #endif
 
@@ -453,7 +453,7 @@ public:
   /// \param v [in] The corresponding value to attempt to insert.  If
   ///   using this class as a set (with Value = void), then you need not
   ///   provide this value.
-    KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   insert_result insert(key_type const& k, impl_value_type const&v = impl_value_type()) const
   {
     insert_result result(invalid_index, insert_result::FAILED);
