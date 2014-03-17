@@ -111,11 +111,8 @@ public:
 
   size_t getLocalNumOf(MeshEntityType etype) const
   {
-    if (MESH_REGION == etype && 3 == dimension_) {
-      return num_elem_;
-    }
-
-    if (MESH_FACE == etype && 2 == dimension_) {
+    if (MESH_REGION == etype && 3 == dimension_ ||
+	MESH_FACE == etype && 2 == dimension_) {
       return num_elem_;
     }
 
@@ -128,12 +125,8 @@ public:
    
   size_t getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
-    if (MESH_REGION == etype && 3 == dimension_) {
-      Ids = element_num_map_;
-      return num_elem_;
-    }
-
-    if (MESH_FACE == etype && 2 == dimension_) {
+    if (MESH_REGION == etype && 3 == dimension_ ||
+	MESH_FACE == etype && 2 == dimension_) {
       Ids = element_num_map_;
       return num_elem_;
     }
@@ -147,6 +140,13 @@ public:
     return 0;
   }
 
+  void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
+			int &stride, int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+  }
+
   int getDimensionOf() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
@@ -156,46 +156,26 @@ public:
       emsg << __FILE__ << ";" <<__LINE__
 	   << "  Invalid dimension " << dim << std::endl;
       throw std::runtime_error(emsg.str());
-    }
-
-    if (MESH_REGION == etype) {
-      if (3 == dimension_) {
-	coords = Acoords_;
-	stride = 1;
-      } else {
-	coords = NULL;
-	stride = 0;
-      }
-    }
-
-    if (MESH_FACE == etype && 2 == dimension_) {
+    } else if (MESH_REGION == etype && 3 == dimension_ ||
+	       MESH_FACE == etype && 2 == dimension_) {
       coords = Acoords_;
       stride = 1;
-    }
-
-    if (MESH_VERTEX == etype) {
+    } else if (MESH_REGION == etype && 2 == dimension_) {
+      coords = NULL;
+      stride = 0;
+    } else if (MESH_VERTEX == etype) {
       coords = coords_;
       stride = 1;
+    } else {
+      coords = NULL;
+      stride = 0;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
     }
-
-    coords = NULL;
-    stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
-  }
-
-  void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
-			int &stride, int idx = 0) const
-  {
-    weights = NULL;
-    stride = 0;
   }
 
   bool availAdjs(MeshEntityType source, MeshEntityType target) {
-    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension) {
-      return TRUE;
-    }
-
-    if (MESH_FACE == source && 2 == dimension && MESH_VERTEX == target) {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
       return TRUE;
     }
 
@@ -209,6 +189,23 @@ public:
     }
 
     return 0;
+  }
+
+  void getAdjsView(MeshEntityType source, MeshEntityType target,
+		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+  {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
+      offsets = elemOffsets;
+      adjacencyIds = elemToNode_;
+    } else if (MESH_REGION == source && 2 == dimension_) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+    } else {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
+    }
   }
 
 private:
