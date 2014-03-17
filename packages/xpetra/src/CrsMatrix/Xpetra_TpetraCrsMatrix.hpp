@@ -337,6 +337,20 @@ namespace Xpetra {
       // mtx_->getLocalDiagCopy(toTpetra(diag));
     }
 
+    //! Get offsets of the diagonal entries in the matrix.
+    void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+      XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagOffsets");
+      mtx_->getLocalDiagOffsets(offsets);
+    }
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+      XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
+      //XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
+      //mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector(), offsets);
+      mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
+    }
+
     //! Implements DistObject interface
     //{@
 
@@ -418,7 +432,6 @@ namespace Xpetra {
 
   private:
 
-    // RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
     RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
 
   }; // TpetraCrsMatrix class
