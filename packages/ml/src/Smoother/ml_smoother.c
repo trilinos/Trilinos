@@ -7510,7 +7510,7 @@ int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
      ML_avoid_unused_param((void *) &inlen);
    }
 
-   beta = 1.1*lambda_max;   /* try and bracket high */
+   beta = (widget->eig_boost)*lambda_max;   /* try and bracket high */
    alpha = lambda_max/(widget->eig_ratio);
 #ifdef GREG
 #undef GREG
@@ -7916,8 +7916,8 @@ int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double 
     ML_avoid_unused_param((void *) &inlen);
   }
 
-  beta_real = 1.1*widget->beta_real;   /* try and bracket high */
-  beta_img  = 1.1*widget->beta_img;    /* frequency errors.    */
+  beta_real = (widget->eig_boost)*widget->beta_real;   /* try and bracket high */
+  beta_img  = (widget->eig_boost)*widget->beta_img;    /* frequency errors.    */
   alpha_real= beta_real/(widget->eig_ratio);
   alpha_img = beta_img;
 
@@ -8538,7 +8538,11 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                           ML_OVERWRITE,NULL);
 
       if (Amat_CrsBindx != NULL) {
-       for (i = 0; i < NBlks; i++) {
+       /* forward mode */
+       if(smooth_ptr->gs_sweep_type == ML_GS_standard ||
+          smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+          (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_PRESM)){
+        for (i = 0; i < NBlks; i++) {
          for (k = 0; k < Bsize ; k++) {
             row = RowsInBlk[i*Bsize+k];
             res[k] = rhs[row];
@@ -8549,8 +8553,12 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                     trid_du2[i], trid_ipiv[i],res,&Bsize);
          for (k = 0; k < Bsize; k++)
             x_ext[RowsInBlk[i*Bsize+k]] +=(omega * res[k]);
+        }
        }
-       for (i = NBlks-1; i >= 0; i--) {
+       /* backward mode  */
+       if (smooth_ptr->gs_sweep_type==ML_GS_symmetric ||
+          (smooth_ptr->gs_sweep_type==ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_POSTSM)){
+        for (i = NBlks-1; i >= 0; i--) {
          for (k = 0; k < Bsize; k++) {
             row = RowsInBlk[i*Bsize+k];
             res[k] = rhs[row];
@@ -8561,10 +8569,15 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                     trid_du2[i], trid_ipiv[i],res,&Bsize);
          for (k = 0; k < Bsize; k++)
                x_ext[RowsInBlk[i*Bsize+k]] += (omega * res[k]);
+        }
        }
       }
       else {
-       for (i = 0; i < NBlks; i++) {
+       /* forward mode */
+       if(smooth_ptr->gs_sweep_type == ML_GS_standard ||
+          smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+          (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_PRESM)){
+        for (i = 0; i < NBlks; i++) {
          for (k = 0; k < Bsize ; k++) {
             row = RowsInBlk[i*Bsize+k];
             res[k] = rhs[row] - Amat_MsrVal[row]*x_ext[row];
@@ -8575,8 +8588,12 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                     trid_du2[i], trid_ipiv[i],res,&Bsize);
          for (k = 0; k < Bsize; k++)
             x_ext[RowsInBlk[i*Bsize+k]] +=(omega * res[k]);
+        }
        }
-       for (i = NBlks-1; i >= 0; i--) {
+       /* backward mode  */
+       if (smooth_ptr->gs_sweep_type==ML_GS_symmetric ||
+          (smooth_ptr->gs_sweep_type==ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_POSTSM)){
+        for (i = NBlks-1; i >= 0; i--) {
          for (k = 0; k < Bsize; k++) {
             row = RowsInBlk[i*Bsize+k];
             res[k] = rhs[row] - Amat_MsrVal[row]*x_ext[row];
@@ -8587,6 +8604,7 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                     trid_du2[i], trid_ipiv[i],res,&Bsize);
          for (k = 0; k < Bsize; k++)
                x_ext[RowsInBlk[i*Bsize+k]] += (omega * res[k]);
+        }
        }
       }
    }
@@ -8763,7 +8781,7 @@ int ML_Cheby_WKC(void *sm, int inlen, double *pep_x, int outlen, double *pep_rhs
    deg    = widget->mlsDeg;
    if (deg == 0) return 0;
 
-   beta = 1.1*Amat->lambda_max;   /* try and bracket high */
+   beta = (widget->eig_boost)*Amat->lambda_max;   /* try and bracket high */
    alpha = Amat->lambda_max/(widget->eig_ratio);
 
    delta = (beta - alpha)/2.;

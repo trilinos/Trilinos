@@ -120,7 +120,7 @@ namespace MueLu {
      */
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
-    std::vector<GO> ComputeGlobalDOFs(GO const gNodeID) const;
+    GO ComputeGlobalDOF(GO const &gNodeID, LO const &step=0) const;
 
   private:
 

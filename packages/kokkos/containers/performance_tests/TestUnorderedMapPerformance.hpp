@@ -54,7 +54,8 @@ struct UnorderedMapTest
     metrics_out << inserts << " , ";
     metrics_out << (map.has_failed_inserts() ? "true" : "false") << " , ";
     metrics_out << collisions << " , ";
-    metrics_out << 1e9*(seconds/inserts) << std::endl;
+    metrics_out << 1e9*(seconds/inserts) << " , ";
+    metrics_out << seconds << std::endl;
 
     length_out << capacity << " , ";
     length_out << ((100.0 *inserts/collisions) / capacity) << " , ";
@@ -92,42 +93,39 @@ template <typename Device, bool Near>
 void run_performance_tests(std::string const & base_file_name)
 {
 #if defined(KOKKOS_COLLECT_UNORDERED_MAP_METRICS)
+  std::string metrics_file_name = base_file_name + std::string("-metrics.csv");
+  std::string length_file_name = base_file_name  + std::string("-length.csv");
+  std::string distance_file_name = base_file_name + std::string("-distance.csv");
+  std::string block_distance_file_name = base_file_name + std::string("-block_distance.csv");
+
+  std::ofstream metrics_out( metrics_file_name.c_str(), std::ofstream::out );
+  std::ofstream length_out( length_file_name.c_str(), std::ofstream::out );
+  std::ofstream distance_out( distance_file_name.c_str(), std::ofstream::out );
+  std::ofstream block_distance_out( block_distance_file_name.c_str(), std::ofstream::out );
+
+  // set up file headers
+  metrics_out << "Capacity , Unique , Percent Full , Attempted Inserts , Failed Inserts , Collision Ratio , Nanoseconds/Inserts, Seconds" << std::endl;
+  length_out << "Capacity , Percent Full , ";
+  distance_out << "Capacity , Percent Full , ";
+  block_distance_out << "Capacity , Percent Full , ";
+
+  for (int i=0; i<100; ++i) {
+    length_out << i << " , ";
+    distance_out << i << " , ";
+    block_distance_out << i << " , ";
+  }
+
+  length_out << "\b\b\b   " << std::endl;
+  distance_out << "\b\b\b   " << std::endl;
+  block_distance_out << "\b\b\b   " << std::endl;
+
   Kokkos::Impl::Timer wall_clock ;
-  for (uint32_t collisions = 1;  collisions <= 16u; collisions *= 2) {
+  for (uint32_t collisions = 1;  collisions <= 64u; collisions = collisions << 1) {
     wall_clock.reset();
-    std::ostringstream c;
-    c << "-collisions_" << collisions;
-
-    std::string metrics_file_name = base_file_name + c.str()+ std::string("-metrics.csv");
-    std::string length_file_name = base_file_name + c.str() + std::string("-length.csv");
-    std::string distance_file_name = base_file_name +  c.str() +std::string("-distance.csv");
-    std::string block_distance_file_name = base_file_name +  c.str() +std::string("-block_distance.csv");
-
-    std::ofstream metrics_out( metrics_file_name.c_str(), std::ofstream::out );
-    std::ofstream length_out( length_file_name.c_str(), std::ofstream::out );
-    std::ofstream distance_out( distance_file_name.c_str(), std::ofstream::out );
-    std::ofstream block_distance_out( block_distance_file_name.c_str(), std::ofstream::out );
-
-    // set up file headers
-    metrics_out << "Capacity , Unique , Percent Full , Attempted Inserts , Failed Inserts , Collision Ratio , Nanoseconds/Inserts" << std::endl;
-    length_out << "Capacity , Percent Full , ";
-    distance_out << "Capacity , Percent Full , ";
-    block_distance_out << "Capacity , Percent Full , ";
-
-    for (int i=0; i<100; ++i) {
-      length_out << i << " , ";
-      distance_out << i << " , ";
-      block_distance_out << i << " , ";
-    }
-
-    length_out << "\b\b\b   " << std::endl;
-    distance_out << "\b\b\b   " << std::endl;
-    block_distance_out << "\b\b\b   " << std::endl;
-
     std::cout << "Collisions: " << collisions << std::endl;
     for (uint32_t i = 1; i <= 12; ++i) {
-      std::cout << "  percent full (" << std::setprecision(3) << std::fixed << (100.0*i)/8 << ") ";
-      for (uint32_t capacity = 1<<12; capacity < 1<<21; capacity = capacity << 1) {
+      std::cout << "  percent full (" << std::setprecision(3) << std::fixed << (100.0*i)/8 << ") " << std::flush;
+      for (uint32_t capacity = 1<<12; capacity < 1<<24; capacity = capacity << 1) {
         uint32_t inserts = i*(capacity/8u);
         UnorderedMapTest<Device, Near> test(capacity, inserts*collisions, collisions);
         test.print(metrics_out, length_out, distance_out, block_distance_out);
@@ -136,12 +134,11 @@ void run_performance_tests(std::string const & base_file_name)
       std::cout << std::endl;
     }
     std::cout << "  " << wall_clock.seconds() << " secs" << std::endl;
-
-    metrics_out.close();
-    length_out.close();
-    distance_out.close();
-    block_distance_out.close();
   }
+  metrics_out.close();
+  length_out.close();
+  distance_out.close();
+  block_distance_out.close();
 #else
   (void)base_file_name;
   std::cout << "skipping test" << std::endl;

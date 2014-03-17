@@ -899,6 +899,9 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    for (i = 0 ; i < AZ_OPTIONS_SIZE; i++) options_copy[i] = options[i];
    for (i = 0 ; i < AZ_PARAMS_SIZE ; i++) params_copy[i]  = params[i];
    options_copy[AZ_output]    = AZ_none;
+#ifdef HARDWIRED_AZTEC_SOLVER
+options_copy[AZ_output]    = 20;
+#endif
    options_copy[AZ_recursion_level] = options[AZ_recursion_level] + 1;
    options_copy[AZ_keep_info] = 1;
    if (N_iterations != AZ_ONLY_PRECONDITIONER) warning_flag = 1;
