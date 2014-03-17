@@ -248,6 +248,10 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
     k_lclMatrix_(lclMatrix)
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params)";
+#endif // HAVE_TPETRA_DEBUG
+
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph,params));
     }
