@@ -346,10 +346,10 @@ namespace Tpetra {
     return (globallyCompat == 1);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool
-  Map<LocalOrdinal,GlobalOrdinal,Node>::
-  locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const
   {
     using Teuchos::ArrayView;
     typedef GlobalOrdinal GO;
