@@ -128,7 +128,7 @@ namespace Tpetra {
   /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
   /// MultiVector).
   ///
-  /// \section Kokkos_Map_prereq Prerequisites
+  /// \section Tpetra_Map_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -260,7 +260,7 @@ namespace Tpetra {
      *
      * Preconditions on \c numGlobalElements and \c indexBase will
      * only be checked in a debug build (when Trilinos was configured
-     * with CMake option <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     * with CMake option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
      * checks are enabled and any check fails, the constructor will
      * throw std::invalid_argument on all processes in the given
      * communicator.
