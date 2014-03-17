@@ -639,6 +639,25 @@ NOTE: This function does *not* contain the the INSTALL() commands because
 CMake will not allow those to even be present in scripting mode that is used
 for unit testing this function.
 
+TRIBITS_ADD_OPTION_AND_DEFINE()
+-------------------------------
+
+Add an option and a define variable in one shot.
+
+Usage::
+
+ TRIBITS_ADD_OPTION_AND_DEFINE( <userOptionName>  <macroDefineName>
+   "<docStr>"  <defaultValue> )
+
+This macro sets the user cache ``BOOL`` variable ``<userOptionName>`` and if
+it is true, then sets the global (internal cache) macro define variable
+``<macroDefineName>`` to ``ON``, and otherwise sets it to ``OFF``.  This is
+designed to make it easy to add a user-enabled option to a configured header
+file and have the define set in one shot.  This would require that the
+package's configure file (see `TRIBITS_CONFIGURE_FILE()`_) have the line::
+
+  #cmakedefine <macroDefineName>
+
 TRIBITS_CONFIGURE_FILE()
 ------------------------
 

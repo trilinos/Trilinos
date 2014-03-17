@@ -388,6 +388,8 @@ ToDo: Define test group PT, ST, and EX
 
 ToDo: Define test category BASIC, CONTINUOUS, NIGHTLY, WEEKLY, and PERFORMANCE
 
+ToDo: Define repo category Continuous, Nightly, and Experimental which also map to CDash tracks
+
 ToDo: Discuss the propery usage of these test categories and why NIGHTLY
 testing should be the default.
 
