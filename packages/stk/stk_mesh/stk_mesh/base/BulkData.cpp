@@ -1808,7 +1808,7 @@ void BulkData::declare_relation( Entity e_from ,
   for(unsigned ipart=0; ipart<add.size(); ++ipart) {
     addParts.push_back(&m_mesh_meta_data.get_part(add[ipart]));
   }
-  
+
 
 
   internal_change_entity_parts( e_to , addParts , emptyParts );
@@ -2082,144 +2082,136 @@ bool ordered_comm(const BulkData& bulk, const Entity entity )
   return true ;
 }
 
-bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
+bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, std::ostream & error_log, size_t& comm_count )
 {
-  bool result = true ;
+  const int p_rank = M.parallel_rank();
+
+  bool result = true;
 
   const MetaData & S = MetaData::get(M);
   Part & owns_part = S.locally_owned_part();
   Part & shares_part = S.globally_shared_part();
 
-  const int p_rank = M.parallel_rank();
+  const bool has_owns_part   = has_superset( bucket , owns_part );
+  const bool has_shares_part = has_superset( bucket , shares_part );
 
-  const size_t EntityRankEnd = MetaData::get(M).entity_rank_count();
+  const Bucket::iterator j_end = bucket.end();
+  Bucket::iterator j           = bucket.begin();
 
-  size_t comm_count = 0 ;
+  while ( j != j_end ) {
+    Entity entity = *j ; ++j ;
 
-  for ( size_t itype = 0 ; itype < EntityRankEnd ; ++itype ) {
-    const BucketVector & all_buckets = M.buckets( static_cast<EntityRank>(itype) );
+    bool this_result = true;
 
-    const BucketVector::const_iterator i_end = all_buckets.end();
-          BucketVector::const_iterator i     = all_buckets.begin();
+    const int      p_owner    = M.parallel_owner_rank(entity);
+    const bool     ordered    = ordered_comm(M, entity );
+    const bool     shares     = M.in_shared( M.entity_key(entity) );
+    const bool     recv_ghost = M.in_receive_ghost( M.entity_key(entity) );
+    const bool     send_ghost = M.in_send_ghost( M.entity_key(entity) );
+    const bool     owned_closure = in_owned_closure( M, entity , p_rank );
 
-    while ( i != i_end ) {
-      Bucket & bucket = **i ; ++i ;
+    if ( ! ordered ) {
+      error_log << "Problem is unordered" << std::endl;
+      this_result = false ;
+    }
 
-      const bool has_owns_part   = has_superset( bucket , owns_part );
-      const bool has_shares_part = has_superset( bucket , shares_part );
+    // Owner consistency:
 
-      const Bucket::iterator j_end = bucket.end();
-            Bucket::iterator j     = bucket.begin();
+    if (   has_owns_part && p_owner != p_rank ) {
+      error_log << "problem is owner-consistency check 1: "
+                << "has_owns_part: " << has_owns_part << ", "
+                << "p_owner: " << p_owner << ", "
+                << "p_rank: " << p_rank << std::endl;
+      this_result = false ;
+    }
 
-      while ( j != j_end ) {
-        Entity entity = *j ; ++j ;
+    if ( ! has_owns_part && p_owner == p_rank ) {
+      error_log << "problem is owner-consistency check 2: "
+                << "has_owns_part: " << has_owns_part << ", "
+                << "p_owner: " << p_owner << ", "
+                << "p_rank: " << p_rank << std::endl;
+      this_result = false ;
+    }
 
-        bool this_result = true ;
+    if ( has_shares_part != shares ) {
+      error_log << "problem is owner-consistency check 3: "
+                << "has_shares_part: " << has_shares_part << ", "
+                << "shares: " << shares << std::endl;
+      this_result = false ;
+    }
 
-        const int      p_owner    = M.parallel_owner_rank(entity);
-        const bool     ordered    = ordered_comm(M, entity );
-        const bool     shares     = M.in_shared( M.entity_key(entity) );
-        const bool     recv_ghost = M.in_receive_ghost( M.entity_key(entity) );
-        const bool     send_ghost = M.in_send_ghost( M.entity_key(entity) );
-        const bool     owned_closure = in_owned_closure( M, entity , p_rank );
+    // Definition of 'closure'
 
-        if ( ! ordered ) {
-          error_log << "Problem is unordered" << std::endl;
-          this_result = false ;
-        }
+    if ( ( has_owns_part || has_shares_part ) != owned_closure ) {
+      error_log << "problem is closure check: "
+                << "has_owns_part: " << has_owns_part << ", "
+                << "has_shares_part: " << has_shares_part << ", "
+                << "owned_closure: " << owned_closure << std::endl;
+      this_result = false ;
+    }
 
-        // Owner consistency:
+    // Must be either owned_closure or recv_ghost but not both.
 
-        if (   has_owns_part && p_owner != p_rank ) {
-          error_log << "problem is owner-consistency check 1: "
-                    << "has_owns_part: " << has_owns_part << ", "
-                    << "p_owner: " << p_owner << ", "
-                    << "p_rank: " << p_rank << std::endl;
-          this_result = false ;
-        }
+    if (   owned_closure &&   recv_ghost ) {
+      error_log << "problem is recv ghost check 1: "
+                << "owned_closure: " << owned_closure << ", "
+                << "recv_ghost: " << recv_ghost << std::endl;
+      this_result = false ;
+    }
+    if ( ! owned_closure && ! recv_ghost ) {
+      error_log << "problem is recv ghost check 2: "
+                << "owned_closure: " << owned_closure << ", "
+                << "recv_ghost: " << recv_ghost << std::endl;
+      this_result = false ;
+    }
 
-        if ( ! has_owns_part && p_owner == p_rank ) {
-          error_log << "problem is owner-consistency check 2: "
-                    << "has_owns_part: " << has_owns_part << ", "
-                    << "p_owner: " << p_owner << ", "
-                    << "p_rank: " << p_rank << std::endl;
-          this_result = false ;
-        }
+    // If sending as a ghost then I must own it
 
-        if ( has_shares_part != shares ) {
-          error_log << "problem is owner-consistency check 3: "
-                    << "has_shares_part: " << has_shares_part << ", "
-                    << "shares: " << shares << std::endl;
-          this_result = false ;
-        }
+    if ( ! has_owns_part && send_ghost ) {
+      error_log << "problem is send ghost check: "
+                << "has_owns_part: " << has_owns_part << ", "
+                << "send_ghost: " << send_ghost << std::endl;
+      this_result = false ;
+    }
 
-        // Definition of 'closure'
+    // If shared then I am owner or owner is in the shared list
 
-        if ( ( has_owns_part || has_shares_part ) != owned_closure ) {
-          error_log << "problem is closure check: "
-                    << "has_owns_part: " << has_owns_part << ", "
-                    << "has_shares_part: " << has_shares_part << ", "
-                    << "owned_closure: " << owned_closure << std::endl;
-          this_result = false ;
-        }
-
-        // Must be either owned_closure or recv_ghost but not both.
-
-        if (   owned_closure &&   recv_ghost ) {
-          error_log << "problem is recv ghost check 1: "
-                    << "owned_closure: " << owned_closure << ", "
-                    << "recv_ghost: " << recv_ghost << std::endl;
-          this_result = false ;
-        }
-        if ( ! owned_closure && ! recv_ghost ) {
-          error_log << "problem is recv ghost check 2: "
-                    << "owned_closure: " << owned_closure << ", "
-                    << "recv_ghost: " << recv_ghost << std::endl;
-          this_result = false ;
-        }
-
-        // If sending as a ghost then I must own it
-
-        if ( ! has_owns_part && send_ghost ) {
-          error_log << "problem is send ghost check: "
-                    << "has_owns_part: " << has_owns_part << ", "
-                    << "send_ghost: " << send_ghost << std::endl;
-          this_result = false ;
-        }
-
-        // If shared then I am owner or owner is in the shared list
-
-        if ( shares && p_owner != p_rank ) {
-          PairIterEntityComm ip = M.entity_comm_sharing(M.entity_key(entity));
-          for ( ; ! ip.empty() && p_owner != ip->proc ; ++ip );
-          if ( ip.empty() ) {
-            error_log << "problem is shared check 1" << std::endl;
-            this_result = false ;
-          }
-        }
-
-        if ( shares || recv_ghost || send_ghost ) { ++comm_count ; }
-
-        if ( ! this_result ) {
-          result = false ;
-          error_log << "P" << M.parallel_rank() << ": " ;
-          error_log << M.identifier(entity);
-          error_log << " ERROR: owner(" << p_owner
-                    << ") owns(" << has_owns_part
-                    << ") shares(" << has_shares_part
-                    << ") owned_closure(" << owned_closure
-                    << ") recv_ghost(" << recv_ghost
-                    << ") send_ghost(" << send_ghost
-                    << ") comm(" ;
-          PairIterEntityComm ip = M.entity_comm(M.entity_key(entity));
-          for ( ; ! ip.empty() ; ++ip ) {
-            error_log << " " << ip->ghost_id << ":" << ip->proc ;
-          }
-          error_log << " )" << std::endl ;
-        }
+    if ( shares && p_owner != p_rank ) {
+      PairIterEntityComm ip = M.entity_comm_sharing(M.entity_key(entity));
+      for ( ; ! ip.empty() && p_owner != ip->proc ; ++ip );
+      if ( ip.empty() ) {
+        error_log << "problem is shared check 1" << std::endl;
+        this_result = false ;
       }
     }
+
+    if ( shares || recv_ghost || send_ghost ) { ++comm_count ; }
+
+    if ( ! this_result ) {
+      result = false ;
+      error_log << "P" << M.parallel_rank() << ": " ;
+      error_log << M.identifier(entity);
+      error_log << " ERROR: owner(" << p_owner
+                << ") owns(" << has_owns_part
+                << ") shares(" << has_shares_part
+                << ") owned_closure(" << owned_closure
+                << ") recv_ghost(" << recv_ghost
+                << ") send_ghost(" << send_ghost
+                << ") comm(" ;
+      PairIterEntityComm ip = M.entity_comm(M.entity_key(entity));
+      for ( ; ! ip.empty() ; ++ip ) {
+        error_log << " " << ip->ghost_id << ":" << ip->proc ;
+      }
+      error_log << " )" << std::endl ;
+    }
   }
+
+  return result;
+}
+
+bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count, std::ostream & error_log )
+{
+  bool result = true;
 
   for ( EntityCommListInfoVector::const_iterator
         i =  M.comm_list().begin() ;
@@ -2252,6 +2244,32 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
     error_log << std::endl ;
     result = false ;
   }
+
+  return result;
+}
+
+bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
+{
+  bool result = true ;
+
+  const size_t EntityRankEnd = MetaData::get(M).entity_rank_count();
+
+  size_t comm_count = 0 ;
+
+  for ( size_t itype = 0 ; itype < EntityRankEnd ; ++itype ) {
+    const BucketVector & all_buckets = M.buckets( static_cast<EntityRank>(itype) );
+
+    const BucketVector::const_iterator i_end = all_buckets.end();
+          BucketVector::const_iterator i     = all_buckets.begin();
+
+    while ( i != i_end ) {
+      Bucket & bucket = **i ; ++i ;
+
+      result = result && verify_parallel_attributes_for_bucket(M, bucket, error_log, comm_count);
+    }
+  }
+
+  result = result && verify_parallel_attributes_comm_list_info(M, comm_count, error_log);
 
   return result ;
 }
