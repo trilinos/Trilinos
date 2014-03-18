@@ -201,8 +201,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   params.set("rectilinear_blocks", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-    MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
@@ -229,7 +228,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("remap", "no-remap", &doRemap, "Remap part numbers.");
   cmdp.parse(argc, argv);
 
-  //meshCoordinatesTest(tcomm);
+  meshCoordinatesTest(tcomm);
 
   testFromDataFile(tcomm, nParts, filename, doRemap);
 
