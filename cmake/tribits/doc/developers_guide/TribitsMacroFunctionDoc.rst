@@ -1782,9 +1782,9 @@ Usage::
     )
 
 Each atomic test case is either a package-built executable or just a basic
-command.  An atomic test command takes the form::
+command.  An atomic test command block of arguments takes the form::
 
-  TEST_<i>
+  TEST_<idx>
      (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
             [DIRECTORY <dir>]
         | CMND <cmndExec>)
@@ -1807,7 +1807,7 @@ order for the overall test to pass.
 *Sections:*
 
 * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
-* `TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+* `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
 * `Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
 * `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -1819,9 +1819,11 @@ order for the overall test to pass.
 
 **Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 
-Below are given some ome overall arguments are.  Remaining overall arguments
-that control overall pass/fail are described in `Overall Pass/Fail
-(TRIBITS_ADD_ADVANCED_TEST())`_..
+Below are given some overall arguments.  Remaining overall arguments that
+control overall pass/fail are described in `Overall Pass/Fail
+(TRIBITS_ADD_ADVANCED_TEST())`_.  (NOTE: All of these arguments must be
+listed outside of the ``TEST_<idx>`` blocks, see `Argument Ordering
+(TRIBITS_ADD_ADVANCED_TEST())`_).
 
   ``<testName>``
 
@@ -1902,13 +1904,13 @@ that control overall pass/fail are described in `Overall Pass/Fail
     calling the test.  This is set using the built-in test property
     ``ENVIRONMENT``.
 
-.. _TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+.. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
-**TEST_<IDX> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
+**TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 
-Each test command block ``TEST_<IDX>`` runs either a package-built test
+Each test command block ``TEST_<idx>`` runs either a package-built test
 executable or some general command executable and is defined as either
-``EXEC <exeRootName>`` or ``CMND <cmndExec>``:
+``EXEC <exeRootName>`` or ``CMND <cmndExec>`` with the arugments:
 
   ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
 
@@ -1937,7 +1939,7 @@ By default, the output (stdout/stderr) for each test command is captured and
 is then echoed to stdout for the overall test.  This is done in order to be
 able to grep the result to determine pass/fail.
 
-Other miscellaneous arguments for each ``TEST_<i>`` block include:
+Other miscellaneous arguments for each ``TEST_<idx>`` block include:
 
   ``DIRECTORY <dir>``
 
@@ -2014,6 +2016,10 @@ on:
     If specified, the test command 'i' will be assumed to pass if the string
     expression "Final Result: PASSED" is found in the ouptut for the test.
 
+All of the arguments for a test block ``TEST_<idx>`` must appear directly
+below their ``TEST_<idx>`` argument and before the next test block (see
+`Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
+
 .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 
 **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
@@ -2043,15 +2049,15 @@ the following restrictions:
 
 * The ``<testName>`` argument must be the first listed (it is the only
   positional argument).
-* The test cases ``TEST_<IDX>`` must be listed in order (i.e. ``TEST_0
+* The test cases ``TEST_<idx>`` must be listed in order (i.e. ``TEST_0
   ... TEST_1 ...``) and the test cases must be consecutive integers (i..e
   can't jump from ``TEST_5`` to ``TEST_7``).
 * All of the arguments for a test case must appear directly below its
-  ``TEST_<IDX>`` keyword and before the next ``TEST_<IDX+1>`` keyword or
+  ``TEST_<idx>`` keyword and before the next ``TEST_<idx+1>`` keyword or
   before any trailing overall keyword arguments.
 * None of the overall arguments (e.g. ``CATEGORIES``) can be inside listed
-  inside of a ``TEST_<IDX>`` block but otherwise can be listed before or
-  after all of the ``TEST_<IDX>`` blocks.
+  inside of a ``TEST_<idx>`` block but otherwise can be listed before or
+  after all of the ``TEST_<idx>`` blocks.
 
 Other than that, the keyword argumnets and options can appear in any order.
 
@@ -2061,10 +2067,11 @@ Other than that, the keyword argumnets and options can appear in any order.
 
 Since raw CTest does not support the features provided by this function, the
 way an advanced test is implemented is that a CMake script with the name
-``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current bindary
+``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current binary
 directory that then gets added to CTest using::
 
-  ADD_TEST(cmake -P ${PACKAGE_NAME}_<testName>.cmake)
+  ADD_TEST(${PACKAGE_NAME}_<testName>
+    cmake [other options] -P ${PACKAGE_NAME}_<testName>.cmake)
 
 This CMake script then runs the various test cases and checks the pass/fail
 for each case to determine overall pass/fail and implement other

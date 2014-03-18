@@ -399,20 +399,9 @@ are:
   multiple subpackages. Examples of TriBITS packages in
   ``TribitsExampleProject`` include ``SimpleCXX``, ``MixedLanguage`` and
   ``PackageWithSubpackages``.  (Don't confuse a TriBTS "Package" with a raw
-  CMake "Package" [#]_.)
+  CMake "Package" (see `History of TriBITS`_).  A raw CMake "Package" actually
+  maps to a `TriBITS TPL`_.)
 
-.. [#] A TriBITS "Package" is not the same thing as a "Package" in raw CMake
-   terminology.  In raw CMake, a "Package" is some externally provided bit of
-   software or other utiltiy for which the current CMake project has an
-   optional or required dependency.  Therefore, a raw CMake "Package" actually
-   maps to a `TriBITS TPL`_.  A raw CMake "Pakage" (e.g. Boost, CUDA, etc.)
-   can be found using a standard CMake find module ``Find<rawPackageName>``
-   using the built-in command ``FIND_PACKAGE(<rawPackageName>``.  It is
-   unfortunate that the TriBITS and the raw CMake defintions of the term
-   "Package" are not the same but the term "Package" was coined by the
-   Trilinos project long ago before CMake was adopted as its built system and
-   it is likely that Trilinos' definition of "Package" predates the
-   development of CMake (see `History of TriBITS`_)
 
 * `TriBITS Subpackage`_: A part of a parent package that also typically has
   source files built into libraries and tests but is documented and tested
@@ -510,7 +499,7 @@ ${PROJECT_SOURCE_DIR}``) are::
   <projectDir>/
      ProjectName.cmake    # Defines PACAKGE_NAME
      CMakeLists.txt       # Base CMakeLists.txt file
-     CTestConfig.cmake
+     CTestConfig.cmake    # [Optional] Needed for CDash submits
      Version.cmake        # [Optional] Dev mode, Project version, VC branch
      cmake/
        NativeRepositoriesList.cmake    # [Optional] Used for some meta-projects
@@ -536,15 +525,64 @@ These TriBITS Project files are documented in more detail below:
 
 .. _<projectDir>/ProjectName.cmake:
 
-**<projectDir>/ProjectName.cmake**: [Required] ToDo: Document!
+**<projectDir>/ProjectName.cmake**: [Required] At a minimum provides a
+``SET()`` statement to set the local variable ``PROJECT_NAME``.  This file is
+the first file is read by a number of tools in order to get the TriBITS
+project's name.  This file is read first in every context that involves
+processing the TriBITS project's files, including processes and tools that
+just need to build a package and TPL dependnecy tree (see `Package
+Enable/Disable Logic`).  Being this is the first file read in for a TriBITS
+project and that it is read in first at the top level scope in every context,
+this is a good file to put other universal static project options in that
+affect dependency handling.  Note that this is a project, not a repository
+file so no general repository-specific settings should go in this file.  A
+simple example of this file is `TribitsExampleProject`_/``PackageName.cmake``:
+
+.. include:: ../examples/TribitsExampleProject/ProjectName.cmake
+   :literal:
+
 
 .. _<projectDir>/CMakeLists.txt:
 
-**<projectDir>/CMakeLists.txt**: [Required] ToDo: Document!
+**<projectDir>/CMakeLists.txt**: [Required] The top-level CMake project file.
+This is the file.  Due to a number of CMake limitations and quarks, a
+project's top-level ``CMakeLists.txt`` file is not a clean as one might
+otherwise hope would be.  A simple but representative exmaple is
+`TribitsExampleProject`_/``CMakeLists.txt``:
+
+.. include:: ../examples/TribitsExampleProject/CMakeLists.txt
+   :literal:
+
+A couple of CMake and TriBITS quarks that that above example
+``CMakeLists.txt`` addresses are worth some discussion.  First, to avoid
+duplication, the project's ``ProjectName.cmake`` file is read in with an
+``INCLUDE()`` that defines the local variable ``PROJECT_NAME``.  Right after
+this initial include, the built-in command ``PROJECT(${PROJECT_NAME} NONE)``
+is run, This must be explicitly called with ``NONE`` so as to avoid default
+CMake behavior for defining compilers.  The definition of compilers comes
+later as part of the TriBITS system inside of the `TRIBITS_PROJECT()`_
+command.  As noted in the above example file, the only project defaults that
+should be set in this top-level ``CMakeLists.txt`` file are those that do not
+impact the list of package enables/disables.  The later type of defaults
+shoule set in `<projectDir>/ProjectName.cmake`_ if only to impact this
+specific project.
 
 .. _<projectDir>/CTestConfig.cmake:
 
-**<projectDir>/CTestConfig.cmake**: [Required] ToDo: Document!
+**<projectDir>/CTestConfig.cmake**: [Optional] Specifies what CDash site and
+project to submit results to when doing an automated build.  This file must
+only be present when there is a default CDash server and CDash project on that
+server to submit configure, build, and test results too (see ???).  This file
+would even be required to use the TriBITS-generated ``dashboard`` target (see
+???).  An example of this file is
+`TribitsExampleProject`_/``CTestConfig.cmake``:
+
+.. include:: ../examples/TribitsExampleProject/CTestConfig.cmake
+   :literal:
+
+Alll of the varibles set in this file are directly understood by raw ``ctest``
+and will not be explained here further (see documentation for the standard
+CMake module ``CTest``).
 
 .. _<projectDir>/Version.cmake:
 
@@ -715,7 +753,6 @@ ${${REPOSITORY_NAME}_SOURCE_DIR}``) are::
        CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
        CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
 
-
 These TriBITS Repository files are documented in more detail below:
 
 * `<repoDir>/PackagesList.cmake`_
@@ -844,15 +881,27 @@ For more details on the definition of a TriBITS Package (or subpackage), see:
 TriBITS Package Core Files
 ..........................
 
-Teh core files that make up TriBITS Package (or Subpackage) are::
+The core files that make up TriBITS Package (or Subpackage) (where
+``<packageDir> = ${${PACKAGE_NAME}_SOURCE_DIR}``) are::
 
-  ${${PACKAGE_NAME}_SOURCE_DIR}/
+  <packageDir>/
     CMakeLists.txt  # Only processed if the package is enabled
     cmake/
       Dependencies.cmake  # Always processed if the package is listed in the
                            # enclosing Repository
 
-ToDo: Document each file in detail here!
+These TriBITS Package files are documented in more detail below:
+
+* `<packageDir>/cmake/Dependencies.cmake`_
+* `<packageDir>/CMakeLists.txt`_
+
+.. _<packageDir>/cmake/Dependencies.cmake:
+
+**<packageDir>/cmake/Dependencies.cmake**: [Required] ToDo: Document!
+
+.. _<packageDir>/CMakeLists.txt:
+
+**<packageDir>/CMakeLists.txt**: [Required] ToDo: Document!
 
 TriBITS Package Core Variables
 ..............................
@@ -1883,3 +1932,16 @@ TriBITS system was further extended and refined, driven by CASL VERA
 development and expansion.  Independently, an early version of TriBITS from
 2012 was adopted by the LiveV project\footnote{https://github.com/lifev/cmake}
 which was forked and extended independently.
+
+Note that a TriBITS "Package" is not the same thing as a "Package" in raw
+CMake terminology.  In raw CMake, a "Package" is some externally provided bit
+of software or other utiltiy for which the current CMake project has an
+optional or required dependency.  Therefore, a raw CMake "Package" actually
+maps to a `TriBITS TPL`_.  A raw CMake "Package" (e.g. Boost, CUDA, etc.)  can
+be found using a standard CMake find module ``Find<rawPackageName>.cmake``
+using the built-in command ``FIND_PACKAGE(<rawPackageName>)``.  It is
+unfortunate that the TriBITS and the raw CMake defintions of the term
+"Package" are not the same.  However, the term "Package" was coined by the
+Trilinos project long ago before CMake was adopted as the Trilinos build
+system and Trilinos' definition of "Package" (going back to 1998) pre-dates
+the development of CMake and therefore dictated the terminology of TriBITS
