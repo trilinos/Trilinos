@@ -187,7 +187,7 @@ namespace Sacado {
       }
       KOKKOS_INLINE_FUNCTION
       static const char * name() {
-        return "PCE<>";
+        return "Sacado::UQ::PCE<>";
       }
       KOKKOS_INLINE_FUNCTION
       static PCEType squareroot(const PCEType& x) {

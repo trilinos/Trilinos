@@ -333,8 +333,8 @@ namespace Teuchos {
       return ScalarType(Teuchos::ScalarTraits<value_type>::random());
     }
     KOKKOS_INLINE_FUNCTION
-    static std::string name() {
-      return Sacado::StringName<ScalarType>::eval();
+    static const char * name() {
+      return "Sacado::MP::Vector<>";
     }
     KOKKOS_INLINE_FUNCTION
     static ScalarType squareroot(const ScalarType& x) {
