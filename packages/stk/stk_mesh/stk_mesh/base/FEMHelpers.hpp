@@ -126,7 +126,7 @@ const CellTopologyData * get_subcell_nodes(const BulkData& mesh,
  */
 int get_entity_subcell_id( const BulkData& mesh, const Entity entity ,
                            const EntityRank          subcell_rank,
-                           const CellTopologyData  * side_topology,
+                           const CellTopologyData  & side_topology,
                            const EntityVector      & side_nodes );
 
 

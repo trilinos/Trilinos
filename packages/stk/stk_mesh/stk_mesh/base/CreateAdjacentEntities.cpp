@@ -47,7 +47,7 @@ struct EntitySubcellComponent {
 };
 
 void get_entities_with_given_subcell(const BulkData& mesh,
-  const CellTopologyData * subcell_topology,
+  const CellTopologyData & subcell_topology,
   const EntityRank subcell_rank,
   const EntityVector & subcell_nodes,
   const EntityRank entities_rank,
@@ -118,18 +118,19 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
               EntityVector subcell_nodes;
 
-              const CellTopologyData * subcell_topology =
+              const CellTopologyData* subcell_topology =
                 get_subcell_nodes(mesh,
                     elem,
                     subcell_rank,
                     subcell_id,
                     subcell_nodes
                     );
+              ThrowAssert(subcell_topology != NULL);
 
               std::vector<EntitySubcellComponent> adjacent_elements;
 
               get_entities_with_given_subcell(mesh,
-                  subcell_topology,
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -139,7 +140,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
               std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
               get_entities_with_given_subcell(mesh,
-                  subcell_topology,
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -252,11 +253,12 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
                     subcell_id,
                     subcell_nodes
                     );
+              ThrowAssert(subcell_topology != NULL);
 
               std::vector<EntitySubcellComponent> adjacent_elements;
 
               get_entities_with_given_subcell(mesh,
-                  subcell_topology,
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -266,7 +268,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
               std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
               get_entities_with_given_subcell(mesh,
-                  subcell_topology,
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -369,6 +371,7 @@ void complete_connectivity( BulkData & mesh )
                       subcell_id,
                       subcell_nodes
                       );
+                ThrowAssert(subcell_topology != NULL);
 
                 std::vector<EntitySubcellComponent> adjacent_entities;
 
@@ -377,7 +380,7 @@ void complete_connectivity( BulkData & mesh )
                 // degenerate elements to the correct faces and edges
 
                 get_entities_with_given_subcell(mesh,
-                    subcell_topology,
+                    *subcell_topology,
                     subcell_rank,
                     subcell_nodes,
                     subcell_rank,
@@ -387,7 +390,7 @@ void complete_connectivity( BulkData & mesh )
                 std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
                 get_entities_with_given_subcell(mesh,
-                    subcell_topology,
+                    *subcell_topology,
                     subcell_rank,
                     subcell_nodes,
                     subcell_rank,

@@ -108,6 +108,7 @@ void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
                                                                 subcell_rank,
                                                                 subcell_identifier,
                                                                 subcell_nodes);
+  ThrowAssert(subcell_topology != NULL);
 
 
   // Given the nodes related to the subcell, find all entities
@@ -131,7 +132,7 @@ void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
        eitr != potentially_adjacent_entities.end(); ++eitr) {
     int local_subcell_num = get_entity_subcell_id(mesh, *eitr,
                                                   subcell_rank,
-                                                  subcell_topology,
+                                                  *subcell_topology,
                                                   subcell_nodes);
     if ( local_subcell_num != -1) {
       adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
