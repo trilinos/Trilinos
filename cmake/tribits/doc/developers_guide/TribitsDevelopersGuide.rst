@@ -398,7 +398,21 @@ are:
   `Automated testing`_).  A TriBITS package may or may not be broken down into
   multiple subpackages. Examples of TriBITS packages in
   ``TribitsExampleProject`` include ``SimpleCXX``, ``MixedLanguage`` and
-  ``PackageWithSubpackages``.
+  ``PackageWithSubpackages``.  (Don't confuse a TriBTS "Package" with a raw
+  CMake "Package" [#]_.)
+
+.. [#] A TriBITS "Package" is not the same thing as a "Package" in raw CMake
+   terminology.  In raw CMake, a "Package" is some externally provided bit of
+   software or other utiltiy for which the current CMake project has an
+   optional or required dependency.  Therefore, a raw CMake "Package" actually
+   maps to a `TriBITS TPL`_.  A raw CMake "Pakage" (e.g. Boost, CUDA, etc.)
+   can be found using a standard CMake find module ``Find<rawPackageName>``
+   using the built-in command ``FIND_PACKAGE(<rawPackageName>``.  It is
+   unfortunate that the TriBITS and the raw CMake defintions of the term
+   "Package" are not the same but the term "Package" was coined by the
+   Trilinos project long ago before CMake was adopted as its built system and
+   it is likely that Trilinos' definition of "Package" predates the
+   development of CMake (see `History of TriBITS`_)
 
 * `TriBITS Subpackage`_: A part of a parent package that also typically has
   source files built into libraries and tests but is documented and tested
@@ -482,14 +496,21 @@ TriBITS Project
 * Defines a default CDash server and default project name on the server (the
   project name on the CDash server must be the same as ``${PROJECT_NAME})``.
 
-**TriBITS Project Files**
+For more details on the definition of a TriBITS Project, see:
 
-The core files making up a TriBITS Project are::
+* `TriBITS Project Core Files`_
+* `TriBITS Project Core Variables`_
 
-  ${${PROJECT_SOURCE_DIR}}/
-     CMakeLists.txt
-     CTestConfig.cmake
+TriBITS Project Core Files
+..........................
+
+The core files making up a TriBITS Project (where ``<projectDir> =
+${PROJECT_SOURCE_DIR}``) are::
+
+  <projectDir>/
      ProjectName.cmake    # Defines PACAKGE_NAME
+     CMakeLists.txt       # Base CMakeLists.txt file
+     CTestConfig.cmake
      Version.cmake        # [Optional] Dev mode, Project version, VC branch
      cmake/
        NativeRepositoriesList.cmake    # [Optional] Used for some meta-projects
@@ -500,21 +521,90 @@ The core files making up a TriBITS Project are::
        ctest/
          CTestCustom.ctest.in  # [Optional] Custom ctest settings
 
-ToDo: Document each file in detail here!
+These TriBITS Project files are documented in more detail below:
 
-**TriBITS Project Core Variables**
+* `<projectDir>/ProjectName.cmake`_
+* `<projectDir>/CMakeLists.txt`_
+* `<projectDir>/CTestConfig.cmake`_
+* `<projectDir>/Version.cmake`_
+* `<projectDir>/cmake/NativeRepositoriesList.cmake`_
+* `<projectDir>/cmake/ExtraRepositoriesList.cmake`_
+* `<projectDir>/cmake/ProjectDependenicesSetup.cmake`_
+* `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_
+* `<projectDir>/cmake/tribits/`_
+* `<projectDir>/cmake/ctest/CTestCustom.ctest.in`_
+
+.. _<projectDir>/ProjectName.cmake:
+
+**<projectDir>/ProjectName.cmake**: [Required] ToDo: Document!
+
+.. _<projectDir>/CMakeLists.txt:
+
+**<projectDir>/CMakeLists.txt**: [Required] ToDo: Document!
+
+.. _<projectDir>/CTestConfig.cmake:
+
+**<projectDir>/CTestConfig.cmake**: [Required] ToDo: Document!
+
+.. _<projectDir>/Version.cmake:
+
+**<projectDir>/Version.cmake:** If defined, gives the project's version and
+determines development/release mode (see `Project and Repositiory Versioning
+and Release Mode`_).  This file is read in (using and ``INCLUDE()`` statement)
+and project's base-level ``<projectDir>/CMakeLists.txt`` file scrope so local
+variables set are seen by the entire CMake project.  For example, for
+`MockTrilinos`_, this looks like:
+
+.. include:: ../../package_arch/UnitTests/MockTrilinos/Version.cmake
+   :literal:
+
+It is strongly recommended that every TriBITS project contain a
+``Version.cmake`` file.  Otherwise, the project needs to define the variable
+``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` at the global scope
+(perhaps in ``<projectDir>/ProjectName.cmake``) to get right development mode
+behavior (see `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_).
+
+.. _<projectDir>/cmake/NativeRepositoriesList.cmake:
+
+**<projectDir>/cmake/NativeRepositoriesList.cmake**: [Optional] ToDo:
+Document!
+
+.. _<projectDir>/cmake/ExtraRepositoriesList.cmake:
+
+**<projectDir>/cmake/ExtraRepositoriesList.cmake**: [Optional] ToDo: Document!
+
+.. _<projectDir>/cmake/ProjectDependenicesSetup.cmake:
+
+**<projectDir>/cmake/ProjectDependenicesSetup.cmake**: [Optional] ToDo:
+Document!
+
+.. _<projectDir>/cmake/CallbackDefineProjectPackaging.cmake:
+
+**<projectDir>/cmake/CallbackDefineProjectPackaging.cmake**: [Optional] ToDo:
+Document!
+
+.. _<projectDir>/cmake/tribits/:
+
+**<projectDir>/cmake/tribits/**: [Optional] ToDo: Document!
+
+.. _<projectDir>/cmake/ctest/CTestCustom.ctest.in:
+
+**<projectDir>/cmake/ctest/CTestCustom.ctest.in**: [Optional] ToDo: Document!
+
+TriBITS Project Core Variables
+..............................
 
 The following local variables are defined in the top-level Project
 ``CMakeLists.txt`` file scople and are therefore acceessible by all files
 prcessed by TriBITS:
-
 
   ``PROJECT_NAME``
 
     The name of the TriBTS Project.  This exists to support, among other
     things, the ability for subordinate units (Repositories and Packages) to
     determine the Project in which is participating.  This is typically read
-    from a ``SET()`` statement in the project's ``ProjectName.cmake`` file.
+    from a ``SET()`` statement in the project's
+    `<projectDir>/ProjectName.cmake`_ file.
 
   ``PROJECT_SOURCE_DIR``
 
@@ -548,6 +638,43 @@ prcessed by TriBITS:
     CMake cache varaibles that if set to ``ON``, then examples for all
     explicitly enabled packages will be turned on.
 
+The following internal project-scope local CMake variables are defined by
+TriBITS for the project's repositoreis.:
+
+  ``${PROJECT_NAME}_NATIVE_REPOSITORIES``
+
+     The list of Native Repositories for a given TriBITS project
+     (i.e. Repositories that are always present when configuring the Project
+     and are managed in the same VC repo typically).  If the file
+     ``${PROJECT_SOURCE_DIR}/NativeRepositoriesList.cmake`` exists, then the
+     list of native repositories will be read from that file.  If the file
+     ``NativeRepositoriesList.cmake`` does not exist, then the project is
+     assumed to also be a repository and the list of native repositories is
+     just the local project directory ``${PROJECT_SOURCE_DIR}/.``.  In this
+     case, the ``${PROJECT_SOURCE_DIR}/`` must contain at a minumum a
+     ``PackagesList.cmake``, and a ``TPLsList.cmake`` file (see `TriBITS
+     Repository`_).
+
+  ``${PROJECT_NAME}_EXTRA_REPOSITORIES``
+
+     The list of Extra Repositories that the project is being configured with.
+     The packages in these repositories are *not* listed in the main project
+     dependency files but are listed in the dependenicy files in other
+     contexts.  This list of repositories either comes from the project's
+     ``ExtraRepositoriesList.cmake`` file or comes from the CMake variables
+     ${PROJECT_NAME}_EXTRA_REPOSITORIES.  See `Enabling extra repositories
+     with add-on packages
+     <../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages>`_
+     for details.
+
+  ``${PROJECT_NAME}_ALL_REPOSITORIES``
+
+    Concatenation of all the repos listed in
+    ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` and
+    ``${PROJECT_NAME}_EXTRA_REPOSITORIES`` in the order that the project is
+    being configured with.
+
+
 TriBITS Repository
 ++++++++++++++++++
 
@@ -567,11 +694,18 @@ In short, a TriBITS Repository:
 * [Optional] Defines a common set of initializations and other hooks for a
   collection of projects.
 
-**TriBITS Repository Core Files**
+For more details on the definition of a TriBITS Repository, see:
 
-The core files making up a TriBITS Repository are::
+* `TriBITS Repository Core Files`_
+* `TriBITS Repository Core Variables`_
 
-  ${${REPOSITORY_NAME}_SOURCE_DIR}/
+TriBITS Repository Core Files
+.............................
+
+The core files making up a TriBITS Repository (where ``<reposDir> =
+${${REPOSITORY_NAME}_SOURCE_DIR}``) are::
+
+  <repoDir>/
     PackagesList.cmake
     TPLsList.cmake
     Copyright.txt  # [Optional] Only needed if creating version header file
@@ -581,9 +715,75 @@ The core files making up a TriBITS Repository are::
        CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
        CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
 
-ToDo: Document each file in detail here!
 
-**TriBITS Repository Core Varaibles**
+These TriBITS Repository files are documented in more detail below:
+
+* `<repoDir>/PackagesList.cmake`_
+* `<repoDir>/TPLsList.cmake`_
+* `<repoDir>/Copyright.txt`_
+* `<repoDir>/Version.cmake`_
+* `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_
+* `<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_
+* `<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_
+
+.. _<repoDir>/PackagesList.cmake:
+
+**<repoDir>/PackagesList.cmake**: [Required] Provides the list top-level
+packages defined by the repository.  This file typically just calls the macro
+``TRIBITS_DEFINE_REPOSITORY_PACKAGES()`` to define the list of packages along
+with their directories and other properties.  For example, the
+`TribitsExampleProject`_ ``PackagesList.cmake`` file looks like:
+
+.. include:: ../examples/TribitsExampleProject/PackagesList.cmake
+   :literal:
+
+Other comamnds that appropriate to set in this file are
+`PACKAGE_DISABLE_ON_PLATFORMS()`_.  If any of the binary directories of listed
+packages needs to be changed, then the variable
+``<packageName>_SPECIFIED_BINARY_DIR`` for each package that needs to be
+modified can be set.
+
+.. _<repoDir>/TPLsList.cmake:
+
+**<repoDir>/TPLsList.cmake**: [Required] ToDo: Document!
+
+.. _<repoDir>/Copyright.txt:
+
+**<repoDir>/Copyright.txt**: [Optional] Gives the default copyright and
+license declaration for all of the software in the TriBITS repository
+`<repoDir>`.  This file is read into a string and then used to configure the
+repository's version file (see `Project and Repositiory Versioning and Release
+Mode`_).
+
+.. _<repoDir>/Version.cmake:
+
+**<repoDir>/Version.cmake**: Contains version information for the repository.
+For example, for `MockTrilinos`_, this looks like:
+
+.. include:: ../../package_arch/UnitTests/MockTrilinos/Version.cmake
+   :literal:
+
+The local variables in these set statements are in the base project
+directory's local scope and are therefore seen by the entire CMake project
+after the file is read (with an ``INCLUDE()`` statement).  When this file is
+read in repository mode, the variable
+``${REPOSITORY_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` is ignored.
+
+.. _<repoDir>/cmake/RepositoryDependenciesSetup.cmake:
+
+**<repoDir>/cmake/RepositoryDependenciesSetup.cmake**: [Optional] ToDo: Document!
+
+.. _<repoDir>/cmake/CallbackSetupExtraOptions.cmake:
+
+**<repoDir>/cmake/CallbackSetupExtraOptions.cmake**: [Optional] ToDo: Document!
+
+.. _<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake:
+
+**<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake**: [Optional] ToDo: Document!
+
+
+TriBITS Repository Core Variables
+.................................
 
 The following local variables are defined automatically by TriBITS before
 processing a given TriBITS repositories files (e.g. ``PackagesList.cmake``,
@@ -617,42 +817,6 @@ of TriBITS repositories are defined:
     ``RepoX_SOURCE_DIR``.  This makes such CMake code independent of where the
     various TriBITS repos are in relation to each other or the Project.
 
-Before processing the various repositories files, the following internal
-project-scope local CMake variables are defined by TriBITS:
-
-
-  ``${PROJECT_NAME}_NATIVE_REPOSITORIES``
-
-     The list of Native Repositories for a given TriBITS project
-     (i.e. Repositories that are always present when configuring the Project).
-     If the file ``${PROJECT_SOURCE_DIR}/NativeRepositoriesList.cmake``
-     exists, then the list of native repositories will be read from that file.
-     If the file ``NativeRepositoriesList.cmake`` does not exist, then the
-     project is assumed to also be a repository and the list of native
-     repositories is just the local project directory
-     ``${PROJECT_SOURCE_DIR}/.``.  In this case, the
-     ``${PROJECT_SOURCE_DIR}/`` must contain at a minumum a
-     ``PackagesList.cmake``, and a ``TPLsList.cmake`` file.
-
-  ``${PROJECT_NAME}_EXTRA_REPOSITORIES``
-
-     The list of Extra Repositories that the project is being configured with.
-     The packages in these repositories are *not* listed in the main project
-     dependency files but are listed in the dependenicy files in other
-     contexts.  This list of repositories either comes from the project's
-     ``ExtraRepositoriesList.cmake`` file or comes from the CMake variables
-     ${PROJECT_NAME}_EXTRA_REPOSITORIES.  See `Enabling extra repositories
-     with add-on packages
-     <../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages>`_
-     for details.
-
-  ``${PROJECT_NAME}_ALL_REPOSITORIES``
-
-    Concatenation of all the repos listed in
-    ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` and
-    ``${PROJECT_NAME}_EXTRA_REPOSITORIES`` in the order that the project is
-    being configured with.
-
 TriBITS Package
 +++++++++++++++
 
@@ -672,9 +836,13 @@ A TriBITS Package:
 * Publishes a list of header file include paths and/or libraries for other
   downstream dependnet packages to use.
 
-.. _TriBITS Package Core Files:
+For more details on the definition of a TriBITS Package (or subpackage), see:
 
-**TriBITS Package Core Files**
+* `TriBITS Package Core Files`_
+* `TriBITS Package Core Variables`_
+
+TriBITS Package Core Files
+..........................
 
 Teh core files that make up TriBITS Package (or Subpackage) are::
 
@@ -686,7 +854,8 @@ Teh core files that make up TriBITS Package (or Subpackage) are::
 
 ToDo: Document each file in detail here!
 
-**TriBITS Package Core Variables**
+TriBITS Package Core Variables
+..............................
 
 These are top-level (non-cache) CMake variables that are available once an SE
 Package (Package or Subpackage) is processed.
@@ -780,9 +949,10 @@ A TriBITS Subpackage:
   have subpackages).
 
 A subpakages set of core files is identical to the `TriBITS Package Core
-Files`_ and the variables defined are almost identicial.  The only difference
-is that a subpakcage may need to refer to its parent package where a top-level
-package has not parent package.
+Files`_ and the core variables defined are almost identicial to the `TriBITS
+Package Core Variables`_.  The only difference is that a subpakcage may need
+to refer to its parent package using ``${PARENT_PACKAGE_NAME}`` where a
+top-level package does not have a parent package.
 
 TriBITS TPL
 +++++++++++
@@ -791,30 +961,34 @@ A TriBITS TPL:
 
 * Defines a set of pre-built libraries and/or header files and/or executables
   and/or some other resoruces used by one or more TriBITS Packages.
-* Is listed as an explicit optional and required dependency in one or more
+* Is listed as an explicit optional or required dependency in one or more SE
   package's ``Dependencies.cmake`` file using the macro
   `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_.
 * Publishes the include directories and/or libraries and/or executables
   provided by the TPL.
 
 Using a TriBITS TPL is to be preferred over using a raw CMake
-``FIND_PACKAGE(${TPL_NAME})`` because the TriBITS system guarantees that only
-a single unique version of TPL will be used by multiple packages and by
-declaring a TPL using TriBITS, automatical enable/disable logic will be
+``FIND_PACKAGE(<someCMakePackage>)`` because the TriBITS system guarantees
+that only a single unique version of TPL will be used by multiple packages and
+by declaring a TPL using TriBITS, automatical enable/disable logic will be
 applied as described in `Package Enable/Disable Logic`_.
 
 For each TPL referenced in a ``TPLsList.cmake`` file using the macro
 `TRIBITS_DEFINE_REPOSITORY_TPLS()`_, there should exist a file, typically
 called ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the
-variables ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  A file
-``FindTPL${TPL_NAME}.cmake`` is typically defined using the function
-`TRIBITS_TPL_DECLARE_LIBRARIES()`_.  A simple example of such a file is the
-standard ``FindTPLPETSC.cmake`` module which is:
+variables ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
+``FindTPL${TPL_NAME}.cmake`` files just use the the function
+`TRIBITS_TPL_DECLARE_LIBRARIES()`_ the define the TriBITS TPL.  A simple
+example of such a file is the standard ``FindTPLPETSC.cmake`` module which is:
 
 .. include:: ../../tpls/FindTPLPETSC.cmake
    :literal:
 
-However, the TriBITS system does not require the usage of of the function
+Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
+``FIND_PACKAGE()`` and a standard CMake package find modulue to fill in the
+guts of finding at TPL.
+
+Note that the TriBITS system does not require the usage of of the function
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ and does not even care about the TPL module
 name ``FindTPL${TPL_NAME}.cmake``.  All that is required is that some CMake
 file fragment exist that once included, will define the varaibles
@@ -830,6 +1004,37 @@ and ``${TPL_NAME}_INCLUDE_DIRS`` as defined in
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
 
+One of the most important things to know about TriBITS is what files it
+processes, in what order, and in what context.  This is critical to being able
+to understand what impact (if any) setting a variable or otherwise changing
+the CMake runtime state will have on configuring a CMake project which uses
+TriBITS.  While the different files that make up a TriBITS Project, TriBITS
+Repository, TriBITS Package, and TriBITS TPL were defined in the section
+`TriBITS Project Structure`_, it did not describe in what context and what
+order these files are processed by the TriBITS framework driven from the
+`TRIBITS_PROJECT()` macro.
+
+The TriBITS system processes the projects files in one of two contexts.  The
+first context is in the basic configuration of the project with a standard
+``cmake`` command invocation in order to set up a set of build files in the
+binary directory.  The second context is in reading the project's dependency
+related files in order to build a package dependency datastructure.  The
+second task of reading the project's dependency files is largely a subset of
+the first which invloves configuring the entire project.
+
+Another factor that is important to understand is the scoping in which the
+various files are processed.  This scoping has a large impact on the
+configuration of the project and what effect the processing of files and
+setting varaibles have on the project as a whole.  Some of the strange scoping
+rules for CMake are discussed in `CMake Language Overivew and Gotchas`_.  Many
+of the basic files are processed in the base project ``CMakeLists.txt`` scope
+and therefore any local variables set are accessible to the entire CMake
+project.  Other files get processed inside of functions which have their own
+local scope and therefore only impact the rest of the project in more
+purposeful ways.
+
+
+
 ToDo: Fill in!
 
 Coexisting Projects, Repositories, and Packages
@@ -840,12 +1045,13 @@ repositories and packages.  The known allowed simplifications are described
 below.
 
 **TriBITS Repository == TriBITS Project**: It is allowed for a TriBITS Project
-and a TriBITS Repository to be the same directory and have the same names with
-no ``NativeRepositoriesList.cmake`` file.  In this case, the repository name
-and the project name and the same name.  This is quite common.  This is the
-case, for example, with the the Trilinos and the TribitsExampleProject
-projects and repositories.  In this case, the Project's and the Repository's
-``Version.cmake`` and ``Copyright.txt`` files are one and the same.
+and a TriBITS Repository to be the same source directory.  In this case, the
+repository name and the project name are the same as well.  This is quite
+common.  This is the case, for example, with the the Trilinos and the
+`TribitsExampleProject`_ projects and repositories.  In this case, the
+Project's and the Repository's ``Version.cmake`` and ``Copyright.txt`` files
+are one and the same, as they should be (see `Project and Repositiory
+Versioning and Release Mode`_).
 
 **TriBITS Package == TriBITS Repository**: It is also allowed for a TriBITS
 Repository to have only one package and to have that package be the base
@@ -1228,6 +1434,45 @@ Creating Source Distributions
 ToDo: Fill in!
 
 
+Project and Repositiory Versioning and Release Mode
+----------------------------------------------------
+
+TriBITS has built-in support for project and repository versioning and release
+mode control.  When the project contains the file
+`<projectDir>/Version.cmake`_, it is used to define the project's offical
+version.  The idea is that when it is time to branch for a release, the only
+file that needs to be changed is the file is `<projectDir>/Version.cmake`_
+
+Each TriBITS repository can also contain a `<repoDir>/Version.cmake`_ file
+that sets varaibles which TriBITS packages in that repository can use to
+derive development and release version information.  If the TriBITS repository
+also contains a `<repoDir>/Copyright.txt`_ file, then the information in
+``<repoDir>/Version.cmake`` and ``<repoDir>/Copyright.txt`` are used to
+configure a repository version header file::
+
+  ${${REPOSITORY_NAME}_BINARY_DIR}/${REPOSITORY_NAME}_version.h
+
+The configured header file ``${REPOSITORY_NAME}_version.h`` gives the
+repository version number in several formats, which allows C/C++ code (or any
+software that uses the C preprocessor) to write conditional code like::
+
+  #if Trilinos_MAJOR_MINOR_VERSION > 100200
+    /* Contains feature X */
+    ...
+  #else
+    /* Does not contain feature X */
+    ...
+  #endif
+
+Of course when the TriBITS project and the TriBITS repository are the same
+directory, the ``<projectDir>/Version.cmake`` and ``<repoDir>/Version.cmake``
+files are the same file, which works just fine.
+
+
+Note that the project and repository version information in the file
+  
+
+
 Regulated Backward Compatibility and Deprecated Code
 ----------------------------------------------------
 
@@ -1506,6 +1751,23 @@ These options are described below.
   job the development teams do in making their test suites run fast and
   keeping the cost of running the tests down.  See the section `Automated
   testing`_ for a more detailed discussion.
+
+.. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE:
+
+**${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE**
+
+  The variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` switches the
+  TriBITS project from development mode to release mode.  The default for this
+  variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` should be set
+  in the project's `<projectDir>/Version.cmake`_ file and switched from ``ON``
+  to ``OFF`` when creating a release (see `Project and Repositiory Versioning
+  and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE = ON``,
+  several other variables are given defaults appropriate for development mode.
+  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES`` is set to ``ON`` by
+  default in development mode but is set to ``OFF`` by default in release
+  mode.  In addition, strong compiler warnings are enabled by default in
+  development mode but are disabled by default in release mode.  Thsi variable
+  also affects the behavior of `TRIBITS_SET_ST_FOR_DEV_MODE()`_.
 
 .. _MPI_EXEC_MAX_NUMPROCS:
 

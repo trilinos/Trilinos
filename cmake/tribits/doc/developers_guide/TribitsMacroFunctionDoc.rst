@@ -26,7 +26,8 @@ TRIBITS_DEFINE_REPOSITORY_PACKAGES()
 ------------------------------------
 
 Define the set of packages for a given TriBIT repo.  This macro is typically
-called from inside of a PackagesList.cmake file for a given TriBITS repo.
+called from inside of a `<repoDir>/PackagesList.cmake`_ file for a given
+TriBITS repo.
 
 Usage::
 
@@ -61,7 +62,9 @@ package which contains the three columns:
   by a coma with no space in between such as "RS,PT" for a "Research
   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
   treats this a one field in the array.  The maturity level can be left off
-  in which case it is assumed to be UM for "Unspecified Maturity".
+  in which case it is assumed to be UM for "Unspecified Maturity".  This
+  classification for individual packages can be changed to ``EX`` for
+  specific platforms by calling `PACKAGE_DISABLE_ON_PLATFORMS()`_.
 
 NOTE: This macro just sets the varaible::
 
@@ -81,6 +84,23 @@ varible include:
 * Avoid mispelling the name of the varible
   ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
   misspell the name of the macro, it is an immediate error in CMake.
+
+PACKAGE_DISABLE_ON_PLATFORMS()
+------------------------------
+
+Disable a package automatically for a list of platforms.
+
+Usage::
+
+  PACKAGE_DISABLE_ON_PLATFORMS( <packageName>
+    <hosttype0> <hosttype1> ...)
+
+If any of the host-type arguments ``<hosttypei>`` matches the
+``${PROJECT_NAME}_HOSTTYPE`` variable for the current platform, then package
+``<packageName>`` test group classification is changed to ``EX``.  Changing
+the package test group classification to ``EX`` results in the package being
+disabled by default.  However, an explicit enable can still enable the
+package.
 
 TRIBITS_DEFINE_REPOSITORY_TPLS()
 --------------------------------
@@ -564,12 +584,15 @@ Usage::
   TRIBITS_SET_ST_FOR_DEV_MODE(<outputVar>)
 
 ``${<outputVar>}`` is set to ``ON`` or ``OFF`` based on the configure state.
-In development mode it will be set to ``ON`` only if ``ST`` code is enabled,
-otherwise it is set to ``OFF``. In release mode it is always set to ``ON``.
-This allows some sections of a TriBITS package to be considered ``ST`` for
-development mode reducing testing time which includes only ``PT`` code.,
-while still having important functionality available to users by default in
-a release.
+In development mode (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==ON``),
+``${<outputVar>}`` will be set to ``ON`` only if ``ST`` code is enabled
+(i.e. ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE==ON``), otherwise it is
+set to ``OFF``. In release mode
+(i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==OFF``) it is always set to
+``ON``.  This allows some sections of a TriBITS package to be considered
+``ST`` for development mode reducing testing time which includes only ``PT``
+code., while still having important functionality available to users by
+default in a release.
 
 TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
 ----------------------------------------------------
