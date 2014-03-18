@@ -486,5 +486,8 @@ describe (Teuchos::FancyOStream& out,
 } // namespace Details
 } // namespace Ifpack2
 
+#define IFPACK2_DETAILS_AMESOS2WRAPPER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
+
 #endif // HAVE_IFPACK2_AMESOS2
 #endif // IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP

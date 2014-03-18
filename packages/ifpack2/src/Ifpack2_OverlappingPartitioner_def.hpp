@@ -408,4 +408,11 @@ void  OverlappingPartitioner<GraphType>::describe(Teuchos::FancyOStream &os, con
 
 }// namespace Ifpack2
 
+// For ETI
+#include "Tpetra_CrsGraph.hpp"
+
+#define IFPACK2_OVERLAPPINGPARTITIONER_INSTANT(LO,GO,N) \
+  template class Ifpack2::OverlappingPartitioner<Tpetra::CrsGraph< LO, GO, N > >; \
+  template class Ifpack2::OverlappingPartitioner<Tpetra::RowGraph< LO, GO, N > >;
+
 #endif // IFPACK2_OVERLAPPINGPARTITIONER_DEF_HPP

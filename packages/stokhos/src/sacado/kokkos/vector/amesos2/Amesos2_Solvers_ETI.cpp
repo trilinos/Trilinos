@@ -39,33 +39,41 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Ifpack2_Details_OverlappingRowGraph_decl.hpp"
+// Add missing instantiations from Amesos2
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "Amesos2_config.h"
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_CrsGraph.hpp"
-#include "Ifpack2_Details_OverlappingRowGraph_def.hpp"
 
-#define IFPACK2_LOCAL_INSTANT(LO,GO,N) \
-  template class OverlappingRowGraph<Tpetra::CrsGraph< LO, GO, N > >;     \
-  template class OverlappingRowGraph<Tpetra::RowGraph< LO, GO, N > >;     \
+#ifdef HAVE_AMESOS2_SUPERLU
+#include "Amesos2_Superlu_decl.hpp"
+#include "Amesos2_Superlu_def.hpp"
+#define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)                        \
+  template class Superlu<Tpetra::CrsMatrix<S, LO, GO, N>,               \
+                         Tpetra::MultiVector<S, LO, GO,  N> >;
+#else
+#define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)
+#endif
 
-namespace Ifpack2 {
-namespace Details {
+#define AMESOS2_LOCAL_INSTANT(S,LO,GO,N)        \
+  AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)
+
+namespace Amesos2 {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-// Add missing instantiations from Ifpack2
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
-  IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+  AMESOS2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
-  IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+  AMESOS2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosCudaWrapperNode)
 #endif
 
-} // namespace Details
-} // namespace Ifpack2
+}
 
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#endif

@@ -692,11 +692,13 @@ IF (Stokhos_ENABLE_Sacado)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/amesos2)
         SET(AMESOS2_HEADERS "")
         SET(AMESOS2_SOURCES "")
-        LIST(APPEND AMESOS2_HEADERS
-          sacado/kokkos/vector/amesos2/Amesos2_Solver_MP_Vector.hpp
-          sacado/kokkos/vector/amesos2/Stokhos_Amesos2_MP_Vector.hpp
-          sacado/kokkos/pce/amesos2/Amesos2_Solver_UQ_PCE.hpp
-          sacado/kokkos/pce/amesos2/Stokhos_Amesos2_UQ_PCE.hpp
+        APPEND_GLOB(AMESOS2_HEADERS
+          sacado/kokkos/vector/amesos2/*.hpp
+          sacado/kokkos/pce/amesos2/*.hpp
+          )
+        APPEND_GLOB(AMESOS2_SOURCES
+          sacado/kokkos/vector/amesos2/*.cpp
+          sacado/kokkos/pce/amesos2/*.cpp
           )
 
         TRANSFORM_CPP_TO_CU("${AMESOS2_SOURCES}" AMESOS2_CUDA_SOURCES ${DO_TRANSFORM})
@@ -720,27 +722,13 @@ IF (Stokhos_ENABLE_Sacado)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           APPEND_GLOB(IFPACK2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
-          SET(IFPACK2_ETI_CRS_ROW_CLASSES
+          SET(IFPACK2_ETI_CLASSES
             Chebyshev
             Diagonal
             IdentitySolver
             Relaxation
             RILUK
             Details::DenseSolver
-            )
-          PROCESS_ETI_TEMPLATE(
-            "${IFPACK2_ETI_CRS_ROW_CLASSES}"
-            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_Template_Crs_Row.cpp.in
-            "Ifpack2_CLASS_FILE_NAME_MP_Vector.cpp"
-            IFPACK2_SRCS)
-          LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${IFPACK2_ETI_CRS_ROW_CLASSES}"
-            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_Template_Crs_Row.cpp.in
-            "Ifpack2_CLASS_FILE_NAME_UQ_PCE.cpp"
-            IFPACK2_SRCS)
-          LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
-          SET(IFPACK2_ETI_CRS_CLASSES
             DiagonalFilter
             LocalFilter
             ILUT
@@ -749,17 +737,40 @@ IF (Stokhos_ENABLE_Sacado)
             SingletonFilter
             SparsityFilter
             Details::OneLevelFactory
+            AdditiveSchwarz
+            BlockRelaxation
+            BorderedOperator
+            Details::Chebyshev
+            SparseContainer
+            Factory
+            Krylov
             )
+          IF(Ifpack2_ENABLE_Amesos2)
+            LIST(APPEND IFPACK2_ETI_CLASSES
+              Details::Amesos2Wrapper
+              )
+          ENDIF()
           PROCESS_ETI_TEMPLATE(
-            "${IFPACK2_ETI_CRS_CLASSES}"
-            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_Template_Crs.cpp.in
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_Template.cpp.in
             "Ifpack2_CLASS_FILE_NAME_MP_Vector.cpp"
             IFPACK2_SRCS)
           LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
           PROCESS_ETI_TEMPLATE(
-            "${IFPACK2_ETI_CRS_CLASSES}"
-            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_Template_Crs.cpp.in
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_Template.cpp.in
             "Ifpack2_CLASS_FILE_NAME_UQ_PCE.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
+          SET(IFPACK2_ETI_CLASSES
+            LinearPartitioner
+            OverlappingPartitioner
+            Details::OverlappingRowGraph
+            )
+          PROCESS_ETI_TEMPLATE(
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_Template.cpp.in
+            "Ifpack2_CLASS_FILE_NAME_MP_Vector.cpp"
             IFPACK2_SRCS)
           LIST(APPEND IFPACK2_SOURCES ${IFPACK2_SRCS})
         ENDIF()

@@ -969,5 +969,8 @@ std::string RILUK<MatrixType>::description () const
 
 } // namespace Ifpack2
 
-#endif
+#define IFPACK2_RILUK_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::RILUK< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::RILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif
