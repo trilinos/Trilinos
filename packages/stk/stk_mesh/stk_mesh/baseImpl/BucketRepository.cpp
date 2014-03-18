@@ -348,10 +348,13 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
 
 void BucketRepository::deallocate_bucket(Bucket *b)
 {
+  ThrowAssertMsg(b != NULL,
+                 "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+
   const unsigned bucket_id = b->bucket_id();
   const EntityRank bucket_rank = b->entity_rank();
 
-  ThrowAssertMsg((b != NULL) && (b == m_buckets[bucket_rank][bucket_id]),
+  ThrowAssertMsg(b == m_buckets[bucket_rank][bucket_id],
                  "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
 
   m_buckets[bucket_rank][bucket_id] = NULL; // space will be reclaimed by sync_from_partitions
