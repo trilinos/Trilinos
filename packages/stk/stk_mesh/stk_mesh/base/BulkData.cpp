@@ -2410,6 +2410,253 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
   }
 }
 
+void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
+                                                const BulkData &       mesh,
+                                                Entity                 entity,
+                                                EntityKey &            recv_entity_key,
+                                                int       &            recv_owner_rank,
+                                                unsigned  &            recv_comm_count,
+                                                std::vector<Part*>&    recv_parts,
+                                                std::vector<Relation>& recv_relations,
+                                                std::vector<int>    &  recv_comm,
+                                                bool&                  bad_comm)
+{
+  const EntityKey key = mesh.entity_key(entity);
+  const PairIterEntityComm ec = mesh.entity_comm(key);
+  const unsigned ec_size = ec.size();
+  std::vector<unsigned> ec_idx_shared;
+  std::vector<unsigned> ec_idx_not_shared;
+  for (unsigned iec=0; iec < ec_size; iec++) {
+    if (0 == ec[iec].ghost_id) {
+      ec_idx_shared.push_back(iec);
+    }
+    else {
+      ec_idx_not_shared.push_back(iec);
+    }
+  }
+
+  //bad_comm = ec_size != recv_comm.size();
+  unsigned ghost_after_shared_count=0;
+  if ( mesh.in_shared( key ) ) {
+    // only packed shared size, so only compare with shared here
+    bad_comm = ec_idx_shared.size() != recv_comm.size();
+    if ( ! bad_comm ) {
+      size_t j = 0 ;
+      for ( ; j < ec_idx_shared.size() &&
+              ec[ec_idx_shared[j]].ghost_id == 0 &&
+              ec[ec_idx_shared[j]].proc   == recv_comm[j] ; ++j );
+      bad_comm = j != ec_idx_shared.size() ;
+
+      // unpack count of additional ghosts
+      check_tag(mesh, buf, PACK_TAG_GHOST_COUNT_AFTER_SHARED);
+      buf.unpack<unsigned>( ghost_after_shared_count);
+    }
+  }
+
+  if ( ! bad_comm ) {
+
+    if (ghost_after_shared_count) {
+      check_tag(mesh, buf, PACK_TAG_ENTITY_GHOST);
+      unpack_entity_info( buf , mesh ,
+                          recv_entity_key , recv_owner_rank ,
+                          recv_parts , recv_relations );
+
+      check_tag(mesh, buf, PACK_TAG_GHOST_COUNT);
+      buf.unpack<unsigned>(recv_comm_count);
+      recv_comm.resize( recv_comm_count);
+      buf.unpack<int>( & recv_comm[0] , recv_comm_count);
+    }
+
+    if ( !mesh.in_shared( key ) || ghost_after_shared_count) {
+      size_t j = 0;
+      // recv_comm contains ghost_ids for ghosted entities
+      for ( ; j < ec_idx_not_shared.size() &&
+                  static_cast<int>(ec[ec_idx_not_shared[j]].ghost_id) == recv_comm[j] &&
+                ec[ec_idx_not_shared[j]].proc   == mesh.parallel_owner_rank(entity) ; ++j );
+      bad_comm = j != ec_idx_not_shared.size() ;
+    }
+  }
+}
+
+void unpack_not_owned_verify_compare_closure_relations( const BulkData &             mesh,
+                                                        Entity                       entity,
+                                                        std::vector<Relation> const& recv_relations,
+                                                        bool&                        bad_rel)
+{
+  const Bucket & bucket = mesh.bucket(entity);
+  const Ordinal bucket_ordinal = mesh.bucket_ordinal(entity);
+  EntityRank erank = mesh.entity_rank(entity);
+  const EntityRank end_rank = static_cast<EntityRank>(MetaData::get(mesh).entity_rank_count());
+
+  EntityRank irank = stk::topology::BEGIN_RANK;
+
+  Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
+  Entity const *rels_end = bucket.end(bucket_ordinal, irank);
+  ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
+  Permutation const *perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
+
+  std::vector<Relation>::const_iterator jr = recv_relations.begin() ;
+
+  for ( ; ! bad_rel && jr != recv_relations.end() &&
+          jr->entity_rank() < erank; ++jr , ++rels_itr, ++ords_itr )
+  {
+    while ((rels_itr == rels_end) && (irank < end_rank))
+    {
+      // There are no more relations of the current, so try the next
+      // higher rank if there is one.
+      ++irank;
+      rels_itr = bucket.begin(bucket_ordinal, irank);
+      rels_end = bucket.end(bucket_ordinal, irank);
+      ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
+      perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
+    }
+    bad_rel = (rels_itr == rels_end) || (jr->entity() != *rels_itr)
+      || (static_cast<ConnectivityOrdinal>(jr->getOrdinal()) != *ords_itr);
+
+    if (perms_itr)
+    {
+      bad_rel = (bad_rel || (static_cast<Permutation>(jr->permutation()) != *perms_itr));
+      ++perms_itr;
+    }
+  }
+}
+
+void unpack_not_owned_verify_compare_parts(const BulkData &  mesh,
+                                           Entity            entity,
+                                           PartVector const& recv_parts,
+                                           bool&             bad_part)
+{
+  const MetaData & meta = MetaData::get(mesh);
+  Part * const       owns_part   = & meta.locally_owned_part();
+  Part * const       shares_part = & meta.globally_shared_part();
+
+  const Bucket & bucket = mesh.bucket(entity);
+  std::pair<const unsigned *,const unsigned *>
+    part_ordinals = bucket.superset_part_ordinals();
+
+  const unsigned * k = part_ordinals.first ;
+
+  std::vector<Part*>::const_iterator ip = recv_parts.begin();
+
+  for ( ; ! bad_part && ip != recv_parts.end() ; ++ip ) {
+    if ( owns_part != *ip ) {
+      if ( shares_part != *ip ) {
+        // All not-owned and not-shares parts must match:
+        bad_part = k == part_ordinals.second ||
+          (*ip)->mesh_meta_data_ordinal() != *k ;
+        ++k ;
+      }
+      else if ( k != part_ordinals.second &&
+                *k == shares_part->mesh_meta_data_ordinal() ) {
+        // shares-part matches
+        ++k ;
+      }
+    }
+  }
+}
+
+void unpack_not_owned_verify_report_errors(const BulkData& mesh,
+                                           Entity entity,
+                                           bool bad_key,
+                                           bool bad_own,
+                                           bool bad_part,
+                                           bool bad_rel,
+                                           bool bad_comm,
+                                           EntityKey            recv_entity_key,
+                                           int                  recv_owner_rank,
+                                           std::vector<Part*> const&    recv_parts,
+                                           std::vector<Relation> const& recv_relations,
+                                           std::vector<int>    const&  recv_comm,
+                                           std::ostream & error_log)
+{
+  const int p_rank = mesh.parallel_rank();
+
+  const MetaData & meta = MetaData::get(mesh);
+  const PartVector & mesh_parts  = meta.get_parts();
+  const Bucket & bucket = mesh.bucket(entity);
+  const Ordinal bucket_ordinal = mesh.bucket_ordinal(entity);
+  const EntityRank erank = mesh.entity_rank(entity);
+  const EntityKey key = mesh.entity_key(entity);
+  std::pair<const unsigned *,const unsigned *>
+    part_ordinals = bucket.superset_part_ordinals();
+
+  error_log << "P" << p_rank << ": " ;
+  error_log << key.id();
+  error_log << " owner(" << mesh.parallel_owner_rank(entity) << ")" ;
+
+  if ( bad_key || bad_own ) {
+    error_log << " != received " ;
+    error_log << recv_entity_key.id();
+    error_log << " owner(" << recv_owner_rank
+              << ")" << std::endl ;
+  }
+  else if ( bad_comm ) {
+    const PairIterEntityComm ec = mesh.entity_comm(key);
+    if ( mesh.in_shared( key ) ) {
+      error_log << " sharing(" ;
+      for ( size_t j = 0 ; j < ec.size() &&
+              ec[j].ghost_id == 0 ; ++j ) {
+        error_log << " " << ec[j].proc ;
+      }
+      error_log << " ) != received sharing(" ;
+      for ( size_t j = 0 ; j < recv_comm.size() ; ++j ) {
+        error_log << " " << recv_comm[j] ;
+      }
+      error_log << " )" << std::endl ;
+    }
+    else {
+      error_log << " ghosting(" ;
+      for ( size_t j = 0 ; j < ec.size() ; ++j ) {
+        error_log << " (g" << ec[j].ghost_id ;
+        error_log << ",p" << ec[j].proc ;
+        error_log << ")" ;
+      }
+      error_log << " ) != received ghosting(" ;
+      for ( size_t j = 0 ; j < recv_comm.size() ; ++j ) {
+        error_log << " (g" << recv_comm[j] ;
+        error_log << ",p" << mesh.parallel_owner_rank(entity);
+        error_log << ")" ;
+      }
+      error_log << " )" << std::endl ;
+    }
+  }
+  else if ( bad_part ) {
+    error_log << " Parts( " ;
+
+    for ( const unsigned * k = part_ordinals.first ;
+          k < part_ordinals.second ; ++k ) {
+      error_log << " \"" << mesh_parts[ *k ]->name() << "\"" ;
+    }
+    error_log << " ) != received Parts( " ;
+
+    for ( std::vector<Part*>::const_iterator
+            ip =  recv_parts.begin();
+          ip != recv_parts.end() ; ++ip ) {
+      error_log << " \"" << (*ip)->name() << "\"" ;
+    }
+    error_log << " )" << std::endl ;
+  }
+  else if ( bad_rel ) {
+    error_log << " Relations(" ;
+    for (EntityRank irank = stk::topology::BEGIN_RANK;
+         irank < erank; ++irank)
+    {
+      Entity const *ir_itr = bucket.begin(bucket_ordinal, irank);
+      Entity const *ir_end = bucket.end(bucket_ordinal, irank);
+      for ( ; ir_itr != ir_end; ++ir_itr ) {
+        error_log << " " << *ir_itr ;
+      }
+    }
+    error_log << " ) != received Relations(" ;
+    std::vector<Relation>::const_iterator jr = recv_relations.begin() ;
+    for ( ; jr != recv_relations.end() &&
+            jr->entity_rank() < erank ; ++jr ) {
+      error_log << " " << *jr ;
+    }
+    error_log << " )" << std::endl ;
+  }
+}
+
 
 //----------------------------------------------------------------------------
 // Unpacking all of my not-owned entities.
@@ -2418,13 +2665,8 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
                               const BulkData & mesh ,
                               std::ostream & error_log )
 {
-  const MetaData & meta = MetaData::get(mesh);
-  Part * const       owns_part   = & meta.locally_owned_part();
-  Part * const       shares_part = & meta.globally_shared_part();
-  const PartVector & mesh_parts  = meta.get_parts();
   const int               p_rank = mesh.parallel_rank();
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();
-  const EntityRank      end_rank = static_cast<EntityRank>(meta.entity_rank_count());
 
 #if (defined(DEBUG_PRINT_COMM_LIST)  && defined(DEBUG_PRINT_COMM_LIST_UNPACK))
   par_verify_print_comm_list(mesh, true, "unpack_not_owned_verify");
@@ -2444,15 +2686,10 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 
     EntityKey key = i->key;
     Entity entity = i->entity;
-    EntityRank erank = mesh.entity_rank(entity);
+    ThrowRequire( mesh.entity_key(entity) == key );
+
 
     if ( i->owner != p_rank ) {
-
-      const Bucket & bucket = mesh.bucket(entity);
-      const Ordinal bucket_ordinal = mesh.bucket_ordinal(entity);
-
-      std::pair<const unsigned *,const unsigned *>
-        part_ordinals = bucket.superset_part_ordinals();
 
       CommBuffer & buf = comm_all.recv_buffer( i->owner );
 
@@ -2461,10 +2698,12 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
                           recv_entity_key , recv_owner_rank ,
                           recv_parts , recv_relations );
 
-      if (mesh.in_shared(key))
+      if (mesh.in_shared(key)) {
         check_tag(mesh, buf, PACK_TAG_SHARED_COUNT);
-      else
+      }
+      else {
         check_tag(mesh, buf, PACK_TAG_GHOST_COUNT);
+      }
       recv_comm_count = 0 ;
       buf.unpack<unsigned>( recv_comm_count );
       recv_comm.resize( recv_comm_count );
@@ -2472,209 +2711,66 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 
       // Match key and owner
 
-      const bool bad_key = key                 != recv_entity_key ;
+      const bool bad_key = key                              != recv_entity_key ;
       const bool bad_own = mesh.parallel_owner_rank(entity) != recv_owner_rank ;
       bool bad_part = false ;
       bool bad_rel  = false ;
       bool bad_comm = false ;
 
+      bool broken = bad_key || bad_own;
+
       // Compare communication information:
 
-      if ( ! bad_key && ! bad_own ) {
-        const PairIterEntityComm ec = mesh.entity_comm(key);
-        const unsigned ec_size = ec.size();
-        std::vector<unsigned> ec_idx_shared;
-        std::vector<unsigned> ec_idx_not_shared;
-        for (unsigned iec=0; iec < ec_size; iec++)
-          {
-            if (0 == ec[iec].ghost_id)
-              ec_idx_shared.push_back(iec);
-            else
-              ec_idx_not_shared.push_back(iec);
-          }
-        //bad_comm = ec_size != recv_comm.size();
-        unsigned ghost_after_shared_count=0;
-        if ( mesh.in_shared( key ) ) {
-          // only packed shared size, so only compare with shared here
-          bad_comm = ec_idx_shared.size() != recv_comm.size();
-          if ( ! bad_comm ) {
-            size_t j = 0 ;
-            for ( ; j < ec_idx_shared.size() &&
-                    ec[ec_idx_shared[j]].ghost_id == 0 &&
-                    ec[ec_idx_shared[j]].proc   == recv_comm[j] ; ++j );
-            bad_comm = j != ec_idx_shared.size() ;
-
-            // unpack count of additional ghosts
-            check_tag(mesh, buf, PACK_TAG_GHOST_COUNT_AFTER_SHARED);
-            buf.unpack<unsigned>( ghost_after_shared_count);
-          }
-        }
-
-        if ( ! bad_comm ) {
-
-          if (ghost_after_shared_count)
-            {
-              check_tag(mesh, buf, PACK_TAG_ENTITY_GHOST);
-              unpack_entity_info( buf , mesh ,
-                                  recv_entity_key , recv_owner_rank ,
-                                  recv_parts , recv_relations );
-
-              check_tag(mesh, buf, PACK_TAG_GHOST_COUNT);
-              buf.unpack<unsigned>(recv_comm_count);
-              recv_comm.resize( recv_comm_count);
-              buf.unpack<int>( & recv_comm[0] , recv_comm_count);
-            }
-
-          if ( !mesh.in_shared( key ) || ghost_after_shared_count) {
-
-            size_t j = 0;
-            // recv_comm contains ghost_ids for ghosted entities
-            for ( ; j < ec_idx_not_shared.size() &&
-                    static_cast<int>(ec[ec_idx_not_shared[j]].ghost_id) == recv_comm[j] &&
-                      ec[ec_idx_not_shared[j]].proc   == mesh.parallel_owner_rank(entity) ; ++j );
-            bad_comm = j != ec_idx_not_shared.size() ;
-          }
-        }
+      if ( ! broken ) {
+        unpack_not_owned_verify_compare_comm_info( buf,
+                                                   mesh,
+                                                   entity,
+                                                   recv_entity_key,
+                                                   recv_owner_rank,
+                                                   recv_comm_count,
+                                                   recv_parts,
+                                                   recv_relations,
+                                                   recv_comm,
+                                                   bad_comm);
+        broken = bad_comm;
       }
 
       // Compare everything but the owns part and uses part
 
-      if ( ! bad_key && ! bad_own && ! bad_comm ) {
-
-        const unsigned * k = part_ordinals.first ;
-
-        std::vector<Part*>::iterator ip = recv_parts.begin();
-
-        for ( ; ! bad_part && ip != recv_parts.end() ; ++ip ) {
-          if ( owns_part != *ip ) {
-            if ( shares_part != *ip ) {
-              // All not-owned and not-shares parts must match:
-              bad_part = k == part_ordinals.second ||
-                         (*ip)->mesh_meta_data_ordinal() != *k ;
-              ++k ;
-            }
-            else if ( k != part_ordinals.second &&
-                     *k == shares_part->mesh_meta_data_ordinal() ) {
-              // shares-part matches
-              ++k ;
-            }
-          }
-        }
+      if ( ! broken ) {
+        unpack_not_owned_verify_compare_parts(mesh,
+                                              entity,
+                                              recv_parts,
+                                              bad_part);
+        broken = bad_part;
       }
 
       // Compare the closure relations:
-      if ( ! bad_key && ! bad_own && ! bad_comm && ! bad_part )
+      if ( ! broken )
       {
-        EntityRank irank = stk::topology::BEGIN_RANK;
+        unpack_not_owned_verify_compare_closure_relations( mesh,
+                                                           entity,
+                                                           recv_relations,
+                                                           bad_rel );
+        broken = bad_rel;
 
-        Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
-        Entity const *rels_end = bucket.end(bucket_ordinal, irank);
-        ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
-        Permutation const *perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
-
-        std::vector<Relation>::iterator jr = recv_relations.begin() ;
-
-        for ( ; ! bad_rel && jr != recv_relations.end() &&
-                jr->entity_rank() < erank; ++jr , ++rels_itr, ++ords_itr )
-        {
-          while ((rels_itr == rels_end) && (irank < end_rank))
-          {
-            // There are no more relations of the current, so try the next
-            // higher rank if there is one.
-            ++irank;
-            rels_itr = bucket.begin(bucket_ordinal, irank);
-            rels_end = bucket.end(bucket_ordinal, irank);
-            ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
-            perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
-          }
-          bad_rel = (rels_itr == rels_end) || (jr->entity() != *rels_itr)
-                    || (static_cast<ConnectivityOrdinal>(jr->getOrdinal()) != *ords_itr);
-
-          if (perms_itr)
-          {
-            bad_rel = (bad_rel || (static_cast<Permutation>(jr->permutation()) != *perms_itr));
-            ++perms_itr;
-          }
-        }
       }
 
       // The rest of this code is just error handling
-      if ( bad_key || bad_own || bad_comm || bad_part || bad_rel ) {
-        error_log << "P" << p_rank << ": " ;
-        error_log << key.id();
-        error_log << " owner(" << mesh.parallel_owner_rank(entity) << ")" ;
-
-        if ( bad_key || bad_own ) {
-          error_log << " != received " ;
-          error_log << recv_entity_key.id();
-          error_log << " owner(" << recv_owner_rank
-                    << ")" << std::endl ;
-        }
-        else if ( bad_comm ) {
-          const PairIterEntityComm ec = mesh.entity_comm(key);
-          if ( mesh.in_shared( key ) ) {
-            error_log << " sharing(" ;
-            for ( size_t j = 0 ; j < ec.size() &&
-                                 ec[j].ghost_id == 0 ; ++j ) {
-              error_log << " " << ec[j].proc ;
-            }
-            error_log << " ) != received sharing(" ;
-            for ( size_t j = 0 ; j < recv_comm.size() ; ++j ) {
-              error_log << " " << recv_comm[j] ;
-            }
-            error_log << " )" << std::endl ;
-          }
-          else {
-            error_log << " ghosting(" ;
-            for ( size_t j = 0 ; j < ec.size() ; ++j ) {
-              error_log << " (g" << ec[j].ghost_id ;
-              error_log << ",p" << ec[j].proc ;
-              error_log << ")" ;
-            }
-            error_log << " ) != received ghosting(" ;
-            for ( size_t j = 0 ; j < recv_comm.size() ; ++j ) {
-              error_log << " (g" << recv_comm[j] ;
-              error_log << ",p" << mesh.parallel_owner_rank(entity);
-              error_log << ")" ;
-            }
-            error_log << " )" << std::endl ;
-          }
-        }
-        else if ( bad_part ) {
-          error_log << " Parts( " ;
-
-          for ( const unsigned * k = part_ordinals.first ;
-                                 k < part_ordinals.second ; ++k ) {
-            error_log << " \"" << mesh_parts[ *k ]->name() << "\"" ;
-          }
-          error_log << " ) != received Parts( " ;
-
-          for ( std::vector<Part*>::iterator
-                ip =  recv_parts.begin();
-                ip != recv_parts.end() ; ++ip ) {
-            error_log << " \"" << (*ip)->name() << "\"" ;
-          }
-          error_log << " )" << std::endl ;
-        }
-        else if ( bad_rel ) {
-          error_log << " Relations(" ;
-          for (EntityRank irank = stk::topology::BEGIN_RANK;
-                irank < erank; ++irank)
-          {
-            Entity const *ir_itr = bucket.begin(bucket_ordinal, irank);
-            Entity const *ir_end = bucket.end(bucket_ordinal, irank);
-            for ( ; ir_itr != ir_end; ++ir_itr ) {
-              error_log << " " << *ir_itr ;
-            }
-          }
-          error_log << " ) != received Relations(" ;
-          std::vector<Relation>::iterator jr = recv_relations.begin() ;
-          for ( ; jr != recv_relations.end() &&
-                  jr->entity_rank() < erank ; ++jr ) {
-            error_log << " " << *jr ;
-          }
-          error_log << " )" << std::endl ;
-        }
+      if ( broken ) {
+        unpack_not_owned_verify_report_errors(mesh,
+                                              entity,
+                                              bad_key,
+                                              bad_own,
+                                              bad_part,
+                                              bad_rel,
+                                              bad_comm,
+                                              recv_entity_key,
+                                              recv_owner_rank,
+                                              recv_parts,
+                                              recv_relations,
+                                              recv_comm,
+                                              error_log);
         result = false ;
       }
     }
