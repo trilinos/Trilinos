@@ -388,8 +388,9 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
                                           const std::vector<unsigned> & arg_key,
                                           size_t arg_capacity )
 {
-
   Bucket * new_bucket = bucket_allocator().allocate(1);
+  ThrowRequire(new_bucket != NULL);
+
   BucketVector &bucket_vec = m_buckets[arg_entity_rank];
   const unsigned bucket_id = bucket_vec.size();
   try {
