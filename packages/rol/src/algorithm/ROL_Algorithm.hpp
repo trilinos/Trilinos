@@ -71,7 +71,12 @@ public:
     step_   = Teuchos::rcp(&step,   false);
     status_ = Teuchos::rcp(&status, false);
     state_  = Teuchos::rcp(new AlgorithmState<Real>);
-    state_->iter = 0;
+    state_->iter  = 0;
+    state_->ngrad = 0;
+    state_->nfval = 0;
+    state_->value = 0;
+    state_->gnorm = 0;
+    state_->snorm = 0;
     printHeader_ = printHeader;
   }
 
