@@ -1988,6 +1988,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \
-  CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                                    \
-  typedef Stokhos::DynamicStorage<int,double,Device> DS;                \
-  CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, int, int, N)
+  CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)
+
+// Disabling testing of dynamic storage -- we don't really need it
+  // typedef Stokhos::DynamicStorage<int,double,Device> DS;                \
+  // CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, int, int, N)

@@ -58,8 +58,10 @@
   INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, DS_ ## L ## _ ## S ## _ ## _ ## D, LO, GO, N)
 
 #define INSTANTIATE_MP_VECTOR_S_D(INSTMACRO, D, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
+  INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N)
+
+// Disabling dynamic storage ETI -- we don't really need it
+//  INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
 #define INSTANTIATE_MP_VECTOR_S(INSTMACRO, LO, GO, N) \
   typedef typename Stokhos::DeviceForNode<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
