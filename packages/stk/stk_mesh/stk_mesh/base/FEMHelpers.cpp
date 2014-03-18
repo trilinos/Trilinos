@@ -252,6 +252,8 @@ const CellTopologyData * get_subcell_nodes(const BulkData& mesh, const Entity en
                                            unsigned subcell_identifier ,
                                            EntityVector & subcell_nodes)
 {
+  ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
+
   subcell_nodes.clear();
 
   // get cell topology
@@ -301,6 +303,8 @@ int get_entity_subcell_id( const BulkData& mesh,
                            const CellTopologyData & subcell_topology,
                            const std::vector<Entity>& subcell_nodes )
 {
+  ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
+
   const int INVALID_SIDE = -1;
 
   unsigned num_nodes = subcell_topology.node_count;

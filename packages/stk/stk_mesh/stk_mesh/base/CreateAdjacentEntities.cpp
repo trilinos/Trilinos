@@ -1,4 +1,3 @@
-
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for reverse
