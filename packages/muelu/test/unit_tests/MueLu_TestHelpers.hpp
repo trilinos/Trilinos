@@ -200,6 +200,7 @@ namespace MueLuTests {
         currentLevel.SetFactoryManager(factoryHandler);
 
         currentLevel.SetLevelID(0);
+        currentLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
       }
 
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
@@ -212,7 +213,9 @@ namespace MueLuTests {
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
 
         fineLevel.SetLevelID(0);
+        fineLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
         coarseLevel.SetLevelID(1);
+        coarseLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
       }
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)

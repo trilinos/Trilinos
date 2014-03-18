@@ -231,6 +231,7 @@ namespace MueLuTests {
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
+    l.SetComm(TestHelpers::Parameters::getDefaultComm());
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
     RCP<CoupledAggregationFactory> aggFact   = rcp(new CoupledAggregationFactory());
@@ -293,6 +294,7 @@ namespace MueLuTests {
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
+    l.SetComm(TestHelpers::Parameters::getDefaultComm());
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
