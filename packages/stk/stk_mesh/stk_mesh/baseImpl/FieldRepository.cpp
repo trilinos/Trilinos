@@ -17,11 +17,9 @@
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/FieldBaseImpl.hpp"  // for FieldBaseImpl
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
+
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-
-
-
 
 namespace stk {
 namespace mesh {
@@ -33,6 +31,8 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
                              unsigned                            arg_rank ,
                              const shards::ArrayDimTag * const * arg_tags )
 {
+  ThrowRequireMsg(arg_rank < 8, "Invalid field rank: " << arg_rank);
+
   std::ostringstream oss;
   oss << "FieldBase<" ;
   oss << arg_traits.name ;
