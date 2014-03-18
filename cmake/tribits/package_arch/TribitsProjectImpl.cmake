@@ -125,14 +125,8 @@ MACRO(TRIBITS_PROJECT_IMPL)
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
 
   TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
-  
-  ADVANCED_OPTION(${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
-    "Shortcircut after dependency handling is complete"
-    OFF )
-  
-  ADVANCED_OPTION(${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST
-    "Skip the Fortran/C++ compatibility test"
-    OFF )
+
+  TRIBITS_PROCESS_EXTRA_REPOS_OPTIONS_FILES()
   
   INCLUDE(TribitsInstallationTestingMacros)
   TRIBITS_FIND_PROJECT_INSTALL()
@@ -194,12 +188,6 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("")
   
   TRIBITS_PROCESS_ENABLED_TPLS()
-  
-  # OpenMP is similar to a TPL in some respects, but requires only compiler
-  # flags to enable
-  
-  OPTION(${PROJECT_NAME}_ENABLE_OpenMP
-    "Build with OpenMP support." OFF)
   
   #
   # H) Set up for testing with CTest and ${PROJECT_NAME} test harness

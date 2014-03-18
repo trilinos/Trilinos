@@ -197,10 +197,20 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable the Fortran compiler and related code"
     ${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT} )
   
+  ADVANCED_OPTION(${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST
+    "Skip the Fortran/C++ compatibility test"
+    OFF )
+
   ADVANCED_SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS ""
     CACHE STRING
     "Extra flags added to the end of every linked executable"
     )
+  
+  # OpenMP is similar to a TPL in some respects, but requires only compiler
+  # flags to enable
+  
+  OPTION(${PROJECT_NAME}_ENABLE_OpenMP
+    "Build with OpenMP support." OFF)
 
   IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
     SET(${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT ON)
@@ -525,6 +535,10 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE STRING
     "Enable testing against an installed version of ${PROJECT_NAME}."
     )
+  
+  ADVANCED_OPTION(${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
+    "Shortcircut after dependency handling is complete"
+    OFF )
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING
     FALSE CACHE BOOL
@@ -569,6 +583,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER  REPO_NAME)
     # in this file.
     CREATE_EMPTY_TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()
     # Include the file which will define the callback macros
+    SET(REPOSITORY_NAME ${REPO_NAME})
     INCLUDE(${CALLBACK_SETUP_EXTRA_OPTIONS_FILE})
     # Call the callback macros to inject repository-specific behavir
     TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()
@@ -819,15 +834,13 @@ ENDMACRO()
 
 
 #
-# Combine native and extra repos
+# Combine native and extra repos lists into a single list.
 #
 # Combines ${PROJECT_NAME}_NATIVE_REPOSITORIES and
 # ${PROJECT_NAME}_EXTRA_REPOSITORIES into a single list
 # ${PROJECT_NAME}_EXTRA_REPOSITORIES.
 #
-
 MACRO(TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS)
-
   # Define a single variable that will loop over native and extra Repositories
   #
   # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
@@ -839,7 +852,15 @@ MACRO(TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS)
   #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
   SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
     ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+  # ToDo: Update this function to put pre-extra repos first followed by native
+  # repos, followed by post-extra repos.
+ENDMACRO()
 
+
+#
+# Process extra repo extra options files
+#
+MACRO(TRIBITS_PROCESS_EXTRA_REPOS_OPTIONS_FILES)
   # Loop through the Repositories, set their base directories and run their
   # options setup callback functions.
   FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
@@ -853,7 +874,6 @@ MACRO(TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS)
     ENDIF()
     TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO_NAME})
   ENDFOREACH()
-
 ENDMACRO()
 
 
