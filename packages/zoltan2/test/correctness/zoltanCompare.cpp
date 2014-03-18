@@ -50,6 +50,7 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <zoltan_cpp.h>
 
 #include <Tpetra_MultiVector.hpp>
 
@@ -115,6 +116,62 @@ typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// Zoltan callbacks
+
+template <typename MV>
+int znumobj(void *data, int *ierr) 
+{
+  *ierr = ZOLTAN_OK;
+  MV *vec = (MV *) data;
+  return vec->getLocalLength();
+}
+
+template <typename MV, typename scalar_t>
+void zobjlist(void *data, int ngid, int nlid, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+              int nwgts, float *wgts, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  MV *vec = (MV *) data;
+  int n = vec->getLocalLength();
+  for (int i = 0; i < n; i++) {
+    gids[i] = vec->getMap()->getGlobalElement(i);
+    lids[i] = i;
+  }
+  for (int w = 0; w < nwgts; w++) {
+    ArrayRCP<const scalar_t> wvec = vec->getData(w);
+    for (int i = 0; i < n; i++)
+      wgts[i*nwgts+w] = wvec[i];
+  }
+}
+
+template <typename MV>
+int znumgeom(void *data, int *ierr) 
+{
+  *ierr = ZOLTAN_OK;
+  MV *cvec = (MV *) data;
+  return cvec->getNumVectors();
+}
+
+template <typename MV, typename scalar_t>
+void zgeom(void *data, int ngid, int nlid, int nobj, 
+          ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+          int ndim, double *coords, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  MV *vec = (MV *) data;
+  for (int d = 0; d < ndim; d++) {
+    ArrayRCP<const scalar_t> cvec = vec->getData(d);
+    for (int i = 0; i < nobj; i++) {
+      coords[lids[i]*ndim+d] = cvec[lids[i]];
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Function to compute both Zoltan2 and Zoltan partitions and print metrics
 
 int runRCB(
   const RCP<const Comm<int> > &comm,
@@ -277,6 +334,43 @@ int runRCB(
     return 1;
   }
 
+  // Now run the same partitioning using Zoltan
+#ifdef HAVE_ZOLTAN2_MPI
+  Zoltan zz(mpiComm);
+#else
+  Zoltan zz();
+#endif
+  char tmp[56];
+  zz.Set_Param("LB_METHOD", "RCB");
+  
+  sprintf(tmp, "%d", numGlobalParts);
+  zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
+  sprintf(tmp, "%d", nWeights);
+  zz.Set_Param("OBJ_WEIGHT_DIM", tmp);
+  sprintf(tmp, "%f", tolerance);
+  zz.Set_Param("IMBALANCE_TOL", tmp);
+  zz.Set_Param("RETURN_LISTS", "PART");
+  zz.Set_Param("FINAL_OUTPUT", "1");
+  zz.Set_Param("CHECK_GEOM", "0");
+  if (testArgs[testCnt*3+1] == "yes") zz.Set_Param("AVERAGE_CUTS", "1");
+  if (testArgs[testCnt*3+2] == "yes") zz.Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
+
+  zz.Set_Num_Obj_Fn(znumobj<tMVector_t>, (void *) coords.getRawPtr());
+  if (nWeights)
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) weights.getRawPtr());
+  else
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+  zz.Set_Num_Geom_Fn(znumgeom<tMVector_t>, (void *) coords.getRawPtr());
+  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+
+  int changes, ngid, nlid;
+  int numd, nump;
+  ZOLTAN_ID_PTR dgid = NULL, dlid = NULL, pgid = NULL, plid = NULL;
+  int *dproc = NULL, *dpart = NULL, *pproc = NULL, *ppart = NULL;
+  zz.LB_Partition(changes, ngid, nlid, numd, dgid, dlid, dproc, dpart,
+                                       nump, pgid, plid, pproc, ppart);
+  zz.LB_Free_Part(&pgid, &plid, &pproc, &ppart);
+
   if (me == 0){
     problem->printMetrics(cout);
   }
@@ -291,6 +385,8 @@ int runRCB(
   return 0;
 }
   
+////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
