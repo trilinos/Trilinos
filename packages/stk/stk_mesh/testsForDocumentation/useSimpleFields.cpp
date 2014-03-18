@@ -44,7 +44,7 @@ TEST(stkMeshHowTo, useSimpleFields)
         EXPECT_GT(bucket.size(), 0u);
         for(size_t nodeIndex=0; nodeIndex<bucket.size(); nodeIndex++)
         {
-            unsigned numValuesPerNode = displacementsField.max_size(stk::topology::NODE_RANK);
+            unsigned numValuesPerNode = stk::mesh::field_scalars_per_entity(displacementsField, bucket);
             EXPECT_EQ(stk::mesh::Cartesian3d::Size, numValuesPerNode);
             for(unsigned i=0; i<numValuesPerNode; i++)
             {
@@ -59,10 +59,6 @@ TEST(stkMeshHowTo, useSimpleFields)
 
     double* pressureFieldDataForElem2 = stk::mesh::field_data(pressureField, elem2);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem2);
-}
-
-TEST(stkMeshHowTo, useAdvancedFields)
-{
 }
 
 }

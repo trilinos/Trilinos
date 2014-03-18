@@ -283,6 +283,25 @@ inline bool is_matching_rank(const FieldBase& f, Entity e) {
   return is_matching_rank(f, f.get_mesh().bucket(e));
 }
 
+inline unsigned field_scalars_per_entity(const FieldBase& f, const Bucket& b) {
+  ThrowAssert(f.entity_rank() == b.entity_rank());
+  ThrowAssert(&f.get_mesh() == &b.mesh());
+  const unsigned bytes_per_scalar = f.data_traits().size_of;
+  return f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity/bytes_per_scalar;
+}
+
+inline unsigned field_scalars_per_entity(const FieldBase& f, unsigned bucket_id) {
+  const unsigned bytes_per_scalar = f.data_traits().size_of;
+  return f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity/bytes_per_scalar;
+}
+
+inline unsigned field_scalars_per_entity(const FieldBase& f, Entity e) {
+  const unsigned bytes_per_scalar = f.data_traits().size_of;
+  BulkData& bulk(f.get_mesh());
+  ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
+  return field_bytes_per_entity(f, bulk.bucket(e))/bytes_per_scalar;
+}
+
 //
 //  Optimized field data access, here the size of the field data is passed in rather than looked up.
 //  This accessor can be used if the field is known to exist everywhere and known to have the same

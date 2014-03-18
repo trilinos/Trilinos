@@ -17,8 +17,8 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk {
 namespace mesh {
 
-//Given a field and a range of parts, determine whether the field has a restriction
-//for the part range. (Common usage is to provide the part-range from a bucket; i.e.,
+//Given a field and a vector of parts, determine whether the field has a restriction
+//for the part vector. (Common usage is to provide the part-vector from a bucket; i.e.,
 //determine whether the field should be allocated in the bucket.)
 const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
