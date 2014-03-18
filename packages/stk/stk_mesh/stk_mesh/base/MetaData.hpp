@@ -61,6 +61,32 @@ print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey
 std::string
 print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
+bool is_cell_topology_root_part(const Part & part);
+
+/** set a cell_topology on a part */
+void set_cell_topology( Part &part, const CellTopology cell_topology);
+
+/** set a cell_topology on a part */
+template<class Topology>
+inline void set_cell_topology(Part & part)
+{
+  stk::mesh::set_cell_topology(part, CellTopology(shards::getCellTopologyData<Topology>()));
+}
+
+
+/** Get the cell_topology off a bucket */
+CellTopology get_cell_topology(const Bucket &bucket);
+
+
+/** set a stk::topology on a part */
+void set_topology(Part &part, stk::topology topology);
+
+/** get the stk::topology given a Shards Cell Topology */
+stk::topology get_topology(CellTopology shards_topology, int spatial_dimension = 3);
+
+/** Get the Shards Cell Topology given a stk::topology  */
+CellTopology get_cell_topology(stk::topology topo);
+
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of
  *          \ref stk::mesh::Part "parts" and
@@ -200,7 +226,6 @@ public:
    */
   Part & declare_part( const std::string & p_name);
 
-
   /** \brief  Declare a part with a given cell topology
    */
   Part &declare_part( const std::string &name, CellTopology cell_topology, bool arg_force_no_induce = false )
@@ -211,6 +236,14 @@ public:
     Part & part = declare_part(name, primary_entity_rank, arg_force_no_induce);
     declare_part_subset(root_part, part);
     return part;
+  }
+
+  /** \brief  Declare a part with a given stk topology
+   */
+  Part &declare_part_with_topology( const std::string &name, stk::topology::topology_t topology, bool arg_force_no_induce = false )
+  {
+    ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
+    return declare_part(name, stk::mesh::get_cell_topology(topology), arg_force_no_induce);
   }
 
   /** \brief  Declare a part with a given cell topology
@@ -553,32 +586,6 @@ private:
 /** \brief  Verify that the meta data is identical on all processors */
 void verify_parallel_consistency( const MetaData & , ParallelMachine );
 
-bool is_cell_topology_root_part(const Part & part);
-
-/** set a cell_topology on a part */
-void set_cell_topology( Part &part, const CellTopology cell_topology);
-
-/** set a cell_topology on a part */
-template<class Topology>
-inline void set_cell_topology(Part & part)
-{
-  stk::mesh::set_cell_topology(part, CellTopology(shards::getCellTopologyData<Topology>()));
-}
-
-
-/** Get the cell_topology off a bucket */
-CellTopology get_cell_topology(const Bucket &bucket);
-
-
-/** set a stk::topology on a part */
-void set_topology(Part &part, stk::topology topology);
-
-/** get the stk::topology given a Shards Cell Topology */
-stk::topology get_topology(CellTopology shards_topology, int spatial_dimension = 3);
-
-/** Get the Shards Cell Topology given a stk::topology  */
-CellTopology get_cell_topology(stk::topology topo);
-
 /** Get default entity rank names */
 const std::vector<std::string>& entity_rank_names();
 
@@ -690,16 +697,16 @@ field_type & put_field( field_type & field ,
                         const void* init_value = NULL);
 
 template< class field_type >
-field_type & put_field_on_all_nodes_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
+field_type & put_field_on_entire_mesh_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
 {
     return put_field(field, field.mesh_meta_data().universal_part(), initial_value);
 }
 
 template< class field_type >
-field_type & put_field_on_all_nodes(field_type & field)
+field_type & put_field_on_entire_mesh(field_type & field)
 {
     typename FieldTraits<field_type>::data_type* init_value = NULL;
-    return put_field_on_all_nodes_with_initial_value(field, init_value);
+    return put_field_on_entire_mesh_with_initial_value(field, init_value);
 }
 
 /** \} */

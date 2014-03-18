@@ -25,7 +25,7 @@ double initial_value1[3] = {-1, 2, -0.3};
 void createNodalVectorField(stk::mesh::MetaData& meshMetaData, const std::string &field_name)
 {
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &field1 = meshMetaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, field_name);
-    stk::mesh::put_field_on_all_nodes_with_initial_value(field1, initial_value1);
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(field1, initial_value1);
 }
 
 void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)

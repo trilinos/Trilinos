@@ -23,13 +23,13 @@ void initializeTestField(stk::mesh::MetaData& meshMetaData)
 {
     stk::mesh::Field<double> &field1 = meshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
     double initial_value1 = 13.13;
-    stk::mesh::put_field_on_all_nodes_with_initial_value(field1, &initial_value1);
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(field1, &initial_value1);
     stk::mesh::Field<double> &field2 = meshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field2");
     double initial_value2 = -3.2323;
-    stk::mesh::put_field_on_all_nodes_with_initial_value(field2, &initial_value2);
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(field2, &initial_value2);
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &field3 = meshMetaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field2");
     double initial_value3[3] = {-1, 2, -0.3};
-    stk::mesh::put_field_on_all_nodes_with_initial_value(field3, initial_value3);
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(field3, initial_value3);
     meshMetaData.commit();
 }
 
