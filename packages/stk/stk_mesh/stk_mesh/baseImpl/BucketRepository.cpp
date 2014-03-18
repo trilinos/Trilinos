@@ -115,73 +115,12 @@ void BucketRepository::optimize_buckets()
 }
 
 ////
-//// Note that in both versions of get_or_create_partition(..) we need to construct a
-//// key vector that the particular format so we can use the lower_bound(..) function to
-//// lookup the partition.  Because we are using partitions now instead of buckets, it
-//// should be possible to do without that vector and instead do the lookup directly from
-//// the PartVector or OrdinalVector.
+//// Note that we need to construct a key vector that the particular
+//// format so we can use the lower_bound(..) function to lookup the
+//// partition.  Because we are using partitions now instead of
+//// buckets, it should be possible to do without that vector and
+//// instead do the lookup directly from the OrdinalVector.
 ////
-
-Partition *BucketRepository::get_or_create_partition(
-  const EntityRank arg_entity_rank ,
-  const PartVector &parts)
-{
-  enum { KEY_TMP_BUFFER_SIZE = 64 };
-
-  TraceIf("stk::mesh::impl::BucketRepository::get_or_create_partition", LOG_BUCKET);
-
-  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
-                  "Entity rank " << arg_entity_rank << " is invalid");
-
-  // Somehow, this can happen.
-  ThrowRequireMsg( !m_buckets.empty(),
-                   "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
-
-  std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
-
-  const size_t part_count = parts.size();
-  std::vector<unsigned> key(2 + part_count) ;
-
-  //----------------------------------
-  // Key layout:
-  // { part_count + 1 , { part_ordinals } , partition_count }
-  // Thus partition_count = key[ key[0] ]
-  //
-  // for upper bound search use the maximum key for a bucket in the partition.
-  const unsigned max = static_cast<unsigned>(-1);
-  key[0] = part_count+1;
-  key[ key[0] ] = max ;
-
-  {
-    for ( unsigned i = 0 ; i < part_count ; ++i )
-    {
-      key[i+1] = parts[i]->mesh_meta_data_ordinal();
-    }
-  }
-
-  // If the partition is found, the iterator will be right after it, thanks to the
-  // trickiness above.
-  const std::vector<Partition *>::iterator ik = lower_bound( partitions , &key[0] );
-  const bool partition_exists =
-    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , &key[0] );
-
-  if (partition_exists)
-  {
-    return ik[-1];
-  }
-
-
-  key[key[0]] = 0;
-
-  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
-  Partition *partition = partition_allocator().allocate(1);
-  partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
-
-  m_need_sync_from_partitions[arg_entity_rank] = true;
-  partitions.insert( ik , partition );
-
-  return partition ;
-}
 
 Partition *BucketRepository::get_or_create_partition(
   const EntityRank arg_entity_rank ,
@@ -232,6 +171,7 @@ Partition *BucketRepository::get_or_create_partition(
 
   typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
   Partition *partition = partition_allocator().allocate(1);
+  ThrowRequire(partition != NULL);
   partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
 
   m_need_sync_from_partitions[arg_entity_rank] = true;

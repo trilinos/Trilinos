@@ -19,11 +19,11 @@ TEST(BucketRepositoryTest, createBuckets)
     size_t spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
 
-    stk::mesh::PartVector parts;
-    parts.push_back(&stkMeshMetaData.universal_part());
-    parts.push_back(&stkMeshMetaData.locally_owned_part());
-    parts.push_back(&stkMeshMetaData.declare_part("part1"));
-    parts.push_back(&stkMeshMetaData.declare_part("part2"));
+    stk::mesh::OrdinalVector parts;
+    parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());
+    parts.push_back(stkMeshMetaData.locally_owned_part().mesh_meta_data_ordinal());
+    parts.push_back(stkMeshMetaData.declare_part("part1").mesh_meta_data_ordinal());
+    parts.push_back(stkMeshMetaData.declare_part("part2").mesh_meta_data_ordinal());
     stkMeshMetaData.commit();
 
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, comm);

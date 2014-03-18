@@ -652,7 +652,6 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
   check_bucket_ids_testset_A(bucket_repository);
 }
 
-
 // Test the OrdinalVector version of get_or_create_partition(..).
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 {
@@ -682,47 +681,6 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
   STKUNIT_EXPECT_EQ(expectedNumBucketsPerPartition, partitionA->num_buckets());
 
   parts.push_back(fix.m_partC.mesh_meta_data_ordinal());
-  stk::mesh::impl::Partition *partitionAC =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
-  STKUNIT_ASSERT(0 != partitionAC);
-  STKUNIT_EXPECT_EQ(0u, partitionAC->num_buckets());
-
-  stk::mesh::impl::Partition *partitionAC_again =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
-  STKUNIT_ASSERT(partitionAC == partitionAC_again);
-
-  check_bucket_ids_testset_A(bucket_repository);
-}
-
-// Test the PartVector version of get_or_create_partition(..).
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreatePV)
-{
-  SelectorFixture fix;
-
-  if (fix.m_bulk_data.parallel_size() > 1)
-  {
-    return;
-  }
-  initializeFivePartitionsWithSixBucketsEach(fix);
-  setFieldDataUsingEntityIDs(fix);
-
-  stk::mesh::impl::BucketRepository &bucket_repository =
-    stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
-  bucket_repository.sync_from_partitions();
-
-  std::vector<stk::mesh::Part *> parts;
-  parts.push_back(&fix.m_meta_data.universal_part());
-  parts.push_back(&fix.m_meta_data.locally_owned_part());
-  parts.push_back(&fix.m_partA);
-  stk::mesh::impl::Partition *partitionA =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
-  STKUNIT_ASSERT(0 != partitionA);
-  size_t numEntitiesPerPartition = 3000;
-  size_t bucketCapacity = bucket_repository.default_bucket_capacity;
-  size_t expectedNumBucketsPerPartition = (numEntitiesPerPartition + (bucketCapacity - 1u)) / bucketCapacity;
-  STKUNIT_EXPECT_EQ(expectedNumBucketsPerPartition, partitionA->num_buckets());
-
-  parts.push_back(&fix.m_partC);
   stk::mesh::impl::Partition *partitionAC =
     bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
   STKUNIT_ASSERT(0 != partitionAC);
