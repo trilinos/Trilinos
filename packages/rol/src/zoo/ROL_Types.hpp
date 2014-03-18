@@ -78,6 +78,7 @@ namespace ROL {
     Real gnorm;
     Real snorm;
     Teuchos::RCP<Vector<Real> > iterateVec;
+    AlgorithmState(void) : iter(0), nfval(0), ngrad(0), value(0), gnorm(0), snorm(0), iterateVec(Teuchos::null) {}
   };  
   
   /** \brief  State for step class.  Will be used for restarts.
@@ -87,6 +88,7 @@ namespace ROL {
     Teuchos::RCP<Vector<Real> > gradientVec;
     Teuchos::RCP<Vector<Real> > descentVec;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
+    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), searchSize(0) {}
   };  
       
   /** \brief  Platform-dependent machine epsilon. 
