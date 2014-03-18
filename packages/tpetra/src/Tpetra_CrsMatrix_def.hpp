@@ -56,6 +56,9 @@
 #  include "Tpetra_CrsMatrix_decl.hpp"
 #endif
 
+// CrsMatrix relies on template methods implemented in Tpetra_CrsGraph_def.hpp
+#include <Tpetra_CrsGraph_def.hpp>
+
 
 namespace Tpetra {
   //
@@ -5632,7 +5635,7 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_CRSMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
+#define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class CrsMatrix< SCALAR , LO , GO , NODE >; \
   template RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
@@ -5673,5 +5676,9 @@ namespace Tpetra {
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
                                                                const RCP<Teuchos::ParameterList>& params);
 
-#endif // TPETRA_CRSMATRIX_DEF_HPP
+#define TPETRA_CRSMATRIX_INSTANT(SCALAR, LO, GO ,NODE)                    \
+  TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR, LO, GO, NODE)                   \
+  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
+  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE)
 
+#endif // TPETRA_CRSMATRIX_DEF_HPP

@@ -628,6 +628,8 @@ IF (Stokhos_ENABLE_Sacado)
           RowMatrix
           RowMatrixTransposer
           DistObject
+          CrsMatrix
+          CrsGraph
           )
         PROCESS_ETI_TEMPLATE(
           "${TPETRA_ETI_CLASSES}"
