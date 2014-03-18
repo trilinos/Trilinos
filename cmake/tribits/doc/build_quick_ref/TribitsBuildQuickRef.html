@@ -825,6 +825,10 @@ package, set:</p>
 <p>This will only affect the compilation of the sources for
 <tt class="docutils literal">&lt;TRIBITS_PACKAGES&gt;</tt>, not warnings generated from the header files in
 downstream packages or client code.</p>
+<p>Note that strong warnings are only enabled by default in development mode
+(<tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_DEVELOPMENT_MODE==ON</span></tt>) but not release mode
+(<tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_DEVELOPMENT_MODE==ON</span></tt>).  A release of &lt;Project&gt; should
+therefore not have strong warning options enabled.</p>
 </blockquote>
 <ol class="loweralpha simple" start="6">
 <li>Overriding all (strong warnings and debug/release) compiler options:</li>
@@ -1233,16 +1237,32 @@ also want to explicitly disable the TPL as shown above.</p>
 <p>There are several different ways to generate verbose output to debug problems
 when they occur:</p>
 <ol class="loweralpha simple">
+<li><strong>Trace file processing during configure:</strong></li>
+</ol>
+<blockquote>
+<pre class="literal-block">
+-D &lt;Project&gt;_TRACE_FILE_PROCESSING:BOOL=ON
+</pre>
+<p>This will cause TriBITS to print out a trace for all of the project's,
+repositorie's, and package's files get processed on lines using the prefix
+<tt class="docutils literal">File Trace:</tt>.  This shows what files get processed and in what order they
+get processed.  To get a clean listing of all the files processed by TriBITS
+just grep out the lines starting with <tt class="docutils literal">File Trace:</tt>.  This can be helpful
+in debugging configure problems without generating too much extra output.</p>
+<p>This is set to <tt class="docutils literal">ON</tt> automatically when
+<tt class="docutils literal">&lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON</tt>.</p>
+</blockquote>
+<ol class="loweralpha simple" start="2">
 <li><strong>Getting verbose output from TriBITS configure:</strong></li>
 </ol>
 <blockquote>
 <pre class="literal-block">
 -D &lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON
 </pre>
-<p>NOTE: This produces a <em>lot</em> of output but can be very useful when debugging
+<p>This produces a <em>lot</em> of output but can be very useful when debugging
 configuration problems.</p>
 </blockquote>
-<ol class="loweralpha simple" start="2">
+<ol class="loweralpha simple" start="3">
 <li><strong>Getting verbose output from the makefile:</strong></li>
 </ol>
 <blockquote>
@@ -1253,7 +1273,7 @@ configuration problems.</p>
 calling <tt class="docutils literal">make</tt> after configuration is finihsed.  See <a class="reference internal" href="#building-with-verbose-output-without-reconfiguring">Building with
 verbose output without reconfiguring</a>.</p>
 </blockquote>
-<ol class="loweralpha simple" start="3">
+<ol class="loweralpha simple" start="4">
 <li><strong>Getting very verbose output from configure:</strong></li>
 </ol>
 <blockquote>
@@ -1523,7 +1543,7 @@ have to query the system.</p>
 can generate a &lt;Project&gt;RepoVersion.txt file which lists all of the repos and
 their current versions using:</p>
 <pre class="literal-block">
--D &lt;PROJECT&gt;_GENERATE_REPO_VERSION_FILE:BOOL=ON
+-D &lt;Project&gt;_GENERATE_REPO_VERSION_FILE:BOOL=ON
 </pre>
 <p>This will cause a &lt;Project&gt;RepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
@@ -1851,7 +1871,9 @@ with:</p>
 -D &lt;Project&gt;_ASSERT_MISSING_PACKAGES:BOOL=OFF
 </pre>
 <p>so that missing packages will be ignored.  Otherwise, TriBITS will error out
-about missing packages.</p>
+about missing packages.  (Note that <tt class="docutils literal">&lt;Project&gt;_ASSERT_MISSING_PACKAGES</tt> will
+default to <tt class="docutils literal">`OFF`</tt> by default in release mode,
+i.e. <tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_DEVELOPMENT_MODE==OFF</span></tt>.)</p>
 </div>
 </div>
 <div class="section" id="dashboard-submissions">

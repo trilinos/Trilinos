@@ -78,6 +78,23 @@ MACRO(TRIBITS_SET_PACKAGE_TO_EX  PACKAGE_NAME)
 ENDMACRO()
 
 
+#
+# @MACRO: PACKAGE_DISABLE_ON_PLATFORMS()
+#
+# Disable a package automatically for a list of platforms.
+#
+# Usage::
+#
+#   PACKAGE_DISABLE_ON_PLATFORMS( <packageName>
+#     <hosttype0> <hosttype1> ...)
+#
+# If any of the host-type arguments ``<hosttypei>`` matches the
+# ``${PROJECT_NAME}_HOSTTYPE`` variable for the current platform, then package
+# ``<packageName>`` test group classification is changed to ``EX``.  Changing
+# the package test group classification to ``EX`` results in the package being
+# disabled by default.  However, an explicit enable can still enable the
+# package.
+#
 MACRO( PACKAGE_DISABLE_ON_PLATFORMS  PACKAGE_NAME )
   #MESSAGE("PACKAGE_DISABLE_ON_PLATFORMS: ${PACKAGE_NAME}")
   #PRINT_VAR(${PROJECT_NAME}_HOSTTYPE)

@@ -621,6 +621,40 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  DefaultExtraReposFile_EnableAllPackages_TraceFileProcessing
+  ARGS 
+    -DTrilinos_EXTRAREPOS_FILE=${MOCK_TRILINOS_DIR}/cmake/ExtraRepositoriesList.cmake
+    -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=TRUE
+    -DTrilinos_TRACE_FILE_PROCESSING=ON
+    -DTrilinos_ENABLE_ALL_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "File Trace: Processing .*/MockTrilinos/Version.cmake"
+    "File Trace: Processing .*/MockTrilinos/./cmake/CallbackSetupExtraOptions.cmake"
+    "File Trace: Processing .*/MockTrilinos/./PackagesList.cmake"
+    "File Trace: Processing .*/MockTrilinos/./TPLsList.cmake"
+    "File Trace: Processing .*/MockTrilinos/preCopyrightTrilinos/PackagesList.cmake"
+    "File Trace: Processing .*/MockTrilinos/preCopyrightTrilinos/TPLsList.cmake"
+    "File Trace: Processing .*/MockTrilinos/extraTrilinosRepo/PackagesList.cmake"
+    "File Trace: Processing .*/MockTrilinos/extraTrilinosRepo/TPLsList.cmake"
+    "File Trace: Processing .*/MockTrilinos/./cmake/RepositoryDependenciesSetup.cmake"
+    "File Trace: Processing .*/MockTrilinos/cmake/ProjectDependenciesSetup.cmake"
+    "File Trace: Processing .*/MockTrilinos/cmake/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/teuchos/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/src/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/src/good_stuff/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/src/crazy_stuff/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/adapters/epetra/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/adapters/epetraext/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/packages/thyra/adapters/tpetra/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/preCopyrightTrilinos/teko/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/preCopyrightTrilinos/stalix/cmake/Dependencies.cmake"
+    "File Trace: Processing .*/MockTrilinos/extraTrilinosRepo/extrapack/cmake/Dependencies.cmake"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   preCopyrightTrilinos_EnableStalix
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
     -DTrilinos_ENABLE_Stalix=ON

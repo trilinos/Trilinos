@@ -67,12 +67,15 @@ INCLUDE(ParseVariableArguments)
 #   TRIBITS_SET_ST_FOR_DEV_MODE(<outputVar>)
 #
 # ``${<outputVar>}`` is set to ``ON`` or ``OFF`` based on the configure state.
-# In development mode it will be set to ``ON`` only if ``ST`` code is enabled,
-# otherwise it is set to ``OFF``. In release mode it is always set to ``ON``.
-# This allows some sections of a TriBITS package to be considered ``ST`` for
-# development mode reducing testing time which includes only ``PT`` code.,
-# while still having important functionality available to users by default in
-# a release.
+# In development mode (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==ON``),
+# ``${<outputVar>}`` will be set to ``ON`` only if ``ST`` code is enabled
+# (i.e. ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE==ON``), otherwise it is
+# set to ``OFF``. In release mode
+# (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==OFF``) it is always set to
+# ``ON``.  This allows some sections of a TriBITS package to be considered
+# ``ST`` for development mode reducing testing time which includes only ``PT``
+# code., while still having important functionality available to users by
+# default in a release.
 #
 FUNCTION(TRIBITS_SET_ST_FOR_DEV_MODE  OUTPUT_VAR)
   IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
@@ -692,6 +695,10 @@ MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
 
   IF (SUBPACKAGE_EXISTS OR ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
 
+    IF (${PROJECT_NAME}_TRACE_FILE_PROCESSING)
+      MESSAGE("File Trace: Processing ${SUBPAKCAGE_DEPENDENCIES_FILE}")
+    ENDIF()
+
     INCLUDE(${SUBPAKCAGE_DEPENDENCIES_FILE})
   
     TRIBITS_ASSERT_READ_DEPENDENCY_VARS(${SUBPACKAGE_FULLNAME})
@@ -780,6 +787,10 @@ MACRO(TRIBITS_READ_PACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR)
 
   SET(PAKCAGE_DEPENDENCIES_FILE
     "${PROJECT_SOURCE_DIR}/${PACKAGE_DIR}/cmake/Dependencies.cmake")
+
+  IF (${PROJECT_NAME}_TRACE_FILE_PROCESSING)
+    MESSAGE("File Trace: Processing ${PAKCAGE_DEPENDENCIES_FILE}")
+  ENDIF()
 
   INCLUDE(${PAKCAGE_DEPENDENCIES_FILE})
 
@@ -911,8 +922,8 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
       "${PROJECT_SOURCE_DIR}/${REPO_DIR}/cmake/RepositoryDependenciesSetup.cmake")
     #PRINT_VAR(REPO_DEPENDENCIES_SETUP_FILE)
     IF (EXISTS ${REPO_DEPENDENCIES_SETUP_FILE})
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Processing ${REPO_NAME} file ${REPO_DEPENDENCIES_SETUP_FILE} ...")
+      IF (${PROJECT_NAME}_TRACE_FILE_PROCESSING)
+        MESSAGE("File Trace: Processing ${REPO_DEPENDENCIES_SETUP_FILE}")
       ENDIF()
       INCLUDE(${REPO_DEPENDENCIES_SETUP_FILE})
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -929,8 +940,8 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
   SET(PROJECT_DEPENDENCIES_SETUP_FILE
     "${PROJECT_SOURCE_DIR}/cmake/ProjectDependenciesSetup.cmake")
   IF (EXISTS ${PROJECT_DEPENDENCIES_SETUP_FILE})
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("-- " "Processing ${PROJECT_NAME} file ${PROJECT_DEPENDENCIES_SETUP_FILE} ...")
+    IF (${PROJECT_NAME}_TRACE_FILE_PROCESSING)
+      MESSAGE("File Trace: Processing ${PROJECT_DEPENDENCIES_SETUP_FILE}")
     ENDIF()
     INCLUDE(${PROJECT_DEPENDENCIES_SETUP_FILE})
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

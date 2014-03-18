@@ -55,7 +55,8 @@ INCLUDE(TribitsListHelpers)
 # @MACRO: TRIBITS_DEFINE_REPOSITORY_PACKAGES()
 #
 # Define the set of packages for a given TriBIT repo.  This macro is typically
-# called from inside of a PackagesList.cmake file for a given TriBITS repo.
+# called from inside of a `<repoDir>/PackagesList.cmake`_ file for a given
+# TriBITS repo.
 #
 # Usage::
 #
@@ -90,7 +91,9 @@ INCLUDE(TribitsListHelpers)
 #   by a coma with no space in between such as "RS,PT" for a "Research
 #   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
 #   treats this a one field in the array.  The maturity level can be left off
-#   in which case it is assumed to be UM for "Unspecified Maturity".
+#   in which case it is assumed to be UM for "Unspecified Maturity".  This
+#   classification for individual packages can be changed to ``EX`` for
+#   specific platforms by calling `PACKAGE_DISABLE_ON_PLATFORMS()`_.
 #
 # NOTE: This macro just sets the varaible::
 #

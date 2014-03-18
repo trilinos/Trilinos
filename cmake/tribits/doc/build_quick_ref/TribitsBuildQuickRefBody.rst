@@ -413,6 +413,11 @@ e) Turning off strong warnings for individual packages:
   ``<TRIBITS_PACKAGES>``, not warnings generated from the header files in
   downstream packages or client code.
 
+  Note that strong warnings are only enabled by default in development mode
+  (``<Project>_ENABLE_DEVELOPMENT_MODE==ON``) but not release mode
+  (``<Project>_ENABLE_DEVELOPMENT_MODE==ON``).  A release of <Project> should
+  therefore not have strong warning options enabled.
+
 f) Overriding all (strong warnings and debug/release) compiler options:
 
   To override all compiler options, including both strong warning options
@@ -844,16 +849,32 @@ Generating verbose output
 There are several different ways to generate verbose output to debug problems
 when they occur:
 
-a) **Getting verbose output from TriBITS configure:**
+a) **Trace file processing during configure:**
+
+  ::
+
+    -D <Project>_TRACE_FILE_PROCESSING:BOOL=ON
+
+  This will cause TriBITS to print out a trace for all of the project's,
+  repositorie's, and package's files get processed on lines using the prefix
+  ``File Trace:``.  This shows what files get processed and in what order they
+  get processed.  To get a clean listing of all the files processed by TriBITS
+  just grep out the lines starting with ``File Trace:``.  This can be helpful
+  in debugging configure problems without generating too much extra output.
+
+  This is set to ``ON`` automatically when
+  ``<Project>_VERBOSE_CONFIGURE:BOOL=ON``.
+
+b) **Getting verbose output from TriBITS configure:**
 
   ::
 
     -D <Project>_VERBOSE_CONFIGURE:BOOL=ON
 
-  NOTE: This produces a *lot* of output but can be very useful when debugging
+  This produces a *lot* of output but can be very useful when debugging
   configuration problems.
 
-b) **Getting verbose output from the makefile:**
+c) **Getting verbose output from the makefile:**
 
   ::
 
@@ -863,7 +884,7 @@ b) **Getting verbose output from the makefile:**
   calling ``make`` after configuration is finihsed.  See `Building with
   verbose output without reconfiguring`_.
 
-c) **Getting very verbose output from configure:**
+d) **Getting very verbose output from configure:**
 
   ::
 
@@ -1542,7 +1563,9 @@ with::
   -D <Project>_ASSERT_MISSING_PACKAGES:BOOL=OFF
 
 so that missing packages will be ignored.  Otherwise, TriBITS will error out
-about missing packages.
+about missing packages.  (Note that ``<Project>_ASSERT_MISSING_PACKAGES`` will
+default to ```OFF``` by default in release mode,
+i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
 Dashboard submissions
