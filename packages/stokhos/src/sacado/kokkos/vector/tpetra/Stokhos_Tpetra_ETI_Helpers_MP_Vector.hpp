@@ -70,3 +70,38 @@
 
 #define INSTANTIATE_TPETRA_MP_VECTOR_N(INSTMACRO, N)  \
   INSTANTIATE_MP_VECTOR_S(INSTMACRO, int, int, N)
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO) \
+  INSTMACRO(Kokkos_Compat_KokkosThreadsWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO) \
+  INSTMACRO(Kokkos_Compat_KokkosOpenMPWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO) \
+  INSTMACRO(Kokkos_Compat_KokkosCudaWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO)
+#endif
+
+#define INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO) \
+  INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO)             \
+  INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO)              \
+  INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO)
+
+#define INSTANTIATE_TPETRA_MP_VECTOR(INSTMACRO)                 \
+  namespace Tpetra {                                            \
+                                                                \
+  TPETRA_ETI_MANGLING_TYPEDEFS()                                \
+                                                                \
+  INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO)         \
+                                                                \
+}
