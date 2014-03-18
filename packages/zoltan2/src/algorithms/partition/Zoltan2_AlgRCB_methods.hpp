@@ -194,10 +194,10 @@ template <typename Adapter>
   partId_t right0 = left1 + 1;  // First part in right half
   partId_t right1 = part1;  // Last part in right half
 
-  int nWeightsPerCoord = solution->getNumberOfCriteria();
-  fractionLeft = arcp(new double [nWeightsPerCoord], 0, nWeightsPerCoord);
+  int nVecs = solution->getNumberOfCriteria();
+  fractionLeft = arcp(new double [nVecs], 0, nVecs);
 
-  for (int widx=0; widx<nWeightsPerCoord; widx++){
+  for (int widx=0; widx<nVecs; widx++){
     if (solution->criteriaHasUniformPartSizes(widx)){
       fractionLeft[widx] = double(numPartsLeftHalf) / double(numParts);
     }
@@ -222,7 +222,7 @@ template <typename Adapter>
  *   \param comm the communicator
  *   \param coordDim the first \c coordDim vectors in the \c vectors
  *              list are coordinates, the rest are weights.
- *   \param vectors lists of coordinates and non-uniform weights
+ *   \param vectors lists of coordinates and weights
  *   \param index is the index into the \c vectors arrays for the
  *              coordinates to be included in the partitioning.
  *              If <tt>index.size()</tt> is zero, then include
@@ -480,13 +480,12 @@ template <typename lno_t, typename scalar_t>
   if (nWeightsPerCoord > 1){
     Array<scalar_t> coordWeights(nWeightsPerCoord, 1.0);
     for (size_t widx=0; widx < nWeightsPerCoord; widx++){
-      if (weights[widx].size() > 0)
-        coordWeights[widx] = weights[widx][id];
+      coordWeights[widx] = weights[widx][id];
     }
 
     wgtValue = normedWeight<scalar_t>(coordWeights.view(0,nWeightsPerCoord), mcnorm);
   }
-  else if (weights[0].size() > 0){
+  else if (nWeightsPerCoord > 0){
     wgtValue = weights[0][id];
   }
 
@@ -522,10 +521,10 @@ template <typename scalar_t>
   lrf = leftFlag;
   cutValue = 0.0;
 
-  size_t nWeightsPerCoord = fractionLeft.size();
+  size_t nVecs = fractionLeft.size();
   int numEmptyRight = 0, numEmptyLeft = 0;
 
-  for (size_t i=0; i < nWeightsPerCoord; i++){
+  for (size_t i=0; i < nVecs; i++){
     if (fractionLeft[i] == 0.0)
       numEmptyLeft++;
     else if (fractionLeft[i] == 1.0)
@@ -670,15 +669,14 @@ template <typename lno_t, typename gno_t, typename scalar_t>
  *   \param cutDim  the dimension of the coordinates to cut.
  *   \param coordDim the first \c coordDim vectors in the \c vectors
  *              list are coordinates, the rest are weights.
- *   \param vectors lists of coordinates and non-uniform weights
+ *   \param nWeightsPerCoord the number of weights provided for each coordinate
+ *   \param vectors lists of coordinates and weights
  *   \param index is the index into the \c vectors arrays for the
  *              coordinates to be included in the partitioning.
  *              If <tt>index.size()</tt> is zero, then all coordinates
  *              are included.
  *   \param fractionLeft  the size of the left part for each weight,
  *                  the right part should measure <tt>1.0 - fractionLeft</tt>.
- *   \param uniformWeights element \c w is true if weights for weight
- *                 dimension \c w are all 1.0.
  *   \param coordGlobalMin the global minimum of coordinates in dimension
  *                                \c cutDim
  *   \param coordGlobalMax the global maximum of coordinates in dimension
@@ -715,10 +713,10 @@ template <typename mvector_t>
     typename mvector_t::scalar_type tolerance,
     int cutDim,
     int coordDim,
+    int nWeightsPerCoord,
     const RCP<mvector_t> &vectors,
     ArrayView<typename mvector_t::local_ordinal_type> index,
     ArrayView<double> fractionLeft,
-    ArrayView<bool> uniformWeights,
     typename mvector_t::scalar_type coordGlobalMin,
     typename mvector_t::scalar_type coordGlobalMax,
     typename mvector_t::scalar_type &cutValue,         // output
@@ -756,17 +754,12 @@ template <typename mvector_t>
 
   // Find the coordinate values and weights.
 
-  int nWeightsPerCoord = uniformWeights.size();   // at least one
-  int numNonUniformWeights = 0;
-  for (int i=0; i < nWeightsPerCoord; i++){
-    if (!uniformWeights[i])
-      numNonUniformWeights++;
-  }
+  int nVecs = fractionLeft.size();
 
   if (env->getDebugLevel() >= DETAILED_STATUS){
     ostringstream info;
     info << "Num weights " << nWeightsPerCoord << ", Fraction left:";
-    for (int i=0; i < nWeightsPerCoord; i++)
+    for (int i=0; i < nVecs; i++)
       info << " " << fractionLeft[i];
     info << endl << "Dimension " << cutDim << " [";
     info << coordGlobalMin << ", " << coordGlobalMax << "]";
@@ -777,18 +770,12 @@ template <typename mvector_t>
 
   const scalar_t *coordValue = vectors->getData(cutDim).getRawPtr();
 
-  // An empty input_t object implies uniform weights.
-
   input_t *wgtinfo = new input_t [nWeightsPerCoord];
   env->localMemoryAssertion(__FILE__, __LINE__, nWeightsPerCoord, wgtinfo);
   ArrayRCP<input_t> weight(wgtinfo, 0, nWeightsPerCoord, true);
 
-  if (numNonUniformWeights > 0){
-    for (int widx = 0, cidx=coordDim; widx < nWeightsPerCoord; widx++){
-      if (!uniformWeights[widx]){
-        weight[widx] = input_t(vectors->getData(cidx++), 1);
-      }
-    }
+  for (int widx = 0, cidx=coordDim; widx < nWeightsPerCoord; widx++){
+    weight[widx] = input_t(vectors->getData(cidx++), 1);
   }
 
   // Multicriteria norm
@@ -803,8 +790,7 @@ template <typename mvector_t>
   // Goal is globally find one cut that comes close to leaving
   // partSizeLeft*totalWeight on the left side.
 
-  Epetra_SerialDenseVector partSizeLeft( 
-    View, fractionLeft.getRawPtr(), nWeightsPerCoord);
+  Epetra_SerialDenseVector partSizeLeft(View, fractionLeft.getRawPtr(), nVecs);
   
   // Where do we make the first test cuts?
   //
@@ -842,7 +828,7 @@ template <typename mvector_t>
   double totalWeight = 0;
   double targetLeftScalar = 0;
   double targetLeftNorm = 0;
-  Epetra_SerialDenseVector targetLeftVector(nWeightsPerCoord);
+  Epetra_SerialDenseVector targetLeftVector(nVecs);
 
   while (!done && !fail && sanityCheck--){
 
@@ -975,9 +961,9 @@ template <typename mvector_t>
     scalar_t testDiff=0, prevTestDiff=0, target=0;
 
     if (multiplePartSizeSpecs){
-      // more complex: if we have multiple weights, the
-      //   weights are non-uniform, and the part sizes requested
-      //   for each each weight index differ, then we may not
+      // more complex: if we have multiple weights
+      //   and the part sizes requested
+      //   for each weight index differ, then we may not
       //   be able to reach the imbalance tolerance.
       //
       // TODO: discuss how to (or whether to) handle this case.
@@ -987,8 +973,8 @@ template <typename mvector_t>
       //    |target - actual|^2 / |target|^2
   
       target = targetLeftNorm;
-      Epetra_SerialDenseVector testVec(nWeightsPerCoord);
-      for (int i=0; i < nWeightsPerCoord; i++)
+      Epetra_SerialDenseVector testVec(nVecs);
+      for (int i=0; i < nVecs; i++)
         testVec[i] = totalWeightLeft;
       Epetra_SerialDenseVector diffVec = testVec;
       diffVec.Scale(-1.0);
@@ -1000,7 +986,7 @@ template <typename mvector_t>
 
       while (++cutLocation< numSums){
 
-        for (int i=0; i < nWeightsPerCoord; i++)
+        for (int i=0; i < nVecs; i++)
           testVec[i] += sums[cutLocation];
   
         diffVec = testVec;
@@ -1205,9 +1191,8 @@ template <typename mvector_t>
  *   \param tolerance the maximum acceptable imbalance (0,1).
  *   \param coordDim the first \c coordDim vectors in the \c vectors
  *              list are coordinates, the rest are weights.
- *   \param vectors lists of coordinates and non-uniform weights
- *   \param uniformWeights element \c w is true if weights for weight
- *                 dimension \c w are all 1.0.
+ *   \param nWeightsPerCoord the number of weights provided for each coordinate
+ *   \param vectors lists of coordinates and weights
  *   \param solution for obtaining the part sizes
  *   \param part0  is the first part of the parts to bisected.
  *   \param part1  is the last part of the parts to bisected.
@@ -1231,8 +1216,8 @@ template <typename mvector_t, typename Adapter>
     int numTestCuts,
     typename mvector_t::scalar_type tolerance,
     int coordDim, 
+    int nWeightsPerCoord,
     const RCP<mvector_t> &vectors,
-    const ArrayView<bool> uniformWeights,
     multiCriteriaNorm mcnorm,
     const RCP<PartitioningSolution<Adapter> > &solution,
     partId_t part0, 
@@ -1271,17 +1256,17 @@ template <typename mvector_t, typename Adapter>
   // Compute part sizes for the two parts.
 
   ArrayRCP<double> fractionLeft;
-  size_t nWeightsPerCoord = uniformWeights.size();
 
   getFractionLeft<Adapter>(env, part0, part1, solution,
     fractionLeft, numPartsLeftHalf);
+  int nVecs = fractionLeft.size();
 
   // Special case of empty left or empty right.
 
   leftRightFlag lrf;
 
   bool emptyParts = emptyPartsCheck(env,
-    fractionLeft.view(0, nWeightsPerCoord), // input
+    fractionLeft.view(0, nVecs), // input
     globalMinCoord, globalMaxCoord,  // input
     lrf, cutValue);                  // output
 
@@ -1292,30 +1277,20 @@ template <typename mvector_t, typename Adapter>
 
     imbalance = 0.0;                // perfect balance
     scalar_t totalWeight = 0.0;
-    int numNonUniform = 0;
 
-    for (size_t i=0; i < nWeightsPerCoord; i++)
-      if (!uniformWeights[i])
-        numNonUniform++;
-
-    int wgt1 = vectors->getNumVectors() - numNonUniform;
-
-    if (nWeightsPerCoord == 1){
-      if (numNonUniform == 0)
-        totalWeight = numLocalCoords;
-      else{
-        const scalar_t *val = vectors->getData(wgt1).getRawPtr();
-        for (lno_t i=0; i < numLocalCoords; i++)
-          totalWeight += val[i];
-      }
+    if (nWeightsPerCoord == 0)
+      totalWeight = numLocalCoords;
+    else if (nWeightsPerCoord == 1) {
+      int wgtidx = coordDim;
+      const scalar_t *val = vectors->getData(wgtidx).getRawPtr();
+      for (lno_t i=0; i < numLocalCoords; i++)
+        totalWeight += val[i];
     }
-    else{  // need to add up total normed weight
+    else {  // need to add up total normed weight
       Array<input_t> wgts(nWeightsPerCoord);
-      for (size_t i=0; i < nWeightsPerCoord; i++){
-        if (!uniformWeights[i]){
-          wgts[i] = input_t(vectors->getData(wgt1++), 1);
-        }
-      }
+      int wgtidx = coordDim;
+      for (int i=0; i < nWeightsPerCoord; i++)
+        wgts[i] = input_t(vectors->getData(wgtidx++), 1);
 
       partId_t numParts, numNonemptyParts;
       ArrayRCP<MetricValues<scalar_t> > metrics;
@@ -1354,8 +1329,8 @@ template <typename mvector_t, typename Adapter>
   try{
     BSPfindCut<mvector_t>( env, comm,
       params, numTestCuts, tolerance,
-      cutDimension, coordDim, vectors, emptyIndices,
-      fractionLeft.view(0, nWeightsPerCoord), uniformWeights.view(0, nWeightsPerCoord),
+      cutDimension, coordDim, nWeightsPerCoord, vectors, emptyIndices,
+      fractionLeft.view(0, nVecs),
       globalMinCoord, globalMaxCoord,
       cutValue, lrflags.view(0, numLocalCoords),
       weightLeftHalf, weightRightHalf, localCountLeft, imbalance);
@@ -1375,12 +1350,11 @@ template <typename mvector_t, typename Adapter>
  *   \param tolerance the maximum acceptable imbalance (0,1).
  *   \param coordDim the first \c coordDim vectors in the \c vectors
  *              list are coordinates, the rest are weights.
- *   \param vectors lists of coordinates and non-uniform weights
+ *   \param nWeightsPerCoord the number of weights provided for each coordinate
+ *   \param vectors lists of coordinates and weights
  *   \param index is the index into the \c vectors arrays for the
  *              coordinates to be included in the partitioning.
  *       If index.size() is zero then indexing will not be used.
- *   \param uniformWeights element \c w is true if weights for weight
- *                 dimension \c w are all 1.0.
  *   \param solution for obtaining part sizes.
  *   \param part0  is the first part of the parts to bisected.
  *   \param part1  is the last part of the parts to bisected.
@@ -1396,9 +1370,9 @@ template <typename mvector_t, typename Adapter>
     int numTestCuts, 
     typename mvector_t::scalar_type tolerance, 
     int coordDim,
+    int nWeightsPerCoord,
     const RCP<mvector_t> &vectors, 
     ArrayView<typename mvector_t::local_ordinal_type> index,
-    const ArrayView<bool> uniformWeights,
     const RCP<PartitioningSolution<Adapter> > &solution,
     partId_t part0, 
     partId_t part1,
@@ -1475,14 +1449,14 @@ template <typename mvector_t, typename Adapter>
       fractionLeft, numPartsLeftHalf);
   }
   Z2_FORWARD_EXCEPTIONS
+  int nVecs = fractionLeft.size();
 
   // Check for special case of empty left or empty right.
 
-  int nWeightsPerCoord = uniformWeights.size();
   scalar_t imbalance, cutValue;  //unused for now
   leftRightFlag lrf;
 
-  bool emptyPart = emptyPartsCheck(env, fractionLeft.view(0, nWeightsPerCoord), 
+  bool emptyPart = emptyPartsCheck(env, fractionLeft.view(0, nVecs), 
     minCoord, maxCoord, lrf, cutValue);
 
   if (emptyPart){  // continue only on the side that is not empty
@@ -1523,8 +1497,8 @@ template <typename mvector_t, typename Adapter>
   try{
     BSPfindCut<mvector_t>( env, comm,
       params, numTestCuts, tolerance,
-      cutDimension, coordDim, vectors, index,
-      fractionLeft.view(0, nWeightsPerCoord), uniformWeights.view(0, nWeightsPerCoord),
+      cutDimension, coordDim, nWeightsPerCoord, vectors, index,
+      fractionLeft.view(0, nVecs),
       minCoord, maxCoord,
       cutValue, lrflags.view(0, numLocalCoords),
       totalLeft, totalRight, localCountLeft, imbalance);
@@ -1561,9 +1535,8 @@ template <typename mvector_t, typename Adapter>
     env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
 
     serialRCB<mvector_t, Adapter>(env, depth+1, params, numTestCuts, tolerance, 
-      coordDim, vectors, leftIndices,
-      uniformWeights.view(0, nWeightsPerCoord), solution,
-      part0, newPart1, partNum);
+      coordDim, nWeightsPerCoord, vectors, leftIndices,
+      solution, part0, newPart1, partNum);
 
     env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
@@ -1594,9 +1567,8 @@ template <typename mvector_t, typename Adapter>
     env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
 
     serialRCB<mvector_t, Adapter>(env, depth+1, params, numTestCuts, tolerance, 
-      coordDim, vectors, rightIndices,
-      uniformWeights.view(0, nWeightsPerCoord), solution,
-      newPart0, part1, partNum);
+      coordDim, nWeightsPerCoord, vectors, rightIndices,
+      solution, newPart0, part1, partNum);
 
     env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
