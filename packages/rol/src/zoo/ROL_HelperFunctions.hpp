@@ -237,10 +237,9 @@ namespace ROL {
       eps_              = eps;
     }
 
-    void update( const Vector<Real> &x, bool flag = true, int iter = -1, Real eps = 0.0 ) {
+    void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) { 
       this->obj_->update(x,flag,iter);
       this->con_->update(x,flag,iter);
-      if ( std::abs(eps) >= ROL_EPSILON ) { this->eps_ = eps; }
     }
 
     Real value( const Vector<Real> &x, Real &tol ) {
