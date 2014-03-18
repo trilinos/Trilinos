@@ -49,8 +49,8 @@
 //@HEADER
 
 
-#ifndef LOCA_EPETRAADAPTIVESTEPPER_H
-#define LOCA_EPETRAADAPTIVESTEPPER_H
+#ifndef LOCA_ADAPTIVESTEPPER_H
+#define LOCA_ADAPTIVESTEPPER_H
 
 #include "Teuchos_RCP.hpp"
 
@@ -60,11 +60,9 @@
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 
-#include "LOCA_Epetra_AdaptiveSolutionManager.H"
+#include "LOCA_Thyra_AdaptiveSolutionManager.H"
 
 namespace LOCA {
-
-namespace Epetra {
 
  /*!
    * \brief Implementation of LOCA::Abstract::Iterator for computing points
@@ -81,12 +79,17 @@ namespace Epetra {
   public:
 
     AdaptiveStepper(const Teuchos::RCP<Teuchos::ParameterList>& pList,
-      const Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager>& mgr,
+      const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager>& mgr,
       const Teuchos::RCP<LOCA::GlobalData>& global_data,
       const Teuchos::RCP<NOX::StatusTest::Generic>& nt);
 
     //! Destructor
     virtual ~AdaptiveStepper();
+
+    void reset(const Teuchos::RCP<Teuchos::ParameterList>& pList,
+      const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager>& mgr,
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& nt);
 
     //! Replaces the eigensolver parameter list.
     bool
@@ -205,7 +208,7 @@ namespace Epetra {
   protected:
 
     //! Adaptive solution manager provides interface to remesh/resize functions
-    Teuchos::RCP<LOCA::Epetra::AdaptiveSolutionManager> mgr;
+    Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> mgr;
 
     //! Global data
     Teuchos::RCP<LOCA::GlobalData> globalData;
@@ -305,7 +308,6 @@ namespace Epetra {
     bool max_steps_exceeded;
 
   };
-} // end namespace Epetra
 } // end namespace LOCA
 
 #endif

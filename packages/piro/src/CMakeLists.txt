@@ -32,6 +32,8 @@ APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
 		   Piro_Epetra_SolverFactory.hpp
 		   Piro_SolverFactory.hpp
 		   Piro_SolverFactory_Def.hpp
+		   Piro_AdaptiveSolverFactory.hpp
+		   Piro_AdaptiveSolverFactory_Def.hpp
                    Piro_StratimikosUtils.hpp
                    Piro_ConfigDefs.hpp)
 APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
@@ -59,6 +61,8 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_LOCASolver.hpp
                      Piro_LOCASolver.hpp
                      Piro_LOCASolver_Def.hpp
+                     Piro_LOCAAdaptiveSolver.hpp
+                     Piro_LOCAAdaptiveSolver_Def.hpp
                      Piro_ObserverToLOCASaveDataStrategyAdapter.hpp
                      Piro_Epetra_LOCAAdaptiveSolver.hpp
                      Piro_Epetra_AdaptiveSolutionManager.hpp
@@ -70,6 +74,7 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_LOCASolver.cpp
                      Piro_NOXSolver.cpp
                      Piro_LOCASolver.cpp
+                     Piro_LOCAAdaptiveSolver.cpp
                      Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
                      Piro_Epetra_LOCAAdaptiveSolver.cpp
                      Piro_Epetra_AdaptiveSolutionManager.cpp
