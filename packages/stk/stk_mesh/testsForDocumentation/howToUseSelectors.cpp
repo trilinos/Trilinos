@@ -30,6 +30,10 @@ TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
     size_t expectingZeroBuckets = 0;
     EXPECT_EQ(expectingZeroBuckets, stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, nothingSelector_byDefaultConstruction).size());
 
+    std::ostringstream readableSelectorDescription;
+    readableSelectorDescription << nothingSelector_byDefaultConstruction;
+    EXPECT_STREQ("NOTHING", readableSelectorDescription.str().c_str());
+
     stk::mesh::Selector allSelector(!nothingSelector_byDefaultConstruction);
     size_t numberOfAllNodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK).size();
     EXPECT_EQ(numberOfAllNodeBuckets, stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, allSelector).size());
@@ -56,24 +60,21 @@ TEST(StkMeshHowTo, makeSureYouAreNotIntersectingNothingSelector)
     allSurfaces.push_back(surface2Part);
     allSurfaces.push_back(surface3Part);
 
-    stk::mesh::Selector boundaryNodesSelectorWithNothingBeingIntersected;
-
-    std::ostringstream readableSelectorDescription;
-    readableSelectorDescription << boundaryNodesSelectorWithNothingBeingIntersected;
-    EXPECT_STREQ("NOTHING", readableSelectorDescription.str().c_str());
-
+    stk::mesh::Selector selectorIntersectingNothing;
     for (size_t surfaceIndex = 0; surfaceIndex < allSurfaces.size(); ++surfaceIndex)
     {
         stk::mesh::Part &surfacePart = *(allSurfaces[surfaceIndex]);
         stk::mesh::Selector surfaceSelector(surfacePart);
-        boundaryNodesSelectorWithNothingBeingIntersected &= surfacePart;
+        selectorIntersectingNothing &= surfacePart;
     }
     size_t expectedNumberOfBucketsWhenIntersectingNothing = 0;
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-    EXPECT_EQ(expectedNumberOfBucketsWhenIntersectingNothing, stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, boundaryNodesSelectorWithNothingBeingIntersected).size());
+    stk::mesh::BucketVector selectedBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, selectorIntersectingNothing);
+    EXPECT_EQ(expectedNumberOfBucketsWhenIntersectingNothing, selectedBuckets.size());
 
     stk::mesh::Selector preferredBoundaryNodesSelector = stk::mesh::selectIntersection(allSurfaces);
     size_t expectedNumberOfNodeBucketsWhenIntersectingAllSurfaces = 1;
-    EXPECT_EQ(expectedNumberOfNodeBucketsWhenIntersectingAllSurfaces, stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, preferredBoundaryNodesSelector).size());
+    selectedBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, preferredBoundaryNodesSelector);
+    EXPECT_EQ(expectedNumberOfNodeBucketsWhenIntersectingAllSurfaces, selectedBuckets.size());
 }
 }
