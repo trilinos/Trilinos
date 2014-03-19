@@ -126,7 +126,7 @@ namespace MueLu {
 #endif
       TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << levelID);
 
-#ifdef HAVE_MUELU_DEBUG
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       RCP<const Teuchos::Comm<int> > comm = requestedLevel.GetComm();
       if (comm.is_null()) {
         // Some factories are called before we constructed Ac, and therefore,
@@ -147,7 +147,7 @@ namespace MueLu {
 
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
 
-#ifdef HAVE_MUELU_DEBUG
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       // Synchronization timer
       if (!comm.is_null()) {
         TimeMonitor timer(*this, syncTimer);
