@@ -401,6 +401,14 @@ int main(int argc, char *argv[])
 
   for (int i=0; i < NUMTESTS; i++) {
     int nTestProcs = testNumProcs[i];
+    if (nTestProcs > np) {
+      if (me == 0) {
+        std::cout << "Skipping test " << i << " on " << testArgs[i*3]
+                  << "; required number of procs " << nTestProcs 
+                  << " is greater than available procs " << np << std::endl;
+      }
+      continue;
+    }
     RCP<const Comm<int> > testcomm;
     if (nTestProcs == np)
       testcomm = comm;
