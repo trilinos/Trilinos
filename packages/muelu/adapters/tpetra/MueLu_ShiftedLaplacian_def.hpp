@@ -710,6 +710,19 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetIte
   }
 }
 
+// Get most recent solver tolerance achieved
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetResidual()
+{
+  if(useKrylov_==true) {
+    double residual = BelosSolverManager_ -> achievedTol();
+    return residual;
+  }
+  else {
+    return 0.0;
+  }
+}
+
 }
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT

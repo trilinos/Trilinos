@@ -265,4 +265,15 @@ Factory::clone (const Teuchos::RCP<Preconditioner<typename InputMatrixType::scal
 
 } // namespace Ifpack2
 
+#define IFPACK2_FACTORY_INSTANT(S,LO,GO,N)                              \
+  template Teuchos::RCP<Ifpack2::Preconditioner<S, LO, GO, N> >         \
+  Ifpack2::Factory::create<Tpetra::CrsMatrix< S, LO, GO, N> > (         \
+    const std::string&,                                                 \
+    const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, N> >&);       \
+  template Teuchos::RCP<Ifpack2::Preconditioner<S, LO, GO, N> >         \
+  Ifpack2::Factory::create<Tpetra::CrsMatrix< S, LO, GO, N> > (         \
+    const std::string&,                                                 \
+    const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, N> >&,        \
+    const int);
+
 #endif // IFPACK2_FACTORY_DEF_HPP

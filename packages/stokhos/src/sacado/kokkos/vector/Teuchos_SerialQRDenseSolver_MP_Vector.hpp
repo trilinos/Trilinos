@@ -48,10 +48,10 @@
 #include <new>
 #include "Teuchos_SerialQRDenseSolver.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 /*! \class Teuchos::SerialQRDenseSolver
-  \brief Specialization for Sacado::MP::Vector< StaticFixedStorage<...> >
+  \brief Specialization for Sacado::MP::Vector< Storage<...> >
 */
 
 namespace Teuchos {

@@ -981,5 +981,7 @@ ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 
 }//namespace Ifpack2
 
-#endif /* IFPACK2_ILUT_DEF_HPP */
+#define IFPACK2_ILUT_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::ILUT< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
+#endif /* IFPACK2_ILUT_DEF_HPP */

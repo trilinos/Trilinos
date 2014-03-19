@@ -45,7 +45,7 @@
 
 #include "Teuchos_Array.hpp"
 #include "Stokhos_Sacado.hpp"
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Sacado_Fad_DFad.hpp"
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"

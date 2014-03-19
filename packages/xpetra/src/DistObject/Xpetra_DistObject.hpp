@@ -93,11 +93,11 @@ namespace Xpetra {
     //@{
 
     //! The Map describing the parallel distribution of this object.
-    virtual const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getMap() const = 0;
+    virtual Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const = 0;
 
     //@}
 
-    //! @name Implementation of \c Teuchos::Describable
+    //! @name Implementation of Teuchos::Describable
     //@{
 
     //! One-line descriptiion of this object.

@@ -90,5 +90,11 @@ void LinearPartitioner<GraphType>::LinearPartitioner::computePartitions()
 
 }// namespace Ifpack2
 
-#endif // IFPACK2_LINEARPARTITIONER_DEF_HPP
+// For ETI
+#include "Tpetra_CrsGraph.hpp"
 
+#define IFPACK2_LINEARPARTITIONER_INSTANT(LO,GO,N) \
+  template class Ifpack2::LinearPartitioner<Tpetra::CrsGraph< LO, GO, N > >; \
+  template class Ifpack2::LinearPartitioner<Tpetra::RowGraph< LO, GO, N > >;
+
+#endif // IFPACK2_LINEARPARTITIONER_DEF_HPP

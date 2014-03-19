@@ -713,36 +713,139 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
+  isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const
+  {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
+    //
+    // Tests that avoid the Boolean all-reduce below by using
+    // globally consistent quantities.
+    //
+    if (this == &map) {
+      // Pointer equality on one process always implies pointer
+      // equality on all processes, since Map is immutable.
+      return true;
+    }
+    else if (getComm ()->getSize () != map.getComm ()->getSize ()) {
+      // The two communicators have different numbers of processes.
+      // It's not correct to call isCompatible() in that case.  This
+      // may result in the all-reduce hanging below.
+      return false;
+    }
+    else if (getGlobalNumElements () != map.getGlobalNumElements ()) {
+      // Two Maps are definitely NOT compatible if they have different
+      // global numbers of indices.
+      return false;
+    }
+    else if (isContiguous () && isUniform () &&
+             map.isContiguous () && map.isUniform ()) {
+      // Contiguous uniform Maps with the same number of processes in
+      // their communicators, and with the same global numbers of
+      // indices, are always compatible.
+      return true;
+    }
+    else if (! isContiguous () && ! map.isContiguous () &&
+             ! lgMap_.is_null () && ! map.lgMap_.is_null () &&
+             lgMap_.getRawPtr () == map.lgMap_.getRawPtr ()) {
+      // Noncontiguous Maps whose global index lists are nonnull and
+      // have the same pointer must be the same (and therefore
+      // contiguous).  (This must be the case, because Map's
+      // constructor makes a deep copy of its input.  This is NOT
+      // necessarily true for the Kokkos refactor version of Map!)
+      //
+      // Nonnull is important, since every empty list is null.  (For
+      // example, consider a communicator with two processes, and two
+      // Maps that share this communicator, with zero global indices
+      // on the first process, and different numbers of global indices
+      // on the second process.)
+      return true;
+    }
 
-#ifdef HAVE_TPETRA_DEBUG
-    // In a debug build, bail out with an exception if the two
-    // communicators don't have the same numbers of processes.
-    // This is explicitly forbidden by the public documentation.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      this->getComm ()->getSize () != map.getComm ()->getSize (),
-      std::invalid_argument, "Tpetra::Map::isCompatibile: The two Maps' "
-      "communicators must have the same numbers of processes in order to call "
-      "this method.");
-#endif // HAVE_TPETRA_DEBUG
+      getGlobalNumElements () != map.getGlobalNumElements (), std::logic_error,
+      "Tpetra::Map::isCompatible: There's a bug in this method.  We've already "
+      "checked that this condition is true above, but it's false here.  "
+      "Please report this bug to the Tpetra developers.");
 
-    // Do both Maps have the same number of elements, both globally
-    // and on the calling process?
-    int locallyCompat = 0;
-    if (getGlobalNumElements() != map.getGlobalNumElements() ||
-        getNodeNumElements() != map.getNodeNumElements()) {
-      locallyCompat = 0; // NOT compatible on this process
-    }
-    else {
-      locallyCompat = 1; // compatible on this process
-    }
+    // Do both Maps have the same number of indices on each process?
+    const int locallyCompat =
+      (getNodeNumElements () == map.getNodeNumElements ()) ? 1 : 0;
 
     int globallyCompat = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, locallyCompat, outArg (globallyCompat));
     return (globallyCompat == 1);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  {
+    using Teuchos::ArrayView;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<const GO>::size_type size_type;
+
+    // If both Maps are contiguous, we can compare their GID ranges
+    // easily by looking at the min and max GID on this process.
+    // Otherwise, we'll compare their GID lists.  If only one Map is
+    // contiguous, then we only have to call getNodeElementList() on
+    // the noncontiguous Map.  (It's best to avoid calling it on a
+    // contiguous Map, since it results in unnecessary storage that
+    // persists for the lifetime of the Map.)
+
+    if (getNodeNumElements () != map.getNodeNumElements ()) {
+      return false;
+    }
+    else if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
+             getMaxGlobalIndex () != map.getMaxGlobalIndex ()) {
+      return false;
+    }
+    else {
+      if (isContiguous ()) {
+        if (map.isContiguous ()) {
+          return true; // min and max match, so the ranges match.
+        }
+        else { // *this is contiguous, but map is not contiguous
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            ! this->isContiguous () || map.isContiguous (), std::logic_error,
+            "Tpetra::Map::locallySameAs: BUG");
+          ArrayView<const GO> rhsElts = map.getNodeElementList ();
+          const GO minLhsGid = this->getMinGlobalIndex ();
+          const size_type numRhsElts = rhsElts.size ();
+          for (size_type k = 0; k < numRhsElts; ++k) {
+            const GO curLhsGid = minLhsGid + static_cast<GO> (k);
+            if (curLhsGid != rhsElts[k]) {
+              return false; // stop on first mismatch
+            }
+          }
+          return true;
+        }
+      }
+      else if (map.isContiguous ()) { // *this is not contiguous, but map is
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          this->isContiguous () || ! map.isContiguous (), std::logic_error,
+          "Tpetra::Map::locallySameAs: BUG");
+        ArrayView<const GO> lhsElts = this->getNodeElementList ();
+        const GO minRhsGid = map.getMinGlobalIndex ();
+        const size_type numLhsElts = lhsElts.size ();
+        for (size_type k = 0; k < numLhsElts; ++k) {
+          const GO curRhsGid = minRhsGid + static_cast<GO> (k);
+          if (curRhsGid != lhsElts[k]) {
+            return false; // stop on first mismatch
+          }
+        }
+        return true;
+      }
+      else { // neither *this nor map are contiguous
+        // std::equal requires that the latter range is as large as
+        // the former.  We know the ranges have equal length, because
+        // they have the same number of local entries.
+        ArrayView<const GO> lhsElts =     getNodeElementList ();
+        ArrayView<const GO> rhsElts = map.getNodeElementList ();
+        return std::equal (lhsElts.begin (), lhsElts.end (), rhsElts.begin ());
+      }
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -753,84 +856,62 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-
-#ifdef HAVE_TPETRA_DEBUG
-    // In a debug build, bail out with an exception if the two
-    // communicators don't have the same numbers of processes.
-    // This is explicitly forbidden by the public documentation.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      this->getComm ()->getSize () != map.getComm ()->getSize (),
-      std::invalid_argument, "Tpetra::Map::isSameAs: The two Maps' communicators"
-      "must have the same numbers of processes in order to call this method.");
-#endif // HAVE_TPETRA_DEBUG
-
+    //
+    // Tests that avoid the Boolean all-reduce below by using
+    // globally consistent quantities.
+    //
     if (this == &map) {
-      // If the input Map is the same object (has the same address) as
-      // *this, then the Maps are the same.  We assume that if this
-      // holds on one process, then it holds on all processes.
+      // Pointer equality on one process always implies pointer
+      // equality on all processes, since Map is immutable.
+      return true;
+    }
+    else if (getComm ()->getSize () != map.getComm ()->getSize ()) {
+      // The two communicators have different numbers of processes.
+      // It's not correct to call isSameAs() in that case.  This
+      // may result in the all-reduce hanging below.
+      return false;
+    }
+    else if (getGlobalNumElements () != map.getGlobalNumElements ()) {
+      // Two Maps are definitely NOT the same if they have different
+      // global numbers of indices.
+      return false;
+    }
+    else if (getMinAllGlobalIndex () != map.getMinAllGlobalIndex () ||
+             getMaxAllGlobalIndex () != map.getMaxAllGlobalIndex () ||
+             getIndexBase () != map.getIndexBase ()) {
+      // If the global min or max global index doesn't match, or if
+      // the index base doesn't match, then the Maps aren't the same.
+      return false;
+    }
+    else if (isDistributed () != map.isDistributed ()) {
+      // One Map is distributed and the other is not, which means that
+      // the Maps aren't the same.
+      return false;
+    }
+    else if (isContiguous () && isUniform () &&
+             map.isContiguous () && map.isUniform ()) {
+      // Contiguous uniform Maps with the same number of processes in
+      // their communicators, with the same global numbers of indices,
+      // and with matching index bases and ranges, must be the same.
       return true;
     }
 
-    // Check all other known properties that are the same on all
-    // processes.  If the two Maps do not share any of these
-    // properties, then they cannot be the same.
-    if (getMinAllGlobalIndex () != map.getMinAllGlobalIndex () ||
-        getMaxAllGlobalIndex () != map.getMaxAllGlobalIndex () ||
-        getGlobalNumElements () != map.getGlobalNumElements () ||
-        isDistributed () != map.isDistributed () ||
-        getIndexBase () != map.getIndexBase ()) {
+    // The two communicators must have the same number of processes,
+    // with process ranks occurring in the same order.  This uses
+    // MPI_COMM_COMPARE.  The MPI 3.1 standard (Section 6.4) says:
+    // "Operations that access communicators are local and their
+    // execution does not require interprocess communication."
+    // However, just to be sure, I'll put this call after the above
+    // tests that don't communicate.
+    if (! Details::congruent (*comm_, * (map.getComm ()))) {
       return false;
     }
 
-    // If we get this far, we need to check local properties and the
-    // communicate same-ness across all processes
-    // we prefer local work over communication, ergo, we will perform all
-    // comparisons and conduct a single communication
-    int isSame_lcl = 1;
+    // If we get this far, we need to check local properties and then
+    // communicate local sameness across all processes.
+    const int isSame_lcl = locallySameAs (map) ? 1 : 0;
 
-    // The two communicators must have the same number of processes,
-    // with process ranks occurring in the same order.
-    if (! Details::congruent (*comm_, * (map.getComm ()))) {
-      isSame_lcl = 0;
-    }
-
-    // Check the number of entries owned by this process.
-    if (getNodeNumElements () != map.getNodeNumElements ()) {
-      isSame_lcl = 0;
-    }
-
-    // Check that the entries owned by this process in both Maps are
-    // the same.  Only do this if we haven't already determined that
-    // the Maps aren't the same.
-    if (isSame_lcl == 1) {
-      // If the Maps are contiguous, we can check the ranges easily by
-      // looking at the min and max GID on this process.  Otherwise,
-      // we'll compare their GID lists.
-      if (isContiguous () && map.isContiguous ()) {
-        if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
-            getMaxGlobalIndex() != map.getMaxGlobalIndex()) {
-          isSame_lcl = 0;
-        }
-      }
-      else {
-        // We could be more clever here to avoid calling
-        // getNodeElementList() on either of the two Maps has
-        // contiguous GIDs.  For now, we call it regardless of whether
-        // the Map is contiguous, as long as one of the Maps is not
-        // contiguous.
-        //
-        // std::equal requires that the latter range is as large as
-        // the former.  We know the ranges have equal length, because
-        // they have the same number of local entries.
-        Teuchos::ArrayView<const GlobalOrdinal> ge1 =     getNodeElementList ();
-        Teuchos::ArrayView<const GlobalOrdinal> ge2 = map.getNodeElementList ();
-        if (! std::equal (ge1.begin (), ge1.end (), ge2.begin ())) {
-          isSame_lcl = 0;
-        }
-      }
-    }
-
-    // Return true if and only if all processes report "same-ness."
+    // Return true if and only if all processes report local sameness.
     int isSame_gbl = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, isSame_lcl, outArg (isSame_gbl));
     return isSame_gbl == 1;
@@ -838,7 +919,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList() const {
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
+  {
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
     // mapping.
@@ -851,18 +933,24 @@ namespace Tpetra {
         "should have been set up already for a noncontiguous Map.  Please report"
         " this bug to the Tpetra team.");
 #endif // HAVE_TEUCHOS_DEBUG
-      lgMap_ = Teuchos::arcp<GlobalOrdinal> (numLocalElements_);
 
-      // mfh 20 Feb 2013: Older compilers don't inline
-      // ArrayRCP::operator* well, so we only use it in a debug build
-      // (where its bounds checking is useful).
+      typedef typename Teuchos::ArrayRCP<GlobalOrdinal>::size_type size_type;
+      const size_type numElts = Teuchos::as<size_type> (getNodeNumElements ());
+      lgMap_ = Teuchos::arcp<GlobalOrdinal> (numElts);
+
+      if (numElts != 0) {
+        // mfh 20 Feb 2013: Older compilers don't inline
+        // ArrayRCP::operator* well, so we only use it in a debug build
+        // (where its bounds checking is useful).
 #ifdef HAVE_TEUCHOS_DEBUG
-      Teuchos::ArrayRCP<GlobalOrdinal> lgMapPtr = lgMap_;
+        Teuchos::ArrayRCP<GlobalOrdinal> lgMapPtr = lgMap_;
 #else
-      GlobalOrdinal* lgMapPtr = lgMap_.getRawPtr ();
+        GlobalOrdinal* const lgMapPtr = lgMap_.getRawPtr ();
 #endif // HAVE_TEUCHOS_DEBUG
-      for (GlobalOrdinal gid = minMyGID_; gid <= maxMyGID_; ++gid) {
-        *(lgMapPtr++) = gid;
+        GlobalOrdinal gid = minMyGID_;
+        for (size_type k = 0; k < numElts; ++k, ++gid) {
+          lgMapPtr[k] = gid;
+        }
       }
     }
     return lgMap_ ();

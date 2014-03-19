@@ -503,4 +503,7 @@ TPETRA_DEPRECATED  void SparsityFilter<MatrixType>::getLocalRowView(LocalOrdinal
 
 }// namespace Ifpack2
 
+#define IFPACK2_SPARSITYFILTER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::SparsityFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+
 #endif

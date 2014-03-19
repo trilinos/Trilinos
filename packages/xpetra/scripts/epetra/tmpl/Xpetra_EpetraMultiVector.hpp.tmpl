@@ -15,10 +15,9 @@ $TMPL_HEADERS
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  const Epetra_MultiVector & toEpetra(const MultiVector<double,int,int> &);
-
-  Epetra_MultiVector & toEpetra(MultiVector<double, int,int> &);
-  //
+  const Epetra_MultiVector &          toEpetra(const MultiVector<double,int,int> &);
+  Epetra_MultiVector &                toEpetra(MultiVector<double, int,int> &);
+  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec);
 
   // #ifndef DOXYGEN_SHOULD_SKIP_THIS
   //   // forward declaration of EpetraVector, needed to prevent circular inclusions
@@ -41,7 +40,7 @@ namespace Xpetra {
 
     //! Basic MultiVector constuctor.
     EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true)
-      : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(map), NumVectors, zeroOut))) { }
+      : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(map), Teuchos::as<int>(NumVectors), zeroOut))) { }
 
     //! MultiVector copy constructor.
     EpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
@@ -59,12 +58,12 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Set multi-vector values to random numbers.
     void randomize(bool bUseXpetraImplementation = false) {
-        XPETRA_MONITOR("EpetraMultiVector::randomize");
+      XPETRA_MONITOR("EpetraMultiVector::randomize");
 
-        if(bUseXpetraImplementation)
-            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
-        else
-            vec_->Random();
+      if (bUseXpetraImplementation)
+        Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+      else
+        vec_->Random();
     }
 
     //! Implements DistObject interface
@@ -84,6 +83,9 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Export (using an Importer).
     void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+
+    //! Replace the underlying Map in place.
+    void replaceMap(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map);
 
     //@}
 

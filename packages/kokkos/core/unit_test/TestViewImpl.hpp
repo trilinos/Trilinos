@@ -221,15 +221,18 @@ void test_view_impl()
   typedef Kokkos::Impl::ViewOffset< shape_01_type , Kokkos::LayoutStride > shape_01_stride_offset ;
   typedef Kokkos::Impl::ViewOffset< shape_36_type , Kokkos::LayoutStride > shape_36_stride_offset ;
 
-  shape_01_stride_offset stride_offset_01 ;
-  shape_36_stride_offset stride_offset_36 ;
+  {
+    shape_01_stride_offset stride_offset_01 ;
 
-  stride_offset_01.assign( 1, stride_offset_01.N1, 0,0,0,0,0,0,0 );
-  
-  ASSERT_EQ( int(stride_offset_01.S[0]) , int(1) );
-  ASSERT_EQ( int(stride_offset_01.S[1]) , int(stride_offset_01.N1) );
+    stride_offset_01.assign( 1, stride_offset_01.N0, 0,0,0,0,0,0,0 );
+
+    ASSERT_EQ( int(stride_offset_01.S[0]) , int(1) );
+    ASSERT_EQ( int(stride_offset_01.S[1]) , int(stride_offset_01.N0) );
+  }
 
   {
+    shape_36_stride_offset stride_offset_36 ;
+
     size_t str[7] ;
     str[5] = 1 ;
     str[4] = str[5] * stride_offset_36.N5 ;
@@ -245,6 +248,21 @@ void test_view_impl()
     ASSERT_EQ( size_t(stride_offset_36.N2)   , size_t(100) );
     ASSERT_EQ( size_t(stride_offset_36.N1)   , size_t(200) );
     ASSERT_EQ( size_t(stride_offset_36.N0)   , size_t(300) );
+  }
+
+  //------------------------------------------------------------------------
+
+  {
+    const int rank = 6 ;
+    const int order[] = { 5 , 3 , 1 , 0 , 2 , 4 };
+    const unsigned dim[] = { 2 , 3 , 5 , 7 , 11 , 13 };
+    Kokkos::LayoutStride stride_6 = Kokkos::LayoutStride::order_dimensions( rank , order , dim );
+    size_t n = 1 ;
+    for ( int i = 0 ; i < rank ; ++i ) {
+      ASSERT_EQ( size_t(dim[i]) , size_t( stride_6.dimension[i] ) );
+      ASSERT_EQ( size_t(n) , size_t( stride_6.stride[ order[i] ] ) );
+      n *= dim[i] ;
+    }
   }
 
   //------------------------------------------------------------------------

@@ -63,7 +63,7 @@ namespace Xpetra {
   const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& import);
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > &import);
   //
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -124,20 +124,20 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getExportLIDs() const { XPETRA_MONITOR("TpetraImport::getExportLIDs"); return import_->getExportLIDs(); }
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportPIDs() const { XPETRA_MONITOR("TpetraImport::getExportImageIDs"); return import_->getExportPIDs(); }
+    ArrayView< const int > getExportPIDs() const { XPETRA_MONITOR("TpetraImport::getExportPIDs"); return import_->getExportPIDs(); }
 
     //! The Source Map used to construct this Import object.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("TpetraImport::getSourceMap"); return toXpetra(import_->getSourceMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("TpetraImport::getSourceMap"); return toXpetra(import_->getSourceMap()); }
 
     //! The Target Map used to construct this Import object.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { XPETRA_MONITOR("TpetraImport::getTargetMap"); return toXpetra(import_->getTargetMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("TpetraImport::getTargetMap"); return toXpetra(import_->getTargetMap()); }
 
     //@}
 
     //! @name I/O Methods
     //@{
 
-    //! Print method.
+    //! Print the Import's data to the given output stream.
     void print(std::ostream &os) const { XPETRA_MONITOR("TpetraImport::print"); import_->print(os); }
 
     //@}
@@ -166,14 +166,14 @@ namespace Xpetra {
     return *tpetraImport.getTpetra_Import();
   }
 
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& import) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP< const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node > >& import) {
     if (!import.is_null())
       return rcp(new TpetraImport<LocalOrdinal,GlobalOrdinal,Node>(import));
 
     return Teuchos::null;
   }
-  //
+
 
 } // Xpetra namespace
 

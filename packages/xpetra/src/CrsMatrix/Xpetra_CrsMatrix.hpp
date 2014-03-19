@@ -196,6 +196,12 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
 
+    //! Get offsets of the diagonal entries in the matrix.
+    virtual void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const = 0;
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+    virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
+
     virtual void removeEmptyProcessesInPlace(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) = 0;
 
     //@}

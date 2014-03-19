@@ -84,6 +84,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     DEPLIBS muelu xpetra muelu-adapters
     )
 
+#  TRIBITS_ADD_EXECUTABLE(
+#    CoalesceDropTest
+#    SOURCES CoalesceDropTest.cpp
+#    COMM serial mpi
+#    DEPLIBS muelu xpetra muelu-adapters
+#    )
+
   TRIBITS_ADD_EXECUTABLE(
     TransposeTest
     SOURCES TransposeTest.cpp

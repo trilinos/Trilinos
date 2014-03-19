@@ -129,7 +129,7 @@ namespace Sacado {
       typedef typename storage_type::const_reference const_reference;
       typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
-      //! Typename of scalar's (which may be different from T)
+      //! Typename of scalar's (which may be different from value_type)
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Turn Vector into a meta-function class usable with mpl::apply
@@ -140,17 +140,6 @@ namespace Sacado {
 
       //! Number of arguments
       static const int num_args = 1;
-
-#if 0
-      // A temporary hack to allow taking the address of a temporary
-      // Vector with ViewStorage.  A better approach would be to return
-      // a VectorViewStoragePtr with overloaded * to return a new
-      // Vector<ViewStorage>
-      KOKKOS_INLINE_FUNCTION
-      Vector* operator&() { return this; }
-      KOKKOS_INLINE_FUNCTION
-      const Vector* operator&() const { return this; }
-#endif
 
       //! Default constructor
       /*!
@@ -166,9 +155,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       Vector(const value_type& x) : s(1) { s.init(x); }
 
-      //! Constructor with specified size \c sz
+      //! View constructor
       /*!
-       * Creates array of size \c sz and initializes coeffiencts to 0.
+       * Creates vector with pre-allocated data.  Set \c owned = true
+       * if this Vector should take over management of the data.
        */
       KOKKOS_INLINE_FUNCTION
       Vector(ordinal_type sz, pointer v, bool owned) : s(sz,v,owned) {}

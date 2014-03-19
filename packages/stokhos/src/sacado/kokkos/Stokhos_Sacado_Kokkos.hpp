@@ -42,31 +42,7 @@
 #ifndef STOKHOS_SACADO_KOKKOS_HPP
 #define STOKHOS_SACADO_KOKKOS_HPP
 
-#include "Stokhos_ConfigDefs.h"
-
-#ifdef HAVE_STOKHOS_KOKKOSCORE
-
-#include "KokkosCore_config.h"
-
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
-
-#include "Stokhos_KokkosTraits.hpp"
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_ViewStorage.hpp"
-
-#include "Sacado_MP_ExpressionTraits.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
-
-#include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_Atomic_MP_Vector.hpp"
-
-#include "Teuchos_SerialQRDenseSolver_MP_Vector.hpp"
-
-#endif // HAVE_STOKHOS_KOKKOSCORE
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
 #endif // STOKHOS_SACADO_KOKKOS_HPP

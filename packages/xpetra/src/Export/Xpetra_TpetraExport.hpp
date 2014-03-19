@@ -63,9 +63,9 @@ namespace Xpetra {
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Export<LocalOrdinal,GlobalOrdinal,Node> &);
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> >& exp);
+
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraExport
@@ -125,13 +125,13 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getExportLIDs() const { XPETRA_MONITOR("TpetraExport::getExportLIDs"); return export_->getExportLIDs(); }
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportPIDs() const { XPETRA_MONITOR("TpetraExport::getExportImageIDs"); return export_->getExportPIDs(); }
+    ArrayView< const int > getExportPIDs() const { XPETRA_MONITOR("TpetraExport::getExportPIDs"); return export_->getExportPIDs(); }
 
     //! The source Map used to construct this Export.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("TpetraExport::getSourceMap"); return toXpetra(export_->getSourceMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("TpetraExport::getSourceMap"); return toXpetra(export_->getSourceMap()); }
 
     //! The target Map used to construct this Export.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { XPETRA_MONITOR("TpetraExport::getTargetMap"); return toXpetra(export_->getTargetMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("TpetraExport::getTargetMap"); return toXpetra(export_->getTargetMap()); }
 
     //@}
 
@@ -166,7 +166,7 @@ namespace Xpetra {
     const TpetraExport<LocalOrdinal,GlobalOrdinal,Node> & tpetraExport = dynamic_cast<const TpetraExport<LocalOrdinal,GlobalOrdinal,Node> &>(exp);
     return *tpetraExport.getTpetra_Export();
   }
-  //
+
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> >& exp) {
     if (!exp.is_null())
