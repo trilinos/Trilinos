@@ -138,6 +138,8 @@ function PrintHeader(description,linalg)
 function PrintTotalSetupTime()
 {
   printf("%60s          ----------------\n"," ");
+  if (etDeltaTotal != 0)
+    printf("%90s          delta total=%5.1f\n"," ",etDeltaTotal);
   for (i in TotalSetup) {
     split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
                          #we only want the first one, sep[1]
@@ -174,6 +176,7 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     if (linalg[i] == "Tpetra") tpetraInd = jj;
     jj++
   }
+  etDeltaTotal=0
   for (j=1; j<=len; j++) {
     split(sortedValuesAndLabels[j],fields,"@");
     printf("%3d: %60s  ==> ",len-j+1,fields[1]);
@@ -188,6 +191,7 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
         printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
       if (etDelta == "diff")
         printf("%11.2f   ",fields[tpetraInd] - fields[epetraInd]);
+        etDeltaTotal+=fields[tpetraInd] - fields[epetraInd];
     }
     printf("\n");
   }

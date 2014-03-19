@@ -67,6 +67,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->output_level    = 10;
    (*ml_ptr)->res_output_freq = 1;
    (*ml_ptr)->tolerance       = 1.e-8;
+   (*ml_ptr)->Cheby_eig_boost = 1.1;
    (*ml_ptr)->max_iterations  = 1000;
    (*ml_ptr)->MinPerProc_repartition = -1;
    (*ml_ptr)->PutOnSingleProc_repartition = -1;
@@ -1502,7 +1503,7 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 
 int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
        int ntimes, double omega, int nBlocks, int *blockIndices, int *blockOffset,
-       int  (*fun)(ML_Smoother *, int, double *, int, double *))
+       int  (*fun)(ML_Smoother *, int, double *, int, double *), ML_GS_SWEEP_TYPE GS_type)
 {
    double         myomega;
    ML_Sm_BGS_Data *data;
@@ -1538,18 +1539,26 @@ int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
       sprintf(str,"%s_pre%d",prestr,nl);
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ml->pre_smoother[nl].pre_or_post=ML_TAG_PRESM;
+      ml->pre_smoother[nl].gs_sweep_type= GS_type;
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]),
                         (void *) data, fun, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       sprintf(str,"%s_post%d",prestr,nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ml->post_smoother[nl].gs_sweep_type= GS_type;
+      ml->post_smoother[nl].pre_or_post=ML_TAG_POSTSM;
       return(ML_Smoother_Set(&(ml->post_smoother[nl]),
                              (void *) data, fun, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       sprintf(str,"%s_pre%d",prestr,nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ml->pre_smoother[nl].pre_or_post=ML_TAG_PRESM;
+      ml->pre_smoother[nl].gs_sweep_type= GS_type;
+      ml->post_smoother[nl].pre_or_post=ML_TAG_POSTSM;
+      ml->post_smoother[nl].gs_sweep_type= GS_type;
       ML_Smoother_Set(&(ml->pre_smoother[nl]),
                         (void *) data, fun, ntimes, myomega, str);
       sprintf(str,"%s_post%d",prestr,nl);
@@ -1587,18 +1596,26 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
 
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ml->pre_smoother[nl].pre_or_post=ML_TAG_PRESM;
+      ml->pre_smoother[nl].gs_sweep_type=ML_GS_symmetric;
       sprintf(str,"VBSGS_pre%d",nl);
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]),
                         (void *) data, fun, ntimes, omega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ml->post_smoother[nl].pre_or_post=ML_TAG_POSTSM;
+      ml->post_smoother[nl].gs_sweep_type=ML_GS_symmetric;
       sprintf(str,"VBSGS_post%d",nl);
       return(ML_Smoother_Set(&(ml->post_smoother[nl]),
                              (void *) data, fun, ntimes, omega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ml->pre_smoother[nl].pre_or_post=ML_TAG_PRESM;
+      ml->pre_smoother[nl].gs_sweep_type=ML_GS_symmetric;
+      ml->post_smoother[nl].pre_or_post=ML_TAG_POSTSM;
+      ml->post_smoother[nl].gs_sweep_type=ML_GS_symmetric;
       sprintf(str,"VBSGS_pre%d",nl);
       ML_Smoother_Set(&(ml->pre_smoother[nl]),
                         (void *) data, fun, ntimes, omega, str);
@@ -2419,6 +2436,8 @@ int ML_Gen_Smoother_Cheby(ML *ml, int nl, int pre_or_post,
          widget = ML_Smoother_Create_MLS();
 	 widget->mlsDeg   = degree;
 	 widget->eig_ratio = eig_ratio;
+	 widget->eig_boost = ml->Cheby_eig_boost;
+
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
            sprintf(str,"Cheby_pre%d",i);

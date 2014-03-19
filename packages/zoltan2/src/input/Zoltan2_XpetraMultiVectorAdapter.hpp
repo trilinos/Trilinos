@@ -108,7 +108,7 @@ public:
    *      The number of weights per multivector element is assumed to be
    *      \c weights.size().
    *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for multivector element
+   *     The weight for weight index \c n for multivector element
    *     \c k should be found at <tt>weights[n][weightStrides[n] * k]</tt>.
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *

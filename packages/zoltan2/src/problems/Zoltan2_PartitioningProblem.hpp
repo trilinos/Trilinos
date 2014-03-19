@@ -150,17 +150,17 @@ public:
   };
 
   /*! \brief Returns the imbalance of the solution.
-   *   \param dim If there are multiple weights per object,
-   *      specify the dimension for which the imbalance
+   *   \param idx If there are multiple weights per object,
+   *      specify the index for which the imbalance
    *      is desired, ranging from zero to one less then
    *     number of weights per object. 
    *   Imbalance was only computed if user requested
    *   metrics with a parameter.
    */
-  const scalar_t getImbalance(int dim=0) const {
+  const scalar_t getWeightImbalance(int idx=0) const {
     scalar_t imb = 0;
     if (!metrics_.is_null())
-      metrics_->getWeightImbalance(imb, dim);
+      metrics_->getWeightImbalance(imb, idx);
 
     return imb;
   }
@@ -222,8 +222,8 @@ public:
    * setPartSizesForCriteria.
    *
    * \todo A user should be able to give us one set of part sizes
-   *            that applies to all weight dimensions.  Right now
-   *            for each weight dimension that does not have
+   *            that applies to all weight indices.  Right now
+   *            for each weight index that does not have
    *            uniform part sizes, the user has to give us the
    *            part sizes once for each.
    */
@@ -237,7 +237,7 @@ public:
   /*! \brief Set or reset the relative sizes (per weight) for the parts
    *    that Zoltan2 will create.
    *
-   *  \param criteria the criteria (weight dimension) for which these 
+   *  \param criteria the criteria for which these 
    *      part sizes apply.  Criteria range from zero to one less than
    *     the number of weights per object specified in the 
    *     caller's InputAdapter.
@@ -538,8 +538,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
         this->graphModel_, solution_);
     }
     else if (algorithm_ == string("block")){
-      AlgBlock<Adapter>(this->envConst_, problemComm_,
+      AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
         this->identifierModel_, solution_);
+      algblock.solve();
     }
     else if (algorithm_ == string("rcb")){
       AlgRCB<Adapter>(this->envConst_, problemComm_,

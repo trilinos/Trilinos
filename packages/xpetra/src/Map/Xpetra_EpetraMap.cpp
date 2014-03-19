@@ -232,12 +232,23 @@ namespace Xpetra {
   Teuchos::ArrayView< const int > EpetraMap::getNodeElementList() const { XPETRA_MONITOR("EpetraMap::getNodeElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
 
   //typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-  const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> EpetraMap::getNode() const { XPETRA_MONITOR("EpetraMap::getNode"); return KokkosClassic::DefaultNode::getDefaultNode(); } //removed &
+  Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> EpetraMap::getNode() const { XPETRA_MONITOR("EpetraMap::getNode"); return KokkosClassic::DefaultNode::getDefaultNode(); } //removed &
 
+  RCP<const Map<int,int> > EpetraMap::removeEmptyProcesses () const {
+   const Epetra_BlockMap * NewMap = map_->RemoveEmptyProcesses();
+    if (!NewMap) {
+      return Teuchos::null;
+    } else {
+      const RCP< const Map<int, int> >  NewMapX = toXpetra(*NewMap);
+      delete NewMap;   // NOTE: toXpetra *copys* the epetra map rather than wrapping it, so we have to delete NewMap to avoid a memory leak.
+      return NewMapX;
+    }
+  }
 
-
-
-
+  RCP<const Map<int,int> > EpetraMap::replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const{
+    throw std::runtime_error("Xpetra::EpetraMap::replaceCommWithSubset has not yet been implemented.");
+    return Teuchos::null;
+  }
 
   std::string EpetraMap::description() const {
     XPETRA_MONITOR("EpetraMap::description");

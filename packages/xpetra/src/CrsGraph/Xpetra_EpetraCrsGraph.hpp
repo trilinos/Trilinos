@@ -52,9 +52,9 @@
 
 #include "Xpetra_CrsGraph.hpp"
 
-#include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_EpetraExport.hpp"
 #include "Xpetra_EpetraImport.hpp"
+#include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_EpetraUtils.hpp"
 
 #include <Epetra_CrsGraph.h>
@@ -65,7 +65,9 @@ namespace Xpetra {
   RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph& graph);
   const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph);
 
-  class EpetraCrsGraph : public CrsGraph<int, int> {
+  class EpetraCrsGraph
+    : public CrsGraph<int, int>
+  {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
@@ -98,11 +100,11 @@ namespace Xpetra {
     //! @name Insertion/Removal Methods
     //@{
 
-    //! Insert graph indices, using global IDs.
+    //! Insert global indices into the graph.
     void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices);
 
-    //! Insert graph indices, using local IDs.
-    void insertLocalIndices(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices);
+    //! Insert local indices into the graph.
+    void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices);
 
     //! Remove all graph indices from the specified local row.
     void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("EpetraCrsGraph::removeLocalIndices"); graph_->RemoveMyIndices(localRow); }
@@ -124,19 +126,19 @@ namespace Xpetra {
     //@{
 
     //! Returns the communicator.
-    const RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraCrsGraph::getComm"); return toXpetra(graph_->Comm()); }
+    RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraCrsGraph::getComm"); return toXpetra(graph_->Comm()); }
 
     //! Returns the Map that describes the row distribution in this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraph::getRowMap"); return toXpetra(graph_->RowMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraph::getRowMap"); return toXpetra(graph_->RowMap()); }
 
     //! Returns the Map that describes the column distribution in this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraph::getColMap"); return toXpetra(graph_->ColMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraph::getColMap"); return toXpetra(graph_->ColMap()); }
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraph::getDomainMap"); return toXpetra(graph_->DomainMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraph::getDomainMap"); return toXpetra(graph_->DomainMap()); }
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraph::getRangeMap"); return toXpetra(graph_->RangeMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraph::getRangeMap"); return toXpetra(graph_->RangeMap()); }
 
     //! Returns the importer associated with this graph.
     RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraph::getImporter"); return toXpetra(graph_->Importer()); }
@@ -183,37 +185,37 @@ namespace Xpetra {
     //! Returns the number of local diagonal entries, based on global row/column index comparisons.
     size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsGraph::getNodeNumDiags"); return graph_->NumMyDiagonals(); }
 
-    //! Returns the maximum number of entries across all rows/columns on all nodes.
+    //! Maximum number of entries in all rows over all processes.
     size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraph::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
 
-    //! Returns the maximum number of entries across all rows/columns on this node.
+    //! Maximum number of entries in all rows owned by the calling process.
     size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraph::getNodeMaxNumRowEntries"); return graph_->MaxNumIndices(); }
 
-    //! Indicates whether the graph has a well-defined column map.
+    //! Whether the graph has a column Map.
     bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraph::hasColMap"); return graph_->HaveColMap(); }
 
-    //! Indicates whether the graph is lower triangular.
+    //! Whether the graph is locally lower triangular.
     bool isLowerTriangular() const { XPETRA_MONITOR("EpetraCrsGraph::isLowerTriangular"); return graph_->LowerTriangular(); }
 
-    //! Indicates whether the graph is upper triangular.
+    //! Whether the graph is locally upper triangular.
     bool isUpperTriangular() const { XPETRA_MONITOR("EpetraCrsGraph::isUpperTriangular"); return graph_->UpperTriangular(); }
 
-    //! If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */.
+    //! Whether column indices are stored using local indices on the calling process.
     bool isLocallyIndexed() const { XPETRA_MONITOR("EpetraCrsGraph::isLocallyIndexed"); return graph_->IndicesAreLocal(); }
 
-    //! If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */.
+    //! Whether column indices are stored using global indices on the calling process.
     bool isGloballyIndexed() const { XPETRA_MONITOR("EpetraCrsGraph::isGloballyIndexed"); return graph_->IndicesAreGlobal(); }
 
-    //! Returns true if fillComplete() has been called and the graph is in compute mode.
+    //! Whether fillComplete() has been called and the graph is in compute mode.
     bool isFillComplete() const { XPETRA_MONITOR("EpetraCrsGraph::isFillComplete"); return graph_->Filled(); }
 
     //! Returns true if storage has been optimized.
     bool isStorageOptimized() const { XPETRA_MONITOR("EpetraCrsGraph::isStorageOptimized"); return graph_->StorageOptimized(); }
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the graph.
+    //! Return a const, nonpersisting view of global indices in the given row.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const;
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the graph.
+    //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const;
 
     //@}
@@ -233,7 +235,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraph::getMap"); return toXpetra(graph_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraph::getMap"); return toXpetra(graph_->Map()); }
 
     //! Import.
     void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);

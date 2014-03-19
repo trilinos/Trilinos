@@ -52,7 +52,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
-
+#include <Tpetra_CrsMatrix.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -75,86 +75,121 @@ double all_reduce_max( double local , const Teuchos::RCP<const Teuchos::Comm<int
   return global ;
 }
 
+struct result_struct {
+  double addtime,dottime,matvectime,norm_res,iter_time;
+  int iteration;
+  result_struct(double add, double dot, double matvec,int niter,double res):
+    addtime(add),dottime(dot),matvectime(matvec),
+    norm_res(res),iteration(niter),iter_time(add+dot+matvec) {};
+};
+
+template<class CrsMatrix, class Vector>
+result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int max_iter = 200
+    , typename CrsMatrix::scalar_type tolerance = std::numeric_limits<typename CrsMatrix::scalar_type>::epsilon(), int print = 0) {
+  typedef typename CrsMatrix::scalar_type ScalarType;
+  typedef typename CrsMatrix::scalar_type magnitude_type;
+  typedef typename CrsMatrix::local_ordinal_type LocalOrdinalType;
+  Teuchos::RCP<Vector> r,p,Ap;
+
+  // create temporary Vectors
+  r = Tpetra::createVector<ScalarType>(A->getRangeMap());
+  p = Tpetra::createVector<ScalarType>(A->getRangeMap());
+  Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
+
+  // fill with initial Values (make this a functor call or something)
+  int length = r->getLocalLength();
+  for(int i = 0;i<length;i++) {
+    x->replaceLocalValue(i,0);
+    r->replaceLocalValue(i,1);
+    Ap->replaceLocalValue(i,1);
+  }
+
+  magnitude_type normr = 0;
+  magnitude_type rtrans = 0;
+  magnitude_type oldrtrans = 0;
+
+  LocalOrdinalType print_freq = max_iter/10;
+  if (print_freq>50) print_freq = 50;
+  if (print_freq<1)  print_freq = 1;
+
+  double dottime = 0;
+  double addtime = 0;
+  double matvectime = 0;
+
+  Kokkos::Impl::Timer timer;
+  p->update(1.0,*x,0.0,*x,0.0);
+  addtime += timer.seconds(); timer.reset();
 
 
-template< class ImportType , class SparseMatrixType , class VectorType , class TagType = void >
-struct CGSolve ;
+  A->apply(*p, *Ap);
+  matvectime += timer.seconds(); timer.reset();
 
+  r->update(1.0,*b,-1.0,*Ap,0.0);
+  addtime += timer.seconds(); timer.reset();
 
-template< class ImportType , class SparseMatrixType , class VectorType >
-struct CGSolve< ImportType , SparseMatrixType , VectorType ,
-  typename Kokkos::Impl::enable_if<(
-    Kokkos::is_view< VectorType >::value &&
-    VectorType::rank == 1
-  )>::type >
-{
-  typedef typename VectorType::value_type scalar_type ;
+  rtrans = r->dot(*r);
+  dottime += timer.seconds(); timer.reset();
 
-  size_t iteration ;
-  double iter_time ;
-  double norm_res ;
+  normr = std::sqrt(rtrans);
 
-  CGSolve( const ImportType       & import ,
-           const SparseMatrixType & A ,
-           const VectorType       & b ,
-           const VectorType       & x ,
-           const size_t             maximum_iteration = 200 ,
-           const double             tolerance = std::numeric_limits<double>::epsilon() )
-    : iteration(0)
-    , iter_time(0)
-    , norm_res(0)
-  {
-    const size_t count_owned = import.count_owned ;
-    const size_t count_total = import.count_owned + import.count_receive;
+  if (print) {
+    std::cout << "Initial Residual = "<< normr << std::endl;
+  }
 
-    // Need input vector to matvec to be owned + received
-    VectorType pAll ( "cg::p" , count_total );
+  magnitude_type brkdown_tol = std::numeric_limits<magnitude_type>::epsilon();
 
-    VectorType p = Kokkos::subview< VectorType >( pAll , std::pair<size_t,size_t>(0,count_owned) );
-    VectorType r ( "cg::r" , count_owned );
-    VectorType Ap( "cg::Ap", count_owned );
-
-    /* r = b - A * x ; */
-
-    /* p  = x       */  Kokkos::deep_copy( p , x );
-    /* import p     */  import( pAll );
-    /* Ap = A * p   */  Kokkos::MV_Multiply( Ap , A , pAll );
-    /* b - Ap => r  */  Kokkos::V_Add( r , 1.0 , b , -1.0 , Ap );
-    /* p  = r       */  Kokkos::deep_copy( p , r );
-
-    double old_rdot = Kokkos::Example::all_reduce( Kokkos::V_Dot( r , r ) , import.comm );
-
-    norm_res  = sqrt( old_rdot );
-    iteration = 0 ;
-
-    Kokkos::Impl::Timer wall_clock ;
-
-    while ( tolerance < norm_res && iteration < maximum_iteration ) {
-
-      /* pAp_dot = dot( p , Ap = A * p ) */
-
-      /* import p    */  import( pAll );
-      /* Ap = A * p  */  Kokkos::MV_Multiply( Ap , A , pAll );
-
-      const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( p , Ap ) , import.comm );
-      const double alpha   = old_rdot / pAp_dot ;
-
-      /* x +=  alpha * p ;  */ Kokkos::V_Add( x ,  alpha, p  , 1.0 , x );
-      /* r += -alpha * Ap ; */ Kokkos::V_Add( r , -alpha, Ap , 1.0 , r );
-
-      const double r_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( r , r ) , import.comm );
-      const double beta  = r_dot / old_rdot ;
-
-      /* p = r + beta * p ; */ Kokkos::V_Add( p , 1.0 , r , beta , p );
-
-      norm_res = sqrt( old_rdot = r_dot );
-
-      ++iteration ;
+  // Count external so that we keep iteration count in the end
+  LocalOrdinalType k;
+  for(k=1; k <= max_iter && normr > tolerance; ++k) {
+    if (k == 1) {
+      p->update(1.0,*r,0.0,*r,0.0);
+      addtime += timer.seconds(); timer.reset();
+    }
+    else {
+      oldrtrans = rtrans;
+      rtrans = r->dot(*r);
+      dottime += timer.seconds(); timer.reset();
+      magnitude_type beta = rtrans/oldrtrans;
+      p->update(beta,*p,1.0,*r,0.0);
+      addtime += timer.seconds(); timer.reset();
+    }
+    normr = std::sqrt(rtrans);
+    if (print && (k%print_freq==0 || k==max_iter)) {
+      std::cout << "Iteration = "<<k<<"   Residual = "<<normr<<std::endl;
     }
 
-    iter_time = wall_clock.seconds();
+    magnitude_type alpha = 0;
+    magnitude_type p_ap_dot = 0;
+    A->apply(*p, *Ap);
+    matvectime += timer.seconds(); timer.reset();
+    p_ap_dot = Ap->dot(*p);
+    dottime += timer.seconds(); timer.reset();
+
+   if (p_ap_dot < brkdown_tol) {
+      if (p_ap_dot < 0 ) {
+        std::cerr << "cg_solve ERROR, numerical breakdown!"<<std::endl;
+        return result_struct(0,0,0,0,0);
+      }
+      else brkdown_tol = 0.1 * p_ap_dot;
+    }
+    alpha = rtrans/p_ap_dot;
+
+
+    x->update(1.0,*x,alpha,*p,0.0);
+    r->update(1.0,*r,-alpha,*Ap,0.0);
+    addtime += timer.seconds(); timer.reset();
+
   }
-};
+  rtrans = r->dot(*r);
+
+  normr = std::sqrt(rtrans);
+
+
+  return result_struct(addtime,dottime,matvectime,k-1,normr);
+}
+
+
+
 
 } // namespace Example
 } // namespace Kokkos

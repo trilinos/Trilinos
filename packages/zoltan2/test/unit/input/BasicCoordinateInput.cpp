@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
   RCP<mv_t> coords;
 
   try{
-    coords = uinput->getCoordinates();
+    coords = uinput->getUICoordinates();
   }
   catch(std::exception &e){
     fail=1;

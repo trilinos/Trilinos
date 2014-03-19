@@ -44,7 +44,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include <Kokkos_Threads.hpp>

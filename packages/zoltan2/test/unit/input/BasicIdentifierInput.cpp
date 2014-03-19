@@ -68,16 +68,16 @@ int main(int argc, char *argv[])
   // Create global identifiers with weights
 
   lno_t numLocalIds = 10;
-  int weightDim = 2;
+  int nWeights = 2;
 
   gno_t *myIds = new gno_t [numLocalIds];
-  scalar_t *weights = new scalar_t [numLocalIds*weightDim];
+  scalar_t *weights = new scalar_t [numLocalIds*nWeights];
   gno_t base = rank * numLocalIds * numLocalIds;
 
   for (lno_t i=0; i < numLocalIds; i++){
     myIds[i] = base+i;
-    weights[i*weightDim] = 1.0;
-    weights[i*weightDim + 1] = (nprocs-rank) / (i+1);
+    weights[i*nWeights] = 1.0;
+    weights[i*nWeights + 1] = (nprocs-rank) / (i+1);
   }
 
   // Create a Zoltan2::BasicIdentifierAdapter object
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     fail = 4;
   }
 
-  if (!fail && ia.getNumWeightsPerID() != weightDim)
+  if (!fail && ia.getNumWeightsPerID() != nWeights)
     fail = 5;
 
   const gno_t *globalIdsIn;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
   ia.getIDsView(globalIdsIn);
 
-  for (int w=0; !fail && w < weightDim; w++)
+  for (int w=0; !fail && w < nWeights; w++)
     ia.getWeightsView(weightsIn[w], weightStridesIn[w], w);
 
   const scalar_t *w1 = weightsIn[0];
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     if (!fail && w1[i*incr1] != 1.0)
       fail = 9;
     
-    if (!fail && w2[i*incr2] != weights[i*weightDim+1])
+    if (!fail && w2[i*incr2] != weights[i*nWeights+1])
       fail = 10;
   }
 

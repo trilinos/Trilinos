@@ -306,8 +306,8 @@ void AlgPTScotch(
   // TODO:  Actually get the weights; for now, not using weights.
   SCOTCH_Num *veloloctab = NULL;  // Vertex weights
   SCOTCH_Num *edloloctab = NULL;  // Edge weights
-  //TODO int vwtdim = model->getVertexWeightDim();
-  //TODO int ewtdim = model->getEdgeWeightDim();
+  //TODO int vwtdim = model->getNumWeightsPerVertex();
+  //TODO int ewtdim = model->getNumWeightsPerEdge();
   //TODO if (vwtdim) veloloctab = new SCOTCH_Num[nVtx];
   //TODO if (ewtdim) edloloctab = new SCOTCH_Num[nEdges];
   //TODO scale weights to SCOTCH_Nums.

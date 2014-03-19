@@ -51,9 +51,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
 
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
 

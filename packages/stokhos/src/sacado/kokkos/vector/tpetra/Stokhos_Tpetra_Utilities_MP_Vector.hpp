@@ -42,7 +42,7 @@
 #ifndef STOKHOS_TPETRA_UTILITIES_MP_VECTOR_HPP
 #define STOKHOS_TPETRA_UTILITIES_MP_VECTOR_HPP
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsGraph.hpp"

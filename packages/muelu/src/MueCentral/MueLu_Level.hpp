@@ -339,10 +339,13 @@ namespace MueLu {
     //@}
 
     enum   RequestMode { REQUEST, RELEASE, UNDEF };
-    RequestMode GetRequestMode() const { return requestMode_; }
+    RequestMode                     GetRequestMode() const                              { return requestMode_; }
 
-    void setlib(Xpetra::UnderlyingLib lib2) { lib_ = lib2; }
-    Xpetra::UnderlyingLib lib() { return lib_; }
+    void                            setlib(Xpetra::UnderlyingLib lib2)                  { lib_ = lib2; }
+    Xpetra::UnderlyingLib           lib()                                               { return lib_; }
+
+    void                            SetComm(RCP<const Teuchos::Comm<int> > const &comm) { comm_ = comm; }
+    RCP<const Teuchos::Comm<int> >  GetComm() const                                     { return comm_; }
 
   private:
 
@@ -371,8 +374,9 @@ namespace MueLu {
     //
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const;
 
-    static RequestMode requestMode_;
-    Xpetra::UnderlyingLib lib_;
+    static RequestMode                  requestMode_;
+    Xpetra::UnderlyingLib               lib_;
+    RCP<const Teuchos::Comm<int> >      comm_;
 
     typedef const FactoryBase*          Key1;
     typedef const std::string           Key2;

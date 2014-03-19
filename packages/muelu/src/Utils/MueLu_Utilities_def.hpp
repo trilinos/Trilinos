@@ -600,6 +600,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix& A) {
+
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
 
@@ -682,20 +683,31 @@ namespace MueLu {
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix& A) {
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
-    ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
 
-    Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
-    for (LO i = 0; i < localDiagVals.size(); i++)
-      localDiagVals[i] = diagVals[i];
-    localDiagVals = diagVals = null;
-
-    // TODO there's a problem with the importer from the underlying Tpetra::CrsGraph
-    // TODO so right now construct an importer.
-    // diagonal->doImport(*localDiag, *(A.getCrsGraph()->getImporter()), Xpetra::INSERT);
-    RCP<const Import> importer = ImportFactory::Build(rowMap, colMap);
+    try {
+       const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
+       if (crsOp == NULL) {
+         throw Exceptions::RuntimeError("cast to CrsMatrixWrap failed");
+       }
+       Teuchos::ArrayRCP<size_t> offsets;
+       crsOp->getLocalDiagOffsets(offsets);
+       crsOp->getLocalDiagCopy(*localDiag,offsets());
+    }
+    catch (...) {
+      ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
+      Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
+      for (LO i = 0; i < localDiagVals.size(); i++)
+        localDiagVals[i] = diagVals[i];
+      localDiagVals = diagVals = null;
+    }
 
     RCP<Vector> diagonal = VectorFactory::Build(colMap);
-    diagonal->doImport(*localDiag, *importer, Xpetra::INSERT);
+    RCP< const Import> importer;
+    importer = A.getCrsGraph()->getImporter();
+    if (importer == Teuchos::null) {
+      importer = ImportFactory::Build(rowMap, colMap);
+    }
+    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
 
     return diagonal;
   } //GetMatrixOverlappedDiagonal
