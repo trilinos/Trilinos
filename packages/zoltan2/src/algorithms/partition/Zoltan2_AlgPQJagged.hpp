@@ -6164,6 +6164,7 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 		this->imbalance_tolerance = tol - 1.0;
 	}
 
+    // TODO: May be a more relaxed tolerance is needed. RCB uses 10%
 	if (this->imbalance_tolerance <= 0)
 		this->imbalance_tolerance= 10e-4;
 
@@ -6250,6 +6251,7 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 	if (pe)
 		val = pe->getValue(&val);
 
+    // TODO: RCB default is false ? Should we change ?
 	if (val == 1){
 		this->distribute_points_on_cut_lines = false;
 	} else {
