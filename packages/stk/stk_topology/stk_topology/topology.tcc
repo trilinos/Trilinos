@@ -13,8 +13,8 @@
     {}                                                                             \
     template <typename Topology>                                                   \
     BOOST_GPU_ENABLED                                                              \
-    result_type operator()(Topology) const                                         \
-    { return Topology::name(m_ordinal,m_output_ordinals); }                        \
+    void operator()(Topology) const                                         \
+    { Topology::name(m_ordinal,m_output_ordinals); }                               \
     unsigned                   m_ordinal;                                          \
     OrdinalOutputIterator m_output_ordinals;                                       \
   };                                                                               \
@@ -45,8 +45,8 @@
     {}                                                                             \
     template <typename Topology>                                                   \
     BOOST_GPU_ENABLED                                                              \
-    result_type operator()(Topology) const                                         \
-    { return Topology::name(m_nodes,m_ordinal,m_output_ordinals); }                \
+    void operator()(Topology) const                                         \
+    { Topology::name(m_nodes,m_ordinal,m_output_ordinals); }                \
     const NodeArray    & m_nodes;                                                  \
     unsigned                  m_ordinal;                                           \
     NodeOutputIterator   m_output_ordinals;                                        \
