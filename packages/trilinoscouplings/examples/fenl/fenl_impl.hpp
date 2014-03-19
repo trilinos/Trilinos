@@ -399,7 +399,13 @@ Perf fenl(
 
     // Create a subview of just the owned data of the solution vector
     GlobalVectorType g_nodal_solution_no_overlap(RowMap,Kokkos::subview<LocalDualVectorType>(k_nodal_solution,std::pair<unsigned,unsigned>(0,k_nodal_delta.dimension_0()),Kokkos::ALL()));
+    //::Teuchos::RCP<GlobalVectorType> temp = g_nodal_solution.offsetViewNonConst (RowMap, 0);
+    //GlobalVectorType g_nodal_solution_no_overlap (*temp); // shallow copy
 
+    typedef ::Tpetra::Import<typename GlobalVectorType::local_ordinal_type,
+      typename GlobalVectorType::global_ordinal_type,
+      typename GlobalVectorType::node_type> import_type;
+    import_type import (RowMap, ColMap);
 
     //----------------------------------
     // Nonlinear Newton iteration:
@@ -412,7 +418,8 @@ Perf fenl(
 
       //--------------------------------
 
-      comm_nodal_import( nodal_solution );
+      //comm_nodal_import( nodal_solution );
+      g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
 
       //--------------------------------
       // Element contributions to residual and jacobian
