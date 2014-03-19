@@ -63,13 +63,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 #INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_BINARY_DIR})
 
 # Generate the XDR header and source file for the service arguments
-TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/opregistration_service_args.x)
+TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/opreg_service_args.x)
 
 
 
 TRIBITS_ADD_EXECUTABLE(
   OpRegistrationTest
-  SOURCES opregistration_service_args.c opregistration_test.cpp opregistration_c_server.c opregistration_cpp_server.cpp opregistration_client.cpp
+  SOURCES opreg_service_args.c opreg_test.cpp opreg_c_server.c opreg_cpp_server.cpp opreg_client.cpp
   DEPLIBS ${DEPLIBS}
   NOEXEPREFIX
 )
