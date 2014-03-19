@@ -58,6 +58,7 @@ typedef zoltan2_partId_t partId_t;
 
 namespace Zoltan2 {
 
+
 /*! Scotch partitioning method.
  *
  *  \param env  parameters for the problem and library configuration
@@ -68,6 +69,8 @@ namespace Zoltan2 {
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).
  */
+
+
 
 template <typename Adapter>
 void AlgPTScotch(
@@ -133,6 +136,61 @@ extern size_t SCOTCH_getMemoryMax();
 
 namespace Zoltan2{
 
+// Scale and round scalar_t weights (typically float or double) to 
+// SCOTCH_Num (typically int or long).
+// subject to sum(weights) <= max_wgt_sum.
+// Only scale if deemed necessary.
+//
+// Note that we use ceil() instead of round() to avoid
+// rounding to zero weights.
+// Based on Zoltan's scale_round_weights, mode 1.
+
+template <typename lno_t, typename scalar_t>
+static void scale_weights(StridedData<lno_t, scalar_t> &fwgts, SCOTCH_Num *iwgts,
+                  const RCP<const Comm<int> > &problemComm)
+{
+  const double INT_EPSILON = 1e-5;
+
+  size_t n = fwgts.size();
+
+  SCOTCH_Num nonint, nonint_local = 0;
+  double sum_wgt, sum_wgt_local = 0.;
+  double max_wgt, max_wgt_local = 0.;
+
+  // Compute local sums of the weights 
+  // Check whether all weights are integers
+  for (size_t i = 0; i < n; i++) {
+    double fw = double(fwgts[i]);
+    if (!nonint_local){
+      SCOTCH_Num tmp = (SCOTCH_Num) floor(fw + .5); /* Nearest int */
+      if (fabs((double)tmp-fw) > INT_EPSILON) {
+        nonint_local = 1;
+      }
+    }
+    sum_wgt_local += fw;
+    if (fw > max_wgt_local) max_wgt_local = fw;
+  }
+
+  Teuchos::reduceAll<int,int>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                              &nonint_local,  &nonint);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 1,
+                                 &sum_wgt_local, &sum_wgt);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                                 &max_wgt_local, &max_wgt);
+
+  double scale = 1.;
+  const double max_wgt_sum = double(SCOTCH_NUMMAX/8);
+
+  // Scaling needed if weights are not integers or weights' range is not sufficient
+  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > max_wgt_sum)) {
+    /* Calculate scale factor */
+    if (sum_wgt != 0.) scale = max_wgt_sum/sum_wgt;
+  }
+
+  /* Convert weights to positive integers using the computed scale factor */
+  for (size_t i = 0; i < n; i++)
+    iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
+}
 /////////////////////////////////////////////////////////////////////////////
 //  Traits struct to handle conversions between gno_t/lno_t and SCOTCH_Num.
 /////////////////////////////////////////////////////////////////////////////
@@ -248,6 +306,7 @@ void AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;
+  int me = problemComm->getRank();
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -273,8 +332,8 @@ void AlgPTScotch(
   // Get vertex info
   ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > xyz;
-  ArrayView<StridedData<lno_t, scalar_t> > vtxWt;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
+  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
   SCOTCH_Num vertlocnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(vertlocnbr, nVtx, env);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
@@ -303,20 +362,37 @@ void AlgPTScotch(
   SCOTCH_Num *edgegsttab = NULL;  // Array for ghost vertices
 
   // Get weight info.
-  // TODO:  Actually get the weights; for now, not using weights.
-  SCOTCH_Num *veloloctab = NULL;  // Vertex weights
-  SCOTCH_Num *edloloctab = NULL;  // Edge weights
-  //TODO int vwtdim = model->getNumWeightsPerVertex();
-  //TODO int ewtdim = model->getNumWeightsPerEdge();
-  //TODO if (vwtdim) veloloctab = new SCOTCH_Num[nVtx];
-  //TODO if (ewtdim) edloloctab = new SCOTCH_Num[nEdges];
-  //TODO scale weights to SCOTCH_Nums.
+  SCOTCH_Num *velotab = NULL;  // Vertex weights
+  SCOTCH_Num *edlotab = NULL;  // Edge weights
+
+  int nVwgts = model->getNumWeightsPerVertex();
+  int nEwgts = model->getNumWeightsPerEdge();
+  if (nVwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per vertex." << std::endl;
+  }
+  if (nEwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per edge." << std::endl;
+  }
+
+  if (nVwgts) {
+    velotab = new SCOTCH_Num[nVtx+1];
+    scale_weights<lno_t, scalar_t>(vwgts[0], velotab, problemComm);
+  }
+
+  if (nEwgts) {
+    edlotab = new SCOTCH_Num[nEdges+1];
+    scale_weights<lno_t, scalar_t>(ewgts[0], edlotab, problemComm);
+  }
 
   // Build PTScotch distributed data structure
   ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax,
-                            vertloctab, vendloctab, veloloctab, vlblloctab,
+                            vertloctab, vendloctab, velotab, vlblloctab,
                             edgelocnbr, edgelocsize,
-                            edgeloctab, edgegsttab, edloloctab);
+                            edgeloctab, edgegsttab, edlotab);
 
   env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphBuild", 
     !ierr, BASIC_ASSERTION, problemComm);
@@ -403,14 +479,12 @@ void AlgPTScotch(
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
-  //if (me == 0) cout << " done." << endl;
-  // Clean up Zoltan2
-  //TODO if (vwtdim) delete [] velotab;
-  //TODO if (ewtdim) delete [] edlotab;
-
   // Clean up copies made due to differing data sizes.
   SCOTCH_Num_Traits<lno_t>::DELETE_SCOTCH_NUM_ARRAY(&vertloctab);
   SCOTCH_Num_Traits<gno_t>::DELETE_SCOTCH_NUM_ARRAY(&edgeloctab);
+
+  if (nVwgts) delete [] velotab;
+  if (nEwgts) delete [] edlotab;
 
 #else // DO NOT HAVE_MPI
 
@@ -422,8 +496,8 @@ void AlgPTScotch(
   // TODO:  Actual logic should call Scotch when number of processes == 1.
   ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > xyz;
-  ArrayView<StridedData<lno_t, scalar_t> > vtxWt;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
+  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
 
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
