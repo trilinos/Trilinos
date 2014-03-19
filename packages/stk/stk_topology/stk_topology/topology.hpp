@@ -30,10 +30,6 @@ struct topology
   enum topology_t
   {
       INVALID_TOPOLOGY
-    , HETEROGENEOUS_EDGE
-    , HETEROGENEOUS_FACE
-    , HETEROGENEOUS_ELEMENT_2D
-    , HETEROGENEOUS_ELEMENT, HETEROGENEOUS_ELEMENT_3D = HETEROGENEOUS_ELEMENT
     , BEGIN_TOPOLOGY
     //NODE_RANK
     , NODE = BEGIN_TOPOLOGY
@@ -83,7 +79,7 @@ struct topology
     , END_TOPOLOGY
     , NUM_TOPOLOGIES = END_TOPOLOGY - BEGIN_TOPOLOGY
     , SUPERELEMENT_START = END_TOPOLOGY+1
-    , FORCE_TOPOLOGY_TO_UNSIGNED = ~0U
+    , FORCE_TOPOLOGY_TO_UNSIGNED = ~0U // max unsigned int
   };
 
   //***************************************************************************
@@ -100,10 +96,6 @@ struct topology
   /// does this topology have homogeneous faces
   BOOST_GPU_ENABLED
   bool has_homogeneous_faces() const;
-
-  /// is this a heterogenuous topology
-  BOOST_GPU_ENABLED
-  bool is_heterogenuous() const;
 
   /// is this topology a shell topology (i.e. an element with only two sides)
   BOOST_GPU_ENABLED

@@ -22,7 +22,7 @@ STKUNIT_UNIT_TEST( stk_topology, lexicographical_smallest_permutation)
 
   STKUNIT_EXPECT_EQ( std::string("abc"), std::string(permutation_nodes));
 
-  permutation_index = t.lexicographical_smallest_permutation(nodes,true);
+  permutation_index = t.lexicographical_smallest_permutation(nodes,true); // only consider positive permutations (true means this)
   t.permutation_nodes(nodes,permutation_index,permutation_nodes);
 
   STKUNIT_EXPECT_EQ( std::string("acb"), std::string(permutation_nodes));
@@ -55,73 +55,6 @@ STKUNIT_UNIT_TEST( stk_topology, side_node_ordinals)
   }
 
 };
-
-STKUNIT_UNIT_TEST( stk_topology, heterogenuous_topology )
-{
-
-  using stk::topology;
-  using namespace stk::topology_detail;
-
-  topology t = topology::HETEROGENEOUS_ELEMENT;
-
-  STKUNIT_EXPECT_TRUE(t.is_valid() );
-  STKUNIT_EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
-  STKUNIT_EXPECT_EQ(t.side_rank(), topology::FACE_RANK );
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
-  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
-  {
-    std::ostringstream name;
-    name << t ;
-    std::string goldName("HETEROGENEOUS_ELEMENT");
-    STKUNIT_EXPECT_EQ( goldName, name.str() );
-  }
-
-  t = topology::HETEROGENEOUS_ELEMENT_2D;
-
-  STKUNIT_EXPECT_TRUE(t.is_valid() );
-  STKUNIT_EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
-  STKUNIT_EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(3));
-  {
-    std::ostringstream name;
-    name << t ;
-    std::string goldName("HETEROGENEOUS_ELEMENT_2D");
-    STKUNIT_EXPECT_EQ( goldName, name.str() );
-  }
-
-  t = topology::HETEROGENEOUS_FACE;
-
-  STKUNIT_EXPECT_TRUE(t.is_valid() );
-  STKUNIT_EXPECT_EQ(t.rank(), topology::FACE_RANK );
-  STKUNIT_EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
-  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
-  {
-    std::ostringstream name;
-    name << t ;
-    std::string goldName("HETEROGENEOUS_FACE");
-    STKUNIT_EXPECT_EQ( goldName, name.str() );
-  }
-
-  t = topology::HETEROGENEOUS_EDGE;
-
-  STKUNIT_EXPECT_TRUE(t.is_valid() );
-  STKUNIT_EXPECT_EQ(t.rank(), topology::EDGE_RANK );
-  STKUNIT_EXPECT_EQ(t.side_rank(), topology::NODE_RANK );
-  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));
-  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
-  {
-    std::ostringstream name;
-    name << t ;
-    std::string goldName("HETEROGENEOUS_EDGE");
-    STKUNIT_EXPECT_EQ( goldName, name.str() );
-  }
-}
 
 STKUNIT_UNIT_TEST( stk_topology, superelement_topology )
 {

@@ -29,7 +29,6 @@ struct topology_data<topology::INVALID_TOPOLOGY>
   static const topology::topology_t base = topology::INVALID_TOPOLOGY;
 
   static const bool is_valid = false;
-  static const bool is_heterogenuous = false;
   static const topology::rank_t rank = topology::INVALID_RANK;
   static const topology::rank_t side_rank = topology::INVALID_RANK;
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
@@ -56,102 +55,6 @@ struct topology_data<topology::INVALID_TOPOLOGY>
   typedef boost::mpl::vector<> face_node_ordinals_vector;
 
   typedef boost::mpl::vector<> permutation_node_ordinals_vector;
-};
-
-//***************************************************************************
-// topology::HETEROGENEOUS_EDGE -- topology::HETEROGENEOUS_EDGE
-//***************************************************************************
-
-template <>
-struct topology_data<topology::HETEROGENEOUS_EDGE>
-  : public topology_data<topology::INVALID_TOPOLOGY>
-{
-  static const topology::topology_t value = topology::HETEROGENEOUS_EDGE;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const bool is_heterogenuous = true;
-  static const topology::rank_t rank = topology::EDGE_RANK;
-  static const topology::rank_t side_rank = topology::NODE_RANK;
-
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true // 2d
-                                , true // 3d
-                              > spatial_dimension_vector;
-
-};
-
-//***************************************************************************
-// topology::HETEROGENEOUS_FACE -- topology::HETEROGENEOUS_FACE
-//***************************************************************************
-
-template <>
-struct topology_data<topology::HETEROGENEOUS_FACE>
-  : public topology_data<topology::INVALID_TOPOLOGY>
-{
-  static const topology::topology_t value = topology::HETEROGENEOUS_FACE;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const bool is_heterogenuous = true;
-  static const topology::rank_t rank = topology::FACE_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true // 3d
-                              > spatial_dimension_vector;
-
-};
-
-//***************************************************************************
-// topology::HETEROGENEOUS_ELEMENT_2D -- topology::HETEROGENEOUS_ELEMENT_2D
-//***************************************************************************
-
-template <>
-struct topology_data<topology::HETEROGENEOUS_ELEMENT_2D>
-  : public topology_data<topology::INVALID_TOPOLOGY>
-{
-  static const topology::topology_t value = topology::HETEROGENEOUS_ELEMENT_2D;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const bool is_heterogenuous = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
-
-};
-
-//***************************************************************************
-// topology::HETEROGENEOUS_ELEMENT -- topology::HETEROGENEOUS_ELEMENT
-//***************************************************************************
-
-template <>
-struct topology_data<topology::HETEROGENEOUS_ELEMENT>
-  : public topology_data<topology::INVALID_TOPOLOGY>
-{
-  static const topology::topology_t value = topology::HETEROGENEOUS_ELEMENT;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const bool is_heterogenuous = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
-
 };
 
 //***************************************************************************
@@ -746,6 +649,7 @@ struct topology_data<topology::SHELL_TRI_3>
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
   static const bool is_shell = true;
+  static const bool has_homogeneous_faces = true;
 
   static const unsigned dimension = 3;
   static const unsigned num_faces = 2;
@@ -771,6 +675,7 @@ struct topology_data<topology::SHELL_TRI_4>
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
   static const bool is_shell = true;
+  static const bool has_homogeneous_faces = true;
 
   static const unsigned dimension = 3;
   static const unsigned num_faces = 2;
@@ -796,6 +701,7 @@ struct topology_data<topology::SHELL_TRI_6>
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
   static const bool is_shell = true;
+  static const bool has_homogeneous_faces = true;
 
   static const unsigned dimension = 3;
   static const unsigned num_faces = 2;
@@ -1044,6 +950,7 @@ struct topology_data<topology::SHELL_QUAD_4>
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
   static const bool is_shell = true;
+  static const bool has_homogeneous_faces = true;
 
   static const unsigned dimension = 3;
   static const unsigned num_faces = 2;
@@ -1069,6 +976,7 @@ struct topology_data<topology::SHELL_QUAD_8>
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
   static const bool is_shell = true;
+  static const bool has_homogeneous_faces = true;
 
   static const unsigned dimension = 3;
   static const unsigned num_faces = 2;
@@ -1094,6 +1002,7 @@ struct topology_data<topology::SHELL_QUAD_9>
   static const topology::rank_t rank = topology::ELEMENT_RANK;
   static const topology::rank_t side_rank = topology::FACE_RANK;
   static const bool is_shell = true;
+  static const bool has_homogeneous_faces = true;
 
   static const unsigned dimension = 3;
   static const unsigned num_faces = 2;

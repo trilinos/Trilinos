@@ -19,7 +19,6 @@ namespace stk { namespace topology_detail {
 
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_valid,bool)
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_shell,bool)
-STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_heterogenuous,bool)
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(has_homogeneous_faces,bool)
 
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(rank,topology::rank_t)

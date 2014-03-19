@@ -12,10 +12,6 @@ std::string topology::name() const
   switch (m_value)
   {
   case INVALID_TOPOLOGY:         return "INVALID_TOPOLOGY";
-  case HETEROGENEOUS_EDGE:       return "HETEROGENEOUS_EDGE";
-  case HETEROGENEOUS_FACE:       return "HETEROGENEOUS_FACE";
-  case HETEROGENEOUS_ELEMENT_2D: return "HETEROGENEOUS_ELEMENT_2D";
-  case HETEROGENEOUS_ELEMENT:    return "HETEROGENEOUS_ELEMENT";
   case NODE:             return "NODE";
   case LINE_2:           return "LINE_2";
   case LINE_3:           return "LINE_3";
