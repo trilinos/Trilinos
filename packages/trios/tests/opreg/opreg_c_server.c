@@ -95,7 +95,7 @@ uint64_t calc_checksum (const char * buf, const uint64_t size);
  * @param data_addr   The remote memory descriptor for the data (not used).
  * @param res_addr    The remote memory descriptor for the result.
  */
-int opreg_request_srvr(
+int opreg_request_processor(
         const unsigned long        request_id,
         const NNTI_peer_t         *caller,
         const opreg_args *args,
@@ -106,7 +106,7 @@ int opreg_request_srvr(
     log_level debug_level = opreg_debug_level;
 
     /* process array (nothing to do) */
-    log_debug(debug_level, "starting opreg_request_srvr()");
+    log_debug(debug_level, "starting opreg_request_processor()");
 
     log_debug(debug_level, "args->data.int_val(%d) args->data.float_val(%f) args->data.double_val(%f) args->chksum(%lu)",
             args->data.int_val, args->data.float_val, args->data.double_val, args->chksum);
@@ -158,7 +158,7 @@ int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
     }
 
     // register callbacks for the service methods
-    NSSI_REGISTER_SERVER_STUB(OPREG_REQUEST_OP, opreg_request_srvr, opreg_args, void);
+    NSSI_REGISTER_SERVER_STUB(OPREG_REQUEST_OP, opreg_request_processor, opreg_args, void);
 
 
     // Get the Server URL
