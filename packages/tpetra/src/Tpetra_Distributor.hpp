@@ -2830,6 +2830,33 @@ namespace Tpetra {
       exportIDs.resize(numExports);
       exportNodeIDs.resize(numExports);
     }
+
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (tempPlan.getTotalReceiveLength ()) != numExports,
+        std::logic_error, "Tpetra::Distributor::computeSends: tempPlan.getTotal"
+        "ReceiveLength() = " << tempPlan.getTotalReceiveLength () << " != num"
+        "Exports = " << numExports  << ".  Please report this bug to the "
+        "Tpetra developers.");
+    }
+
+    // exportObjs: Packed receive buffer.  (exportObjs[2*i],
+    // exportObjs[2*i+1]) will give the (GID, PID) pair for export i,
+    // after tempPlan.doPostsAndWaits(...) finishes below.
+    //
+    // FIXME (mfh 19 Mar 2014) This only works if OrdinalType fits in
+    // size_t.  This issue might come up, for example, on a 32-bit
+    // machine using 64-bit global indices.  I will add a check here
+    // for that case.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sizeof (size_t) < sizeof (OrdinalType), std::logic_error,
+      "Tpetra::Distributor::computeSends: sizeof(size_t) = " << sizeof(size_t)
+      << " < sizeof(" << Teuchos::TypeNameTraits<OrdinalType>::name () << ") = "
+      << sizeof (OrdinalType) << ".  This violates an assumption of the "
+      "method.  It's not hard to work around (just use Array<OrdinalType> as "
+      "the export buffer, not Array<size_t>), but we haven't done that yet.  "
+      "Please report this bug to the Tpetra developers.");
+
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
       std::ostringstream os;
@@ -2840,8 +2867,8 @@ namespace Tpetra {
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
-      exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
-      exportNodeIDs[i] = exportObjs[2*i+1];
+      exportIDs[i] = as<OrdinalType> (exportObjs[2*i]);
+      exportNodeIDs[i] = as<int> (exportObjs[2*i+1]);
     }
 
     if (debug_) {
