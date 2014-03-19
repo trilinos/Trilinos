@@ -57,6 +57,7 @@
 
 #include <algorithm>
 #include <string>
+#include <limits>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
 
@@ -78,7 +79,9 @@ namespace ROL {
     Real gnorm;
     Real snorm;
     Teuchos::RCP<Vector<Real> > iterateVec;
-    AlgorithmState(void) : iter(0), nfval(0), ngrad(0), value(0), gnorm(0), snorm(0), iterateVec(Teuchos::null) {}
+    AlgorithmState(void) : iter(0), nfval(0), ngrad(0), value(0), 
+      gnorm(std::numeric_limits<Real>::max()), snorm(std::numeric_limits<Real>::max()), 
+      iterateVec(Teuchos::null) {}
   };  
   
   /** \brief  State for step class.  Will be used for restarts.

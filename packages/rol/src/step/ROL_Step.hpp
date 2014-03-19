@@ -102,8 +102,6 @@ public:
       algo_state.gnorm = (state_->gradientVec)->norm();
     }
     algo_state.ngrad = 1;
-    // Set initial step norm to something large
-    algo_state.snorm = 1.e10;
   }
 
   /** \brief Compute step.
