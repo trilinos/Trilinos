@@ -267,7 +267,7 @@ Sentinel::~Sentinel()
 
 Sentinel::Sentinel()
 {
-#if defined(__MIC__) && 0
+#if defined(__MIC__)
   static const bool remove_core_0 = true ;
 #else
   static const bool remove_core_0 = false ;
