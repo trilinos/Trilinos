@@ -95,6 +95,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(run_external_func
   SOURCES run_external_func.cpp
   DEPLIBS exteranl_func
   PASS_REGULAR_EXPRESSION "external_func C B A"
+  NUM_MPI_PROCS 1
   )
 
 ADD_CUSTOM_TARGET( clean_exteranl_func
