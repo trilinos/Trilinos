@@ -116,8 +116,12 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
-// Vector size used in tests
-const int VectorSize = 3;
+// Vector size used in tests -- Needs to be what is instantiated for CPU/MIC/GPU
+#if defined(__CUDACC__)
+const int VectorSize = 16;
+#else
+const int VectorSize = 8;
+#endif
 
 //
 // Test vector addition
@@ -1104,7 +1108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
-  btol = 100*btol;
+  btol = 1000*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -1259,7 +1263,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
-  btol = 100*btol;
+  btol = 1000*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -1415,6 +1419,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //     [ 0, 0,   ..., 0            ]
   //     [ 1, 1/2, ..., 1/VectorSize ]
   //     ....
+  tol = 1000*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
@@ -1579,6 +1584,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //     [ 0, 0,   ..., 0            ]
   //     [ 1, 1/2, ..., 1/VectorSize ]
   //     ....
+  tol = 1000*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
@@ -1762,6 +1768,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
+  tol = 1000*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
