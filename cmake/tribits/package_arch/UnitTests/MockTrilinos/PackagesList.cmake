@@ -71,5 +71,5 @@ TRIBITS_DEFINE_REPOSITORY_PACKAGES(
 # NOTE: Sacado is really PT but for testing purpose it is made ST
 # NOTE: Belos is really PT but for testing purpose it is made ST
 
-PACKAGE_DISABLE_ON_PLATFORMS(ML BadSystem1)
-PACKAGE_DISABLE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(ML BadSystem1)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)
