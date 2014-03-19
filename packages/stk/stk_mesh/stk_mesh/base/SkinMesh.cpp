@@ -54,27 +54,11 @@ void get_common_elements( BulkData const& mesh, EntityVector const& nodes, Entit
 
 typedef std::set< std::pair<Entity, unsigned> > Boundary;
 
-} //end un-named namespace
-
-void skin_mesh( BulkData & mesh, PartVector const& skin_parts)
+size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
+                                                   const BucketVector& element_buckets,
+                                                   Boundary& boundary)
 {
-  skin_mesh(mesh, mesh.mesh_meta_data().universal_part(), skin_parts);
-}
-
-void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts)
-{
-  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE, "mesh is not SYNCHRONIZED" );
-
-  const unsigned spatial_dimension = mesh.mesh_meta_data().spatial_dimension();
-  const bool consider_negative_permutations = spatial_dimension < 3u;
   const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
-  const Part & locally_owned = mesh.mesh_meta_data().locally_owned_part();
-
-  const BucketVector& element_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & locally_owned);
-
-  Boundary boundary;
-
-  // find elements with external sides
   size_t num_sides_to_create = 0;
   for (size_t i=0, ie=element_buckets.size(); i<ie; ++i) {
     const Bucket & b = *element_buckets[i];
@@ -160,15 +144,17 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
       }
     }
   }
+  return num_sides_to_create;
+}
 
-
-  std::vector<size_t> requests(mesh.mesh_meta_data().entity_rank_count(), 0);
-  requests[side_rank] = num_sides_to_create;
-
-  mesh.modification_begin();
-
-  EntityVector sides;
-  mesh.generate_new_entities(requests, sides);
+void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
+                                                      Boundary& boundary,
+                                                      EntityVector const& sides,
+                                                      PartVector const& skin_parts)
+{
+  const unsigned spatial_dimension = mesh.mesh_meta_data().spatial_dimension();
+  const bool consider_negative_permutations = spatial_dimension < 3u;
+  const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
 
   size_t side_index = 0;
   for (Boundary::const_iterator itr = boundary.begin(), end_itr = boundary.end();
@@ -225,9 +211,42 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
 
     mesh.change_entity_parts(side,add_parts);
   }
+}
+
+} //end un-named namespace
+
+void skin_mesh( BulkData & mesh, PartVector const& skin_parts)
+{
+  skin_mesh(mesh, mesh.mesh_meta_data().universal_part(), skin_parts);
+}
+
+void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts)
+{
+  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE, "mesh is not SYNCHRONIZED" );
+
+  const Part & locally_owned = mesh.mesh_meta_data().locally_owned_part();
+  const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
+  const BucketVector& element_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & locally_owned);
+
+  Boundary boundary;
+
+  // find elements with external sides
+  size_t num_sides_to_create = skin_mesh_find_elements_with_external_sides(mesh,
+                                                                           element_buckets,
+                                                                           boundary);
+  // create the sides
+  std::vector<size_t> requests(mesh.mesh_meta_data().entity_rank_count(), 0);
+  requests[side_rank] = num_sides_to_create;
+
+  mesh.modification_begin();
+
+  EntityVector sides;
+  mesh.generate_new_entities(requests, sides);
+
+  // attach new sides to connected entities
+  skin_mesh_attach_new_sides_to_connected_entities(mesh, boundary, sides, skin_parts);
 
   mesh.modification_end();
 }
-
 
 }} // namespace stk::mesh
