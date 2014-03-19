@@ -100,7 +100,7 @@ uint64_t calc_checksum (const char * buf, const uint64_t size);
  * @param data_addr   The remote memory descriptor for the data (not used).
  * @param res_addr    The remote memory descriptor for the result.
  */
-class opreg_request_srvr : public NssiRpc {
+class OpRegRequestProcessor : public NssiRpc {
     public:
         int doRPC(
                 const unsigned long  request_id,
@@ -114,7 +114,7 @@ class opreg_request_srvr : public NssiRpc {
             const opreg_args *args = static_cast<const opreg_args*>(void_args);
 
             /* process array (nothing to do) */
-            log_debug(debug_level, "starting opreg_request_srvr->dispatch()");
+            log_debug(debug_level, "starting OpRegRequestProcessor->dispatch()");
 
             log_debug(debug_level, "args->data.int_val(%d) args->data.float_val(%f) args->data.double_val(%f) args->chksum(%lu)",
                     args->data.int_val, args->data.float_val, args->data.double_val, args->chksum);
@@ -152,7 +152,7 @@ int opreg_cpp_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
     nssi_service opreg_svc;
     int server_rank;
 
-    opreg_request_srvr *opreg_srvr_obj = new opreg_request_srvr();
+    OpRegRequestProcessor *opreg_srvr_obj = new OpRegRequestProcessor();
 
     MPI_Comm_rank(server_comm, &server_rank);
 
