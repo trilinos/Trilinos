@@ -104,9 +104,12 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     element_rank_topologies.push_back(stk::topology::HEXAHEDRON_27);
 
     // zero noded super element
-    element_rank_topologies.push_back(stk::topology::SUPERELEMENT_START);
     unsigned num_nodes_in_super_element = 10;
     element_rank_topologies.push_back(stk::create_superelement_topology(num_nodes_in_super_element));
+
+    // add a topology of invalid_rank
+    unsigned zeroNodes = 0;
+    element_rank_topologies.push_back(stk::create_superelement_topology(zeroNodes));
 
     ASSERT_EQ(55u, element_rank_topologies.size());
 
@@ -128,11 +131,15 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
         EXPECT_EQ(stk::topology::FACE_RANK, face_rank_topologies[i].rank());
     }
 
-    for (size_t i=0;i<element_rank_topologies.size();i++)
+    for (size_t i=0;i<element_rank_topologies.size()-1;i++)
     {
         EXPECT_TRUE(element_rank_topologies[i].is_valid());
         EXPECT_EQ(stk::topology::ELEMENT_RANK, element_rank_topologies[i].rank());
     }
+
+    EXPECT_FALSE(element_rank_topologies.back().is_valid());
+    EXPECT_EQ(stk::topology::INVALID_RANK, element_rank_topologies.back().rank());
+
 }
 
 TEST(stk_topology_understanding, zero_dim_element)

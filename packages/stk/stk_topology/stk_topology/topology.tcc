@@ -209,7 +209,7 @@ topology::rank_t topology::rank() const
 {
   typedef topology_detail::rank_impl functor;
   topology::apply_functor< functor > apply;
-  return m_value < SUPERELEMENT_START ? apply(m_value) : topology::ELEMENT_RANK;
+  return m_value < SUPERELEMENT_START ? apply(m_value) : ( m_value > SUPERELEMENT_START ? topology::ELEMENT_RANK : topology::INVALID_RANK);
 }
 
 template <typename NodeArrayA, typename NodeArrayB>
