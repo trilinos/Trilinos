@@ -312,7 +312,9 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # By default, the command to run for the executable is determined by first
 # getting the exectuable name which by default is assumed to be
-# ``<fullExeName``> =::
+# ``<fullExeName``> =
+#
+# ::
 #
 #   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 #

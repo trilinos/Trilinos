@@ -600,7 +600,7 @@ It is strongly recommended that every TriBITS project contain a
 ``Version.cmake`` file.  Otherwise, the project needs to define the variable
 ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` at the global scope
 (perhaps in ``<projectDir>/ProjectName.cmake``) to get right development mode
-behavior (see `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_).
+behavior (see `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_).  
 
 .. _<projectDir>/cmake/NativeRepositoriesList.cmake:
 
@@ -774,11 +774,15 @@ with their directories and other properties.  For example, the
 .. include:: ../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-Other comamnds that appropriate to set in this file are
-`PACKAGE_DISABLE_ON_PLATFORMS()`_.  If any of the binary directories of listed
-packages needs to be changed, then the variable
+Other comamnds that are appropriate to use this file are
+`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  If any of the binary directories
+of listed packages needs to be changed, then the variable
 ``<packageName>_SPECIFIED_BINARY_DIR`` for each package that needs to be
-modified can be set.
+modified can be set as well.  One can see that used in the
+``tribits/PackageList.cmake`` file itself:
+
+.. include:: ../../PackagesList.cmake
+   :literal:
 
 .. _<repoDir>/TPLsList.cmake:
 
@@ -1843,14 +1847,13 @@ TriBITS Macros and Functions
 
 The following subsections give detailed documentation for the CMake macros and
 functions that make up the core TriBITS system.  These are what are used by
-TriBITS project developers in their ``CMakeLists.txt`` and other files.  These
-are listed in approximately the order they will be encounted in a project or
-packages ``CMakeLists.txt`` and other files.  All of these functions and
-macros should be aviable when processing the project's and package's variables
-files if used properly.  Therefore, no explicit ``INCLUDE()`` statements
-should be needed other than the initial include of the
-``TribitsProject.cmake`` file in the top-level CMakeLists.txt file so the
-command `TRIBITS_PROJECT()`_ can be executed.
+TriBITS project developers in their ``CMakeLists.txt`` and other files.  All
+of these functions and macros should be available when processing the
+project's and package's variables files if used properly.  Therefore, no
+explicit ``INCLUDE()`` statements should be needed other than the initial
+include of the ``TribitsProject.cmake`` file in the top-level
+`<projectDir>/CMakeLists.txt`_ file so the command `TRIBITS_PROJECT()`_ can be
+executed.
 
 .. include:: TribitsMacroFunctionDoc.rst
 

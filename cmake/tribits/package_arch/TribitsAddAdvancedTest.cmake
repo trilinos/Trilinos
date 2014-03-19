@@ -109,7 +109,7 @@ INCLUDE(PrintVar)
 # * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
-# * `Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -122,8 +122,8 @@ INCLUDE(PrintVar)
 # Below are given some overall arguments.  Remaining overall arguments that
 # control overall pass/fail are described in `Overall Pass/Fail
 # (TRIBITS_ADD_ADVANCED_TEST())`_.  (NOTE: All of these arguments must be
-# listed outside of the ``TEST_<idx>`` blocks, see `Argument Ordering
-# (TRIBITS_ADD_ADVANCED_TEST())`_).
+# listed outside of the ``TEST_<idx>`` blocks, see `Argument Parsing and
+# Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 #   ``<testName>``
 #
@@ -214,26 +214,29 @@ INCLUDE(PrintVar)
 #
 #   ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
 #
-#     If specified, then ``<exeRootName>`` gives the the name of an executable
-#     target that will be run as the command.  The full executable path is
-#     determined in exactly the same way it is in the `TRIBITS_ADD_TEST()`_
-#     function (see `Determining the Exectuable or Command to Run
-#     (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then the executable
-#     will be run with MPI using ``NUM_MPI_PROCS <numProcs>`` or
-#     ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not
-#     set for this test case).  If the number of maximum MPI processes allowed
-#     is less than this number of MPI processes, then the test will *not* be
-#     run.  Note that ``EXEC <exeRootName>`` is basically equivalent to ``CMND
-#     <cmndExec>`` when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In
-#     this case, you can pass in ``<exeRootName>`` to any command you would
-#     like and it will get run with MPI in MPI mode just link any other
-#     command.
+#     If specified, then ``<exeRootName>`` gives the root name of an
+#     executable target that will be run as the command.  The full executable
+#     name and path is determined in exactly the same way it is in the
+#     `TRIBITS_ADD_TEST()`_ function (see `Determining the Exectuable or
+#     Command to Run (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then
+#     the executable will be run with MPI using ``NUM_MPI_PROCS <numProcs>``
+#     or ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is
+#     not set for this test case).  If the number of maximum MPI processes
+#     allowed is less than this number of MPI processes, then the test will
+#     *not* be run.  Note that ``EXEC <exeRootName>`` when ``NOEXEPREFIX`` and
+#     ``NOEXESUFFIX`` are specified is basically equivalent to ``CMND
+#     <cmndExec>`` except that in an MPI build, ``<exeRootName>`` is always
+#     run using MPI.  In this case, you can pass in ``<exeRootName>`` to any
+#     command you would like and it will get run with MPI in MPI mode just
+#     link any other command.
 #
 #   ``CMND <cmndExec>``
 #
 #     If specified, then ``<cmndExec>`` gives the executable for a command to
 #     be run.  In this case, MPI will never be used to run the executable even
-#     when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).
+#     when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).  If you want to
+#     run an arbitrary command using MPI, use ``EXEC <fullPathToCmndExec>
+#     NOPREFIX NOEXESUFFIX`` instead.
 #
 # By default, the output (stdout/stderr) for each test command is captured and
 # is then echoed to stdout for the overall test.  This is done in order to be
@@ -318,7 +321,7 @@ INCLUDE(PrintVar)
 #
 # All of the arguments for a test block ``TEST_<idx>`` must appear directly
 # below their ``TEST_<idx>`` argument and before the next test block (see
-# `Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
+# `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 # 
@@ -340,12 +343,25 @@ INCLUDE(PrintVar)
 #     If specified, the test will be assumed to fail if the output matches
 #     <regex>.  Otherwise, it will be assumed to fail.
 #
-# .. _Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):
+# .. _Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST()):
 # 
-# **Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())**
+# **Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# For the most part, the listed arguments can appear in any order except for
-# the following restrictions:
+# The basic tool used for parsing the arguments to this function is the macro
+# `PARSE_ARGUMENTS()`_ which has a certain set of behaviors.  The parsing
+# using `PARSE_ARGUMENTS()`_ is actually done in two phases.  There is a
+# top-level parsing listing the "overall" arguments listed in `Overall
+# Arguments (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test
+# blocks and then there is a second level of parsing using `PARSE_ARGUMENTS()`
+# for each of the ``TEST_<idx>`` blocks.  Becuase of this usage, there are a
+# few restructions that one needs to be aware of when using
+# ``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to explain the
+# behaviors and what is allowed and what is not allowed.
+#
+# For the most part, the overall argument and the arguments inside of any
+# individual ``TEST_<idx>`` block can be listed can appear in any order but
+# there are restructions related to the grouping of overall arguments and
+# ``TEST_<idx>`` blocks which are as follows:
 #
 # * The ``<testName>`` argument must be the first listed (it is the only
 #   positional argument).
@@ -360,6 +376,8 @@ INCLUDE(PrintVar)
 #   after all of the ``TEST_<idx>`` blocks.
 #
 # Other than that, the keyword argumnets and options can appear in any order.
+#
+# ToDo: Add some examples of bad argument ordering and what will happen.
 #
 # .. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
 #

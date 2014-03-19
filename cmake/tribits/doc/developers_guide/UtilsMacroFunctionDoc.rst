@@ -406,9 +406,9 @@ Arguments to this macro:
     or function to be parsed out into the different argument and option
     lists.
 
-What this macro does is very simple yet very powerful.  What it does is to
-allow you to create your own keyword-based macros and functions like CMake
-has.
+What this macro does is very simple yet very useful.  What it does is to
+allow you to create your own user-defined keyword-based macros and functions
+like is used by some built-in CMake comamnds..
 
 For example, consider the following user-defined macro that uses both
 positional and keyword-based arguments using ``PARSE_ARGUMENTS()``::
@@ -431,23 +431,65 @@ Calling this macro as::
 
   PARSE_SPECIAL_VARS(MyVar ARG0 a b ARG2 c OPT1)
 
-sets the following varibles in the current scopt:
+sets the following varibles in the current scope::
 
-* ``MyVar_ARG0="a;b"``
-* ``MyVar_ARG1=""``
-* ``MyVar_ARG2="c"``
-* ``MyVar_OPT0="FALSE"``
-* ``MyVar_OPT1="TRUE"``
-
-Any initial arguments that are not recongnised as ``<argNamesList>`` keyword
-arguments will be put into the local varible ``<prefix>_DEFAULT_ARGS``.  If
-no arguments in ``${ARGN}`` match any in ``<argNamesList>``, then all
-non-option arguments are point into ``<prefix>_DEFAULT_ARGS``.
+  MyVar_ARG0="a;b"
+  MyVar_ARG1=""
+  MyVar_ARG2="c"
+  MyVar_OPT0="FALSE"
+  MyVar_OPT1="TRUE"
 
 This allows you to define user-defined macros and functions that have a
 mixture of positional arguments and keyword-based arguments like you can do
 in other languages.  The keyword-based arguments can be passed in any
 order and those that are missing are empty (or false) by default.
+
+Any initial arguments that are not recongnised as ``<argNamesList>`` or
+``<optionNamesList>`` keyword arguments will be put into the local varible
+``_DEFAULT_ARGS``.  If no arguments in ``${ARGN}`` match any in
+``<argNamesList>``, then all non-option arguments are point into
+``DEFAULT_ARGS``.  For example, if you pass in::
+
+  PARSE_SPECIAL_VARS(MyVar ARG5 a b c)
+
+you will get::
+
+  DEFAULT_ARGS="a;b;c"
+  MyVar_ARG0=""
+  MyVar_ARG1=""
+  MyVar_ARG2=""
+  MyVar_OPT0="FALSE"
+  MyVar_OPT1="FALSE"
+
+Multiple occurances of keyword arguments in ``${ARGN}`` is allowed but only
+the last one listed will be recored.  For example, if you call::
+
+  PARSE_SPECIAL_VARS(MyVar ARG1 a b ARG1 c)
+
+then this wil set::
+
+  MyVar_ARG0=""
+  MyVar_ARG1="c"
+  MyVar_ARG2=""
+  MyVar_OPT0="FALSE"
+  MyVar_OPT1="FALSE"
+
+This is actually consistent with the way that most arugment list parsers
+behave with respect to multiple instances of the same argument so hopefully
+this will not be a surprise to anyone.
+
+If you put an option keyword in the middle of a keyword argument list, the
+option keyword will get pulled out of the list.  For exmaple, if you call::
+
+  PARSE_SPECIAL_VARS(MyVar ARG0 a OPT0 c)
+
+then this wil set::
+
+  MyVar_ARG0="a;c"
+  MyVar_ARG1=""
+  MyVar_ARG2=""
+  MyVar_OPT0="TRUE"
+  MyVar_OPT1="FALSE"
 
 If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED``is set to ``TRUE``, then a bunch
 of detailed debug info will be printed.  This should only lbe used in the

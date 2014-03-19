@@ -93,7 +93,7 @@ INCLUDE(TribitsListHelpers)
 #   treats this a one field in the array.  The maturity level can be left off
 #   in which case it is assumed to be UM for "Unspecified Maturity".  This
 #   classification for individual packages can be changed to ``EX`` for
-#   specific platforms by calling `PACKAGE_DISABLE_ON_PLATFORMS()`_.
+#   specific platforms by calling `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
 #
 # NOTE: This macro just sets the varaible::
 #

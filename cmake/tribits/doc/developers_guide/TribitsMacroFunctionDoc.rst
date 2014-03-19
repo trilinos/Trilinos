@@ -3,553 +3,390 @@
 .. generate-dev-guide.sh.  Only the file TribitsDetailedMacroFunctionDoc.rst
 .. should be directly modified!
 
-TRIBITS_PROJECT()
------------------
+TRIBITS_ADD_ADVANCED_TEST()
+---------------------------
 
-Defines and processes a TriBITS project.
+Function that creates an advanced test defined by stringing together one or
+more executables and/or commands that is run as a separate CMake -P script
+with very flixible pass/fail criteria.
 
-Usage::
-
-  TRIBITS_PROJECT()
-
-Requires that the project name variable ``PROJECT_NAME`` be defined before
-calling this macro.  Also, all default values for project settings should be
-set before calling this (see `TriBITS Global Project Settings`_).  Also, the
-variable ``${PROJECT_NAME}_TRIBITS_DIR`` must be set as well.
-
-This macro then adds all of the necssary paths to ``CMAKE_MODULE_PATH`` and
-then performs all processing of the TriBITS project files (see ???).
-
-ToDo: Give documentation!
-
-TRIBITS_DEFINE_REPOSITORY_PACKAGES()
-------------------------------------
-
-Define the set of packages for a given TriBIT repo.  This macro is typically
-called from inside of a `<repoDir>/PackagesList.cmake`_ file for a given
-TriBITS repo.
+This function allows you to add a single CTest test as a single unit that is
+actually a sequence of one or more separate commands strung together in some
+way to define the final pass/fail.  You will want to use this function to
+add a test instead of ``TRIBITS_ADD_TEST()`` when you need to run more than
+one command, or you need more sophisticated checking of the test result
+other than just greping STDOUT (i.e. by running programs to examine output
+files).
 
 Usage::
 
-   TRIBITS_DEFINE_REPOSITORY_PACKAGES(
-      <pkg0>  <pkg0_dir>  <pkg0_classifications>
-      <pkg1>  <pkg1_dir>  <pkg1_classifications>
-      ...
-      )
-
-This macro sets up a 2D array of NumPackages by NumColumns listing out the
-packages for a TriBITS repository.  Each row (with 3 entries) specifies a
-package which contains the three columns:
-
-* **PACKAGE** (1st column): The name of the TriBITS package.  This name must
-  be unique across all other TriBITS packages in this or any other TriBITS
-  repo that might be combined into a single TriBITS project meta-build.  The
-  name should be a valid identifier (e.g. matches the regex
-  ``[a-zA-Z_][a-zA-Z0-9_]*``).
-
-* **DIR** (2nd column): The relative directory for the package.  This is
-  relative to the TriBITS repository base directory.  Under this directory
-  will be a package-specific 'cmake/' directory with file
-  'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
-  entire contents of the package including all of the source code and all of
-  the tests should be contained under this directory.  The TriBITS testing
-  infrastructure relies on the mapping of changed files to these base
-  directories when deciding what packages are modified and need to be
-  retested (along with downstream packages).
-
-* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
-  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
-  by a coma with no space in between such as "RS,PT" for a "Research
-  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
-  treats this a one field in the array.  The maturity level can be left off
-  in which case it is assumed to be UM for "Unspecified Maturity".  This
-  classification for individual packages can be changed to ``EX`` for
-  specific platforms by calling `PACKAGE_DISABLE_ON_PLATFORMS()`_.
-
-NOTE: This macro just sets the varaible::
-
-  ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-
-in the current
-scope.  The advantages of using this macro instead of directly setting this
-varible include:
-
-* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
-
-* Avoids having to hard-code the assumed repository name
-  ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
-  TriBITS project name a given TriBITS repo (i.e. the name of repo
-  subdirs).
-
-* Avoid mispelling the name of the varible
-  ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
-  misspell the name of the macro, it is an immediate error in CMake.
-
-PACKAGE_DISABLE_ON_PLATFORMS()
-------------------------------
-
-Disable a package automatically for a list of platforms.
-
-Usage::
-
-  PACKAGE_DISABLE_ON_PLATFORMS( <packageName>
-    <hosttype0> <hosttype1> ...)
-
-If any of the host-type arguments ``<hosttypei>`` matches the
-``${PROJECT_NAME}_HOSTTYPE`` variable for the current platform, then package
-``<packageName>`` test group classification is changed to ``EX``.  Changing
-the package test group classification to ``EX`` results in the package being
-disabled by default.  However, an explicit enable can still enable the
-package.
-
-TRIBITS_DEFINE_REPOSITORY_TPLS()
---------------------------------
-
-Define the list of TPLs, find modules, and classifications for a given
-TriBITS repository.  This macro is typically called from inside of a
-TPLsList.cmake fil for a given TriBITS repo.
-
-Usage::
-
-  TRIBITS_DEFINE_REPOSITORY_TPLS(
-    <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
-    <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
+  TRIBITS_ADD_ADVANCED_TEST(
+    <testName>
+    TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
+    [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
     ...
+    [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
+    [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
+    [FAIL_FAST]
+    [KEYWORDS <keyword1> <keyword2> ...]
+    [COMM [serial] [mpi]]
+    [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
+    [CATEGORIES <category0> <category1> ...]
+    [HOST <host0> <host1> ...]
+    [XHOST <host0> <host1> ...]
+    [HOSTTYPE <hosttype0> <hosttype1> ...]
+    [XHOSTTYPE <hosttype0> <hosttype1> ...]
+    [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
+    [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
     )
 
-This macro sets up a 2D array of NumTPLS by NumColumns listing out the
-TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
-package which contains the three columns:
+Each atomic test case is either a package-built executable or just a basic
+command.  An atomic test command block of arguments takes the form::
 
-* **TPL** (1st column): The name of the TriBITS TPL ``<TPL_NAME>``.  This
-  name must be unique across all other TriBITS TPLs in this or any other
-  TriBITS repo that might be combined into a single TriBITS project
-  meta-build.  However, a TPL can be redefined (see below).  The name should
-  be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
-
-* **FINDMOD** (2nd column): The relative directory for the find module,
-  usually with the name ``FindTPL<TPL_NAME>.cmake``.  This is relative to
-  the repository base directory.  If just the base path for the find module
-  is given, ending with "/" (e.g. "cmake/tpls/") then the find module will
-  be assumed to be under that this directory with the standard name
-  (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard way to write a
-  ``FindTPL<TPL_NAME>.cmake`` module is to use the function
-  `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
-
-* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
-  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
-  by a coma with no space in between such as "RS,PT" for a "Research
-  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
-  treats this a one field in the array.  The maturity level can be left off
-  in which case it is assumed to be UM for "Unspecified Maturity".
-
-A TPL defined in a upstream repo can listed again, which allows redefining
-the find module that is used to specificy the TPL.  This allows downstream
-repos to add additional requirements on a given TPL.  However, the
-downstream repo's find module file must find the TPL components that are
-fully compatible with the upstream's find module.
-
-This macro just sets the varaible::
-
- ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
-
-in the current scope.  The advantages of using this macro instead of
-directly setting this varible include:
-
-* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
-* Avoids having to hard-code the assumed repository name ``${REPOSITORY_NAME}``.
-  This provides more flexibility for how other TriBITS project name a given
-  TriBITS repo (i.e. the name of repo subdirs).
-* Avoid mispelling the name of the varible
-  ``${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS``.  If you misspell the
-  name of the macro, it is an immediate error in CMake.
-
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
--------------------------------------
-
-Define the dependenices for a given TriBITS SE package (i.e. a top-level
-package or a subpackage).
-
-Usage::
-
-  TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
-     [LIB_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
-     [LIB_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
-     [TEST_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
-     [TEST_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
-     [LIB_REQUIRED_TPLS <tpl1> <tpl2> ...]
-     [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
-     [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
-     [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
-     [REGRESSION_EMAIL_LIST  <regression-email-address>
-     [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-       <spkg1_name>  <spkg1_dir>  <spkg1_classifications>  <spkg1_optreq>
-       <spkg2_name>  <spkg2_dir>  <spkg2_classifications>  <spkg2_optreq>
-       ...
+  TEST_<idx>
+     (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
+            [DIRECTORY <dir>]
+        | CMND <cmndExec>)
+     [ARGS <arg1> <arg2> ... <argn>]
+     [MESSAGE "<message>"]
+     [WORKING_DIRECTORY <workingDir>]
+     [NUM_MPI_PROCS <numProcs>]
+     [OUTPUT_FILE <outputFile>]
+     [NO_ECHO_OUTPUT]]
+     [PASS_ANY
+       | PASS_REGULAR_EXPRESSION "<regex>"
+       | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
+       | FAIL_REGULAR_EXPRESSION "<regex>"
+       | STANDARD_PASS_OUTPUT
        ]
-     )
-
-Every argument in this macro is optional.  The arguments that apply a package
-itself are:
-
-* **LIB_REQUIRED_PACKAGES:** List of upstream packages that must be enabled
-  in order to build and use the libraries (or capabilities) in this
-  package.
-
-* **LIB_OPTIONAL_PACKAGES:** List of additional optional upstream packages
-  that can be used in this package if enabled.  These upstream packages need
-  not be enabled in order to use this package but not enabling one or more
-  of these optional upstream packages will result in diminished capabilities
-  of this package.
-
-* **TEST_REQUIRED_PACKAGES:** List of additional upstream packages that must
-  be enabled in order to build and/or run the tests and/or examples in this
-  packages.  If any of these upstream packages is not enabled, then there
-  will be no tests or examples defined or run for this package.
-
-* **TEST_OPTIONAL_PACKAGES:** List of additional optional upstream packages
-  that can be used by the tests in this package.  These upstream packages
-  need not be enabled in order to run basic tests for this package.
-  Typically, extra tests that depend on optional test packages involve
-  integration testing of some type.
-
-* **LIB_REQUIRED_TPLS:** List of upstream TPLs that must be enabled in order
-  to build and use the libraries (or capabilities) in this package.
-
-* **LIB_OPTIONAL_TPLS:** List of additional optional upstream TPLs that can
-  be used in this package if enabled.  These upstream TPLs need not be
-  enabled in order to use this package but not enabling one or more of these
-  optional upstream TPLs will result in diminished capabilities of this
-  package.
-
-* **TEST_REQUIRED_TPLS:** List of additional upstream TPLs that must
-  be enabled in order to build and/or run the tests and/or examples in this
-  packages.  If any of these upstream TPLs is not enabled, then there
-  will be no tests or examples defined or run for this package.
-
-* **TEST_OPTIONAL_TPLS:** List of additional optional upstream TPLs
-  that can be used by the tests in this package.  These upstream TPLs
-  need not be enabled in order to run basic tests for this package.
-  Typically, extra tests that depend on optional test TPLs involve
-  integration testing of some type.
-
-Only direct package dependenices need to be listed.  Indirect package
-dependencies are automatically handled.  For example, if this SE package
-directly depends on PKG2 which depends on PKG1 (but this SE package does not
-directly depend on anything in PKG1) then this package only needs to list a
-dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
-automatically by the TriBITS dependency tracking system.
-
-However, currently, all TPL dependendies must be listed, even the indirect
-ones.  This is a requirement that will be dropped in the future.
-
-The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
-dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
-implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
-dependencies.
-
-The dependencies within a single list do not need to be listed in any order.
-For example if PKG2 depends on PKG1, and this given SE package depends on
-both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
-"LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
-not important.
-
-If some upstream packages are allowed to be missing, this can be specified
-by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
-
-A top-level package can also have subpackages.  In this case, the following
-varible must be set:
-
-* **SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:** 2D array with rows listing
-  the subpackages and the columns:
-
-  * **SUBPACKAGE:** The name of the subpackage <spkg_name>.  The full SE
-    package name is "${PARENT_PACKAGE_NAME}<spkg_name>".  The full SE
-    package name is what is used in listing dependenices in other SE
-    packages.
-
-  * **DIRS:** The subdirectory <spkg_dir> relative to the parent package's
-    base directory.  All of the contents of the subpackage should be under
-    this subdirectory.  This is assumed by the TriBITS testing support
-    software when mapping modified files to SE packages that need to be
-    tested.
-
-  * **CLASSIFICATIONS***: The test group PT, ST, EX and the maturity level
-    EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
-    spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
-    as for full packages (see
-    `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_).
-
-  * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
-    REQUIRED dependence on this subpackage.
-
-Other variables that this macro handles:
-
-* **REGRESSION_EMAIL_LIST:** The email list that is used to send CDash error
-  messages.  If this is missing, then the email list that CDash errors go to
-  is determined by other means (see ???).
 
-NOTE: All this macro really does is to just define the variables:
+By default, each and every atomic test or command needs to pass (as defined below) in
+order for the overall test to pass.
 
-* LIB_REQUIRED_DEP_PACKAGES
-* LIB_OPTIONAL_DEP_PACKAGES
-* TEST_REQUIRED_DEP_PACKAGES
-* TEST_OPTIONAL_DEP_PACKAGES
-* LIB_REQUIRED_DEP_TPLS
-* LIB_OPTIONAL_DEP_TPLS
-* TEST_REQUIRED_DEP_TPLS
-* TEST_OPTIONAL_DEP_TPLS
-* REGRESSION_EMAIL_LIST
-* SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+*Sections:*
 
-which are then read by the TriBITS cmake code to build the package
-dependency graph.  The advantage of using this macro instead of just
-directly setting the varibles is that you only need to list the dependencies
-you have.  Otherwise, you need to set all of these varibles, even those that
-are empty.  This is a error checking property of the TriBITS system to avoid
-misspelling the names of these variables.
+* `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+* `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
+* `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
 
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
------------------------------------------
+.. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
-Macro used in Dependencies.cmake files to allow some upstream dependent packages
-to be missing.
+**Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 
-Usage::
+Below are given some overall arguments.  Remaining overall arguments that
+control overall pass/fail are described in `Overall Pass/Fail
+(TRIBITS_ADD_ADVANCED_TEST())`_.  (NOTE: All of these arguments must be
+listed outside of the ``TEST_<idx>`` blocks, see `Argument Parsing and
+Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 
-  TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pack_1> <pack_2> ...)
+  ``<testName>``
 
-If the missing upstream SE package <pack_i> is optional, then the effect
-will be to simply ignore the missing package and remove it from the
-dependency list.  However, if the missing upstream SE package <pack_i> is
-required, then in addition to ignoring the missing package, the current SE
-(sub)package will also ee hard disabled,
-i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.
+    The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
+    the name) that will be used to name the output CMake script file as well
+    as the CTest test name passed into ``ADD_TEST()``.  This must be the
+    first argument.
 
-This function is typically used in packages in external TriBITS repos that
-are depend on other packages in other exteral TriBITS repos that might be
-missing.
+  ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 
-NOTE: Using this function effectively turns off error checking for
-misspelled package names so it is important to only use it when it
-absolutely is needed.
+    If specified, then the working directory ``<overallWorkingDir>`` will be
+    created and all of the test commands by default will be run from within
+    this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
+    given, then the working directory will be given the name
+    ``${PACKAGE_NAME}_<testName>``.  If the directory
+    ``<overallWorkingDir>`` exists before the test runs, it will be deleted
+    and created again.  Therefore, if you want to preserve the contents of
+    this directory between test runs you need to copy the files it somewhere
+    else.  This is a good option to use if the commands create intermediate
+    files and you want to make sure they get deleted before a set of test
+    cases runs again.
 
-TRIBITS_TPL_DECLARE_LIBRARIES()
--------------------------------
+  ``FAIL_FAST``
 
-Function that sets up cache variables for users to specify where to find a
-TPL's headers and libraries.  This function is typically called inside of a
-file ``FindTPL<tpl_name>.cmake`` file.
+    If specified, then the remaining test commands will be aborted when any
+    test command fails.  Otherwise, all of the test cases will be run.
 
-Usage::
+  ``RUN_SERIAL``
 
-  TRIBITS_TPL_DECLARE_LIBRARIES(
-    <tpl_name>
-    [REQUIRED_HEADERS <header1> <header2> ...]
-    [MUST_FIND_ALL_HEADERS]
-    [REQUIRED_LIBS_NAMES <libname1> <libname2> ...]
-    [MUST_FIND_ALL_LIBS]
-    [NO_PRINT_ENABLE_SUCCESS_FAIL]
-    )
+    If specified then no other tests will be allowed to run while this test
+    is running.  This is useful for devices(like cuda cards) that require
+    exclusive access for processes/threads.  This just sets the CTest test
+    property ``RUN_SERIAL`` using the built-in CMake function
+    ``SET_TESTS_PROPERTIES()``.
 
-This function can set up a with header files and/or libraries.
+  ``COMM [serial] [mpi]``
 
-The input arguments to this function are:
+    If specified, selects if the test will be added in serial and/or MPI
+    mode.  See the ``COMM`` argument in the script
+    `TRIBITS_ADD_TEST()`_ for more details.
 
-* ``<tpl_name>``: Name of the TPL that is listed in a TPLsList.cmake file.
-  Below, this is referted to as the local CMake variable ``TPL_NAME``.
+  ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
 
-* ``REQUIRED_HEADERS``: List of header files that are searched for the TPL
-  using ``FIND_PATH()``.
+    If specified, gives the default number of processes that each executable
+    command runs on.  If ``<numProcs>`` is greater than
+    ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
+    specified, then the default number of processes for an MPI build will be
+    ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
+    ignored.
 
-* ``MUST_FIND_ALL_HEADERS``:  If set, then all of the header files listed in
-  REQUIRED_HEADERS must be found in order for TPL_${TPL_NAME}_INCLUDE_DIRS
-  to be defined.
+  ``CATEGORIES <category0> <category1> ...``
 
-* ``REQUIRED_LIBS_NAMES``: List of libraries that are searched for when
-  looked for the TPLs libraries with FIND_LIBRARY(...).
+    Gives the test categories for which this test will be added.  See
+    `TRIBITS_ADD_TEST()`_ for more details.
 
-* ``MUST_FIND_ALL_LIBS``:  If set, then all of the library files listed in
-  REQUIRED_LIBS_NAMES must be found or the TPL is considered not
-  found!
+  ``HOST <host0> <host1> ...``
 
-* ``NO_PRINT_ENABLE_SUCCESS_FAIL``: If set, then the final success/fail
-    will not be printed
+    The list of hosts for which to enable the test (see `TRIBITS_ADD_TEST()`_).
 
-The following cache variables, if set, will be used by that this function:
+  ``XHOST <host0> <host1> ...``
 
-* ``${TPL_NAME}_INCLUDE_DIRS:PATH``: List of paths to search first for
-  header files defined in ``REQUIRED_HEADERS``.
+    The list of hosts for which **not** to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
 
-* ``${TPL_NAME}_INCLUDE_NAMES:STIRNG``: List of include names to be looked
-  for instead of what is specified in REQUIRED_HEADERS.
+  ``HOSTTYPE <hosttype0> <hosttype1> ...``
 
-* ``${TPL_NAME}_LIBRARY_DIRS:PATH``: The list of directories to search first
-  for libraies defined in REQUIRED_LIBS_NAMES.
+    The list of host types for which to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
 
-* ``${TPL_NAME}_LIBRARY_NAMES:STIRNG``: List of library names to be looked
-  for instead of what is specified in REQUIRED_LIBS_NAMES.
+  ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 
-This function sets global varibles to return state so it can be called from
-anywhere in the call stack.  The following cache variables defined that are
-intended for the user to set and/or use:
+    The list of host types for which **not** to enable the test (see
+    `TRIBITS_ADD_TEST()`_).
 
-* ``TPL_${TPL_NAME}_INCLUDE_DIRS``: A list of common-separated full
-  directory paths that contain the TPLs headers.  If this varible is set
-  before calling this function, then no headers are searched for and this
-  variable will be assumed to have the correct list of header paths.
+  ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
 
-* ``TPL_${TPL_NAME}_LIBRARIES``: A list of commons-seprated full library
-  names (output from FIND_LIBRARY(...)) for all of the libraries found for
-  the TPL.  IF this varible is set before calling this function, no
-  libraries are searched for and this varaible will be assumed to have the
-  correct list of libraries to link to.
+    If passed in, the listed environment varaibles will be set before
+    calling the test.  This is set using the built-in test property
+    ``ENVIRONMENT``.
 
-TRIBITS_PACKAGE()
------------------
+.. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
-Macro called at the very beginning of a package's top-level CMakeLists.txt
-file.
+**TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 
-Usage::
+Each test command block ``TEST_<idx>`` runs either a package-built test
+executable or some general command executable and is defined as either
+``EXEC <exeRootName>`` or ``CMND <cmndExec>`` with the arugments:
 
-  TRIBITS_PACKAGE(
-    <packageName>
-    [ENABLE_SHADOWING_WARNINGS]
-    [DISABLE_STRONG_WARNINGS]
-    [CLEANED]
-    [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
-    )
+  ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
 
-See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
-`TRIBITS_PACKAGE_DECL()`_ and `TRIBITS_PACKAGE()`_ for a description the
-side-effects (and varibles set) after calling this macro.
+    If specified, then ``<exeRootName>`` gives the root name of an
+    executable target that will be run as the command.  The full executable
+    name and path is determined in exactly the same way it is in the
+    `TRIBITS_ADD_TEST()`_ function (see `Determining the Exectuable or
+    Command to Run (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then
+    the executable will be run with MPI using ``NUM_MPI_PROCS <numProcs>``
+    or ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is
+    not set for this test case).  If the number of maximum MPI processes
+    allowed is less than this number of MPI processes, then the test will
+    *not* be run.  Note that ``EXEC <exeRootName>`` when ``NOEXEPREFIX`` and
+    ``NOEXESUFFIX`` are specified is basically equivalent to ``CMND
+    <cmndExec>`` except that in an MPI build, ``<exeRootName>`` is always
+    run using MPI.  In this case, you can pass in ``<exeRootName>`` to any
+    command you would like and it will get run with MPI in MPI mode just
+    link any other command.
 
-TRIBITS_PACKAGE_DECL()
-----------------------
+  ``CMND <cmndExec>``
 
-Macro called at the very beginning of a package's top-level CMakeLists.txt
-file when a packages has subpackages.
+    If specified, then ``<cmndExec>`` gives the executable for a command to
+    be run.  In this case, MPI will never be used to run the executable even
+    when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).  If you want to
+    run an arbitrary command using MPI, use ``EXEC <fullPathToCmndExec>
+    NOPREFIX NOEXESUFFIX`` instead.
 
-If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
-which calls this macro.
+By default, the output (stdout/stderr) for each test command is captured and
+is then echoed to stdout for the overall test.  This is done in order to be
+able to grep the result to determine pass/fail.
 
-Usage::
+Other miscellaneous arguments for each ``TEST_<idx>`` block include:
 
-  TRIBITS_PACKAGE_DECL(
-    <packageName>
-    [ENABLE_SHADOWING_WARNINGS]
-    [DISABLE_STRONG_WARNINGS]
-    [CLEANED]
-    [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
-    )
+  ``DIRECTORY <dir>``
 
-The arguments are:
+    If specified, then the executable is assumed to be in the directory
+    given by relative <dir>.  See `TRIBITS_ADD_TEST()`_.
 
-  ``<packageName>``
+  ``MESSAGE "<message>"``
 
-    Gives the name of the Package, mostly just for checking and
-    documentation purposes.  This much match the name of the package
-    provided in the PackagesLists.cmake or it is an error.
+    If specified, then the string in ``"<message>"`` will be print before
+    this test command is run.  This allows adding some documentation about
+    each individual test invocation to make the test output more
+    understandable.
 
-  ``ENABLE_SHADOWING_WARNINGS``
+  ``WORKING_DIRECTORY <workingDir>``
 
-    If specified, then shadowing warnings will
-    be turned on for supported platforms/compilers.  The default is for
-    shadowing warnings to be turned off.  Note that this can be overridden
-    globally by setting the cache variable
-    ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
+    If specified, then the working directory ``<workingDir>`` will be
+    created and the test will be run from within this directory.  If the
+    value ``<workingDir> = TEST_NAME`` is given, then the working directory
+    will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
+    <workingDir> exists before the test runs, it will be deleted and created
+    again.  Therefore, if you want to preserve the contents of this
+    directory between test runs you need to copy it somewhere else.  Using
+    ``WORKING_DIRECTORY` for individual test commands allows creating
+    independent working directories for each test case.  This would be
+    useful if a single ``OVERALL_WORKING_DIRECTORY`` was not sufficient for
+    some reason.
 
-  ``DISABLE_STRONG_WARNINGS``
+  ``NUM_MPI_PROCS <numProcs>``
 
-    If specified, then all strong warnings will be turned off, if they are
-    not already turned off by global cache variables.  Strong warnings are
-    turned on by default in development mode.
- 
-  ``CLEANED``
+    If specified, then <``numProcs>`` is the number of processors used for MPI
+    executables.  If not specified, this will default to ``<overallNumProcs>``
+    from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
 
-    If specified, then warnings will be promoted to errors for all defined
-    warnings.
- 
-  ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
+  ``OUTPUT_FILE <outputFile>``
 
-    If specified, then the
-    standard grep looking for RCPNode circular references that causes tests to
-    fail will be disabled.  Note that if these warnings are being produced
-    then it means that the test is leaking memory and user like may also be
-    leaking memory.
+    If specified, then stdout and stderr for the test case will be sent to
+    ``<outputFile>``.
 
-There are several side-effects of calling this macro:
+  ``NO_ECHO_OUTPUT``
 
-* The the varibles listed the packages set of library targets
-  ``${PACKAGE_NAME}_LIB_TARGETS`` and all targets
-  ``${PACKAGE_NAME}_ALL_TARGETS`` and are initialized to emtpy.
+    If specified, then the output for the test command will not be echoed to
+    the output for the entire test command.
 
-* The local varibles ``PACKAGE_SOURCE_DIR`` and ``PACKAGE_BINARY_DIR`` are
-  set for this package's use in its CMakeLists.txt files.
+By default, an atomic test line is assumed to pass if the executable returns
+a non-zero value.  However, a test case can also be defined to pass based
+on:
 
-* Package-specific compiler options are set up in package-scoped (i.e., the
-  package's subdir and its subdirs) in ``CMAKE_<LANG>_FLAG``.
+  ``PASS_ANY``
 
-* This packages's cmake subdir ``${PACKAGE_SOURCE_DIR}/cmake`` is added to
-  ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
-  can be read in with just a raw ``INCLUDE()`` leaving off the full path and
-  the ``*.cmake`` extension.
+    If specified, the test command 'i' will be assumed to pass reguardless
+    of the return value or any other output.  This would be used when a
+    command that is to follow will determine pass or fail based on output
+    from this command in some way.
 
-TRIBITS_PACKAGE_DEF()
----------------------
+  ``PASS_REGULAR_EXPRESSION "<regex>"``
 
-Macro called after subpackages are processed in order to
-handle the libraries, tests, and examples of the final package. 
+    If specified, the test command 'i' will be assumed to pass if it matches
+    the given regular expression.  Otherwise, it is assumed to fail.
 
-Usage::
+  ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
 
-  TRIBITS_PACKAGE_DEF()
+    If specified, the test command 'i' will be assumed to pas if the output
+    matches all of the provided regular expressions.  Note that this is not
+    a capability of raw ctest and represents an extension provided by
+    TriBITS.
 
-If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
-which calls this macro.
+  ``FAIL_REGULAR_EXPRESSION "<regex>"``
 
-This macro has several side effects:
+    If specified, the test command 'i' will be assumed to fail if it matches
+    the given regular expression.  Otherwise, it is assumed to pass.
 
-* The varible ``PACKAGE_NAME`` is set in the local scope for usage by the
-  package's CMakeLists.txt files.
+  ``STANDARD_PASS_OUTPUT``
 
-* The intra-package dependency varibles (i.e. list of include directoires,
-  list of libraries, etc.) are initialized to emtpy.
+    If specified, the test command 'i' will be assumed to pass if the string
+    expression "Final Result: PASSED" is found in the ouptut for the test.
 
-TRIBITS_PROCESS_SUBPACKAGES()
------------------------------
+All of the arguments for a test block ``TEST_<idx>`` must appear directly
+below their ``TEST_<idx>`` argument and before the next test block (see
+`Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 
-Macro that processes subpackages for packages that have them.  This is
-called in the parent packages top-level CMakeLists.txt file.
+.. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 
-Usage::
+**Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
 
-  TRIBITS_PROCESS_SUBPACKAGES()
+By default, the overall test will be assumed to pass if it prints::
 
-Must be called after `TRIBITS_PACKAGE_DECL()`_ but before
-`TRIBITS_PACKAGE_DEF()`_.
+  "OVERALL FINAL RESULT: TEST PASSED"
 
-TRIBITS_ADD_TEST_DIRECTORIES()
-------------------------------
+However, this can be changed by setting one of the following optional arguments:
 
-Macro called to add a set of test directories for an SE package.
+  ``FINAL_PASS_REGULAR_EXPRESSION <regex>``
 
-Usage::
+    If specified, the test will be assumed to pass if the output matches
+    <regex>.  Otherwise, it will be assumed to fail.
 
-   TRIBITS_ADD_TEST_DIRECTORIES(<dir1> <dir2> ...)
+  ``FINAL_FAIL_REGULAR_EXPRESSION <regex>``
 
-This macro only needs to be called from the top most CMakeList.txt file for
-which all subdirectories are all "tests".
+    If specified, the test will be assumed to fail if the output matches
+    <regex>.  Otherwise, it will be assumed to fail.
 
-This macro can be called several times within a package and it will have the
-right effect.
+.. _Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST()):
 
-Currently, really all it does macro does is to call
-``ADD_SUBDIRECTORY(<diri>)`` if ``${PACKAGE_NAME}_ENABLE_TESTS`` or
-``${PARENT_PACKAGE_NAME}_ENABLE_TESTS`` are true. However, this macro may be
-extended in the futgure in order to modify behavior related to adding tests
-and examples in a uniform way..
+**Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
+
+The basic tool used for parsing the arguments to this function is the macro
+`PARSE_ARGUMENTS()`_ which has a certain set of behaviors.  The parsing
+using `PARSE_ARGUMENTS()`_ is actually done in two phases.  There is a
+top-level parsing listing the "overall" arguments listed in `Overall
+Arguments (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test
+blocks and then there is a second level of parsing using `PARSE_ARGUMENTS()`
+for each of the ``TEST_<idx>`` blocks.  Becuase of this usage, there are a
+few restructions that one needs to be aware of when using
+``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to explain the
+behaviors and what is allowed and what is not allowed.
+
+For the most part, the overall argument and the arguments inside of any
+individual ``TEST_<idx>`` block can be listed can appear in any order but
+there are restructions related to the grouping of overall arguments and
+``TEST_<idx>`` blocks which are as follows:
+
+* The ``<testName>`` argument must be the first listed (it is the only
+  positional argument).
+* The test cases ``TEST_<idx>`` must be listed in order (i.e. ``TEST_0
+  ... TEST_1 ...``) and the test cases must be consecutive integers (i..e
+  can't jump from ``TEST_5`` to ``TEST_7``).
+* All of the arguments for a test case must appear directly below its
+  ``TEST_<idx>`` keyword and before the next ``TEST_<idx+1>`` keyword or
+  before any trailing overall keyword arguments.
+* None of the overall arguments (e.g. ``CATEGORIES``) can be inside listed
+  inside of a ``TEST_<idx>`` block but otherwise can be listed before or
+  after all of the ``TEST_<idx>`` blocks.
+
+Other than that, the keyword argumnets and options can appear in any order.
+
+ToDo: Add some examples of bad argument ordering and what will happen.
+
+.. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Implementation Details (TRIBITS_ADD_ADVANCED_TEST())**
+
+Since raw CTest does not support the features provided by this function, the
+way an advanced test is implemented is that a CMake script with the name
+``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current binary
+directory that then gets added to CTest using::
+
+  ADD_TEST(${PACKAGE_NAME}_<testName>
+    cmake [other options] -P ${PACKAGE_NAME}_<testName>.cmake)
+
+This CMake script then runs the various test cases and checks the pass/fail
+for each case to determine overall pass/fail and implement other
+functionality. 
+
+.. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())**
+
+After this function returns, if the test gets added using ``ADD_TEST()``
+then additional properties can be set and changed using
+``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
+tests properties that are not directly supported by this function and passed
+through the argument list to this wrapper function can be set in the outer
+``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
+
+.. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
+
+The test can be disabled externally by setting the CMake cache variable
+``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
+case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
+when running the test.
+
+.. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
+
+**Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
+
+In order to see if the test gets added and to debug some issues in test
+creation, one can set the cache variable
+``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
+of some information about the test getting added or not.
+
+Likely the best way to debugging test generation using this function is to
+examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
+current binary directory (see `Implementation Details
+(TRIBITS_ADD_ADVANCED_TEST())`_).
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES()
 ---------------------------------
@@ -572,474 +409,6 @@ Currently, really all it does macro does is to call
 ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
 be extended in the futgure in order to modify behavior related to adding
 tests and examples in a uniform way..
-
-TRIBITS_SET_ST_FOR_DEV_MODE()
------------------------------
-
-Function that allows packages to easily make a feature ``ST`` for
-development builds and ``PT`` for release builds by default.
-
-Usage::
-
-  TRIBITS_SET_ST_FOR_DEV_MODE(<outputVar>)
-
-``${<outputVar>}`` is set to ``ON`` or ``OFF`` based on the configure state.
-In development mode (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==ON``),
-``${<outputVar>}`` will be set to ``ON`` only if ``ST`` code is enabled
-(i.e. ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE==ON``), otherwise it is
-set to ``OFF``. In release mode
-(i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==OFF``) it is always set to
-``ON``.  This allows some sections of a TriBITS package to be considered
-``ST`` for development mode reducing testing time which includes only ``PT``
-code., while still having important functionality available to users by
-default in a release.
-
-TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
-----------------------------------------------------
-
-Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
-Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
-flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()
-
-Usage::
-
-  TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
-    PACKAGE_NAME <pakageName>
-    [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
-    [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
-    [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
-    [WRITE_INSTALL_CMAKE_CONFIG_FILE]
-    [WRITE_INSTALL_EXPORT_MAKLEFILE]
-    )
-
-The arguments are:
-
-``PACKAGE_NAME <pakageName>``
-
-  Gives the name of the TriBITS package for which the export files should be
-  created for.
-
-``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
-
-  If specified, then all of the varibles in the generated export files will
-  be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
-  This is to provide flexibility.
-
-``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
-
-  If specified, then the package <packageName>'s cmake configure export file
-  for extenral CMake client projects will be created in the file
-  <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
-
-``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
-
-  If specified, then the package <packageName>'s cmake configure export file
-  for external Makefile client projects will be created in the file
-  <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
-
-``WRITE_INSTALL_CMAKE_CONFIG_FILE``
-
-  If specified, then the package <packageName>'s install cmake configure
-  export to be installed will be written.  The name and location of this
-  file is hard-coded.
-
-``WRITE_INSTALL_EXPORT_MAKLEFILE``
-
-  If specified, then the package <packageName>'s install export makefile to
-  be installed will be written.  The name and location of this file is
-  hard-coded.
-
-NOTE: The arguments to this function may look strange but the motivation is
-to support versy speicalized use cases such as when a TriBITS package needs
-to generate an export makefile for a given package but name the export
-makefile differently and use different variable name prefixes.  The
-particular driver use case is when wrapping an external autotools project
-that depends on Trilinos and needs to read in the Makefile.export.Trilinos
-file but this file needs to be generated for a subset of enabled packages on
-the fly during a one-pass configure.
-
-NOTE: This function does *not* contain the the INSTALL() commands because
-CMake will not allow those to even be present in scripting mode that is used
-for unit testing this function.
-
-TRIBITS_ADD_OPTION_AND_DEFINE()
--------------------------------
-
-Add an option and a define variable in one shot.
-
-Usage::
-
- TRIBITS_ADD_OPTION_AND_DEFINE( <userOptionName>  <macroDefineName>
-   "<docStr>"  <defaultValue> )
-
-This macro sets the user cache ``BOOL`` variable ``<userOptionName>`` and if
-it is true, then sets the global (internal cache) macro define variable
-``<macroDefineName>`` to ``ON``, and otherwise sets it to ``OFF``.  This is
-designed to make it easy to add a user-enabled option to a configured header
-file and have the define set in one shot.  This would require that the
-package's configure file (see `TRIBITS_CONFIGURE_FILE()`_) have the line::
-
-  #cmakedefine <macroDefineName>
-
-TRIBITS_CONFIGURE_FILE()
-------------------------
-
-Macro that configures the package's main configured header file (typically
-called ``${PACKAGE_NAME}_config.h`` but any name can be used).
-
-Usage::
-
-  TRIBITS_CONFIGURE_FILE(<packageConfigFile>)
-
-This function requires the file::
-
-   ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
-
-exists and it creates the file::
-
-  ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
-
-by calling the built-in ``CONFIGURE_FILE()`` command::
-
-  CONFIGURE_FILE(
-    ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
-    ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
-    )
-
-which does basic sustitution of CMake variables (see documentation for
-built-in ``CONFIGURE_FILE()`` command for rules on how it performs
-substitutions).
-
-In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
-creating configured header files adding macros for deprecating code.
-
-**Deprecated Code Macros**
-
-If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE``, then the
-local CMake varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS``
-adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
-``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
-add the compiler-specific deprecated warning for an entity.  To use this,
-just add the line::
-
-  @<PARENT_PACKAGE_NAME_UC>_DEPRECATED_DECLARATIONS@
-
-to the <packageConfigFile>.in file and it will be expended.
-
-Then C/C++ code can use this macro to deprecate functions, variables,
-classes, etc., for example, using::
-
-  <PARENT_PACKAGE_NAME_UC>_DEPRECATED class SomeDepreatedClass { ... }.
-
-If the particular compiler does not support deprecated warnings, then this
-macro is defined to be empty.  See `Regulated Backward Compatibility and
-Deprecated Code`_ for more details.
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR()
-----------------------------------
-
-Function that copies a list of files from a soruce directory to a
-destination directory at configure time, typically so that it can be used in
-one or more tests.  This sets up all of the custom CMake commands and
-targets to ensure that the files in the destiation directory are always up
-to date just by building the ``ALL`` target.
-
-Usage::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    [SOURCE_FILES <file1> <file2> ...]
-    [SOURCE_DIR <sourceDir>]
-    [DEST_FILES <dfile1> <dfile2> ...]
-    [DEST_DIR <destDir>]
-    [TARGETDEPS <targDep1> <targDep2> ...]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-This function has a few valid calling modes:
-
-**1) Source files and destination files have the same name**::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    SOURCE_FILES <file1> <file2> ...
-    [SOURCE_DIR <sourceDir>]
-    [DEST_DIR <destDir>]
-    [TARGETDEPS <targDep1> <targDep2> ...]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-In this case, the names of the source files and the destination files
-are the same but just live in different directories.
-
-**2) Source files have a prefix different from the destination files**::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    DEST_FILES <file1> <file2> ...
-    SOURCE_PREFIX <srcPrefix>
-    [SOURCE_DIR <sourceDir>]
-    [DEST_DIR <destDir>]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-In this case, the source files have the same basic name as the
-destination files except they have the prefix 'srcPrefix' appended
-to the name.
-
-**3) Source files and destination files have completely different names**::
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    <targetName>
-    SOURCE_FILES <sfile1> <sfile2> ...
-    [SOURCE_DIR <sourceDir>]
-    DEST_FILES <dfile1> <dfile2> ...
-    [DEST_DIR <destDir>]
-    [EXEDEPS <exeDep1> <exeDep2> ...]
-    [NOEXEPREFIX]
-    [CATEGORIES <category1>  <category2> ...]
-    )
-
-In this case, the source files and destination files have completely
-different prefixes.
-
-The individual arguments are:
-
-  ``SOURCE_FILES <file1> <file2> ...``
-
-    Listing of the source files relative to the source directory given by
-    the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
-    the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
-    <srcPrefix>`` appended.
-
-  ``SOURCE_DIR <sourceDir>``
-
-    Optional argument that gives (absolute) the base directory for all of the
-    source files.  If omited, this takes the default value of 
-    ``${CMAKE_CURRENT_SOURCE_DIR}``.
-
-  ``DEST_FILES <file1> <file2> ...``
-
-    Listing of the destination files relative to the destination directory
-    given by the argument ``DEST_DIR <destDir>`` If omited, this list will
-    be the same as given by the ``SOURCE_FILES`` list.
-
-  ``DEST_DIR <destDir>``
-
-    Optional argument that gives the (absolute) base directory for all of the
-    destination files.  If omited, this takes the default value of 
-    ``${CMAKE_CURRENT_BINARY_DIR}``
-
-  ``TARGETDEPS <targDep1> <targDep2> ...``
-
-    Listing of general CMake targets that these files will be added as
-    dependencies to.
-
-  ``EXEDEPS <exeDep1> <exeDep2> ...``
-
-    Listing of executable targets that these files will be added as
-    dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
-    appended to the names of the targets.  This ensures that if the
-    executable target is built that these files will also be copied as well.
-
-  ``NOEXEPREFIX``
-
-    Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
-    appended to the arguments in the ``EXEDEPS`` list.
-
-TRIBITS_INCLUDE_DIRECTORIES()
------------------------------
-
-This function is to override the standard behavior of include_directories
-for a TriBITS package.
-
-Usage::
-
-  TRIBITS_INCLUDE_DIRECTORIES(
-    [REQUIRED_DURING_INSTALLATION_TESTING] <dir0> <dir1> ...
-    )
-
-If specified, ``REQUIRED_DURING_INSTALLATION_TESTING`` can appear anywhere
-in the argument list.
-
-This function allows overriding the default behavior for installation
-testing, to ensure that include directories will not be inadvertently added
-to the build lines for tests during installation testing. Normally we want
-the include directories to be handled as cmake usually does.  However during
-TriBITS installation testing we do not want most of the include directories
-to be used as the majority of the files should come from the installation we
-are building against.  There is an exception to this and that is when there
-are test only headers that are needed.  For that case we allow people to set
-``REQUIRED_DURING_INSTALLATION_TESTING`` to tell us that this include
-directory does need to be set for instaltion testing.
-
-TRIBITS_ADD_LIBRARY()
----------------------
-
-Function used to add a CMake library and target using ``ADD_LIBRARY()``.
-
-Usage::
-
-  TRIBITS_ADD_LIBRARY(
-    <libName>
-    [HEADERS <h0> <h1> ...]
-    [NOINSTALLHEADERS <nih0> <hih1> ...]
-    [SOURCES <src0> <src1> ...]
-    [DEPLIBS <deplib0> <deplib1> ...]
-    [IMPORTEDLIBS <ideplib0> <ideplib1> ...]
-    [TESTONLY]
-    [NO_INSTALL_LIB_OR_HEADERS]
-    [CUDALIBRARY]
-    )
-
-*Sections:*
-
-* `Formal Arguments (TRIBITS_ADD_LIBRARY())`_
-* `Include Directories (TRIBITS_ADD_LIBRARY())`_
-* `Install Targets (TRIBITS_ADD_LIBRARY())`_
-* `Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())`_
-* `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_
-
-.. _Formal Arguments (TRIBITS_ADD_LIBRARY()):
-
-**Formal Arguments (TRIBITS_ADD_LIBRARY())**
-
-  ``<libName>``
-
-    Required name of the library.  This is the name passed to
-     ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
-     packae name.  CMake will of course add any standard prefix or post-fix
-     to the library file name appropriate for the platform and if this is a
-     static or shared library build.
-
-  ``HEADERS <h0> <h1> ...``
-
-    List of public header files for using this library.  By default, these
-    header files are assumed to be in the current source directory.  They
-    can also contain the relative path or absolute path to the files if they
-    are not in the current source directory.  List list of headers is passed
-    into ``ADD_LIBRARY(...)`` as well (which is not strictly needed but is
-    helpful for some build tools, like MS Visual Stuido).  By default, these
-    headers will be installed as well (see `Include Directories
-    (TRIBITS_ADD_LIBRARY())`_).
-
-  ``NOINSTALLHEADERS <nih0> <hih1> ...``
-
-    List of private header files which are used by this library. These
-    headers are not installed and do not needed to be passed in for any
-    purpose other than to pass them into ``ADD_LIBRARY()`` as some build
-    tools like to have these listed (e.g. MS Visual Studio).
-
-  ``SOURCES <src0> <src1> ...``
-
-    List of source files passed into ``ADD_LIBRARY()`` that are compiled
-    into header files and included in the library.  The compiler used to
-    compile the files is determined automatically based on the file
-    extension (see CMake documentation).
-
-  ``DEPLIBS <deplib0> <deplib1> ...``
-
-    List of dependent libraries that are built in the current SE package
-    that this library is dependent on.  These libraries are passed into
-    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  You should **not** list libraries in other upstream SE
-    packages or libraries built externally from this TriBITS CMake project.
-    The TriBITS system automatically handles linking to libraries in uptream
-    TriBITS packages and external libraries need to be listed in
-    ``IMPORTEDLIBS`` instead.
-
-  ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
-
-    List of dependent libraries built exteranlly from this TriBITS CMake
-    project.  These libraries are passed into
-    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  These libraries are added the ``${PACKAGE_NAME}_LIBRARIES``
-    so that downstream SE packages will also have these libraries and the
-    link line also and these libraries will show up in the generated
-    ``Makefile.export.${PACKAGE_NAME}`` and ``${PACKAGE_NAME}Config.cmake``
-    files if they are generated.
-
-  ``TESTONLY``
-
-    If passed in, then ``<libName>`` will **not** be added to
-    ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
-    not be added.  In this case, the current include directories will be set
-    in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
-    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in.
-
-  ``NO_INSTALL_LIB_OR_HEADERS``
-
-    If specified, then no install targets will be added for the library
-    ``<libName>`` or the header files listed in ``HEADERS``.
-
-  ``CUDALIBRARY``
-
-    If specified then ``CUDA_ADD_LIBRARY()`` is used instead of
-    ``ADD_LIBRARY()`` where ``CUDA_ADD_LIBRARY()`` is assumed to be defined
-    by the standard FindCUDA.cmake module as processed using the standard
-    TriBITS FindTPLCUDA.cmake file.  For this option to work, this SE
-    package must have an enabled direct or indirect dependency on the
-    TriBITS CUDA TPL or a configure-time error will occur about not finding
-    ``CUDA_ALL_LIBRARY()``.
-
-.. _Include Directories (TRIBITS_ADD_LIBRARY()):
-
-**Include Directories (TRIBITS_ADD_LIBRARY())**
-
-Any base directories for these header files listed in ``HEADERS`` or
-``NOINSTALLHEADERS`` should be passed into ``INCLUDE_DIRECTORIES()`` *before*
-calling this function.  These include directories will then be added to
-current packages list of include directories
-``${PACKAGE_NAME}_INCLUDE_DIRS``.
-
-.. _Install Targets (TRIBITS_ADD_LIBRARY()):
-
-**Install Targets (TRIBITS_ADD_LIBRARY())**
-
-By default, an install target for the library is created using
-``INSTALL(TARGETS <libName> ...)`` to install into the directory
-``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
-``${PROJECT}_INSTALL_LIB_DIR``).  However, this install target will not get
-created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
-``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
-target will get created.  Also, this install target will *not* get created
-if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
-
-By default, an install target for the headers listed in ``HEADERS`` will get
-created using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
-``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
-installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
-actual install directory is given by
-``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``).  Note that an install target will
-*not* get created for the headers listed in ``NOINSTALLHEADERS``.
-
-.. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
-
-**Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
-
-Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
-and change properties on the ``<libName>`` library target using
-``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
-listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
-any CMake project.
-
-.. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
-
-**Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
-
-**WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
-``-D<someDefine>`` to the compile command line that will affect a header
-file!  These defines are only set locally in this directory and child
-directories.  These defines will **NOT** be set when code in peer
-directories (e.g. a downstream TriBIS pacakge) compiles code that may
-include these header files.  To add defines, please use a configured header
-file (see `TRIBITS_CONFIGURE_FILE()`_).
 
 TRIBITS_ADD_EXECUTABLE()
 ------------------------
@@ -1304,6 +673,187 @@ Arguments that are specific to this function and not contained in
 This is the function to use for simple test executbles that you want to run
 that either takes no arguments or just a simple set of arguments passed in
 through ``ARGS``.
+
+TRIBITS_ADD_LIBRARY()
+---------------------
+
+Function used to add a CMake library and target using ``ADD_LIBRARY()``.
+
+Usage::
+
+  TRIBITS_ADD_LIBRARY(
+    <libName>
+    [HEADERS <h0> <h1> ...]
+    [NOINSTALLHEADERS <nih0> <hih1> ...]
+    [SOURCES <src0> <src1> ...]
+    [DEPLIBS <deplib0> <deplib1> ...]
+    [IMPORTEDLIBS <ideplib0> <ideplib1> ...]
+    [TESTONLY]
+    [NO_INSTALL_LIB_OR_HEADERS]
+    [CUDALIBRARY]
+    )
+
+*Sections:*
+
+* `Formal Arguments (TRIBITS_ADD_LIBRARY())`_
+* `Include Directories (TRIBITS_ADD_LIBRARY())`_
+* `Install Targets (TRIBITS_ADD_LIBRARY())`_
+* `Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())`_
+* `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_
+
+.. _Formal Arguments (TRIBITS_ADD_LIBRARY()):
+
+**Formal Arguments (TRIBITS_ADD_LIBRARY())**
+
+  ``<libName>``
+
+    Required name of the library.  This is the name passed to
+     ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
+     packae name.  CMake will of course add any standard prefix or post-fix
+     to the library file name appropriate for the platform and if this is a
+     static or shared library build.
+
+  ``HEADERS <h0> <h1> ...``
+
+    List of public header files for using this library.  By default, these
+    header files are assumed to be in the current source directory.  They
+    can also contain the relative path or absolute path to the files if they
+    are not in the current source directory.  List list of headers is passed
+    into ``ADD_LIBRARY(...)`` as well (which is not strictly needed but is
+    helpful for some build tools, like MS Visual Stuido).  By default, these
+    headers will be installed as well (see `Include Directories
+    (TRIBITS_ADD_LIBRARY())`_).
+
+  ``NOINSTALLHEADERS <nih0> <hih1> ...``
+
+    List of private header files which are used by this library. These
+    headers are not installed and do not needed to be passed in for any
+    purpose other than to pass them into ``ADD_LIBRARY()`` as some build
+    tools like to have these listed (e.g. MS Visual Studio).
+
+  ``SOURCES <src0> <src1> ...``
+
+    List of source files passed into ``ADD_LIBRARY()`` that are compiled
+    into header files and included in the library.  The compiler used to
+    compile the files is determined automatically based on the file
+    extension (see CMake documentation).
+
+  ``DEPLIBS <deplib0> <deplib1> ...``
+
+    List of dependent libraries that are built in the current SE package
+    that this library is dependent on.  These libraries are passed into
+    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
+    dependency.  You should **not** list libraries in other upstream SE
+    packages or libraries built externally from this TriBITS CMake project.
+    The TriBITS system automatically handles linking to libraries in uptream
+    TriBITS packages and external libraries need to be listed in
+    ``IMPORTEDLIBS`` instead.
+
+  ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
+
+    List of dependent libraries built exteranlly from this TriBITS CMake
+    project.  These libraries are passed into
+    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
+    dependency.  These libraries are added the ``${PACKAGE_NAME}_LIBRARIES``
+    so that downstream SE packages will also have these libraries and the
+    link line also and these libraries will show up in the generated
+    ``Makefile.export.${PACKAGE_NAME}`` and ``${PACKAGE_NAME}Config.cmake``
+    files if they are generated.
+
+  ``TESTONLY``
+
+    If passed in, then ``<libName>`` will **not** be added to
+    ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
+    not be added.  In this case, the current include directories will be set
+    in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
+    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in.
+
+  ``NO_INSTALL_LIB_OR_HEADERS``
+
+    If specified, then no install targets will be added for the library
+    ``<libName>`` or the header files listed in ``HEADERS``.
+
+  ``CUDALIBRARY``
+
+    If specified then ``CUDA_ADD_LIBRARY()`` is used instead of
+    ``ADD_LIBRARY()`` where ``CUDA_ADD_LIBRARY()`` is assumed to be defined
+    by the standard FindCUDA.cmake module as processed using the standard
+    TriBITS FindTPLCUDA.cmake file.  For this option to work, this SE
+    package must have an enabled direct or indirect dependency on the
+    TriBITS CUDA TPL or a configure-time error will occur about not finding
+    ``CUDA_ALL_LIBRARY()``.
+
+.. _Include Directories (TRIBITS_ADD_LIBRARY()):
+
+**Include Directories (TRIBITS_ADD_LIBRARY())**
+
+Any base directories for these header files listed in ``HEADERS`` or
+``NOINSTALLHEADERS`` should be passed into ``INCLUDE_DIRECTORIES()`` *before*
+calling this function.  These include directories will then be added to
+current packages list of include directories
+``${PACKAGE_NAME}_INCLUDE_DIRS``.
+
+.. _Install Targets (TRIBITS_ADD_LIBRARY()):
+
+**Install Targets (TRIBITS_ADD_LIBRARY())**
+
+By default, an install target for the library is created using
+``INSTALL(TARGETS <libName> ...)`` to install into the directory
+``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
+``${PROJECT}_INSTALL_LIB_DIR``).  However, this install target will not get
+created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
+target will get created.  Also, this install target will *not* get created
+if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
+
+By default, an install target for the headers listed in ``HEADERS`` will get
+created using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
+``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
+installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
+actual install directory is given by
+``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``).  Note that an install target will
+*not* get created for the headers listed in ``NOINSTALLHEADERS``.
+
+.. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
+
+**Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
+
+Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
+and change properties on the ``<libName>`` library target using
+``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
+listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
+any CMake project.
+
+.. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
+
+**Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
+
+**WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
+``-D<someDefine>`` to the compile command line that will affect a header
+file!  These defines are only set locally in this directory and child
+directories.  These defines will **NOT** be set when code in peer
+directories (e.g. a downstream TriBIS pacakge) compiles code that may
+include these header files.  To add defines, please use a configured header
+file (see `TRIBITS_CONFIGURE_FILE()`_).
+
+TRIBITS_ADD_OPTION_AND_DEFINE()
+-------------------------------
+
+Add an option and a define variable in one shot.
+
+Usage::
+
+ TRIBITS_ADD_OPTION_AND_DEFINE( <userOptionName>  <macroDefineName>
+   "<docStr>"  <defaultValue> )
+
+This macro sets the user cache ``BOOL`` variable ``<userOptionName>`` and if
+it is true, then sets the global (internal cache) macro define variable
+``<macroDefineName>`` to ``ON``, and otherwise sets it to ``OFF``.  This is
+designed to make it easy to add a user-enabled option to a configured header
+file and have the define set in one shot.  This would require that the
+package's configure file (see `TRIBITS_CONFIGURE_FILE()`_) have the line::
+
+  #cmakedefine <macroDefineName>
 
 TRIBITS_ADD_TEST()
 ------------------
@@ -1576,7 +1126,9 @@ tests to run arbitrary executables, see below.
 
 By default, the command to run for the executable is determined by first
 getting the exectuable name which by default is assumed to be
-``<fullExeName``> =::
+``<fullExeName``> =
+
+::
 
   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 
@@ -1744,372 +1296,648 @@ multiple argument sets to ``ARGS`` or through multiple
 ``POSTFIX_AND_ARGS_<IDX>`` arguments, then
 ``${FULL_TEST_NAME}_DISABLE=TRUE`` must be set for each test individually.
 
-TRIBITS_ADD_ADVANCED_TEST()
----------------------------
+TRIBITS_ADD_TEST_DIRECTORIES()
+------------------------------
 
-Function that creates an advanced test defined by stringing together one or
-more executables and/or commands that is run as a separate CMake -P script
-with very flixible pass/fail criteria.
-
-This function allows you to add a single CTest test as a single unit that is
-actually a sequence of one or more separate commands strung together in some
-way to define the final pass/fail.  You will want to use this function to
-add a test instead of ``TRIBITS_ADD_TEST()`` when you need to run more than
-one command, or you need more sophisticated checking of the test result
-other than just greping STDOUT (i.e. by running programs to examine output
-files).
+Macro called to add a set of test directories for an SE package.
 
 Usage::
 
-  TRIBITS_ADD_ADVANCED_TEST(
-    <testName>
-    TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
-    [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
-    ...
-    [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
-    [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
-    [FAIL_FAST]
-    [KEYWORDS <keyword1> <keyword2> ...]
-    [COMM [serial] [mpi]]
-    [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
-    [CATEGORIES <category0> <category1> ...]
-    [HOST <host0> <host1> ...]
-    [XHOST <host0> <host1> ...]
-    [HOSTTYPE <hosttype0> <hosttype1> ...]
-    [XHOSTTYPE <hosttype0> <hosttype1> ...]
-    [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
-    [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+   TRIBITS_ADD_TEST_DIRECTORIES(<dir1> <dir2> ...)
+
+This macro only needs to be called from the top most CMakeList.txt file for
+which all subdirectories are all "tests".
+
+This macro can be called several times within a package and it will have the
+right effect.
+
+Currently, really all it does macro does is to call
+``ADD_SUBDIRECTORY(<diri>)`` if ``${PACKAGE_NAME}_ENABLE_TESTS`` or
+``${PARENT_PACKAGE_NAME}_ENABLE_TESTS`` are true. However, this macro may be
+extended in the futgure in order to modify behavior related to adding tests
+and examples in a uniform way..
+
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
+-----------------------------------------
+
+Macro used in Dependencies.cmake files to allow some upstream dependent packages
+to be missing.
+
+Usage::
+
+  TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pack_1> <pack_2> ...)
+
+If the missing upstream SE package <pack_i> is optional, then the effect
+will be to simply ignore the missing package and remove it from the
+dependency list.  However, if the missing upstream SE package <pack_i> is
+required, then in addition to ignoring the missing package, the current SE
+(sub)package will also ee hard disabled,
+i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.
+
+This function is typically used in packages in external TriBITS repos that
+are depend on other packages in other exteral TriBITS repos that might be
+missing.
+
+NOTE: Using this function effectively turns off error checking for
+misspelled package names so it is important to only use it when it
+absolutely is needed.
+
+TRIBITS_CONFIGURE_FILE()
+------------------------
+
+Macro that configures the package's main configured header file (typically
+called ``${PACKAGE_NAME}_config.h`` but any name can be used).
+
+Usage::
+
+  TRIBITS_CONFIGURE_FILE(<packageConfigFile>)
+
+This function requires the file::
+
+   ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
+
+exists and it creates the file::
+
+  ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
+
+by calling the built-in ``CONFIGURE_FILE()`` command::
+
+  CONFIGURE_FILE(
+    ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
+    ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
     )
 
-Each atomic test case is either a package-built executable or just a basic
-command.  An atomic test command block of arguments takes the form::
+which does basic sustitution of CMake variables (see documentation for
+built-in ``CONFIGURE_FILE()`` command for rules on how it performs
+substitutions).
 
-  TEST_<idx>
-     (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
-            [DIRECTORY <dir>]
-        | CMND <cmndExec>)
-     [ARGS <arg1> <arg2> ... <argn>]
-     [MESSAGE "<message>"]
-     [WORKING_DIRECTORY <workingDir>]
-     [NUM_MPI_PROCS <numProcs>]
-     [OUTPUT_FILE <outputFile>]
-     [NO_ECHO_OUTPUT]]
-     [PASS_ANY
-       | PASS_REGULAR_EXPRESSION "<regex>"
-       | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
-       | FAIL_REGULAR_EXPRESSION "<regex>"
-       | STANDARD_PASS_OUTPUT
+In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
+creating configured header files adding macros for deprecating code.
+
+**Deprecated Code Macros**
+
+If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE``, then the
+local CMake varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS``
+adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
+``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
+add the compiler-specific deprecated warning for an entity.  To use this,
+just add the line::
+
+  @<PARENT_PACKAGE_NAME_UC>_DEPRECATED_DECLARATIONS@
+
+to the <packageConfigFile>.in file and it will be expended.
+
+Then C/C++ code can use this macro to deprecate functions, variables,
+classes, etc., for example, using::
+
+  <PARENT_PACKAGE_NAME_UC>_DEPRECATED class SomeDepreatedClass { ... }.
+
+If the particular compiler does not support deprecated warnings, then this
+macro is defined to be empty.  See `Regulated Backward Compatibility and
+Deprecated Code`_ for more details.
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR()
+----------------------------------
+
+Function that copies a list of files from a soruce directory to a
+destination directory at configure time, typically so that it can be used in
+one or more tests.  This sets up all of the custom CMake commands and
+targets to ensure that the files in the destiation directory are always up
+to date just by building the ``ALL`` target.
+
+Usage::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    [SOURCE_FILES <file1> <file2> ...]
+    [SOURCE_DIR <sourceDir>]
+    [DEST_FILES <dfile1> <dfile2> ...]
+    [DEST_DIR <destDir>]
+    [TARGETDEPS <targDep1> <targDep2> ...]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+This function has a few valid calling modes:
+
+**1) Source files and destination files have the same name**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    SOURCE_FILES <file1> <file2> ...
+    [SOURCE_DIR <sourceDir>]
+    [DEST_DIR <destDir>]
+    [TARGETDEPS <targDep1> <targDep2> ...]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the names of the source files and the destination files
+are the same but just live in different directories.
+
+**2) Source files have a prefix different from the destination files**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    DEST_FILES <file1> <file2> ...
+    SOURCE_PREFIX <srcPrefix>
+    [SOURCE_DIR <sourceDir>]
+    [DEST_DIR <destDir>]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the source files have the same basic name as the
+destination files except they have the prefix 'srcPrefix' appended
+to the name.
+
+**3) Source files and destination files have completely different names**::
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    <targetName>
+    SOURCE_FILES <sfile1> <sfile2> ...
+    [SOURCE_DIR <sourceDir>]
+    DEST_FILES <dfile1> <dfile2> ...
+    [DEST_DIR <destDir>]
+    [EXEDEPS <exeDep1> <exeDep2> ...]
+    [NOEXEPREFIX]
+    [CATEGORIES <category1>  <category2> ...]
+    )
+
+In this case, the source files and destination files have completely
+different prefixes.
+
+The individual arguments are:
+
+  ``SOURCE_FILES <file1> <file2> ...``
+
+    Listing of the source files relative to the source directory given by
+    the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
+    the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
+    <srcPrefix>`` appended.
+
+  ``SOURCE_DIR <sourceDir>``
+
+    Optional argument that gives (absolute) the base directory for all of the
+    source files.  If omited, this takes the default value of 
+    ``${CMAKE_CURRENT_SOURCE_DIR}``.
+
+  ``DEST_FILES <file1> <file2> ...``
+
+    Listing of the destination files relative to the destination directory
+    given by the argument ``DEST_DIR <destDir>`` If omited, this list will
+    be the same as given by the ``SOURCE_FILES`` list.
+
+  ``DEST_DIR <destDir>``
+
+    Optional argument that gives the (absolute) base directory for all of the
+    destination files.  If omited, this takes the default value of 
+    ``${CMAKE_CURRENT_BINARY_DIR}``
+
+  ``TARGETDEPS <targDep1> <targDep2> ...``
+
+    Listing of general CMake targets that these files will be added as
+    dependencies to.
+
+  ``EXEDEPS <exeDep1> <exeDep2> ...``
+
+    Listing of executable targets that these files will be added as
+    dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
+    appended to the names of the targets.  This ensures that if the
+    executable target is built that these files will also be copied as well.
+
+  ``NOEXEPREFIX``
+
+    Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
+    appended to the arguments in the ``EXEDEPS`` list.
+
+TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
+-------------------------------------
+
+Define the dependenices for a given TriBITS SE package (i.e. a top-level
+package or a subpackage).
+
+Usage::
+
+  TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+     [LIB_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
+     [LIB_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
+     [TEST_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
+     [TEST_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
+     [LIB_REQUIRED_TPLS <tpl1> <tpl2> ...]
+     [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
+     [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
+     [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
+     [REGRESSION_EMAIL_LIST  <regression-email-address>
+     [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+       <spkg1_name>  <spkg1_dir>  <spkg1_classifications>  <spkg1_optreq>
+       <spkg2_name>  <spkg2_dir>  <spkg2_classifications>  <spkg2_optreq>
+       ...
        ]
-
-By default, each and every atomic test or command needs to pass (as defined below) in
-order for the overall test to pass.
-
-*Sections:*
-
-* `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
-* `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
-* `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
-* `Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
-* `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
-* `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
-* `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
-* `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
-
-.. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())**
-
-Below are given some overall arguments.  Remaining overall arguments that
-control overall pass/fail are described in `Overall Pass/Fail
-(TRIBITS_ADD_ADVANCED_TEST())`_.  (NOTE: All of these arguments must be
-listed outside of the ``TEST_<idx>`` blocks, see `Argument Ordering
-(TRIBITS_ADD_ADVANCED_TEST())`_).
-
-  ``<testName>``
-
-    The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
-    the name) that will be used to name the output CMake script file as well
-    as the CTest test name passed into ``ADD_TEST()``.  This must be the
-    first argument.
-
-  ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
-
-    If specified, then the working directory ``<overallWorkingDir>`` will be
-    created and all of the test commands by default will be run from within
-    this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
-    given, then the working directory will be given the name
-    ``${PACKAGE_NAME}_<testName>``.  If the directory
-    ``<overallWorkingDir>`` exists before the test runs, it will be deleted
-    and created again.  Therefore, if you want to preserve the contents of
-    this directory between test runs you need to copy the files it somewhere
-    else.  This is a good option to use if the commands create intermediate
-    files and you want to make sure they get deleted before a set of test
-    cases runs again.
-
-  ``FAIL_FAST``
-
-    If specified, then the remaining test commands will be aborted when any
-    test command fails.  Otherwise, all of the test cases will be run.
-
-  ``RUN_SERIAL``
-
-    If specified then no other tests will be allowed to run while this test
-    is running.  This is useful for devices(like cuda cards) that require
-    exclusive access for processes/threads.  This just sets the CTest test
-    property ``RUN_SERIAL`` using the built-in CMake function
-    ``SET_TESTS_PROPERTIES()``.
-
-  ``COMM [serial] [mpi]``
-
-    If specified, selects if the test will be added in serial and/or MPI
-    mode.  See the ``COMM`` argument in the script
-    `TRIBITS_ADD_TEST()`_ for more details.
-
-  ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
-
-    If specified, gives the default number of processes that each executable
-    command runs on.  If ``<numProcs>`` is greater than
-    ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
-    specified, then the default number of processes for an MPI build will be
-    ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
-    ignored.
-
-  ``CATEGORIES <category0> <category1> ...``
-
-    Gives the test categories for which this test will be added.  See
-    `TRIBITS_ADD_TEST()`_ for more details.
-
-  ``HOST <host0> <host1> ...``
-
-    The list of hosts for which to enable the test (see `TRIBITS_ADD_TEST()`_).
-
-  ``XHOST <host0> <host1> ...``
-
-    The list of hosts for which **not** to enable the test (see
-    `TRIBITS_ADD_TEST()`_).
-
-  ``HOSTTYPE <hosttype0> <hosttype1> ...``
-
-    The list of host types for which to enable the test (see
-    `TRIBITS_ADD_TEST()`_).
-
-  ``XHOSTTYPE <hosttype0> <hosttype1> ...``
-
-    The list of host types for which **not** to enable the test (see
-    `TRIBITS_ADD_TEST()`_).
-
-  ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
-
-    If passed in, the listed environment varaibles will be set before
-    calling the test.  This is set using the built-in test property
-    ``ENVIRONMENT``.
-
-.. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
-
-**TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
-
-Each test command block ``TEST_<idx>`` runs either a package-built test
-executable or some general command executable and is defined as either
-``EXEC <exeRootName>`` or ``CMND <cmndExec>`` with the arugments:
-
-  ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <dir>]``
-
-    If specified, then ``<exeRootName>`` gives the the name of an executable
-    target that will be run as the command.  The full executable path is
-    determined in exactly the same way it is in the `TRIBITS_ADD_TEST()`_
-    function (see `Determining the Exectuable or Command to Run
-    (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then the executable
-    will be run with MPI using ``NUM_MPI_PROCS <numProcs>`` or
-    ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is not
-    set for this test case).  If the number of maximum MPI processes allowed
-    is less than this number of MPI processes, then the test will *not* be
-    run.  Note that ``EXEC <exeRootName>`` is basically equivalent to ``CMND
-    <cmndExec>`` when ``NOEXEPREFIX`` and ``NOEXESUFFIX`` are specified.  In
-    this case, you can pass in ``<exeRootName>`` to any command you would
-    like and it will get run with MPI in MPI mode just link any other
-    command.
-
-  ``CMND <cmndExec>``
-
-    If specified, then ``<cmndExec>`` gives the executable for a command to
-    be run.  In this case, MPI will never be used to run the executable even
-    when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).
-
-By default, the output (stdout/stderr) for each test command is captured and
-is then echoed to stdout for the overall test.  This is done in order to be
-able to grep the result to determine pass/fail.
-
-Other miscellaneous arguments for each ``TEST_<idx>`` block include:
-
-  ``DIRECTORY <dir>``
-
-    If specified, then the executable is assumed to be in the directory
-    given by relative <dir>.  See `TRIBITS_ADD_TEST()`_.
-
-  ``MESSAGE "<message>"``
-
-    If specified, then the string in ``"<message>"`` will be print before
-    this test command is run.  This allows adding some documentation about
-    each individual test invocation to make the test output more
-    understandable.
-
-  ``WORKING_DIRECTORY <workingDir>``
-
-    If specified, then the working directory ``<workingDir>`` will be
-    created and the test will be run from within this directory.  If the
-    value ``<workingDir> = TEST_NAME`` is given, then the working directory
-    will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
-    <workingDir> exists before the test runs, it will be deleted and created
-    again.  Therefore, if you want to preserve the contents of this
-    directory between test runs you need to copy it somewhere else.  Using
-    ``WORKING_DIRECTORY` for individual test commands allows creating
-    independent working directories for each test case.  This would be
-    useful if a single ``OVERALL_WORKING_DIRECTORY`` was not sufficient for
-    some reason.
-
-  ``NUM_MPI_PROCS <numProcs>``
-
-    If specified, then <``numProcs>`` is the number of processors used for MPI
-    executables.  If not specified, this will default to ``<overallNumProcs>``
-    from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
-
-  ``OUTPUT_FILE <outputFile>``
-
-    If specified, then stdout and stderr for the test case will be sent to
-    ``<outputFile>``.
-
-  ``NO_ECHO_OUTPUT``
-
-    If specified, then the output for the test command will not be echoed to
-    the output for the entire test command.
-
-By default, an atomic test line is assumed to pass if the executable returns
-a non-zero value.  However, a test case can also be defined to pass based
-on:
-
-  ``PASS_ANY``
-
-    If specified, the test command 'i' will be assumed to pass reguardless
-    of the return value or any other output.  This would be used when a
-    command that is to follow will determine pass or fail based on output
-    from this command in some way.
-
-  ``PASS_REGULAR_EXPRESSION "<regex>"``
-
-    If specified, the test command 'i' will be assumed to pass if it matches
-    the given regular expression.  Otherwise, it is assumed to fail.
-
-  ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
-
-    If specified, the test command 'i' will be assumed to pas if the output
-    matches all of the provided regular expressions.  Note that this is not
-    a capability of raw ctest and represents an extension provided by
-    TriBITS.
-
-  ``FAIL_REGULAR_EXPRESSION "<regex>"``
-
-    If specified, the test command 'i' will be assumed to fail if it matches
-    the given regular expression.  Otherwise, it is assumed to pass.
-
-  ``STANDARD_PASS_OUTPUT``
-
-    If specified, the test command 'i' will be assumed to pass if the string
-    expression "Final Result: PASSED" is found in the ouptut for the test.
-
-All of the arguments for a test block ``TEST_<idx>`` must appear directly
-below their ``TEST_<idx>`` argument and before the next test block (see
-`Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
-
-.. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
-
-By default, the overall test will be assumed to pass if it prints::
-
-  "OVERALL FINAL RESULT: TEST PASSED"
-
-However, this can be changed by setting one of the following optional arguments:
-
-  ``FINAL_PASS_REGULAR_EXPRESSION <regex>``
-
-    If specified, the test will be assumed to pass if the output matches
-    <regex>.  Otherwise, it will be assumed to fail.
-
-  ``FINAL_FAIL_REGULAR_EXPRESSION <regex>``
-
-    If specified, the test will be assumed to fail if the output matches
-    <regex>.  Otherwise, it will be assumed to fail.
-
-.. _Argument Ordering (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Argument Ordering (TRIBITS_ADD_ADVANCED_TEST())**
-
-For the most part, the listed arguments can appear in any order except for
-the following restrictions:
-
-* The ``<testName>`` argument must be the first listed (it is the only
-  positional argument).
-* The test cases ``TEST_<idx>`` must be listed in order (i.e. ``TEST_0
-  ... TEST_1 ...``) and the test cases must be consecutive integers (i..e
-  can't jump from ``TEST_5`` to ``TEST_7``).
-* All of the arguments for a test case must appear directly below its
-  ``TEST_<idx>`` keyword and before the next ``TEST_<idx+1>`` keyword or
-  before any trailing overall keyword arguments.
-* None of the overall arguments (e.g. ``CATEGORIES``) can be inside listed
-  inside of a ``TEST_<idx>`` block but otherwise can be listed before or
-  after all of the ``TEST_<idx>`` blocks.
-
-Other than that, the keyword argumnets and options can appear in any order.
-
-.. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Implementation Details (TRIBITS_ADD_ADVANCED_TEST())**
-
-Since raw CTest does not support the features provided by this function, the
-way an advanced test is implemented is that a CMake script with the name
-``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current binary
-directory that then gets added to CTest using::
-
-  ADD_TEST(${PACKAGE_NAME}_<testName>
-    cmake [other options] -P ${PACKAGE_NAME}_<testName>.cmake)
-
-This CMake script then runs the various test cases and checks the pass/fail
-for each case to determine overall pass/fail and implement other
-functionality. 
-
-.. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())**
-
-After this function returns, if the test gets added using ``ADD_TEST()``
-then additional properties can be set and changed using
-``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
-tests properties that are not directly supported by this function and passed
-through the argument list to this wrapper function can be set in the outer
-``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
-
-.. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
-
-The test can be disabled externally by setting the CMake cache variable
-``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
-case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
-when running the test.
-
-.. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
-
-**Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
-
-In order to see if the test gets added and to debug some issues in test
-creation, one can set the cache variable
-``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
-of some information about the test getting added or not.
-
-Likely the best way to debugging test generation using this function is to
-examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
-current binary directory (see `Implementation Details
-(TRIBITS_ADD_ADVANCED_TEST())`_).
+     )
+
+Every argument in this macro is optional.  The arguments that apply a package
+itself are:
+
+* **LIB_REQUIRED_PACKAGES:** List of upstream packages that must be enabled
+  in order to build and use the libraries (or capabilities) in this
+  package.
+
+* **LIB_OPTIONAL_PACKAGES:** List of additional optional upstream packages
+  that can be used in this package if enabled.  These upstream packages need
+  not be enabled in order to use this package but not enabling one or more
+  of these optional upstream packages will result in diminished capabilities
+  of this package.
+
+* **TEST_REQUIRED_PACKAGES:** List of additional upstream packages that must
+  be enabled in order to build and/or run the tests and/or examples in this
+  packages.  If any of these upstream packages is not enabled, then there
+  will be no tests or examples defined or run for this package.
+
+* **TEST_OPTIONAL_PACKAGES:** List of additional optional upstream packages
+  that can be used by the tests in this package.  These upstream packages
+  need not be enabled in order to run basic tests for this package.
+  Typically, extra tests that depend on optional test packages involve
+  integration testing of some type.
+
+* **LIB_REQUIRED_TPLS:** List of upstream TPLs that must be enabled in order
+  to build and use the libraries (or capabilities) in this package.
+
+* **LIB_OPTIONAL_TPLS:** List of additional optional upstream TPLs that can
+  be used in this package if enabled.  These upstream TPLs need not be
+  enabled in order to use this package but not enabling one or more of these
+  optional upstream TPLs will result in diminished capabilities of this
+  package.
+
+* **TEST_REQUIRED_TPLS:** List of additional upstream TPLs that must
+  be enabled in order to build and/or run the tests and/or examples in this
+  packages.  If any of these upstream TPLs is not enabled, then there
+  will be no tests or examples defined or run for this package.
+
+* **TEST_OPTIONAL_TPLS:** List of additional optional upstream TPLs
+  that can be used by the tests in this package.  These upstream TPLs
+  need not be enabled in order to run basic tests for this package.
+  Typically, extra tests that depend on optional test TPLs involve
+  integration testing of some type.
+
+Only direct package dependenices need to be listed.  Indirect package
+dependencies are automatically handled.  For example, if this SE package
+directly depends on PKG2 which depends on PKG1 (but this SE package does not
+directly depend on anything in PKG1) then this package only needs to list a
+dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
+automatically by the TriBITS dependency tracking system.
+
+However, currently, all TPL dependendies must be listed, even the indirect
+ones.  This is a requirement that will be dropped in the future.
+
+The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
+dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
+implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
+dependencies.
+
+The dependencies within a single list do not need to be listed in any order.
+For example if PKG2 depends on PKG1, and this given SE package depends on
+both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
+"LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
+not important.
+
+If some upstream packages are allowed to be missing, this can be specified
+by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
+
+A top-level package can also have subpackages.  In this case, the following
+varible must be set:
+
+* **SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:** 2D array with rows listing
+  the subpackages and the columns:
+
+  * **SUBPACKAGE:** The name of the subpackage <spkg_name>.  The full SE
+    package name is "${PARENT_PACKAGE_NAME}<spkg_name>".  The full SE
+    package name is what is used in listing dependenices in other SE
+    packages.
+
+  * **DIRS:** The subdirectory <spkg_dir> relative to the parent package's
+    base directory.  All of the contents of the subpackage should be under
+    this subdirectory.  This is assumed by the TriBITS testing support
+    software when mapping modified files to SE packages that need to be
+    tested.
+
+  * **CLASSIFICATIONS***: The test group PT, ST, EX and the maturity level
+    EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
+    spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
+    as for full packages (see
+    `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_).
+
+  * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
+    REQUIRED dependence on this subpackage.
+
+Other variables that this macro handles:
+
+* **REGRESSION_EMAIL_LIST:** The email list that is used to send CDash error
+  messages.  If this is missing, then the email list that CDash errors go to
+  is determined by other means (see ???).
+
+NOTE: All this macro really does is to just define the variables:
+
+* LIB_REQUIRED_DEP_PACKAGES
+* LIB_OPTIONAL_DEP_PACKAGES
+* TEST_REQUIRED_DEP_PACKAGES
+* TEST_OPTIONAL_DEP_PACKAGES
+* LIB_REQUIRED_DEP_TPLS
+* LIB_OPTIONAL_DEP_TPLS
+* TEST_REQUIRED_DEP_TPLS
+* TEST_OPTIONAL_DEP_TPLS
+* REGRESSION_EMAIL_LIST
+* SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+
+which are then read by the TriBITS cmake code to build the package
+dependency graph.  The advantage of using this macro instead of just
+directly setting the varibles is that you only need to list the dependencies
+you have.  Otherwise, you need to set all of these varibles, even those that
+are empty.  This is a error checking property of the TriBITS system to avoid
+misspelling the names of these variables.
+
+TRIBITS_DEFINE_REPOSITORY_PACKAGES()
+------------------------------------
+
+Define the set of packages for a given TriBIT repo.  This macro is typically
+called from inside of a `<repoDir>/PackagesList.cmake`_ file for a given
+TriBITS repo.
+
+Usage::
+
+   TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+      <pkg0>  <pkg0_dir>  <pkg0_classifications>
+      <pkg1>  <pkg1_dir>  <pkg1_classifications>
+      ...
+      )
+
+This macro sets up a 2D array of NumPackages by NumColumns listing out the
+packages for a TriBITS repository.  Each row (with 3 entries) specifies a
+package which contains the three columns:
+
+* **PACKAGE** (1st column): The name of the TriBITS package.  This name must
+  be unique across all other TriBITS packages in this or any other TriBITS
+  repo that might be combined into a single TriBITS project meta-build.  The
+  name should be a valid identifier (e.g. matches the regex
+  ``[a-zA-Z_][a-zA-Z0-9_]*``).
+
+* **DIR** (2nd column): The relative directory for the package.  This is
+  relative to the TriBITS repository base directory.  Under this directory
+  will be a package-specific 'cmake/' directory with file
+  'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+  entire contents of the package including all of the source code and all of
+  the tests should be contained under this directory.  The TriBITS testing
+  infrastructure relies on the mapping of changed files to these base
+  directories when deciding what packages are modified and need to be
+  retested (along with downstream packages).
+
+* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
+  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
+  by a coma with no space in between such as "RS,PT" for a "Research
+  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
+  treats this a one field in the array.  The maturity level can be left off
+  in which case it is assumed to be UM for "Unspecified Maturity".  This
+  classification for individual packages can be changed to ``EX`` for
+  specific platforms by calling `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
+
+NOTE: This macro just sets the varaible::
+
+  ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+
+in the current
+scope.  The advantages of using this macro instead of directly setting this
+varible include:
+
+* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+
+* Avoids having to hard-code the assumed repository name
+  ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
+  TriBITS project name a given TriBITS repo (i.e. the name of repo
+  subdirs).
+
+* Avoid mispelling the name of the varible
+  ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
+  misspell the name of the macro, it is an immediate error in CMake.
+
+TRIBITS_DEFINE_REPOSITORY_TPLS()
+--------------------------------
+
+Define the list of TPLs, find modules, and classifications for a given
+TriBITS repository.  This macro is typically called from inside of a
+TPLsList.cmake fil for a given TriBITS repo.
+
+Usage::
+
+  TRIBITS_DEFINE_REPOSITORY_TPLS(
+    <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
+    <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
+    ...
+    )
+
+This macro sets up a 2D array of NumTPLS by NumColumns listing out the
+TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
+package which contains the three columns:
+
+* **TPL** (1st column): The name of the TriBITS TPL ``<TPL_NAME>``.  This
+  name must be unique across all other TriBITS TPLs in this or any other
+  TriBITS repo that might be combined into a single TriBITS project
+  meta-build.  However, a TPL can be redefined (see below).  The name should
+  be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
+
+* **FINDMOD** (2nd column): The relative directory for the find module,
+  usually with the name ``FindTPL<TPL_NAME>.cmake``.  This is relative to
+  the repository base directory.  If just the base path for the find module
+  is given, ending with "/" (e.g. "cmake/tpls/") then the find module will
+  be assumed to be under that this directory with the standard name
+  (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard way to write a
+  ``FindTPL<TPL_NAME>.cmake`` module is to use the function
+  `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+
+* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
+  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
+  by a coma with no space in between such as "RS,PT" for a "Research
+  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
+  treats this a one field in the array.  The maturity level can be left off
+  in which case it is assumed to be UM for "Unspecified Maturity".
+
+A TPL defined in a upstream repo can listed again, which allows redefining
+the find module that is used to specificy the TPL.  This allows downstream
+repos to add additional requirements on a given TPL.  However, the
+downstream repo's find module file must find the TPL components that are
+fully compatible with the upstream's find module.
+
+This macro just sets the varaible::
+
+ ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+
+in the current scope.  The advantages of using this macro instead of
+directly setting this varible include:
+
+* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+* Avoids having to hard-code the assumed repository name ``${REPOSITORY_NAME}``.
+  This provides more flexibility for how other TriBITS project name a given
+  TriBITS repo (i.e. the name of repo subdirs).
+* Avoid mispelling the name of the varible
+  ``${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS``.  If you misspell the
+  name of the macro, it is an immediate error in CMake.
+
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()
+--------------------------------------
+
+Disable a package automatically for a list of platforms.
+
+Usage::
+
+  TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS( <packageName>
+    <hosttype0> <hosttype1> ...)
+
+If any of the host-type arguments ``<hosttypei>`` matches the
+``${PROJECT_NAME}_HOSTTYPE`` variable for the current platform, then package
+``<packageName>`` test group classification is changed to ``EX``.  Changing
+the package test group classification to ``EX`` results in the package being
+disabled by default.  However, an explicit enable can still enable the
+package.
+
+TRIBITS_INCLUDE_DIRECTORIES()
+-----------------------------
+
+This function is to override the standard behavior of include_directories
+for a TriBITS package.
+
+Usage::
+
+  TRIBITS_INCLUDE_DIRECTORIES(
+    [REQUIRED_DURING_INSTALLATION_TESTING] <dir0> <dir1> ...
+    )
+
+If specified, ``REQUIRED_DURING_INSTALLATION_TESTING`` can appear anywhere
+in the argument list.
+
+This function allows overriding the default behavior for installation
+testing, to ensure that include directories will not be inadvertently added
+to the build lines for tests during installation testing. Normally we want
+the include directories to be handled as cmake usually does.  However during
+TriBITS installation testing we do not want most of the include directories
+to be used as the majority of the files should come from the installation we
+are building against.  There is an exception to this and that is when there
+are test only headers that are needed.  For that case we allow people to set
+``REQUIRED_DURING_INSTALLATION_TESTING`` to tell us that this include
+directory does need to be set for instaltion testing.
+
+TRIBITS_PACKAGE()
+-----------------
+
+Macro called at the very beginning of a package's top-level CMakeLists.txt
+file.
+
+Usage::
+
+  TRIBITS_PACKAGE(
+    <packageName>
+    [ENABLE_SHADOWING_WARNINGS]
+    [DISABLE_STRONG_WARNINGS]
+    [CLEANED]
+    [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
+    )
+
+See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
+`TRIBITS_PACKAGE_DECL()`_ and `TRIBITS_PACKAGE()`_ for a description the
+side-effects (and varibles set) after calling this macro.
+
+TRIBITS_PACKAGE_DECL()
+----------------------
+
+Macro called at the very beginning of a package's top-level CMakeLists.txt
+file when a packages has subpackages.
+
+If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+which calls this macro.
+
+Usage::
+
+  TRIBITS_PACKAGE_DECL(
+    <packageName>
+    [ENABLE_SHADOWING_WARNINGS]
+    [DISABLE_STRONG_WARNINGS]
+    [CLEANED]
+    [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
+    )
+
+The arguments are:
+
+  ``<packageName>``
+
+    Gives the name of the Package, mostly just for checking and
+    documentation purposes.  This much match the name of the package
+    provided in the PackagesLists.cmake or it is an error.
+
+  ``ENABLE_SHADOWING_WARNINGS``
+
+    If specified, then shadowing warnings will
+    be turned on for supported platforms/compilers.  The default is for
+    shadowing warnings to be turned off.  Note that this can be overridden
+    globally by setting the cache variable
+    ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
+
+  ``DISABLE_STRONG_WARNINGS``
+
+    If specified, then all strong warnings will be turned off, if they are
+    not already turned off by global cache variables.  Strong warnings are
+    turned on by default in development mode.
+ 
+  ``CLEANED``
+
+    If specified, then warnings will be promoted to errors for all defined
+    warnings.
+ 
+  ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
+
+    If specified, then the
+    standard grep looking for RCPNode circular references that causes tests to
+    fail will be disabled.  Note that if these warnings are being produced
+    then it means that the test is leaking memory and user like may also be
+    leaking memory.
+
+There are several side-effects of calling this macro:
+
+* The the varibles listed the packages set of library targets
+  ``${PACKAGE_NAME}_LIB_TARGETS`` and all targets
+  ``${PACKAGE_NAME}_ALL_TARGETS`` and are initialized to emtpy.
+
+* The local varibles ``PACKAGE_SOURCE_DIR`` and ``PACKAGE_BINARY_DIR`` are
+  set for this package's use in its CMakeLists.txt files.
+
+* Package-specific compiler options are set up in package-scoped (i.e., the
+  package's subdir and its subdirs) in ``CMAKE_<LANG>_FLAG``.
+
+* This packages's cmake subdir ``${PACKAGE_SOURCE_DIR}/cmake`` is added to
+  ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
+  can be read in with just a raw ``INCLUDE()`` leaving off the full path and
+  the ``*.cmake`` extension.
+
+TRIBITS_PACKAGE_DEF()
+---------------------
+
+Macro called after subpackages are processed in order to
+handle the libraries, tests, and examples of the final package. 
+
+Usage::
+
+  TRIBITS_PACKAGE_DEF()
+
+If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+which calls this macro.
+
+This macro has several side effects:
+
+* The varible ``PACKAGE_NAME`` is set in the local scope for usage by the
+  package's CMakeLists.txt files.
+
+* The intra-package dependency varibles (i.e. list of include directoires,
+  list of libraries, etc.) are initialized to emtpy.
 
 TRIBITS_PACKAGE_POSTPROCESS()
 -----------------------------
@@ -2124,4 +1952,196 @@ Usage::
 
 NOTE: It is unfortunate that a packages's CMakeLists.txt file must call this
 macro but limitations of the CMake language make it necessary to do so.
+
+TRIBITS_PROCESS_SUBPACKAGES()
+-----------------------------
+
+Macro that processes subpackages for packages that have them.  This is
+called in the parent packages top-level CMakeLists.txt file.
+
+Usage::
+
+  TRIBITS_PROCESS_SUBPACKAGES()
+
+Must be called after `TRIBITS_PACKAGE_DECL()`_ but before
+`TRIBITS_PACKAGE_DEF()`_.
+
+TRIBITS_PROJECT()
+-----------------
+
+Defines and processes a TriBITS project.
+
+Usage::
+
+  TRIBITS_PROJECT()
+
+Requires that the project name variable ``PROJECT_NAME`` be defined before
+calling this macro.  Also, all default values for project settings should be
+set before calling this (see `TriBITS Global Project Settings`_).  Also, the
+variable ``${PROJECT_NAME}_TRIBITS_DIR`` must be set as well.
+
+This macro then adds all of the necssary paths to ``CMAKE_MODULE_PATH`` and
+then performs all processing of the TriBITS project files (see ???).
+
+ToDo: Give documentation!
+
+TRIBITS_SET_ST_FOR_DEV_MODE()
+-----------------------------
+
+Function that allows packages to easily make a feature ``ST`` for
+development builds and ``PT`` for release builds by default.
+
+Usage::
+
+  TRIBITS_SET_ST_FOR_DEV_MODE(<outputVar>)
+
+``${<outputVar>}`` is set to ``ON`` or ``OFF`` based on the configure state.
+In development mode (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==ON``),
+``${<outputVar>}`` will be set to ``ON`` only if ``ST`` code is enabled
+(i.e. ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE==ON``), otherwise it is
+set to ``OFF``. In release mode
+(i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==OFF``) it is always set to
+``ON``.  This allows some sections of a TriBITS package to be considered
+``ST`` for development mode reducing testing time which includes only ``PT``
+code., while still having important functionality available to users by
+default in a release.
+
+TRIBITS_TPL_DECLARE_LIBRARIES()
+-------------------------------
+
+Function that sets up cache variables for users to specify where to find a
+TPL's headers and libraries.  This function is typically called inside of a
+file ``FindTPL<tpl_name>.cmake`` file.
+
+Usage::
+
+  TRIBITS_TPL_DECLARE_LIBRARIES(
+    <tpl_name>
+    [REQUIRED_HEADERS <header1> <header2> ...]
+    [MUST_FIND_ALL_HEADERS]
+    [REQUIRED_LIBS_NAMES <libname1> <libname2> ...]
+    [MUST_FIND_ALL_LIBS]
+    [NO_PRINT_ENABLE_SUCCESS_FAIL]
+    )
+
+This function can set up a with header files and/or libraries.
+
+The input arguments to this function are:
+
+* ``<tpl_name>``: Name of the TPL that is listed in a TPLsList.cmake file.
+  Below, this is referted to as the local CMake variable ``TPL_NAME``.
+
+* ``REQUIRED_HEADERS``: List of header files that are searched for the TPL
+  using ``FIND_PATH()``.
+
+* ``MUST_FIND_ALL_HEADERS``:  If set, then all of the header files listed in
+  REQUIRED_HEADERS must be found in order for TPL_${TPL_NAME}_INCLUDE_DIRS
+  to be defined.
+
+* ``REQUIRED_LIBS_NAMES``: List of libraries that are searched for when
+  looked for the TPLs libraries with FIND_LIBRARY(...).
+
+* ``MUST_FIND_ALL_LIBS``:  If set, then all of the library files listed in
+  REQUIRED_LIBS_NAMES must be found or the TPL is considered not
+  found!
+
+* ``NO_PRINT_ENABLE_SUCCESS_FAIL``: If set, then the final success/fail
+    will not be printed
+
+The following cache variables, if set, will be used by that this function:
+
+* ``${TPL_NAME}_INCLUDE_DIRS:PATH``: List of paths to search first for
+  header files defined in ``REQUIRED_HEADERS``.
+
+* ``${TPL_NAME}_INCLUDE_NAMES:STIRNG``: List of include names to be looked
+  for instead of what is specified in REQUIRED_HEADERS.
+
+* ``${TPL_NAME}_LIBRARY_DIRS:PATH``: The list of directories to search first
+  for libraies defined in REQUIRED_LIBS_NAMES.
+
+* ``${TPL_NAME}_LIBRARY_NAMES:STIRNG``: List of library names to be looked
+  for instead of what is specified in REQUIRED_LIBS_NAMES.
+
+This function sets global varibles to return state so it can be called from
+anywhere in the call stack.  The following cache variables defined that are
+intended for the user to set and/or use:
+
+* ``TPL_${TPL_NAME}_INCLUDE_DIRS``: A list of common-separated full
+  directory paths that contain the TPLs headers.  If this varible is set
+  before calling this function, then no headers are searched for and this
+  variable will be assumed to have the correct list of header paths.
+
+* ``TPL_${TPL_NAME}_LIBRARIES``: A list of commons-seprated full library
+  names (output from FIND_LIBRARY(...)) for all of the libraries found for
+  the TPL.  IF this varible is set before calling this function, no
+  libraries are searched for and this varaible will be assumed to have the
+  correct list of libraries to link to.
+
+TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
+----------------------------------------------------
+
+Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
+Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
+flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()
+
+Usage::
+
+  TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
+    PACKAGE_NAME <pakageName>
+    [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
+    [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
+    [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
+    [WRITE_INSTALL_CMAKE_CONFIG_FILE]
+    [WRITE_INSTALL_EXPORT_MAKLEFILE]
+    )
+
+The arguments are:
+
+``PACKAGE_NAME <pakageName>``
+
+  Gives the name of the TriBITS package for which the export files should be
+  created for.
+
+``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
+
+  If specified, then all of the varibles in the generated export files will
+  be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
+  This is to provide flexibility.
+
+``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
+
+  If specified, then the package <packageName>'s cmake configure export file
+  for extenral CMake client projects will be created in the file
+  <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
+
+``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
+
+  If specified, then the package <packageName>'s cmake configure export file
+  for external Makefile client projects will be created in the file
+  <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
+
+``WRITE_INSTALL_CMAKE_CONFIG_FILE``
+
+  If specified, then the package <packageName>'s install cmake configure
+  export to be installed will be written.  The name and location of this
+  file is hard-coded.
+
+``WRITE_INSTALL_EXPORT_MAKLEFILE``
+
+  If specified, then the package <packageName>'s install export makefile to
+  be installed will be written.  The name and location of this file is
+  hard-coded.
+
+NOTE: The arguments to this function may look strange but the motivation is
+to support versy speicalized use cases such as when a TriBITS package needs
+to generate an export makefile for a given package but name the export
+makefile differently and use different variable name prefixes.  The
+particular driver use case is when wrapping an external autotools project
+that depends on Trilinos and needs to read in the Makefile.export.Trilinos
+file but this file needs to be generated for a subset of enabled packages on
+the fly during a one-pass configure.
+
+NOTE: This function does *not* contain the the INSTALL() commands because
+CMake will not allow those to even be present in scripting mode that is used
+for unit testing this function.
 
