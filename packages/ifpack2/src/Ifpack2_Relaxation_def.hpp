@@ -1517,5 +1517,8 @@ describe (Teuchos::FancyOStream &out,
 
 } // namespace Ifpack2
 
-#endif // IFPACK2_RELAXATION_DEF_HPP
+#define IFPACK2_RELAXATION_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::Relaxation< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Relaxation< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif // IFPACK2_RELAXATION_DEF_HPP

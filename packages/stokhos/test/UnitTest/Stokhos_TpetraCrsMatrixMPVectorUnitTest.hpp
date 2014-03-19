@@ -116,8 +116,12 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
-// Vector size used in tests
-const int VectorSize = 3;
+// Vector size used in tests -- Needs to be what is instantiated for CPU/MIC/GPU
+#if defined(__CUDACC__)
+const int VectorSize = 16;
+#else
+const int VectorSize = 8;
+#endif
 
 //
 // Test vector addition
@@ -152,7 +156,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -240,7 +244,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -325,7 +329,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -422,7 +426,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -519,7 +523,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Map
   GlobalOrdinal nrow = 10;
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -623,7 +627,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -751,7 +755,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -894,7 +898,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1021,7 +1025,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1104,7 +1108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
-  btol = 100*btol;
+  btol = 1000*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -1169,7 +1173,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1259,7 +1263,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
-  btol = 100*btol;
+  btol = 1000*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -1329,7 +1333,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1415,6 +1419,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //     [ 0, 0,   ..., 0            ]
   //     [ 1, 1/2, ..., 1/VectorSize ]
   //     ....
+  tol = 1000*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
@@ -1484,7 +1489,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1579,6 +1584,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //     [ 0, 0,   ..., 0            ]
   //     [ 1, 1/2, ..., 1/VectorSize ]
   //     ....
+  tol = 1000*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
     const GlobalOrdinal row = myGIDs[i];
@@ -1649,7 +1655,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1762,6 +1768,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   //             Teuchos::VERB_EXTREME);
 
   // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
+  tol = 1000*tol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   Scalar val(VectorSize, BaseScalar(0.0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -1834,7 +1841,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
+  RCP<Node> node = KokkosClassic::Details::getNode<Node>();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
       nrow, comm, node);
@@ -1988,6 +1995,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \
-  CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                                    \
-  typedef Stokhos::DynamicStorage<int,double,Device> DS;                \
-  CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, int, int, N)
+  CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)
+
+// Disabling testing of dynamic storage -- we don't really need it
+  // typedef Stokhos::DynamicStorage<int,double,Device> DS;
+  // CRSMATRIX_MP_VECTOR_TESTS_SLGN(DS, int, int, N)

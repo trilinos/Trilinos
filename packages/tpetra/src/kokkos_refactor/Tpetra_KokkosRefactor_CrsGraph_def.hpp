@@ -327,7 +327,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "CrsGraph(Map,Map,Kokkos::LocalStaticCrsGraph)";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! colMap.is_null (), std::runtime_error,
+      colMap.is_null (), std::runtime_error,
       ": The input column Map must be nonnull.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       k_local_graph_.numRows () != rowMap->getNodeNumElements (),

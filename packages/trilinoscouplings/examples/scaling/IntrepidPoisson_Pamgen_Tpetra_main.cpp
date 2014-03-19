@@ -32,7 +32,7 @@
     \author Created by P. Bochev, D. Ridzal, K. Peterson,
             D. Hensinger, C. Siefert.  Converted to Tpetra by
             I. Kalashnikova (ikalash@sandia.gov).  Modified by Mark
-            Hoemmen (mhoemme@sandia.gov).
+            Hoemmen (mhoemme@sandia.gov) and a bunch of other people.
 
     \remark Use the "--help" command-line argument for usage info.
 
@@ -106,165 +106,182 @@ main (int argc, char *argv[])
 
   bool success = true;
   try {
+    Teuchos::oblackholestream blackHole;
+    Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
+    const int myRank = mpiSession.getRank ();
+    //const int numProcs = mpiSession.getNProc ();
 
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  const int myRank = mpiSession.getRank ();
-  //const int numProcs = mpiSession.getNProc ();
+    // Get the default communicator and Kokkos Node instance
+    RCP<const Comm<int> > comm =
+      DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
 
-  // Get the default communicator and Kokkos Node instance
-  RCP<const Comm<int> > comm =
-    DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+    // Did the user specify --help at the command line to print help
+    // with command-line arguments?
+    bool printedHelp = false;
+    // Values of command-line arguments.
+    int nx, ny, nz;
+    std::string xmlInputParamsFile;
+    bool verbose, debug;
 
-  // Did the user specify --help at the command line to print help
-  // with command-line arguments?
-  bool printedHelp = false;
-  // Values of command-line arguments.
-  int nx, ny, nz;
-  std::string xmlInputParamsFile;
-  bool verbose, debug;
+    // Set default values of command-line arguments.
+    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
+                                    verbose, debug);
+    // Parse and validate command-line arguments.
+    Teuchos::CommandLineProcessor cmdp (false, true);
+    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
+                               verbose, debug);
+    bool gpu = false;
+    cmdp.setOption ("gpu", "no-gpu", &gpu,
+                    "Run example using GPU node (if supported)");
+    int ranks_per_node = 1;
+    cmdp.setOption ("ranks_per_node", &ranks_per_node,
+                    "Number of MPI ranks per node");
+    int gpu_ranks_per_node = 1;
+    cmdp.setOption ("gpu_ranks_per_node", &gpu_ranks_per_node,
+                    "Number of MPI ranks per node for GPUs");
+    int device_offset = 0;
+    cmdp.setOption ("device_offset", &device_offset,
+                    "Offset for attaching MPI ranks to CUDA devices");
 
-  // Set default values of command-line arguments.
-  setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
-                                  verbose, debug);
-  // Parse and validate command-line arguments.
-  Teuchos::CommandLineProcessor cmdp (false, true);
-  setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
-                             verbose, debug);
-  bool gpu = false;
-  cmdp.setOption ("gpu", "no-gpu", &gpu,
-                  "Run example using GPU node (if supported)");
-  int ranks_per_node = 1;
-  cmdp.setOption("ranks_per_node", &ranks_per_node,
-                 "Number of MPI ranks per node");
-  int gpu_ranks_per_node = 1;
-  cmdp.setOption("gpu_ranks_per_node", &gpu_ranks_per_node,
-                 "Number of MPI ranks per node for GPUs");
-  int device_offset = 0;
-  cmdp.setOption("device_offset", &device_offset,
-                 "Offset for attaching MPI ranks to CUDA devices");
-  parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
-                             xmlInputParamsFile, verbose, debug);
-  if (printedHelp) {
-    // The user specified --help at the command line to print help
-    // with command-line arguments.  We printed help already, so quit
-    // with a happy return code.
-    return EXIT_SUCCESS;
-  }
+    // If matrixFilename is nonempty, dump the matrix to that file
+    // in MatrixMarket format.
+    std::string matrixFilename;
+    cmdp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
+                    "generated matrix to that file in MatrixMarket format.");
 
-  // Both streams only print on MPI Rank 0.  "out" only prints if the
-  // user specified --verbose.
-  RCP<FancyOStream> out =
-    getFancyOStream (rcpFromRef ((myRank == 0 && verbose) ? std::cout : blackHole));
-  RCP<FancyOStream> err =
-    getFancyOStream (rcpFromRef ((myRank == 0 && debug) ? std::cerr : blackHole));
+    // If rowMapFilename is nonempty, dump the matrix's row Map to
+    // that file in MatrixMarket format.
+    std::string rowMapFilename;
+    cmdp.setOption ("rowMapFilename", &rowMapFilename, "If nonempty, dump the "
+                    "generated matrix's row Map to that file in a format that "
+                    "Tpetra::MatrixMarket::Reader can read.");
+
+    parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
+                               xmlInputParamsFile, verbose, debug);
+    if (printedHelp) {
+      // The user specified --help at the command line to print help
+      // with command-line arguments.  We printed help already, so quit
+      // with a happy return code.
+      return EXIT_SUCCESS;
+    }
+
+    // Both streams only print on MPI Rank 0.  "out" only prints if the
+    // user specified --verbose.
+    RCP<FancyOStream> out =
+      getFancyOStream (rcpFromRef ((myRank == 0 && verbose) ? std::cout : blackHole));
+    RCP<FancyOStream> err =
+      getFancyOStream (rcpFromRef ((myRank == 0 && debug) ? std::cerr : blackHole));
 
 #ifdef HAVE_MPI
-  *out << "PARALLEL executable" << endl;
+    *out << "PARALLEL executable" << endl;
 #else
-  *out << "SERIAL executable" << endl;
+    *out << "SERIAL executable" << endl;
 #endif
 
-/**********************************************************************************/
-/********************************** GET XML INPUTS ********************************/
-/**********************************************************************************/
-  ParameterList inputList;
-  if (xmlInputParamsFile != "") {
-    *out << "Reading parameters from XML file \""
-         << xmlInputParamsFile << "\"..." << endl;
-    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile,
-                                          outArg (inputList));
-    if (myRank == 0) {
-      inputList.print (*out, 2, true, true);
-      *out << endl;
-    }
-  }
-
-  // Get Pamgen mesh definition string, either from the input
-  // ParameterList or from our function that makes a cube and fills in
-  // the number of cells along each dimension.
-  std::string meshInput = inputList.get("meshInput", "");
-  if (meshInput == "") {
-    *out << "Generating mesh input string: nx = " << nx
-         << ", ny = " << ny
-         << ", nz = " << nz << endl;
-    meshInput = makeMeshInput (nx, ny, nz);
-  }
-
-  // Total application run time
-  {
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Time", total_time);
-
-  RCP<sparse_matrix_type> A;
-  RCP<vector_type> B, X_exact, X;
-  {
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-    makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
-                                out, err, verbose, debug);
-  }
-
-  const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
-  // X_exact is the exact solution of the PDE, projected onto the
-  // discrete mesh.  It may not necessarily equal the exact solution
-  // of the linear system.
-  *out << "||B - A*X_exact||_2 = " << norms[0] << endl
-       << "||B||_2 = " << norms[1] << endl
-       << "||A||_F = " << norms[2] << endl;
-
-  // Setup preconditioner
-  std::string prec_type = inputList.get("Preconditioner", "None");
-  RCP<operator_type> M;
-  {
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
-
-    if (prec_type == "MueLu") {
-      if (inputList.isSublist("MueLu")) {
-        ParameterList mueluParams = inputList.sublist("MueLu");
-        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
-      } else {
-        M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+    /**********************************************************************************/
+    /********************************** GET XML INPUTS ********************************/
+    /**********************************************************************************/
+    ParameterList inputList;
+    if (xmlInputParamsFile != "") {
+      *out << "Reading parameters from XML file \""
+           << xmlInputParamsFile << "\"..." << endl;
+      Teuchos::updateParametersFromXmlFile (xmlInputParamsFile,
+                                            outArg (inputList));
+      if (myRank == 0) {
+        inputList.print (*out, 2, true, true);
+        *out << endl;
       }
     }
-  }
 
-  bool converged = false;
-  int numItersPerformed = 0;
-  const MT tol = inputList.get("Convergence Tolerance",
-                               STM::squareroot (STM::eps ()));
-  const int maxNumIters = inputList.get("Maximum Iterations", 200);
-  const int num_steps = inputList.get("Number of Time Steps", 1);
-  if (gpu) {
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total GPU Solve", total_solve);
-    solveWithBelosGPU(converged, numItersPerformed, tol, maxNumIters, num_steps,
-                      ranks_per_node, gpu_ranks_per_node, device_offset,
-                      prec_type,
-                      X, A, B, Teuchos::null, M);
-  }
-  else {
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-    solveWithBelos (converged, numItersPerformed, tol, maxNumIters, num_steps,
-                    X, A, B, Teuchos::null, M);
-  }
+    // Get Pamgen mesh definition string, either from the input
+    // ParameterList or from our function that makes a cube and fills in
+    // the number of cells along each dimension.
+    std::string meshInput = inputList.get("meshInput", "");
+    if (meshInput == "") {
+      *out << "Generating mesh input string: nx = " << nx
+           << ", ny = " << ny
+           << ", nz = " << nz << endl;
+      meshInput = makeMeshInput (nx, ny, nz);
+    }
 
-  // Compute ||X-X_exact||_2
-  MT norm_x = X_exact->norm2();
-  X_exact->update(-1.0, *X, 1.0);
-  MT norm_error = X_exact->norm2();
-  *out << endl
-       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
-       << endl;
+    // Total application run time
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Time", total_time);
 
-  } // total time block
+      RCP<sparse_matrix_type> A;
+      RCP<vector_type> B, X_exact, X;
+      {
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
+        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
+                                    out, err, verbose, debug);
+      }
 
-  // Summarize timings
-  // RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
-  // reportParams->set ("Report format", std::string ("YAML"));
-  // reportParams->set ("writeGlobalStats", true);
-  // Teuchos::TimeMonitor::report (*out, reportParams);
-  Teuchos::TimeMonitor::summarize(std::cout);
+      // Optionally dump the matrix and/or its row Map to files.
+      {
+        typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
+        if (matrixFilename != "") {
+          writer_type::writeSparseFile (matrixFilename, A);
+        }
+        if (rowMapFilename != "") {
+          writer_type::writeMapFile (rowMapFilename, A->getRowMap ());
+        }
+      }
 
-  } //try
+      const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
+      // X_exact is the exact solution of the PDE, projected onto the
+      // discrete mesh.  It may not necessarily equal the exact solution
+      // of the linear system.
+      *out << "||B - A*X_exact||_2 = " << norms[0] << endl
+           << "||B||_2 = " << norms[1] << endl
+           << "||A||_F = " << norms[2] << endl;
+
+      // Setup preconditioner
+      std::string prec_type = inputList.get("Preconditioner", "None");
+      RCP<operator_type> M;
+      {
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
+
+        if (prec_type == "MueLu") {
+          if (inputList.isSublist("MueLu")) {
+            ParameterList mueluParams = inputList.sublist("MueLu");
+            M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+          } else {
+            M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+          }
+        }
+      }
+
+      bool converged = false;
+      int numItersPerformed = 0;
+      const MT tol = inputList.get("Convergence Tolerance",
+                                   STM::squareroot (STM::eps ()));
+      const int maxNumIters = inputList.get("Maximum Iterations", 200);
+      const int num_steps = inputList.get("Number of Time Steps", 1);
+      if (gpu) {
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total GPU Solve", total_solve);
+        solveWithBelosGPU (converged, numItersPerformed, tol, maxNumIters,
+                           num_steps, ranks_per_node, gpu_ranks_per_node,
+                           device_offset, prec_type, X, A, B, Teuchos::null, M);
+      }
+      else {
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
+        solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
+                        num_steps, X, A, B, Teuchos::null, M);
+      }
+
+      // Compute ||X-X_exact||_2
+      MT norm_x = X_exact->norm2 ();
+      X_exact->update (-1.0, *X, 1.0);
+      MT norm_error = X_exact->norm2 ();
+      *out << endl
+           << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
+           << endl;
+    } // total time block
+
+    // Summarize timings
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  } // try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   if (success)

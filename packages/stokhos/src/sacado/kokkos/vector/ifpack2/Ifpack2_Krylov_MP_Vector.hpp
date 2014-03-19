@@ -43,7 +43,7 @@
 #define IFPACK2_KRYLOV_MP_VECTOR_HPP
 
 // MP includes
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 // Belos adapter
 #include "Belos_TpetraAdapter_MP_Vector.hpp"

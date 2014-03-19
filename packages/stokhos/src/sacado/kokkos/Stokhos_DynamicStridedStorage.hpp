@@ -292,7 +292,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
       if (stride_ == 1)
-        ds::copy(coeff_, v, sz_);
+        copy(v, coeff_, sz_);
       for (ordinal_type i=0; i<sz_; ++i)
         coeff_[i*stride_] = v[i];
     }
@@ -301,7 +301,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) volatile {
       if (stride_ == 1)
-        ds::copy(coeff_, v, sz_);
+        copy(v, coeff_, sz_);
       for (ordinal_type i=0; i<sz_; ++i)
         coeff_[i*stride_] = v[i];
     }

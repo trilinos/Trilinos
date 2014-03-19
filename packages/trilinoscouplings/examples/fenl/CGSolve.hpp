@@ -80,7 +80,7 @@ struct result_struct {
   int iteration;
   result_struct(double add, double dot, double matvec,int niter,double res):
     addtime(add),dottime(dot),matvectime(matvec),
-    norm_res(res),iteration(niter),iter_time(add+dot+matvec) {};
+    norm_res(res),iter_time(add+dot+matvec),iteration(niter) {};
 };
 
 template<class CrsMatrix, class Vector>

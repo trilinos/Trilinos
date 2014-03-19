@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
   RCP<tmatrix_t> tM;     // original matrix (for checking)
   RCP<tmatrix_t> newM;   // migrated matrix
 
-  tM = uinput->getTpetraCrsMatrix();
+  tM = uinput->getUITpetraCrsMatrix();
   size_t nrows = tM->getNodeNumRows();
   Teuchos::ArrayView<const gno_t> rowGids = 
     tM->getRowMap()->getNodeElementList();
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
-  int weightDim = 1;
+  int nWeights = 1;
 
 
   zoltan2_partId_t *p = new zoltan2_partId_t [nrows];
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
   typedef Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
-  soln_t solution(env, comm, idMap, weightDim);
+  soln_t solution(env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, false);//could use true, but test false
 
   /////////////////////////////////////////////////////////////
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::CrsMatrix
   if (!gfail){ 
-    RCP<xmatrix_t> xM = uinput->getXpetraCrsMatrix();
+    RCP<xmatrix_t> xM = uinput->getUIXpetraCrsMatrix();
     RCP<const xmatrix_t> cxM = rcp_const_cast<const xmatrix_t>(xM);
     RCP<Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t> > xMInput;
   
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsMatrix
   if (!gfail){ 
-    RCP<ematrix_t> eM = uinput->getEpetraCrsMatrix();
+    RCP<ematrix_t> eM = uinput->getUIEpetraCrsMatrix();
     RCP<const ematrix_t> ceM = rcp_const_cast<const ematrix_t>(eM);
     RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > eMInput;
   

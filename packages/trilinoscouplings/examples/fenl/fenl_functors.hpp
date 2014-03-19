@@ -284,6 +284,7 @@ public:
   void fill_elem_graph_map( const unsigned ielem ) const
   {
     typedef typename CrsGraphType::size_type size_type;
+    typedef typename CrsGraphType::data_type entry_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
@@ -292,15 +293,15 @@ public:
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-        size_type entry = 0 ;
+        entry_type entry = 0 ;
 
         if ( row_node + 1 < graph.row_map.dimension_0() ) {
 
-          const size_type entry_end = graph.row_map( row_node + 1 );
+          const entry_type entry_end = static_cast<entry_type> (graph.row_map( row_node + 1 ));
 
           entry = graph.row_map( row_node );
 
-          for ( ; entry < entry_end && graph.entries(entry) != col_node ; ++entry );
+          for ( ; entry < entry_end && graph.entries(entry) != static_cast<entry_type> (col_node) ; ++entry );
 
           if ( entry == entry_end ) entry = ~0u ;
         }

@@ -169,9 +169,9 @@ public:
    */
   global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
 
-  /*! \brief Returns the dimension (0 or greater) of coordinate weights.
+  /*! \brief Returns the number (0 or greater) of weights per coordinate
    */
-  int getCoordinateWeightDim() const { return userNumWeights_;}
+  int getNumWeightsPerCoordinate() const { return userNumWeights_;}
 
   /*! \brief Returns the coordinate ids, values and optional weights.
 
@@ -184,9 +184,9 @@ public:
           the coordinates for <tt>Ids[k]</tt> are
           <tt>xyz[0][k], xyz[1][k], xyz[2][k]</tt>.
 
-      \param wgts on return is a list of getCoordinateWeightDim()
+      \param wgts on return is a list of getNumWeightsPerCoordinate()
           StridedData objects, each containing the weights for
-          one weight dimension.  For the dimension \d,
+          one weight index.  For the index \d,
           the weight for <tt>Ids[k]</tt> is <tt>wgts[d][k]</tt>.
 
        \return The number of ids in the Ids list.
@@ -283,7 +283,6 @@ void CoordinateModel<Adapter>::sharedConstructor(
   env_->localMemoryAssertion(__FILE__, __LINE__, userNumWeights_+coordinateDim_,
     coordArray && (!userNumWeights_|| weightArray));
 
-  Array<lno_t> arrayLengths(userNumWeights_, 0);
 
   if (nLocalIds){
     const gid_t *gids=NULL;
@@ -313,7 +312,13 @@ void CoordinateModel<Adapter>::sharedConstructor(
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
         weightArray[idx] = input_t(wArray, stride);
-        arrayLengths[idx] = nLocalIds;
+      }
+      else {
+        // User did not provide weights for this idx; create uniform weights.
+        scalar_t *uniwgts = new scalar_t[nLocalIds];
+        for (size_t i = 0; i < nLocalIds; i++) uniwgts[i] = scalar_t(1);
+        ArrayRCP<const scalar_t> wArray(uniwgts, 0, nLocalIds, true);
+        weightArray[idx] = input_t(wArray, 1);
       }
     }
   }
@@ -322,9 +327,6 @@ void CoordinateModel<Adapter>::sharedConstructor(
 
   if (userNumWeights_)
     weights_ = arcp(weightArray, 0, userNumWeights_);
-
-  // Sets this->weightDim_ and this->uniform_
-  this->setWeightArrayLengths(arrayLengths, *comm_);
 
   // Create identifier map.
   // TODO:  Why do coordinate models need an IdentifierMap?

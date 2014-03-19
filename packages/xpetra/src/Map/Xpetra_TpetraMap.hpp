@@ -173,10 +173,10 @@ namespace Xpetra {
     //@{
 
     //! Get this Map's Comm object.
-    const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { XPETRA_MONITOR("TpetraMap::getComm"); return map_->getComm(); }
+    Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { XPETRA_MONITOR("TpetraMap::getComm"); return map_->getComm(); }
 
     //! Get this Map's Node object.
-    const Teuchos::RCP< Node >  getNode() const { XPETRA_MONITOR("TpetraMap::getNode"); return map_->getNode(); }
+    Teuchos::RCP< Node >  getNode() const { XPETRA_MONITOR("TpetraMap::getNode"); return map_->getNode(); }
 
     //@}
 

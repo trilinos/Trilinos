@@ -227,13 +227,13 @@ namespace Stokhos {
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ds::copy(coeff_, v, sz_);
+      ds::copy(v, coeff_, sz_);
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) volatile {
-      ds::copy(coeff_, v, sz_);
+      ds::copy(v, coeff_, sz_);
     }
 
     //! Resize to new size (values are preserved)
@@ -297,6 +297,14 @@ namespace Stokhos {
     //! Return size
     KOKKOS_INLINE_FUNCTION
     ordinal_type size() const volatile { return sz_; }
+
+    //! Return whether storage is a view
+    KOKKOS_INLINE_FUNCTION
+    bool is_view() const { return is_view_; }
+
+     //! Return whether storage is a view
+    KOKKOS_INLINE_FUNCTION
+    bool is_view() const volatile { return is_view_; }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION

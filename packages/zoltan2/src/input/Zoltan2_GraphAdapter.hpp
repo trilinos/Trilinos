@@ -168,14 +168,14 @@ public:
   virtual void getEdgesView(const lno_t *&offsets,
                             const gid_t *&adjIds) const = 0;
        
-  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+  /*! \brief Returns the number (0 or greater) of weights per vertex
    */
   virtual int getNumWeightsPerVertex() const { return 0; }
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
-      \param weights is the list of weights of the given dimension for
+      \param weights is the list of weights of the given index for
            the vertices returned in getVertexIDsView().  If weights for
-           this dimension are to be uniform for all vertices in the
+           this index are to be uniform for all vertices in the
            global problem, the \c weights should be a NULL pointer.
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
@@ -197,7 +197,7 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
-  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+  /*! \brief Returns the number (0 or greater) of edge weights.
    */
   virtual int getNumWeightsPerEdge() const { return 0; }
 

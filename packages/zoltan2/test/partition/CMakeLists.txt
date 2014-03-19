@@ -12,6 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   )
 ENDIF()
   
+# PQJagged Tests
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     pqJaggedTest
@@ -23,6 +24,53 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+  TRIBITS_ADD_TEST(
+    pqJaggedTest
+    NAME pqJaggedTest_geomgen
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+  TRIBITS_ADD_TEST(
+    pqJaggedTest
+    NAME pqJaggedTest_geomgen_noholes
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam_noholes.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+#muelu like usecase, don't specify pqparts
+  TRIBITS_ADD_TEST(
+    pqJaggedTest
+    NAME pqJaggedTest_geomgen_nopqparts
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "C=16 O=1 F=GeomGenParam_noholes.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+#muelu like usecase, don't specify pqparts, odd parts
+  TRIBITS_ADD_TEST(
+    pqJaggedTest
+    NAME pqJaggedTest_geomgen_nopqparts_odd
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "C=9 O=1 F=GeomGenParam_noholes.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)

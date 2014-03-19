@@ -980,5 +980,13 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 
 }//namespace Ifpack2
 
-#endif // IFPACK2_BLOCKRELAXATION_DEF_HPP
+// For ETI
+#include "Ifpack2_SparseContainer.hpp"
 
+#define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::BlockRelaxation< \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                              Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO,N> > > >;
+
+#endif // IFPACK2_BLOCKRELAXATION_DEF_HPP

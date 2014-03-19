@@ -109,13 +109,16 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getPermuteToLIDs() const;
 
     //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const { XPETRA_MONITOR("EpetraImport::getNumRemoteIDs"); return import_->NumRemoteIDs(); }
+    size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map to receive from other processes.
     ArrayView< const LocalOrdinal > getRemoteLIDs() const;
 
+    //! List of entries in the target Map to receive from other processes.
+    ArrayView< const LocalOrdinal > getRemotePIDs() const;
+
     //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const { XPETRA_MONITOR("EpetraImport::getNumExportIDs"); return import_->NumExportIDs(); }
+    size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other processes.
     ArrayView< const LocalOrdinal > getExportLIDs() const;
@@ -124,17 +127,17 @@ namespace Xpetra {
     ArrayView< const int > getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("EpetraImport::getSourceMap"); return toXpetra(import_->SourceMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraImport::getSourceMap"); return toXpetra(import_->SourceMap()); }
 
     //! The Target Map used to construct this Import object.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { XPETRA_MONITOR("EpetraImport::getTargetMap"); return toXpetra(import_->TargetMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraImport::getTargetMap"); return toXpetra(import_->TargetMap()); }
 
     //@}
 
     //! @name I/O Methods
     //@{
 
-    //! Print method.
+    //! Print the Import's data to the given output stream.
     void print(std::ostream &os) const;
 
     //@}

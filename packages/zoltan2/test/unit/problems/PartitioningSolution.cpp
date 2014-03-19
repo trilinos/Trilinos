@@ -91,16 +91,16 @@ int main(int argc, char *argv[])
   double epsilon = 10e-6;
 
   ////////////////
-  // Arrays to hold part Ids and part Sizes for each weight dimension.
+  // Arrays to hold part Ids and part Sizes for each weight
 
   int numIdsPerProc = 10;
-  int maxWeightDim = 3;
+  int maxNumWeights = 3;
   int maxNumPartSizes = nprocs;
-  int *lengths = new int [maxWeightDim];
-  partId_t **idLists = new partId_t * [maxWeightDim];
-  scalar_t **sizeLists = new scalar_t * [maxWeightDim];
+  int *lengths = new int [maxNumWeights];
+  partId_t **idLists = new partId_t * [maxNumWeights];
+  scalar_t **sizeLists = new scalar_t * [maxNumWeights];
 
-  for (int w=0; w < maxWeightDim; w++){
+  for (int w=0; w < maxNumWeights; w++){
     idLists[w] = new partId_t [maxNumPartSizes];
     sizeLists[w] = new scalar_t [maxNumPartSizes];
   }
@@ -124,16 +124,16 @@ int main(int argc, char *argv[])
 
   /////////////
   // TEST:
-  // One weight dimension, one part per proc.
+  // One weight, one part per proc.
   // Some part sizes are 2 and some are 1.
 
   int numGlobalParts = nprocs;
-  int weightDim = 1;
+  int nWeights = 1;
 
   ArrayRCP<ArrayRCP<partId_t> > ids;
   ArrayRCP<ArrayRCP<scalar_t> > sizes;
 
-  memset(lengths, 0, sizeof(int) * maxWeightDim);
+  memset(lengths, 0, sizeof(int) * maxNumWeights);
 
   lengths[0] = 1;                    // We give a size for 1 part.
   idLists[0][0] = rank;              // The part is my part.
@@ -163,9 +163,9 @@ int main(int argc, char *argv[])
       env,                // application environment info
       comm,               // problem communicator
       idMap,              // problem identifiers (global Ids, local Ids)
-      weightDim,                  // weight dimension
-      ids.view(0,weightDim),      // part ids
-      sizes.view(0,weightDim))); // part sizes
+      nWeights,                  // number of weights
+      ids.view(0,nWeights),      // part ids
+      sizes.view(0,nWeights))); // part sizes
   }
   catch (std::exception &e){
     fail=1;
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
   // Specify a list of parts of size 0.  (The rest should be uniform.)
 
   delete [] lengths;
-  for (int w=0; w < maxWeightDim; w++){
+  for (int w=0; w < maxNumWeights; w++){
     delete [] idLists[w];
     delete [] sizeLists[w];
   }

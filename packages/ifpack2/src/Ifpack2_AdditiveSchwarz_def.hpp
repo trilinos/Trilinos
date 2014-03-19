@@ -63,6 +63,10 @@
 #include "Zoltan2_OrderingSolution.hpp"
 #endif
 
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+#include "Ifpack2_SupportGraph_decl.hpp"
+#endif
+
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_LocalFilter_def.hpp"
@@ -1518,5 +1522,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 }
 
 } // namespace Ifpack2
+
+#define IFPACK2_ADDITIVESCHWARZ_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                                  Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO, N > > >;
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP

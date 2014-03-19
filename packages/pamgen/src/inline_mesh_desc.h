@@ -100,7 +100,10 @@ public:
  
   virtual long long Rename_Block_BC_Sets(){return 0;};
 
-  virtual void Calc_Intervals(){};
+  virtual std::string Calc_Intervals(){
+    std::string errorString;
+    return errorString;
+  };
 
   virtual void setStrides();
 

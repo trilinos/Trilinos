@@ -81,7 +81,7 @@ namespace Xpetra {
     //! The number of elements in this Map.
     virtual global_size_t getGlobalNumElements() const = 0;
 
-    //! The number of elements belonging to the calling node.
+    //! The number of elements belonging to the calling process.
     virtual size_t getNodeNumElements() const = 0;
 
     //! The index base for this Map.
@@ -111,13 +111,13 @@ namespace Xpetra {
     //! The global index corresponding to the given local index.
     virtual GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const = 0;
 
-    //! Return the process IDs and corresponding local IDs for the given global IDs.
+    //! Return the process ranks and corresponding local indices for the given global indices.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const = 0;
 
-    //! Return the process IDs for the given global IDs.
+    //! Return the process ranks for the given global indices.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const = 0;
 
-    //! Return a view of the global indices owned by this node.
+    //! Return a view of the global indices owned by this process.
     virtual Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const = 0;
 
     //@}
@@ -125,10 +125,10 @@ namespace Xpetra {
     //! @name Boolean tests
     //@{
 
-    //! True if the local index is valid for this Map on this node, else false.
+    //! Whether the given local index is valid for this Map on this process.
     virtual bool isNodeLocalElement(LocalOrdinal localIndex) const = 0;
 
-    //! True if the global index is found in this Map on this node, else false.
+    //! Whether the given global index is valid for this Map on this process.
     virtual bool isNodeGlobalElement(GlobalOrdinal globalIndex) const = 0;
 
     //! True if this Map is distributed contiguously, else false.
@@ -149,10 +149,10 @@ namespace Xpetra {
     //@{
 
     //! Get this Map's Comm object.
-    virtual const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const = 0;
+    virtual Teuchos::RCP< const Teuchos::Comm< int > > getComm() const = 0;
 
     //! Get this Map's Node object.
-    virtual const Teuchos::RCP< Node >  getNode() const = 0;
+    virtual Teuchos::RCP< Node > getNode() const = 0;
 
     //@}
 
@@ -162,11 +162,19 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     virtual std::string description() const = 0;
 
-    //! Print this object with the given verbosity level to the given FancyOStream.
+    //! Print this object with the given verbosity level to the given Teuchos::FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
-    virtual RCP<const Map> removeEmptyProcesses  () const = 0;
-    virtual RCP<const Map> replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const = 0;
+    //@}
+
+    //! @name
+    //@{
+
+    //! Return a new Map with processes with zero elements removed.
+    virtual RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > removeEmptyProcesses() const = 0;
+
+    //! Replace this Map's communicator with a subset communicator.
+    virtual RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const = 0;
 
     //@}
 
@@ -176,14 +184,15 @@ namespace Xpetra {
     //! Get the library used by this object (Tpetra or Epetra?)
     virtual UnderlyingLib lib() const = 0;
 
-    //@}
-
     // TODO: find a better solution for this hack
     // The problem is that EpetraMap, TpetraMap and StridedMap all inherit Map. To have proper toEpetra() we
     // need to understand the type of underlying matrix. But in src/Map we have no knowledge of StridedMaps, so
     // we cannot check for it by casting. This function allows us to avoid the restriction, as StridedMap redefines
     // it to return the base map.
     virtual RCP<const Map> getMap() const { return rcpFromRef(*this); }
+
+
+    //@}
 
   }; // Map class
 
