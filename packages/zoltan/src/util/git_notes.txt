@@ -385,3 +385,4 @@ Then
   git log HEAD..bad_state  (shows all differences between master and bad_state)
     or git log bad_state   (and visually determine what the differences are)
   git cherry-pick SHA (using SHA from the log command)
+
