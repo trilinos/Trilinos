@@ -41,16 +41,16 @@
 //@HEADER
  */
 /*
- * opregistration_client.cpp
+ * opreg_client.cpp
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
  */
 
 /**
- * @defgroup opregistration_client Data Transfer Client
+ * @defgroup opreg_client Data Transfer Client
  *
- * @ingroup opregistration_example
+ * @ingroup opreg_example
  *
  * @{
  */
@@ -62,8 +62,8 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "opregistration_test.h"
-#include "opregistration_service_args.h"
+#include "opreg_test.h"
+#include "opreg_service_args.h"
 
 
 #include <iostream>
@@ -90,7 +90,7 @@ log_level client_debug_level = LOG_UNDEFINED;
 
 extern int print_args(
         std::ostream &out,
-        const struct opregistration_args &args,
+        const struct opreg_args &args,
         const char *prefix);
 
 extern "C" {
@@ -109,18 +109,18 @@ uint64_t calc_checksum (const char * buf, const uint64_t size);
  * @param array The data array to transfer.
  * @param req  The \ref nssi_request returned to caller.
  */
-int opregistration_request(
+int opreg_request(
     const nssi_service *svc,
     nssi_request *req)
 {
     int rc = NSSI_OK;
     log_level debug_level = client_debug_level;
-    opregistration_args args;
+    opreg_args args;
 
-    log_debug(debug_level, "Calling RPC for OPREGISTRATION_REQUEST_OP");
+    log_debug(debug_level, "Calling RPC for OPREG_REQUEST_OP");
 
     /* initialize the arguments */
-    memset(&args, 0, sizeof(opregistration_args));
+    memset(&args, 0, sizeof(opreg_args));
     args.data.int_val    = 10;
     args.data.float_val  = 10.10;
     args.data.double_val = 10.10;
@@ -130,9 +130,9 @@ int opregistration_request(
             args.data.int_val, args.data.float_val, args.data.double_val, args.chksum);
 
     /* call the remote methods */
-    rc = nssi_call_rpc(svc, OPREGISTRATION_REQUEST_OP, &args, NULL, 0, NULL, req);
+    rc = nssi_call_rpc(svc, OPREG_REQUEST_OP, &args, NULL, 0, NULL, req);
     if (rc != NSSI_OK) {
-        log_error(client_debug_level, "unable to call OPREGISTRATION_EMPTY_REQUEST_OP: %s",
+        log_error(client_debug_level, "unable to call OPREG_EMPTY_REQUEST_OP: %s",
             nssi_err_str(rc));
     }
 
@@ -150,7 +150,7 @@ int opregistration_request(
  * @param svc  The service description of the remote service.
  * @param array The data array to transfer.
  */
-int opregistration_request_blk(
+int opreg_request_blk(
     const nssi_service *svc)
 {
     int rc = NSSI_OK;
@@ -158,7 +158,7 @@ int opregistration_request_blk(
     nssi_request req;
 
     /* call the async function */
-    rc = opregistration_request(svc, &req);
+    rc = opreg_request(svc, &req);
     if (rc != NSSI_OK) {
         log_error(client_debug_level, "unable to call async method: %s",
                 nssi_err_str(rc));
@@ -219,11 +219,11 @@ int read_contact_info(const char *fname, char *url, int maxlen)
  * @brief Main code for data transfer client.
  *
  * @param args      The options for the experiment, set at the command-line
- * @param opregistration_svc  The nssi_service descriptor for the remote service (already connected)
+ * @param opreg_svc  The nssi_service descriptor for the remote service (already connected)
  * @param comm      The communicator for the client application
  */
 int
-opregistration_client_main (struct opregistration_cmdline_args &args, nssi_service &opregistration_svc, MPI_Comm client_comm)
+opreg_client_main (struct opreg_cmdline_args &args, nssi_service &opreg_svc, MPI_Comm client_comm)
 {
     using namespace std;
 
@@ -238,9 +238,9 @@ opregistration_client_main (struct opregistration_cmdline_args &args, nssi_servi
 
 
     /* register the XDR encoding functions */
-    NSSI_REGISTER_CLIENT_STUB(OPREGISTRATION_REQUEST_OP, opregistration_args, void, void);
+    NSSI_REGISTER_CLIENT_STUB(OPREG_REQUEST_OP, opreg_args, void, void);
 
-    rc = opregistration_request_blk(&opregistration_svc);
+    rc = opreg_request_blk(&opreg_svc);
     if (rc != NSSI_OK) {
         log_error(client_debug_level, "could not transfer data: %s",
                 nssi_err_str(rc));

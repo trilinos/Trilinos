@@ -41,14 +41,14 @@
 //@HEADER
  */
 /*
- * opregistration_client.h
+ * opreg_client.h
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
  */
 
-#ifndef OPREGISTRATION_CLIENT_H_
-#define OPREGISTRATION_CLIENT_H_
+#ifndef OPREG_CLIENT_H_
+#define OPREG_CLIENT_H_
 
 #include <string>
 #include <limits.h>
@@ -61,7 +61,7 @@
 /**
  * Options and arguments passed to the client driver.
  */
-struct opregistration_cmdline_args {
+struct opreg_cmdline_args {
         bool client_flag;
         bool server_flag;
         int transport;
@@ -97,4 +97,4 @@ extern "C" {
 #endif
 
 
-#endif /* OPREGISTRATION_CLIENT_H_ */
+#endif /* OPREG_CLIENT_H_ */

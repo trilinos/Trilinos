@@ -41,17 +41,17 @@
 //@HEADER
  */
 /*
- * opregistration_debug.h
+ * opreg_debug.h
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
  */
 
-#ifndef OPREGISTRATION_DEBUG_H_
-#define OPREGISTRATION_DEBUG_H_
+#ifndef OPREG_DEBUG_H_
+#define OPREG_DEBUG_H_
 
 #include "Trios_logger.h"
 
-extern log_level opregistration_debug_level;
+extern log_level opreg_debug_level;
 
-#endif /* OPREGISTRATION_CLIENT_H_ */
+#endif /* OPREG_CLIENT_H_ */

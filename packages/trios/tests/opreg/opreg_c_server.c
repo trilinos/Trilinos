@@ -40,7 +40,7 @@
 // *************************************************************************
 //@HEADER
  */
-/**  @file opregistration-server.cpp
+/**  @file opreg-server.cpp
  *
  *   @brief Example data transfer server.
  *
@@ -48,9 +48,9 @@
  */
 
 /**
- * @defgroup opregistration_server Data Transfer Server
+ * @defgroup opreg_server Data Transfer Server
  *
- * @ingroup opregistration_example
+ * @ingroup opreg_example
  *
  * @{
  */
@@ -63,7 +63,7 @@
 #include "Trios_nssi_debug.h"
 #include "Trios_nssi_fprint_types.h"
 
-#include "opregistration_service_args.h"
+#include "opreg_service_args.h"
 
 #include <time.h>
 #include <sys/types.h>
@@ -74,7 +74,7 @@
 
 
 
-log_level opregistration_debug_level = LOG_UNDEFINED;
+log_level opreg_debug_level = LOG_UNDEFINED;
 
 uint64_t calc_checksum (const char * buf, const uint64_t size);
 
@@ -95,18 +95,18 @@ uint64_t calc_checksum (const char * buf, const uint64_t size);
  * @param data_addr   The remote memory descriptor for the data (not used).
  * @param res_addr    The remote memory descriptor for the result.
  */
-int opregistration_request_srvr(
+int opreg_request_srvr(
         const unsigned long        request_id,
         const NNTI_peer_t         *caller,
-        const opregistration_args *args,
+        const opreg_args *args,
         const NNTI_buffer_t       *data_addr,
         const NNTI_buffer_t       *res_addr)
 {
     int rc;
-    log_level debug_level = opregistration_debug_level;
+    log_level debug_level = opreg_debug_level;
 
     /* process array (nothing to do) */
-    log_debug(debug_level, "starting opregistration_request_srvr()");
+    log_debug(debug_level, "starting opreg_request_srvr()");
 
     log_debug(debug_level, "args->data.int_val(%d) args->data.float_val(%f) args->data.double_val(%f) args->chksum(%lu)",
             args->data.int_val, args->data.float_val, args->data.double_val, args->chksum);
@@ -126,18 +126,18 @@ int opregistration_request_srvr(
 
 
 /**
- * @brief The NSSI opregistration-server.
+ * @brief The NSSI opreg-server.
  *
  * NSSI has already been initialized and the client already knows the URL of the
  * server.  This function simply registers the server methods and starts the
  * service loop.   The client will send a request to kill the service upon completion.
  *
  */
-int opregistration_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
+int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
 {
     int rc = NSSI_OK;
 
-    nssi_service opregistration_svc;
+    nssi_service opreg_svc;
     int server_rank;
 
     MPI_Comm_rank(server_comm, &server_rank);
@@ -146,19 +146,19 @@ int opregistration_c_server_main(nssi_rpc_transport transport, MPI_Comm server_c
     char server_url[NSSI_URL_LEN];          /* NNTI-style url of the server */
 
 
-    memset(&opregistration_svc, 0, sizeof(nssi_service));
+    memset(&opreg_svc, 0, sizeof(nssi_service));
 
 
     /* initialize the nssi service */
-    rc = nssi_service_init(transport, NSSI_SHORT_REQUEST_SIZE, &opregistration_svc);
+    rc = nssi_service_init(transport, NSSI_SHORT_REQUEST_SIZE, &opreg_svc);
     if (rc != NSSI_OK) {
-        log_error(opregistration_debug_level, "could not init opregistration_svc: %s",
+        log_error(opreg_debug_level, "could not init opreg_svc: %s",
                 nssi_err_str(rc));
         return -1;
     }
 
     // register callbacks for the service methods
-    NSSI_REGISTER_SERVER_STUB(OPREGISTRATION_REQUEST_OP, opregistration_request_srvr, opregistration_args, void);
+    NSSI_REGISTER_SERVER_STUB(OPREG_REQUEST_OP, opreg_request_srvr, opreg_args, void);
 
 
     // Get the Server URL
@@ -167,25 +167,25 @@ int opregistration_c_server_main(nssi_rpc_transport transport, MPI_Comm server_c
 
 
     // Set the maxumum number of requests to handle (-1 == infinite)
-    opregistration_svc.max_reqs = -1;
+    opreg_svc.max_reqs = -1;
 
-    log_debug(opregistration_debug_level, "Starting Server: url = %s", url);
+    log_debug(opreg_debug_level, "Starting Server: url = %s", url);
 
     // Tell the NSSI server to output log data
-    //rpc_debug_level = opregistration_debug_level;
+    //rpc_debug_level = opreg_debug_level;
 
     // start processing requests, the client will send a request to exit when done
-    rc = nssi_service_start(&opregistration_svc);
+    rc = nssi_service_start(&opreg_svc);
     if (rc != NSSI_OK) {
-        log_info(opregistration_debug_level, "exited opregistration_svc: %s",
+        log_info(opreg_debug_level, "exited opreg_svc: %s",
                 nssi_err_str(rc));
     }
 
     sleep(5);
 
-    /* shutdown the opregistration_svc */
-    log_debug(opregistration_debug_level, "shutting down service library");
-    nssi_service_fini(&opregistration_svc);
+    /* shutdown the opreg_svc */
+    log_debug(opreg_debug_level, "shutting down service library");
+    nssi_service_fini(&opreg_svc);
 
 
     return rc;

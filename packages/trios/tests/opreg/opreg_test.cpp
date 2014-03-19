@@ -41,7 +41,7 @@
 //@HEADER
  */
 /*
- * opregistration_service_test.cpp
+ * opreg_service_test.cpp
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
@@ -56,9 +56,9 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
-#include "opregistration_test.h"
-#include "opregistration_service_args.h"
-#include "opregistration_debug.h"
+#include "opreg_test.h"
+#include "opreg_service_args.h"
+#include "opreg_debug.h"
 
 
 #include <mpi.h>
@@ -73,10 +73,10 @@
 // Prototypes for client and server codes
 extern "C" {
 uint64_t calc_checksum (const char * buf, const uint64_t size);
-int opregistration_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm);
+int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm);
 }
-int opregistration_cpp_server_main(nssi_rpc_transport transport, MPI_Comm server_comm);
-int opregistration_client_main (struct opregistration_cmdline_args &args, nssi_service &opregistration_svc, MPI_Comm client_comm);
+int opreg_cpp_server_main(nssi_rpc_transport transport, MPI_Comm server_comm);
+int opreg_client_main (struct opreg_cmdline_args &args, nssi_service &opreg_svc, MPI_Comm client_comm);
 
 
 /* -------------- private methods -------------------*/
@@ -101,7 +101,7 @@ uint64_t calc_checksum (const char * buf, const uint64_t size)
 
 int print_args(
         std::ostream &out,
-        const struct opregistration_cmdline_args &args,
+        const struct opreg_cmdline_args &args,
         const char *prefix)
 {
     if (args.client_flag && args.server_flag)
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     int np=1, rank=0;
     int splitrank, splitsize;
     int rc = 0;
-    nssi_service opregistration_svc;
+    nssi_service opreg_svc;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -142,11 +142,11 @@ int main(int argc, char *argv[])
     Teuchos::oblackholestream blackhole;
     std::ostream &out = ( rank == 0 ? std::cout : blackhole );
 
-    struct opregistration_cmdline_args args;
+    struct opreg_cmdline_args args;
 
     const int num_opreg_types = 2;
     const int opreg_type_vals[] = {
-            OPREGISTRATION_C_TEST, OPREGISTRATION_CPP_TEST};
+            OPREG_C_TEST, OPREG_CPP_TEST};
     const char * opreg_type_names[] = {
             "c-stub", "cpp-obj"};
 
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
     // Initialize arguments
     args.transport=NSSI_DEFAULT_TRANSPORT;
     args.delay = 1;
-    args.opreg_type = OPREGISTRATION_C_TEST;
+    args.opreg_type = OPREG_C_TEST;
     args.debug_level = LOG_WARN;
     args.url_file = "";
     args.logfile = "";
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
 
-    log_debug(debug_level, "%d: Starting opregistration-service test", rank);
+    log_debug(debug_level, "%d: Starting opreg-service test", rank);
 
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
@@ -420,8 +420,8 @@ int main(int argc, char *argv[])
 
 
 
-    // Set the debug level for the opregistration service.
-    opregistration_debug_level = args.debug_level;
+    // Set the debug level for the opreg service.
+    opreg_debug_level = args.debug_level;
 
     // Print the arguments after they've all been set.
     args.opreg_type_name = opreg_type_names[args.opreg_type];
@@ -434,10 +434,10 @@ int main(int argc, char *argv[])
      *  In this example, the server is a single process.
      */
     if (args.server_flag && (rank == 0)) {
-        if (args.opreg_type == OPREGISTRATION_C_TEST) {
-            rc = opregistration_c_server_main((nssi_rpc_transport)args.transport, comm);
-        } else if (args.opreg_type == OPREGISTRATION_CPP_TEST) {
-            rc = opregistration_cpp_server_main((nssi_rpc_transport)args.transport, comm);
+        if (args.opreg_type == OPREG_C_TEST) {
+            rc = opreg_c_server_main((nssi_rpc_transport)args.transport, comm);
+        } else if (args.opreg_type == OPREG_CPP_TEST) {
+            rc = opreg_cpp_server_main((nssi_rpc_transport)args.transport, comm);
         }
         log_debug(debug_level, "Server is finished");
     }
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
      /**  The parallel client will execute this branch.  The root node, node 0, of the client connects
       *   connects with the server, using the \ref nssi_get_service function.  Then the root
       *   broadcasts the service description to the other clients before starting the main
-      *   loop of the client code by calling \ref opregistration_client_main.
+      *   loop of the client code by calling \ref opreg_client_main.
       */
     else {
         int i;
@@ -467,11 +467,11 @@ int main(int argc, char *argv[])
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
                 log_debug(debug_level, "Try to connect to server: attempt #%d", i);
-                rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url.c_str(), args.timeout, &opregistration_svc);
+                rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url.c_str(), args.timeout, &opreg_svc);
                 if (rc == NSSI_OK)
                     break;
                 else if (rc != NSSI_ETIMEDOUT) {
-                    log_error(opregistration_debug_level, "could not get svc description: %s",
+                    log_error(opreg_debug_level, "could not get svc description: %s",
                             nssi_err_str(rc));
                     break;
                 }
@@ -484,20 +484,20 @@ int main(int argc, char *argv[])
             if (client_rank == 0) log_debug(debug_level, "Connected to service on attempt %d\n", i);
 
             // Broadcast the service description to the other clients
-            //log_debug(opregistration_debug_level, "Bcasting svc to other clients");
-            //MPI_Bcast(&opregistration_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
+            //log_debug(opreg_debug_level, "Bcasting svc to other clients");
+            //MPI_Bcast(&opreg_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
 
             log_debug(debug_level, "Starting client main");
             // Start the client code
-            opregistration_client_main(args, opregistration_svc, comm);
+            opreg_client_main(args, opreg_svc, comm);
 
 
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
             if (client_rank == 0) {
-                log_debug(debug_level, "%d: Halting opregistration service", rank);
-                rc = nssi_kill(&opregistration_svc, 0, 5000);
+                log_debug(debug_level, "%d: Halting opreg service", rank);
+                rc = nssi_kill(&opreg_svc, 0, 5000);
             }
         }
 

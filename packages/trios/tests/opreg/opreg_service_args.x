@@ -41,9 +41,9 @@
 //@HEADER
  */
 /**
- *   @file opregistration_service_args.x
+ *   @file opreg_service_args.x
  *
- *   @brief Type definitions for an request opregistration test.
+ *   @brief Type definitions for an request opreg test.
  *
  *   @author Todd kordenbrock (thkorde\@sandia.gov).
  *
@@ -52,7 +52,7 @@
  */
 
 /**
- * @defgroup opregistration_example  Nessie Data Transfer Example
+ * @defgroup opreg_example  Nessie Data Transfer Example
  *
  * The data-transfer example demonstrates a simple client
  * and server that transfer an array of 16-byte \ref data_t
@@ -68,8 +68,8 @@
 */
 
 /**
- * @defgroup opregistration_types  Nessie Example Types
- * @ingroup opregistration_example
+ * @defgroup opreg_types  Nessie Example Types
+ * @ingroup opreg_example
  *
  * @{
  */
@@ -86,17 +86,17 @@
 
 
 
-enum opregistration_test_type {
-    OPREGISTRATION_C_TEST = 0,
-    OPREGISTRATION_CPP_TEST
+enum opreg_test_type {
+    OPREG_C_TEST = 0,
+    OPREG_CPP_TEST
 };
 
 /**
  * @brief Opcodes for the types of transfer operations.
  */
-enum opregistration_op {
+enum opreg_op {
     /** Opcode for sending a request. */
-    OPREGISTRATION_REQUEST_OP = 1
+    OPREG_REQUEST_OP = 1
 };
 
 /**
@@ -115,7 +115,7 @@ struct data_t {
     double double_val;
 };
 
-struct opregistration_args {
+struct opreg_args {
         /* test data */
         data_t data;
         /** 32-bit checksum of the test data */

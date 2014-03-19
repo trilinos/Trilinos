@@ -68,7 +68,7 @@ TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/opreg_service_args.x)
 
 
 TRIBITS_ADD_EXECUTABLE(
-  OpRegistrationTest
+  OpRegTest
   SOURCES opreg_service_args.c opreg_test.cpp opreg_c_server.c opreg_cpp_server.cpp opreg_client.cpp
   DEPLIBS ${DEPLIBS}
   NOEXEPREFIX
@@ -94,9 +94,9 @@ foreach (testname ${TESTNAMES})
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
 
   TRIBITS_ADD_TEST(
-    OpRegistrationTest
+    OpRegTest
     NOEXEPREFIX
-    NAME OpRegistrationTest_${testname}
+    NAME OpRegTest_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi
     NUM_MPI_PROCS 2)

@@ -41,17 +41,17 @@
 //@HEADER
  */
 /*
- * opregistration_debug.cpp
+ * opreg_debug.cpp
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
  */
 
 #include "Trios_logger.h"
-#include "opregistration_debug.h"
+#include "opreg_debug.h"
 
 /**
- * Initialize the opregistration_debug_level variable to LOG_UNDEFINED.  This
+ * Initialize the opreg_debug_level variable to LOG_UNDEFINED.  This
  * tells the logger to use the value set by logger_init, if called.
  */
-log_level opregistration_debug_level = LOG_UNDEFINED;
+log_level opreg_debug_level = LOG_UNDEFINED;
