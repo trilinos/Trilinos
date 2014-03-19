@@ -12,6 +12,7 @@
 #include <stk_mesh/base/FieldParallel_helpers.hpp>
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
@@ -19,7 +20,6 @@
 #include <stddef.h>                     // for size_t
 #include <vector>                       // for vector
 
-namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Ghosting; } }
 
 namespace stk {
@@ -28,12 +28,6 @@ namespace mesh {
 /**
  * This file contains some helper functions that are part of the Field API.
  */
-
-/** Copy data for the given fields, from owned entities to shared-but-not-owned entities.
- * I.e., shared-but-not-owned entities get an update of the field-data from the owned entity.
-*/
-void copy_owned_to_shared( const BulkData& mesh,
-                           const std::vector< const FieldBase *> & fields );
 
 /** Communicate field data from domain to range.
  *  The fields array must be identical on all processors.
@@ -57,6 +51,17 @@ void communicate_field_data(
 void communicate_field_data(
   const Ghosting                        & ghosts ,
   const std::vector< const FieldBase *> & fields );
+
+/** Copy data for the given fields, from owned entities to shared-but-not-owned entities.
+ * I.e., shared-but-not-owned entities get an update of the field-data from the owned entity.
+*/
+inline
+void copy_owned_to_shared( const BulkData& mesh,
+                           const std::vector< const FieldBase *> & fields )
+{
+  communicate_field_data(*mesh.ghostings()[0], fields);
+}
+
 
 /** Communicate field data among shared entities.
  * This function is a helper function for the parallel_reduce/sum/max/min functions below.
