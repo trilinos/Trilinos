@@ -222,12 +222,13 @@ IF (${PACKAGE_NAME}_BUILD_COLORING)
 
   SET(HEADERS ${HEADERS}
     coloring/EpetraExt_MapColoring.h
+    coloring/EpetraExt_TCrsGraph_MapColoringIndex.h
     coloring/EpetraExt_MapColoringIndex.h
     )
 
   SET(SOURCES ${SOURCES}
     coloring/EpetraExt_MapColoring.cpp
-    #coloring/EpetraExt_MapColoringIndex.cpp
+    coloring/EpetraExt_MapColoringIndex.cpp
     )
 
 ENDIF()
