@@ -87,7 +87,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SelfSendTest
+  NntiSelfSendTest
+  SOURCES NntiSelfSendTest.cpp
+  COMM serial mpi
+  NOEXEPREFIX
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  NssiSelfSendTest
   SOURCES NssiSelfSendTest.cpp
   COMM serial mpi
   NOEXEPREFIX
