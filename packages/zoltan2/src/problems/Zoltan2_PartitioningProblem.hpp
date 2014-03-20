@@ -548,16 +548,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     }
     else if (algorithm_ == string("multijagged")){
       Zoltan2_AlgMJ<Adapter> *alg_mj = new Zoltan2_AlgMJ<Adapter>();
-      alg_mj->multi_jagged_part(
-    		  this->envConst_,
-    		  problemComm_,
-    		  this->coordinateModel_,
-    		  solution_);
+      alg_mj->multi_jagged_part( this->envConst_, problemComm_,
+         this->coordinateModel_, solution_);
       delete alg_mj;
-      /*
-      AlgPQJagged<Adapter>(this->envConst_, problemComm_,
-    	        this->coordinateModel_, solution_);
-       */
     }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");

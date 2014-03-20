@@ -89,6 +89,25 @@ namespace Tpetra {
     std::string
     DistributorSendTypeEnumToString (EDistributorSendType sendType);
 
+    /// \brief Enum indicating how and whether a Distributor was initialized.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on these values in your code.
+    enum EDistributorHowInitialized {
+      DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
+      DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
+      DISTRIBUTOR_INITIALIZED_BY_COPY // By copy constructor
+    };
+
+    /// \brief Convert an EDistributorHowInitialized enum value to a string.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on this function in your code.
+    std::string
+    DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
+
   } // namespace Details
 
   /// \brief Valid values for Distributor's "Send type" parameter.
@@ -374,6 +393,14 @@ namespace Tpetra {
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
     ArrayView<const size_t> getLengthsTo() const;
+
+    /// \brief Return an enum indicating whether and how a Distributor was initialized.
+    ///
+    /// This is an implementation detail of Tpetra.  Please do not
+    /// call this method or rely on it existing in your code.
+    Details::EDistributorHowInitialized howInitialized () const {
+      return howInitialized_;
+    }
 
     //@}
     //! @name Reverse communication methods
@@ -737,6 +764,9 @@ namespace Tpetra {
     //! Output stream for debug output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
 
+    //! How the Distributor was initialized (if it was).
+    Details::EDistributorHowInitialized howInitialized_;
+
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
 
@@ -773,7 +803,9 @@ namespace Tpetra {
     /// require a buffer.
     size_t numExports_;
 
-    //! Whether I am supposed to send a message to myself.
+    /// \brief Whether I am supposed to send a message to myself.
+    ///
+    /// This is set in createFromSends or createReverseDistributor.
     bool selfMessage_;
 
     /// \brief The number of sends from this process to other process.
@@ -1135,15 +1167,15 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
 
-#ifdef HAVE_TEUCHOS_DEBUG
     // Each message has the same number of packets.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
-      std::runtime_error, typeName (*this) << "::doPosts(): imports must be "
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.size ()) != totalNumImportPackets,
+      std::invalid_argument, "Tpetra::Distributor::doPosts<" <<
+      TypeNameTraits<Packet>::name () << ">(3 args): imports must be "
       "large enough to store the imported data.  imports.size() = "
       << imports.size() << ", but total number of import packets = "
       << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
@@ -2830,6 +2862,33 @@ namespace Tpetra {
       exportIDs.resize(numExports);
       exportNodeIDs.resize(numExports);
     }
+
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (tempPlan.getTotalReceiveLength ()) != numExports,
+        std::logic_error, "Tpetra::Distributor::computeSends: tempPlan.getTotal"
+        "ReceiveLength() = " << tempPlan.getTotalReceiveLength () << " != num"
+        "Exports = " << numExports  << ".  Please report this bug to the "
+        "Tpetra developers.");
+    }
+
+    // exportObjs: Packed receive buffer.  (exportObjs[2*i],
+    // exportObjs[2*i+1]) will give the (GID, PID) pair for export i,
+    // after tempPlan.doPostsAndWaits(...) finishes below.
+    //
+    // FIXME (mfh 19 Mar 2014) This only works if OrdinalType fits in
+    // size_t.  This issue might come up, for example, on a 32-bit
+    // machine using 64-bit global indices.  I will add a check here
+    // for that case.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sizeof (size_t) < sizeof (OrdinalType), std::logic_error,
+      "Tpetra::Distributor::computeSends: sizeof(size_t) = " << sizeof(size_t)
+      << " < sizeof(" << Teuchos::TypeNameTraits<OrdinalType>::name () << ") = "
+      << sizeof (OrdinalType) << ".  This violates an assumption of the "
+      "method.  It's not hard to work around (just use Array<OrdinalType> as "
+      "the export buffer, not Array<size_t>), but we haven't done that yet.  "
+      "Please report this bug to the Tpetra developers.");
+
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
       std::ostringstream os;
@@ -2840,8 +2899,8 @@ namespace Tpetra {
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
-      exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
-      exportNodeIDs[i] = exportObjs[2*i+1];
+      exportIDs[i] = as<OrdinalType> (exportObjs[2*i]);
+      exportNodeIDs[i] = as<int> (exportObjs[2*i+1]);
     }
 
     if (debug_) {
@@ -2882,11 +2941,27 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    (void) createFromSends (exportNodeIDs ());
+
+    const size_t numProcsSendingToMe = createFromSends (exportNodeIDs ());
+
+    if (debug_) {
+      // NOTE (mfh 20 Mar 2014) If remoteImageIDs could contain
+      // duplicates, then its length might not be the right check here,
+      // even if we account for selfMessage_.  selfMessage_ is set in
+      // createFromSends.
+      std::ostringstream os;
+      os << "Proc " << myRank << ": {numProcsSendingToMe: "
+         << numProcsSendingToMe << ", remoteImageIDs.size(): "
+         << remoteImageIDs.size () << ", selfMessage_: "
+         << (selfMessage_ ? "true" : "false") << "}" << std::endl;
+      std::cerr << os.str ();
+    }
 
     if (debug_) {
       *out_ << myRank << ": createFromRecvs done" << endl;
     }
+
+    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
   }
 
 } // namespace Tpetra

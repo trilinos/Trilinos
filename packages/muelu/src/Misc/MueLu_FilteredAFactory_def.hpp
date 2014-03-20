@@ -110,7 +110,7 @@ namespace MueLu {
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
 
     // Both Epetra and Tpetra matrix-matrix multiply use the following trick:
     // if an entry of the left matrix is zero, it does not compute or store the

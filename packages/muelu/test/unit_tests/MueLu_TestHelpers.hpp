@@ -200,7 +200,9 @@ namespace MueLuTests {
         currentLevel.SetFactoryManager(factoryHandler);
 
         currentLevel.SetLevelID(0);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
         currentLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
+#endif
       }
 
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
@@ -213,9 +215,11 @@ namespace MueLuTests {
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
 
         fineLevel.SetLevelID(0);
-        fineLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
         coarseLevel.SetLevelID(1);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+        fineLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
         coarseLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
+#endif
       }
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)

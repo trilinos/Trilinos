@@ -962,7 +962,10 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
     return token;
   }
   
-  Inline_Mesh_Desc::im_static_storage->Calc_Intervals();
+  std::string intervalResults = Inline_Mesh_Desc::im_static_storage->Calc_Intervals();
+  if(!intervalResults.empty()){
+     token_stream->Parse_Error(intervalResults);
+   }
 
   token = token_stream->Shift();
   return token;

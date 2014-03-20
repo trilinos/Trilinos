@@ -338,7 +338,7 @@ int runRCB(
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan zz(mpiComm);
 #else
-  Zoltan zz();
+  Zoltan zz;
 #endif
   char tmp[56];
   zz.Set_Param("LB_METHOD", "RCB");
