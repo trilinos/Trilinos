@@ -38,11 +38,12 @@
 # @HEADER
 
 FUNCTION(TRIBITS_CONFIGURE_CTEST_CUSTOM  OUTPUT_BINARY_DIR)
-  SET(CTEST_CUSTOM_IN ${PROJECT_SOURCE_DIR}/cmake/ctest/CTestCustom.ctest.in)
+  SET(CTEST_CUSTOM_IN ${PROJECT_SOURCE_DIR}/cmake/ctest/CTestCustom.cmake.in)
   IF(EXISTS ${CTEST_CUSTOM_IN})
+    TRIBITS_TRACE_FILE_PROCESSING(PROJECT  CONFIGURE "${CTEST_CUSTOM_IN}")
     CONFIGURE_FILE(
-      ${PROJECT_SOURCE_DIR}/cmake/ctest/CTestCustom.ctest.in
-      ${OUTPUT_BINARY_DIR}/CTestCustom.ctest
+      ${PROJECT_SOURCE_DIR}/cmake/ctest/CTestCustom.cmake.in
+      ${OUTPUT_BINARY_DIR}/CTestCustom.cmake
       )
   ENDIF()
 ENDFUNCTION()

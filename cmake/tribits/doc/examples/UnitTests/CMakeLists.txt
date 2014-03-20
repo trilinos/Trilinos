@@ -155,6 +155,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/wrap_external/cmake/Dependencies.cmake"
+      "-- File Trace: PROJECT    CONFIGURE  .*/TribitsExampleProject/cmake/ctest/CTestCustom.cmake.in"
       "-- File Trace: REPOSITORY READ       .*/TribitsExampleProject/./Copyright.txt"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./Version.cmake"
       "${TPL_MPI_FILE_TRACE}"
