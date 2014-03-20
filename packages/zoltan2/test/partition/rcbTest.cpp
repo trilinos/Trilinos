@@ -180,7 +180,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   int xdim = 40;
   int ydim = 60;
   int zdim = 20;
-  UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true);
+  UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true, true);
 
   RCP<tMVector_t> coords = uinput.getUICoordinates();
 
