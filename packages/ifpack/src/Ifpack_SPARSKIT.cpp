@@ -153,14 +153,14 @@ int Ifpack_SPARSKIT::Compute()
   int n   = Matrix().NumMyRows();
   int nnz = Matrix().NumMyNonzeros();
 
-  vector<double> a(nnz);
-  vector<int>    ja(nnz);
-  vector<int>    ia(n + 1);
+  std::vector<double> a(nnz);
+  std::vector<int>    ja(nnz);
+  std::vector<int>    ia(n + 1);
 
   const int MaxNumEntries = Matrix().MaxNumEntries();
 
-  vector<double> Values(MaxNumEntries);
-  vector<int>    Indices(MaxNumEntries);
+  std::vector<double> Values(MaxNumEntries);
+  std::vector<int>    Indices(MaxNumEntries);
 
   int count = 0;
 
@@ -206,8 +206,8 @@ int Ifpack_SPARSKIT::Compute()
   jlu_.resize(iwk);
   ju_.resize(n + 1);
 
-  vector<int>    jw(n + 1);
-  vector<double> w(n + 1);
+  std::vector<int>    jw(n + 1);
+  std::vector<double> w(n + 1);
 
   if (Type_ == "ILUT")
   {
@@ -243,7 +243,7 @@ int Ifpack_SPARSKIT::Compute()
   }
   else if (Type_ == "ILUK")
   {
-    vector<int> levs(iwk);
+    std::vector<int> levs(iwk);
     jw.resize(3 * n);
     F77_ILUK(&n, &a[0], &ja[0], &ia[0], &lfil_, 
              &alu_[0], &jlu_[0], &ju_[0], &levs[0], &iwk, &w[0], &jw[0], &ierr);
@@ -281,7 +281,7 @@ int Ifpack_SPARSKIT::ApplyInverse(const Epetra_MultiVector& X,
   // still need to fix support for permutation
   if (Type_ == "ILUTP" || Type_ == "ILUDP")
   {
-    vector<double> tmp(n);
+    std::vector<double> tmp(n);
     for (int j = 0 ; j < n ; ++j)
       tmp[iperm_[j]] = Y[0][j];
     for (int j = 0 ; j < n ; ++j)

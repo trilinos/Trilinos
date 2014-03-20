@@ -142,10 +142,10 @@ int Ifpack_SORa::TCompute(){
 
     int Nmax=A_->MaxNumEntries();
     int length;
-    vector<double> values(Nmax); 
+    std::vector<double> values(Nmax); 
     Epetra_CrsMatrix *Acrs=new Epetra_CrsMatrix(Copy,*RowMap,Nmax);
 
-	vector<int> indices_local(Nmax);
+	std::vector<int> indices_local(Nmax);
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 	if(RowMap->GlobalIndicesInt()) {
       for(int i=0;i<Arow->NumMyRows();i++) {
@@ -159,7 +159,7 @@ int Ifpack_SORa::TCompute(){
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(RowMap->GlobalIndicesLongLong()) {
-      vector<int_type> indices_global(Nmax);
+      std::vector<int_type> indices_global(Nmax);
       for(int i=0;i<Arow->NumMyRows();i++) {
         Arow->ExtractMyRowCopy(i,Nmax,length,&values[0],&indices_local[0]);
         for(int j=0;j<length;j++)

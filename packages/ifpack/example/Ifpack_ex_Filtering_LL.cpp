@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> Matrix = Teuchos::rcp( new Epetra_CrsMatrix(Copy,Map,0) );
 
-  vector<long long> Indices(NumPoints);
-  vector<double> Values(NumPoints);
+  std::vector<long long> Indices(NumPoints);
+  std::vector<double> Values(NumPoints);
   double Diag = 0.0;
 
   for (long long i = 0 ; i < NumPoints ; ++i) {
