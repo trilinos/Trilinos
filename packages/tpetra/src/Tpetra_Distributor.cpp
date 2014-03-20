@@ -1083,7 +1083,13 @@ namespace Tpetra {
     //
     // FIXME (mfh 20 Mar 2014) This is one of a few places in Tpetra
     // that create an array of length the number of processes in the
-    // communicator (plus one).
+    // communicator (plus one).  Given how this code uses this array,
+    // it should be straightforward to replace it with a hash table or
+    // some other more space-efficient data structure.  In practice,
+    // most of the entries of starts should be zero for a sufficiently
+    // large process count, unless the communication pattern is dense.
+    // Note that it's important to be able to iterate through keys (i
+    // for which starts[i] is nonzero) in increasing order.
     Teuchos::Array<size_t> starts (numImages + 1, 0);
 
     // numActive is the number of sends that are not Null
