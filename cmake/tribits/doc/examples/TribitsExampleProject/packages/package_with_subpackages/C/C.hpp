@@ -11,7 +11,7 @@ namespace PackageWithSubpackages {
   // return a string describing the dependencies of "C", recursively
   std::string depsC();
 
-};
+}
 
 
 #endif /* PACKAGEWITHSUBPACKAGES_C_HPP_ */

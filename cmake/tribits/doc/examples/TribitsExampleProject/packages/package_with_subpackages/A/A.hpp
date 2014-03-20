@@ -11,7 +11,7 @@ namespace PackageWithSubpackages {
   // return a string describing the dependencies of "A", recursively
   std::string depsA();
 
-};
+}
 
 
 #endif /* PACKAGEWITHSUBPACKAGES_A_HPP_ */
