@@ -89,7 +89,7 @@ namespace Tpetra {
     std::string
     DistributorSendTypeEnumToString (EDistributorSendType sendType);
 
-    /// \brief Enum indicating how a Distributor was initialized.
+    /// \brief Enum indicating how and whether a Distributor was initialized.
     ///
     /// This is an implementation detail of Distributor.  Please do
     /// not rely on these values in your code.
@@ -100,6 +100,13 @@ namespace Tpetra {
       DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
       DISTRIBUTOR_INITIALIZED_BY_COPY // By copy constructor
     };
+
+    /// \brief Convert an EDistributorHowInitialized enum value to a string.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on this function in your code.
+    std::string
+    DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 
   } // namespace Details
 
@@ -386,6 +393,14 @@ namespace Tpetra {
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
     ArrayView<const size_t> getLengthsTo() const;
+
+    /// \brief Return an enum indicating whether and how a Distributor was initialized.
+    ///
+    /// This is an implementation detail of Tpetra.  Please do not
+    /// call this method or rely on it existing in your code.
+    Details::EDistributorHowInitialized howInitialized () const {
+      return howInitialized_;
+    }
 
     //@}
     //! @name Reverse communication methods
@@ -788,7 +803,9 @@ namespace Tpetra {
     /// require a buffer.
     size_t numExports_;
 
-    //! Whether I am supposed to send a message to myself.
+    /// \brief Whether I am supposed to send a message to myself.
+    ///
+    /// This is set in createFromSends or createReverseDistributor.
     bool selfMessage_;
 
     /// \brief The number of sends from this process to other process.
@@ -2924,7 +2941,21 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    (void) createFromSends (exportNodeIDs ());
+
+    const size_t numProcsSendingToMe = createFromSends (exportNodeIDs ());
+
+    if (debug_) {
+      // NOTE (mfh 20 Mar 2014) If remoteImageIDs could contain
+      // duplicates, then its length might not be the right check here,
+      // even if we account for selfMessage_.  selfMessage_ is set in
+      // createFromSends.
+      std::ostringstream os;
+      os << "Proc " << myRank << ": {numProcsSendingToMe: "
+         << numProcsSendingToMe << ", remoteImageIDs.size(): "
+         << remoteImageIDs.size () << ", selfMessage_: "
+         << (selfMessage_ ? "true" : "false") << "}" << std::endl;
+      std::cerr << os.str ();
+    }
 
     if (debug_) {
       *out_ << myRank << ": createFromRecvs done" << endl;

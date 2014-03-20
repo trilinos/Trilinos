@@ -996,8 +996,10 @@ namespace Tpetra {
           importLen << ".  numRecv: " << numRecv << ", packetSize: " <<
           packetSize << ", numEntries (# GIDs): " << numEntries <<
           ", numMissing: " << numMissing << ": distor.getTotalReceiveLength(): "
-          << distor.getTotalReceiveLength () << ".  Please report this bug to "
-          "the Tpetra developers.");
+          << distor.getTotalReceiveLength () << ".  " << std::endl <<
+          "Distributor description: " << distor.description () << ".  "
+          << std::endl <<
+          "Please report this bug to the Tpetra developers.");
       }
 
       Array<GO> sortedIDs (globalIDs); // deep copy (for later sorting)

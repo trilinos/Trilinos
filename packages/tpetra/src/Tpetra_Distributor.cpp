@@ -66,6 +66,25 @@ namespace Tpetra {
           "EDistributorSendType enum value " << sendType << ".");
       }
     }
+
+    std::string
+    DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
+    {
+      switch (how) {
+      case Details::DISTRIBUTOR_NOT_INITIALIZED:
+        return "Not initialized yet";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
+        return "By createFromSends";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
+        return "By createFromRecvs";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
+        return "By createReverseDistributor";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
+        return "By copy constructor";
+      default:
+        return "INVALID";
+      }
+    }
   } // namespace Details
 
   Array<std::string>
@@ -619,10 +638,28 @@ namespace Tpetra {
     }
   }
 
-  std::string Distributor::description() const {
-    std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    return oss.str();
+  std::string Distributor::description () const {
+    std::ostringstream out;
+
+    out << "\"Tpetra::Distributor\": {";
+    const std::string label = this->getObjectLabel ();
+    if (label != "") {
+      out << "Label: " << label << ", ";
+    }
+    out << "How initialized: "
+        << Details::DistributorHowInitializedEnumToString (howInitialized_)
+        << ", Parameters: {"
+        << "Send type: "
+        << DistributorSendTypeEnumToString (sendType_)
+        << ", Barrier between receives and sends: "
+        << (barrierBetween_ ? "true" : "false")
+        << ", Use distinct tags: "
+        << (useDistinctTags_ ? "true" : "false")
+        << ", Debug: " << (debug_ ? "true" : "false")
+        << ", Enable MPI CUDA RDMA support: "
+        << (enable_cuda_rdma_ ? "true" : "false")
+        << "}}";
+    return out.str ();
   }
 
   void
@@ -656,27 +693,9 @@ namespace Tpetra {
         if (label != "") {
           out << "Label: " << label << endl;
         }
-        out << "How initialized: ";
-        switch (howInitialized_) {
-        case Details::DISTRIBUTOR_NOT_INITIALIZED:
-          out << "Not initialized yet";
-          break;
-        case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
-          out << "By createFromSends";
-          break;
-        case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
-          out << "By createFromRecvs";
-          break;
-        case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
-          out << "By createReverseDistributor";
-          break;
-        case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
-          out << "By copy constructor";
-          break;
-        default:
-          out << "INVALID";
-        }
-        out << endl << "Parameters: " << endl;
+        out << "How initialized: "
+            << Details::DistributorHowInitializedEnumToString (howInitialized_)
+            << endl << "Parameters: " << endl;
         {
           Teuchos::OSTab tab3 (out);
           out << "\"Send type\": "
