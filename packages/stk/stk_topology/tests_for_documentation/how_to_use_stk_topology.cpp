@@ -471,6 +471,88 @@ TEST(stk_topology_understanding, three_dim_linear_element)
     }
 }
 
+
+TEST(stk_topology_understanding, equivalent_elements)
+{
+    std::pair<bool, unsigned> areElementsEquivalent;
+
+    {
+        unsigned hex1[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+        unsigned hex2[8] = { 0, 1, 2, 3, 4, 7, 6, 5 };
+        unsigned hex3[8] = { 4, 5, 6, 7, 0, 1, 2, 3 };
+
+        stk::topology hex8 = stk::topology::HEX_8;
+
+        areElementsEquivalent = hex8.equivalent(hex1, hex2);
+        EXPECT_FALSE(areElementsEquivalent.first);
+
+        areElementsEquivalent = hex8.equivalent(hex1, hex3);
+        // should be true, but is not implemented
+        EXPECT_FALSE(areElementsEquivalent.first);
+    }
+
+    {
+        unsigned triangle_1[3] = {0, 1, 2};
+        unsigned triangle_2[3] = {0, 2, 1};
+
+        stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
+
+        areElementsEquivalent = triangular_shell.equivalent(triangle_1, triangle_2);
+
+        EXPECT_TRUE(areElementsEquivalent.first);
+
+        unsigned permutation_index = areElementsEquivalent.second;
+        unsigned goldValue = 3;
+        EXPECT_EQ(goldValue, permutation_index); // From previous unit test, this is the 4th permutation
+    }
+
+}
+
+void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* triangle_1_node_ids, unsigned* gold_triangle_1_permutations)
+{
+    ASSERT_TRUE(stk::topology::SHELL_TRIANGLE_3 == triangular_shell);
+    unsigned triangle_1_permutation[3];
+    for (unsigned i=0;i<triangular_shell.num_permutations();i++)
+    {
+        triangular_shell.permutation_nodes(triangle_1_node_ids, i, triangle_1_permutation);
+        EXPECT_TRUE(gold_triangle_1_permutations[3*i+0] == triangle_1_permutation[0] &&
+                    gold_triangle_1_permutations[3*i+1] == triangle_1_permutation[1] &&
+                    gold_triangle_1_permutations[3*i+2] == triangle_1_permutation[2]);
+    }
+}
+
+TEST(stk_topology_understanding, lexicographical_smallest_permutation)
+{
+    {
+        unsigned triangle_node_ids[3] = {10, 8, 12};
+
+        stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
+
+        unsigned gold_triangle_permutations[18]= {
+                10, 8, 12,
+                12, 10, 8,
+                8, 12, 10, // lexicographical smallest permutation by node ids if considering only positive permutations
+                10, 12, 8,
+                12, 8, 10,
+                8, 10, 12  // lexicographical smallest permutation by node ids if considering all permutations
+        };
+
+        verifyPermutationsForTriangle(triangular_shell, triangle_node_ids, gold_triangle_permutations);
+
+        bool usePositivePermutationsOnly = false;
+        unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation(triangle_node_ids, usePositivePermutationsOnly);
+        unsigned gold_lexicographical_smallest_permutation_index = 5;
+        // driven by vertices, NOT mid-edge nodes
+        EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
+
+        usePositivePermutationsOnly = true;
+        permutation_index = triangular_shell.lexicographical_smallest_permutation(triangle_node_ids, usePositivePermutationsOnly);
+        gold_lexicographical_smallest_permutation_index = 2;
+        // driven by vertices, NOT mid-edge nodes
+        EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
+    }
+}
+
 }
 
 // stk_mesh should get away from generic entity, the entity keyword altogether, and use words
