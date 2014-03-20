@@ -227,7 +227,7 @@ IF (${PACKAGE_NAME}_BUILD_COLORING)
 
   SET(SOURCES ${SOURCES}
     coloring/EpetraExt_MapColoring.cpp
-    coloring/EpetraExt_MapColoringIndex.cpp
+    #coloring/EpetraExt_MapColoringIndex.cpp
     )
 
 ENDIF()
