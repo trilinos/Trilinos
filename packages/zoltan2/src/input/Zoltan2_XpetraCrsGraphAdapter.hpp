@@ -299,12 +299,8 @@ public:
 
   void getEdgeView(const lno_t *&offsets, const gid_t *&adjIds) const
   {
-    adjIds = NULL;
-    offsets = NULL;
-    if (getLocalNumVertices()) {
-      offsets = offs_.getRawPtr();
-      adjIds = adjids_.getRawPtr();
-    }
+    offsets = offs_.getRawPtr();
+    adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
   }
 
   int getNumWeightsPerVertex() const { return vertexWeightDim_;}
