@@ -311,11 +311,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Jacobi(Scalar omega,
-									const Vector& Dinv,
-									const Matrix& A,
-									const Matrix& B,
-									RCP<Matrix> C_in,
-									Teuchos::FancyOStream &fos) {
+                                                                        const Vector& Dinv,
+                                                                        const Matrix& A,
+                                                                        const Matrix& B,
+                                                                        RCP<Matrix> C_in,
+                                                                        Teuchos::FancyOStream &fos) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -641,12 +641,12 @@ namespace MueLu {
       LO j = 0;
       for (; j < cols.size(); ++j) {
         if (Teuchos::as<size_t>(cols[j]) == i) {
-	  if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
-	    diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-	  else
-	    diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-	  break;
-	}
+          if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
+            diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
+          else
+            diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
+          break;
+        }
       }
       if (j == cols.size()) {
         // Diagonal entry is absent
@@ -876,13 +876,13 @@ namespace MueLu {
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
 //        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
-	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
 
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
         //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-	Teuchos::ParameterList pl = Teuchos::ParameterList();
-	RCP<Node> node = rcp(new Node(pl));
+        Teuchos::ParameterList pl = Teuchos::ParameterList();
+        RCP<Node> node = rcp(new Node(pl));
         bool callFillComplete = true;
 
         RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
