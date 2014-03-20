@@ -1,14 +1,10 @@
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
-
 #include <vector>
-#include <string>
-#include <sstream>
-#include <algorithm>
-
 
 namespace {
 
+//Mapping
 TEST(stk_topology_how_to, map_topologies_to_ranks )
 {
     stk::topology topology = stk::topology::INVALID_TOPOLOGY;
@@ -140,6 +136,7 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     EXPECT_EQ(stk::topology::INVALID_RANK, element_rank_topologies.back().rank());
 }
 
+//ZeroDimElement
 TEST(stk_topology_understanding, zero_dim_element)
 {
     stk::topology sphere = stk::topology::PARTICLE;
@@ -173,9 +170,23 @@ TEST(stk_topology_understanding, zero_dim_element)
     EXPECT_EQ(sphere.base(),stk::topology::PARTICLE);
 }
 
+//ConstraintRank
 TEST(stk_topology_understanding, constraint_ranks)
 {
     // that's it folks, there is no topology that provides a constraint rank
+}
+
+void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* triangle_1_node_ids, unsigned* gold_triangle_1_permutations)
+{
+    ASSERT_TRUE(stk::topology::SHELL_TRIANGLE_3 == triangular_shell);
+    unsigned triangle_1_permutation[3];
+    for (unsigned i=0;i<triangular_shell.num_permutations();i++)
+    {
+        triangular_shell.permutation_nodes(triangle_1_node_ids, i, triangle_1_permutation);
+        EXPECT_TRUE(gold_triangle_1_permutations[3*i+0] == triangle_1_permutation[0] &&
+                    gold_triangle_1_permutations[3*i+1] == triangle_1_permutation[1] &&
+                    gold_triangle_1_permutations[3*i+2] == triangle_1_permutation[2]);
+    }
 }
 
 void checkForValidOffsets(const unsigned numNodes, const unsigned *offsets, const unsigned *goldValuesOffsets)
@@ -253,6 +264,7 @@ void checkNodeOrderingAndOffsetsForPermutations(const stk::topology &element, co
     delete [] offsets; offsets = 0;
 }
 
+//OneDimElement
 TEST(stk_topology_understanding, one_dim_higher_order_element)
 {
     stk::topology secondOrderBeam = stk::topology::BEAM_3;
@@ -303,6 +315,7 @@ TEST(stk_topology_understanding, one_dim_higher_order_element)
     }
 }
 
+//TwoDimElement
 TEST(stk_topology_understanding, two_dim_higher_order_element)
 {
     stk::topology secondOrderTriShell = stk::topology::SHELL_TRIANGLE_6;
@@ -376,7 +389,7 @@ TEST(stk_topology_understanding, two_dim_higher_order_element)
 }
 
 
-
+//ThreeDimElement
 TEST(stk_topology_understanding, three_dim_linear_element)
 {
     stk::topology hex8 = stk::topology::HEX_8;
@@ -469,7 +482,7 @@ TEST(stk_topology_understanding, three_dim_linear_element)
     }
 }
 
-
+//EquivalentElements
 TEST(stk_topology_understanding, equivalent_elements)
 {
     std::pair<bool, unsigned> areElementsEquivalent;
@@ -506,19 +519,7 @@ TEST(stk_topology_understanding, equivalent_elements)
 
 }
 
-void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* triangle_1_node_ids, unsigned* gold_triangle_1_permutations)
-{
-    ASSERT_TRUE(stk::topology::SHELL_TRIANGLE_3 == triangular_shell);
-    unsigned triangle_1_permutation[3];
-    for (unsigned i=0;i<triangular_shell.num_permutations();i++)
-    {
-        triangular_shell.permutation_nodes(triangle_1_node_ids, i, triangle_1_permutation);
-        EXPECT_TRUE(gold_triangle_1_permutations[3*i+0] == triangle_1_permutation[0] &&
-                    gold_triangle_1_permutations[3*i+1] == triangle_1_permutation[1] &&
-                    gold_triangle_1_permutations[3*i+2] == triangle_1_permutation[2]);
-    }
-}
-
+//Lexicographical
 TEST(stk_topology_understanding, lexicographical_smallest_permutation)
 {
     {
@@ -551,6 +552,7 @@ TEST(stk_topology_understanding, lexicographical_smallest_permutation)
     }
 }
 
+//SubTopology
 TEST(stk_topology_understanding, sub_topology)
 {
     stk::topology hex20 = stk::topology::HEX_20;
@@ -579,6 +581,7 @@ TEST(stk_topology_understanding, sub_topology)
     }
 }
 
+//Sides
 TEST(stk_topology_understanding, sides)
 {
     stk::topology hex20 = stk::topology::HEX_20;
@@ -597,6 +600,7 @@ TEST(stk_topology_understanding, sides)
 
 }
 
+//Superelements
 TEST(stk_topology_understanding, superelements)
 {
     unsigned eightNodes=8;
@@ -631,6 +635,7 @@ TEST(stk_topology_understanding, superelements)
     EXPECT_FALSE(invalidSuperElement.has_homogeneous_faces());
     EXPECT_FALSE(invalidSuperElement.is_shell());
 }
+//Done
 
 }
 
