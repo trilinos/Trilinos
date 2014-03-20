@@ -859,8 +859,9 @@ a) **Trace file processing during configure:**
   repositorie's, and package's files get processed on lines using the prefix
   ``File Trace:``.  This shows what files get processed and in what order they
   get processed.  To get a clean listing of all the files processed by TriBITS
-  just grep out the lines starting with ``File Trace:``.  This can be helpful
-  in debugging configure problems without generating too much extra output.
+  just grep out the lines starting with ``-- File Trace:``.  This can be
+  helpful in debugging configure problems without generating too much extra
+  output.
 
   This is set to ``ON`` automatically when
   ``<Project>_VERBOSE_CONFIGURE:BOOL=ON``.

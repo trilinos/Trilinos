@@ -38,12 +38,34 @@
 # @HEADER
 
 
+SET(COMMON_ENV_ARGS_PASSTHROUGH
+  -DTPL_ENABLE_MPI=${TPL_ENABLE_MPI}
+  )
+
+IF (TPL_ENABLE_MPI)
+  APPEND_SET(COMMON_ENV_ARGS_PASSTHROUGH
+    -DMPI_C_COMPILER=${MPI_C_COMPILER}
+    -DMPI_CXX_COMPILER=${MPI_CXX_COMPILER}
+    -DMPI_Fortran_COMPILER=${MPI_Fortran_COMPILER}
+    )
+  SET(TEST_MPI_1_SUFFIX "_MPI_1")
+ELSE()
+  APPEND_SET(COMMON_ENV_ARGS_PASSTHROUGH
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
+    )
+  SET(TEST_MPI_1_SUFFIX "")
+ENDIF()
+
+
 TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/RawHelloWorld
     PASS_REGULAR_EXPRESSION_ALL
       "Configuring done"
@@ -69,6 +91,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
     PASS_REGULAR_EXPRESSION_ALL
       "Configuring done"
@@ -88,15 +111,26 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   )
 
 
+ASSERT_DEFINED(TPL_ENABLE_MPI)
+IF (TPL_ENABLE_MPI)
+  SET(TPL_MPI_FILE_TRACE
+    "-- File Trace: TPL        INCLUDE    .*/tpls/FindTPLMPI.cmake")
+ELSE()
+  SET(TPL_MPI_FILE_TRACE "")
+ENDIF()
+
+
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
       -DTribitsExProj_ENABLE_TESTS=ON
+      -DTribitsExProj_TRACE_FILE_PROCESSING=ON
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Explicitly enabled packages on input .by user.:  0"
@@ -111,6 +145,30 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Configuring done"
       "Generating done"
       "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
+      "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/Version.cmake"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./PackagesList.cmake"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./TPLsList.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/simple_cxx/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/mixed_language/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/A/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/wrap_external/cmake/Dependencies.cmake"
+      "-- File Trace: REPOSITORY READ       .*/TribitsExampleProject/./Copyright.txt"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./Version.cmake"
+      "${TPL_MPI_FILE_TRACE}"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/test/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/mixed_language/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/mixed_language/test/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/A/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/A/tests/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/B/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/B/tests/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/tests/CMakeLists.txt"
   TEST_1 CMND make
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
@@ -121,8 +179,8 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Built target pws_c"
   TEST_2 CMND ${CMAKE_CTEST_COMMAND}
     PASS_REGULAR_EXPRESSION_ALL
-      "SimpleCxx_HelloWorldTests .* Passed"
-      "MixedLanguage_RayTracerTests .* Passed"
+      "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
+      "MixedLanguage_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
       "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
       "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
       "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
@@ -136,6 +194,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=OFF
       -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=OFF
@@ -162,6 +221,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "Built target WrapExternal_run_external_func"
   TEST_2 CMND ${CMAKE_CTEST_COMMAND}
     PASS_REGULAR_EXPRESSION_ALL
-      "WrapExternal_run_external_func .* Passed"
+      "WrapExternal_run_external_func${TEST_MPI_1_SUFFIX} .* Passed"
       "100% tests passed, 0 tests failed out of 1"
   )

@@ -498,7 +498,7 @@ ${PROJECT_SOURCE_DIR}``) are::
 
   <projectDir>/
      ProjectName.cmake    # Defines PACAKGE_NAME
-     CMakeLists.txt       # Base CMakeLists.txt file
+     CMakeLists.txt       # Base project CMakeLists.txt file
      CTestConfig.cmake    # [Optional] Needed for CDash submits
      Version.cmake        # [Optional] Dev mode, Project version, VC branch
      cmake/
@@ -545,9 +545,11 @@ simple example of this file is `TribitsExampleProject`_/``PackageName.cmake``:
 .. _<projectDir>/CMakeLists.txt:
 
 **<projectDir>/CMakeLists.txt**: [Required] The top-level CMake project file.
-This is the file.  Due to a number of CMake limitations and quarks, a
-project's top-level ``CMakeLists.txt`` file is not a clean as one might
-otherwise hope would be.  A simple but representative exmaple is
+This is the first file that the ``cmake`` exectuable processes that starts
+everything off and is the base level scope for local CMake variables. Due to a
+number of CMake limitations and quarks, a project's top-level
+``CMakeLists.txt`` file is not a clean as one might otherwise hope would be
+but it is not too bad.  A simple, but representative, example is
 `TribitsExampleProject`_/``CMakeLists.txt``:
 
 .. include:: ../examples/TribitsExampleProject/CMakeLists.txt
@@ -557,50 +559,98 @@ A couple of CMake and TriBITS quarks that that above example
 ``CMakeLists.txt`` addresses are worth some discussion.  First, to avoid
 duplication, the project's ``ProjectName.cmake`` file is read in with an
 ``INCLUDE()`` that defines the local variable ``PROJECT_NAME``.  Right after
-this initial include, the built-in command ``PROJECT(${PROJECT_NAME} NONE)``
-is run, This must be explicitly called with ``NONE`` so as to avoid default
-CMake behavior for defining compilers.  The definition of compilers comes
-later as part of the TriBITS system inside of the `TRIBITS_PROJECT()`_
-command.  As noted in the above example file, the only project defaults that
-should be set in this top-level ``CMakeLists.txt`` file are those that do not
-impact the list of package enables/disables.  The later type of defaults
-shoule set in `<projectDir>/ProjectName.cmake`_ if only to impact this
-specific project.
+this initial include, the built-in CMake command ``PROJECT(${PROJECT_NAME}
+NONE)`` is run.  This command must be explicitly called with ``NONE`` so as to
+avoid default CMake behavior for defining compilers.  The definition of
+compilers comes later as part of the TriBITS system inside of the
+`TRIBITS_PROJECT()`_ command (see ???).
+
+As noted in the above example file, the only project defaults that should be
+set in this top-level ``CMakeLists.txt`` file are those that do not impact the
+list of package enables/disables.  The latter type of defaults should set in
+other files (see below).
+
+In this example project, a CMake cache variable
+``${PROJECT_NAME}_TRIBITS_DIR`` must be set by the user to define where the
+base ``tribits`` source directory is located.  With this variable set
+(i.e. passed into ``cmake`` command-line use
+``-DTribitsExProj_TRIBITS_DIR=<someDir>``), one just includes a single file to
+pull in the TriBITS system::
+
+  INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+
+With the ``TriBITS.cmake`` file included, the configuration of the project
+using TriBITS occurs with a single call to `TRIBITS_PROJECT()`_.
+
+Some projects, like Trilinos, actually snapshot the ``tribits`` directory into
+their source tree and therefore don't need to have this variable set.  In
+Trilinos, the include line is just::
+
+  INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/TriBITS.cmake)
+
+The minimum CMake version must also be delcared in the top-level
+``CMakeLists.txt`` file as shown.  Explicitly setting the minimum CMake
+version avoids strange errors that can occur when someone tries to build the
+project using a version of CMake that is too old.  If the given project
+requires a version of CMake newer than what is required by TriBITS itelf (as
+defined in the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` which was set when
+the ``TriBITS.cmake`` file was included), then that version can be passed
+instead of using ``${TRIBITS_CMAKE_MINIMUM_REQUIRED}`` (the current minimum
+version of CMake required by TriBITS is given at in `TribitsBuildQuickRef
+<../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake>`_)
+.  For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
+
+  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.5)
+  CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
 .. _<projectDir>/CTestConfig.cmake:
 
 **<projectDir>/CTestConfig.cmake**: [Optional] Specifies what CDash site and
 project to submit results to when doing an automated build.  This file must
 only be present when there is a default CDash server and CDash project on that
-server to submit configure, build, and test results too (see ???).  This file
-would even be required to use the TriBITS-generated ``dashboard`` target (see
-???).  An example of this file is
-`TribitsExampleProject`_/``CTestConfig.cmake``:
+server to submit configure, build, and test results for the project (see ???).
+This file is also required to use the TriBITS-generated ``dashboard`` target
+(see `Dashboard Submissions
+<../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions>`_).  An
+example of this file is `TribitsExampleProject`_/``CTestConfig.cmake``:
 
 .. include:: ../examples/TribitsExampleProject/CTestConfig.cmake
    :literal:
 
-Alll of the varibles set in this file are directly understood by raw ``ctest``
+All of the varibles set in this file are directly understood by raw ``ctest``
 and will not be explained here further (see documentation for the standard
-CMake module ``CTest``).
+CMake module ``CTest``).  The usage of the function
+`SET_DEFAULT_AND_FROM_ENV()`_ allows the varaibles to be overridded both as
+CMake cache variables an in the environment.  The latter is needed when
+running using ``ctest`` as the driver.  Given that all of these variables are
+nicely namespaced, overriding them on the env is not as dangerous as might
+otherwise be the case but this is what had to be done using older versions of
+CMake/CTest.
 
 .. _<projectDir>/Version.cmake:
 
 **<projectDir>/Version.cmake:** If defined, gives the project's version and
 determines development/release mode (see `Project and Repositiory Versioning
-and Release Mode`_).  This file is read in (using and ``INCLUDE()`` statement)
-and project's base-level ``<projectDir>/CMakeLists.txt`` file scrope so local
-variables set are seen by the entire CMake project.  For example, for
-`MockTrilinos`_, this looks like:
+and Release Mode`_).  This file is read in (using ``INCLUDE()``) in the
+project's base-level ``<projectDir>/CMakeLists.txt`` file scope so local
+variables set in this file are seen by the entire CMake project.  For example,
+`TribitsExampleProject`_/``Version.cmake``, this looks like:
 
-.. include:: ../../package_arch/UnitTests/MockTrilinos/Version.cmake
+.. include:: ../examples/TribitsExampleProject/Version.cmake
    :literal:
 
+Note that the prefix ``${REPOSITORY_NAME}_`` is used instead of hard-coding
+the project name.  This is so that the same ``Version.txt`` file can be used
+as the the `<repoDir>/Version.cmake`_ file and have the repository name be
+flexible.  TriBITS sets ``REPOSITORY_NAME = ${PROJECT_NAME}`` when it reads in
+this file at the project-level scope.
+
 It is strongly recommended that every TriBITS project contain a
-``Version.cmake`` file.  Otherwise, the project needs to define the variable
-``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` at the global scope
-(perhaps in ``<projectDir>/ProjectName.cmake``) to get right development mode
-behavior (see `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_).  
+``Version.cmake`` file, even if a release has never occured.  Otherwise, the
+project needs to define the variable
+``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` at the global project
+scope (perhaps in ``<projectDir>/ProjectName.cmake``) to get right development
+mode of behavior (see `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_).
 
 .. _<projectDir>/cmake/NativeRepositoriesList.cmake:
 
@@ -798,16 +848,20 @@ Mode`_).
 
 .. _<repoDir>/Version.cmake:
 
-**<repoDir>/Version.cmake**: Contains version information for the repository.
-For example, for `MockTrilinos`_, this looks like:
+**<repoDir>/Version.cmake**: Contains version information for the repository
+(and the project also if this is also the base project).  For example,
+`TribitsExampleProject`_/``Version.cmake``, this looks like:
 
-.. include:: ../../package_arch/UnitTests/MockTrilinos/Version.cmake
+.. include:: ../examples/TribitsExampleProject/Version.cmake
    :literal:
 
-The local variables in these set statements are in the base project
-directory's local scope and are therefore seen by the entire CMake project
-after the file is read (with an ``INCLUDE()`` statement).  When this file is
-read in repository mode, the variable
+Note that the prefix ``${REPOSITORY_NAME}_`` is used instead of hard-coding
+the repository's name to allow flexibility in what a meta-project names a
+given TriBITS repository.
+
+The local variables in these set statements are processed in the base project
+directory's local scope and are therefore seen by the entire CMake project.
+When this file is read in repository mode, the variable
 ``${REPOSITORY_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` is ignored.
 
 .. _<repoDir>/cmake/RepositoryDependenciesSetup.cmake:
@@ -1085,6 +1139,42 @@ and therefore any local variables set are accessible to the entire CMake
 project.  Other files get processed inside of functions which have their own
 local scope and therefore only impact the rest of the project in more
 purposeful ways.
+
+In order to aid in debugging problems with configuration, TriBITS defines the
+CMake cache option ``${PROJECT_NAME}_TRACE_FILE_PROCESSING``.  When enabled,
+TriBITS will print out when any of the project-related, repository-related, or
+package-related file is being processed by TriBITS.  When
+``${PROJECT_NAME}_TRACE_FILE_PROCESSING=ON``, lines starting with ``"-- File
+Trace:"`` are
+
+
+For example, for `TribitsExampleProject`_, the configure file trace for ???
+looks something like::
+
+  File Trace: PROJECT    INCLUDE    [...]/TribitsExampleProject/Version.cmake"
+  File Trace: REPOSITORY INCLUDE    [...]/TribitsExampleProject/./PackagesList.cmake"
+  File Trace: REPOSITORY INCLUDE    [...]/TribitsExampleProject/./TPLsList.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/simple_cxx/cmake/Dependencies.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/mixed_language/cmake/Dependencies.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/package_with_subpackages/A/cmake/Dependencies.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
+  File Trace: PACKAGE    INCLUDE    [...]/TribitsExampleProject/packages/wrap_external/cmake/Dependencies.cmake"
+  File Trace: REPOSITORY READ       [...]/TribitsExampleProject/./Copyright.txt"
+  File Trace: REPOSITORY INCLUDE    [...]/TribitsExampleProject/./Version.cmake"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/simple_cxx/test/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/mixed_language/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/mixed_language/test/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/A/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/A/tests/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/B/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/B/tests/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/C/CMakeLists.txt"
+  File Trace: PACKAGE    ADD_SUBDIR [...]/TribitsExampleProject/packages/package_with_subpackages/C/tests/CMakeLists.txt"
+
 
 
 
