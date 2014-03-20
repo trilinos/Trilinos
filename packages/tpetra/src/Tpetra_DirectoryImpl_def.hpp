@@ -839,6 +839,7 @@ namespace Tpetra {
       using Teuchos::RCP;
       using std::cerr;
       using std::endl;
+      typedef typename Array<GO>::size_type size_type;
 
       RCP<const Teuchos::Comm<int> > comm = map.getComm ();
       const size_t numEntries = globalIDs.size ();
@@ -876,7 +877,7 @@ namespace Tpetra {
       Array<GO> sendGIDs;
       Array<int> sendImages;
       distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
-      const size_t numSends = sendGIDs.size ();
+      const size_type numSends = sendGIDs.size ();
 
       //
       // mfh 13 Nov 2012:
@@ -916,67 +917,83 @@ namespace Tpetra {
         // - Otherwise:         (GID, PID)
         //
         // "PID" means "process ID" (a.k.a. "node ID," a.k.a. "rank").
-        typename Array<global_size_t>::iterator exportsIter = exports.begin();
-        typename Array<GO>::const_iterator gidIter = sendGIDs.begin();
+
+        // Current position to which to write in exports array.  If
+        // sending pairs, we pack the (GID, PID) pair for gid =
+        // sendGIDs[k] in exports[2*k], exports[2*k+1].  If sending
+        // triples, we pack the (GID, PID, LID) pair for gid =
+        // sendGIDs[k] in exports[3*k, 3*k+1, 3*k+2].
+        size_type exportsIndex = 0;
 
 #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
         if (useHashTables_) {
-          for ( ; gidIter != sendGIDs.end(); ++gidIter) {
-            const GO curGID = *gidIter;
+          for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
+            const GO curGID = sendGIDs[gidIndex];
             // Don't use as() here (see above note).
-            *exportsIter++ = static_cast<global_size_t> (curGID);
+            exports[exportsIndex++] = static_cast<global_size_t> (curGID);
             const LO curLID = directoryMap_->getLocalElement (curGID);
             TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
               Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
               "Map's global index " << curGID << " does not have a corresponding "
               "local index.  Please report this bug to the Tpetra developers.");
             // Don't use as() here (see above note).
-            *exportsIter++ = static_cast<global_size_t> (lidToPidTable_->get (curLID));
+            exports[exportsIndex++] = static_cast<global_size_t> (lidToPidTable_->get (curLID));
             if (computeLIDs) {
               // Don't use as() here (see above note).
-              *exportsIter++ = static_cast<global_size_t> (lidToLidTable_->get (curLID));
+              exports[exportsIndex++] = static_cast<global_size_t> (lidToLidTable_->get (curLID));
             }
           }
         } else {
-          for ( ; gidIter != sendGIDs.end(); ++gidIter) {
-            const GO curGID = *gidIter;
+          for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
+            const GO curGID = sendGIDs[gidIndex];
             // Don't use as() here (see above note).
-            *exportsIter++ = static_cast<global_size_t> (curGID);
+            exports[exportsIndex++] = static_cast<global_size_t> (curGID);
             const LO curLID = directoryMap_->getLocalElement (curGID);
             TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
               Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
               "Map's global index " << curGID << " does not have a corresponding "
               "local index.  Please report this bug to the Tpetra developers.");
             // Don't use as() here (see above note).
-            *exportsIter++ = static_cast<global_size_t> (PIDs_[curLID]);
+            exports[exportsIndex++] = static_cast<global_size_t> (PIDs_[curLID]);
             if (computeLIDs) {
               // Don't use as() here (see above note).
-              *exportsIter++ = static_cast<global_size_t> (LIDs_[curLID]);
+              exports[exportsIndex++] = static_cast<global_size_t> (LIDs_[curLID]);
             }
           }
         }
 #else // NOT HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-        for ( ; gidIter != sendGIDs.end (); ++gidIter) {
-          const GO curGID = *gidIter;
+        for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
+          const GO curGID = sendGIDs[gidIndex];
           // Don't use as() here (see above note).
-          *exportsIter++ = static_cast<global_size_t> (curGID);
+          exports[exportsIndex++] = static_cast<global_size_t> (curGID);
           const LO curLID = directoryMap_->getLocalElement (curGID);
           TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
             Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
             "Map's global index " << curGID << " does not have a corresponding "
             "local index.  Please report this bug to the Tpetra developers.");
           // Don't use as() here (see above note).
-          *exportsIter++ = static_cast<global_size_t> (PIDs_[curLID]);
+          exports[exportsIndex++] = static_cast<global_size_t> (PIDs_[curLID]);
           if (computeLIDs) {
             // Don't use as() here (see above note).
-            *exportsIter++ = static_cast<global_size_t> (LIDs_[curLID]);
+            exports[exportsIndex++] = static_cast<global_size_t> (LIDs_[curLID]);
           }
         }
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          exportsIndex > exports.size (), std::logic_error,
+          Teuchos::typeName (*this) << "::getEntriesImpl(): On Process " <<
+          comm->getRank () << ", exportsIndex = " << exportsIndex <<
+          " > exports.size() = " << exports.size () <<
+          ".  Please report this bug to the Tpetra developers.");
       }
 
-      Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
-      distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numEntries < numMissing, std::logic_error,
+        Teuchos::typeName (*this) << "::getEntriesImpl(): On Process "
+        << comm->getRank () << ", numEntries = " << numEntries
+        << " < numMissing = " << numMissing
+        << ".  Please report this bug to the Tpetra developers.");
 
       //
       // mfh 13 Nov 2012: See note above on conversions between
@@ -985,7 +1002,7 @@ namespace Tpetra {
       const size_t numRecv = numEntries - numMissing;
 
       {
-        const size_t importLen = imports.size ();
+        const size_t importLen = packetSize * distor.getTotalReceiveLength ();
         const size_t requiredImportLen = numRecv * packetSize;
         const int myRank = comm->getRank ();
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1002,6 +1019,12 @@ namespace Tpetra {
           "Please report this bug to the Tpetra developers.");
       }
 
+      Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
+      // FIXME (mfh 20 Mar 2014) One could overlap the sort2() below
+      // with communication, by splitting this call into doPosts and
+      // doWaits.  The code is still correct in this form, however.
+      distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
+
       Array<GO> sortedIDs (globalIDs); // deep copy (for later sorting)
       Array<GO> offset (numEntries); // permutation array (sort2 output)
       for (GO ii = 0; ii < static_cast<GO> (numEntries); ++ii) {
@@ -1016,7 +1039,6 @@ namespace Tpetra {
       // we know these conversions are in range, because we loaded this data
       for (size_t i = 0; i < numRecv; ++i) {
         // Don't use as() here (see above note).
-        //const GO curGID = static_cast<GO> (*ptr++);
         const GO curGID = static_cast<GO> (imports[importsIndex++]);
         std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
         if (p1.first != p1.second) {
