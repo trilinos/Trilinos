@@ -38,9 +38,9 @@ MJ quality is measured with an imbalance measure.  Use the parameter
 compute imbalance metrics for the solution.
 
 \subsection mj_examples Examples
-See test/partition/PQJaggedTest.cpp for an example of using the MJ algorithm.
+See test/partition/MultiJaggedTest.cpp for an example of using the MJ algorithm.
 
 \subsection mj_source Source
-Zoltan2_AlgPQJagged.hpp is the source file for MJ.
+Zoltan2_AlgMultiJagged.hpp is the source file for MJ.
 
 */
