@@ -497,7 +497,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
     "${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT}"
     CACHE FILENAME
-    "File contining the list of extra repositories contining add-on packages to process")
+    "File contining the list of extra repositories containing add-on packages to process")
   #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
@@ -834,9 +834,10 @@ ENDMACRO()
 
 
 #
-# Read in the Project's native repositories
+# Read in the Project's native repositories.,
 #
-
+# On output, the variable ${PRJECT_NAME}_NATIVE_REPOSITORES is set.
+#
 MACRO(TRIBITS_READ_IN_NATIVE_REPOSITORIES)
   SET(NATIVE_REPO_FILE ${PROJECT_SOURCE_DIR}/cmake/NativeRepositoriesList.cmake)
   IF (EXISTS ${NATIVE_REPO_FILE})
