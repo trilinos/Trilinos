@@ -5007,7 +5007,7 @@ static NNTI_result_t check_for_waiting_connection()
 
         insert_conn_qpn(conn->req_qp.qpn, conn);
         insert_conn_qpn(conn->data_qp.qpn, conn);
-        insert_conn_peer(&peer, conn);
+//        insert_conn_peer(&peer, conn);
 
         log_debug(nnti_debug_level, "Allocating new connection count=%d", ++connection_count);
 
