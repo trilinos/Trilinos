@@ -43,18 +43,18 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_PQJagged_ReductionOps.hpp
-  \brief Contains Teuchos redcution operators for the PQ-jagged algorthm.
+/*! \file Zoltan2_MultiJagged_ReductionOps.hpp
+  \brief Contains Teuchos redcution operators for the Multi-jagged algorthm.
  */
 
-#ifndef _ZOLTAN2_PQJagged_ReductionOps_HPP_
-#define _ZOLTAN2_PQJagged_ReductionOps_HPP_
+#ifndef _ZOLTAN2_MultiJagged_ReductionOps_HPP_
+#define _ZOLTAN2_MultiJagged_ReductionOps_HPP_
 
 #include <Teuchos_ReductionOp.hpp>
 
 namespace Teuchos{
 template <typename Ordinal, typename T>
-class PQJaggedCombinedReductionOp  : public ValueTypeReductionOp<Ordinal,T>
+class MultiJaggedCombinedReductionOp  : public ValueTypeReductionOp<Ordinal,T>
 {
 private:
     Ordinal numSum_0, numMin_1, numMin_2;
@@ -66,7 +66,7 @@ private:
 public:
     /*! \brief Default Constructor
      */
-    PQJaggedCombinedReductionOp ():numSum_0(0), numMin_1(0),
+    MultiJaggedCombinedReductionOp ():numSum_0(0), numMin_1(0),
         numMin_2(0), k(0), partVector(NULL), vectorBegin(0), reductionType(0){}
 
     /*! \brief Constructor
@@ -75,13 +75,13 @@ public:
      *   \param nmin  following the sums, this many minimums will be computed.
      *   \param nmax  following the minimums, this many maximums will be computed.
      */
-    PQJaggedCombinedReductionOp (Ordinal nsum, Ordinal nmin1, Ordinal nmin2,
+    MultiJaggedCombinedReductionOp (Ordinal nsum, Ordinal nmin1, Ordinal nmin2,
      Ordinal k_):
         numSum_0(nsum), numMin_1(nmin1), numMin_2(nmin2), partVector(NULL),
         vectorBegin(0), k(k_), reductionType(0){}
 
 
-    PQJaggedCombinedReductionOp (std::vector <Ordinal> *pVector, Ordinal vBegin,
+    MultiJaggedCombinedReductionOp (std::vector <Ordinal> *pVector, Ordinal vBegin,
      Ordinal k_):
         numSum_0(0), numMin_1(0), numMin_2(0), partVector(pVector),
         vectorBegin(vBegin), k(k_), reductionType(1){}
@@ -130,7 +130,7 @@ public:
 
 
 template <typename Ordinal, typename T>
-class PQJaggedCombinedMinMaxTotalReductionOp :
+class MultiJaggedCombinedMinMaxTotalReductionOp :
      public ValueTypeReductionOp<Ordinal,T>
 {
 private:
@@ -139,7 +139,7 @@ private:
 public:
     /*! \brief Default Constructor
      */
-    PQJaggedCombinedMinMaxTotalReductionOp ():numMin(0), numMax(0), numTotal(0)
+    MultiJaggedCombinedMinMaxTotalReductionOp ():numMin(0), numMax(0), numTotal(0)
     {}
 
     /*! \brief Constructor
@@ -148,7 +148,7 @@ public:
      *   \param nmin  following the sums,  #minimums will be computed.
      *   \param nmax  following the minimums, #maximums will be computed.
      */
-    PQJaggedCombinedMinMaxTotalReductionOp (Ordinal nmin, Ordinal nmax, Ordinal
+    MultiJaggedCombinedMinMaxTotalReductionOp (Ordinal nmin, Ordinal nmax, Ordinal
      nTotal): numMin(nmin), numMax(nmax), numTotal(nTotal){}
 
     /*! \brief Implement Teuchos::ValueTypeReductionOp interface
@@ -172,4 +172,4 @@ public:
 };
 } // namespace Teuchos
 
-#endif //_ZOLTAN2_PQJagged_ReductionOps_HPP_
+#endif //_ZOLTAN2_MultiJagged_ReductionOps_HPP_

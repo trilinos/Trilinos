@@ -4,7 +4,7 @@
 #include <fstream>
 #include <ctime>
 #include <vector>
-#include "Zoltan2_AlgPQJagged.hpp"
+#include "Zoltan2_AlgMultiJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"

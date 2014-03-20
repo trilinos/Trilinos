@@ -43,14 +43,14 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_AlgPQJagged.hpp
-  \brief Contains the PQ-jagged algorthm.
+/*! \file Zoltan2_AlgMultiJagged.hpp
+  \brief Contains the Multi-jagged algorthm.
  */
 
-#ifndef _ZOLTAN2_ALGPQJagged_HPP_
-#define _ZOLTAN2_ALGPQJagged_HPP_
+#ifndef _ZOLTAN2_ALGMultiJagged_HPP_
+#define _ZOLTAN2_ALGMultiJagged_HPP_
 
-#include <Zoltan2_PQJagged_ReductionOps.hpp>
+#include <Zoltan2_MultiJagged_ReductionOps.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Tpetra_Distributor.hpp>
@@ -2209,7 +2209,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_get_global_min_max_coord_totW(
 	//concurrentPartCount elements,
 	//reduce sum for the last concurrentPartCount elements.
 	if(this->comm->getSize()  > 1){
-		Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, pq_scalar_t>
+		Teuchos::MultiJaggedCombinedMinMaxTotalReductionOp<int, pq_scalar_t>
 			reductionOp(
 					current_concurrent_num_parts,
 					current_concurrent_num_parts,
@@ -2394,9 +2394,9 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_1D_part(
     partId_t rectelinear_cut_count = 0;
     pq_scalar_t *temp_cut_coords = current_cut_coordinates;
 
-    Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>
+    Teuchos::MultiJaggedCombinedReductionOp<partId_t, pq_scalar_t>
                  *reductionOp = NULL;
-    reductionOp = new Teuchos::PQJaggedCombinedReductionOp
+    reductionOp = new Teuchos::MultiJaggedCombinedReductionOp
                      <partId_t, pq_scalar_t>(
                     		 &num_partitioning_in_current_dim ,
                     		 current_work_part ,
@@ -4397,7 +4397,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_migrate_coords(
 	pq_lno_t num_incoming_gnos = 0;
 	int message_tag = 7859;
 
-	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
+	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration Z1PlanCreating-" + iteration);
 	int ierr = Zoltan_Comm_Create(
 			&plan,
 			this->num_local_coords,
@@ -4406,9 +4406,9 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_migrate_coords(
 			message_tag,
 			&num_incoming_gnos);
 	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
-	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
+	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration Z1PlanCreating-" + iteration);
 
-	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" + iteration);
+	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration Z1Migration-" + iteration);
 	pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(num_incoming_gnos);
 
 	//migrate gnos.
@@ -4491,16 +4491,16 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_migrate_coords(
 	ierr = Zoltan_Comm_Destroy(&plan);
 	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
 	num_new_local_points = num_incoming_gnos;
-	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" + iteration);
+	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration Z1Migration-" + iteration);
 #else
 
-	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Migration DistributorPlanCreating-" + iteration);
+	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration DistributorPlanCreating-" + iteration);
 	Tpetra::Distributor distributor(this->comm);
 	ArrayView<const partId_t> destinations( coordinate_destionations, this->num_local_coords);
 	pq_lno_t num_incoming_gnos = distributor.createFromSends(destinations);
-	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Migration DistributorPlanCreating-" + iteration);
+	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration DistributorPlanCreating-" + iteration);
 
-	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Migration DistributorMigration-" + iteration);
+	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration DistributorMigration-" + iteration);
 	{
 		//migrate gnos.
 		ArrayRCP<pq_gno_t> recieved_gnos(num_incoming_gnos);
@@ -4573,7 +4573,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::mj_migrate_coords(
 		freeArray<partId_t>(this->assigned_part_ids);
 		this->assigned_part_ids = new_parts;
 	}
-	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Migration DistributorMigration-" + iteration);
+	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration DistributorMigration-" + iteration);
 	num_new_local_points = num_incoming_gnos;
 
 #endif
@@ -5139,7 +5139,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_final_parts(
 		partId_t output_part_begin_index,
 		RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > output_part_boxes,
 		bool is_data_ever_migrated){
-    this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Part_Assignment");
+    this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Part_Assignment");
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
@@ -5176,17 +5176,17 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_final_parts(
     	pq_lno_t incoming = 0;
     	int message_tag = 7856;
 
-    	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating");
+    	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final Z1PlanCreating");
     	int ierr = Zoltan_Comm_Create( &plan, this->num_local_coords,
     			this->owner_of_coordinate, mpi_comm, message_tag,
     			&incoming);
     	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
-    	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating" );
+    	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Final Z1PlanCreating" );
 
     	pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(incoming);
 
     	message_tag++;
-    	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanComm");
+    	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final Z1PlanComm");
     	ierr = Zoltan_Comm_Do( plan, message_tag, (char *) this->current_mj_gnos,
     			sizeof(pq_gno_t), (char *) incoming_gnos);
     	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
@@ -5203,7 +5203,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_final_parts(
     	freeArray<partId_t>(this->assigned_part_ids);
     	this->assigned_part_ids = incoming_partIds;
 
-    	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanComm");
+    	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Final Z1PlanComm");
     	ierr = Zoltan_Comm_Destroy(&plan);
     	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
 
@@ -5212,13 +5212,13 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_final_parts(
 #else
 
     	//if data is migrated, then send part numbers to the original owners.
-    	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Final DistributorPlanCreating");
+    	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final DistributorPlanCreating");
     	Tpetra::Distributor distributor(this->mj_problemComm);
     	ArrayView<const partId_t> owners_of_coords(this->owner_of_coordinate, this->num_local_coords);
     	pq_lno_t incoming = distributor.createFromSends(owners_of_coords);
-    	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Final DistributorPlanCreating" );
+    	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Final DistributorPlanCreating" );
 
-    	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Final DistributorPlanComm");
+    	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final DistributorPlanComm");
 		//migrate gnos to actual owners.
 		ArrayRCP<pq_gno_t> recieved_gnos(incoming);
 		ArrayView<pq_gno_t> sent_gnos(this->current_mj_gnos, this->num_local_coords);
@@ -5242,14 +5242,14 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_final_parts(
 				incoming * sizeof(partId_t));
 
     	this->num_local_coords = incoming;
-    	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Final DistributorPlanComm");
+    	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Final DistributorPlanComm");
 
 #endif
     }
 
-    this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Part_Assignment");
+    this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Part_Assignment");
 
-    this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Solution_Part_Assignment");
+    this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Solution_Part_Assignment");
 
     //ArrayRCP<partId_t> partId;
     //partId = arcp(this->assigned_part_ids, 0, this->num_local_coords, true);
@@ -5258,14 +5258,14 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::set_final_parts(
     	this->kept_boxes = output_part_boxes;
     }
 
-    this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Solution_Part_Assignment");
+    this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Solution_Part_Assignment");
 }
 
 /*! \brief Function frees all allocated work memory.
 */
 template <typename pq_scalar_t, typename pq_lno_t, typename pq_gno_t>
 void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::free_work_memory(){
-	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Problem_Free");
+	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Problem_Free");
 
 	for (int i=0; i < this->coord_dim; i++){
 
@@ -5337,7 +5337,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::free_work_memory(){
 	freeArray<pq_scalar_t *>(this->thread_cut_left_closest_point);
 	freeArray<pq_scalar_t *>(this->thread_cut_right_closest_point);
 
-	this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Free");
+	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Free");
 }
 
 /*! \brief Multi Jagged  coordinate partitioning algorithm.
@@ -5419,7 +5419,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
 
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
-    Z2_THROW_EXPERIMENTAL("Zoltan2 PQJagged is strictly experimental software "
+    Z2_THROW_EXPERIMENTAL("Zoltan2 MultiJagged is strictly experimental software "
             "while it is being developed and tested.")
 
 #else
@@ -5436,8 +5436,8 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
     this->mj_problemComm = problemComm;
     this->myActualRank = this->myRank = this->mj_problemComm->getRank();
 
-    this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Total");
-    this->mj_env->debug(3, "In PQ Jagged");
+    this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Total");
+    this->mj_env->debug(3, "In MultiJagged Jagged");
 
     {
     	this->imbalance_tolerance = imbalance_tolerance_;
@@ -5479,7 +5479,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
     partId_t current_num_parts = 1;
     pq_scalar_t *current_cut_coordinates =  this->all_cut_coordinates;
 
-    this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Problem_Partitioning");
+    this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Problem_Partitioning");
 
     partId_t output_part_begin_index = 0;
     partId_t future_num_parts = this->total_num_part;
@@ -5571,7 +5571,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
 
         //convert i to string to be used for debugging purposes.
         string istring = toString<int>(i);
-        this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Problem_Partitioning_" + istring);
+        this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Problem_Partitioning_" + istring);
 
         //alloc Memory to point the indices
         //of the parts in the permutation array.
@@ -5852,7 +5852,7 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
             this->check_migrate_avoid_migration_option >= 0 &&
             current_world_size > 1){
 
-        	this->mj_env->timerStart(MACRO_TIMERS, "PQJagged - Problem_Migration-" + istring);
+        	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Problem_Migration-" + istring);
         	partId_t num_parts = output_part_count_in_dimension;
         	if ( this->mj_perform_migration(
         					num_parts,
@@ -5865,14 +5865,14 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
         					input_part_boxes, output_part_boxes) ) {
         		is_migrated_in_current_dimension = true;
         		is_data_ever_migrated = true;
-        		this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Migration-" +
+        		this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Migration-" +
         				istring);
         		//since data is migrated, we reduce the number of reduceAll operations for the last part.
         		this->total_dim_num_reduce_all /= num_parts;
         	}
         	else {
         		is_migrated_in_current_dimension = false;
-        		this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Migration-" + istring);
+        		this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Migration-" + istring);
         	}
         }
 
@@ -5888,14 +5888,14 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
         freeArray<pq_lno_t>(this->part_xadj);
         this->part_xadj = this->new_part_xadj;
 
-        this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Partitioning_" + istring);
+        this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Partitioning_" + istring);
     }
 
     // Partitioning is done
     delete future_num_part_in_parts;
     delete next_future_num_parts_in_parts;
 
-    this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Partitioning");
+    this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Partitioning");
     /////////////////////////////End of the partitioning////////////////////////
 
 
@@ -5912,8 +5912,8 @@ void AlgMJ<pq_scalar_t, pq_lno_t, pq_gno_t>::multi_jagged_part(
 	result_mj_gnos_ = this->current_mj_gnos;
 
     this->free_work_memory();
-    this->mj_env->timerStop(MACRO_TIMERS, "PQJagged - Total");
-    this->mj_env->debug(3, "Out of PQ Jagged");
+    this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Total");
+    this->mj_env->debug(3, "Out of MultiJagged");
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 
 }
