@@ -190,6 +190,8 @@ static void scale_weights(StridedData<lno_t, scalar_t> &fwgts, SCOTCH_Num *iwgts
   /* Convert weights to positive integers using the computed scale factor */
   for (size_t i = 0; i < n; i++)
     iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
+
+printf("KDDKDD SCALE %f\n", scale);
 }
 /////////////////////////////////////////////////////////////////////////////
 //  Traits struct to handle conversions between gno_t/lno_t and SCOTCH_Num.
@@ -344,10 +346,10 @@ void AlgPTScotch(
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
-  size_t nEdges = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(edgelocnbr, nEdges, env);
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(edgelocnbr, nEdge, env);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
@@ -379,13 +381,21 @@ void AlgPTScotch(
   }
 
   if (nVwgts) {
-    velotab = new SCOTCH_Num[nVtx+1];
+    velotab = new SCOTCH_Num[nVtx+1];  // +1 since Scotch wants all procs 
+                                       // to have non-NULL arrays
     scale_weights<lno_t, scalar_t>(vwgts[0], velotab, problemComm);
+cout << me << " KDDKDD VTX WGTS ";
+for (size_t i = 0; i < nVtx; i++) cout << velotab[i] << " ";
+cout << endl;
   }
 
   if (nEwgts) {
-    edlotab = new SCOTCH_Num[nEdges+1];
+    edlotab = new SCOTCH_Num[nEdge+1];  // +1 since Scotch wants all procs 
+                                         // to have non-NULL arrays
     scale_weights<lno_t, scalar_t>(ewgts[0], edlotab, problemComm);
+cout << me << " KDDKDD EDGE WGTS ";
+for (size_t i = 0; i < nEdge; i++) cout << edlotab[i] << " ";
+cout << endl;
   }
 
   // Build PTScotch distributed data structure
@@ -499,8 +509,11 @@ void AlgPTScotch(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
 
+  ArrayRCP<partId_t> partList(new partId_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
+  solution->setParts(vtxID, partList, true);
 
 #endif // DO NOT HAVE_MPI
 }
