@@ -191,7 +191,7 @@ namespace Tpetra {
     Teuchos::RCP<const MapType>
     computeGatherMap (Teuchos::RCP<const MapType> map,
                       const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                      const bool debug=false)
+                      const bool dbg=false)
     {
       using Tpetra::createOneToOne;
       using Tpetra::global_size_t;
@@ -213,7 +213,7 @@ namespace Tpetra {
       if (! err.is_null ()) {
         err->pushTab ();
       }
-      if (debug) {
+      if (dbg) {
         *err << myRank << ": computeGatherMap:" << endl;
       }
       if (! err.is_null ()) {
@@ -224,7 +224,7 @@ namespace Tpetra {
       if (map->isContiguous ()) {
         oneToOneMap = map; // contiguous Maps are always 1-to-1
       } else {
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Calling createOneToOne" << endl;
         }
         // It could be that Map is one-to-one, but the class doesn't
@@ -237,7 +237,7 @@ namespace Tpetra {
       if (numProcs == 1) {
         gatherMap = oneToOneMap;
       } else {
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Gathering Map counts" << endl;
         }
         // Gather each process' count of Map elements to Proc 0,
@@ -272,7 +272,7 @@ namespace Tpetra {
           std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
         }
 
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Computing MPI_Gatherv "
             "displacements" << endl;
         }
@@ -283,14 +283,14 @@ namespace Tpetra {
         Array<int> displs (numProcs, 0);
         std::partial_sum (recvCounts.begin (), recvCounts.end () - 1,
                           displs.begin () + 1);
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Calling MPI_Gatherv" << endl;
         }
         gatherv<GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
                      allGlobalElts.getRawPtr (), recvCounts.getRawPtr (),
                      displs.getRawPtr (), rootProc, comm);
 
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Creating gather Map" << endl;
         }
         // Create a Map with all the GIDs, in the same order as in
@@ -307,7 +307,7 @@ namespace Tpetra {
       if (! err.is_null ()) {
         err->popTab ();
       }
-      if (debug) {
+      if (dbg) {
         *err << myRank << ": computeGatherMap: done" << endl;
       }
       if (! err.is_null ()) {

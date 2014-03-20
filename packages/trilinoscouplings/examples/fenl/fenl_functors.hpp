@@ -651,20 +651,44 @@ public:
 } /* namespace Kokkos  */
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template< class FiniteElementMeshType , class SparseMatrixType >
+struct ElementComputationConstantCoefficient {
+  enum { is_constant = true };
+
+  const float coeff_k ;
+
+  KOKKOS_INLINE_FUNCTION
+  float operator()( double /* x */
+                  , double /* y */
+                  , double /* z */
+                  ) const
+    { return coeff_k ; }
+
+  ElementComputationConstantCoefficient( const float val )
+    : coeff_k( val ) {}
+
+  ElementComputationConstantCoefficient( const ElementComputationConstantCoefficient & rhs )
+    : coeff_k( rhs.coeff_k ) {}
+};
+
+template< class FiniteElementMeshType , class SparseMatrixType
+        , class CoeffFunctionType = ElementComputationConstantCoefficient
+        >
 class ElementComputation ;
 
 
 template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
-class ElementComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
+          class CoeffFunctionType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
+  , Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >
+  , CoeffFunctionType >
 {
 public:
 
@@ -708,7 +732,7 @@ public:
   const vector_type         solution ;
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
-  const scalar_type         coeff_K ;
+  const CoeffFunctionType   coeff_function ;
 
   ElementComputation( const ElementComputation & rhs )
     : elem_data()
@@ -720,13 +744,13 @@ public:
     , solution( rhs.solution )
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
-    , coeff_K( rhs.coeff_K )
+    , coeff_function( rhs.coeff_function )
     {}
 
   // If the element->sparse_matrix graph is provided then perform atomic updates
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
-	              const scalar_type          arg_coeff_K ,
+	              const CoeffFunctionType  & arg_coeff_function ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
@@ -740,12 +764,12 @@ public:
     , solution( arg_solution )
     , residual( arg_residual )
     , jacobian( arg_jacobian )
-    , coeff_K( arg_coeff_K )
+    , coeff_function( arg_coeff_function )
     {}
 
-  ElementComputation( const mesh_type    & arg_mesh ,
-	              const scalar_type    arg_coeff_K ,
-                      const vector_type  & arg_solution )
+  ElementComputation( const mesh_type          & arg_mesh ,
+	              const CoeffFunctionType  & arg_coeff_function ,
+                      const vector_type        & arg_solution )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -755,7 +779,7 @@ public:
     , solution( arg_solution )
     , residual()
     , jacobian()
-    , coeff_K( arg_coeff_K )
+    , coeff_function( arg_coeff_function )
     {}
 
   //------------------------------------
@@ -852,16 +876,16 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
-    const float coeff_k ,
     const double dof_values[] ,
-    const float dpsidx[] ,
-    const float dpsidy[] ,
-    const float dpsidz[] ,
-    const float detJ ,
-    const float integ_weight ,
-    const float bases_vals[] ,
-    double elem_res[] ,
-    double elem_mat[][ FunctionCount ] ) const
+    const float  dpsidx[] ,
+    const float  dpsidy[] ,
+    const float  dpsidz[] ,
+    const float  detJ ,
+    const float  coeff_k ,
+    const float  integ_weight ,
+    const float  bases_vals[] ,
+    double       elem_res[] ,
+    double       elem_mat[][ FunctionCount ] ) const
   {
     double value_at_pt = 0 ;
     double gradx_at_pt = 0 ;
@@ -944,13 +968,32 @@ public:
       float dpsidy[ FunctionCount ] ;
       float dpsidz[ FunctionCount ] ;
 
+      float coeff_k = 0 ;
+
+      {
+        double pt_x = 0 ;
+        double pt_y = 0 ;
+        double pt_z = 0 ;
+
+        // If function is not constant
+        // then compute physical coordinates of integration point
+        if ( ! coeff_function.is_constant ) {
+          for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
+            pt_x += x[j] * elem_data.values[i][j] ;
+            pt_y += y[j] * elem_data.values[i][j] ;
+            pt_z += z[j] * elem_data.values[i][j] ;
+          }
+        }
+
+        coeff_k = coeff_function(pt_x,pt_y,pt_z);
+      }
+
       const float detJ =
         transform_gradients( elem_data.gradients[i] , x , y , z ,
                              dpsidx , dpsidy , dpsidz );
 
-      contributeResidualJacobian( coeff_K ,
-                                  val , dpsidx , dpsidy , dpsidz ,
-                                  detJ ,
+      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz ,
+                                  detJ , coeff_k ,
                                   elem_data.weights[i] ,
                                   elem_data.values[i] ,
                                   elem_vec , elem_mat );

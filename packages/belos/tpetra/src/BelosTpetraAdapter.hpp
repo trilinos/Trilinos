@@ -580,7 +580,7 @@ namespace { // anonymous
     {
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
-        normvec.size () < static_cast<size_type> (mv.getNumVectors ()),
+        normvec.size () < static_cast<std::vector<int>::size_type> (mv.getNumVectors ()),
         std::invalid_argument,
         "Belos::MultiVecTraits::MvNorm(mv,normvec): The normvec output "
         "argument must have at least as many entries as the number of vectors "

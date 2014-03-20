@@ -1372,8 +1372,8 @@ namespace {
         TEST_COMPARE_FLOATING_ARRAYS(b2,a2,tol);
         TEST_COMPARE_FLOATING_ARRAYS(b3,a3,tol);
         TEST_COMPARE_ARRAYS(changed(), zeros());
-        for (size_t i=0; i<numVectors; ++i) {
-          TEST_EQUALITY_CONST( aw[i] < bw[i] + tol, true ); // shrunk
+        for (size_t ii = 0; ii < numVectors; ++ii) {
+          TEST_EQUALITY_CONST( aw[ii] < bw[ii] + tol, true ); // shrunk
         }
       }
     }

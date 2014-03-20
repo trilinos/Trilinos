@@ -39,6 +39,10 @@ def controller():
     p.add_option('-t', '--template',   dest="template",     default="sched.template")                   # template file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
     p.add_option(      '--cpn',        dest="cpn",          default=CPN, type='int')                    # cores per node
+    p.add_option('-u', '--unified',    dest="unified",      action="store_true", default=True)          # by default, try to use unified
+    p.add_option('-d', '--default',    dest="unified",      action="store_false")                       #   but sometimes we want to use
+                                                                                                        #   the default one, particularly
+                                                                                                        #   when we get segfaults and such
 
     # run arguments
     p.add_option(      '--cmds',       dest="cmds",         default="")                                 # additional args for the command
@@ -48,6 +52,8 @@ def controller():
 
     # parse
     options, arguments = p.parse_args()
+
+    unified = options.unified
 
     if   options.petra == 'epetra': petra = 1
     elif options.petra == 'tpetra': petra = 2
@@ -105,6 +111,12 @@ def controller():
 
                 datafiles.append(xmlfile)
 
+                if unified == True:
+                    if cmds[i] != "--xml=" + xmlfile:
+                        print("WARNING: command '" + cmds[i] + "' provides extra (to xml) arguments, "
+                              "disabling construction of a single unified xml file")
+                        unified = False
+
         nnodes = []         # number of nodes
         nx     = []         # single dimension of the problem
         if options.nnodes == "":
@@ -125,8 +137,32 @@ def controller():
             nx.append(int(options.nx * pow(nnodes[i] * float(cpn)/CPN, 1./dim)))
 
         for i in range(0, len(nnodes)):
-            build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn)
+            if unified == True:
+                # Assemble unified xml file
+                unified_xml = "unified.xml"
+                unified_cmd = ["--xml=" + unified_xml]
+
+                global NUM_RUNS
+
+                qn = "\\\\n"
+                os.system("echo -e '<ParameterList   name=\"Driver\">'" + " > " + unified_xml)
+                # Move number of runs into an xml file, and reset the global
+                os.system("echo -e '  <Parameter     name=\"number of reruns\" type=\"int\" value=\"" + str(NUM_RUNS) + "\"/>'"+qn + " >> " + unified_xml)
+                NUM_RUNS = 1
+                for k in range(0,len(datafiles)):
+                    os.system("echo -e '  <ParameterList name=\"Run" + str(k+1) + "\">'" + " >> " + unified_xml)
+                    os.system("echo -e '    <Parameter   name=\"filename\" type=\"string\" value=\"cmd" + str(k+1) + "\"/>'"+ qn + qn + " >> " + unified_xml)
+                    os.system("cat " + datafiles[i] + " >> " + unified_xml)
+                    os.system("echo -e '  </ParameterList>'" + " >> " + unified_xml)
+
+                os.system("echo -e '</ParameterList>'" + " >> " + unified_xml)
+
+                build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
+                      datafiles=[unified_xml], cmds=unified_cmd, template=options.template, output=options.output, cpn=cpn, unified=True)
+
+            else:
+                build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
+                      datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn, unified=False)
 
     elif options.action == 'run':
         run()
@@ -141,6 +177,7 @@ def controller():
           labels = LABELS
           timelines = TIMELINES
           parsefunc = ""
+
         else:
           labels    = import_from(options.ltmodule, "LABELS")
           timelines = import_from(options.ltmodule, "TIMELINES")
@@ -277,7 +314,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
 
             os.chdir("..")
 
-def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn):
+def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn, unified):
     dir = DIR_PREFIX + str(nnodes)
     print("Building %s..." % dir)
 
@@ -318,6 +355,7 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
                " | sed \"s/_NX_/"         + str(nx)                   + "/g\"" +
                " | sed \"s/_EPETRA_/"     + str(petra & 1)            + "/g\"" +
                " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/g\"" +
+               " | sed \"s/_UNIFIED_/"    + str(unified)              + "/g\"" +
                " | sed \"s/_NUM_RUNS_/"   + str(NUM_RUNS)             + "/g\"" +
                " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/g\"")
 
@@ -377,15 +415,15 @@ def main():
         CPN          = 24
         SCHEDULER    = "pbs"
         SCHED_HEADER = ("#PBS -S /bin/bash\\n"
-                        "#PBS -q regular\\n" +
+                        "#PBS -q regular\\n" +                     # queue
                         "#PBS -l mppwidth=_WIDTH_\\n"
                         "#PBS -l walltime=00:10:00\\n"
                         "#PBS -N _MTYPE___CORES_\\n"
                         "#PBS -e screen.err.\\$PBS_JOBID\\n"
                         "#PBS -o screen.out.\\$PBS_JOBID\\n"
                         "#PBS -V\\n"
-                        "#PBS -A m1327\\n\\n"
-                        "#PBS -m ae\\n"                         # abort/termination
+                        "#PBS -A m1327\\n"                         # repository
+                        "#PBS -m ae\\n\\n"                         # abort/termination
                         "cd \\$PBS_O_WORKDIR\\n")
 
     elif PLATFORM == "shannon":

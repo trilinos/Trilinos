@@ -271,6 +271,11 @@ namespace Tpetra {
     lclMatrix_->setValues (Teuchos::arcp(k_lclMatrix_.values.ptr_on_device(), 0, k_lclMatrix_.values.dimension_0(),
         Kokkos::Compat::deallocator(k_lclMatrix_.values), false));
 
+    k_values1D_ = k_lclMatrix_.values;
+
+    values1D_ = arcp (k_lclMatrix_.values.ptr_on_device (), 0,
+                      k_lclMatrix_.values.dimension_0 (),
+                      Kokkos::Compat::deallocator (k_lclMatrix_.values), false);
     //
     // Set up the local sparse kernels.
     //

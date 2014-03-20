@@ -175,7 +175,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordina
 
   typedef Teuchos::ScalarTraits<Packet> PT;
   typedef typename PT::magnitudeType PacketMag;
-  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
@@ -217,7 +217,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
 
   typedef Teuchos::ScalarTraits<Packet> PT;
   typedef typename PT::magnitudeType PacketMag;
-  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
@@ -275,8 +275,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend1, Ordinal, Packet )
   using Teuchos::ArrayRCP;
   using Teuchos::ptr;
   typedef Teuchos::ScalarTraits<Packet> PT;
-  typedef typename PT::magnitudeType PacketMag;
-  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+  //typedef typename PT::magnitudeType PacketMag; // unused
+  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
@@ -370,8 +370,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend, Ordinal, Packet )
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::ArrayRCP;
   typedef Teuchos::ScalarTraits<Packet> PT;
-  typedef typename PT::magnitudeType PacketMag;
-  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+  //typedef typename PT::magnitudeType PacketMag; // unused
+  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
@@ -492,8 +492,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   using Teuchos::rcp_dynamic_cast;
   using std::endl;
   typedef Teuchos::ScalarTraits<Packet> PT;
-  typedef typename PT::magnitudeType PacketMag;
-  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+  //typedef typename PT::magnitudeType PacketMag; // unused
+  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
@@ -581,8 +581,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   using std::cerr;
   using std::endl;
   typedef Teuchos::ScalarTraits<Packet> PT;
-  typedef typename PT::magnitudeType PacketMag;
-  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+  //typedef typename PT::magnitudeType PacketMag; // unused
+  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);

@@ -186,11 +186,13 @@ namespace MueLu {
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
     // Record the communicator on the level (used for timers sync)
     if (isFinestLevel) {
       RCP<Matrix> A = level.Get< RCP<Matrix> >("A");
       level.SetComm(A->getRowMap()->getComm());
     }
+#endif
 
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;
@@ -265,9 +267,11 @@ namespace MueLu {
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
 
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
     // Record the communicator on the level (used for timers sync)
     if (!Ac.is_null())
       level.SetComm(Ac->getRowMap()->getComm());
+#endif
 
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;

@@ -27,6 +27,17 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
 ENDIF ()
 
+# Enable timer synchronization via barriers
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION
+  HAVE_${PACKAGE_NAME_UC}_TIMER_SYNCHRONIZATION
+  "Enable timer synchronization in MueLu via barriers."
+  NO)
+
+if (${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION)
+  MESSAGE(STATUS "Enabling timer synchronization")
+ENDIF ()
+
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
@@ -36,6 +47,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
   MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Experimental=ON requires Xpetra_ENABLE_Experimental=ON.")
 ENDIF ()
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  MESSAGE(STATUS "Enabling MueLu experimental code")
+ENDIF()
 
 # Memory testing
 IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
@@ -49,6 +64,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
   HAVE_${PACKAGE_NAME_UC}_PROFILING
   "Enable detailed timing and memory profiling of MueLu."
   OFF)
+
+IF (${PACKAGE_NAME}_ENABLE_PROFILING)
+  MESSAGE(STATUS "Enabling MueLu profiling code")
+ENDIF()
 
 # Profiling (expert users only. There is no TPL for Google Perftools)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
