@@ -84,22 +84,26 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Configuring ${PROJECT_NAME} build directory")
   MESSAGE("")
  
-  TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS()
+  # A.1) Set some basic system vars and info you can't change
+  TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS()
+
+  # A.2) Read user provided options from specified files.  It is important to
+  # process these files *very* early on so that they have the same basic
+  # effect of setting these variables directly in the cache.
   TRIBITS_READ_IN_OPTIONS_FROM_FILE()
-  
-  #
-  # A.2) Set up other stuff
-  #
-  
+
+  # A.3) Get some other basic system info that is useful early on in
+  # configuration
+  TRIBITS_SETUP_BASIC_SYSTEM_VARS()
   TRIBITS_FIND_PYTHON_INTERP()
   
   #
-  # A.3) Read in the Project's version file
+  # A.4) Read in the Project's version file
   #
   # NOTE: The file Version.cmake must be read *before* the global options are
-  # read!
+  # read because the variables defined in Version.cmake provide defaults for
+  # many of these options.
   #
-
   TRIBITS_PROJECT_READ_VERSION_FILE(${PROJECT_SOURCE_DIR})
   
   # Since the version header file is now configured the root build
@@ -116,9 +120,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()
   
-  # Have to start timing after we read in the major options.
+  # Have to start timing after we read in the major options since that
+  # determines the timing option var.
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    # Start the global timer
     TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
   ENDIF()
 

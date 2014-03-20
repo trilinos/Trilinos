@@ -68,8 +68,7 @@ INCLUDE(CheckIncludeFileCXX)
 #
 # Assert and setup project binary directory and other project varibles.
 #
-
-MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS)
+MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS)
 
   IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     MESSAGE(FATAL_ERROR "ERROR! "
@@ -95,7 +94,34 @@ MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS)
   PRINT_VAR(PROJECT_BINARY_DIR)
   # Above, we put these in the cache so we can grep them out of the cache file
   
-  MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
+  #
+  # Print some basic static info provided by CMake automatically
+  #
+
+  PRINT_VAR(CMAKE_VERSION)
+
+ENDMACRO()
+
+
+#
+# Set up some really basic systme varaibles.
+#
+# This macro needs to be called *before* the user *.cmake option files are
+# read in so that there is an opportunity to override these.
+#
+MACRO(TRIBITS_SETUP_BASIC_SYSTEM_VARS)
+
+  # CMAKE_HOST_SYSTEM_NAME is provided by CMake automatically but can actually
+  # be overridded in the cache.
+  PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
+  
+  SITE_NAME(${PROJECT_NAME}_HOSTNAME)
+  MARK_AS_ADVANCED(${PROJECT_NAME}_HOSTNAME)
+  PRINT_VAR(${PROJECT_NAME}_HOSTNAME)
+
+  # NOTE: CMAKE_HOST_SYSTEM_NAME and ${PROJECT_NAME}_HOSTNAME are used by
+  # TRIBITS_ADD[_ADVANCED]_TEST() to include/exclude tests based in the
+  # arguments HOSTS, XHOSTS, HOSTTYPES, AND XHOSTTYPES.
 
 ENDMACRO()
 
@@ -1543,18 +1569,6 @@ MACRO(TRIBITS_SETUP_ENV)
  
   INCLUDE(TribitsSetupBasicCompileLinkFlags)
   TRIBITS_SETUP_BASIC_COMPILE_LINK_FLAGS()
-
-  # Find the host site name used in selecting or deselecting tests by the
-  # TRIBITS_ADD_TEST(...) function.
-  
-  SITE_NAME(${PROJECT_NAME}_HOSTNAME)
-  MARK_AS_ADVANCED(${PROJECT_NAME}_HOSTNAME)
-  PRINT_VAR(${PROJECT_NAME}_HOSTNAME)
-
-  # Find the host site type name used in selecting or deselecting tests by the
-  # TRIBITS_ADD_TEST(...) function.
-
-  PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
 
   # Set up Windows interface stuff
 
