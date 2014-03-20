@@ -44,6 +44,7 @@
 #ifndef KOKKOS_VIEWOFFSET_HPP
 #define KOKKOS_VIEWOFFSET_HPP
 
+#include <Kokkos_Pair.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
 
@@ -1045,6 +1046,18 @@ struct ViewOffsetRange< std::pair<iType,iType> > {
 
   KOKKOS_INLINE_FUNCTION static
   size_t begin( std::pair<iType,iType> const & r ) { return r.first ; }
+};
+
+template< typename iType >
+struct ViewOffsetRange< Kokkos::pair<iType,iType> > {
+  enum { is_range = true };
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t dimension( size_t const n , Kokkos::pair<iType,iType> const & r )
+    { return ( 0 <= int(r.first) && r.first < r.second && size_t(r.second) < n ) ? r.second - r.first : 0 ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t begin( Kokkos::pair<iType,iType> const & r ) { return r.first ; }
 };
 
 }} // namespace Kokkos::Impl

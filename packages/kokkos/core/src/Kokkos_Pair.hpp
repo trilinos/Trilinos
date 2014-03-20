@@ -4,11 +4,10 @@
 /// This header file declares and defines Kokkos::pair and its related
 /// nonmember functions.
 
-#ifndef KOKKOS_CONTAINERS_PAIR_HPP
-#define KOKKOS_CONTAINERS_PAIR_HPP
+#ifndef KOKKOS_PAIR_HPP
+#define KOKKOS_PAIR_HPP
 
 #include <Kokkos_Macros.hpp>
-#include <Kokkos_Functional.hpp>
 #include <utility>
 
 namespace Kokkos {
@@ -263,4 +262,4 @@ bool operator>= (const pair<T1,void>& lhs, const pair<T1,void>& rhs)
 } // namespace Kokkos
 
 
-#endif //KOKKOS_CONTAINERS_PAIR_HPP
+#endif //KOKKOS_PAIR_HPP
