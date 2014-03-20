@@ -103,6 +103,7 @@ uint64_t calc_checksum (const char * buf, const uint64_t size);
 class OpRegRequestProcessor : public NssiRpc {
     public:
         int doRPC(
+                const int            opcode,
                 const unsigned long  request_id,
                 const NNTI_peer_t   *caller,
                 const void          *void_args,
@@ -114,7 +115,7 @@ class OpRegRequestProcessor : public NssiRpc {
             const opreg_args *args = static_cast<const opreg_args*>(void_args);
 
             /* process array (nothing to do) */
-            log_debug(debug_level, "starting OpRegRequestProcessor->dispatch()");
+            log_debug(debug_level, "starting OpRegRequestProcessor->dispatch(opcode=%d)", opcode);
 
             log_debug(debug_level, "args->data.int_val(%d) args->data.float_val(%f) args->data.double_val(%f) args->chksum(%lu)",
                     args->data.int_val, args->data.float_val, args->data.double_val, args->chksum);

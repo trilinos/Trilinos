@@ -194,6 +194,7 @@ extern "C" {
         class NssiRpc {
             public:
                 virtual int doRPC(
+                        const int            opcode,
                         const unsigned long  request_id,
                         const NNTI_peer_t   *caller,
                         const void          *void_args,

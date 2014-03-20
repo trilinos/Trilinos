@@ -1300,7 +1300,7 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     if (svc_op.func) {
         rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
     } else if (svc_op.obj) {
-        rc = svc_op.obj->doRPC(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
+        rc = svc_op.obj->doRPC(svc_op.opcode, header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
     } else {
         rc = NSSI_ENOENT;
     }
