@@ -13,20 +13,17 @@ PROJECT(${PROJECT_NAME} NONE)
 
 SET(${PROJECT_NAME}_TRIBITS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..
   CACHE PATH "Path to TriBITS.")
-INCLUDE(${${PROJECT_NAME}_TRIBITS_DIR}/package_arch/TribitsProject.cmake)
+INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
 
 # CMake requires this be in the top file and not in an include file :-(
 CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
 # Disable MPI and Fortran
 SET(TPL_ENABLE_MPI OFF CACHE BOOL "" FORCE)
-
 # Turn off Fortran support by default
 SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
-
 # Turn of export makefiles and the like
 SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
-
 # Only one package in this simple project so just enable it :-)
 SET(${PROJECT_NAME}_ENABLE_HelloWorld ON CACHE BOOL "" FORCE)
 

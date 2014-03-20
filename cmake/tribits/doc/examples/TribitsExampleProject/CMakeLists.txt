@@ -11,7 +11,7 @@ SET(CMAKE_LEGACY_CYGWIN_WIN32 1 CACHE BOOL "" FORCE)
 #
 # A) Define your project name and set up major project options
 #
-# NOTE: Don't set options that would impact that packages get defined or
+# NOTE: Don't set options that would impact what packages get defined or
 # enabled/disabled in this file as that would not impact other tools that
 # don't process this file.
 #
@@ -31,7 +31,7 @@ SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
 #
 
 SET(${PROJECT_NAME}_TRIBITS_DIR  ""  CACHE  STRING "TriBITS base directory (required!)")
-INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/package_arch/TribitsProject.cmake")
+INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
 
 # CMake requires this be in the top file and not in an include file :-(
 CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
