@@ -89,6 +89,18 @@ namespace Tpetra {
     std::string
     DistributorSendTypeEnumToString (EDistributorSendType sendType);
 
+    /// \brief Enum indicating how a Distributor was initialized.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on these values in your code.
+    enum EDistributorHowInitialized {
+      DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
+      DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
+      DISTRIBUTOR_INITIALIZED_BY_COPY // By copy constructor
+    };
+
   } // namespace Details
 
   /// \brief Valid values for Distributor's "Send type" parameter.
@@ -736,6 +748,9 @@ namespace Tpetra {
 
     //! Output stream for debug output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+    //! How the Distributor was initialized (if it was).
+    Details::EDistributorHowInitialized howInitialized_;
 
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
@@ -2914,6 +2929,8 @@ namespace Tpetra {
     if (debug_) {
       *out_ << myRank << ": createFromRecvs done" << endl;
     }
+
+    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
   }
 
 } // namespace Tpetra

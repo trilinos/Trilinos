@@ -155,6 +155,7 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     : comm_ (comm)
     , out_  (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -174,6 +175,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::FancyOStream>& out)
     : comm_ (comm)
     , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -193,6 +195,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
     , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -213,6 +216,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
     , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -231,6 +235,7 @@ namespace Tpetra {
   Distributor::Distributor (const Distributor & distributor)
     : comm_ (distributor.comm_)
     , out_ (distributor.out_)
+    , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
@@ -293,6 +298,7 @@ namespace Tpetra {
 
     std::swap (comm_, rhs.comm_);
     std::swap (out_, rhs.out_);
+    std::swap (howInitialized_, rhs.howInitialized_);
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
@@ -530,6 +536,8 @@ namespace Tpetra {
     reverseDistributor_->selfMessage_ = selfMessage_;
     reverseDistributor_->maxSendLength_ = maxReceiveLength;
     reverseDistributor_->totalReceiveLength_ = totalSendLength;
+    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+
     // Note: technically, I am my reverse distributor's reverse distributor, but
     //       we will not set this up, as it gives us an opportunity to test
     //       that reverseDistributor is an inverse operation w.r.t. value semantics of distributors
@@ -648,7 +656,27 @@ namespace Tpetra {
         if (label != "") {
           out << "Label: " << label << endl;
         }
-        out << "Parameters: " << endl;
+        out << "How initialized: ";
+        switch (howInitialized_) {
+        case Details::DISTRIBUTOR_NOT_INITIALIZED:
+          out << "Not initialized yet";
+          break;
+        case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
+          out << "By createFromSends";
+          break;
+        case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
+          out << "By createFromRecvs";
+          break;
+        case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
+          out << "By createReverseDistributor";
+          break;
+        case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
+          out << "By copy constructor";
+          break;
+        default:
+          out << "INVALID";
+        }
+        out << endl << "Parameters: " << endl;
         {
           Teuchos::OSTab tab3 (out);
           out << "\"Send type\": "
@@ -1289,6 +1317,11 @@ namespace Tpetra {
       os << myImageID << ": createFromSends: done" << endl;
       *out_ << os.str ();
     }
+
+    // createFromRecvs() calls createFromSends(), but will set
+    // howInitialized_ again after calling createFromSends().
+    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
+
     return totalReceiveLength_;
   }
 
