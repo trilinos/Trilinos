@@ -434,6 +434,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 
   // Classic csr assembly (low memory edition)
   int CSR_alloc=C_estimate_nnz(A,B);
+  if(CSR_alloc < n) CSR_alloc = n;
   int CSR_ip=0,OLD_ip=0;
   Epetra_IntSerialDenseVector & CSR_rowptr = C.ExpertExtractIndexOffset();
   Epetra_IntSerialDenseVector & CSR_colind = C.ExpertExtractIndices();  
