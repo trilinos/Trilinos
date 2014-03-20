@@ -982,37 +982,66 @@ namespace Tpetra {
       // mfh 13 Nov 2012: See note above on conversions between
       // global_size_t and LO, GO, or int.
       //
-      typename Array<global_size_t>::iterator ptr = imports.begin();
       const size_t numRecv = numEntries - numMissing;
 
-      Array<GO> sortedIDs (globalIDs);
-      ArrayRCP<GO> offset = arcp<GO> (numEntries);
-      GO ii=0;
-      for (typename ArrayRCP<GO>::iterator oo = offset.begin();
-           oo != offset.end(); ++oo, ++ii) {
-        *oo = ii;
+      {
+        const size_t importLen = imports.size ();
+        const size_t requiredImportLen = numRecv * packetSize;
+        const int myRank = comm->getRank ();
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          importLen < requiredImportLen, std::logic_error,
+          "Tpetra::Details::DistributedNoncontiguousDirectory::getEntriesImpl: "
+          "On Process " << myRank << ": The 'imports' array must have length "
+          "at least " << requiredImportLen << ", but its actual length is " <<
+          importLen << ".  numRecv: " << numRecv << ", packetSize: " <<
+          packetSize << ", numEntries (# GIDs): " << numEntries <<
+          ", numMissing: " << numMissing << ": distor.getTotalReceiveLength(): "
+          << distor.getTotalReceiveLength () << ".  Please report this bug to "
+          "the Tpetra developers.");
+      }
+
+      Array<GO> sortedIDs (globalIDs); // deep copy (for later sorting)
+      Array<GO> offset (numEntries); // permutation array (sort2 output)
+      for (GO ii = 0; ii < static_cast<GO> (numEntries); ++ii) {
+        offset[ii] = ii;
       }
       sort2 (sortedIDs.begin(), sortedIDs.begin() + numEntries, offset.begin());
 
+      size_t importsIndex = 0;
+      //typename Array<global_size_t>::iterator ptr = imports.begin();
       typedef typename Array<GO>::iterator IT;
+
       // we know these conversions are in range, because we loaded this data
       for (size_t i = 0; i < numRecv; ++i) {
         // Don't use as() here (see above note).
-        const GO curGID = static_cast<GO> (*ptr++);
+        //const GO curGID = static_cast<GO> (*ptr++);
+        const GO curGID = static_cast<GO> (imports[importsIndex++]);
         std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
         if (p1.first != p1.second) {
           const size_t j = p1.first - sortedIDs.begin();
           // Don't use as() here (see above note).
-          nodeIDs[offset[j]] = static_cast<int> (*ptr++);
+          nodeIDs[offset[j]] = static_cast<int> (imports[importsIndex++]);
           if (computeLIDs) {
             // Don't use as() here (see above note).
-            localIDs[offset[j]] = static_cast<LO> (*ptr++);
+            localIDs[offset[j]] = static_cast<LO> (imports[importsIndex++]);
           }
           if (nodeIDs[offset[j]] == -1) {
             res = IDNotPresent;
           }
         }
       }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (importsIndex) > static_cast<size_t> (imports.size ()),
+        std::logic_error,
+        "Tpetra::Details::DistributedNoncontiguousDirectory::getEntriesImpl: "
+        "On Process " << comm->getRank () << ": importsIndex = " <<
+        importsIndex << " > imports.size() = " << imports.size () << ".  "
+        "numRecv: " << numRecv << ", packetSize: " << packetSize << ", "
+        "numEntries (# GIDs): " << numEntries << ", numMissing: " << numMissing
+        << ": distor.getTotalReceiveLength(): "
+        << distor.getTotalReceiveLength () << ".  Please report this bug to "
+        "the Tpetra developers.");
 
       return res;
     }
