@@ -35,6 +35,9 @@ namespace stk { namespace mesh { class FieldBase; } }
 
 namespace {
 
+using namespace stk::mesh;
+using stk::mesh::fixtures::HexFixture;
+
 enum Operation
 {
   SUM,
@@ -42,10 +45,10 @@ enum Operation
   MAX
 };
 
-template <typename T>
-T do_operation(T lhs, T rhs, Operation op)
+template <typename T, Operation Op>
+T do_operation(T lhs, T rhs)
 {
-  switch(op) {
+  switch(Op) {
   case SUM:
     return lhs + rhs;
   case MIN:
@@ -58,15 +61,30 @@ T do_operation(T lhs, T rhs, Operation op)
   }
 }
 
-using namespace stk::mesh;
-using stk::mesh::fixtures::HexFixture;
+template <Operation Op, typename FieldVector>
+void do_assemble(BulkData & bulk, FieldVector const& field_vector)
+{
+  switch(Op) {
+  case SUM:
+    parallel_sum(bulk, field_vector);
+    break;
+  case MIN:
+    parallel_min(bulk, field_vector);
+    break;
+  case MAX:
+    parallel_max(bulk, field_vector);
+    break;
+  default:
+    ThrowRequire(false);
+  }
+}
 
 typedef Field<double> ScalarField;
 typedef Field<double, Cartesian> CartesianField;
 typedef Field<int> IntField;
 
-// Client needs to delete
-void do_parallel_assemble(Operation op)
+template <Operation Op>
+void do_parallel_assemble()
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -176,35 +194,11 @@ void do_parallel_assemble(Operation op)
   double_field_vector.push_back(&universal_cartesian_node_field);
   double_field_vector.push_back(&universal_scalar_edge_field);
 
-  switch(op) {
-  case SUM:
-    parallel_sum(bulk, double_field_vector);
-    break;
-  case MIN:
-    parallel_min(bulk, double_field_vector);
-    break;
-  case MAX:
-    parallel_max(bulk, double_field_vector);
-    break;
-  default:
-    ThrowRequire(false);
-  }
+  do_assemble<Op>(bulk, double_field_vector);
 
   std::vector<FieldBase*> int_field_vector(1, &universal_scalar_int_node_field);
 
-  switch(op) {
-  case SUM:
-    parallel_sum(bulk, int_field_vector);
-    break;
-  case MIN:
-    parallel_min(bulk, int_field_vector);
-    break;
-  case MAX:
-    parallel_max(bulk, int_field_vector);
-    break;
-  default:
-    ThrowRequire(false);
-  }
+  do_assemble<Op>(bulk, int_field_vector);
 
   // Check field values
 
@@ -220,22 +214,22 @@ void do_parallel_assemble(Operation op)
       int field_id = 1;
 
       EXPECT_EQ( *field_data(universal_scalar_node_field, node),
-                 do_operation<double>(p_rank + field_id + node_id, sharing_rank + field_id + node_id, op) );
+                 (do_operation<double, Op>(p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       ++field_id;
 
       double* data = field_data(universal_cartesian_node_field, node);
       for (int d = 0; d < 3; ++d) {
-        EXPECT_EQ( data[d], do_operation<double>(p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id, op) );
+        EXPECT_EQ( data[d], (do_operation<double, Op>(p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id)) );
       }
       ++field_id;
 
       EXPECT_EQ( *field_data(universal_scalar_int_node_field, node),
-                 do_operation<int>(p_rank + field_id + node_id, sharing_rank + field_id + node_id, op) );
+                 (do_operation<int, Op>(p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       ++field_id;
 
       if (bucket.member(center_part)) {
         EXPECT_EQ( *field_data(non_universal_scalar_node_field, node),
-                   do_operation<double>(p_rank + field_id + node_id, sharing_rank + field_id + node_id, op) );
+                   (do_operation<double, Op>(p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       }
     }
   }
@@ -252,24 +246,24 @@ void do_parallel_assemble(Operation op)
       int field_id = 5;
 
       EXPECT_EQ( *field_data(universal_scalar_edge_field, edge),
-                 do_operation<double>(p_rank + field_id + edge_id, sharing_rank + field_id + edge_id, op) );
+                 (do_operation<double, Op>(p_rank + field_id + edge_id, sharing_rank + field_id + edge_id)) );
     }
   }
 }
 
 STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
 {
-  do_parallel_assemble(SUM);
+  do_parallel_assemble<SUM>();
 }
 
 STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
 {
-  do_parallel_assemble(MIN);
+  do_parallel_assemble<MIN>();
 }
 
 STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
 {
-  do_parallel_assemble(MAX);
+  do_parallel_assemble<MAX>();
 }
 
 } //namespace <anonymous>
