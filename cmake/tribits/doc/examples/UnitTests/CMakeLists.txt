@@ -136,6 +136,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       -DTribitsExProj_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
+      "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
       "Explicitly enabled packages on input .by user.:  0"
       "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
       "Enabling all packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
@@ -149,6 +150,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Generating done"
       "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/Version.cmake"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackSetupExtraOptions.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/PackagesList.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/TPLsList.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/simple_cxx/cmake/Dependencies.cmake"

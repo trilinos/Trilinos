@@ -3,13 +3,13 @@
 #
 
 # The purpose of this package is to demonstrate how to wrap an externally
-# configured and built bit of software.  The external software once built
+# configured and built piece of software.  The external software once built
 # provides libraries that need to be cast as TriBITS CMake librarires.  To
 # make this even more interesting, the external software has dependancies on
 # upstream TriBITS packages that it pulls in through a TriBITS export
 # makefile.
 #
-# An overview of the basic tasks required at:
+# An overview of the basic tasks required are:
 #
 # a) Enumerate the upstream packages and TPLs needed (this is done in the
 # cmake/Dependencies.cmake file).
