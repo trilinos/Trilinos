@@ -630,14 +630,14 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     -DTrilinos_ENABLE_ALL_PACKAGES=ON
   PASS_REGULAR_EXPRESSION_ALL
     "-- File Trace: PROJECT    INCLUDE    .*/MockTrilinos/Version.cmake"
-    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/./cmake/CallbackSetupExtraOptions.cmake"
-    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/./PackagesList.cmake"
-    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/./TPLsList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/cmake/CallbackSetupExtraOptions.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/PackagesList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/TPLsList.cmake"
     "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/preCopyrightTrilinos/PackagesList.cmake"
     "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/preCopyrightTrilinos/TPLsList.cmake"
     "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/extraTrilinosRepo/PackagesList.cmake"
     "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/extraTrilinosRepo/TPLsList.cmake"
-    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/./cmake/RepositoryDependenciesSetup.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/cmake/RepositoryDependenciesSetup.cmake"
     "-- File Trace: PROJECT    INCLUDE    .*/MockTrilinos/cmake/ProjectDependenciesSetup.cmake"
     "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/cmake/cmake/Dependencies.cmake"
     "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/teuchos/cmake/Dependencies.cmake"

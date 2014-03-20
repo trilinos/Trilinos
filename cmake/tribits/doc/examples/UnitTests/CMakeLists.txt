@@ -125,12 +125,15 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
+    MESSAGE "Do the initial configure"
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
       -DTribitsExProj_ENABLE_TESTS=ON
       -DTribitsExProj_TRACE_FILE_PROCESSING=ON
+      -DTribitsExProj_ENABLE_CPACK_PACKAGING=ON
+      -DTribitsExProj_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Explicitly enabled packages on input .by user.:  0"
@@ -146,8 +149,8 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Generating done"
       "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/Version.cmake"
-      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./PackagesList.cmake"
-      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./TPLsList.cmake"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/PackagesList.cmake"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/TPLsList.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/simple_cxx/cmake/Dependencies.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/mixed_language/cmake/Dependencies.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake"
@@ -156,8 +159,8 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/wrap_external/cmake/Dependencies.cmake"
       "-- File Trace: PROJECT    CONFIGURE  .*/TribitsExampleProject/cmake/ctest/CTestCustom.cmake.in"
-      "-- File Trace: REPOSITORY READ       .*/TribitsExampleProject/./Copyright.txt"
-      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/./Version.cmake"
+      "-- File Trace: REPOSITORY READ       .*/TribitsExampleProject/Copyright.txt"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/Version.cmake"
       "${TPL_MPI_FILE_TRACE}"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/test/CMakeLists.txt"
@@ -170,7 +173,10 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/B/tests/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/tests/CMakeLists.txt"
+      "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineRepositoryPackaging.cmake"
+      "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineProjectPackaging.cmake"
   TEST_1 CMND make
+    MESSAGE "Build the default 'all' target using raw 'make'"
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
@@ -179,6 +185,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Built target pws_b"
       "Built target pws_c"
   TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+    MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
       "MixedLanguage_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -186,6 +193,28 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
       "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
       "100% tests passed, 0 tests failed out of 5"
+  TEST_3 CMND make ARGS package_source
+    MESSAGE "Create the tarball"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Run CPack packaging tool for source..."
+      "CPack: Create package using TGZ"
+      "CPack: Install projects"
+      "CPack: - Install directory: .*/doc/examples/TribitsExampleProject"
+      "CPack: Create package"
+      "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT/tribitsexproj-1.1-Source.tar.gz generated."
+      "CPack: Create package using TBZ2"
+      "CPack: Install projects"
+      "CPack: - Install directory: .*/doc/examples/TribitsExampleProject"
+      "CPack: Create package"
+      "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT/tribitsexproj-1.1-Source.tar.bz2 generated."
+  TEST_4 CMND tar ARGS -xzf tribitsexproj-1.1-Source.tar.gz
+    MESSAGE "Untar the tarball"
+  TEST_5 CMND diff ARGS -qr ${CMAKE_CURRENT_SOURCE_DIR}/../TribitsExampleProject tribitsexproj-1.1-Source
+    MESSAGE "Make sure right directoires are excluced"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Only in .*/TribitsExampleProject/cmake: ctest"
+      "Only in .*/TribitsExampleProject: .gitignore"
+      "Only in .*/TribitsExampleProject/packages: wrap_external"
   )
 
 
