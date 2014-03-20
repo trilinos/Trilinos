@@ -1061,6 +1061,10 @@ namespace Tpetra {
 
     // Set up data structures for quick traversal of arrays.
     // This contains the number of sends for each process ID.
+    //
+    // FIXME (mfh 20 Mar 2014) This is one of a few places in Tpetra
+    // that create an array of length the number of processes in the
+    // communicator (plus one).
     Teuchos::Array<size_t> starts (numImages + 1, 0);
 
     // numActive is the number of sends that are not Null
@@ -1071,7 +1075,7 @@ namespace Tpetra {
     int badID = -1; // only used in a debug build
 #endif // HAVE_TPETRA_DEBUG
     for (size_t i = 0; i < numExports_; ++i) {
-      int exportID = exportNodeIDs[i];
+      const int exportID = exportNodeIDs[i];
       if (exportID >= numImages) {
 #ifdef HAVE_TPETRA_DEBUG
         badID = myImageID;
