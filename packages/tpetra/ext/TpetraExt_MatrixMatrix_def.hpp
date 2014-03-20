@@ -1063,7 +1063,7 @@ void mult_A_B_newmatrix(
   Array<size_t> c_status(n, ST_INVALID);
 
   // Classic csr assembly (low memory edition)
-  size_t CSR_alloc=C_estimate_nnz(*Aview.origMatrix,*Bview.origMatrix);
+  size_t CSR_alloc=std::max(C_estimate_nnz(*Aview.origMatrix,*Bview.origMatrix),n);
   size_t CSR_ip=0,OLD_ip=0;
   Crowptr.resize(m+1);
   Ccolind.resize(CSR_alloc);
