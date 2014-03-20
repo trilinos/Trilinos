@@ -127,6 +127,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
     USAir97.mtx
     USAir97_coord.mtx
     GeomGenParam.txt
+    GeomGenParam_noholes.txt
     proc.txt
     part.txt
     machine.txt
