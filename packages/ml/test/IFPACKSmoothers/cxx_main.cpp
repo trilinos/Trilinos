@@ -69,17 +69,17 @@ int main(int argc, char *argv[]) {
 
   bool TestPassed = true;
 
-  vector<string> TestList;
+  std::vector<string> TestList;
   TestList.push_back("Jacobi");
   TestList.push_back("Gauss-Seidel");
   TestList.push_back("symmetric Gauss-Seidel");
 
-  vector<string> PreOrPost;
+  std::vector<string> PreOrPost;
   PreOrPost.push_back("pre");
   PreOrPost.push_back("post");
   PreOrPost.push_back("both");
 
-  vector<double> Damping;
+  std::vector<double> Damping;
   Damping.push_back(0.67);
   Damping.push_back(1.00);
 
