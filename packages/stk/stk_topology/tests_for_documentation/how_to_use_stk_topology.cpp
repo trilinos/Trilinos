@@ -15,7 +15,6 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     EXPECT_EQ(stk::topology::INVALID_RANK, topology.rank());
 
     std::vector<stk::topology> node_rank_topologies;
-    node_rank_topologies.push_back(stk::topology::BEGIN_TOPOLOGY);
     node_rank_topologies.push_back(stk::topology::NODE);
 
     ASSERT_EQ(2u, node_rank_topologies.size());
@@ -139,7 +138,6 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
 
     EXPECT_FALSE(element_rank_topologies.back().is_valid());
     EXPECT_EQ(stk::topology::INVALID_RANK, element_rank_topologies.back().rank());
-
 }
 
 TEST(stk_topology_understanding, zero_dim_element)
