@@ -47,10 +47,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-#muelu like usecase, don't specify pqparts
+#muelu like usecase, don't specify mjparts
   TRIBITS_ADD_TEST(
     mjTest
-    NAME mjTest_geomgen_nopqparts
+    NAME mjTest_geomgen_nomjparts
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS 
@@ -59,10 +59,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-#muelu like usecase, don't specify pqparts, odd parts
+#muelu like usecase, don't specify mjparts, odd parts
   TRIBITS_ADD_TEST(
     mjTest
-    NAME mjTest_geomgen_nopqparts_odd
+    NAME mjTest_geomgen_nomjparts_odd
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS 
