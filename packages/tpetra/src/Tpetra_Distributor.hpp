@@ -1167,15 +1167,15 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
 
-#ifdef HAVE_TEUCHOS_DEBUG
     // Each message has the same number of packets.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
-      std::runtime_error, typeName (*this) << "::doPosts(): imports must be "
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.size ()) != totalNumImportPackets,
+      std::invalid_argument, "Tpetra::Distributor::doPosts<" <<
+      TypeNameTraits<Packet>::name () << ">(3 args): imports must be "
       "large enough to store the imported data.  imports.size() = "
       << imports.size() << ", but total number of import packets = "
       << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
