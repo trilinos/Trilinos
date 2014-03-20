@@ -307,15 +307,14 @@ void AlgPTScotch(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
-  int ierr = 0;
-  int me = problemComm->getRank();
-
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
 
 #ifdef HAVE_ZOLTAN2_MPI
+  int ierr = 0;
+  int me = problemComm->getRank();
 
   const SCOTCH_Num  baseval = 0;  // Base value for array indexing.
                                   // GraphModel returns GNOs from base 0.
@@ -513,7 +512,7 @@ cout << endl;
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
-  solution->setParts(vtxID, partList, true);
+  solution->setParts(gnos, partList, true);
 
 #endif // DO NOT HAVE_MPI
 }
