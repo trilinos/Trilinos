@@ -43,8 +43,8 @@
 //
 // @HEADER
 
-/*! \file PQJagged.cpp
-    \brief An example of partitioning coordinates with PQJagged.
+/*! \file MultiJagged.cpp
+    \brief An example of partitioning coordinates with MultiJagged.
     \todo add more cases to this test.
  */
 
@@ -96,8 +96,8 @@ using Teuchos::rcp;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 
-/*! \test PQJaggedTest.cpp
-    An example of the use of the PQJagged algorithm to partition coordinate data.
+/*! \test MultiJaggedTest.cpp
+    An example of the use of the MultiJagged algorithm to partition coordinate data.
  */
 
 
@@ -734,7 +734,7 @@ void print_usage(char *executable){
     cout << executable << " arglist" << endl;
     cout << "arglist:" << endl;
     cout << "\tC=numParts: numParts > 0" << endl;
-    cout << "\tP=pqJaggedPart: Example: P=512,512" << endl;
+    cout << "\tP=MultiJaggedPart: Example: P=512,512" << endl;
     cout << "\tI=imbalance: Example I=1.03 (ignored for now.)" << endl;
     cout << "\tF=filePath: When O=0 the path of the coordinate input file, for O>1 the path to the geometric generator parameter file." << endl;
     cout << "\tO=input option: O=0 for reading coordinate from file, O>0 for generating coordinate from coordinate generator file. Default will run geometric generator." << endl;
