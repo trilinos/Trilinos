@@ -14,58 +14,6 @@ struct ConnectivityMap
 {
   typedef boost::array<boost::array<ConnectivityType, 4>, 4> map_type;
 
-  static ConnectivityMap const& none()
-  {
-    static const map_type map =
-    {{
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{invalid(),invalid(),invalid(),invalid()}}
-    }};
-    static ConnectivityMap r = {map};
-    return r;
-  }
-
-  static ConnectivityMap const& none_2d()
-  {
-    static const map_type map =
-    {{
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{invalid(),invalid(),invalid(),invalid()}}
-    }};
-    static ConnectivityMap r = {map};
-    return r;
-  }
-
-  static ConnectivityMap const& all_dynamic()
-  {
-    static const map_type map =
-    {{
-      {{dynamic(),dynamic(),dynamic(),dynamic()}},
-      {{dynamic(),dynamic(),dynamic(),dynamic()}},
-      {{dynamic(),dynamic(),dynamic(),dynamic()}},
-      {{dynamic(),dynamic(),dynamic(),dynamic()}}
-    }};
-    static ConnectivityMap r = {map};
-    return r;
-  }
-
-  static ConnectivityMap const& all_dynamic_2d()
-  {
-    static const map_type map =
-    {{
-      {{dynamic(),dynamic(),invalid(),dynamic()}},
-      {{dynamic(),dynamic(),invalid(),dynamic()}},
-      {{invalid(),invalid(),invalid(),invalid()}},
-      {{dynamic(),dynamic(),invalid(),dynamic()}}
-    }};
-    static ConnectivityMap r = {map};
-    return r;
-  }
-
   static ConnectivityMap const& classic_stk_mesh()
   {
     static const map_type map =
@@ -106,7 +54,7 @@ struct ConnectivityMap
     return classic_stk_mesh_2d();
   }
 
-  static ConnectivityMap const& minimal_back_relations_map()
+  static ConnectivityMap const& minimal_upward_connectivity_map()
   {
     static const map_type map =
     {{
@@ -176,6 +124,58 @@ struct ConnectivityMap
       /*edge*/  {{ invalid(), invalid(),  invalid(), invalid()}},
       /*face*/  {{ invalid(), invalid(),  invalid(), invalid()}},
       /*elem*/  {{ fixed()  , invalid(),  invalid(), invalid()}}
+    }};
+    static ConnectivityMap r = {map};
+    return r;
+  }
+
+  static ConnectivityMap const& none()
+  {
+    static const map_type map =
+    {{
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{invalid(),invalid(),invalid(),invalid()}}
+    }};
+    static ConnectivityMap r = {map};
+    return r;
+  }
+
+  static ConnectivityMap const& none_2d()
+  {
+    static const map_type map =
+    {{
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{invalid(),invalid(),invalid(),invalid()}}
+    }};
+    static ConnectivityMap r = {map};
+    return r;
+  }
+
+  static ConnectivityMap const& all_dynamic()
+  {
+    static const map_type map =
+    {{
+      {{dynamic(),dynamic(),dynamic(),dynamic()}},
+      {{dynamic(),dynamic(),dynamic(),dynamic()}},
+      {{dynamic(),dynamic(),dynamic(),dynamic()}},
+      {{dynamic(),dynamic(),dynamic(),dynamic()}}
+    }};
+    static ConnectivityMap r = {map};
+    return r;
+  }
+
+  static ConnectivityMap const& all_dynamic_2d()
+  {
+    static const map_type map =
+    {{
+      {{dynamic(),dynamic(),invalid(),dynamic()}},
+      {{dynamic(),dynamic(),invalid(),dynamic()}},
+      {{invalid(),invalid(),invalid(),invalid()}},
+      {{dynamic(),dynamic(),invalid(),dynamic()}}
     }};
     static ConnectivityMap r = {map};
     return r;

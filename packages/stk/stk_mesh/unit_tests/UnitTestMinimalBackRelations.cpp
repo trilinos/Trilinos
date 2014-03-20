@@ -97,7 +97,7 @@ void check_equiv_conn(Bucket const& bucket_full_conn, Bucket const& bucket_min_c
 STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
 {
   fixtures::HexFixture* fixture_with_full_conn = set_up_mesh(ConnectivityMap::classic_stk_mesh());
-  fixtures::HexFixture* fixture_with_min_conn  = set_up_mesh(ConnectivityMap::minimal_back_relations_map());
+  fixtures::HexFixture* fixture_with_min_conn  = set_up_mesh(ConnectivityMap::minimal_upward_connectivity_map());
 
   BulkData& mesh_full_conn = fixture_with_full_conn->m_bulk_data;
   BulkData& mesh_min_conn  = fixture_with_min_conn->m_bulk_data;
