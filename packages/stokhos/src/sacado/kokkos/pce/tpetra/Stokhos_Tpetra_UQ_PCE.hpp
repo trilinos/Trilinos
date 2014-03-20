@@ -63,6 +63,9 @@
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
+#include "Kokkos_MV_UQ_PCE.hpp"
+#include "Kokkos_CrsMatrix_UQ_PCE.hpp"
+#include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Kokkos_TeuchosCommAdapters_UQ_PCE.hpp"
 #endif
 

@@ -580,15 +580,19 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
       LIST(APPEND SACADO_HEADERS
+        sacado/kokkos/vector/linalg/Kokkos_MV_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
+        sacado/kokkos/pce/linalg/Kokkos_MV_UQ_PCE.hpp
+        sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_ArithTraits_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp
         )
       IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
         LIST(APPEND SACADO_HEADERS
           sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
+          sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp
           )
       ENDIF()
     ENDIF()
