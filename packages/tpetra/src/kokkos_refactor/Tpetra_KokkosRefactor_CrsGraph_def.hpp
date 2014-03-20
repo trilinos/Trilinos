@@ -405,12 +405,12 @@ namespace Tpetra {
       // that globalRow is not a GID in the column Map).
       if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          rlcid >= as<LO> (d_ptrs.dimension_0 ()), std::runtime_error,
+          rlcid + 1 >= as<LO> (d_ptrs.dimension_0 ()), std::runtime_error,
           ": The given row Map and/or column Map is/are not compatible with "
           "the provided local graph.");
         if (d_ptrs(rlcid) != d_ptrs(rlcid + 1)) {
           const size_t smallestCol = as<size_t> (d_inds(d_ptrs(rlcid)));
-          const size_t largestCol = as<size_t> (d_inds(d_ptrs(rlcid + 1)));
+          const size_t largestCol = as<size_t> (d_inds(d_ptrs(rlcid + 1)-1));
           if (smallestCol < localRow) {
             upperTriangular_ = false;
           }
@@ -427,6 +427,19 @@ namespace Tpetra {
           std::max (d_ptrs(rlcid + 1) - d_ptrs(rlcid), nodeMaxNumRowEntries_);
       }
     }
+
+    k_lclInds1D_ = k_lclGraph_.entries;
+
+    lclInds1D_ = arcp (k_lclGraph_.entries.ptr_on_device (), 0,
+                       k_lclGraph_.entries.dimension_0 (),
+                       Kokkos::Compat::deallocator (k_lclGraph_.entries), false);
+
+    //FIXME: This doesn't work because of const/non const issues
+    /*k_rowPtrs_ = k_lclGraph_.row_map;
+
+    rowPtrs_ = arcp (k_lclGraph_.row_map.ptr_on_device (), 0,
+                       k_lclGraph_.row_map.dimension_0 (),
+                       Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);*/
 
     haveLocalConstants_ = true;
     computeGlobalConstants();
