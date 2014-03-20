@@ -1042,8 +1042,8 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   const size_t numMyRows             = A_->getNodeNumRows();
   const local_ordinal_type * rowInd  = 0;
   size_t numActive                   = numMyRows;
-  bool do_local = localSmoothingIndices_.is_null();
-  if(!do_local) {
+  bool do_local = !localSmoothingIndices_.is_null();
+  if(do_local) {
     rowInd    = localSmoothingIndices_.getRawPtr();
     numActive = localSmoothingIndices_.size();
   }
@@ -1142,7 +1142,7 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
   using Teuchos::as;
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
-  if(!localSmoothingIndices_.is_null())
+  if(localSmoothingIndices_.is_null())
     A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
                        NumSweeps_, ZeroStartingSolution_);
   else
@@ -1320,7 +1320,7 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
 {
   using Teuchos::as;
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
-  if(!localSmoothingIndices_.is_null())
+  if(localSmoothingIndices_.is_null())
     A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
                        NumSweeps_, ZeroStartingSolution_);
   else
