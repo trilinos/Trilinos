@@ -29,7 +29,7 @@ Partitioning functionality that is available now is:
 
 <ul>
 <li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
-<li> Multi-jagged for weighted geometric coordinates.
+<li> \ref mjPage Multi-jagged for weighted geometric coordinates.
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
 </ul>

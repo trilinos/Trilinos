@@ -865,6 +865,20 @@ struct ViewOffset< ShapeType , LayoutStride
     }
 
   KOKKOS_INLINE_FUNCTION
+  void assign( const LayoutStride & layout )
+  {
+    size_type max = 0 ;
+    size_type dim[ shape_type::rank ];
+    for ( int i = 0 ; i < shape_type::rank ; ++i ) {
+      dim[i] = layout.dimension[i] ;
+      S[i] = layout.stride[i] ;
+      const size_type m = dim[i] * S[i] ;
+      if ( max < m ) { max = m ; }
+    }
+    S[ shape_type::rank ] = max ;
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void assign( size_t s0 , size_t s1 , size_t s2 , size_t s3
              , size_t s4 , size_t s5 , size_t s6 , size_t s7
              , size_t s8 )

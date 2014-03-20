@@ -836,4 +836,7 @@ describe (Teuchos::FancyOStream &out,
 
 } // namespace Ifpack2
 
+#define IFPACK2_LOCALFILTER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::LocalFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+
 #endif

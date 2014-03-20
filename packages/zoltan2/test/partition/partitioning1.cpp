@@ -159,7 +159,7 @@ int main(int narg, char** arg)
     uinput = rcp(new UserInputForTests(xdim, ydim, zdim, string(""), comm,
                                        true));
 
-  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
+  RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (origMatrix->getGlobalNumRows() < 40) {
     Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));

@@ -58,22 +58,43 @@ uint32_t find_hash_size( uint32_t size );
 
 // find the first set bit of the integer
 KOKKOS_FORCEINLINE_FUNCTION
-int find_first_set(uint32_t i)
+int bit_scan_forward(uint32_t i)
 {
 #if defined( __CUDA_ARCH__ )
-  return __ffs(i);
+  return __ffs(i) - 1;
 #elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
-  return i ? _bit_scan_forward(i) + 1 : 0;
+  return _bit_scan_forward(i);
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
-  return __builtin_ffs(i);
+  return __builtin_ffs(i) - 1;
 #else
-  if(!i)
-    return 0;
+
   uint32_t t = 1;
-  int r = 1;
-  while (i & t == 0)
+  int r = 0;
+  while (i && (i & t == 0))
   {
-    t <<= 1;
+    t = t << 1;
+    ++r;
+  }
+  return r;
+#endif
+}
+
+// find the first set bit of the integer
+KOKKOS_FORCEINLINE_FUNCTION
+int bit_scan_reverse(uint32_t i)
+{
+#if defined( __CUDA_ARCH__ )
+  return 31 - __clz(i);
+#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
+  return _bit_scan_reverse(i);
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return 31 - __builtin_clz(i);
+#else
+  uint32_t t = 1 << 31;
+  int r = 0;
+  while (i && (i & t == 0))
+  {
+    t = t >> 1;
     ++r;
   }
   return r;

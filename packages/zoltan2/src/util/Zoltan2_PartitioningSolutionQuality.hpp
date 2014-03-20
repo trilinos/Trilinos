@@ -122,16 +122,16 @@ public:
       imbalance = metrics_[0].getMaxImbalance();
   }
 
-  /*! \brief Return the imbalance for the requested weight dimension.
+  /*! \brief Return the imbalance for the requested weight.
    *  \param imbalance on return is the requested value.
-   *  \param dim is the weight dimension requested, ranging from zero
+   *  \param idx is the weight index requested, ranging from zero
    *     to one less than the number of weights provided in the input.
    *  If there were no weights, this is the object count imbalance.
    */
-  void getWeightImbalance(scalar_t &imbalance, int dim=0) const{
+  void getWeightImbalance(scalar_t &imbalance, int idx=0) const{
     imbalance = 0;
-    if (metrics_.size() > 2)  // dimension dim of multiple weights
-      imbalance = metrics_[dim+2].getMaxImbalance();
+    if (metrics_.size() > 2)  // idx of multiple weights
+      imbalance = metrics_[idx+2].getMaxImbalance();
     else if (metrics_.size() == 2)   //  only one weight
       imbalance = metrics_[1].getMaxImbalance();
     else                       // no weights, return object count imbalance

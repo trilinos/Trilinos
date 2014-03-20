@@ -46,7 +46,7 @@
 // code with Stokhos scalar types
 
 // MP includes and specializations
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 // Kokkos includes
 #include "KokkosClassic_config.h"

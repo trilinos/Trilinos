@@ -68,20 +68,22 @@ BEGIN {
         #fix minor difference between Epetra and Tpetra smoother tags
         sub(/Ifpack2Smoother/,"IfpackSmoother");
         sub(/Amesos2Smoother/,"AmesosSmoother");
-        if (match($0,"[(]level=[0-9][)]")) {
-          # timer is level-specific (and by its nature excludes calls to child factories)
-          foundTimersToReport=1;
-          factAndLevel = substr($0,1,RSTART-1+RLENGTH);
-          alltimes = substr($0,RSTART+RLENGTH);
-          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-          maxtime = ExtractTime(alltimes,cutCmd);
-          if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
-            #TODO figure out which solve labels to pull out
-            solveLabels[factAndLevel] = factAndLevel;
-            solveTimes[factAndLevel,FILENAME] = maxtime;
-          } else {
-            setupLabels[factAndLevel] = factAndLevel;
-            setupTimes[factAndLevel,FILENAME] = maxtime;
+        if (!match($0," sync ")) {
+          if (match($0,"[(]level=[0-9][)]")) {
+            # timer is level-specific (and by its nature excludes calls to child factories)
+            foundTimersToReport=1;
+            factAndLevel = substr($0,1,RSTART-1+RLENGTH);
+            alltimes = substr($0,RSTART+RLENGTH);
+            cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+            maxtime = ExtractTime(alltimes,cutCmd);
+            if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
+              #TODO figure out which solve labels to pull out
+              solveLabels[factAndLevel] = factAndLevel;
+              solveTimes[factAndLevel,FILENAME] = maxtime;
+            } else {
+              setupLabels[factAndLevel] = factAndLevel;
+              setupTimes[factAndLevel,FILENAME] = maxtime;
+            }
           }
         }
       }
@@ -138,6 +140,8 @@ function PrintHeader(description,linalg)
 function PrintTotalSetupTime()
 {
   printf("%60s          ----------------\n"," ");
+  if (etDeltaTotal != 0)
+    printf("%90s          delta total=%5.1f\n"," ",etDeltaTotal);
   for (i in TotalSetup) {
     split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
                          #we only want the first one, sep[1]
@@ -164,7 +168,8 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     if (linalg[i] == libToSortOn) break
     sortField++
   }
-  sortCmd = "sort -k" sortField" -n -t @"
+  #use -g to sort properly numbers in scientific notation
+  sortCmd = "sort -k" sortField" -g -t @"
   SystemSort(valuesAndLabels,sortedValuesAndLabels,sortCmd);
 
   jj=2
@@ -174,6 +179,7 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     if (linalg[i] == "Tpetra") tpetraInd = jj;
     jj++
   }
+  etDeltaTotal=0
   for (j=1; j<=len; j++) {
     split(sortedValuesAndLabels[j],fields,"@");
     printf("%3d: %60s  ==> ",len-j+1,fields[1]);
@@ -188,10 +194,20 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
         printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
       if (etDelta == "diff")
         printf("%11.2f   ",fields[tpetraInd] - fields[epetraInd]);
+        etDeltaTotal+=fields[tpetraInd] - fields[epetraInd];
     }
     printf("\n");
   }
 
+}
+###############################################################################
+function DumpLabelsAndTimers(timerLabels, timerValues, linalg)
+{
+  for (i in timerLabels) {
+    print "timer name: >" timerLabels[i] "<"
+    for (j in linalg)
+      print "    values: >" timerValues[i,j] "<"
+  }
 }
 ###############################################################################
 
@@ -237,6 +253,11 @@ function RemoveWhiteSpace(theString)
 END {
 
   if (foundTimersToReport) {
+    if (debug) {
+      print "============================="
+      DumpLabelsAndTimers(setupLabels,setupTimes,linalg);
+      print "============================="
+    }
     PrintHeader("Setup times (level specific) excluding child calls ",linalg);
     SortAndReportTimings(sortByLib,setupLabels,setupTimes,linalg);
     PrintTotalSetupTime();

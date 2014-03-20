@@ -43,15 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * Xpetra_MapExtractor.hpp
- *
- *  Created on: 08.08.2011
- *      Author: tobias
- */
-
-// WARNING: This code is experimental. Backwards compatibility should not be expected.
-
 #ifndef XPETRA_MAPEXTRACTOR_HPP_
 #define XPETRA_MAPEXTRACTOR_HPP_
 
@@ -99,14 +90,14 @@ namespace Xpetra {
     /** \name Extract subblocks from full map */
     //@{
     void ExtractVector(const Vector& full, size_t block, Vector& partial) const {
-      if (maps_[block] == null)
-        std::cout << "null map at block " << block << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "ExtractVector: maps_[" << block << "] is null");
 
       partial.doImport(full, *importers_[block], Xpetra::INSERT);
     }
     void ExtractVector(const MultiVector& full, size_t block, MultiVector& partial) const {
-      if (maps_[block] == null)
-        std::cout << "null map at block " << block << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "ExtractVector: maps_[" << block << "] is null");
 
       partial.doImport(full, *importers_[block], Xpetra::INSERT);
     }
@@ -145,19 +136,17 @@ namespace Xpetra {
     }
     //@}
 
-    //RCP<Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> >ExtractVector(RCP<const Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> > full, int block) const {};
-
     /** \name Insert subblocks into full map */
     //@{
     void InsertVector(const Vector& partial, size_t block, Vector& full) const {
-      if (maps_[block] == null)
-        std::cout << "null map at block " << block << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "InsertVector: maps_[" << block << "] is null");
 
       full.doExport(partial, *importers_[block], Xpetra::INSERT);
     }
     void InsertVector(const MultiVector& partial, size_t block, MultiVector& full) const {
-      if (maps_[block] == null)
-        std::cout << "null map at block " << block << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "InsertVector: maps_[" << block << "] is null");
 
       full.doExport(partial, *importers_[block], Xpetra::INSERT);
     }

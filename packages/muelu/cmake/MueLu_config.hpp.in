@@ -54,3 +54,5 @@
 /* Optional TPL */
 
 #cmakedefine HAVE_MUELU_BOOST
+
+#cmakedefine HAVE_MUELU_TIMER_SYNCHRONIZATION

@@ -186,6 +186,16 @@ public:
     modified_device = src.modified_device;
   }
 
+  /* \brief Create DualView from existing views */
+
+  DualView(const t_dev& d_view_, const t_host& h_view_) {
+    d_view = d_view_;
+    h_view = h_view_;
+    modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");
+    modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");
+    Impl::assert_shapes_are_equal( d_view.shape() , h_view.shape() );
+  }
+
   /* \brief Update data on device or host only if other space is polluted */
 
   template<class Device>

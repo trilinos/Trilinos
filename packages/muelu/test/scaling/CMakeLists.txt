@@ -84,6 +84,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     DEPLIBS muelu xpetra muelu-adapters
     )
 
+#  TRIBITS_ADD_EXECUTABLE(
+#    CoalesceDropTest
+#    SOURCES CoalesceDropTest.cpp
+#    COMM serial mpi
+#    DEPLIBS muelu xpetra muelu-adapters
+#    )
+
   TRIBITS_ADD_EXECUTABLE(
     TransposeTest
     SOURCES TransposeTest.cpp
@@ -119,7 +126,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
-    SOURCE_FILES scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml pfact.xml
+    SOURCE_FILES scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml
    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
@@ -189,7 +196,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   TRIBITS_ADD_TEST(
     ProlongatorScalingTest
     NAME "ProlongatorScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra --xml=pfact.xml"
+    ARGS "--linAlgebra=Epetra"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
@@ -254,7 +261,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_TEST(
     ProlongatorScalingTest
     NAME "ProlongatorScalingTestTpetra"
-    ARGS "--linAlgebra=Tpetra --xml=pfact.xml"
+    ARGS "--linAlgebra=Tpetra"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )

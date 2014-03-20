@@ -2,9 +2,8 @@
 
   <ParameterList name="CoalesceDrop">
     <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-    <!--
-    <Parameter name="aggregation threshold"               type="double" value="0.1"/>
-    -->
+    <Parameter name="algorithm"                    type="string"   value="original"/>
+    <Parameter name="aggregation threshold"               type="double" value="0.02"/>
   </ParameterList>
 
   <ParameterList name="Aggregates">

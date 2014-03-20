@@ -1312,7 +1312,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
       agg_->coarsen_rate      =  List_.get("semicoarsen: coarsen rate", -1);
       ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
       ml_->Amat[LevelID_[0]].NumZDir= List_.get("semicoarsen: line direction nodes", -1);
-      ml_->Amat[LevelID_[0]].Zorientation= List_.get("semicoarsen: line orientation", -1);
+      std::string orient =List_.get("semicoarsen: line orientation", "use coordinates"); //
+      ml_->Amat[LevelID_[0]].Zorientation= -1;
+      if (orient == "vertical")    ml_->Amat[LevelID_[0]].Zorientation= 1;
+      if (orient == "horizontal")  ml_->Amat[LevelID_[0]].Zorientation= 2;
             /* -1: not specified */ /*  1: vertical      */ /*  2: horizontal    */
       if (agg_->coarsen_rate == -1) {
          if (Comm().MyPID() == 0)

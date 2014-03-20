@@ -6,8 +6,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src )
 
 SET(SOURCES
   TestMain.cpp 
-  TestThreads.cpp
   )
+
+IF(Kokkos_ENABLE_Pthread)
+  LIST( APPEND SOURCES TestThreads.cpp)
+ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES TestOpenMP.cpp)

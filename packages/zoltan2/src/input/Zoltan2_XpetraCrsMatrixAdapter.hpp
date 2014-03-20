@@ -104,17 +104,17 @@ public:
   /*! \brief Constructor   
    *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
    *    \param numWeightsPerRow If row weights will be provided in setRowWeights(),
-   *        the set \c weightDim to the number of weights per row.
+   *        the set \c numWeightsPerRow to the number of weights per row.
    */
   XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
                          int numWeightsPerRow=0);
 
   /*! \brief Specify a weight for each entity of the primaryEntityType.
-   *    \param weightVal A pointer to the weights for this dimension.
+   *    \param weightVal A pointer to the weights for this index.
    *    \stride          A stride to be used in reading the values.  The
-   *        dimension \c dim weight for entity \k should be found at
+   *        index \c idx weight for entity \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param dim  A value between zero and one less that the \c weightDim 
+   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of the primary 
@@ -124,11 +124,11 @@ public:
   void setWeights(const scalar_t *weightVal, int stride, int idx = 0);
 
   /*! \brief Specify a weight for each row.
-   *    \param weightVal A pointer to the weights for this dimension.
+   *    \param weightVal A pointer to the weights for this index.
    *    \stride          A stride to be used in reading the values.  The
-   *        dimension \c dim weight for row \k should be found at
+   *        index \c idx weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param dim  A value between zero and one less that the \c weightDim 
+   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
@@ -193,14 +193,14 @@ public:
   }
 
 
-  int getNumWeightsPerRow() const { return weightDim_; }
+  int getNumWeightsPerRow() const { return numWeightsPerRow_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid weight index",
-      idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
+      idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -224,7 +224,7 @@ private:
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
   ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
 
-  int weightDim_;
+  int numWeightsPerRow_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
   ArrayRCP<bool> numNzWeight_;
 
@@ -237,11 +237,11 @@ private:
 
 template <typename User, typename UserCoord>
   XpetraCrsMatrixAdapter<User,UserCoord>::XpetraCrsMatrixAdapter(
-    const RCP<const User> &inmatrix, int weightDim):
+    const RCP<const User> &inmatrix, int numWeightsPerRow):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
-      weightDim_(weightDim), rowWeights_(), numNzWeight_(),
+      numWeightsPerRow_(numWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -274,10 +274,10 @@ template <typename User, typename UserCoord>
     offset_[i+1] = offset_[i] + nnz;
   } 
 
-  if (weightDim_ > 0){
-    rowWeights_ = arcp(new input_t [weightDim_], 0, weightDim_, true);
-    numNzWeight_ = arcp(new bool [weightDim_], 0, weightDim_, true);
-    for (int i=0; i < weightDim_; i++)
+  if (numWeightsPerRow_ > 0){
+    rowWeights_ = arcp(new input_t [numWeightsPerRow_], 0, numWeightsPerRow_, true);
+    numNzWeight_ = arcp(new bool [numWeightsPerRow_], 0, numWeightsPerRow_, true);
+    for (int i=0; i < numWeightsPerRow_; i++)
       numNzWeight_[i] = false;
   }
 }
@@ -308,7 +308,7 @@ template <typename User, typename UserCoord>
   typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight index",
-    idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
+    idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
   size_t nvtx = getLocalNumRows();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   rowWeights_[idx] = input_t(weightV, stride);
@@ -338,7 +338,7 @@ template <typename User, typename UserCoord>
 {
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight index",
-    idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
+    idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
 
   numNzWeight_[idx] = true;
 }
