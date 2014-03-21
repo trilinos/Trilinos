@@ -20,9 +20,13 @@ TEUCHOS_UNIT_TEST(SlaveReduce1, Rijk_de_Rooij )
 	// -------------------------------------------------------- //
 	
 	int localProc = 0;
-	#ifndef FEI_SER
-	  TEUCHOS_TEST_EQUALITY(MPI_Comm_size(MPI_COMM_WORLD, &numProcs), 0, out, success);
-	#endif
+#ifndef FEI_SER
+  int numProcs = 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+  if (numProcs != 1) {
+    return;
+  }
+#endif
 	
 	MPI_Comm comm = MPI_COMM_WORLD;
 	bool verbose = (localProc==0);
