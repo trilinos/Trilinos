@@ -68,6 +68,8 @@
 // MueLu includes
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
+#include <MatrixMarket_Tpetra.hpp>
+
 int
 main (int argc, char *argv[])
 {
@@ -224,7 +226,7 @@ main (int argc, char *argv[])
           writer_type::writeSparseFile (matrixFilename, A);
         }
         if (rowMapFilename != "") {
-          writer_type::writeMapFile (rowMapFilename, A->getRowMap ());
+          writer_type::writeMapFile (rowMapFilename, * (A->getRowMap ()));
         }
       }
 
