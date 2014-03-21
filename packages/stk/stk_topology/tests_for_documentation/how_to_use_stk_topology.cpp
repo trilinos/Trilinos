@@ -13,7 +13,7 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     std::vector<stk::topology> node_rank_topologies;
     node_rank_topologies.push_back(stk::topology::NODE);
 
-    ASSERT_EQ(2u, node_rank_topologies.size());
+    ASSERT_EQ(1u, node_rank_topologies.size());
 
     std::vector<stk::topology> edge_rank_topologies;
     edge_rank_topologies.push_back(stk::topology::LINE_2);
