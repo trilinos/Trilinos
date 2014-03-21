@@ -55,9 +55,4 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 INSTANTIATE_TPETRA_MP_VECTOR_THREADS(IFPACK2_@UPPER_CASE_CLASS@_INSTANT)
 
-// Add missing instantiations from Ifpack2 for double
-// #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
-//   IFPACK2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
-// #endif
-
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
