@@ -515,10 +515,11 @@ cmake \
 <pre class="literal-block">
 ./do-configure [OTHER OPTIONS] -D&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON
 </pre>
-<p>where &lt;TRIBITS_PACKAGE&gt; is Epetra, AztecOO, etc. and SOURCE_BASE is et
-to the &lt;Project&gt; source base directory (or your can just give it
-explicitly).</p>
-<p>See <cite>&lt;Project&gt;/sampleScripts/*cmake</cite> for real examples.</p>
+<p>where <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> is a valid SE Package name (see above), etc. and
+<tt class="docutils literal">SOURCE_BASE</tt> is set to the &lt;Project&gt; source base directory (or your can
+just give it explicitly in the script).</p>
+<p>See <cite>&lt;Project&gt;/sampleScripts/*cmake</cite> for examples of real <cite>do-configure</cite>
+scripts for different platforms..</p>
 <p>NOTE: If one has already configured once and one needs to configure from
 scratch (needs to wipe clean defaults for cache variables, updates
 compilers, other types of changes) then one will want to delete the local
@@ -576,6 +577,20 @@ the GUI.</blockquote>
 </div>
 <div class="section" id="selecting-the-list-of-packages-to-enable">
 <h2><a class="toc-backref" href="#id11">4.3&nbsp;&nbsp;&nbsp;Selecting the list of packages to enable</a></h2>
+<p>In order to see the list of avaiable &lt;Project&gt; SE Packages to enable, just run
+a basic CMake configure, enabling nothing, and then grep the output to see
+what packages are avaiable to enable.  The full set of defined packages is
+contained the lines starting with <tt class="docutils literal">'Final set of enabled SE packages'</tt> and
+<tt class="docutils literal">'Final set of <span class="pre">non-enabled</span> SE packages'</tt>.  If no SE packages are enabled by
+default (which is base behavior), the full list of pacakges will be listed on
+the line <tt class="docutils literal">'Final set of <span class="pre">non-enabled</span> SE packages'</tt>.  Therefore, to see the
+full list of defined packages, run:</p>
+<pre class="literal-block">
+./do-configure 2&gt;&amp;1 | grep &quot;Final set of .*enabled SE packages&quot;
+</pre>
+<p>Any of the packages shown on those lines can potentially be enabled using <tt class="docutils literal"><span class="pre">-D</span>
+<span class="pre">&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON</span></tt> (unless they are forcabily
+disabled for some reason, see the CMake ouptut for package disable warnings).</p>
 <ol class="loweralpha">
 <li><p class="first">Configuring a package(s) along with all of the packages it can use:</p>
 <pre class="literal-block">
@@ -1247,8 +1262,9 @@ when they occur:</p>
 repositorie's, and package's files get processed on lines using the prefix
 <tt class="docutils literal">File Trace:</tt>.  This shows what files get processed and in what order they
 get processed.  To get a clean listing of all the files processed by TriBITS
-just grep out the lines starting with <tt class="docutils literal">File Trace:</tt>.  This can be helpful
-in debugging configure problems without generating too much extra output.</p>
+just grep out the lines starting with <tt class="docutils literal"><span class="pre">--</span> File Trace:</tt>.  This can be
+helpful in debugging configure problems without generating too much extra
+output.</p>
 <p>This is set to <tt class="docutils literal">ON</tt> automatically when
 <tt class="docutils literal">&lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON</tt>.</p>
 </blockquote>
@@ -1444,35 +1460,37 @@ $ cmake -LA $SOURCE_BASE
 <div class="section" id="enabling-extra-repositories-with-add-on-packages">
 <h2><a class="toc-backref" href="#id32">4.24&nbsp;&nbsp;&nbsp;Enabling extra repositories with add-on packages:</a></h2>
 <p>To configure &lt;Project&gt; with an extra set of packages in extra TriBITS
-repositoris, configure with:</p>
+repositories, configure with:</p>
 <pre class="literal-block">
 -D&lt;Project&gt;_EXTRA_REPOSITORIES:STRING=&quot;&lt;REPO0&gt;,&lt;REPO1&gt;,...&quot;
 </pre>
-<p>Here, &lt;REPOi&gt; is the name of an extra repository that typically has been
-cloned under the main '&lt;Project&gt;' source directory as:</p>
+<p>Here, <tt class="docutils literal">&lt;REPOi&gt;</tt> is the name of an extra repository that typically has been
+cloned under the main &lt;Project&gt; source directory as:</p>
 <pre class="literal-block">
 &lt;Project&gt;/&lt;REPOi&gt;/
 </pre>
 <p>For example, to add the packages from SomeExtraRepo one would configure as:</p>
 <pre class="literal-block">
 $ cd $SOURCE_BASE_DIR
-$ eg clone some_url.com/some/dir/SomeExtraRepo
+$ git clone some_url.com/some/dir/SomeExtraRepo
 $ cd $BUILD_DIR
 $ ./do-configure -D&lt;Project&gt;_EXTRA_REPOSITORIES:STRING=SomeExtraRepo \
    [Other Options]
 </pre>
-<p>After that, all of the extra packages defined in SomeExtraRepo will appear in
-the list of official &lt;Project&gt; packages and you are free to enable any that
-you would like just like any other &lt;Project&gt; package.</p>
+<p>After that, all of the extra packages defined in <tt class="docutils literal">SomeExtraRepo</tt> will appear
+in the list of official &lt;Project&gt; packages and you are free to enable any of
+the defined add-on packages that you would like just like any other &lt;Project&gt;
+package.</p>
 <p>NOTE: If <tt class="docutils literal">&lt;Project&gt;_EXTRAREPOS_FILE</tt> and
 <tt class="docutils literal">&lt;Project&gt;_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE</tt> are specified then the list of
-extra repositories in <tt class="docutils literal">&lt;REPOi&gt;</tt> must be a subset of the extra repos read in
-from this file.</p>
+extra repositories in <tt class="docutils literal">&lt;Project&gt;_EXTRA_REPOSITORIES</tt> must be a subset and in
+the same order as the list extra repos read in from the file
+<tt class="docutils literal">&lt;Project&gt;_EXTRAREPOS_FILE</tt>.</p>
 </div>
 <div class="section" id="enabling-extra-repositories-through-a-file">
 <h2><a class="toc-backref" href="#id33">4.25&nbsp;&nbsp;&nbsp;Enabling extra repositories through a file</a></h2>
 <p>In order to provide the list of extra TriBIITS repositories containing add-on
-apckages from a file, configure with:</p>
+packages from a file, configure with:</p>
 <pre class="literal-block">
 -D&lt;Project&gt;_EXTRAREPOS_FILE:FILEPATH=&lt;EXTRAREPOSFILE&gt; \
 -D&lt;Project&gt;_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
@@ -1480,16 +1498,23 @@ apckages from a file, configure with:</p>
 <p>Specifing extra repositories through an extra repos file allows greater
 flexibility in the specification of extra repos.  This is not helpful for a
 basic configure of the project but is useful in automated testing using the
-TribitsCTestDriverCore.cmake script and the checkin-test.py script.</p>
+<tt class="docutils literal">TribitsCTestDriverCore.cmake</tt> script and the <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script.</p>
 <p>The valid values of <tt class="docutils literal">&lt;Project&gt;_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE</tt> include
-<tt class="docutils literal">Continuous</tt> and <tt class="docutils literal">Nightly</tt>.  Only repositories listed in the file
-<tt class="docutils literal">&lt;EXTRAREPOSFILE&gt;</tt> that match this type will be included.  Note that
-<tt class="docutils literal">Nightly</tt> also matches <tt class="docutils literal">Continuous</tt>.</p>
+<tt class="docutils literal">Continuous</tt>, <tt class="docutils literal">Nightly</tt>, and <tt class="docutils literal">Experimental</tt>.  Only repositories listed
+in the file <tt class="docutils literal">&lt;EXTRAREPOSFILE&gt;</tt> that match this type will be included.  Note
+that <tt class="docutils literal">Nightly</tt> matches <tt class="docutils literal">Continuous</tt> and <tt class="docutils literal">Experimental</tt> matches
+<tt class="docutils literal">Nightly</tt> and <tt class="docutils literal">Continuous</tt> and therefore includes all repos by default.</p>
 <p>If <tt class="docutils literal">&lt;Project&gt;_IGNORE_MISSING_EXTRA_REPOSITORIES</tt> is set to <tt class="docutils literal">TRUE</tt>, then
 any extra repositories selected who's directory is missing will be ignored.
-This is useful when the list of extra repos that one developers or tests with
-is variable and one just wants TriBITS to pick up the list of existing repos
-automatically.</p>
+This is useful when the list of extra repos that a given developers develops
+or tests with is variable and one just wants TriBITS to pick up the list of
+existing repos automatically.</p>
+<p>If the file <tt class="docutils literal"><span class="pre">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</span></tt> exists, then it
+is used as the default value for <tt class="docutils literal">&lt;Project&gt;_EXTRAREPOS_FILE</tt>.  However, the
+default value for <tt class="docutils literal">&lt;Project&gt;_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE</tt> is empty so
+no extra repostories are defined by default unless
+<tt class="docutils literal">&lt;Project&gt;_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE</tt> is specifically set to one of
+the allowed values.</p>
 </div>
 <div class="section" id="reconfiguring-completely-from-scratch">
 <h2><a class="toc-backref" href="#id34">4.26&nbsp;&nbsp;&nbsp;Reconfiguring completely from scratch</a></h2>
@@ -1852,12 +1877,16 @@ $ git clean -fd -x
 </pre>
 <p>You can also include generated files, such as Doxygen output files first, then
 run <tt class="docutils literal">make package_source</tt> and it will be included in the distribution.</p>
-<p>While this TriBITS project has a default, disabled subpackages can be include
+<p>While this TriBITS project has a default, disabled subpackages can be included
 or excluded from the tarball by setting
 <tt class="docutils literal">&lt;Project&gt;_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION</tt>.  If
 <tt class="docutils literal">&lt;Project&gt;_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON</tt> and one wants
 to include some subpackages that are otherwise excluded, just enable them or
-their outer package so they will be included in the source tarball.</p>
+their outer package so they will be included in the source tarball.  To get a
+printout of the files being excluded, set:</p>
+<pre class="literal-block">
+-D &lt;Project&gt;_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
+</pre>
 <p>While a set of default CPack source generator types is defined, it can be
 overridden using, for example:</p>
 <pre class="literal-block">
@@ -1872,7 +1901,7 @@ with:</p>
 </pre>
 <p>so that missing packages will be ignored.  Otherwise, TriBITS will error out
 about missing packages.  (Note that <tt class="docutils literal">&lt;Project&gt;_ASSERT_MISSING_PACKAGES</tt> will
-default to <tt class="docutils literal">`OFF`</tt> by default in release mode,
+default to <tt class="docutils literal">`OFF`</tt> in release mode,
 i.e. <tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_DEVELOPMENT_MODE==OFF</span></tt>.)</p>
 </div>
 </div>

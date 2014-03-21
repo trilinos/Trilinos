@@ -114,11 +114,12 @@ a) Create a 'do-configure' script such as [Recommended]::
 
     ./do-configure [OTHER OPTIONS] -D<Project>_ENABLE_<TRIBITS_PACKAGE>=ON
 
-  where <TRIBITS_PACKAGE> is Epetra, AztecOO, etc. and SOURCE_BASE is et
-  to the <Project> source base directory (or your can just give it
-  explicitly).
+  where ``<TRIBITS_PACKAGE>`` is a valid SE Package name (see above), etc. and
+  ``SOURCE_BASE`` is set to the <Project> source base directory (or your can
+  just give it explicitly in the script).
 
-  See `<Project>/sampleScripts/*cmake` for real examples.
+  See `<Project>/sampleScripts/*cmake` for examples of real `do-configure`
+  scripts for different platforms..
 
   NOTE: If one has already configured once and one needs to configure from
   scratch (needs to wipe clean defaults for cache variables, updates
@@ -173,6 +174,21 @@ d) Using the QT CMake configuration GUI:
 
 Selecting the list of packages to enable
 ----------------------------------------
+
+In order to see the list of avaiable <Project> SE Packages to enable, just run
+a basic CMake configure, enabling nothing, and then grep the output to see
+what packages are avaiable to enable.  The full set of defined packages is
+contained the lines starting with ``'Final set of enabled SE packages'`` and
+``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
+default (which is base behavior), the full list of pacakges will be listed on
+the line ``'Final set of non-enabled SE packages'``.  Therefore, to see the
+full list of defined packages, run::
+
+  ./do-configure 2>&1 | grep "Final set of .*enabled SE packages"
+
+Any of the packages shown on those lines can potentially be enabled using ``-D
+<Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON`` (unless they are forcabily
+disabled for some reason, see the CMake ouptut for package disable warnings).
 
 a) Configuring a package(s) along with all of the packages it can use::
 
@@ -1070,38 +1086,40 @@ Enabling extra repositories with add-on packages:
 -------------------------------------------------
 
 To configure <Project> with an extra set of packages in extra TriBITS
-repositoris, configure with::
+repositories, configure with::
 
   -D<Project>_EXTRA_REPOSITORIES:STRING="<REPO0>,<REPO1>,..."
 
-Here, <REPOi> is the name of an extra repository that typically has been
-cloned under the main '<Project>' source directory as::
+Here, ``<REPOi>`` is the name of an extra repository that typically has been
+cloned under the main <Project> source directory as::
 
   <Project>/<REPOi>/
 
 For example, to add the packages from SomeExtraRepo one would configure as::
 
   $ cd $SOURCE_BASE_DIR
-  $ eg clone some_url.com/some/dir/SomeExtraRepo
+  $ git clone some_url.com/some/dir/SomeExtraRepo
   $ cd $BUILD_DIR
   $ ./do-configure -D<Project>_EXTRA_REPOSITORIES:STRING=SomeExtraRepo \
      [Other Options]
 
-After that, all of the extra packages defined in SomeExtraRepo will appear in
-the list of official <Project> packages and you are free to enable any that
-you would like just like any other <Project> package.
+After that, all of the extra packages defined in ``SomeExtraRepo`` will appear
+in the list of official <Project> packages and you are free to enable any of
+the defined add-on packages that you would like just like any other <Project>
+package.
 
 NOTE: If ``<Project>_EXTRAREPOS_FILE`` and
 ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` are specified then the list of
-extra repositories in ``<REPOi>`` must be a subset of the extra repos read in
-from this file.
+extra repositories in ``<Project>_EXTRA_REPOSITORIES`` must be a subset and in
+the same order as the list extra repos read in from the file
+``<Project>_EXTRAREPOS_FILE``.
 
 
 Enabling extra repositories through a file
 ------------------------------------------
 
 In order to provide the list of extra TriBIITS repositories containing add-on
-apckages from a file, configure with::
+packages from a file, configure with::
 
   -D<Project>_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE> \
   -D<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
@@ -1109,18 +1127,26 @@ apckages from a file, configure with::
 Specifing extra repositories through an extra repos file allows greater
 flexibility in the specification of extra repos.  This is not helpful for a
 basic configure of the project but is useful in automated testing using the
-TribitsCTestDriverCore.cmake script and the checkin-test.py script.
+``TribitsCTestDriverCore.cmake`` script and the ``checkin-test.py`` script.
 
 The valid values of ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
-``Continuous`` and ``Nightly``.  Only repositories listed in the file
-``<EXTRAREPOSFILE>`` that match this type will be included.  Note that
-``Nightly`` also matches ``Continuous``.
+``Continuous``, ``Nightly``, and ``Experimental``.  Only repositories listed
+in the file ``<EXTRAREPOSFILE>`` that match this type will be included.  Note
+that ``Nightly`` matches ``Continuous`` and ``Experimental`` matches
+``Nightly`` and ``Continuous`` and therefore includes all repos by default.
 
 If ``<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES`` is set to ``TRUE``, then
 any extra repositories selected who's directory is missing will be ignored.
-This is useful when the list of extra repos that one developers or tests with
-is variable and one just wants TriBITS to pick up the list of existing repos
-automatically.
+This is useful when the list of extra repos that a given developers develops
+or tests with is variable and one just wants TriBITS to pick up the list of
+existing repos automatically.
+
+If the file ``<projectDir>/cmake/ExtraRepositoriesList.cmake`` exists, then it
+is used as the default value for ``<Project>_EXTRAREPOS_FILE``.  However, the
+default value for ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` is empty so
+no extra repostories are defined by default unless
+``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` is specifically set to one of
+the allowed values.
 
   
 Reconfiguring completely from scratch
@@ -1543,12 +1569,15 @@ using::
 You can also include generated files, such as Doxygen output files first, then
 run ``make package_source`` and it will be included in the distribution.
 
-While this TriBITS project has a default, disabled subpackages can be include
+While this TriBITS project has a default, disabled subpackages can be included
 or excluded from the tarball by setting
 ``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
 ``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
 to include some subpackages that are otherwise excluded, just enable them or
-their outer package so they will be included in the source tarball.
+their outer package so they will be included in the source tarball.  To get a
+printout of the files being excluded, set::
+
+  -D <Project>_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
 
 While a set of default CPack source generator types is defined, it can be
 overridden using, for example::
@@ -1565,7 +1594,7 @@ with::
 
 so that missing packages will be ignored.  Otherwise, TriBITS will error out
 about missing packages.  (Note that ``<Project>_ASSERT_MISSING_PACKAGES`` will
-default to ```OFF``` by default in release mode,
+default to ```OFF``` in release mode,
 i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
