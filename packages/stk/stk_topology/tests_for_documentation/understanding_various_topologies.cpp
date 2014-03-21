@@ -30,6 +30,8 @@ void createIossElementRegistryForKnownElementTopologies()
     Ioss::Init::Initializer io;
 }
 
+//Begin documentation test here
+
 void setUpMappingsToTest(std::vector<TopologyMapper>& topologyMappings)
 {
     std::string exodusName;
@@ -67,7 +69,6 @@ void setUpMappingsToTest(std::vector<TopologyMapper>& topologyMappings)
     topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopology, stkTopology, shardsTopology));
 }
 
-//Item1
 TEST(Understanding, sierra_topologies)
 {
     int spatialDim = 3;
@@ -98,6 +99,6 @@ TEST(Understanding, sierra_topologies)
     }
 }
 
-//Item2
+//End documentation test here
 
 }
