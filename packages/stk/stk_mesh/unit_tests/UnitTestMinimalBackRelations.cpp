@@ -140,4 +140,63 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
   delete fixture_with_min_conn;
 }
 
+STKUNIT_UNIT_TEST( UnitTestNoUpwardConnectivity, simpleTri )
+{
+   const unsigned spatialDimension = 2;
+   stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+   metaData.commit();
+
+   stk::mesh::ConnectivityMap custom_connectivity = stk::mesh::ConnectivityMap::none();
+   //Now set which connectivities we want enabled:
+   custom_connectivity(stk::topology::ELEM_RANK, stk::topology::NODE_RANK) = stk::mesh::ConnectivityMap::fixed();
+   custom_connectivity(stk::topology::ELEM_RANK, stk::topology::EDGE_RANK) = stk::mesh::ConnectivityMap::fixed();
+   custom_connectivity(stk::topology::EDGE_RANK, stk::topology::NODE_RANK) = stk::mesh::ConnectivityMap::fixed();
+
+   //Now verify that node->edge, node->elem and edge->elem connections are disabled, but
+   //elem->node and edge->node connections are allowed:
+   EXPECT_FALSE(custom_connectivity.valid(stk::topology::NODE_RANK, stk::topology::ELEM_RANK));
+   EXPECT_FALSE(custom_connectivity.valid(stk::topology::NODE_RANK, stk::topology::EDGE_RANK));
+   EXPECT_FALSE(custom_connectivity.valid(stk::topology::EDGE_RANK, stk::topology::ELEM_RANK));
+   EXPECT_TRUE(custom_connectivity.valid(stk::topology::ELEM_RANK, stk::topology::NODE_RANK));
+   EXPECT_TRUE(custom_connectivity.valid(stk::topology::EDGE_RANK, stk::topology::NODE_RANK));
+
+   bool add_fmwk_data = false;
+   stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, add_fmwk_data, &custom_connectivity);
+   if (mesh.parallel_size() > 1) {
+     return;//this test can't run in parallel
+   }
+
+   mesh.modification_begin();
+
+   //set up 1 element (3-node triangle) with elem->node and edge->node connections
+   stk::mesh::EntityId elemId = 1;
+   stk::mesh::EntityId elemNodeIds[] = {1, 2, 3};
+   stk::mesh::EntityId elemEdgeIds[] = {6, 7, 8};
+   stk::mesh::Entity elemNodes[3];
+   stk::mesh::Entity elemEdges[3];
+   stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId);
+   elemNodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[0]);
+   elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[1]);
+   elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[2]);
+
+   elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0]);
+   elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1]);
+   elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2]);
+
+   //downward element -> node connectivity
+   mesh.declare_relation(elem, elemNodes[0], 0);
+   mesh.declare_relation(elem, elemNodes[1], 1);
+   mesh.declare_relation(elem, elemNodes[2], 2);
+
+   //downward edge -> node connectivity
+   mesh.declare_relation(elemEdges[0], elemNodes[0], 0); mesh.declare_relation(elemEdges[0], elemNodes[1], 1);
+   mesh.declare_relation(elemEdges[1], elemNodes[1], 0); mesh.declare_relation(elemEdges[1], elemNodes[2], 1);
+   mesh.declare_relation(elemEdges[2], elemNodes[2], 0); mesh.declare_relation(elemEdges[2], elemNodes[0], 1);
+   mesh.modification_end();
+
+   //verify that get_connectivity throws (rather than infinitely recursing) since node->elem connections are disabled.
+   stk::mesh::EntityVector connected_edges;
+   EXPECT_THROW(stk::mesh::get_connectivity(mesh, elemNodes[0], stk::topology::EDGE_RANK, connected_edges), std::logic_error);
+}
+
 } // namespace

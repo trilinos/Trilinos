@@ -1481,6 +1481,8 @@ void find_potential_upward_entities( const BulkData & mesh, Entity node, EntityR
   }
   else {
     // Have to go up to the elements, then back down to the target rank
+    ThrowRequireMsg(mesh.connectivity_map().valid(stk::topology::NODE_RANK, stk::topology::ELEMENT_RANK), "ERROR, stk::mesh::get_connectivity was called but upward node->element connections are disabled. For get_connectivity to find non-stored connectivities, node->element connections must be enabled.");
+
     EntityVector elements;
     find_potential_upward_entities(mesh, node, stk::topology::ELEMENT_RANK, elements);
 

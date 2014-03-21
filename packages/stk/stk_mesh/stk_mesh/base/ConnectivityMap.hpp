@@ -188,7 +188,7 @@ struct ConnectivityMap
   ConnectivityType & operator()(EntityRank from, EntityRank to)
   { return m_map[from][to]; }
 
-  ConnectivityType operator()(EntityRank from, EntityRank to) const
+  const ConnectivityType & operator()(EntityRank from, EntityRank to) const
   { return m_map[from][to]; }
 
   bool valid(EntityRank from, EntityRank to) const
