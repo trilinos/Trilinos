@@ -1,4 +1,5 @@
-/*@HEADER
+/*
+//@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
@@ -40,58 +41,22 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_LINEAR_PARTITIONER_DEF_HPP
-#define IFPACK2_LINEAR_PARTITIONER_DEF_HPP
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_LinearPartitioner_decl.hpp"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-namespace Ifpack2 {
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
+#include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
+#include "Tpetra_CrsGraph.hpp"
 
-//==============================================================================
-// Constructor
-template<class GraphType>
-LinearPartitioner<GraphType>::
-LinearPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
-  OverlappingPartitioner<GraphType> (graph)
-{}
+#define IFPACK2_LOCAL_INSTANT(LO,GO,N) \
+  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(LO,GO,N)
 
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-template<class GraphType>
-LinearPartitioner<GraphType>::~LinearPartitioner() {}
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+  IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
+#endif
 
-
-template<class GraphType>
-void
-LinearPartitioner<GraphType>::
-setPartitionParameters (Teuchos::ParameterList& List) {}
-
-
-template<class GraphType>
-void LinearPartitioner<GraphType>::LinearPartitioner::computePartitions()
-{
-  using Teuchos::as;
-  // Partition_ is an array of local_ordinal_type.  local_ordinal_type
-  // may be signed or unsigned.  NumLocalParts_ is int, and needs to
-  // be signed, since negative values are significant.  Comparisons
-  // between signed and unsigned integers often result in compiler
-  // warnings, which is why we use as() for explicit conversions
-  // below.  We also use as() because in a debug build, it checks for
-  // overflow.
-  const int mod = as<int> (this->Graph_->getNodeNumRows () / 
-			   this->NumLocalParts_);
-  for (size_t i = 0; i < this->Graph_->getNodeNumRows (); ++i) {
-    this->Partition_[i] = as<local_ordinal_type> (i / mod);
-    if (this->Partition_[i] >= as<local_ordinal_type> (this->NumLocalParts_)) {
-      this->Partition_[i] = this->NumLocalParts_ - 1;
-    }
-  }
-}
-
-
-}// namespace Ifpack2
-
-#define IFPACK2_LINEARPARTITIONER_INSTANT(LO,GO,N) \
-  template class Ifpack2::LinearPartitioner<Tpetra::CrsGraph< LO, GO, N > >; \
-  template class Ifpack2::LinearPartitioner<Tpetra::RowGraph< LO, GO, N > >;
-
-#endif // IFPACK2_LINEARPARTITIONER_DEF_HPP
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
