@@ -8,10 +8,12 @@ TRIBITS_PACKAGE(Domi DISABLE_STRONG_WARNINGS)
 
 #
 # Set up package-specific options
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ABC
-  HAVE_DOMI_ARRAY_BOUNDS_CHECK
-  "Enable array bounds checking on Domi objects."
-  ${${PROJECT_NAME}_ENABLE_DEBUG} )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_ABC
+  HAVE_DOMI_ARRAY_BOUNDSCHECK
+  "Enable Domi feature for array bounds checking."
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
+  )
 
 #
 # Add the libraries, tests, and examples

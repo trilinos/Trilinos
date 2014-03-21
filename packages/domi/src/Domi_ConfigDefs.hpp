@@ -84,11 +84,9 @@
 #include <string>
 #include <stdexcept>
 
-// Enable or disable array bounds checking
-#ifdef HAVE_DOMI_ARRAY_BOUNDS_CHECK
-#define DOMI_ENABLE_ABC 1
-#else
-#define DOMI_ENABLE_ABC 0
+#ifdef HAVE_DOMI_DEBUG
+#  define DOMI_DEBUG
+#  define HAVE_DOMI_ARRAY_BOUNDSCHECK
 #endif
 
 // Set the Domi Ordinal type

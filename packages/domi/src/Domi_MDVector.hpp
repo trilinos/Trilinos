@@ -56,6 +56,15 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+#ifdef HAVE_EPETRA
+#include "Epetra_Vector.h"
+#endif
+
+#ifdef HAVE_TPETRA
+#include "Tpetra_Vector.hpp"
+#endif
+
+
 #ifdef OPEN_MPI
 // I provide dummy definitions for MPI structs so that
 // typeid(MPI_Datatype) and typeid(MPI_Request) will compile.
@@ -468,6 +477,139 @@ public:
    * data is contiguous.
    */
   bool isContiguous() const;
+
+  //@}
+
+  /** \name Conversion to other types of Vectors */
+  //@{
+
+#ifdef HAVE_EPETRA
+
+  /** \brief Return this MDVector as an Epetra_Vector
+   *
+   * The multiple dimensions of the MDVector will be flattened in
+   * order to be expressed as an Epetra_Vector.  Currently, if the
+   * MDVector is non-contiguous, an exception will be thrown, as
+   * Epetra_Vectors are contiguous, and this is intended as a view
+   * transform.  Non-contiguous data is the result of slicing a parent
+   * MDVector, and getEpetraVector() should be called on the parent
+   * instead.
+   *
+   * The MDVector Scalar template must be the same type as an
+   * Epetra_Vector, i.e. double, or an exception will be thrown.
+   */
+  Teuchos::RCP< Epetra_Vector > getEpetraVector() const;
+
+  /** \brief Return this MDVector as an Epetra_MultiVector
+   *
+   * This method will attempt to utilize either the leading dimension
+   * (if the layout is C-order) or the trailing dimension (if the
+   * layout is Fortran-order) to serve as the Epetra_MultiVector
+   * vector index.  This dimension must be non-distributed (i.e., the
+   * corresponding commDim must be 1) in order for this mapping to
+   * work.  If this is not the case, an exception will be thrown and
+   * getEpetraVector() is the proper method to call.
+   *
+   * The MDVector Scalar template must be the same type as an
+   * Epetra_MultiVector, i.e. double, or an exception will be thrown.
+   */
+  Teuchos::RCP< Epetra_MultiVector > getEpetraMultiVector() const;
+
+#endif
+
+#ifdef HAVE_TPETRA
+
+  /** \brief Return this MDVector as an Tpetra::Vector
+   *
+   * The multiple dimensions of the MDVector will be flattened in
+   * order to be expressed as an Tpetra::Vector.  Currently, if the
+   * MDVector is non-contiguous, an exception will be thrown, as
+   * Tpetra::Vectors are contiguous, and this is intended as a view
+   * transform.  Non-contiguous data is the result of slicing a parent
+   * MDVector, and getTpetraVector() should be called on the parent
+   * instead.
+   */
+  template< class LocalOrdinal >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
+  getTpetraVector() const;
+
+  /** \brief Return this MDVector as an Tpetra::Vector
+   *
+   * The multiple dimensions of the MDVector will be flattened in
+   * order to be expressed as an Tpetra::Vector.  Currently, if the
+   * MDVector is non-contiguous, an exception will be thrown, as
+   * Tpetra::Vectors are contiguous, and this is intended as a view
+   * transform.  Non-contiguous data is the result of slicing a parent
+   * MDVector, and getTpetraVector() should be called on the parent
+   * instead.
+   */
+  template< class LocalOrdinal,
+            class GlobalOrdinal >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
+  getTpetraVector() const;
+
+  /** \brief Return this MDVector as an Tpetra::Vector
+   *
+   * The multiple dimensions of the MDVector will be flattened in
+   * order to be expressed as an Tpetra::Vector.  Currently, if the
+   * MDVector is non-contiguous, an exception will be thrown, as
+   * Tpetra::Vectors are contiguous, and this is intended as a view
+   * transform.  Non-contiguous data is the result of slicing a parent
+   * MDVector, and getTpetraVector() should be called on the parent
+   * instead.
+   */
+  template< class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node2 >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
+  getTpetraVector() const;
+
+  /** \brief Return this MDVector as an Tpetra::MultiVector
+   *
+   * This method will attempt to utilize either the leading dimension
+   * (if the layout is C-order) or the trailing dimension (if the
+   * layout is Fortran-order) to serve as the Tpetra::MultiVector
+   * vector index.  This dimension must be non-distributed (i.e., the
+   * corresponding commDim must be 1) in order for this mapping to
+   * work.  If this is not the case, an exception will be thrown and
+   * getTpetraVector() is the proper method to call.
+   */
+  template < class LocalOrdinal >
+  Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, LocalOrdinal, Node > >
+  getTpetraMultiVector() const;
+
+  /** \brief Return this MDVector as an Tpetra::MultiVector
+   *
+   * This method will attempt to utilize either the leading dimension
+   * (if the layout is C-order) or the trailing dimension (if the
+   * layout is Fortran-order) to serve as the Tpetra::MultiVector
+   * vector index.  This dimension must be non-distributed (i.e., the
+   * corresponding commDim must be 1) in order for this mapping to
+   * work.  If this is not the case, an exception will be thrown and
+   * getTpetraVector() is the proper method to call.
+   */
+  template < class LocalOrdinal,
+             class GlobalOrdinal >
+  Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, GlobalOrdinal, Node > >
+  getTpetraMultiVector() const;
+
+  /** \brief Return this MDVector as an Tpetra::MultiVector
+   *
+   * This method will attempt to utilize either the leading dimension
+   * (if the layout is C-order) or the trailing dimension (if the
+   * layout is Fortran-order) to serve as the Tpetra::MultiVector
+   * vector index.  This dimension must be non-distributed (i.e., the
+   * corresponding commDim must be 1) in order for this mapping to
+   * work.  If this is not the case, an exception will be thrown and
+   * getTpetraVector() is the proper method to call.
+   */
+  template < class LocalOrdinal,
+             class GlobalOrdinal,
+             class Node2 >
+  Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, GlobalOrdinal, Node2 > >
+  getTpetraMultiVector() const;
+
+#endif
 
   //@}
 

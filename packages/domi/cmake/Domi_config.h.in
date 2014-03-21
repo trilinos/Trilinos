@@ -48,7 +48,7 @@
 #cmakedefine HAVE_BLAS
 
 /* Define if want to build domi with array bounds checking */
-#cmakedefine HAVE_DOMI_ARRAY_BOUNDS_CHECK
+#cmakedefine HAVE_DOMI_ARRAY_BOUNDSCHECK
 
 /* Define the Ordinal type */
 #define DOMI_ORDINAL_TYPE @Domi_ORDINAL_TYPE@

@@ -182,7 +182,7 @@ public:
   bool operator!=(const MDIterator< MDARRAY > & other) const;
 
   /** \brief Dereferencing operator */
-  value_type & operator*();
+  inline value_type & operator*();
 
   /** \brief Prefix increment operator */
   MDIterator< MDARRAY > & operator++();
@@ -202,7 +202,7 @@ public:
    *
    *  \param axis [in] Requested axis for index value
    */
-  dim_type index(int axis) const;
+  inline dim_type index(int axis) const;
 
   /** \brief Stream output operator
    */

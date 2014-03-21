@@ -201,10 +201,10 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * Functions and methods that take arbitrary arguments denoted by the
  * ellipsis ("...") are called "variadic", and unfortunately, they
  * reduce the amount of error checking that can be done, even with
- * <tt>DOMI_ENABLE_ABC</tt> defined.  The reason for this is that the
- * macros provided in C/C++ to handle variadic arguments do not
- * provide a way to count the number of arguments provided.  If you
- * provide too many indexes, the excess are just ignored.  If you
+ * <tt>HAVE_DOMI_ARRAY_BOUNDSCHECK</tt> defined.  The reason for this
+ * is that the macros provided in C/C++ to handle variadic arguments
+ * do not provide a way to count the number of arguments provided.  If
+ * you provide too many indexes, the excess are just ignored.  If you
  * provide too few, the behavior is undefined.  Processing the
  * variadic arguments also introduces computational overhead, so
  * <tt>operator()</tt> has been overloaded to accept concrete numbers
@@ -578,8 +578,8 @@ public:
    * \param i [in] 1D index.
    *
    * This operator should only be used with a 1D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 1D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 1D, an exception will be thrown.
    */
   inline T & operator()(dim_type i);
 
@@ -590,8 +590,8 @@ public:
    * \param j [in] second 2D index.
    *
    * This operator should only be used with a 2D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 2D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 2D, an exception will be thrown.
    */
   inline T & operator()(dim_type i, dim_type j);
 
@@ -604,8 +604,8 @@ public:
    * \param k [in] third 3D index.
    *
    * This operator should only be used with a 3D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 3D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 3D, an exception will be thrown.
    */
   inline T & operator()(dim_type i, dim_type j, dim_type k);
 
@@ -620,8 +620,8 @@ public:
    * \param m [in] fourth 4D index.
    *
    * This operator should only be used with a 4D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 4D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 4D, an exception will be thrown.
    */
   inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m);
 
@@ -638,8 +638,8 @@ public:
    * \param n [in] fifth 5D index.
    *
    * This operator should only be used with a 5D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 5D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 5D, an exception will be thrown.
    */
   inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m,
                         dim_type n);
@@ -661,8 +661,9 @@ public:
    * \param ... [in] seventh and higher indexes.
    *
    * This operator should only be used with a 6D and higher
-   * <tt>MDArray</tt>s.  If DOMI_ENABLE_ABC is true and the
-   * <tt>MDArray</tt> is less than 6D, an exception will be thrown.
+   * <tt>MDArray</tt>s.  If HAVE_DOMI_ARRAY_BOUNDSCHECK is true and
+   * the <tt>MDArray</tt> is less than 6D, an exception will be
+   * thrown.
    */
   inline T & operator()(dim_type i, dim_type j, dim_type k, dim_type m,
                         dim_type n, dim_type p, ...);
@@ -672,8 +673,8 @@ public:
    * \param i [in] 1D index.
    *
    * This operator should only be used with a 1D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 1D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 1D, an exception will be thrown.
    */
   inline const T & operator()(dim_type i) const;
 
@@ -684,8 +685,8 @@ public:
    * \param j [in] second 2D index.
    *
    * This operator should only be used with a 2D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 2D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 2D, an exception will be thrown.
    */
   inline const T & operator()(dim_type i, dim_type j) const;
 
@@ -698,8 +699,8 @@ public:
    * \param k [in] third 3D index.
    *
    * This operator should only be used with a 3D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 3D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 3D, an exception will be thrown.
    */
   inline const T & operator()(dim_type i, dim_type j, dim_type k) const;
 
@@ -714,8 +715,8 @@ public:
    * \param m [in] fourth 4D index.
    *
    * This operator should only be used with a 4D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 4D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 4D, an exception will be thrown.
    */
   inline const T & operator()(dim_type i, dim_type j, dim_type k,
                               dim_type m) const;
@@ -733,8 +734,8 @@ public:
    * \param n [in] fifth 5D index.
    *
    * This operator should only be used with a 5D <tt>MDArray</tt>.  If
-   * DOMI_ENABLE_ABC is true and the <tt>MDArray</tt> is not 5D, an
-   * exception will be thrown.
+   * HAVE_DOMI_ARRAY_BOUNDSCHECK is true and the <tt>MDArray</tt> is
+   * not 5D, an exception will be thrown.
    */
   inline const T & operator()(dim_type i, dim_type j, dim_type k,
                               dim_type m, dim_type n) const;
@@ -756,8 +757,9 @@ public:
    * \param ... [in] seventh and higher indexes.
    *
    * This operator should only be used with a 6D and higher
-   * <tt>MDArray</tt>s.  If DOMI_ENABLE_ABC is true and the
-   * <tt>MDArray</tt> is less than 6D, an exception will be thrown.
+   * <tt>MDArray</tt>s.  If HAVE_DOMI_ARRAY_BOUNDSCHECK is true and
+   * the <tt>MDArray</tt> is less than 6D, an exception will be
+   * thrown.
    */
   inline const T & operator()(dim_type i, dim_type j, dim_type k,
                               dim_type m, dim_type n, dim_type p, ...) const;
@@ -1272,7 +1274,7 @@ template< typename T >
 T &
 MDArray< T >::operator()(typename MDArray< T >::dim_type i)
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 1), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 1 index"
@@ -1289,7 +1291,7 @@ T &
 MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type j)
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 2), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 2 indexes"
@@ -1308,7 +1310,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type j,
                          typename MDArray< T >::dim_type k)
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 3), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 3 indexes"
@@ -1329,7 +1331,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type k,
                          typename MDArray< T >::dim_type m)
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 4), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 4 indexes"
@@ -1353,7 +1355,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type m,
                          typename MDArray< T >::dim_type n)
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 5), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 5 indexes"
@@ -1380,7 +1382,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type p,
                          ...)
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() < 6), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with too many indexes"
@@ -1399,7 +1401,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
   for (int axis = 6; axis < _dimensions.size(); axis++)
   {
     dim_type q = va_arg(indexes, dim_type);
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
     assertIndex(q, axis);
 #endif
     offset += q * _strides[axis];
@@ -1414,7 +1416,7 @@ template< typename T >
 const T &
 MDArray< T >::operator()(typename MDArray< T >::dim_type i) const
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 1), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 1 index"
@@ -1431,7 +1433,7 @@ const T &
 MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type j) const
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 2), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 2 indexes"
@@ -1450,7 +1452,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type j,
                          typename MDArray< T >::dim_type k) const
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 3), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 3 indexes"
@@ -1471,7 +1473,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type k,
                          typename MDArray< T >::dim_type m) const
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 4), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 4 indexes"
@@ -1495,7 +1497,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type m,
                          typename MDArray< T >::dim_type n) const
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 5), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 5 indexes"
@@ -1522,7 +1524,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
                          typename MDArray< T >::dim_type p,
                          ...) const
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() < 6), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with too many indexes"
@@ -1541,7 +1543,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
   for (int axis = 6; axis < _dimensions.size(); axis++)
   {
     dim_type q = va_arg(indexes, dim_type);
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
     assertIndex(q, axis);
 #endif
     offset += q * _strides[axis];
@@ -1679,7 +1681,7 @@ template< typename T >
 bool
 MDArray< T >::hasBoundsChecking()
 {
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   return true;
 #else
   return false;
