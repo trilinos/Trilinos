@@ -259,8 +259,6 @@ public:
 
   void check_size_invariant() const;
 
-  // Samba-like interface...
-
   //generic rank connectivity calls
   Entity const* begin(size_type bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, begin, s, bucket_ordinal) }

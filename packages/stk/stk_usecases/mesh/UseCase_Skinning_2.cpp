@@ -109,8 +109,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     stk::mesh::Part & skin_part = fixture.m_meta.declare_part("skin_part");
 
-    stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-    stk::mesh::Part & shell_part = fixture.m_meta.declare_part("shell_part", shell_top);
+    stk::mesh::Part & shell_part = fixture.m_meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
 
     fixture.m_meta.commit();
 

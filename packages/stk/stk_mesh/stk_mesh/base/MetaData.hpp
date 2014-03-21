@@ -187,9 +187,8 @@ public:
 
   /** \brief  Get an existing part by its application-defined text name.
    *
-   *  Return NULL if not present and required_by == NULL.
-   *  If required and not present then throws an exception
-   *  with the 'required_by' text.
+   *  Return NULL if not present.
+   *  If not present throws an exception
    */
   /// \todo REFACTOR remove required_by argument
   Part * get_part( const std::string & p_name,
@@ -222,11 +221,12 @@ public:
   /** \brief  Declare a part of the given name
    *          Redeclaration returns the previously declared part.
    *
-   *  This part does not have an entity type rank.
+   *  This part does not have an entity rank.
    */
   Part & declare_part( const std::string & p_name);
 
   /** \brief  Declare a part with a given cell topology
+   * This will be deprecated, please use declare_part_with_topology instead.
    */
   Part &declare_part( const std::string &name, CellTopology cell_topology, bool arg_force_no_induce = false )
   {
@@ -333,7 +333,7 @@ public:
    *  \exception std::runtime_error
    *    If the field exits and the
    *    \ref stk::mesh::Field "field_type" does not match or
-   *    if required_by != NULL and a field of that name is not found.
+   *    if a field of that name is not found.
    */
   template< class field_type >
   field_type * get_field( const std::string & name ) const ;

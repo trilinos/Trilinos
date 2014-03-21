@@ -55,8 +55,7 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   // Create a part for the shells
-  stk::mesh::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology("shell_part", stk::topology::SHELL_LINE_2);
 
   fem_meta.commit();
 

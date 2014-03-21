@@ -103,8 +103,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   // make shell part
-  stk::mesh::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
-  stk::mesh::Part& shell_part = fem_meta.declare_part("shell_part", line_top);
+  stk::mesh::Part& shell_part = fem_meta.declare_part_with_topology("shell_part", stk::topology::LINE_2);
 
   fem_meta.commit();
 

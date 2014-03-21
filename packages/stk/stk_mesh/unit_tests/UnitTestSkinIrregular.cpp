@@ -52,8 +52,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
+  stk::mesh::Part & hex_part = fem_meta.declare_part_with_topology( "hex_part", stk::topology::HEX_8 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -118,8 +117,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinTwoStackedShells)
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
-  stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology( "shell_part", stk::topology::SHELL_QUAD_4 );
   const EntityRank side_rank    = fem_meta.side_rank();
 
   fem_meta.commit();
@@ -191,8 +189,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
-  stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology( "shell_part", stk::topology::SHELL_QUAD_4 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -348,10 +345,8 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk::mesh::Part & hex_part = fem_meta.declare_part_with_topology( "hex_part", stk::topology::HEX_8 );
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology( "shell_part", stk::topology::SHELL_QUAD_4 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -447,10 +442,8 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk::mesh::Part & hex_part = fem_meta.declare_part_with_topology( "hex_part", stk::topology::HEX_8 );
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology( "shell_part", stk::topology::SHELL_QUAD_4 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -546,10 +539,8 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk::mesh::Part & hex_part = fem_meta.declare_part_with_topology( "hex_part", stk::topology::HEX_8 );
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology( "shell_part", stk::topology::SHELL_QUAD_4 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 

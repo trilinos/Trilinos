@@ -76,8 +76,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
 
   stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
 
-  stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", shell_top);
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
 
   fem_meta.commit();
 
@@ -138,8 +137,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // Create a part for the skin and the shells
   stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
-  stk::mesh::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology("shell_part", stk::topology::SHELL_LINE_2);
   fem_meta.commit();
 
   // Begin modification cycle

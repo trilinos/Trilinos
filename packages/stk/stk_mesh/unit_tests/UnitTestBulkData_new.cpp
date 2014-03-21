@@ -723,12 +723,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   stk::mesh::MetaData fem_meta(spatial_dimension);
 
-  stk::mesh::CellTopology tet_top(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-  stk::mesh::Part & part_a = fem_meta.declare_part( "block_a", tet_top );
-  stk::mesh::Part & part_b = fem_meta.declare_part( "block_b", tet_top );
+  stk::mesh::Part & part_a = fem_meta.declare_part_with_topology( "block_a", stk::topology::TET_4 );
+  stk::mesh::Part & part_b = fem_meta.declare_part_with_topology( "block_b", stk::topology::TET_4 );
 
-  stk::mesh::CellTopology node_top(shards::getCellTopologyData<shards::Node>());
-  stk::mesh::Part & part_a_0 = fem_meta.declare_part( "block_a_0", node_top );
+  stk::mesh::Part & part_a_0 = fem_meta.declare_part_with_topology( "block_a_0", stk::topology::NODE );
 
   typedef stk::mesh::Field<double>  ScalarFieldType;
 
