@@ -550,6 +550,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           else if(ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
           else MyMeshNumbering = "use coordinates";
        }
+       if (ml_->Pmat[currentLevel].NumZDir == -7) {
+          MyNumVerticalNodes = 1;
+          MyMeshNumbering = "vertical";
+       }
 
        double *xvals= NULL, *yvals = NULL, *zvals = NULL;
        ML_Aggregate_Viz_Stats *grid_info = NULL;
@@ -562,7 +566,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (grid_info != NULL) zvals = grid_info->z;
 
           if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
-             std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << MyMeshNumbering << "\n";
+             std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << "\n";
              exit(EXIT_FAILURE);
           }
        }
