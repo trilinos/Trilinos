@@ -3931,7 +3931,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t>::mj_assign_proc_to_parts(
         partId_t required_proc_count =  num_procs_assigned_to_each_part[i];
         mj_gno_t total_num_points_in_part = global_num_points_in_parts[i];
         mj_gno_t ideal_num_points_in_a_proc =
-                ceil (total_num_points_in_part / double (required_proc_count));
+                Teuchos::as<mj_gno_t>(ceil (total_num_points_in_part / double (required_proc_count)));
 
         //starts sending to least heaviest part.
         partId_t next_proc_to_send_index = num_procs - required_proc_count;
