@@ -15,6 +15,8 @@ class HelloWorld {
 public:
   /** \brief . */
   void printHelloWorld(std::ostream &out) const;
+  /** \brief Deprecated. */
+  SIMPLECXX_DEPRECATED int someOldFunc() const; 
 };
 
 

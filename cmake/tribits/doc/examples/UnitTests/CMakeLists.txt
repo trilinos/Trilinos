@@ -146,6 +146,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
       "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
       "Final set of non-enabled packages:  WrapExternal 1"
+      "Performing Test HAVE_SIMPLECXX___INT64"
       "Configuring done"
       "Generating done"
       "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
@@ -217,6 +218,37 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Only in .*/TribitsExampleProject/cmake: ctest"
       "Only in .*/TribitsExampleProject: .gitignore"
       "Only in .*/TribitsExampleProject/packages: wrap_external"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_SimpleCxx_DEBUG_int64
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES CONTINUOUS
+  TEST_0 CMND ${CMAKE_COMMAND}
+    MESSAGE "Do the initial configure"
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_DEBUG=ON
+      -DTribitsExProj_ENABLE_SimpleCxx=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+      -DHAVE_SIMPLECXX___INT64=ON
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final set of enabled packages:  SimpleCxx 1"
+      "Configuring done"
+      "Generating done"
+  TEST_1 CMND make
+    MESSAGE "Build the default 'all' target using raw 'make'"
+    ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target simplecxx"
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+    MESSAGE "Run all the tests with raw 'ctest'"
+    PASS_REGULAR_EXPRESSION_ALL
+      "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
+      "100% tests passed, 0 tests failed out of 1"
   )
 
 

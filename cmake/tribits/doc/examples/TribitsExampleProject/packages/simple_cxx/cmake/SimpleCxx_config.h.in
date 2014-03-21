@@ -1,3 +1,4 @@
+#cmakedefine HAVE_SIMPLECXX___INT64
 
 #cmakedefine HAVE_SIMPLECXX_DEBUG
 

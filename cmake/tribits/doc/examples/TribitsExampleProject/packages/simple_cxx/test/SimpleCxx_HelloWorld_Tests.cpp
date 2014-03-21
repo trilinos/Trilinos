@@ -5,6 +5,15 @@
 #include "SimpleCxx_HelloWorld.hpp"
 
 
+#define TEST_FIND_SUBSTR_IN_STR(SUBSTR, STR) \
+  { \
+    const bool foundSubStr = ((STR).find(SUBSTR) != std::string::npos); \
+    std::cout << "Found \"" SUBSTR "\" ? " << foundSubStr << "\n"; \
+    if (!foundSubStr) success=false; \
+  } \
+  (success)
+
+
 int main() {
 
   bool success = true;
@@ -14,10 +23,18 @@ int main() {
   std::ostringstream oss;
   helloWorld.printHelloWorld(oss);
   std::cout << oss.str();
-  const bool foundHelloWorld = (oss.str().find("Hello World") != std::string::npos);
-  std::cout << "Found \"Hello World\" ? " << foundHelloWorld << "\n";
-  if (!foundHelloWorld) success=false;
 
+  TEST_FIND_SUBSTR_IN_STR("Hello World", oss.str());
+
+#ifdef HAVE_SIMPLECXX___INT64
+  TEST_FIND_SUBSTR_IN_STR("We have __int64", oss.str());
+#endif
+
+#ifdef HAVE_SIMPLECXX_DEBUG
+  TEST_FIND_SUBSTR_IN_STR("Debug is enabled", oss.str());
+#else
+  TEST_FIND_SUBSTR_IN_STR("Release is enabled", oss.str());
+#endif
 
   if (success) {
     std::cout << "End Result: TEST PASSED\n";
