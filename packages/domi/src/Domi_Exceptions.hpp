@@ -119,6 +119,34 @@ public:
   { }
 };
 
+/** \brief MDMap Error exception type
+ */
+class MDMapNoncontiguousError : public std::runtime_error
+{
+public:
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  MDMapNoncontiguousError(std::string msg) :
+    std::runtime_error(msg)
+  { }
+};
+
+/** \brief Type Error exception type
+ */
+class TypeError : public std::runtime_error
+{
+public:
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  TypeError(std::string msg) :
+    std::runtime_error(msg)
+  { }
+};
+
 }
 
 #endif
