@@ -730,7 +730,8 @@ public:
   void resize(const Teuchos::ArrayView< dim_type > & dims);
 
   /** \brief Return true if <tt>MDArrayRCP</tt> has been compiled with
-   *  bounds checking on. */
+   *  bounds checking on.
+   */
   inline static bool hasBoundsChecking();
 
   /** \brief Convert the <tt>MDArrayRCP</tt> to a string
@@ -739,8 +740,14 @@ public:
   std::string toString() const;
 
   /** \brief Return a const raw pointer to the beginning of the
-   *  <tt>MDArrayRCP</tt> or NULL if unsized. */
+   *  <tt>MDArrayRCP</tt> or NULL if unsized.
+   */
   inline const_pointer getRawPtr() const;
+
+  /** \brief Return a raw pointer to the beginning of the
+   *  <tt>MDArrayRCP</tt> or NULL if unsized.
+   */
+  inline pointer getRawPtr();
 
   //@}
 
@@ -1663,6 +1670,15 @@ MDArrayRCP< T >::toString() const
 template< typename T >
 const T *
 MDArrayRCP< T >::getRawPtr() const
+{
+  return _array.getRawPtr();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+T *
+MDArrayRCP< T >::getRawPtr()
 {
   return _array.getRawPtr();
 }

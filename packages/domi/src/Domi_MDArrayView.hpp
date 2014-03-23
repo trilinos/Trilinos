@@ -637,6 +637,11 @@ public:
    */
   inline const T * getRawPtr() const;
 
+  /** \brief Return a raw pointer to the beginning of the
+   *  <tt>MDArrayView</tt> or NULL if unsized.
+   */
+  inline T * getRawPtr();
+
   // These operators are declared as friends so that the compiler will
   // do automatic type conversion.
 
@@ -1497,6 +1502,15 @@ MDArrayView< T >::toString(int indent) const
 template< typename T >
 const T *
 MDArrayView< T >::getRawPtr() const
+{
+  return _array.getRawPtr();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+T *
+MDArrayView< T >::getRawPtr()
 {
   return _array.getRawPtr();
 }

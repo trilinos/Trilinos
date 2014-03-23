@@ -822,7 +822,8 @@ public:
   void swap(MDArray<T> & a);
 
   /** \brief Return true if <tt>MDArray</tt> has been compiled with bounds
-   *         checking on. */
+   *         checking on.
+   */
   inline static bool hasBoundsChecking();
 
   /** \brief Convert the <tt>MDArray</tt> to a string representation
@@ -830,8 +831,14 @@ public:
   std::string toString() const;
 
   /** \brief Return a const raw pointer to the beginning of the
-   *         <tt>MDArray</tt> or NULL if unsized. */
+   *         <tt>MDArray</tt> or NULL if unsized.
+   */
   inline const T * getRawPtr() const;
+
+  /** \brief Return a raw pointer to the beginning of the
+   *         <tt>MDArray</tt> or NULL if unsized.
+   */
+  inline T * getRawPtr();
 
   //@}
 
@@ -1702,6 +1709,15 @@ MDArray< T >::toString() const
 template< typename T >
 const T *
 MDArray< T >::getRawPtr() const
+{
+  return _array.getRawPtr();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+T *
+MDArray< T >::getRawPtr()
 {
   return _array.getRawPtr();
 }
