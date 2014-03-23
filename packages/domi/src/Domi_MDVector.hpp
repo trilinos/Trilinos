@@ -263,7 +263,7 @@ public:
    */
   int numDims() const;
 
-  /** \brief Get the size along the given axis
+  /** \brief Get the communicator size along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -489,14 +489,15 @@ public:
    *
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Epetra_Vector.  Currently, if the
-   * MDVector is non-contiguous, an exception will be thrown, as
-   * Epetra_Vectors are contiguous, and this is intended as a view
-   * transform.  Non-contiguous data is the result of slicing a parent
-   * MDVector, and getEpetraVector() should be called on the parent
-   * instead.
+   * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
+   * will be thrown, as Epetra_Vectors are contiguous, and this is
+   * intended as a view transform.  Non-contiguous data is the result
+   * of slicing a parent MDVector, and getEpetraVector() should be
+   * called on the parent instead.
    *
    * The MDVector Scalar template must be the same type as an
-   * Epetra_Vector, i.e. double, or an exception will be thrown.
+   * Epetra_Vector, i.e. double, or a Domi::TypeError exception will
+   * be thrown.
    */
   Teuchos::RCP< Epetra_Vector > getEpetraVector() const;
 
@@ -507,11 +508,19 @@ public:
    * layout is Fortran-order) to serve as the Epetra_MultiVector
    * vector index.  This dimension must be non-distributed (i.e., the
    * corresponding commDim must be 1) in order for this mapping to
-   * work.  If this is not the case, an exception will be thrown and
-   * getEpetraVector() is the proper method to call.
+   * work.  There must also be no padding associated with this axis.
+   * If these requirements are not met, then the entire MDVector will
+   * be treated as a single vector, that is the number of vectors will
+   * equal 1.
+   *
+   * Currently, if the MDVector is non-contiguous, a
+   * Domi::MDMapNoncontiguous exception will be thrown, as
+   * Epetra_MultiVectors are contiguous, and this is intended as a
+   * view transform.
    *
    * The MDVector Scalar template must be the same type as an
-   * Epetra_MultiVector, i.e. double, or an exception will be thrown.
+   * Epetra_MultiVector, i.e. double, or a Domi::TypeError exception
+   * will be thrown.
    */
   Teuchos::RCP< Epetra_MultiVector > getEpetraMultiVector() const;
 
@@ -523,11 +532,11 @@ public:
    *
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Tpetra::Vector.  Currently, if the
-   * MDVector is non-contiguous, an exception will be thrown, as
-   * Tpetra::Vectors are contiguous, and this is intended as a view
-   * transform.  Non-contiguous data is the result of slicing a parent
-   * MDVector, and getTpetraVector() should be called on the parent
-   * instead.
+   * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
+   * will be thrown, as Tpetra::Vectors are contiguous, and this is
+   * intended as a view transform.  Non-contiguous data is the result
+   * of slicing a parent MDVector, and getTpetraVector() should be
+   * called on the parent instead.
    */
   template< class LocalOrdinal >
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
@@ -537,11 +546,11 @@ public:
    *
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Tpetra::Vector.  Currently, if the
-   * MDVector is non-contiguous, an exception will be thrown, as
-   * Tpetra::Vectors are contiguous, and this is intended as a view
-   * transform.  Non-contiguous data is the result of slicing a parent
-   * MDVector, and getTpetraVector() should be called on the parent
-   * instead.
+   * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
+   * will be thrown, as Tpetra::Vectors are contiguous, and this is
+   * intended as a view transform.  Non-contiguous data is the result
+   * of slicing a parent MDVector, and getTpetraVector() should be
+   * called on the parent instead.
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
@@ -552,11 +561,11 @@ public:
    *
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Tpetra::Vector.  Currently, if the
-   * MDVector is non-contiguous, an exception will be thrown, as
-   * Tpetra::Vectors are contiguous, and this is intended as a view
-   * transform.  Non-contiguous data is the result of slicing a parent
-   * MDVector, and getTpetraVector() should be called on the parent
-   * instead.
+   * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
+   * will be thrown, as Tpetra::Vectors are contiguous, and this is
+   * intended as a view transform.  Non-contiguous data is the result
+   * of slicing a parent MDVector, and getTpetraVector() should be
+   * called on the parent instead.
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
@@ -571,8 +580,15 @@ public:
    * layout is Fortran-order) to serve as the Tpetra::MultiVector
    * vector index.  This dimension must be non-distributed (i.e., the
    * corresponding commDim must be 1) in order for this mapping to
-   * work.  If this is not the case, an exception will be thrown and
-   * getTpetraVector() is the proper method to call.
+   * work.  There must also be no padding associated with this axis.
+   * If these requirements are not met, then the entire MDVector will
+   * be treated as a single vector, that is the number of vectors will
+   * equal 1.
+   *
+   * Currently, if the MDVector is non-contiguous, a
+   * Domi::MDMapNoncontiguous exception will be thrown, as
+   * Tpetra::MultiVectors are contiguous, and this is intended as a
+   * view transform.
    */
   template < class LocalOrdinal >
   Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, LocalOrdinal, Node > >
@@ -585,8 +601,15 @@ public:
    * layout is Fortran-order) to serve as the Tpetra::MultiVector
    * vector index.  This dimension must be non-distributed (i.e., the
    * corresponding commDim must be 1) in order for this mapping to
-   * work.  If this is not the case, an exception will be thrown and
-   * getTpetraVector() is the proper method to call.
+   * work.  There must also be no padding associated with this axis.
+   * If these requirements are not met, then the entire MDVector will
+   * be treated as a single vector, that is the number of vectors will
+   * equal 1.
+   *
+   * Currently, if the MDVector is non-contiguous, a
+   * Domi::MDMapNoncontiguous exception will be thrown, as
+   * Tpetra::MultiVectors are contiguous, and this is intended as a
+   * view transform.
    */
   template < class LocalOrdinal,
              class GlobalOrdinal >
@@ -600,8 +623,15 @@ public:
    * layout is Fortran-order) to serve as the Tpetra::MultiVector
    * vector index.  This dimension must be non-distributed (i.e., the
    * corresponding commDim must be 1) in order for this mapping to
-   * work.  If this is not the case, an exception will be thrown and
-   * getTpetraVector() is the proper method to call.
+   * work.  There must also be no padding associated with this axis.
+   * If these requirements are not met, then the entire MDVector will
+   * be treated as a single vector, that is the number of vectors will
+   * equal 1.
+   *
+   * Currently, if the MDVector is non-contiguous, a
+   * Domi::MDMapNoncontiguous exception will be thrown, as
+   * Tpetra::MultiVectors are contiguous, and this is intended as a
+   * view transform.
    */
   template < class LocalOrdinal,
              class GlobalOrdinal,
@@ -1432,6 +1462,128 @@ isContiguous() const
 {
   return _mdMap->isContiguous();
 }
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_EPETRA
+
+// The getEpetraVector() method only makes sense for Scalar=double,
+// because Epetra_Vectors store data buffers of type double only.
+// There is no convenient way to specialize just one (or a small
+// handfull of) methods, instead you have to specialize the whole
+// class.  So we allow getEpetraVector() to compile for any Scalar,
+// but we will throw an exception if Scalar is not double.
+
+template< class Scalar,
+          class Node >
+Teuchos::RCP< Epetra_Vector >
+MDVector< Scalar, Node >::
+getEpetraVector() const
+{
+  // Throw an exception if Scalar is not double
+  const char * scalarType = typeid(Scalar).name();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    strncmp(scalarType, "double", 6) != 0,
+    TypeError,
+    "MDVector is of scalar type '" << scalarType << "', but Epetra_Vector "
+    "requires scalar type 'double'");
+
+  // Throw an exception if this MDVector's MDMap is not contiguous
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !isContiguous(),
+    MDMapNoncontiguousError,
+    "This MDVector's MDMap is non-contiguous.  This can happen when you take "
+    "a slice of a parent MDVector.");
+
+  // Get the Epetra_Map that is equivalent to this MDVector's MDMap
+  Teuchos::RCP< const Epetra_Map > epetraMap = _mdMap->getEpetraMap(true);
+
+  // Return the result.  We are changing a Sca* to a double*, which
+  // looks sketchy, but we have thrown an exception if Sca is not
+  // double, so everything is kosher.
+  void * buffer = (void*) _mdArrayView.getRawPtr();
+  return Teuchos::rcp(new Epetra_Vector(View,
+                                        *epetraMap,
+                                        (double*) buffer));
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_EPETRA
+
+// The getEpetraMultiVector() method only makes sense for
+// Scalar=double, because Epetra_MultiVectors store data buffers of
+// type double only.  There is no convenient way to specialize just
+// one (or a small handfull of) methods, instead you have to
+// specialize the whole class.  So we allow getEpetraVector() to
+// compile for any Scalar, but we will throw an exception if Scalar is
+// not double.
+
+template< class Scalar,
+          class Node >
+Teuchos::RCP< Epetra_MultiVector >
+MDVector< Scalar, Node >::
+getEpetraMultiVector() const
+{
+  // Throw an exception if Scalar is not double
+  const char * scalarType = typeid(Scalar).name();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    strncmp(scalarType, "double", 6) != 0,
+    TypeError,
+    "MDVector is of scalar type '" << scalarType << "', but Epetra_Vector "
+    "requires scalar type 'double'");
+
+  // Determine the vector axis and related info
+  int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
+  int padding    = getLowerPadSize(vectorAxis) + getUpperPadSize(vectorAxis);
+  int commDim    = getCommDim(vectorAxis);
+  int numVectors = getGlobalDim(vectorAxis);
+
+  // Obtain the appropriate MDMap and check that it is contiguous
+  Teuchos::RCP< const MDMap< Node > > newMdMap;
+  if (padding == 0 && commDim == 1)
+    newMdMap = Teuchos::rcp(new MDMap<Node>(*_mdMap, vectorAxis, 0));
+  else
+  {
+    newMdMap = _mdMap;
+    numVectors = 1;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! newMdMap->isContiguous(),
+    MDMapNoncontiguousError,
+    "This MDVector's MDMap is non-contiguous.  This can happen when you take "
+    "a slice of a parent MDVector.");
+
+  // Get the stride between vectors.  The MDMap strides are private,
+  // but we know the new MDMap is contiguous, so we can calculate it
+  // as the product of the new MDMap dimensions (including padding)
+  size_type stride = newMdMap->getLocalDim(0,true);
+  for (int axis = 0; axis < newMdMap->numDims(); ++axis)
+    stride *= newMdMap->getLocalDim(axis,true);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stride*numVectors > Teuchos::OrdinalTraits<int>::max(),
+    MapOrdinalError,
+    "Buffer size " << stride*numVectors << " is too large for Eeptra int "
+    "ordinals");
+  int lda = (int)stride;
+
+  // Get the Epetra_Map that is equivalent to newMdMap
+  Teuchos::RCP< const Epetra_Map > epetraMap = newMdMap->getEpetraMap(true);
+
+  // Return the result.  We are changing a Sca* to a double*, which
+  // looks sketchy, but we have thrown an exception if Sca is not
+  // double, so everything is kosher.
+  void * buffer = (void*) _mdArrayView.getRawPtr();
+  return Teuchos::rcp(new Epetra_MultiVector(View,
+                                             *epetraMap,
+                                             (double*) buffer,
+                                             lda,
+                                             numVectors));
+}
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 
