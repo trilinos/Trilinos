@@ -199,6 +199,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
                           std::pow(scalar, 3./2.)        ), <, tolerance);
     TEST_COMPARE(std::abs(mdVector.meanValue()   - scalar), <, tolerance);
   }
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
@@ -280,6 +289,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
   for (typename MDArrayView< Sca >::iterator it = data.begin();
        it != data.end(); ++it)
     TEST_EQUALITY(*it, scalar);
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
@@ -356,6 +374,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
   for (typename MDArrayView< Sca >::iterator it = data.begin();
        it != data.end(); ++it)
     TEST_EQUALITY(*it, scalar);
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
@@ -414,6 +441,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
     TEST_EQUALITY_CONST(mdVector.getUpperBndryPad(axis), 0);
     TEST_EQUALITY_CONST(mdVector.getBndryPadSize(axis), 0);
   }
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
@@ -481,6 +517,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
     TEST_EQUALITY_CONST(mdVector.getUpperBndryPad(axis), 0);
     TEST_EQUALITY_CONST(mdVector.getBndryPadSize(axis), 0);
   }
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
@@ -560,6 +605,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
     TEST_EQUALITY(mdVector.getUpperBndryPad(axis), bndryPad[axis]);
     TEST_EQUALITY(mdVector.getBndryPadSize(axis), bndryPad[axis]);
   }
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
@@ -644,6 +698,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
     TEST_EQUALITY(mdVector.getUpperBndryPad(axis), bndryPad[axis]);
     TEST_EQUALITY(mdVector.getBndryPadSize(axis), bndryPad[axis]);
   }
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+  }
+  else
+    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
@@ -684,6 +747,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
   TEST_EQUALITY(mdv3.numDims()            , numDims+1);
   TEST_EQUALITY(mdv3.getCommDim(numDims)  , 1        );
   TEST_EQUALITY(mdv3.getGlobalDim(numDims), 5        );
+
+#ifdef HAVE_EPETRA
+  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  {
+    Teuchos::RCP< Epetra_Vector      > ev1  = mdv1.getEpetraVector();
+    Teuchos::RCP< Epetra_MultiVector > emv2 = mdv2.getEpetraMultiVector();
+    Teuchos::RCP< Epetra_MultiVector > emv3 = mdv3.getEpetraMultiVector();
+    TEST_EQUALITY_CONST(emv2->NumVectors(), 2);
+    TEST_EQUALITY_CONST(emv3->NumVectors(), 5);
+  }
+  else
+  {
+    TEST_THROW(mdv1.getEpetraVector()     , Domi::TypeError);
+    TEST_THROW(mdv2.getEpetraMultiVector(), Domi::TypeError);
+    TEST_THROW(mdv2.getEpetraMultiVector(), Domi::TypeError);
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
