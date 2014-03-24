@@ -208,6 +208,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
 #endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
@@ -298,6 +303,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
 #endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
@@ -383,6 +393,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
 #endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
@@ -449,6 +464,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
 #endif
 }
 
@@ -525,6 +545,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
 #endif
 }
 
@@ -613,6 +638,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
 #endif
 }
 
@@ -707,6 +737,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
   else
     TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
 #endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
+    mdVector.template getTpetraVector< int, int >();
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
@@ -763,6 +798,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
     TEST_THROW(mdv2.getEpetraMultiVector(), Domi::TypeError);
     TEST_THROW(mdv2.getEpetraMultiVector(), Domi::TypeError);
   }
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1  =
+    mdv1.template getTpetraVector< int >();
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2 =
+    mdv2.template getTpetraMultiVector< int >();
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3 =
+    mdv3.template getTpetraMultiVector< int >();
+  TEST_EQUALITY_CONST(tmv2->getNumVectors(), 2);
+  TEST_EQUALITY_CONST(tmv3->getNumVectors(), 5);
 #endif
 }
 
