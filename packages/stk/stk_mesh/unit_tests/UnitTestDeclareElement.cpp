@@ -38,7 +38,7 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 
   const int p_rank = fixture.m_bulk_data.parallel_rank();
 
-  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellQuadrilateral<4> >( fixture.m_meta, "shell_part");
+  stk::mesh::Part & shell_part = fixture.m_meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
 
   fixture.m_meta.commit();
 

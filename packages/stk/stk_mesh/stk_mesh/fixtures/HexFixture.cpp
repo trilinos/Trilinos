@@ -47,11 +47,10 @@ namespace fixtures {
 #endif
                 , connectivity_map
                ),
-    m_elem_parts( 1, &declare_part<shards::Hexahedron<8> >(m_meta, "hex_part") ),
-    m_node_parts( 1, &m_meta.declare_part("node_part", stk::topology::NODE_RANK ) ),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("hex_part", stk::topology::HEX_8) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
 {
-  typedef shards::Hexahedron<8> Hex8 ;
 
   //put coord-field on all nodes:
   put_field(
