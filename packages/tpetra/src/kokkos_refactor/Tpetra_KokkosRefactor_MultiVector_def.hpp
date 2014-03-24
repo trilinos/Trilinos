@@ -634,12 +634,10 @@ namespace Tpetra {
     if (numVecs > 0 && importLIDs.size () > 0) {
       //const size_t myStride = MVT::getStride (lclMV_);
 
-      // NOTE (mfh 10 Mar 2012) If you want to implement custom
-      // combine modes, start editing here.  Also, if you trust
+      // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
+      // custom combine modes, start editing here.  Also, if you trust
       // inlining, it would be nice to condense this code by using a
-      // binary function object f:
-      //
-      // ncview_[...] = f (ncview_[...], *impptr++);
+      // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
         if (isConstantStride()) {
           KokkosRefactor::Details::unpack_array_multi_column(
@@ -2622,44 +2620,19 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   createViews() const
-  {
-    Teuchos::RCP<Node> node = this->getMap ()->getNode ();
-    if (cview_.is_null () && getLocalLength () > 0) {
-      Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
-      KOKKOS_NODE_TRACE("MultiVector::createViews()")
-      cview_ = node->template viewBuffer<Scalar> (buff.size (), buff);
-    }
-  }
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
-  {
-    Teuchos::RCP<Node> node = this->getMap ()->getNode ();
-    if (ncview_.is_null () && getLocalLength () > 0) {
-      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
-      KOKKOS_NODE_TRACE("MultiVector::createViewsNonConst()")
-      ncview_ = node->template viewBufferNonConst<Scalar> (rwo, buff.size (), buff);
-    }
-  }
+  createViewsNonConst (KokkosClassic::ReadWriteOption /* rwo */ )
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::releaseViews () const
-  {
-    const int constViewCount = cview_.total_count ();
-    const int nonconstViewCount = ncview_.total_count ();
-
-    // This prevents unused variable compiler warnings, in case Tpetra
-    // efficiency warnings aren't enabled.
-    (void) constViewCount;
-    (void) nonconstViewCount;
-
-    // Release the views.
-    cview_ = Teuchos::null;
-    ncview_ = Teuchos::null;
-  }
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  releaseViews () const
+  {}
 
 #endif // TPETRA_USE_KOKKOS_DISTOBJECT
 

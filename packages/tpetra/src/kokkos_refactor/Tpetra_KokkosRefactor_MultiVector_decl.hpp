@@ -1111,23 +1111,23 @@ namespace Tpetra {
     copyAndPermuteNew (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
+      const Kokkos::View<const LocalOrdinal*, device_type>& permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type>& permuteFromLIDs);
 
     virtual void
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
-      Kokkos::View<Scalar*, device_type> &exports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, device_type>& exportLIDs,
+      Kokkos::View<Scalar*, device_type>& exports,
+      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
 
     virtual void
     unpackAndCombineNew (
-      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
-      const Kokkos::View<const Scalar*, device_type> &imports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, device_type>& importLIDs,
+      const Kokkos::View<const Scalar*, device_type>& imports,
+      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM);
@@ -1135,13 +1135,6 @@ namespace Tpetra {
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
     void releaseViews () const;
-
-    //! Nonconst host view created in createViewsNonConst().
-    mutable ArrayRCP<Scalar> ncview_;
-
-    //! Const host view created in createViews().
-    mutable ArrayRCP<const Scalar> cview_;
-
     //@}
 
     typename view_type::t_dev getKokkosView() const { return view_.d_view; }
