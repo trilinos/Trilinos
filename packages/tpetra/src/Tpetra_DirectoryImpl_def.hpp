@@ -49,9 +49,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_TieBreak.hpp>
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-#  include <Tpetra_Details_FixedHashTable.hpp>
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+#include <Tpetra_Details_FixedHashTable.hpp>
 
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
@@ -572,7 +570,7 @@ namespace Tpetra {
       // NOTE: This is a per-process decision.  Some processes may use
       // array-based storage, whereas others may use hash table -
       // based storage.
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
       // A hash table takes a constant factor more space, more or
       // less, than an array.  Thus, it's not worthwhile, even in
       // terms of memory usage, always to use a hash table.
@@ -583,7 +581,6 @@ namespace Tpetra {
       const size_t inverseSparsityThreshold = 10;
       useHashTables_ =
         dir_numMyEntries >= inverseSparsityThreshold * map.getNodeNumElements ();
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
@@ -650,7 +647,6 @@ namespace Tpetra {
       // Distribute the triples of (GID, process ID, LID).
       distor.doPostsAndWaits (exportEntries ().getConst (), packetSize, importElements ());
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
       // Unpack the redistributed data.  Both implementations of
       // Directory storage map from an LID in the Directory Map (which
       // is the LID of the GID to store) to either a PID or an LID in
@@ -783,32 +779,6 @@ namespace Tpetra {
           }
         }
       }
-#else // NOT HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-      if (! useHashTables_) {
-        // Allocate arrays implementing Directory storage.  Fill them
-        // with invalid values, in case the input Map's GID list is
-        // sparse (i.e., does not populate all GIDs from minAllGID to
-        // maxAllGID).
-        PIDs_ = arcp<int> (dir_numMyEntries);
-        std::fill (PIDs_.begin (), PIDs_.end (), -1);
-        LIDs_ = arcp<LO> (dir_numMyEntries);
-        std::fill (LIDs_.begin (), LIDs_.end (), LINVALID);
-        // Fill in the arrays with PIDs resp. LIDs.
-        typename Array<GO>::iterator iter = importElements.begin();
-        for (size_t i = 0; i < numReceives; ++i) {
-          const GO curGID = *iter++;
-          const LO curLID = directoryMap_->getLocalElement (curGID);
-          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
-            Teuchos::typeName(*this) << " constructor: Incoming global index "
-            << curGID << " does not have a corresponding local index in the "
-            "Directory Map.  Please report this bug to the Tpetra developers.");
-          PIDs_[curLID] = *iter++;
-          LIDs_[curLID] = *iter++;
-        }
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-      }
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
     }
 
     template<class LO, class GO, class NT>
@@ -925,7 +895,6 @@ namespace Tpetra {
         // sendGIDs[k] in exports[3*k, 3*k+1, 3*k+2].
         size_type exportsIndex = 0;
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
         if (useHashTables_) {
           for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
             const GO curGID = sendGIDs[gidIndex];
@@ -961,24 +930,6 @@ namespace Tpetra {
             }
           }
         }
-#else // NOT HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-        for (size_type gidIndex = 0; gidIndex < numSends; ++gidIndex) {
-          const GO curGID = sendGIDs[gidIndex];
-          // Don't use as() here (see above note).
-          exports[exportsIndex++] = static_cast<global_size_t> (curGID);
-          const LO curLID = directoryMap_->getLocalElement (curGID);
-          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
-            Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
-            "Map's global index " << curGID << " does not have a corresponding "
-            "local index.  Please report this bug to the Tpetra developers.");
-          // Don't use as() here (see above note).
-          exports[exportsIndex++] = static_cast<global_size_t> (PIDs_[curLID]);
-          if (computeLIDs) {
-            // Don't use as() here (see above note).
-            exports[exportsIndex++] = static_cast<global_size_t> (LIDs_[curLID]);
-          }
-        }
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
         TEUCHOS_TEST_FOR_EXCEPTION(
           exportsIndex > exports.size (), std::logic_error,
