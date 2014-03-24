@@ -906,6 +906,9 @@ private:
   pointer                     _ptr;
 
   // Used for array bounds checking
+  void assertAxis(int axis) const;
+
+  // Used for array bounds checking
   void assertIndex(dim_type i, int axis) const;
 };
 
@@ -1026,6 +1029,9 @@ template< typename T >
 dim_type
 MDArray< T >::dimension(int axis) const
 {
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+  assertAxis(axis);
+#endif
   return _dimensions[axis];
 }
 
@@ -1790,6 +1796,20 @@ void swap(MDArray< T > & a1, MDArray< T > & a2)
 /////////////////////////////
 // Private implementations //
 /////////////////////////////
+
+template< typename T >
+void
+MDArray< T >::assertAxis(int axis) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(0 <= axis && axis < _dimensions.size()),
+    RangeError,
+    "MDArray<T>::assertAxis(axis=" << axis << "): out of range "
+    << "axis in [0, " << _dimensions.size() << ")"
+    );
+}
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 void

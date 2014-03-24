@@ -683,6 +683,11 @@ private:
   int                         _next_axis;
 
   // Method provided for aiding in array bounds checking.  It raises
+  // an exception when the given axis is out of range of valid
+  // dimensions.
+  void assertAxis(int axis) const;
+
+  // Method provided for aiding in array bounds checking.  It raises
   // an exception when the given index i is out of range along the
   // given axis.
   void assertIndex(dim_type i, int axis) const;
@@ -779,11 +784,9 @@ MDArrayView< T >::MDArrayView(const MDArrayView< T > & parent,
   _ptr(),
   _next_axis(0)
 {
-#ifdef DOMI_ENABLE_ABC
+  // Make sure axis and index are valid
+  parent.assertAxis(axis);
   parent.assertIndex(index, axis);
-#endif
-  using std::cout;
-  using std::endl;
   // Find the offset to the new MDArrayView
   size_type offset = index * parent._strides[axis];
   // Compute the dimensions of the new MDArrayView
@@ -823,6 +826,8 @@ MDArrayView< T >::MDArrayView(const MDArrayView< T > & parent,
   _ptr(),
   _next_axis(0)
 {
+  // Make sure axis is valid
+  parent.assertAxis(axis);
   // Note: the Slice.bounds() method produces safe indexes
   Slice bounds = slice.bounds(_dimensions[axis]);
   // Find the offset to the new MDArrayView
@@ -884,6 +889,9 @@ template< typename T >
 dim_type
 MDArrayView< T >::dimension(int axis) const
 {
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+  assertAxis(axis);
+#endif
   return _dimensions[axis];
 }
 
@@ -1054,7 +1062,8 @@ MDArrayView< T >::operator[](MDArrayView< T >::dim_type i)
   // Construct the new MDArrayView
   MDArrayView< T > result(*this, _next_axis, i);
   // Correct the next axis of the new MDArrayView
-  result._next_axis = _next_axis;
+  if (_next_axis < result.numDims())
+    result._next_axis = _next_axis;
   // Return the result
   return result;
 }
@@ -1068,7 +1077,8 @@ MDArrayView< T >::operator[](MDArrayView< T >::dim_type i) const
   // Construct the new MDArrayView
   MDArrayView< T > result(*this, _next_axis, i);
   // Correct the next axis of the new MDArrayView
-  result._next_axis = _next_axis;
+  if (_next_axis < result.numDims())
+    result._next_axis = _next_axis;
   // Return the result
   return result;
 }
@@ -1559,6 +1569,18 @@ std::ostream & operator<<(std::ostream & os, const MDArrayView< T > & a)
 /////////////////////////////
 // Private implementations //
 /////////////////////////////
+
+template< typename T >
+void
+MDArrayView< T >::assertAxis(int axis) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(0 <= axis && axis < _dimensions.size()),
+    RangeError,
+    "MDArrayView<T>::assertAxis(axis=" << axis << "): out of "
+    << "range axis in [0, " << _dimensions.size() << ")"
+    );
+}
 
 template< typename T >
 void

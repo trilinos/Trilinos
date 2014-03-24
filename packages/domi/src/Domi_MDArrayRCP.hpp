@@ -283,7 +283,7 @@ public:
   /** \brief Return the dimension of the given axis
    *
    * \param axis [in] The axis being queried (0 for the first axis,
-   *        for the second axis, and so forth)
+   *        1 for the second axis, and so forth)
    */
   inline dim_type dimension(int axis) const;
 
@@ -833,6 +833,9 @@ private:
   pointer                     _ptr;
 
   // Used for array bounds checking
+  void assertAxis(int axis) const;
+
+  // Used for array bounds checking
   void assertIndex(dim_type i, int axis) const;
 };
 
@@ -973,6 +976,9 @@ template< typename T >
 dim_type
 MDArrayRCP< T >::dimension(int axis) const
 {
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+  assertAxis(axis);
+#endif
   return _dimensions[axis];
 }
 
@@ -1784,6 +1790,20 @@ std::ostream & operator<<(std::ostream & os,
 //////////////////////////
 // Private implementations
 //////////////////////////
+
+template< typename T >
+void
+MDArrayRCP< T >::assertAxis(int axis) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(0 <= axis && axis < _dimensions.size()),
+    RangeError,
+    "MDArrayRCP<T>::assertAxis(axis=" << axis << "): out of "
+    << "range axis in [0, " << _dimensions.size() << ")"
+    );
+}
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 void
