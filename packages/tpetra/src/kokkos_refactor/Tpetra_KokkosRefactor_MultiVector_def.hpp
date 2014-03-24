@@ -123,45 +123,20 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
-    // copy data from the source MultiVector into this multivector
-    RCP<Node> node = MVT::getNode(source.lclMV_);
-    const LocalOrdinal myLen = source.getLocalLength();
-    const size_t numVecs = source.getNumVectors();
-
-    // On host-type Kokkos Nodes, allocBuffer() just calls the
-    // one-argument version of arcp to allocate memory.  This should
-    // not fill the memory by default, otherwise we would lose the
-    // first-touch allocation optimization.
-/*    ArrayRCP<Scalar> data = (myLen > 0) ?
-      node->template allocBuffer<Scalar> (myLen * numVecs) :
-      Teuchos::null;*/
+    const LocalOrdinal myLen = source.getLocalLength ();
+    const size_t numVecs = source.getNumVectors ();
     ArrayRCP<Scalar> data = (myLen > 0) ?
-      Kokkos::Compat::persistingView(view_.d_view) :
+      Kokkos::Compat::persistingView (view_.d_view) :
       Teuchos::null;
-    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     view_.stride (stride);
-    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
 
     // This just sets the dimensions, pointer, and stride of lclMV_.
+    // This is only a shallow copy.
     MVT::initializeValues (lclMV_, myLen, numVecs, data, LDA);
-
-    // Refactor: don't copy we use view semantics
-    //
-    // mfh 27 Nov 2013: Hm, it will break a lot of things if
-    // MultiVector uses view semantics.  I prefer view semantics
-    // myself, but it definitely won't preserve backwards
-    // compatibility.
-
-    // This actually copies the data.  It uses the Node's
-    // parallel_for to copy, which should ensure first-touch
-    // allocation on systems that support it.
-    /*if (source.isConstantStride ()) {
-      MVT::Assign (lclMV_, source.lclMV_);
-    }
-    else {
-      MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
-    }*/
   }
 
 
@@ -172,27 +147,29 @@ namespace Tpetra {
                const view_type view) :
     DO (map),
     lclMV_ (map->getNode ()),
-    view_(view)
+    view_ (view)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
-    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    const char tfecfFuncName[] = "Tpetra::MultiVector(map,view)";
+
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     view_.stride (stride);
-    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
-    const size_t NumVectors = view_.dimension_1();
+    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    const size_t numVecs = view_.dimension_1 ();
 
-    const char tfecfFuncName[] = "MultiVector(view,LDA,NumVector)";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
-      ": NumVectors must be strictly positive, but you specified NumVectors = "
-      << NumVectors << ".");
-    const size_t myLen = getLocalLength();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
+      ": numVecs must be strictly positive, but you specified numVecs = "
+      << numVecs << ".");
+    const size_t myLen = getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
       ": LDA must be large enough to accomodate the local entries.");
 
     // This is a shallow copy into the KokkosClassic::MultiVector.
-    MVT::initializeValues(lclMV_,myLen,NumVectors,Kokkos::Compat::persistingView(view_.d_view),LDA);
+    MVT::initializeValues (lclMV_, myLen, numVecs, Kokkos::Compat::persistingView (view_.d_view), LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -208,16 +185,18 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
-    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    const char tfecfFuncName[] = "MultiVector(map,view,whichVectors)";
+
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     view_.stride (stride);
-    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
-    size_t NumVectors = view_.dimension_1();
+    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    size_t numVecs = view_.dimension_1 ();
 
-    const char tfecfFuncName[] = "MultiVector(view,LDA,NumVector)";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
-      ": NumVectors must be strictly positive, but you specified NumVectors = "
-      << NumVectors << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
+      ": numVecs must be strictly positive, but you specified numVecs = "
+      << numVecs << ".");
     const size_t myLen = getLocalLength();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
       ": LDA must be large enough to accomodate the local entries.");
@@ -227,12 +206,12 @@ namespace Tpetra {
       // kill whichVectors_; we are constant stride
       view_type tmpview = Kokkos::subview<view_type>(view_,Kokkos::ALL(),whichVectors[0]);
       view_ = tmpview;
-      NumVectors = 1;
+      numVecs = 1;
       whichVectors_.clear ();
     }
     // This is a shallow copy into the KokkosClassic::MultiVector.
     // KokkosClassic::MultiVector doesn't know about whichVectors_.
-    MVT::initializeValues (lclMV_, myLen, NumVectors, Kokkos::Compat::persistingView (view_.d_view), LDA);
+    MVT::initializeValues (lclMV_, myLen, numVecs, Kokkos::Compat::persistingView (view_.d_view), LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -249,20 +228,24 @@ namespace Tpetra {
 
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
     const size_t numRows = this->getLocalLength ();
-    view_ = view_type("MV::view_",numRows,numVecs);
-    for(size_t i = 0; i<numRows;i++)
-      for(size_t j = 0; j<numVecs;j++)
-        view_.h_view(i,j) = data[j*LDA+i];
-    view_.template modify<typename view_type::host_mirror_device_type>();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
       ": LDA = " << LDA << " < numRows = " << numRows << ".");
 
-    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    view_ = view_type("MV::view_",numRows,numVecs);
+    for (size_t i = 0; i < numRows; ++i) {
+      for (size_t j = 0; j < numVecs; ++j) {
+        view_.h_view(i,j) = data[j*LDA+i];
+      }
+    }
+    view_.template modify<typename view_type::host_mirror_device_type> ();
+
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     view_.stride (stride);
-    const size_t stride_1 = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+    const size_t stride_1 = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
 
-    MVT::initializeValues (lclMV_, numRows, numVecs, Kokkos::Compat::persistingView(view_.d_view), stride_1);
+    MVT::initializeValues (lclMV_, numRows, numVecs, Kokkos::Compat::persistingView (view_.d_view), stride_1);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -277,60 +260,69 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
+    const char tfecfFuncName[] = "MultiVector(map,ArrayOfPtrs,NumVectors)";
 
-    const char tfecfFuncName[] = "MultiVector(ArrayOfPtrs)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       NumVectors < 1 || NumVectors != as<size_t>(ArrayOfPtrs.size()),
       std::runtime_error,
       ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
-    const size_t myLen = getLocalLength();
-    RCP<Node> node = MVT::getNode(lclMV_);
-    view_ = view_type("MV::view_",myLen,NumVectors);
+    const size_t myLen = getLocalLength ();
+    view_ = view_type ("MV::view_", myLen, NumVectors);
 
-    // TODO: write a functor and use parallel_for
-    // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+    // TODO: write a functor and use parallel_for.
+
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     view_.stride (stride);
-    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
 
-    for(size_t i = 0; i<myLen;i++)
-      for(size_t j = 0; j<NumVectors;j++)
+    for (size_t i = 0; i < myLen; ++i) {
+      for (size_t j = 0; j < NumVectors; ++j) {
         view_.h_view(i,j) = ArrayOfPtrs[j][i];
-      view_.template modify<typename view_type::t_host::device_type>();
-    MVT::initializeValues(lclMV_,myLen,NumVectors,Kokkos::Compat::persistingView(view_.d_view),LDA);
+      }
+    }
+    view_.template modify<typename view_type::t_host::device_type> ();
+    MVT::initializeValues (lclMV_, myLen, NumVectors, Kokkos::Compat::persistingView (view_.d_view), LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::~MultiVector() {
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  ~MultiVector () {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  isConstantStride () const {
+    return whichVectors_.empty ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  getLocalLength () const {
+    return this->getMap ()->getNodeNumElements ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  global_size_t
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  getGlobalLength () const {
+    return this->getMap ()->getGlobalNumElements ();
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::isConstantStride() const {
-    return whichVectors_.empty();
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getLocalLength() const {
-    return this->getMap()->getNodeNumElements();
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  global_size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getGlobalLength() const {
-    return this->getMap()->getGlobalNumElements();
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getStride() const {
-    if (isConstantStride()) {
-      // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+  size_t
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  getStride () const
+  {
+    if (isConstantStride ()) {
+      // Get stride of view: if second dimension is 0, the
+      // stride might be 0, so take view_dimension instead.
       size_t stride[8];
       view_.stride (stride);
-      const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
-      const size_t LDA_C = MVT::getStride(lclMV_);
+      const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+      const size_t LDA_C = MVT::getStride (lclMV_);
       TEUCHOS_TEST_FOR_EXCEPTION(
         LDA != LDA_C, std::logic_error, "Tpetra::MultiVector::getStride: "
         "LDA from Kokkos::View != LDA from KokkosClassic.  First is " << LDA
@@ -726,9 +718,8 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::arcp_const_cast;
 
-    const char tfecfFuncName[] = "dot()";
-    //const size_t myLen   = getLocalLength();
-    const size_t numVecs = getNumVectors();
+    const char tfecfFuncName[] = "Tpetra::MultiVector::dot";
+    const size_t numVecs = getNumVectors ();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
         ": MultiVectors do not have compatible Maps:" << std::endl
@@ -742,41 +733,33 @@ namespace Tpetra {
         ": MultiVectors must have the same number of vectors.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
         ": dots.size() must be as large as the number of vectors in *this and A.");
-    /*
-    if (isConstantStride() && A.isConstantStride()) {
-      MVT::Dot(lclMV_,A.lclMV_,dots);
+
+    if (isConstantStride () && A.isConstantStride ()) {
+      Kokkos::MV_Dot (&dots[0], view_.d_view, A.view_.d_view, getLocalLength ());
     }
     else {
-      KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr  = arcp_const_cast<Scalar>(MVT::getValues(lclMV_));
-      ArrayRCP<Scalar> avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj  =   getSubArrayRCP( vptr,j);
-        ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
-        MVT::initializeValues(a,myLen, 1, avj, myLen);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
-      }
-    }*/
-    if (isConstantStride() && A.isConstantStride() ) {
-      Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view,getLocalLength());
-    } else {
       for (size_t k = 0; k < numVecs; ++k) {
         Kokkos::View<Scalar*,DeviceType> vector_k,vector_Ak;
-        if (!isConstantStride() )
+        if (! isConstantStride ()) {
           vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
-        else
+        }
+        else {
           vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), k);
-        if (!A.isConstantStride() )
+        }
+        if (! A.isConstantStride ()) {
           vector_Ak = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (A.view_.d_view, Kokkos::ALL (), A.whichVectors_[k]);
-        else
+        }
+        else {
           vector_Ak = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (A.view_.d_view, Kokkos::ALL (), k);
-        dots[k] = Kokkos::V_Dot (vector_k,vector_Ak);
+        }
+        dots[k] = Kokkos::V_Dot (vector_k, vector_Ak);
       }
     }
-    if (this->isDistributed()) {
-      Array<dot_type> ldots(dots);
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
+    if (this->isDistributed ()) {
+      Array<dot_type> ldots (dots);
+      Teuchos::reduceAll (* (this->getMap ()->getComm ()), Teuchos::REDUCE_SUM,
+                          static_cast<int> (numVecs),
+                          ldots.getRawPtr (), dots.getRawPtr ());
     }
   }
 
@@ -1314,7 +1297,10 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A) {
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  abs (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
+  {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
@@ -1352,9 +1338,11 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::update(
-                      const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
-                      const Scalar &beta)
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  update (const Scalar& alpha,
+          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A,
+          const Scalar& beta)
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
@@ -1383,56 +1371,22 @@ namespace Tpetra {
     } else {
       for (size_t k = 0; k < numVecs; ++k) {
         Kokkos::V_Add (Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]),
-                        alpha,
-                        Kokkos::subview<Kokkos::View<Scalar*,DeviceType> >  (A.view_.d_view, Kokkos::ALL (), A.whichVectors_[k]),
-                        beta,
-                        Kokkos::subview<Kokkos::View<Scalar*,DeviceType> >  (view_.d_view, Kokkos::ALL (), whichVectors_[k]));
+                       alpha,
+                       Kokkos::subview<Kokkos::View<Scalar*,DeviceType> >  (A.view_.d_view, Kokkos::ALL (), A.whichVectors_[k]),
+                       beta,
+                       Kokkos::subview<Kokkos::View<Scalar*,DeviceType> >  (view_.d_view, Kokkos::ALL (), whichVectors_[k]));
       }
     }
-    /*using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
-    using Teuchos::as;
-
-    const char tfecfFuncName[] = "update()";
-    // this = beta*this + alpha*A
-    // must support case where &this == &A
-    // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
-        ": MultiVectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << this->getMap()
-        << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
-        ": MultiVectors do not have the same local length.");
-#endif
-    const size_t myLen = getLocalLength();
-    const size_t numVecs = getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        ": MultiVectors must have the same number of vectors.");
-    if (isConstantStride() && A.isConstantStride()) {
-      MVT::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta);
-    }
-    else {
-      KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = MVT::getValuesNonConst(lclMV_),
-                      avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
-                        avj = A.getSubArrayRCP(avptr,j);
-        MVT::initializeValues(a,myLen, 1, avj, myLen);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        MVT::GESUM(v,alpha,(const KMV &)a,beta);
-      }
-    }*/
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::update(
-                      const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
-                      const Scalar &beta,  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &B,
-                      const Scalar &gamma)
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  update (const Scalar& alpha,
+          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A,
+          const Scalar& beta,
+          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& B,
+          const Scalar& gamma)
   {
     const char tfecfFuncName[] = "update()";
 #ifdef HAVE_TPETRA_DEBUG
@@ -1482,50 +1436,7 @@ namespace Tpetra {
         }
       }
     }
-    /*
-    using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
-    using Teuchos::as;
-
-    const char tfecfFuncName[] = "update()";
-    // this = alpha*A + beta*B + gamma*this
-    // must support case where &this == &A or &this == &B
-    // can't short circuit on alpha==0.0 or beta==0.0 or gamma==0.0, because 0.0*NaN != 0.0
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()),
-        std::runtime_error,
-        ": MultiVectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << *this->getMap()
-        << "A.getMap(): " << std::endl << *A.getMap() << std::endl
-        << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
-        ": MultiVectors do not have the same local length.");
-#endif
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors() || B.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        ": MultiVectors must have the same number of vectors.");
-    const size_t myLen = getLocalLength();
-    const size_t numVecs = getNumVectors();
-    if (isConstantStride() && A.isConstantStride() && B.isConstantStride()) {
-      MVT::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta,(const KMV&)B.lclMV_,gamma);
-    }
-    else {
-      KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_)), b(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = MVT::getValuesNonConst(lclMV_),
-                      avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_)),
-                      bvptr = arcp_const_cast<Scalar>(MVT::getValues(B.lclMV_));
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
-                        avj = A.getSubArrayRCP(avptr,j),
-                        bvj = B.getSubArrayRCP(bvptr,j);
-        MVT::initializeValues(b,myLen, 1, bvj, myLen);
-        MVT::initializeValues(a,myLen, 1, avj, myLen);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        MVT::GESUM(v,alpha,(const KMV&)a,beta,(const KMV&)b,gamma);
-      }
-    }*/
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::ArrayRCP<const Scalar>
@@ -1537,7 +1448,6 @@ namespace Tpetra {
     return node->template viewBuffer<Scalar> (getLocalLength (), getSubArrayRCP (MVT::getValues(lclMV_), j));
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::ArrayRCP<Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
@@ -1548,83 +1458,39 @@ namespace Tpetra {
     return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite, getLocalLength (), getSubArrayRCP (MVT::getValuesNonConst (lclMV_), j));
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >&
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
   {
-    //const char tfecfFuncName[] = "operator=";
-    DO::operator=(source);
-    RCP<Node> node = MVT::getNode(source.lclMV_);
-    const LocalOrdinal myLen = source.getLocalLength();
-    const size_t numVecs = source.getNumVectors();
+    if (this != &source) {
+      DO::operator= (source);
+      //
+      // operator= implements view semantics (shallow copy).
+      //
 
-    // On host-type Kokkos Nodes, allocBuffer() just calls the
-    // one-argument version of arcp to allocate memory.  This should
-    // not fill the memory by default, otherwise we would lose the
-    // first-touch allocation optimization.
-/*    ArrayRCP<Scalar> data = (myLen > 0) ?
-      node->template allocBuffer<Scalar> (myLen * numVecs) :
-      Teuchos::null;*/
+      // OK: Kokkos::View operator= also implements view semantics.
+      view_ = source.view_;
+      // NOTE (mfh 24 Mar 2014) Christian wrote here that assigning
+      // whichVectors_ is "probably not ok" (probably constitutes deep
+      // copy).  I would say that it's OK, because whichVectors_ is
+      // immutable (from the user's perspective); it's analogous to
+      // the dimensions or stride.  Once we make whichVectors_ a
+      // Kokkos::View instead of a Teuchos::Array, all debate will go
+      // away and we will unquestionably have view semantics.
+      whichVectors_ = source.whichVectors_;
 
-    view_ = source.view_; // OK View Semantics from Kokkos
-    whichVectors_ = source.whichVectors_; // Probably not ok (probably constitutes deep copy)
-
-    ArrayRCP<Scalar> data = (myLen > 0) ?
-      Kokkos::Compat::persistingView(view_.d_view) :
-      Teuchos::null;
-    const size_t stride = (myLen > 0) ? myLen : size_t (0);
-    // This just sets the dimensions, pointer, and stride of lclMV_.
-    MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
-
-    // Check for special case of this=Source, in which case we do nothing.
-    /*if (this != &source) {
-      // Whether the input and *this are compatible on the calling process.
-      const int locallyCompat =
-        (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
-#ifdef HAVE_TPETRA_DEBUG
-      int globallyCompat = 1; // innocent until proven guilty
-      Teuchos::reduceAll<int, int> (* (this->getMap ()->getComm ()), Teuchos::REDUCE_MIN,
-                                    locallyCompat, outArg (globallyCompat));
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        globallyCompat == 0, std::invalid_argument,
-        ": MultiVectors do not have the same local length on all processes.");
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        locallyCompat == 0, std::invalid_argument,
-        ": MultiVectors do not have the same local length on the calling "
-        "process " << this->getMap ()->getComm ()->getSize () << ".  *this "
-        "has " << this->getLocalLength () << " local rows, and source has "
-        << source.getLocalLength () << " rows.");
-#endif // HAVE_TPETRA_DEBUG
-
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        source.getNumVectors() != getNumVectors(), std::invalid_argument,
-        ": MultiVectors must have the same number of vectors.");
-
-      Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
-      const size_t numVecs = getNumVectors();
-      if (isConstantStride () && source.isConstantStride () &&
-          getLocalLength () == getStride () &&
-          source.getLocalLength ()== source.getStride ()) {
-        // Both multivectors' data are stored contiguously, so we can
-        // copy in one call.
-        KOKKOS_NODE_TRACE("MultiVector::operator=()")
-        node->template copyBuffers<Scalar> (getLocalLength () * numVecs,
-                                            MVT::getValues (source.lclMV_),
-                                            MVT::getValuesNonConst (lclMV_));
-      }
-      else {
-        // We have to copy the columns one at a time.
-        for (size_t j=0; j < numVecs; ++j) {
-          KOKKOS_NODE_TRACE("MultiVector::operator=()")
-          node->template copyBuffers<Scalar> (getLocalLength (),
-                                              source.getSubArrayRCP (MVT::getValues (source.lclMV_), j),
-                                              getSubArrayRCP (MVT::getValuesNonConst(lclMV_), j));
-        }
-      }
-    }*/
+      const LocalOrdinal myLen = source.getLocalLength ();
+      const size_t numVecs = source.getNumVectors ();
+      Teuchos::ArrayRCP<Scalar> data = (myLen > 0) ?
+        Kokkos::Compat::persistingView (view_.d_view) :
+        Teuchos::null;
+      const size_t stride = (myLen > 0) ?
+        static_cast<size_t> (myLen) :
+        static_cast<size_t> (0);
+      // This just sets the dimensions, pointer, and stride of lclMV_.
+      MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+    }
     return *this;
   }
 
