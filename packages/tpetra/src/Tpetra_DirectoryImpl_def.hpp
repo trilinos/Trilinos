@@ -727,7 +727,7 @@ namespace Tpetra {
           // one-to-one, corresponding directory Map LIDs will have
           // more than one pair.  In that case, we will use the
           // TieBreak object to pick exactly one pair.
-          typedef std::map<LO, std::vector<std::pair<LO, int> > > pair_table_type;
+          typedef std::map<LO, std::vector<std::pair<int, LO> > > pair_table_type;
           pair_table_type ownedPidLidPairs;
 
           // For each directory Map LID received, collect the zero or
@@ -826,8 +826,7 @@ namespace Tpetra {
           // one-to-one, corresponding LIDs will have
           // ownedPidLidPairs[curLID].size() > 1.  In that case, we
           // will use the TieBreak object to pick exactly one pair.
-          typedef std::vector<std::pair<int,LO> > VectorType;
-          Array<VectorType> ownedPidLidPairs (dir_numMyEntries);
+          Array<std::vector<std::pair<int, LO> > > ownedPidLidPairs (dir_numMyEntries);
           size_type importIndex = 0;
           for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
             const GO  GID = importElements[importIndex++];
@@ -835,13 +834,11 @@ namespace Tpetra {
             const LO  LID = importElements[importIndex++];
 
             const LO dirMapLid = directoryMap_->getLocalElement (GID);
-
             TEUCHOS_TEST_FOR_EXCEPTION(
               dirMapLid == LINVALID, std::logic_error,
               Teuchos::typeName(*this) << " constructor: Incoming global index "
               << GID << " does not have a corresponding local index in the "
               "Directory Map.  Please report this bug to the Tpetra developers.");
-
             ownedPidLidPairs[dirMapLid].push_back (std::make_pair (PID, LID));
           }
 
@@ -853,7 +850,8 @@ namespace Tpetra {
           for (size_type i = 0; i < ownedPidLidPairs.size (); ++i) {
             const LO dirMapLid = static_cast<LO> (i);
             const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
-            const VectorType& pid_and_lid = ownedPidLidPairs[i];
+            const std::vector<std::pair<int, LO> >& pid_and_lid =
+              ownedPidLidPairs[i];
             if (pid_and_lid.size () > 0) {
               // If there is some (PID,LID) pair for the current input
               // Map LID, then it makes sense to invoke the TieBreak
