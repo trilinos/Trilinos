@@ -639,13 +639,3 @@ TEST(stk_topology_understanding, superelements)
 
 }
 
-// stk_mesh should get away from generic entity, the entity keyword altogether, and use words
-// like node, face, edge, and element.
-// then figure out how this impacts stk::topology... (Martin: no need for node_rank and node_topology)
-// this is a bleed through of internal workings to the user which doesn't make sense.
-
-// remove constraint rank from topology
-
-// Permutations for any continuum element are NOT DONE. Does anyone need them?
-
-// consider adding a picture for each test for documentation?
