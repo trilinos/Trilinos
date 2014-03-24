@@ -37,19 +37,35 @@
 # original text in the *.cmake file that this came from for the given macro or
 # function.
 #
+# NOTE: To skip the extraction of the documentation from the *.cmake files,
+# just sent the env varaible SKIP_DOCUMENTATION_EXTRACTION as:
+#
+#   env SKIP_DOCUMENTATION_EXTRACTION=1 ./generate-dev-guilde.sh
+#
+# That will result in the generated files TribitsMacroFunctionDoc.rst and
+# UtilsMacroFunctionDoc.rst being left as is.  This would be useful to speed
+# up builds (but it is very fast) but is more useful when spell checking and
+# editing the documentation.  This speeds up the editing process and then the
+# updated documentation can be copied back into the *.cmake files of origin.
+#
 # Enjoy!
 
 ARGS=$@
 
 source source_set_env
 
-echo
-echo "Extracting TriBITS documentation from *.cmake files ..."
-echo
-../../python/extract_rst_cmake_doc.py \
-  --extract-from=../../package_arch/,../../utils/ \
-  --rst-file-pairs=TribitsMacroFunctionDocTemplate.rst:TribitsMacroFunctionDoc.rst,UtilsMacroFunctionDocTemplate.rst:UtilsMacroFunctionDoc.rst \
-  $EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
+if [ "$SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
+
+  echo
+  echo "Extracting TriBITS documentation from *.cmake files ..."
+  echo
+  ../../python/extract_rst_cmake_doc.py \
+    --extract-from=../../package_arch/,../../utils/ \
+    --rst-file-pairs=TribitsMacroFunctionDocTemplate.rst:TribitsMacroFunctionDoc.rst,UtilsMacroFunctionDocTemplate.rst:UtilsMacroFunctionDoc.rst \
+    $EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
+  
+fi
+
 
 echo
 echo "Generating HTML and PDF files ..."
