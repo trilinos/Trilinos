@@ -224,6 +224,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, squareBracketOrdinal, T )
   TEST_EQUALITY_CONST(view(2),  8);
   TEST_EQUALITY_CONST(view(3), 11);
 
+  // This tests a bug in computing the private _next_axis data member.
+  // If incorrect, we'll get an exception here.
+  view = a[Slice()][0];
+  MDArrayView< T > view2 = view[1];
+
   view = av[1][1];
   TEST_EQUALITY_CONST(view(0), 4);
 }
