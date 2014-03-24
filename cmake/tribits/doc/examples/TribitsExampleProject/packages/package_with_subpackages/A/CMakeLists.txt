@@ -1,16 +1,13 @@
 #
 # A) Define the subpackage
 #
-
-TRIBITS_SUBPACKAGE(SubpackageA ENABLE_SHADOWING_WARNINGS  CLEANED )
+TRIBITS_SUBPACKAGE(SubpackageA)
 
 #
-# B) Set up package-specific options
+# B) Set up subpackage-specific options
 #
-
-TRIBITS_ADD_DEBUG_OPTION()
-
-TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+# Typically there are none or are few as must are picked up from the parent
+# package's CMakeLists.txt file!
 
 #
 # C) Add the libraries, tests, and examples
@@ -28,5 +25,4 @@ TRIBITS_ADD_TEST_DIRECTORIES(tests)
 #
 # D) Do standard postprocessing
 #
-
 TRIBITS_SUBPACKAGE_POSTPROCESS()

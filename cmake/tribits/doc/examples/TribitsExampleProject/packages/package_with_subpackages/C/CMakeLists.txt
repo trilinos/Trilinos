@@ -1,16 +1,12 @@
 #
 # A) Define the subpackage
 #
-
-TRIBITS_SUBPACKAGE(SubpackageC ENABLE_SHADOWING_WARNINGS  CLEANED )
+TRIBITS_SUBPACKAGE(SubpackageC)
 
 #
 # B) Set up package-specific options
 #
-
-TRIBITS_ADD_DEBUG_OPTION()
-
-TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+# None!
 
 #
 # C) Add the libraries, tests, and examples
@@ -27,5 +23,4 @@ TRIBITS_ADD_TEST_DIRECTORIES(tests)
 #
 # D) Do standard postprocessing
 #
-
 TRIBITS_SUBPACKAGE_POSTPROCESS()
