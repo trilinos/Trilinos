@@ -45,7 +45,8 @@
 #
 # Usage::
 #
-#   JOIN(<outputStrVar> <sepStr> <quoteElements> "<string0>" "<string1"> ...)
+#   JOIN(<outputStrVar> <sepStr> <quoteElements> 
+#     "<string0>" "<string1"> ...)
 #
 # Arguments:
 #
