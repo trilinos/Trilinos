@@ -68,17 +68,17 @@ namespace Tpetra {
     comm_ (comm),
     node_ (node)
   {
-    // Start with a host Map.  We could create the device Map on
-    // demand, but it's easier to create it here.
+    // Start with a host Map implementation, since this will make this
+    // class' public (host) methods work.  If users want device
+    // methods, they will call getDeviceView(), which will initialize
+    // the device Map implementation.
     //
-    // FIXME (mfh 06 Feb 2014) If we're using UVM, we don't really
-    // need the host and device Maps to be separate.
+    // NOTE (mfh 06 Feb 2014) If we're using UVM, we don't really need
+    // the host and device Maps to be separate.
     mapHost_ = host_impl_type (Teuchos::as<GlobalOrdinal> (globalNumIndices),
                                indexBase, *comm, lOrG);
-    mapDevice_.create_copy_view (mapHost_);
 
     // Create the Directory on demand in getRemoteIndexList().
-    //setupDirectory ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -99,13 +99,14 @@ namespace Tpetra {
     const GO myNumInds = (myNumIndices == GSTI) ?
       getInvalidLocalIndex () : Teuchos::as<GO> (myNumIndices);
 
-    // Start with a host Map.  We could create the device Map on
-    // demand, but it's easier to create it here.
+    // Start with a host Map implementation, since this will make this
+    // class' public (host) methods work.  If users want device
+    // methods, they will call getDeviceView(), which will initialize
+    // the device Map implementation.
     //
-    // FIXME (mfh 06 Feb 2014) If we're using UVM, we don't really
-    // need the host and device Maps to be separate.
+    // NOTE (mfh 06 Feb 2014) If we're using UVM, we don't really need
+    // the host and device Maps to be separate.
     mapHost_ = host_impl_type (globalNumInds, myNumInds, indexBase, *comm);
-    mapDevice_.create_copy_view (mapHost_);
 
     // Create the Directory on demand in getRemoteIndexList().
   }
@@ -125,11 +126,14 @@ namespace Tpetra {
     const GO globalNumInds = (globalNumIndices == GSTI) ?
       getInvalidGlobalIndex () : Teuchos::as<GO> (globalNumIndices);
 
-    // Since we already have device data, start here with a device
-    // Map, and then create the host Map.
+    // Since we already have device data, start here with a device Map
+    // implementation.  In order to make this class' host methods work
+    // and still be const (that is, legal to call in a host parallel
+    // operation), we can't create the host mirror on demand; we must
+    // create it here, in advance.
     //
-    // FIXME (mfh 06 Feb 2014) If we're using UVM, we don't really
-    // need the host and device Maps to be separate.
+    // NOTE (mfh 06 Feb 2014) If we're using UVM, we don't really need
+    // the host and device Maps to be separate.
     mapDevice_ = device_impl_type (globalNumInds, myGlobalIndices, indexBase, *comm);
     mapHost_.create_copy_view (mapDevice_);
 
@@ -154,10 +158,12 @@ namespace Tpetra {
     // Copy the input GID list from host (we assume that
     // Teuchos::ArrayView should only view host memory) to device.
     //
-    // FIXME (mfh 06 Feb 2014) We could use the CUDA API function here
-    // that can look at a pointer and tell whether it lives on host or
-    // device, to tell whether the Teuchos::ArrayView is viewing host
-    // or device memory.
+    // FIXME (mfh 06 Feb, 24 Mar 2014) We could use the CUDA API
+    // function here that can look at a pointer and tell whether it
+    // lives on host or device, to tell whether the Teuchos::ArrayView
+    // is viewing host or device memory.  Regardless, we don't own the
+    // data and we will need a deep copy anyway, so we might as well
+    // copy it.
     host_view_type gidsHost (myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
     device_view_type gidsDevice ("GIDs", myGlobalIndices.size ());
     Kokkos::deep_copy (gidsDevice, gidsHost);
@@ -166,10 +172,14 @@ namespace Tpetra {
     const GO globalNumInds = (globalNumIndices == GSTI) ?
       getInvalidGlobalIndex () : Teuchos::as<GO> (globalNumIndices);
 
+    // Start with a host Map implementation, since this will make this
+    // class' public (host) methods work.  If users want device
+    // methods, they will call getDeviceView(), which will initialize
+    // the device Map implementation.
+    //
+    // NOTE (mfh 06 Feb 2014) If we're using UVM, we don't really need
+    // the host and device Maps to be separate.
     mapHost_ = host_impl_type (globalNumInds, gidsDevice, indexBase, *comm);
-    // FIXME (mfh 06 Feb 2014) If we're using UVM, we don't really
-    // need the host and device Maps to be separate.
-    mapDevice_.template create_copy_view<host_mirror_device_type> (mapHost_);
 
     // Create the Directory on demand in getRemoteIndexList().
   }
@@ -617,6 +627,7 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const
   {
+    using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::RCP;
     using Teuchos::REDUCE_MIN;
@@ -653,10 +664,21 @@ namespace Tpetra {
 
       // Make Map's constructor compute the global number of indices.
       const GST globalNumInds = Teuchos::OrdinalTraits<GST>::invalid ();
-      Kokkos::View<const GlobalOrdinal*, DeviceType> myGIDs =
-        mapDevice_.getMyGlobalIndices ();
-      return rcp (new map_type (globalNumInds, myGIDs, newIndexBase,
-                                newComm, this->getNode ()));
+
+      if (mapDevice_.initialized ()) {
+        Kokkos::View<const GO*, DeviceType> myGIDs =
+          mapDevice_.getMyGlobalIndices ();
+        return rcp (new map_type (globalNumInds, myGIDs, newIndexBase,
+                                  newComm, this->getNode ()));
+      }
+      else {
+        Kokkos::View<const GO*, host_mirror_device_type> myGidsHostView =
+          mapHost_.getMyGlobalIndices ();
+        ArrayView<const GO> myGidsArrayView (myGidsHostView.ptr_on_device (),
+                                             myGidsHostView.dimension_0 ());
+        return rcp (new map_type (globalNumInds, myGidsArrayView, newIndexBase,
+                                  newComm, this->getNode ()));
+      }
     }
   }
 
