@@ -78,6 +78,34 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 
 // **********************************************************************
 template<typename EvalT,typename Traits>
+panzer::ReorderADValues_Evaluator<EvalT, Traits>::
+ReorderADValues_Evaluator(const std::string & outPrefix,
+                          const std::vector<std::string> & inFieldNames,
+                          const std::vector<std::string> & inDOFs,
+                          const std::vector<std::string> & outDOFs,
+                          const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
+                          const std::string & elementBlock,
+                          const UniqueGlobalIndexerBase & indexerSrc,
+                          const UniqueGlobalIndexerBase & indexerDest)
+{ 
+  TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
+  TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
+
+  // build the vector of fields that this is dependent on
+  for (std::size_t eq = 0; eq < inFieldNames.size(); ++eq) {
+    inFields_.push_back(PHX::MDField<ScalarT>(inFieldNames[eq],fieldLayouts[eq]));
+    outFields_.push_back(PHX::MDField<ScalarT>(outPrefix+inFieldNames[eq],fieldLayouts[eq]));
+
+    // tell the field manager that we depend on this field
+    this->addDependentField(inFields_[eq]);
+    this->addEvaluatedField(outFields_[eq]);
+  }
+
+  this->setName("Reorder AD Values");
+}
+
+// **********************************************************************
+template<typename EvalT,typename Traits>
 void panzer::ReorderADValues_Evaluator<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
@@ -131,6 +159,51 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                     indexerDest);
 
   this->setName(outPrefix+" Reorder AD Values");
+}
+
+// **********************************************************************
+
+template<typename Traits>
+panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
+ReorderADValues_Evaluator(const std::string & outPrefix,
+                          const std::vector<std::string> & inFieldNames,
+                          const std::vector<std::string> & inDOFs,
+                          const std::vector<std::string> & outDOFs,
+                          const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
+                          const std::string & elementBlock,
+                          const UniqueGlobalIndexerBase & indexerSrc,
+                          const UniqueGlobalIndexerBase & indexerDest)
+{ 
+  TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
+  TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
+
+  // build the vector of fields that this is dependent on
+  std::map<int,int> fieldNumberMaps;
+  for (std::size_t eq = 0; eq < inFieldNames.size(); ++eq) {
+    inFields_.push_back(PHX::MDField<ScalarT>(inFieldNames[eq],fieldLayouts[eq]));
+    outFields_.push_back(PHX::MDField<ScalarT>(outPrefix+inFieldNames[eq],fieldLayouts[eq]));
+
+    // tell the field manager that we depend on this field
+    this->addDependentField(inFields_[eq]);
+    this->addEvaluatedField(outFields_[eq]);
+  }
+
+  // build a int-int map that associates fields
+  for(std::size_t i=0;i<inDOFs.size();i++) {
+    int srcFieldNum = indexerSrc.getFieldNum(inDOFs[i]);
+    int dstFieldNum = indexerDest.getFieldNum(outDOFs[i]);
+    TEUCHOS_ASSERT(srcFieldNum>=0);
+    TEUCHOS_ASSERT(dstFieldNum>=0);
+
+    fieldNumberMaps[srcFieldNum] = dstFieldNum;
+  }
+
+  buildSrcToDestMap(elementBlock,
+                    fieldNumberMaps,
+                    indexerSrc,
+                    indexerDest);
+
+  this->setName("Reorder AD Values");
 }
 
 // **********************************************************************
@@ -204,6 +277,17 @@ buildSrcToDestMap(const std::string & elementBlock,
       out << "Warning: Reorder AD Values can't find field \"" << fieldName << "\"" << std::endl;
   }
 
+  buildSrcToDestMap(elementBlock,fieldNumberMaps,indexerSrc,indexerDest);
+}
+
+// **********************************************************************
+template<typename Traits>
+void panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
+buildSrcToDestMap(const std::string & elementBlock,
+                  const std::map<int,int> & fieldNumberMaps,
+                  const UniqueGlobalIndexerBase & indexerSrc,
+                  const UniqueGlobalIndexerBase & indexerDest)
+{
   int maxDest = -1;
   std::map<int,int> offsetMap; // map from source to destination offsets
   for(std::map<int,int>::const_iterator itr=fieldNumberMaps.begin();
