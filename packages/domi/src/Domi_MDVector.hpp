@@ -591,7 +591,10 @@ public:
    * view transform.
    */
   template < class LocalOrdinal >
-  Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, LocalOrdinal, Node > >
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                     LocalOrdinal,
+                                     LocalOrdinal,
+                                     Node > >
   getTpetraMultiVector() const;
 
   /** \brief Return this MDVector as an Tpetra::MultiVector
@@ -613,7 +616,10 @@ public:
    */
   template < class LocalOrdinal,
              class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, GlobalOrdinal, Node > >
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                     LocalOrdinal,
+                                     GlobalOrdinal,
+                                     Node > >
   getTpetraMultiVector() const;
 
   /** \brief Return this MDVector as an Tpetra::MultiVector
@@ -636,7 +642,10 @@ public:
   template < class LocalOrdinal,
              class GlobalOrdinal,
              class Node2 >
-  Teuchos::RCP< Tpetra::MultiVector< LocalOrdinal, GlobalOrdinal, Node2 > >
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                     LocalOrdinal,
+                                     GlobalOrdinal,
+                                     Node2 > >
   getTpetraMultiVector() const;
 
 #endif
@@ -1565,7 +1574,7 @@ getEpetraMultiVector() const
   TEUCHOS_TEST_FOR_EXCEPTION(
     stride*numVectors > Teuchos::OrdinalTraits<int>::max(),
     MapOrdinalError,
-    "Buffer size " << stride*numVectors << " is too large for Eeptra int "
+    "Buffer size " << stride*numVectors << " is too large for Epetra int "
     "ordinals");
   int lda = (int)stride;
 
@@ -1581,6 +1590,176 @@ getEpetraMultiVector() const
                                              (double*) buffer,
                                              lda,
                                              numVectors));
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+
+template< class Scalar, class Node >
+template< class LocalOrdinal >
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
+MDVector< Scalar, Node >::
+getTpetraVector() const
+{
+  return getTpetraVector< LocalOrdinal, LocalOrdinal, Node >();
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+
+template< class Scalar, class Node >
+template< class LocalOrdinal,
+          class GlobalOrdinal >
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
+MDVector< Scalar, Node >::
+getTpetraVector() const
+{
+  return getTpetraVector< LocalOrdinal, GlobalOrdinal, Node >();
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+
+template< class Scalar, class Node >
+template< class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node2 >
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
+MDVector< Scalar, Node >::
+getTpetraVector() const
+{
+  // Throw an exception if this MDVector's MDMap is not contiguous
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !isContiguous(),
+    MDMapNoncontiguousError,
+    "This MDVector's MDMap is non-contiguous.  This can happen when you take "
+    "a slice of a parent MDVector.");
+
+  // Get the Tpetra::Map that is equivalent to this MDVector's MDMap
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
+                                   GlobalOrdinal,
+                                   Node2 > > tpetraMap =
+    _mdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, Node2 >(true);
+
+  // Return the result
+  return Teuchos::rcp(new Tpetra::Vector< Scalar,
+                                          LocalOrdinal,
+                                          GlobalOrdinal,
+                                          Node2 >(tpetraMap,
+                                                  _mdArrayView.arrayView()));
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+
+template< class Scalar, class Node >
+template < class LocalOrdinal >
+Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                   LocalOrdinal,
+                                   LocalOrdinal,
+                                   Node > >
+MDVector< Scalar, Node >::
+getTpetraMultiVector() const
+{
+  return getTpetraMultiVector< LocalOrdinal, LocalOrdinal, Node >();
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+
+template< class Scalar, class Node >
+template < class LocalOrdinal,
+           class GlobalOrdinal >
+Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                   LocalOrdinal,
+                                   GlobalOrdinal,
+                                   Node > >
+MDVector< Scalar, Node >::
+getTpetraMultiVector() const
+{
+  return getTpetraMultiVector< LocalOrdinal, GlobalOrdinal, Node >();
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+
+template< class Scalar, class Node >
+template < class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node2 >
+Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                   LocalOrdinal,
+                                   GlobalOrdinal,
+                                   Node2 > >
+MDVector< Scalar, Node >::
+getTpetraMultiVector() const
+{
+  // Determine the vector axis and related info
+  int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
+  int padding    = getLowerPadSize(vectorAxis) + getUpperPadSize(vectorAxis);
+  int commDim    = getCommDim(vectorAxis);
+  int numVectors = getGlobalDim(vectorAxis);
+
+  // Obtain the appropriate MDMap and check that it is contiguous
+  Teuchos::RCP< const MDMap< Node > > newMdMap;
+  if (padding == 0 && commDim == 1)
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
+  else
+  {
+    newMdMap = _mdMap;
+    numVectors = 1;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! newMdMap->isContiguous(),
+    MDMapNoncontiguousError,
+    "This MDVector's MDMap is non-contiguous.  This can happen when you take "
+    "a slice of a parent MDVector.");
+
+  // Get the stride between vectors.  The MDMap strides are private,
+  // but we know the new MDMap is contiguous, so we can calculate it
+  // as the product of the new MDMap dimensions (including padding)
+  size_type stride = newMdMap->getLocalDim(0,true);
+  for (int axis = 0; axis < newMdMap->numDims(); ++axis)
+    stride *= newMdMap->getLocalDim(axis,true);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stride*numVectors > Teuchos::OrdinalTraits<GlobalOrdinal>::max(),
+    MapOrdinalError,
+    "Buffer size " << stride*numVectors << " is too large for Tpetra "
+    "GlobalOrdinal = " << typeid(GlobalOrdinal).name() );
+  size_t lda = (size_t)stride;
+
+  // Get the Tpetra::Map that is equivalent to newMdMap
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
+                                   GlobalOrdinal,
+                                   Node2> > tpetraMap =
+    newMdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, Node2 >(true);
+
+  // Return the result
+  return Teuchos::rcp(new Tpetra::MultiVector< Scalar,
+                                               LocalOrdinal,
+                                               GlobalOrdinal,
+                                               Node2 >(tpetraMap,
+                                                       _mdArrayRcp.arrayRCP(),
+                                                       lda,
+                                                       numVectors));
 }
 
 #endif
