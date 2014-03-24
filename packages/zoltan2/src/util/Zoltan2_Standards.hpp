@@ -88,8 +88,6 @@
 
 namespace Zoltan2{
 
-using namespace std;
-
 using Teuchos::ENull;
 using Teuchos::RCP;
 using Teuchos::rcp;

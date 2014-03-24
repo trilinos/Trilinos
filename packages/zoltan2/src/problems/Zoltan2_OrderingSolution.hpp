@@ -128,7 +128,7 @@ public:
     }
     else {
       // TODO: throw exception
-      cerr << "No inverse!" << endl;
+      std::cerr << "No inverse!" << std::endl;
     }
   }
 
@@ -144,7 +144,7 @@ public:
     }
     else {
       // TODO: throw exception
-      cerr << "No perm!" << endl;
+      std::cerr << "No perm!" << std::endl;
     }
   }
 

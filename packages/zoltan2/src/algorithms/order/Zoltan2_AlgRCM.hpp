@@ -92,7 +92,7 @@ class AlgRCM
     model->getLocalEdgeList(edgeIds, offsets, wgts); 
     const int numWeightsPerEdge = model->getNumWeightsPerEdge();
     if (numWeightsPerEdge > 1){
-      throw runtime_error("Multiple weights not supported.");
+      throw std::runtime_error("Multiple weights not supported.");
     }
   
 #if 0
@@ -139,11 +139,11 @@ class AlgRCM
       // Select root method. Pseudoperipheral usually gives the best
       // ordering, but the user may choose a faster method.
       std::string root_method = pl->get("root_method", "pseudoperipheral");
-      if (root_method == string("first"))
+      if (root_method == std::string("first"))
         root = next;
-      else if (root_method == string("smallest_degree"))
+      else if (root_method == std::string("smallest_degree"))
         root = findSmallestDegree(next, nVtx, edgeIds, offsets);
-      else if (root_method == string("pseudoperipheral"))
+      else if (root_method == std::string("pseudoperipheral"))
         root = findPseudoPeripheral(next, nVtx, edgeIds, offsets);
       else {
         // This should never happen if pl was validated.

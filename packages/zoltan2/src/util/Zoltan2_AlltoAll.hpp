@@ -225,9 +225,9 @@ void AlltoAllv(const Comm<int> &comm,
 template <>
 void AlltoAllv(const Comm<int> &comm,
               const Environment &env,
-              const ArrayView<const string> &sendBuf,
+              const ArrayView<const std::string> &sendBuf,
               const ArrayView<const int> &sendCount,
-              ArrayRCP<string> &recvBuf,
+              ArrayRCP<std::string> &recvBuf,
               const ArrayView<int> &recvCount);
 
 #ifdef HAVE_ZOLTAN2_LONG_LONG

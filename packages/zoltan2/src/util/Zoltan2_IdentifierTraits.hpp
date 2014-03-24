@@ -81,8 +81,8 @@ extern int getHashCode(const unsigned char *a, size_t len);
 template <typename T>
   std::pair<T, T> z2LocalMinMax(const T *val, size_t n)
 {
-  T max = numeric_limits<T>::min();
-  T min = numeric_limits<T>::max();
+  T max = std::numeric_limits<T>::min();
+  T min = std::numeric_limits<T>::max();
 
   for (size_t i=0; i < n; i++){
     if (val[i] < min) min = val[i];
@@ -119,8 +119,8 @@ template <typename T>
     T localMin, T localMax, T &globalMin, T &globalMax)
 {
   if (noLocalValues){
-    localMin = numeric_limits<T>::max();
-    localMax = numeric_limits<T>::min();
+    localMin = std::numeric_limits<T>::max();
+    localMax = std::numeric_limits<T>::min();
   }
 
   if (comm.getSize() == 1){
@@ -610,8 +610,8 @@ struct IdentifierTraits<unsigned long long> {
 #endif
 
 template<>
-struct IdentifierTraits<string> {
-  typedef string T;
+struct IdentifierTraits<std::string> {
+  typedef std::string T;
   static inline int hashCode(const T a) {
     return getHashCode(
       reinterpret_cast<const unsigned char *>(a.c_str()), a.size());}
@@ -778,8 +778,8 @@ template <typename T>
       v1 = val[len-1];
     }
     else {
-      v0 = numeric_limits<T>::max();
-      v1 = numeric_limits<T>::min();
+      v0 = std::numeric_limits<T>::max();
+      v1 = std::numeric_limits<T>::min();
     }
   
     try{
