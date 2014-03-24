@@ -52,6 +52,11 @@
 // it is by default), then Map will used the fixed-structure hash
 // table variant for global-to-local index lookups.  Otherwise, it
 // will use the dynamic-structure hash table variant.
+//
+// mfh 23 Mar 2014: I've removed all code in Map that uses the
+// dynamic-structure hash table variant, since it has not been used
+// for at least a year.  However, I am retaining the #define, in case
+// downstream code depends on it.
 
 #ifndef HAVE_TPETRA_FIXED_HASH_TABLE
 #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
@@ -73,13 +78,8 @@ namespace Tpetra {
     // Forward declaration of TieBreak
     template <class LO, class GO> class TieBreak;
 
-#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     template<class GlobalOrdinal, class LocalOrdinal>
     class FixedHashTable;
-#  else
-    template<class GlobalOrdinal, class LocalOrdinal>
-    class HashTable;
-#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \class MapCloner
@@ -864,13 +864,8 @@ namespace Tpetra {
     /// describe(), may invoke getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
-#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#else
-    //! Type of the table that maps global IDs to local IDs.
-    typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     /// \brief A mapping from global IDs to local IDs.
     ///
