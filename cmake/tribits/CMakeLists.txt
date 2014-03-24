@@ -5,7 +5,7 @@
 ################################################################################
 
 
-IF (TriBITS_PROCESSED_BASED_PROJECT)
+IF (TriBITS_PROCESSED_BASE_PROJECT)
 
   # This CMakeLists.txt file is being processed as the TriBITS package file.
 
@@ -28,32 +28,34 @@ IF (TriBITS_PROCESSED_BASED_PROJECT)
 
 ELSE()
 
-  # This CMakeLists.txt file is being processed as the projects's base
-  # CMakeLists.txt file!  (See comments at bottom of file)
+  # This CMakeLists.txt file is being processed as the TriBITSProj projects's
+  # base CMakeLists.txt file!  (See comments at bottom of this file.)
 
   INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
   PROJECT(${PROJECT_NAME} NONE)
   
   SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "")
-  SET(CMAKE_MODULE_PATH "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch")
-  INCLUDE(TribitsProject)
+  INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
   
   CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
-  # TriBITS is the only package so just enabled it!
+  # TriBITS is the only package so just enable it!
   SET(${PROJECT_NAME}_ENABLE_TriBITS ON)
 
-  SET(TriBITS_PROCESSED_BASED_PROJECT ON)
+  SET(TriBITS_PROCESSED_BASE_PROJECT ON)
 
   TRIBITS_PROJECT()
 
 ENDIF()
 
-# NOTE: In order to allow the tribits directory to be both a TriBITS package
+# NOTE: In order to allow the `tribits` directory to be both a TriBITS package
 # (for inclusion in other TriBITS projects) and to be a TriBITS project
-# itself, you only have to put in a simple if statement and in
-# PackagesList.cmake you just need to use a different binary directory.  That
-# is all!  In fact, this tribits directory shows how the same directory can be
-# used for a TriBITS package, a TriBITS repository, and a TriBITS project!
-# However, you can't name the project the same as the package since this will
-# try to create two targets with the name ${PROJECT_NAME}_libs.
+# itself, you only have to put in a simple if statement in this top-level
+# CMakeLists.txt file and need to use a different package binary directory in
+# PackagesList.cmake.  That is all!  In fact, this `tribits` directory shows
+# how the same directory can be used for a TriBITS package, a TriBITS
+# repository, and a TriBITS project!  However, you can't name the project the
+# same as the package, otherwise, TriBITS woiuld try to try to create two
+# targets with the name, such as ${PROJECT_NAME}_libs.  Therefore a different
+# name and different binary directory must be used for the TriBITS package.
+# But that is all.
