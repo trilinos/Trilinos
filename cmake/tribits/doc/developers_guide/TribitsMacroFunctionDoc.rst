@@ -4,7 +4,7 @@
 .. should be directly modified!
 
 TRIBITS_ADD_ADVANCED_TEST()
----------------------------
++++++++++++++++++++++++++++
 
 Function that creates an advanced test defined by stringing together one or
 more executables and/or commands that is run as a separate CMake -P script
@@ -388,8 +388,21 @@ examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
 current binary directory (see `Implementation Details
 (TRIBITS_ADD_ADVANCED_TEST())`_).
 
+TRIBITS_ADD_DEBUG_OPTION()
+++++++++++++++++++++++++++
+
+Add the standard option ``${PACKGE_NAME}_ENABLE_DEBUG`` for the package.
+
+Usage::
+
+  TRIBITS_ADD_DEBUG_OPTION()
+
+This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
+true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
+the package's configured header file).
+
 TRIBITS_ADD_EXAMPLE_DIRECTORIES()
----------------------------------
++++++++++++++++++++++++++++++++++
  
 Macro called to conditionally add a set of example directories for an SE
 package.
@@ -411,7 +424,7 @@ be extended in the futgure in order to modify behavior related to adding
 tests and examples in a uniform way..
 
 TRIBITS_ADD_EXECUTABLE()
-------------------------
+++++++++++++++++++++++++
 
 Function used to create an executable (typically for a test or example),
 using the built-in CMake command ``ADD_EXECUTABLE()``.
@@ -616,7 +629,7 @@ If ``INSTALLABLE`` is passed in, then an install target ``INSTALL(TARGETS
 determined by ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``) .
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST()
----------------------------------
++++++++++++++++++++++++++++++++++
 
 Add an executable and a test (or several tests) all in one shot.
 
@@ -675,7 +688,7 @@ that either takes no arguments or just a simple set of arguments passed in
 through ``ARGS``.
 
 TRIBITS_ADD_LIBRARY()
----------------------
++++++++++++++++++++++
 
 Function used to add a CMake library and target using ``ADD_LIBRARY()``.
 
@@ -837,7 +850,7 @@ include these header files.  To add defines, please use a configured header
 file (see `TRIBITS_CONFIGURE_FILE()`_).
 
 TRIBITS_ADD_OPTION_AND_DEFINE()
--------------------------------
++++++++++++++++++++++++++++++++
 
 Add an option and a define variable in one shot.
 
@@ -855,8 +868,23 @@ package's configure file (see `TRIBITS_CONFIGURE_FILE()`_) have the line::
 
   #cmakedefine <macroDefineName>
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
++++++++++++++++++++++++++++++++++++++++++++++
+
+Add the standard option ``${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` for the
+package.
+
+Usage::
+
+  TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+This option is given the
+default``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then
+looked for in `TRIBITS_CONFIGURE_FILE()`_ to add macros to add deprecated
+warnings to deprecated parts of a package.
+
 TRIBITS_ADD_TEST()
-------------------
+++++++++++++++++++
 
 Add a test or a set of tests for a single executable or command.
 
@@ -1297,7 +1325,7 @@ multiple argument sets to ``ARGS`` or through multiple
 ``${FULL_TEST_NAME}_DISABLE=TRUE`` must be set for each test individually.
 
 TRIBITS_ADD_TEST_DIRECTORIES()
-------------------------------
+++++++++++++++++++++++++++++++
 
 Macro called to add a set of test directories for an SE package.
 
@@ -1318,7 +1346,7 @@ extended in the futgure in order to modify behavior related to adding tests
 and examples in a uniform way..
 
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
------------------------------------------
++++++++++++++++++++++++++++++++++++++++++
 
 Macro used in Dependencies.cmake files to allow some upstream dependent packages
 to be missing.
@@ -1343,7 +1371,7 @@ misspelled package names so it is important to only use it when it
 absolutely is needed.
 
 TRIBITS_CONFIGURE_FILE()
-------------------------
+++++++++++++++++++++++++
 
 Macro that configures the package's main configured header file (typically
 called ``${PACKAGE_NAME}_config.h`` but any name can be used).
@@ -1376,12 +1404,12 @@ creating configured header files adding macros for deprecating code.
 
 **Deprecated Code Macros**
 
-If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE``, then the
-local CMake varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS``
-adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
-``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
-add the compiler-specific deprecated warning for an entity.  To use this,
-just add the line::
+If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE`` (see
+`TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()`_), then the local CMake
+varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS`` adds a define
+``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where ``<PARENT_PACKAGE_NAME_UC>``
+is the package name in all upper-case letters) add the compiler-specific
+deprecated warning for an entity.  To use this, just add the line::
 
   @<PARENT_PACKAGE_NAME_UC>_DEPRECATED_DECLARATIONS@
 
@@ -1397,7 +1425,7 @@ macro is defined to be empty.  See `Regulated Backward Compatibility and
 Deprecated Code`_ for more details.
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR()
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 Function that copies a list of files from a soruce directory to a
 destination directory at configure time, typically so that it can be used in
@@ -1515,10 +1543,11 @@ The individual arguments are:
     appended to the arguments in the ``EXEDEPS`` list.
 
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
--------------------------------------
++++++++++++++++++++++++++++++++++++++
 
 Define the dependenices for a given TriBITS SE package (i.e. a top-level
-package or a subpackage).
+package or a subpackage) in the package's
+`<packageDir>/cmake/Dependencies.cmake`_ file.
 
 Usage::
 
@@ -1637,7 +1666,7 @@ Other variables that this macro handles:
 
 * **REGRESSION_EMAIL_LIST:** The email list that is used to send CDash error
   messages.  If this is missing, then the email list that CDash errors go to
-  is determined by other means (see ???).
+  is determined by other means (see `CDash regression email addresses`_).
 
 NOTE: All this macro really does is to just define the variables:
 
@@ -1660,7 +1689,7 @@ are empty.  This is a error checking property of the TriBITS system to avoid
 misspelling the names of these variables.
 
 TRIBITS_DEFINE_REPOSITORY_PACKAGES()
-------------------------------------
+++++++++++++++++++++++++++++++++++++
 
 Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a `<repoDir>/PackagesList.cmake`_ file for a given
@@ -1723,7 +1752,7 @@ varible include:
   misspell the name of the macro, it is an immediate error in CMake.
 
 TRIBITS_DEFINE_REPOSITORY_TPLS()
---------------------------------
+++++++++++++++++++++++++++++++++
 
 Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
@@ -1785,7 +1814,7 @@ directly setting this varible include:
   name of the macro, it is an immediate error in CMake.
 
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()
---------------------------------------
+++++++++++++++++++++++++++++++++++++++
 
 Disable a package automatically for a list of platforms.
 
@@ -1802,7 +1831,7 @@ disabled by default.  However, an explicit enable can still enable the
 package.
 
 TRIBITS_INCLUDE_DIRECTORIES()
------------------------------
++++++++++++++++++++++++++++++
 
 This function is to override the standard behavior of include_directories
 for a TriBITS package.
@@ -1828,7 +1857,7 @@ are test only headers that are needed.  For that case we allow people to set
 directory does need to be set for instaltion testing.
 
 TRIBITS_PACKAGE()
------------------
++++++++++++++++++
 
 Macro called at the very beginning of a package's top-level CMakeLists.txt
 file.
@@ -1848,7 +1877,7 @@ See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
 side-effects (and varibles set) after calling this macro.
 
 TRIBITS_PACKAGE_DECL()
-----------------------
+++++++++++++++++++++++
 
 Macro called at the very beginning of a package's top-level CMakeLists.txt
 file when a packages has subpackages.
@@ -1919,7 +1948,7 @@ There are several side-effects of calling this macro:
   the ``*.cmake`` extension.
 
 TRIBITS_PACKAGE_DEF()
----------------------
++++++++++++++++++++++
 
 Macro called after subpackages are processed in order to
 handle the libraries, tests, and examples of the final package. 
@@ -1940,7 +1969,7 @@ This macro has several side effects:
   list of libraries, etc.) are initialized to emtpy.
 
 TRIBITS_PACKAGE_POSTPROCESS()
------------------------------
++++++++++++++++++++++++++++++
  
 Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
@@ -1954,7 +1983,7 @@ NOTE: It is unfortunate that a packages's CMakeLists.txt file must call this
 macro but limitations of the CMake language make it necessary to do so.
 
 TRIBITS_PROCESS_SUBPACKAGES()
------------------------------
++++++++++++++++++++++++++++++
 
 Macro that processes subpackages for packages that have them.  This is
 called in the parent packages top-level CMakeLists.txt file.
@@ -1967,7 +1996,7 @@ Must be called after `TRIBITS_PACKAGE_DECL()`_ but before
 `TRIBITS_PACKAGE_DEF()`_.
 
 TRIBITS_PROJECT()
------------------
++++++++++++++++++
 
 Defines and processes a TriBITS project.
 
@@ -1986,7 +2015,7 @@ then performs all processing of the TriBITS project files (see ???).
 ToDo: Give documentation!
 
 TRIBITS_SET_ST_FOR_DEV_MODE()
------------------------------
++++++++++++++++++++++++++++++
 
 Function that allows packages to easily make a feature ``ST`` for
 development builds and ``PT`` for release builds by default.
@@ -2006,8 +2035,49 @@ set to ``OFF``. In release mode
 code., while still having important functionality available to users by
 default in a release.
 
+TRIBITS_SUBPACKAGE()
+++++++++++++++++++++
+
+Declare a subpackage.
+
+Usage::
+
+  TRIBITS_SUBPACKAGE(<spkgName>)
+
+Once called, the following local varibles are in scope:
+
+  ``PARENT_PACKAGE_NAME``
+
+    The name of the parent package.
+
+  ``SUBPACKAGE_NAME``
+
+    The local name of the subpackage (does not contain
+    the parent package name).
+
+  ``SUBPACKAGE_FULLNAME``
+
+    The full project-level name of the subpackage (which includes the parent
+    package name at the beginning).
+
+  ``PACKAGE_NAME``
+
+    Inside the subpackage, the same as ``SUBPACKAGE_FULLNAME``.
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()
+++++++++++++++++++++++++++++++++
+
+Postprocess after defining a subpackage.
+
+Usage::
+
+  TRIBITS_SUBPACKAGE_POSTPROCESS()
+
+NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
+this macro but limitations of the CMake language make it necessary to do so.
+
 TRIBITS_TPL_DECLARE_LIBRARIES()
--------------------------------
++++++++++++++++++++++++++++++++
 
 Function that sets up cache variables for users to specify where to find a
 TPL's headers and libraries.  This function is typically called inside of a
@@ -2078,7 +2148,7 @@ intended for the user to set and/or use:
   correct list of libraries to link to.
 
 TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
-----------------------------------------------------
+++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
 Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
@@ -2097,40 +2167,40 @@ Usage::
 
 The arguments are:
 
-``PACKAGE_NAME <pakageName>``
-
-  Gives the name of the TriBITS package for which the export files should be
-  created for.
-
-``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
-
-  If specified, then all of the varibles in the generated export files will
-  be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
-  This is to provide flexibility.
-
-``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
-
-  If specified, then the package <packageName>'s cmake configure export file
-  for extenral CMake client projects will be created in the file
-  <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
-
-``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
-
-  If specified, then the package <packageName>'s cmake configure export file
-  for external Makefile client projects will be created in the file
-  <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
-
-``WRITE_INSTALL_CMAKE_CONFIG_FILE``
-
-  If specified, then the package <packageName>'s install cmake configure
-  export to be installed will be written.  The name and location of this
-  file is hard-coded.
-
-``WRITE_INSTALL_EXPORT_MAKLEFILE``
-
-  If specified, then the package <packageName>'s install export makefile to
-  be installed will be written.  The name and location of this file is
-  hard-coded.
+  ``PACKAGE_NAME <pakageName>``
+ 
+    Gives the name of the TriBITS package for which the export files should be
+    created for.
+ 
+  ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
+ 
+    If specified, then all of the varibles in the generated export files will
+    be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
+    This is to provide flexibility.
+ 
+  ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
+ 
+    If specified, then the package <packageName>'s cmake configure export file
+    for extenral CMake client projects will be created in the file
+    <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
+ 
+  ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
+ 
+    If specified, then the package <packageName>'s cmake configure export file
+    for external Makefile client projects will be created in the file
+    <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
+ 
+  ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
+ 
+    If specified, then the package <packageName>'s install cmake configure
+    export to be installed will be written.  The name and location of this
+    file is hard-coded.
+ 
+  ``WRITE_INSTALL_EXPORT_MAKLEFILE``
+ 
+    If specified, then the package <packageName>'s install export makefile to
+    be installed will be written.  The name and location of this file is
+    hard-coded.
 
 NOTE: The arguments to this function may look strange but the motivation is
 to support versy speicalized use cases such as when a TriBITS package needs

@@ -41,19 +41,33 @@ INCLUDE(TribitsPackageMacros)
 
 
 #
-# Define a subpackage.
+# @MACRO: TRIBITS_SUBPACKAGE()
 #
-# Once called, the following varibles are in scope:
+# Declare a subpackage.
 #
-#   PARENT_PACKAGE_NAME: The name of the parent package
+# Usage::
 #
-#   SUBPACKAGE_NAME: The local name of the subpackage (does not contain the
-#   parent package name).
+#   TRIBITS_SUBPACKAGE(<spkgName>)
 #
-#   SUBPACKAGE_FULLNAME: The full project-level name of the subpackage (which
-#   includes the parent package name at the beginning).
+# Once called, the following local varibles are in scope:
 #
-#   PACKAGE_NAME: Inside the subpackage, the same as SUBPACKAGE_FULLNAME.
+#   ``PARENT_PACKAGE_NAME``
+#
+#     The name of the parent package.
+#
+#   ``SUBPACKAGE_NAME``
+#
+#     The local name of the subpackage (does not contain
+#     the parent package name).
+#
+#   ``SUBPACKAGE_FULLNAME``
+#
+#     The full project-level name of the subpackage (which includes the parent
+#     package name at the beginning).
+#
+#   ``PACKAGE_NAME``
+#
+#     Inside the subpackage, the same as ``SUBPACKAGE_FULLNAME``.
 #
 MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
 
@@ -82,9 +96,17 @@ ENDMACRO()
 
 
 #
-# Postprocess after defining a subpackage
+# @MACRO: TRIBITS_SUBPACKAGE_POSTPROCESS()
 #
-
+# Postprocess after defining a subpackage.
+#
+# Usage::
+#
+#   TRIBITS_SUBPACKAGE_POSTPROCESS()
+#
+# NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
+# this macro but limitations of the CMake language make it necessary to do so.
+#
 MACRO(TRIBITS_SUBPACKAGE_POSTPROCESS)
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
 ENDMACRO()

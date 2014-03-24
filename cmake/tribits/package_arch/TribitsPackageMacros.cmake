@@ -359,6 +359,19 @@ ENDMACRO()
 #
 
 
+#
+# @MACRO: TRIBITS_ADD_DEBUG_OPTION()
+#
+# Add the standard option ``${PACKGE_NAME}_ENABLE_DEBUG`` for the package.
+#
+# Usage::
+#
+#   TRIBITS_ADD_DEBUG_OPTION()
+#
+# This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
+# true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
+# the package's configured header file).
+#
 MACRO(TRIBITS_ADD_DEBUG_OPTION)
   TRIBITS_ADD_OPTION_AND_DEFINE(
     ${PACKAGE_NAME}_ENABLE_DEBUG
@@ -378,6 +391,21 @@ MACRO(TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION)
 ENDMACRO()
 
 
+#
+# @MACRO: TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+#
+# Add the standard option ``${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` for the
+# package.
+#
+# Usage::
+#
+#   TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+#
+# This option is given the
+# default``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then
+# looked for in `TRIBITS_CONFIGURE_FILE()`_ to add macros to add deprecated
+# warnings to deprecated parts of a package.
+#
 MACRO(TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION)
   ADVANCED_SET(
     ${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS  ${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}

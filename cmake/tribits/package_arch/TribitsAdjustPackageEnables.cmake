@@ -320,7 +320,8 @@ ENDMACRO()
 # @MACRO: TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
 #
 # Define the dependenices for a given TriBITS SE package (i.e. a top-level
-# package or a subpackage).
+# package or a subpackage) in the package's
+# `<packageDir>/cmake/Dependencies.cmake`_ file.
 #
 # Usage::
 #
@@ -439,7 +440,7 @@ ENDMACRO()
 #
 # * **REGRESSION_EMAIL_LIST:** The email list that is used to send CDash error
 #   messages.  If this is missing, then the email list that CDash errors go to
-#   is determined by other means (see ???).
+#   is determined by other means (see `CDash regression email addresses`_).
 #
 # NOTE: All this macro really does is to just define the variables:
 #

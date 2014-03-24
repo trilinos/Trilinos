@@ -105,12 +105,12 @@ ENDFUNCTION()
 #
 # **Deprecated Code Macros**
 #
-# If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE``, then the
-# local CMake varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS``
-# adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
-# ``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
-# add the compiler-specific deprecated warning for an entity.  To use this,
-# just add the line::
+# If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE`` (see
+# `TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()`_), then the local CMake
+# varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS`` adds a define
+# ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where ``<PARENT_PACKAGE_NAME_UC>``
+# is the package name in all upper-case letters) add the compiler-specific
+# deprecated warning for an entity.  To use this, just add the line::
 #
 #   @<PARENT_PACKAGE_NAME_UC>_DEPRECATED_DECLARATIONS@
 #

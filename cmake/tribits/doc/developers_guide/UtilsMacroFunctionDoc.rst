@@ -4,7 +4,7 @@
 .. should be directly modified!
 
 ADD_SUBDIRECTORIES()
---------------------
+++++++++++++++++++++
 
 Macro that adds a list of subdirectories all at once (removed boiler-place
 code).
@@ -14,7 +14,7 @@ Usage::
   ADD_SUBDIRECTORIES(<dir1> <dir2> ...)
 
 ADVANCED_OPTION()
------------------
++++++++++++++++++
 
 Macro that sets an option and marks it as advanced (removes boiler-plate and
 duplication).
@@ -29,7 +29,7 @@ This is identical to::
   MARK_AS_ADVANCED(<varName>)
 
 ADVANCED_SET()
---------------
+++++++++++++++
 
 Macro that sets a variable and marks it as advanced (removes boiler-plate
 and duplication).
@@ -44,7 +44,7 @@ This is identical to::
   MARK_AS_ADVANCED(<varName>)
 
 APPEND_CMNDLINE_ARGS()
-----------------------
+++++++++++++++++++++++
 
 Utility function that appends command-line arguments to a variable of
 command-line options.
@@ -58,7 +58,7 @@ This function just appends the command-line arguments in the string
 input.
 
 APPEND_GLOB()
--------------
++++++++++++++
 
 Utility macro that does a ``FILE(GLOB ...)`` and appends to an existing list
 (removes boiler-plate code).
@@ -70,7 +70,7 @@ Usage::
 On output, ``<fileListVar>`` will have the list of glob files appended.
 
 APPEND_GLOBAL_SET()
--------------------
++++++++++++++++++++
 
 Utility macro that appends arguments to a global variable (reduces
 boiler-plate code and mistakes).
@@ -83,7 +83,7 @@ NOTE: The variable ``<varName>`` must exist before calling this function.
 To set it empty initially use `GLOBAL_NULL_SET()`_.
 
 APPEND_SET()
-------------
+++++++++++++
 
 Utility function to append elements to a varible (reduces boiler-plate
 code).
@@ -97,7 +97,7 @@ Just calls::
   LIST(APPEND <varName> <arg0> <arg1> ...)
 
 APPEND_STRING_VAR()
--------------------
++++++++++++++++++++
 
 Append strings to an existing string variable (reduces boiler-place code and
 reduces mistakes).
@@ -113,7 +113,7 @@ If you want to ignore the meaning of these special characters and are okay with
 just adding one string at a time use `APPEND_STRING_VAR_EXT()`_.
 
 APPEND_STRING_VAR_EXT()
------------------------
++++++++++++++++++++++++
 
 Append a single string to an existing string variable, ignoring ';' (reduces
 boiler-place code and reduces mistakes).
@@ -125,7 +125,7 @@ Usage::
 Simply sets ``<stringVar> = "${<stringVar>}<string>"``.
 
 APPEND_STRING_VAR_WITH_SEP()
-----------------------------
+++++++++++++++++++++++++++++
 
 Append strings to a given string varible, joining them using a seperator.
 
@@ -137,7 +137,7 @@ Each of the strings ``<stri>`` are appended to ``<stringVar>`` using the
 separation string ``<sepStr>``.
 
 ASSERT_DEFINED()
-----------------
+++++++++++++++++
 
 Assert that a varaible is defined and if not call ``MESSAGE(SEND_ERROR ...)``.
 
@@ -169,7 +169,7 @@ between the two statements so they are always the same.  This is the best we
 can do in CMake unfortunately.
 
 COMBINED_OPTION()
------------------
++++++++++++++++++
 
 Set up a bool cache variable (i.e. an option) based on a set of dependent
 options.
@@ -193,7 +193,7 @@ feature that requires a set of other features to also be turned on but
 allows a user to disable the feature if desired.
 
 CONCAT_STRINGS()
-----------------
+++++++++++++++++
 
 Concatenate a set of string argumnets.
 
@@ -204,7 +204,7 @@ Usage::
 On output, ``<outputVar>`` is set to ``"<str0><str1>..."``.
 
 DUAL_SCOPE_APPEND_CMNDLINE_ARGS()
----------------------------------
++++++++++++++++++++++++++++++++++
 
 Utility function that appends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.
@@ -216,7 +216,7 @@ Usage::
 Just calls `APPEND_CMNDLINE_ARGS()`_ and then ``SET(<var> ${<var>} PARENT_SCOPE)``.
 
 DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 Utility function that prepends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.
@@ -228,7 +228,7 @@ Usage::
 Just calls `PREPEND_CMNDLINE_ARGS()`_ and then ``SET(<var> ${<var>} PARENT_SCOPE)``.
 
 DUAL_SCOPE_SET()
-----------------
+++++++++++++++++
 
 Macro that sets a variable name both in the current scope and the
 parent scope.
@@ -254,7 +254,7 @@ CACHE INTERNAL ""), then the value will get changed in the current
 subordinate scope and in all parent scopes all in one shot!
 
 GLOBAL_NULL_SET()
------------------
++++++++++++++++++
 
 Set a variable as a null internal global (cache) variable (removes boiler
 plate).
@@ -268,7 +268,7 @@ This just calls::
   SET(<varName> "" CACHE INTERNAL "")
 
 GLOBAL_SET()
-------------
+++++++++++++
 
 Set a variable as an internal global (cache) variable (removes boiler
 plate).
@@ -282,13 +282,14 @@ This just calls::
   SET(<varName> [other args] CACHE INTERNAL "")
 
 JOIN()
-------
+++++++
 
 Join a set of strings into a single string using a join string.
 
 Usage::
 
-  JOIN(<outputStrVar> <sepStr> <quoteElements> "<string0>" "<string1"> ...)
+  JOIN(<outputStrVar> <sepStr> <quoteElements> 
+    "<string0>" "<string1"> ...)
 
 Arguments:
 
@@ -322,7 +323,7 @@ WARNING: Be careful to quote string arguments that have spaces because CMake
 interpet those ase array boundaries.
 
 MESSAGE_WRAPPER()
------------------
++++++++++++++++++
 
 Function that wraps the standard CMake/CTest ``MESSAGE()`` function call in
 order to allow unit testing to intercept the call.
@@ -345,7 +346,7 @@ CMake program.  Otherwise, this is used to capture print messages to verify
 that they say the right thing.
 
 MULTILINE_SET()
----------------
++++++++++++++++
 
 Function to set a single string by concatenating a list of separate strings
 
@@ -365,7 +366,7 @@ The purpose of this is to make it easier to set longer strings without going
 to far to the right.
 
 PARSE_ARGUMENTS()
------------------
++++++++++++++++++
 
 Parse a set of macro/functon input arguments into different lists.  This
 allows the easy implementation of keyword-based user-defined macros and
@@ -503,7 +504,7 @@ Therefore, this could scale very badly for large lests of argument and
 option names and input argument lists.
 
 PREPEND_CMNDLINE_ARGS()
------------------------
++++++++++++++++++++++++
 
 Utility function that prepends command-line arguments to a variable of
 command-line options.
@@ -517,7 +518,7 @@ This function just prepends the command-line arguments in the string
 input.
 
 PREPEND_GLOBAL_SET()
---------------------
+++++++++++++++++++++
 
 Utility macro that prepends arguments to a global variable (reduces
 boiler-plate code and mistakes).
@@ -530,7 +531,7 @@ NOTE: The variable ``<varName>`` must exist before calling this function.
 To set it empty initially use `GLOBAL_NULL_SET()`_.
 
 APPEND_SET()
-------------
+++++++++++++
 
 Utility function to append elements to a varible (reduces boiler-plate
 code).
@@ -544,7 +545,7 @@ Just calls::
   LIST(APPEND <varName> <arg0> <arg1> ...)
 
 PRINT_NONEMPTY_VAR()
---------------------
+++++++++++++++++++++
 
 Print a defined variable giving its name then value only if it is not empty.
 
@@ -555,7 +556,7 @@ Usage::
 Calls ``PRINT_VAR(<varName>)`` if ``${<varName>}`` is not empty.
 
 PRINT_VAR()
------------
++++++++++++
 
 Unconditionally print a variable giving its name then value.
 
@@ -571,7 +572,7 @@ The variable ``<varName>`` can be defined or undefined or empty.  This uses
 an explicit "-- " line prefix so that it prints nice even on Windows CMake.
 
 REMOVE_GLOBAL_DUPLICATES()
---------------------------
+++++++++++++++++++++++++++
 
 Remove duplicate elements from a global list variable.
 
@@ -585,7 +586,7 @@ create a local variable of the same name and shadow the global variable!
 That is a fun bug to track down!
 
 SET_AND_INC_DIRS()
-------------------
+++++++++++++++++++
 
 Set a variable to an include dir and call ``INCLUDE_DIRECTORIES()`` (removes
 boiler plate).
@@ -598,7 +599,7 @@ On output, this justs ``<dirVarName>`` to ``<includeDir>`` in the local
 scope and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
 
 SET_CACHE_ON_OFF_EMPTY()
-------------------------
+++++++++++++++++++++++++
 
 Usage::
 
@@ -609,7 +610,7 @@ Sets a special string cache variable with possible values "", "ON", or
 GUIs.
 
 SET_DEFAULT()
--------------
++++++++++++++
 
 Give a local variable a default if a non-empty value is not already set.
 
@@ -621,7 +622,7 @@ If on input ``"${<varName>}"==""``, then ``<varName>`` is set to the given
 default.  Otherwise, the existing non-empty value is preserved.
 
 SET_DEFAULT_AND_FROM_ENV()
---------------------------
+++++++++++++++++++++++++++
 
 Set a default value for a local variable and override from an env var of the
 same name if it is set.
@@ -640,7 +641,7 @@ option ``-D <var>:<type>=<value>`` to allow varaibles to be set through the
 commandline like ``cmake`` always allowed.
 
 SPLIT()
--------
++++++++
 
 Split a string varible into a string array/list variable.
 
@@ -656,7 +657,7 @@ WARNING: ``<sepStr>`` is interpreted as a regular expression so keep that in
 mind when considering special regex chars like ``'*'``, ``'.'``, etc!
 
 TIMER_GET_RAW_SECONDS()
------------------------
++++++++++++++++++++++++
 
 Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
 UTC.
@@ -677,7 +678,7 @@ only be used to time very course grained operations (i.e. that take longer
 than a second).
 
 TIMER_GET_REL_SECONDS()
------------------------
++++++++++++++++++++++++
 
 Return the relative time between start and stop seconds.
 
@@ -691,7 +692,7 @@ This simple function computes the relative number of seconds between
 ``<relSecondsOutVar>``.
 
 TIMER_PRINT_REL_TIME()
-----------------------
+++++++++++++++++++++++
 
 Print the relative time between start and stop timers in ``<min>m<sec>s``
 format.
@@ -726,7 +727,7 @@ Again, don't try to time something that takes less than 1 second as it will
 be recored as ``0m0s``.
   
 UNITTEST_COMPARE_CONST()
-------------------------
+++++++++++++++++++++++++
 
 Perform a single unit test equality check and update overall test statistics
 
@@ -742,7 +743,7 @@ This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
 by the unit test harness system to assess overall pass/fail.
 
 UNITTEST_STRING_REGEX()
------------------------
++++++++++++++++++++++++
 
 Perform a series regexes of given strings and update overall test statistics.
 
@@ -761,7 +762,7 @@ This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
 by the unit test harness system to assess overall pass/fail.
 
 UNITTEST_FILE_REGEX()
----------------------
++++++++++++++++++++++
 
 Perform a series regexes of given strings and update overall test statistics.
 
@@ -776,7 +777,7 @@ The contents of ``<inputFileName>`` are read into a string and then passed
 to `UNITTEST_STRING_REGEX()`_ to assess pass/fail.
 
 UNITTEST_FINAL_RESULT()
------------------------
++++++++++++++++++++++++
 
 Print final statstics from all tests and assert final pass/fail
 
