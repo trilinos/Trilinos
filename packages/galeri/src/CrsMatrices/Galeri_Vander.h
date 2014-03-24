@@ -62,8 +62,8 @@ Epetra_CrsMatrix* Vander(const Epetra_Map* Map, const double value)
 
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, NumGlobalElements);
 
-  vector<double> Values(NumGlobalElements);
-  vector<int_type> Indices(NumGlobalElements);
+  std::vector<double> Values(NumGlobalElements);
+  std::vector<int_type> Indices(NumGlobalElements);
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {

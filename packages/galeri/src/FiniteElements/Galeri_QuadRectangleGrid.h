@@ -55,7 +55,6 @@
 #include <vector>
 #include <algorithm>
 
-using namespace std;
 using namespace Teuchos;
 
 namespace Galeri {
@@ -529,7 +528,7 @@ private:
     int size = (endx - startx) * (endy - starty);
 
     int count = 0;
-    vector<int> itmp(size);
+    std::vector<int> itmp(size);
     for (int j = starty ; j < endy ; ++j) 
     {
       for (int i = startx ; i < endx ; ++i) 
@@ -566,7 +565,7 @@ private:
     NumMyElementsY_ = endy - starty;
     NumMyElements_ = (endx - startx) * (endy - starty);
 
-    vector<int> itmp(NumMyElements());
+    std::vector<int> itmp(NumMyElements());
     int count = 0;
 
     for (int j = starty ; j < endy ; ++j) 
@@ -598,7 +597,7 @@ private:
     if (xpid == 0) 
       NumMyBoundaryFaces_ += NumMyElementsY();
 
-    vector<int> itmp(NumMyBoundaryFaces());
+    std::vector<int> itmp(NumMyBoundaryFaces());
     int count = 0;
 
     if (ypid == 0)
@@ -649,8 +648,8 @@ private:
 
   void CreateVertexMap()
   {
-    vector<int> tmp;
-    vector<int>::iterator where;
+    std::vector<int> tmp;
+    std::vector<int>::iterator where;
     int Vertices[4];
 
     for (int i = 0 ; i < NumMyElements() ; ++i)

@@ -92,8 +92,8 @@ Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
 
   // allocate storage to extract matrix rows.
   int Length = Matrix->MaxNumEntries();
-  vector<double> Values(Length);
-  vector<int>    Indices(Length);
+  std::vector<double> Values(Length);
+  std::vector<int>    Indices(Length);
 
   for (int j = 0 ; j < Matrix->NumMyRows() ; ++j)
   {
@@ -134,7 +134,7 @@ ComputeNorm(const Epetra_MultiVector* LHS, const Epetra_MultiVector* RHS)
   Epetra_MultiVector LHS2(*LHS);
   LHS2.Update(1.0, *RHS, -1.0);
 
-  vector<double> norm(LHS->NumVectors());
+  std::vector<double> norm(LHS->NumVectors());
   LHS2.Norm2(&norm[0]);
 
   for (int i = 0 ; i < LHS->NumVectors() ; ++i)
@@ -154,7 +154,7 @@ ComputeNorm(const Epetra_RowMatrix* A, const Epetra_MultiVector* LHS,
   A->Multiply(false, *LHS, Ax);
   Ax.Update(1.0, *RHS, -1.0);
 
-  vector<double> norm(LHS->NumVectors());
+  std::vector<double> norm(LHS->NumVectors());
   Ax.Norm2(&norm[0]);
 
   for (int i = 0 ; i < LHS->NumVectors() ; ++i)
@@ -387,8 +387,8 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
 
   int MaxPerRow = Matrix->MaxNumEntries();
   int NumEntriesRow;   // local entries on each row
-  vector<double> Values(MaxPerRow);
-  vector<int>    Indices(MaxPerRow);
+  std::vector<double> Values(MaxPerRow);
+  std::vector<int>    Indices(MaxPerRow);
 
   int ierr = Matrix->ExtractMyRowCopy(LID, MaxPerRow, NumEntriesRow,
                                       &Values[0], &Indices[0]);
