@@ -50,6 +50,7 @@
 #include <Tpetra_TieBreak.hpp>
 
 #include <Tpetra_Details_FixedHashTable.hpp>
+#include <Tpetra_HashTable.hpp>
 
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
@@ -696,26 +697,98 @@ namespace Tpetra {
         ArrayRCP<LO> tableLids (tableLidsRaw, 0, numReceives, true);
         ArrayRCP<int> tablePids (tablePidsRaw, 0, numReceives, true);
 
-        // Fill the temporary arrays of keys and values.
-        size_type importIndex = 0;
-        for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
-          const GO curGID = importElements[importIndex++];
-          const LO curLID = directoryMap_->getLocalElement (curGID);
-          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
-            Teuchos::typeName(*this) << " constructor: Incoming global index "
-            << curGID << " does not have a corresponding local index in the "
-            "Directory Map.  Please report this bug to the Tpetra developers.");
-          tableKeys[i] = curLID;
-          tablePids[i] = importElements[importIndex++];
-          tableLids[i] = importElements[importIndex++];
+        if (tie_break.is_null ()) {
+          // Fill the temporary arrays of keys and values.
+          size_type importIndex = 0;
+          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+            const GO curGID = importElements[importIndex++];
+            const LO curLID = directoryMap_->getLocalElement (curGID);
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              curLID == LINVALID, std::logic_error,
+              Teuchos::typeName(*this) << " constructor: Incoming global index "
+              << curGID << " does not have a corresponding local index in the "
+              "Directory Map.  Please report this bug to the Tpetra developers.");
+            tableKeys[i] = curLID;
+            tablePids[i] = importElements[importIndex++];
+            tableLids[i] = importElements[importIndex++];
+          }
+          // Set up the hash tables.
+          lidToPidTable_ =
+            rcp (new Details::FixedHashTable<LO, int> (tableKeys (),
+                                                       tablePids ()));
+          lidToLidTable_ =
+            rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
+                                                      tableLids ()));
         }
-        // Set up the hash tables.
-        lidToPidTable_ =
-          rcp (new Details::FixedHashTable<LO, int> (tableKeys (),
-                                                     tablePids ()));
-        lidToLidTable_ =
-          rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
-                                                    tableLids ()));
+        else { // tie_break is NOT null
+
+          // For each directory Map LID received, collect all the
+          // corresponding (PID,LID) pairs.  If the input Map is not
+          // one-to-one, corresponding directory Map LIDs will have
+          // more than one pair.  In that case, we will use the
+          // TieBreak object to pick exactly one pair.
+          typedef std::map<LO, std::vector<std::pair<LO, int> > > pair_table_type;
+          pair_table_type ownedPidLidPairs;
+
+          // For each directory Map LID received, collect the zero or
+          // more input Map (PID,LID) pairs into ownedPidLidPairs.
+          size_type importIndex = 0;
+          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+            const GO curGID = importElements[importIndex++];
+            const LO dirMapLid = directoryMap_->getLocalElement (curGID);
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              dirMapLid == LINVALID, std::logic_error,
+              Teuchos::typeName(*this) << " constructor: Incoming global index "
+              << curGID << " does not have a corresponding local index in the "
+              "Directory Map.  Please report this bug to the Tpetra developers.");
+            tableKeys[i] = dirMapLid;
+            const int PID = importElements[importIndex++];
+            const int LID = importElements[importIndex++];
+
+            // These may change below.  We fill them in just to ensure
+            // that they won't have invalid values.
+            tablePids[i] = PID;
+            tableLids[i] = LID;
+
+            // For every directory Map LID, we have to remember all
+            // (PID, LID) pairs.  The TieBreak object will arbitrate
+            // between them in the loop below.
+            ownedPidLidPairs[dirMapLid].push_back (std::make_pair (PID, LID));
+          }
+
+          // Use TieBreak to arbitrate between (PID,LID) pairs
+          // corresponding to each directory Map LID.
+          //
+          // FIXME (mfh 23 Mar 2014) How do I know that i is the same
+          // as the directory Map LID?
+          for (size_type i = 0; i < ownedPidLidPairs.size (); ++i) {
+            const LO dirMapLid = static_cast<LO> (i);
+            const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+            const std::vector<std::pair<int, LO> >& pidLidList =
+              ownedPidLidPairs[i];
+            if (pidLidList.size () > 0) {
+              // If there is some (PID,LID) pair for the current input
+              // Map LID, then it makes sense to invoke the TieBreak
+              // object to arbitrate between the options.  Even if
+              // there is only one (PID,LID) pair, we still want to
+              // give the TieBreak object a chance to do whatever it
+              // likes to do (e.g., track (PID,LID) pairs).
+              const size_type index =
+                static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
+                                                                  pidLidList));
+              tablePids[i] = pidLidList[index].first;
+              tableLids[i] = pidLidList[index].second;
+            }
+          }
+
+          // Set up the hash tables.
+          lidToPidTable_ =
+            rcp (new Details::FixedHashTable<LO, int> (tableKeys (),
+                                                       tablePids ()));
+          lidToLidTable_ =
+            rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
+                                                      tableLids ()));
+        }
       }
       else {
         if (tie_break == Teuchos::null) {
@@ -755,28 +828,31 @@ namespace Tpetra {
           // will use the TieBreak object to pick exactly one pair.
           typedef std::vector<std::pair<int,LO> > VectorType;
           Array<VectorType> ownedPidLidPairs (dir_numMyEntries);
-          //typename Array<GO>::const_iterator iter = importElements.begin ();
           size_type importIndex = 0;
           for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
             const GO  GID = importElements[importIndex++];
             const int PID = importElements[importIndex++];
             const LO  LID = importElements[importIndex++];
 
-            const LO curLID = directoryMap_->getLocalElement (GID);
+            const LO dirMapLid = directoryMap_->getLocalElement (GID);
 
-            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              dirMapLid == LINVALID, std::logic_error,
               Teuchos::typeName(*this) << " constructor: Incoming global index "
               << GID << " does not have a corresponding local index in the "
               "Directory Map.  Please report this bug to the Tpetra developers.");
 
-            ownedPidLidPairs[curLID].push_back (std::make_pair (PID, LID));
+            ownedPidLidPairs[dirMapLid].push_back (std::make_pair (PID, LID));
           }
 
-          // loop over each global id type
+          // Use TieBreak to arbitrate between (PID,LID) pairs
+          // corresponding to each directory Map LID.
+          //
+          // FIXME (mfh 23 Mar 2014) How do I know that i is the same
+          // as the directory Map LID?
           for (size_type i = 0; i < ownedPidLidPairs.size (); ++i) {
-            const GO GID = directoryMap_->getGlobalElement (i);
-
-            // produce tie break index
+            const LO dirMapLid = static_cast<LO> (i);
+            const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
             const VectorType& pid_and_lid = ownedPidLidPairs[i];
             if (pid_and_lid.size () > 0) {
               // If there is some (PID,LID) pair for the current input
@@ -786,9 +862,8 @@ namespace Tpetra {
               // give the TieBreak object a chance to do whatever it
               // likes to do (e.g., track (PID,LID) pairs).
               const size_type index =
-                static_cast<size_type> (tie_break->selectedIndex (GID, pid_and_lid));
-
-              // assign PIDs and LIDs based on tie_break
+                static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
+                                                                  pid_and_lid));
               PIDs_[i] = pid_and_lid[index].first;
               LIDs_[i] = pid_and_lid[index].second;
             }
