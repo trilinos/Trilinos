@@ -507,6 +507,7 @@ namespace Tpetra {
       using Teuchos::TypeNameTraits;
       using std::cerr;
       using std::endl;
+      typedef Array<int>::size_type size_type;
 
       // This class' implementation of getEntriesImpl() currently
       // encodes the following assumptions:
@@ -625,18 +626,23 @@ namespace Tpetra {
       // NOTE (mfh 21 Mar 2012) The following code assumes that
       // sizeof(GO) >= sizeof(int) and sizeof(GO) >= sizeof(LO).
       //
-      // Create and fill buffer of (GID, process ID, LID) triples to
-      // send out.  We pack the (GID, process ID, LID) triples into a
-      // single Array of GO, casting the process ID from int to GO and
-      // the LID from LO to GO as we do so.
+      // Create and fill buffer of (GID, PID, LID) triples to send
+      // out.  We pack the (GID, PID, LID) triples into a single Array
+      // of GO, casting the PID from int to GO and the LID from LO to
+      // GO as we do so.
+      //
+      // FIXME (mfh 23 Mar 2014) This assumes that sizeof(LO) <=
+      // sizeof(GO) and sizeof(int) <= sizeof(GO).  The former is
+      // required, and the latter is generally the case, but we should
+      // still check for this.
       const int packetSize = 3; // We're sending triples, so packet size is 3.
       Array<GO> exportEntries (packetSize * numMyEntries); // data to send out
       {
-        typename Array<GO>::iterator iter = exportEntries.begin();
-        for (size_t i=0; i < numMyEntries; ++i) {
-          *iter++ = myGlobalEntries[i];
-          *iter++ = as<GO> (myRank);
-          *iter++ = as<GO> (i);
+        size_type exportIndex = 0;
+        for (size_type i = 0; i < static_cast<size_type> (numMyEntries); ++i) {
+          exportEntries[exportIndex++] = myGlobalEntries[i];
+          exportEntries[exportIndex++] = as<GO> (myRank);
+          exportEntries[exportIndex++] = as<GO> (i);
         }
       }
       // Buffer of data to receive.  The Distributor figured out for
@@ -691,17 +697,17 @@ namespace Tpetra {
         ArrayRCP<int> tablePids (tablePidsRaw, 0, numReceives, true);
 
         // Fill the temporary arrays of keys and values.
-        typename Array<GO>::const_iterator iter = importElements.begin ();
-        for (size_t i = 0; i < numReceives; ++i) {
-          const GO curGID = *iter++;
+        size_type importIndex = 0;
+        for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+          const GO curGID = importElements[importIndex++];
           const LO curLID = directoryMap_->getLocalElement (curGID);
           TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
             Teuchos::typeName(*this) << " constructor: Incoming global index "
             << curGID << " does not have a corresponding local index in the "
             "Directory Map.  Please report this bug to the Tpetra developers.");
           tableKeys[i] = curLID;
-          tablePids[i] = *iter++;
-          tableLids[i] = *iter++;
+          tablePids[i] = importElements[importIndex++];
+          tableLids[i] = importElements[importIndex++];
         }
         // Set up the hash tables.
         lidToPidTable_ =
@@ -723,32 +729,38 @@ namespace Tpetra {
           LIDs_ = arcp<LO> (dir_numMyEntries);
           std::fill (LIDs_.begin (), LIDs_.end (), LINVALID);
           // Fill in the arrays with PIDs resp. LIDs.
-          typename Array<GO>::const_iterator iter = importElements.begin ();
-          for (size_t i = 0; i < numReceives; ++i) {
-            const GO curGID = *iter++;
+          size_type importIndex = 0;
+          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+            const GO curGID = importElements[importIndex++];
             const LO curLID = directoryMap_->getLocalElement (curGID);
             TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
               Teuchos::typeName(*this) << " constructor: Incoming global index "
               << curGID << " does not have a corresponding local index in the "
               "Directory Map.  Please report this bug to the Tpetra developers.");
-            PIDs_[curLID] = *iter++;
-            LIDs_[curLID] = *iter++;
+            PIDs_[curLID] = importElements[importIndex++];
+            LIDs_[curLID] = importElements[importIndex++];
           }
         }
         else {
-          typedef std::vector<std::pair<int,LO> > VectorType;
-
           PIDs_ = arcp<int> (dir_numMyEntries);
           LIDs_ = arcp<LO> (dir_numMyEntries);
           std::fill (PIDs_.begin (), PIDs_.end (), -1);
 
-          // extract all the received entries
-          ArrayRCP<VectorType> owned_ids = arcp<VectorType> (dir_numMyEntries);
-          typename Array<GO>::const_iterator iter = importElements.begin ();
-          for (size_t i = 0; i < numReceives; ++i) {
-            const GO  GID = *iter++;
-            const int PID = *iter++;
-            const LO  LID = *iter++;
+          // All received (PID, LID) pairs go into ownedPidLidPairs.
+          // This is a map from the directory Map's LID to the (PID,
+          // LID) pair (where the latter LID comes from the input Map,
+          // not the directory Map).  If the input Map is not
+          // one-to-one, corresponding LIDs will have
+          // ownedPidLidPairs[curLID].size() > 1.  In that case, we
+          // will use the TieBreak object to pick exactly one pair.
+          typedef std::vector<std::pair<int,LO> > VectorType;
+          Array<VectorType> ownedPidLidPairs (dir_numMyEntries);
+          //typename Array<GO>::const_iterator iter = importElements.begin ();
+          size_type importIndex = 0;
+          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+            const GO  GID = importElements[importIndex++];
+            const int PID = importElements[importIndex++];
+            const LO  LID = importElements[importIndex++];
 
             const LO curLID = directoryMap_->getLocalElement (GID);
 
@@ -757,19 +769,24 @@ namespace Tpetra {
               << GID << " does not have a corresponding local index in the "
               "Directory Map.  Please report this bug to the Tpetra developers.");
 
-            owned_ids[curLID].push_back (std::make_pair (PID, LID));
+            ownedPidLidPairs[curLID].push_back (std::make_pair (PID, LID));
           }
 
           // loop over each global id type
-          for (typename ArrayRCP<VectorType>::size_type i = 0; i < owned_ids.size (); ++i) {
+          for (size_type i = 0; i < ownedPidLidPairs.size (); ++i) {
             const GO GID = directoryMap_->getGlobalElement (i);
 
             // produce tie break index
-            const VectorType& pid_and_lid = owned_ids[i];
+            const VectorType& pid_and_lid = ownedPidLidPairs[i];
             if (pid_and_lid.size () > 0) {
-              // size and greater than zero, it makes sense to
-              // run a tie break
-              std::size_t index = tie_break->selectedIndex (GID, pid_and_lid);
+              // If there is some (PID,LID) pair for the current input
+              // Map LID, then it makes sense to invoke the TieBreak
+              // object to arbitrate between the options.  Even if
+              // there is only one (PID,LID) pair, we still want to
+              // give the TieBreak object a chance to do whatever it
+              // likes to do (e.g., track (PID,LID) pairs).
+              const size_type index =
+                static_cast<size_type> (tie_break->selectedIndex (GID, pid_and_lid));
 
               // assign PIDs and LIDs based on tie_break
               PIDs_[i] = pid_and_lid[index].first;
