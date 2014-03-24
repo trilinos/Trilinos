@@ -742,7 +742,7 @@ namespace Tpetra {
           LIDs_ = arcp<LO> (dir_numMyEntries);
           std::fill (PIDs_.begin (), PIDs_.end (), -1);
 
-          // extract all the recived entries
+          // extract all the received entries
           ArrayRCP<VectorType> owned_ids = arcp<VectorType> (dir_numMyEntries);
           typename Array<GO>::const_iterator iter = importElements.begin ();
           for (size_t i = 0; i < numReceives; ++i) {
