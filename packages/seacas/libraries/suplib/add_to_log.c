@@ -76,15 +76,18 @@ void add_to_log(const char *my_name, double elapsed)
   access_dir = getenv("ACCESS");
   if (access_dir != NULL) {
     char filename[LEN];
-    sprintf(filename, "%s/etc/audit.log", access_dir);
+    snprintf(filename, LEN, "%s/etc/audit.log", access_dir);
     if (0 == access(filename, W_OK)) {
       FILE *audit = fopen(filename, "a");
       if (audit != NULL) {
 	const char *codename = strrchr (my_name, '/');
 	
-	char *username = getlogin();
+	const char *username = getlogin();
 	if (username == NULL) {
 	  username = getenv("LOGNAME");
+	}
+	if (username == NULL) {
+	  username = "UNKNOWN";
 	}
 
 	if (codename == NULL)
@@ -103,7 +106,7 @@ void add_to_log(const char *my_name, double elapsed)
 	  struct rusage rusage;
     
 	  getrusage(RUSAGE_SELF,&rusage);
-	  /*
+	  /*pp
 	   * NOTE: Catamount seems to return the same values for user and system.
 	   *       To avoid double-counting cpu time, I only use the user time.
 	   *       and set the system time to 0.
@@ -125,9 +128,9 @@ void add_to_log(const char *my_name, double elapsed)
 	minutes = elapsed / 60;
 	seconds = elapsed - minutes * 60.0;
 	
-	sprintf(log_string, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
-		codename, username, time_string, u_time, s_time,
-		minutes, seconds, sys_info.nodename);
+	snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs %d:%5.2f 0.0%% 0+0k 0+0io 0pf+0w %s\n",
+		 codename, username, time_string, u_time, s_time,
+		 minutes, seconds, sys_info.nodename);
 
 	fprintf(audit, "%s", log_string);
 	fclose(audit);

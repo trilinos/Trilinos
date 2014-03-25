@@ -42,7 +42,7 @@ namespace SEAMS {
   {
     int len=strlen(from1) + strlen(from2);
     *to = new char[len+1];
-    std::memcpy(*to, from1, len+1);
+    std::strcpy(*to, from1);
     std::strcat(*to, from2);
     allocations.push_back(*to);
   }
