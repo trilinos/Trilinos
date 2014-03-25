@@ -2,7 +2,7 @@
 
 \section mj_algorithm Multi-jagged algorithm
 
-Multi-jagged (MJ) is a parallel geometric partitioning algorithm that is a
+Multi-jagged (MJ) is a parallel (MPI+OpenMP) geometric partitioning algorithm that is a
 generalization of the recursive coordinate bisection algorithm.  MJ partitions
 the coordinates into "p" balanced parts.  Partitioning continues recursively in
 each part until the desired number of balanced parts has been created. The
@@ -21,7 +21,7 @@ weights are not provided, MJ assumes coordinates are equally weighted.
 The following parameters are used by the MJ algorithm:
 
 - \ref imbalance_tolerance (default is \e .01% )
-- \ref mj_parts (default is \e none )
+- \ref mj_parts (default is \e none ) 
 - \ref rectilinear_blocks (default is \e yes )
 - \ref mj_recursion_depth (default is \e coordinate dimension )
 - \ref mj_enable_rcb (default is \e 0 )
