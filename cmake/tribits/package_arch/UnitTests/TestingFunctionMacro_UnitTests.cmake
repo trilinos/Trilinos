@@ -1875,4 +1875,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(221)
+UNITTEST_FINAL_RESULT(217)
